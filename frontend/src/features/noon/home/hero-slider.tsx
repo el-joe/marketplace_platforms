@@ -14,6 +14,40 @@ type Props = {
 
 export default function HeroSlider({ data }: Props) {
   const locale = useLocale();
+
+  if (data?.config?.is_announcement) {
+    const slide = data?.slides?.[0];
+    if (!slide) return null;
+
+    const imageUrl = slide.desktop_url || slide.mobile_url;
+    if (!imageUrl) return null;
+
+    const inner = (
+      <div className="relative w-full h-12 md:h-14">
+        <Image
+          src={imageUrl}
+          alt="Announcement"
+          fill
+          className="object-cover object-center"
+          sizes="100vw"
+          priority
+        />
+      </div>
+    );
+
+    return (
+      <div className="w-full">
+        {slide.cta_url ? (
+          <Link href={slide.cta_url} className="block w-full">
+            {inner}
+          </Link>
+        ) : (
+          inner
+        )}
+      </div>
+    );
+  }
+
   return (
     <Swiper
       modules={[Navigation, Pagination, Autoplay]}
@@ -28,20 +62,11 @@ export default function HeroSlider({ data }: Props) {
         }
       }
       loop={!!data?.config?.loop}
-      // autoplay={{
-      //   delay: +(data?.config?.autoplay_seconds || 3) * 1000,
-      //   pauseOnMouseEnter: true,
-      // }}
       speed={1500}
       className="flex-1 pb-6! md:pb-0! h-full max-h-100"
       spaceBetween={20}
       slidesPerView={1.2}
-      breakpoints={{
-        768: {
-          spaceBetween: 0,
-          slidesPerView: 1,
-        },
-      }}
+      breakpoints={{ 768: { spaceBetween: 0, slidesPerView: 1 } }}
     >
       {data?.slides?.map((banner) => (
         <SwiperSlide key={banner.title[locale]} className="h-auto! max-h-100">
@@ -52,7 +77,7 @@ export default function HeroSlider({ data }: Props) {
               width={2400}
               height={400}
               quality={100}
-              className="rounded-4xl md:rounded-none h-full "
+              className="rounded-4xl md:rounded-none h-full"
             />
             {banner?.is_paid && <AdBadge />}
           </Link>

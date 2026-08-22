@@ -42,7 +42,6 @@ use App\Http\Controllers\Api\Customer\OrderController as ApiOrderController;
 use App\Http\Controllers\Api\Customer\GiftCardController as ApiGiftCardController;
 use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\Customer\NewsletterController;
-use App\Http\Controllers\Api\Customer\AnnouncementBarController;
 use App\Http\Controllers\Api\Customer\PaymentCallbackController;
 use App\Http\Controllers\Api\Customer\PaymentHistoryController;
 
@@ -198,11 +197,6 @@ use Illuminate\Support\Facades\Route;
                 ->name('subscribe');
             Route::get('unsubscribe', [NewsletterController::class, 'unsubscribe'])
                 ->name('unsubscribe');
-        });
-
-        // ── Announcement bars (public — guest safe) ────────────────────────────
-        Route::prefix('announcement-bars')->name('customer.announcement-bars.')->group(function (): void {
-            Route::get('/', [AnnouncementBarController::class, 'index'])->name('index');
         });
 
         // ── Public auth endpoints ─────────────────────────────────────────────

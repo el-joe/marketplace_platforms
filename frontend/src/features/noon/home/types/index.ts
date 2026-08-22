@@ -129,6 +129,7 @@ export interface BlockConfig {
   tiles?: ConfigTile[];
   grid_cols?: string;
   grid_rows?: string;
+  is_announcement?: boolean;
 }
 
 export interface BlockItem {

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\AppConfigResource;
 use App\Http\Responses\ApiResponse;
-use App\Models\AnnouncementBar;
 use App\Models\AppContextCountry;
 use App\Models\Page;
 use App\Services\Customer\PageRendererService;
@@ -76,31 +75,10 @@ class AppConfigController extends Controller
             return [
                 'contexts' => $contexts,
                 'default_context' => 'main',
-                'announcement_bar' => $this->announcementBarPayload($countryId),
             ];
         });
 
         return ApiResponse::success(new AppConfigResource($data));
-    }
-
-    /**
-     * Build the sitewide announcement bar payload for the given country, or null when
-     * no bar is currently active/scheduled/targeted for it. Matches the ar/en text-pair
-     * convention used elsewhere in this response (see `name_en`/`name_ar` shaping above).
-     */
-    private function announcementBarPayload(string $countryId): ?array
-    {
-        $bar = AnnouncementBar::getActive($countryId);
-
-        if (!$bar) {
-            return null;
-        }
-
-        return [
-            'id' => $bar->id,
-            'image_url' => $bar->image_url,
-            'cta_url' => $bar->cta_url,
-        ];
     }
 
     public function homePage(Request $request): JsonResponse

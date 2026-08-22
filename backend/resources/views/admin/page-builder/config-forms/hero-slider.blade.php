@@ -2,6 +2,19 @@
 
 <form data-config-form data-block-id="{{ $block?->id }}">
     @csrf
+
+    <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <x-form.toggle
+            name="is_announcement"
+            label="Announcement Banner Mode"
+            :value="$config['is_announcement'] ?? false"
+        />
+        <p class="text-xs text-amber-700 mt-1">
+            Renders this slider as a full-width banner strip above the header (like bank offer banners).
+            Only the first active slide is shown — no arrows, no dots.
+        </p>
+    </div>
+
     <div class="grid grid-cols-2 gap-3">
         <x-form.input name="height_desktop" label="{{ __('admin.page_builder.config_forms.hero_slider.desktop_height') }}" :value="$config['height_desktop'] ?? '480px'" />
         <x-form.input name="autoplay_seconds" type="number" label="{{ __('admin.page_builder.config_forms.hero_slider.autoplay_seconds') }}" :value="$config['autoplay_seconds'] ?? 4" min="0" />

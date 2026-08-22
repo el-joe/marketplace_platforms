@@ -37,7 +37,6 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\WishlistOverviewController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
-use App\Http\Controllers\Admin\AnnouncementBarController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\AdCampaignController;
 use App\Http\Controllers\Admin\MarketerCampaignController;
@@ -842,16 +841,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{banner}/upload-image', [BannerController::class, 'uploadImage'])->name('upload-image');
         Route::delete('/image', [BannerController::class, 'deleteImage'])->name('delete-image');
         Route::post('/bulk', [BannerController::class, 'bulk'])->name('bulk');
-    });
-
-    // ─── Announcement Bars ────────────────────────────────────────────────────────
-    Route::prefix('announcement-bars')->name('announcement-bars.')->middleware('admin.permission:announcement_bars.view')->group(function () {
-        Route::get('/', [AnnouncementBarController::class, 'index'])->name('index');
-        Route::post('/upload-image', [AnnouncementBarController::class, 'uploadImage'])->name('upload-image');
-        Route::post('/', [AnnouncementBarController::class, 'store'])->name('store')->middleware('admin.permission:announcement_bars.create');
-        Route::put('/{announcementBar}', [AnnouncementBarController::class, 'update'])->name('update')->middleware('admin.permission:announcement_bars.edit');
-        Route::delete('/{announcementBar}', [AnnouncementBarController::class, 'destroy'])->name('destroy')->middleware('admin.permission:announcement_bars.delete');
-        Route::post('/{announcementBar}/toggle', [AnnouncementBarController::class, 'toggle'])->name('toggle')->middleware('admin.permission:announcement_bars.edit');
     });
 
     // ─── Ad Campaigns ──────────────────────────────────────────────────────────────

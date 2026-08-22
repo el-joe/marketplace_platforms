@@ -183,13 +183,6 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
-                        'label' => __('admin.nav.announcement_bars'),
-                        'route' => 'admin.announcement-bars.index',
-                        'icon' => 'bell',
-                        'permission' => 'announcement_bars.view',
-                        'badge' => null,
-                    ],
-                    [
                         'label' => __('admin.nav.cart_card_offers'),
                         'route' => 'admin.cart-card-offers.index',
                         'icon' => 'credit-card',

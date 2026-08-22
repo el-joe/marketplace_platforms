@@ -340,6 +340,7 @@ class PageRendererService
                 'show_arrows' => $cfg['show_arrows'] ?? true,
                 'loop' => $cfg['loop'] ?? true,
                 'transition' => $cfg['transition'] ?? 'slide',
+                'is_announcement' => (bool) ($cfg['is_announcement'] ?? false),
             ],
             // desktop_file_id/mobile_file_id are intentionally NEVER exposed —
             // only their resolved URLs (see SliderSlide::getDesktopUrlAttribute()).

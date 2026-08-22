@@ -2,7 +2,6 @@
 
 namespace App\Services\Customer;
 
-use App\Models\AnnouncementBar;
 use App\Models\Category;
 use App\Models\Country;
 use App\Models\CountryCategory;
@@ -44,30 +43,11 @@ class HomeService
             'nav' => $nav,
             'page_builder' => $this->pageBuilder->resolve($country, 'home', null, $deviceTarget, $audience),
             'sections' => $this->buildSections($country, $wishlistListingIds),
-            'announcement_bar' => $this->announcementBar($country),
             'meta' => [
                 'country_code' => strtolower($country->iso_code_2),
                 'currency' => $country->currency_code,
                 'locale' => $country->default_locale ?? app()->getLocale(),
             ],
-        ];
-    }
-
-    /**
-     * Sitewide announcement bar payload for this country: a full-width clickable image.
-     */
-    private function announcementBar(Country $country): ?array
-    {
-        $bar = AnnouncementBar::getActive($country->id);
-
-        if (! $bar) {
-            return null;
-        }
-
-        return [
-            'id' => $bar->id,
-            'image_url' => $bar->image_url,
-            'cta_url' => $bar->cta_url,
         ];
     }
 
