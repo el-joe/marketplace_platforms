@@ -98,7 +98,6 @@ export default function BoughtTogether({
               >
                 <Price
                   currentPrice={product.price_formatted}
-                  // currentPrice={centsToAmount(product?.price)}
                   currency={product.currency}
                 />
                 <p className="text-sm text-gray text-center line-clamp-2">

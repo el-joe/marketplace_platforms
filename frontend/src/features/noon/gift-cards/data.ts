@@ -48,8 +48,8 @@ export const giftCardCategories: GiftCardCategory[] = [
 ];
 
 /**
- * Fallback display amounts (major-unit AED values) used when no batch catalog is loaded.
- * In production, amounts come from GET /gift-card-store/available → GiftCardBatch.amount / 100.
+ * Fallback display amounts used when no batch catalog is loaded.
+ * GiftCardBatch.amount from the API is raw base-currency units (e.g. 500 = 500 AED) — no division needed.
  */
 export const giftCardAmounts = [50, 100, 250, 500, 1000] as const;
 

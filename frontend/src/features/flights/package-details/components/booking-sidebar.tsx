@@ -24,7 +24,7 @@ export default async function BookingSidebar({ pkg }: Props) {
           </span>
           <Price
             size="xl"
-            currentPrice={pkg.price / 100}
+            currentPrice={pkg.price}
             className="text-blue-3"
           />
           <span className="text-gray text-xs">{t("perPerson")}</span>

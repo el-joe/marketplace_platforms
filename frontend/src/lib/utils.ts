@@ -9,14 +9,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * @deprecated The marketplace API already returns values in major currency units.
- * Only use this for third-party APIs (e.g., flights) that genuinely return minor units.
- * Do NOT call this for any marketplace endpoint (cart, orders, checkout, wallet, product prices).
- */
-export function centsToAmount(cents: number): number {
-  return cents / 100;
-}
 
 export const apiBaseUrl = `${process.env.NEXT_PUBLIC_BASE_API_URL}/${region}`;
 /** Base URL for the country-agnostic `/v1/...` endpoints (no region segment) — e.g. `/v1/countries`. */

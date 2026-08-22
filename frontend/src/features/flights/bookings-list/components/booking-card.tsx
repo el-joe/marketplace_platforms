@@ -61,7 +61,7 @@ export default function BookingCard({ booking }: Props) {
         </p>
 
         <div className="flex items-end justify-between mt-auto pt-3 border-t border-border">
-          <Price currentPrice={booking.total_price / 100} size="lg" />
+          <Price currentPrice={booking.total_price} size="lg" />
           <Link
             href={`/my-bookings/${booking.id}`}
             className={cn(

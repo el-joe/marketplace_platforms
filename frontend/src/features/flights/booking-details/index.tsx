@@ -74,7 +74,7 @@ export default async function BookingDetails({ booking }: Props) {
             label={t("myBookings.totalPrice")}
             value={
               <Price
-                currentPrice={booking.total_price / 100}
+                currentPrice={booking.total_price}
                 size="sm"
               />
             }
@@ -136,7 +136,7 @@ export default async function BookingDetails({ booking }: Props) {
             <div className="flex items-center justify-between text-sm">
               <p className="text-gray">{t("myBookings.pricePerPerson")}</p>
               <Price
-                currentPrice={booking.package.price / 100}
+                currentPrice={booking.package.price}
                 size="xs"
               />
             </div>
