@@ -1,0 +1,121 @@
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║              MARKETPLACE PLATFORM — SEEDED ACCOUNTS REFERENCE                  ║
+║                        Generated: 2026-06-20                                   ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+
+DEFAULT PASSWORD FOR ALL NEW ACCOUNTS:  password123
+NOTE: The four original admin accounts (created by AdminSeeder) use:  123456
+
+Admin Panel Test Use this account : admin@admin.com / 123456
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: admin  →  Panel URL: http://admin.noon.loc
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                    Password    Spatie Role              Notes
+─────────────────────    ────────    ─────────────────────    ─────────────────────────────────────────
+admin@admin.com          123456      super_admin              All permissions; original seed row
+mohamed@admin.com        123456      operations_admin         Orders, delivery, warehouses
+layla@admin.com          123456      marketing_admin          Flash sales, marketer approvals
+sara@admin.com           123456      finance_admin            Refunds, payment gateways
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: vendor  →  Panel URL: http://partner.noon.loc
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                         Password       Role (enum)   Store                   Status
+────────────────────────────  ────────────   ───────────   ─────────────────────   ────────────
+khalid@techzone.com           password123    owner         TechZone Electronics    active
+staff-techzone@vendor.com     password123    staff         TechZone Electronics    active
+reem@bellafashion.com         password123    owner         Bella Fashion House     active
+staff-bella@vendor.com        password123    staff         Bella Fashion House     active
+ahmed@cairohome.com           password123    owner         Cairo Home Essentials   under_review  ← approval queue demo
+staff-cairohome@vendor.com    password123    staff         Cairo Home Essentials   under_review
+fahad@kuwaitgadgets.com       password123    owner         Kuwait Gadgets Hub      active
+staff-kuwaitgadgets@vendor.com password123   staff         Kuwait Gadgets Hub      active
+suspended-owner@vendor.com    password123    owner         Suspended Test Store    suspended     ← suspend/reactivate demo
+staff-suspended@vendor.com    password123    staff         Suspended Test Store    suspended
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: web (customers)  →  Storefront / API
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                    Password       Country   Phone              Status
+─────────────────────    ────────────   ───────   ────────────────   ──────────────────────────
+ali@customer.com         password123    SA        +966511111111      active
+dina@customer.com        password123    EG        +201100000001      active
+rami@customer.com        password123    AE        +971511111111      active
+faisal@customer.com      password123    KW        +965511111111      active
+noura@customer.com       password123    AE        +971522222222      active
+suspended@customer.com   password123    SA        +966599999999      suspended   ← ban/suspend demo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: marketer  →  Panel URL: http://marketer.noon.loc
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                              Password       Type               Status      Notes
+─────────────────────────────────  ────────────   ────────────────   ─────────   ────────────────────────────
+yasmin@marketer.com                password123    influencer         active      fashion, 250k followers
+omar@marketer.com                  password123    influencer         active      tech, 180k followers
+hana@marketer.com                  password123    celebrity          active      food/lifestyle, 1.2M followers
+budgetdeals@marketer.com           password123    affiliate          active      general, 15k followers
+pending-marketer@marketer.com      password123    influencer         pending     ← approval queue demo
+rejected-marketer@marketer.com     password123    affiliate          rejected    ← rejection demo
+suspended-marketer@marketer.com    password123    brand_ambassador   suspended   ← suspension demo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: shipping_supervisor  →  Panel URL: http://carrier.noon.loc
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                    Password       Company                Status    Permissions
+─────────────────────    ────────────   ─────────────────────  ────────  ──────────────────────────────────────────
+tariq@aramex.com         password123    Aramex Gulf            active    manage_agents, view_orders, assign_orders, view_reports
+salim@localexpress.om    password123    Local Express Oman     active    manage_agents, view_orders
+mona@cairoswift.com      password123    Cairo Swift Delivery   pending   view_orders   ← approval queue demo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: delivery  →  Panel URL: http://delivery.noon.loc  (also Sanctum token API)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                            Password       Type          Company              Status      Vehicle
+───────────────────────────────  ────────────   ───────────   ───────────────────  ──────────  ──────────
++1-681-242-4935                  password123    platform      —                    active      motorcycle
+khalifa@delivery.com             password123    platform      —                    on_shift    car
+inactive@delivery.com            password123    platform      —                    inactive    bicycle
+suspended@delivery.com           password123    platform      —                    suspended   motorcycle
+847-607-7542                  password123    third_party   Aramex Gulf          active      van
+aramex-rider2@delivery.com       password123    third_party   Aramex Gulf          on_shift    motorcycle
+localexpress-rider1@delivery.com password123    third_party   Local Express Oman   active      motorcycle
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GUARD: travel agency  →  Panel URL: http://travel-agency.noon.loc
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email                         Password       Role (enum)
+────────────────────────────  ────────────   ───────────
+info@gulfhorizons.com         password123    owner        
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPATIE ROLES & PERMISSIONS SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ADMIN GUARD ROLES:
+  super_admin             — all 37 admin permissions
+  operations_admin        — dashboard, orders (view/edit/cancel), vendors (view), delivery, warehouses
+  finance_admin           — dashboard, orders (view/refund), payment_gateways, marketers (view)
+  marketing_admin         — dashboard, marketers (view/approve/campaigns/secret_promotions), flash_sales (all)
+  vendor_relations_admin  — dashboard, vendors (view/approve/suspend/edit), products (view/edit)
+
+VENDOR GUARD ROLES:
+  vendor_owner    — listings.manage, orders.manage, payouts.view, team.manage, documents.manage
+  vendor_manager  — listings.manage, orders.manage, payouts.view
+  vendor_staff    — orders.manage only
+
+NOTE: VendorAdmin also has a simple 'role' enum column (owner/manager/staff) — this
+coexists with Spatie roles. The enum is the tier; Spatie is for granular can() checks.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOW TO RUN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  php artisan db:seed                   # run all seeders (idempotent, safe to re-run)
+  php artisan db:seed --class=VendorSeeder          # run one seeder in isolation
+  php artisan db:seed --class=RolesAndPermissionsSeeder
+  php artisan db:seed --class=AdminRoleAssignmentSeeder
+
+  Fresh install (wipes data):
+  php artisan migrate:fresh --seed

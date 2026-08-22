@@ -1,0 +1,405 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>Marketplace Platform — Developer Documentation</title>
+<!--[if gte mso 9]>
+<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml>
+<![endif]-->
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 2cm 2.5cm; }
+  h1 { font-size: 24pt; color: #1e3a8a; border-bottom: 3px solid #2563eb; padding-bottom: 6pt; margin-top: 0; }
+  h2 { font-size: 16pt; color: #1d4ed8; border-bottom: 1px solid #93c5fd; padding-bottom: 3pt; margin-top: 20pt; }
+  h3 { font-size: 13pt; color: #1e40af; margin-top: 14pt; }
+  h4 { font-size: 11pt; color: #2563eb; margin-top: 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 10pt 0; font-size: 10pt; }
+  th { background: #1e3a8a; color: white; padding: 6pt 8pt; text-align: left; font-weight: bold; }
+  td { padding: 5pt 8pt; border: 1px solid #dbeafe; vertical-align: top; }
+  tr:nth-child(even) td { background: #eff6ff; }
+  code { font-family: Consolas, 'Courier New', monospace; background: #f1f5f9; padding: 1pt 3pt; border-radius: 2pt; font-size: 9pt; }
+  .badge { display: inline-block; background: #2563eb; color: white; padding: 1pt 6pt; border-radius: 10pt; font-size: 9pt; margin: 1pt; }
+  .section-intro { background: #eff6ff; border-left: 4px solid #2563eb; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .stat-box { display: inline-block; background: #1e3a8a; color: white; padding: 8pt 16pt; margin: 4pt; border-radius: 4pt; text-align: center; min-width: 80pt; }
+  .stat-num { font-size: 18pt; font-weight: bold; color: #93c5fd; }
+  .stat-label { font-size: 8pt; color: #bfdbfe; }
+  ul li { margin-bottom: 3pt; }
+  p { margin: 6pt 0; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h1>Marketplace Platform — Developer Documentation</h1>
+<p><strong>Version:</strong> Laravel 13.8 &nbsp;|&nbsp; <strong>PHP:</strong> 8.3+ &nbsp;|&nbsp; <strong>Generated:</strong> June 2026</p>
+
+<div class="section-intro">
+A full-stack, multi-vendor enterprise marketplace built on Laravel with multi-guard authentication, logistics management, affiliate marketing, AI-powered features, and a comprehensive admin ecosystem supporting 8 distinct user roles across subdomain-based portals.
+</div>
+
+<div>
+  <div class="stat-box"><div class="stat-num">180</div><div class="stat-label">Eloquent Models</div></div>
+  <div class="stat-box"><div class="stat-num">113</div><div class="stat-label">Controllers</div></div>
+  <div class="stat-box"><div class="stat-num">187</div><div class="stat-label">DB Migrations</div></div>
+  <div class="stat-box"><div class="stat-num">7</div><div class="stat-label">Auth Guards</div></div>
+  <div class="stat-box"><div class="stat-num">34</div><div class="stat-label">Queue Jobs</div></div>
+  <div class="stat-box"><div class="stat-num">48</div><div class="stat-label">Services</div></div>
+  <div class="stat-box"><div class="stat-num">8</div><div class="stat-label">Subdomains</div></div>
+  <div class="stat-box"><div class="stat-num">EN/AR</div><div class="stat-label">Languages</div></div>
+</div>
+
+<!-- ==================== TECH STACK ==================== -->
+<h2>1. Technology Stack</h2>
+
+<h3>1.1 Backend</h3>
+<table>
+  <tr><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+  <tr><td><strong>PHP</strong></td><td>8.3+</td><td>Runtime language</td></tr>
+  <tr><td><strong>Laravel</strong></td><td>13.8</td><td>Full-stack PHP framework — routing, ORM, queues, events, mail</td></tr>
+  <tr><td><strong>Laravel Sanctum</strong></td><td>4.3</td><td>API token authentication for mobile/SPA clients (delivery agents)</td></tr>
+  <tr><td><strong>Spatie Laravel Permission</strong></td><td>7.4</td><td>Role-based access control (RBAC) for the admin panel</td></tr>
+  <tr><td><strong>endroid/qr-code</strong></td><td>6.0</td><td>QR code generation for marketer affiliate tracking</td></tr>
+  <tr><td><strong>kalnoy/nestedset</strong></td><td>7.0</td><td>Nested set pattern for hierarchical product categories</td></tr>
+</table>
+
+<h3>1.2 Frontend</h3>
+<table>
+  <tr><th>Library</th><th>Version</th><th>Role</th></tr>
+  <tr><td><strong>Vite</strong></td><td>8.0</td><td>Build tool and asset bundler</td></tr>
+  <tr><td><strong>Tailwind CSS</strong></td><td>4.0</td><td>Utility-first CSS framework (with forms and typography plugins)</td></tr>
+  <tr><td><strong>Alpine.js</strong></td><td>3.14.1</td><td>Lightweight reactive JS for Blade templates</td></tr>
+  <tr><td><strong>jQuery</strong></td><td>3.7.1</td><td>DOM manipulation, AJAX, plugin compatibility</td></tr>
+  <tr><td><strong>DataTables.net</strong></td><td>2.3.2</td><td>Admin data grids with server-side processing, export buttons</td></tr>
+  <tr><td><strong>Chart.js</strong></td><td>4.4.0</td><td>Analytics charts (revenue, orders, performance)</td></tr>
+  <tr><td><strong>FilePond</strong></td><td>4.30.6</td><td>Rich drag-and-drop file upload UI</td></tr>
+  <tr><td><strong>Flatpickr</strong></td><td>4.6.13</td><td>Date/time picker for forms and filters</td></tr>
+  <tr><td><strong>Select2</strong></td><td>4.1.0</td><td>Searchable select dropdowns</td></tr>
+  <tr><td><strong>SortableJS</strong></td><td>1.15.7</td><td>Drag-and-drop reordering (images, blocks, products)</td></tr>
+  <tr><td><strong>Summernote</strong></td><td>0.9.1</td><td>WYSIWYG rich text editor</td></tr>
+  <tr><td><strong>TipTap</strong></td><td>2.4.0</td><td>Modern rich text editor with image and link extensions</td></tr>
+  <tr><td><strong>SweetAlert2</strong></td><td>11.26</td><td>Beautiful modal alerts and confirmation dialogs</td></tr>
+  <tr><td><strong>Toastify-JS</strong></td><td>1.12.0</td><td>Toast notifications</td></tr>
+</table>
+
+<h3>1.3 Development Tools</h3>
+<table>
+  <tr><th>Tool</th><th>Version</th><th>Purpose</th></tr>
+  <tr><td>PHPUnit</td><td>12.5.12</td><td>Unit and feature testing</td></tr>
+  <tr><td>Faker</td><td>1.23</td><td>Test data generation for factories and seeders</td></tr>
+  <tr><td>Laravel Pint</td><td>1.27</td><td>Opinionated PHP code formatter</td></tr>
+  <tr><td>Laravel Pail</td><td>1.2.5</td><td>Real-time log monitoring in terminal</td></tr>
+  <tr><td>Mockery</td><td>1.6</td><td>Test mocking framework</td></tr>
+</table>
+
+<!-- ==================== AUTHENTICATION ==================== -->
+<h2>2. Authentication Guards & Middleware</h2>
+
+<div class="section-intro">
+The platform uses Laravel's multi-guard system with 7 distinct auth guards — one per user type. Each guard has its own Eloquent model, session driver, and associated middleware. Admin access is additionally controlled via Spatie RBAC.
+</div>
+
+<h3>2.1 Auth Guards</h3>
+<table>
+  <tr><th>Guard Name</th><th>Driver</th><th>Eloquent Model</th><th>Portal</th></tr>
+  <tr><td><code>web</code></td><td>session</td><td>Customer</td><td>Storefront — shoppers</td></tr>
+  <tr><td><code>admin</code></td><td>session</td><td>Admin</td><td>Admin panel — platform management</td></tr>
+  <tr><td><code>vendor</code></td><td>session</td><td>VendorAdmin</td><td>Partner portal — vendor team members</td></tr>
+  <tr><td><code>delivery</code></td><td>session + Sanctum</td><td>DeliveryAgent</td><td>Delivery agent app — also supports API tokens</td></tr>
+  <tr><td><code>marketer</code></td><td>session</td><td>Marketer</td><td>Marketer portal — affiliates and influencers</td></tr>
+  <tr><td><code>travel_agency</code></td><td>session</td><td>TravelAgency</td><td>Travel agency portal</td></tr>
+  <tr><td><code>shipping_supervisor</code></td><td>session</td><td>ShippingCompanySupervisor</td><td>Carrier portal</td></tr>
+</table>
+
+<h3>2.2 Custom Middleware</h3>
+<table>
+  <tr><th>Middleware</th><th>Description</th></tr>
+  <tr><td><code>AdminAuth</code></td><td>Enforces auth:admin guard on all admin subdomain routes</td></tr>
+  <tr><td><code>VendorAuth</code></td><td>Enforces auth:vendor guard on partner portal routes</td></tr>
+  <tr><td><code>DeliveryAuth</code></td><td>Enforces auth:delivery guard for delivery agent sessions</td></tr>
+  <tr><td><code>MarketerAuth</code></td><td>Enforces auth:marketer guard for the affiliate portal</td></tr>
+  <tr><td><code>TravelAgencyAuth</code></td><td>Enforces auth:travel_agency guard</td></tr>
+  <tr><td><code>ShippingCompanySupervisorAuth</code></td><td>Enforces auth:shipping_supervisor guard</td></tr>
+  <tr><td><code>CheckAdminPermission</code></td><td>Granular Spatie permission checks per route</td></tr>
+  <tr><td><code>VendorActive</code></td><td>Ensures vendor account is active before accessing partner portal</td></tr>
+  <tr><td><code>VendorOnboarded</code></td><td>Ensures vendor completed onboarding steps</td></tr>
+  <tr><td><code>SetLocale / SetVendorLocale</code></td><td>Sets app locale to en or ar based on user preference</td></tr>
+  <tr><td><code>SubdomainDetect</code></td><td>Reads incoming subdomain to route to correct portal context</td></tr>
+  <tr><td><code>TrackMarketerClick</code></td><td>Logs marketer click before forwarding to product page via /r/{slug}</td></tr>
+</table>
+
+<!-- ==================== ROUTES ==================== -->
+<h2>3. Routes & Pages</h2>
+
+<h3>3.1 Route Files Overview</h3>
+<table>
+  <tr><th>File</th><th>Subdomain / Prefix</th><th>Guard</th><th>Description</th></tr>
+  <tr><td><code>web.php</code></td><td>{domain}</td><td>web</td><td>Main orchestrator and storefront routes</td></tr>
+  <tr><td><code>admin.php</code></td><td>admin.{domain}</td><td>admin</td><td>Full admin panel CRUD for all entities</td></tr>
+  <tr><td><code>partner.php</code></td><td>partner.{domain}</td><td>vendor</td><td>Vendor dashboard — listings, orders, inventory</td></tr>
+  <tr><td><code>delivery.php</code></td><td>delivery.{domain}</td><td>delivery</td><td>Delivery agent app — assignments, location</td></tr>
+  <tr><td><code>marketer.php</code></td><td>marketer.{domain}</td><td>marketer</td><td>Affiliate portal — campaigns, QR codes</td></tr>
+  <tr><td><code>travel.php</code></td><td>travel-agency.{domain}</td><td>travel_agency</td><td>Travel package management</td></tr>
+  <tr><td><code>carrier.php</code></td><td>carrier.{domain}</td><td>shipping_supervisor</td><td>Shipping company supervisor portal</td></tr>
+  <tr><td><code>portal.php</code></td><td>portal.{domain}</td><td>— (public)</td><td>Vendor registration landing pages</td></tr>
+  <tr><td><code>api.php</code></td><td>/api/v1/*</td><td>sanctum</td><td>REST API for mobile clients</td></tr>
+  <tr><td><code>console.php</code></td><td>CLI</td><td>—</td><td>Custom Artisan commands</td></tr>
+</table>
+
+<h3>3.2 Storefront Pages</h3>
+<table>
+  <tr><th>URL</th><th>Feature</th><th>Description</th></tr>
+  <tr><td><code>/classifieds</code></td><td>P2P Classifieds</td><td>Peer-to-peer listings with map view, image attachments, contract templates, buyer inquiries</td></tr>
+  <tr><td><code>/travel</code></td><td>Travel Packages</td><td>Browse and book travel packages from agencies with media galleries</td></tr>
+  <tr><td><code>/try-on/{listing}</code></td><td>AI Virtual Try-On</td><td>Customer uploads photo → AI overlays product → returns try-on results</td></tr>
+  <tr><td><code>/radio/{country}</code></td><td>Internet Radio</td><td>Country-specific radio channels with scheduled programming and listener analytics</td></tr>
+  <tr><td><code>/now-nawy</code></td><td>Curated Feed</td><td>Admin hand-picked product listings displayed as a curated shopping feed</td></tr>
+  <tr><td><code>/r/{slug}</code></td><td>Marketer Tracking</td><td>Affiliate redirect links that log clicks before forwarding to product pages</td></tr>
+</table>
+
+<!-- ==================== MODELS ==================== -->
+<h2>4. Models & Relationships</h2>
+
+<div class="section-intro">
+<strong>Legend:</strong> HM = hasMany | BT = belongsTo | BTM = belongsToMany | HT = hasOne | MM = morphMany (polymorphic)
+</div>
+
+<h3>4.1 E-Commerce Core</h3>
+<table>
+  <tr><th>Model</th><th>Relationships</th><th>Notes</th></tr>
+  <tr><td><strong>Product</strong></td><td>BT: Category, Brand, createdByAdmin | HM: variants, images, countrySettings | BTM: coupons</td><td>Master product record. Listings per vendor.</td></tr>
+  <tr><td><strong>Category</strong></td><td>HM: products, childCategories, banners | BT: parentCategory | BTM: attributes</td><td>Uses kalnoy/nestedset for tree structure</td></tr>
+  <tr><td><strong>Brand</strong></td><td>HM: products</td><td></td></tr>
+  <tr><td><strong>Vendor</strong></td><td>BT: country, businessAddress | HM: documents, strikes, vendorAdmins, subOrders, warehouses, listings, bankAccounts | MM: addresses, files, notifications</td><td>Core seller entity</td></tr>
+  <tr><td><strong>VendorListing</strong></td><td>BT: vendor, product, warehouse | HM: pricing</td><td>Vendor-specific listing of a product</td></tr>
+  <tr><td><strong>ProductVariant</strong></td><td>BT: product | HM: listings | BTM: attributes</td><td>SKU / size-color variant</td></tr>
+</table>
+
+<h3>4.2 Orders & Fulfillment</h3>
+<table>
+  <tr><th>Model</th><th>Relationships</th><th>Notes</th></tr>
+  <tr><td><strong>Order</strong></td><td>BT: customer, coupon, paymentMethod | HM: subOrders, items, statusHistories, transactions, refunds, disputes | MM: files</td><td>Master order entity</td></tr>
+  <tr><td><strong>SubOrder</strong></td><td>BT: order, vendor, warehouse, shippingMethod, carrier | HM: items, shipments, refunds, statusHistories, payoutItems</td><td>Per-vendor portion of an order</td></tr>
+  <tr><td><strong>OrderItem</strong></td><td>BT: subOrder, product, variant</td><td>Line item</td></tr>
+  <tr><td><strong>Shipment</strong></td><td>BT: subOrder, carrier | HM: trackingEvents, carrierClaims | MM: files</td><td>Physical shipment record</td></tr>
+</table>
+
+<h3>4.3 Customers & Carts</h3>
+<table>
+  <tr><th>Model</th><th>Relationships</th></tr>
+  <tr><td><strong>Customer</strong></td><td>BT: country, referredBy | HM: referrals, carts, orders, paymentMethods, wishlists, reviews, returnRequests, disputes, supportTickets | MM: addresses, files, notifications</td></tr>
+  <tr><td><strong>Cart</strong></td><td>BT: customer | HM: items, inventoryLocks</td></tr>
+</table>
+
+<h3>4.4 Payments & Wallets</h3>
+<table>
+  <tr><th>Model</th><th>Relationships</th><th>Notes</th></tr>
+  <tr><td><strong>Wallet</strong></td><td>Polymorphic owner (Vendor / Customer / DeliveryAgent) | HM: transactions, withdrawalRequests</td><td>Universal wallet entity</td></tr>
+  <tr><td><strong>Commission</strong></td><td>BT: vendor, order, category</td><td>Types: order_commission, flash_sale, etc.</td></tr>
+  <tr><td><strong>Payout</strong></td><td>BT: vendor | HM: items</td><td>Scheduled weekly or monthly</td></tr>
+  <tr><td><strong>LedgerEntry</strong></td><td>Standalone</td><td>Double-entry accounting records</td></tr>
+</table>
+
+<h3>4.5 Logistics</h3>
+<table>
+  <tr><th>Model</th><th>Relationships</th></tr>
+  <tr><td><strong>ShippingZone</strong></td><td>HM: cities, shippingMethods, rates</td></tr>
+  <tr><td><strong>DeliveryAgent</strong></td><td>BT: country, zone, shippingCompany | HM: assignments, earnings, payouts, documents, shifts, locationHistory | MM: notifications</td></tr>
+  <tr><td><strong>DeliveryAssignment</strong></td><td>BT: agent, subOrder, zone</td></tr>
+  <tr><td><strong>ShippingCompany</strong></td><td>HM: supervisors, deliveryAgents, fallbackRules</td></tr>
+</table>
+
+<h3>4.6 Promotions & Affiliate</h3>
+<table>
+  <tr><th>Model</th><th>Relationships</th></tr>
+  <tr><td><strong>FlashSale</strong></td><td>BT: category | HM: submissions, invitations, priceHistories, analytics</td></tr>
+  <tr><td><strong>Marketer</strong></td><td>HM: campaigns, clicks, conversions, payouts, commissionTiers, qrCodes, sampleRequests</td></tr>
+  <tr><td><strong>MarketerConversion</strong></td><td>BT: marketer, campaign, order | status: pending/approved/reversed</td></tr>
+  <tr><td><strong>AdCampaign</strong></td><td>BT: vendor | HM: impressions, clicks, keywords, categoryTargets | HT: qualityScore</td></tr>
+  <tr><td><strong>Coupon</strong></td><td>BTM: products | HM: usages | fields: min_amount, usage_limit, expiry</td></tr>
+</table>
+
+<h3>4.7 AI, Content & Misc</h3>
+<table>
+  <tr><th>Model</th><th>Description</th></tr>
+  <tr><td><strong>Page / PageBlock</strong></td><td>CMS page builder — blocks with revision history and visibility rules</td></tr>
+  <tr><td><strong>VirtualTryonSession</strong></td><td>BT: listing, customer | stores AI try-on result image URLs as JSON</td></tr>
+  <tr><td><strong>AiImageEnhancementJob</strong></td><td>BT: product | status: pending/processing/completed/failed</td></tr>
+  <tr><td><strong>RadioChannel</strong></td><td>HM: scheduleSlots, listenSessions</td></tr>
+  <tr><td><strong>TravelPackage</strong></td><td>BT: agency | HM: media, bookings</td></tr>
+  <tr><td><strong>ClassifiedListing</strong></td><td>BT: customer, category | HM: images, attachments, inquiries | status: pending/approved</td></tr>
+  <tr><td><strong>SupportTicket</strong></td><td>BT: requester, assignee | HM: messages, attachments | status: open/in-review/resolved</td></tr>
+  <tr><td><strong>Dispute</strong></td><td>BT: order | HM: evidences, messages | resolution: winner/refund_amount</td></tr>
+  <tr><td><strong>Address / File / Notification</strong></td><td>Polymorphic — can belong to any entity (Customer, Vendor, Agent, etc.)</td></tr>
+</table>
+
+<!-- ==================== CONTROLLERS ==================== -->
+<h2>5. Controllers & Actions</h2>
+
+<h3>5.1 Admin Panel Controllers (65+)</h3>
+<table>
+  <tr><th>Controller</th><th>Key Actions</th></tr>
+  <tr><td>DashboardController</td><td>index, stats, revenueChart, ordersByStatus, recentOrders, topSellers, pendingItems, lowStock</td></tr>
+  <tr><td>ProductController</td><td>CRUD + generateVariants, uploadImage, deleteImage, checkDuplicate, checkGtin, reorderImages, countrySettings, datatable, bulkAction</td></tr>
+  <tr><td>CategoryController</td><td>CRUD + reorder, bulkCommission, toggleFeatured, syncAttributes, search</td></tr>
+  <tr><td>VendorController</td><td>CRUD + approve, reject, suspend, reactivate, blacklist, assignManager, issueStrike, placeHold, releaseHold, documents, verifyDocument, verifyBankAccount, applicationQueue, bulkAction</td></tr>
+  <tr><td>OrderController</td><td>index, show, datatable, updateSubOrderStatus, forceCancel, processRefund, escalateDispute, flagFraud</td></tr>
+  <tr><td>FlashSaleController</td><td>CRUD + transition, eligibleVendorCount, inviteVendors, reviewSubmission, priceHistory, bulkReviewSubmissions, liveMonitorData, analyticsData</td></tr>
+  <tr><td>PageBuilderController</td><td>30+ actions — full page/block/slide/product CRUD with revision history and visibility management</td></tr>
+  <tr><td>MarketerController</td><td>CRUD + approve/reject/suspend + campaigns, conversions, samples, payouts, tiers</td></tr>
+  <tr><td>DeliveryAgentController</td><td>CRUD + suspend, activate, assignToZone, verifyDocument, earningsSummary</td></tr>
+  <tr><td>DeliveryAssignmentController</td><td>index, datatable, autoAssign, manualAssign, liveMap</td></tr>
+  <tr><td>WalletController</td><td>index, show, adjustBalance, freezeWallet, unfreezeWallet, withdrawalRequests, approveWithdrawal, codSettlements, runCodSettlement</td></tr>
+  <tr><td>ShippingZoneController</td><td>CRUD + getRates, calculateEstimate, bulkRates, copyRates, getCities, assignCities, duplicate</td></tr>
+  <tr><td>WarehouseController</td><td>CRUD + inventory management, stock adjustments, inter-warehouse transfers, FBN</td></tr>
+  <tr><td>AdCampaignController</td><td>index, approve, reject, pauseCampaign, resumeCampaign, fraudAlerts, blockFraudPattern</td></tr>
+  <tr><td>RadioChannelController</td><td>Full resource + schedule, storeSlot, updateSlot, destroySlot</td></tr>
+  <tr><td>PackagingSupplyController</td><td>CRUD + requests, showRequest, approveRequest, rejectRequest, updateRequestStatus</td></tr>
+</table>
+
+<h3>5.2 Partner Portal Controllers (18)</h3>
+<table>
+  <tr><th>Controller</th><th>Key Actions</th></tr>
+  <tr><td>ListingController</td><td>index, create, store, show, updatePrice, toggleStatus, adjustStock, productSearch</td></tr>
+  <tr><td>OrderController</td><td>index, show, confirm, ship, cancel, datatable</td></tr>
+  <tr><td>InventoryController</td><td>index, lowStock, outOfStock, movements</td></tr>
+  <tr><td>FlashSaleController</td><td>index, create, submit, eligible</td></tr>
+  <tr><td>AiToolsController</td><td>Image enhancement, video generation, credits management</td></tr>
+  <tr><td>DisputeController</td><td>index, show, reply</td></tr>
+  <tr><td>FulfillmentController</td><td>FBN inbound shipment management</td></tr>
+  <tr><td>TeamController</td><td>Vendor admin team member management</td></tr>
+</table>
+
+<h3>5.3 Delivery Agent Controllers (7)</h3>
+<table>
+  <tr><th>Controller</th><th>Key Actions</th></tr>
+  <tr><td>AssignmentController</td><td>index, show, accept, pickedUp, deliver, fail</td></tr>
+  <tr><td>LocationController</td><td>update coordinates, toggle availability</td></tr>
+  <tr><td>EarningsController</td><td>index, summary — earnings by period</td></tr>
+  <tr><td>WalletController</td><td>index, requestWithdrawal</td></tr>
+</table>
+
+<!-- ==================== DATABASE ==================== -->
+<h2>6. Database Schema (187 Migrations)</h2>
+
+<h3>6.1 User Account Tables</h3>
+<table>
+  <tr><th>Table</th><th>Key Columns</th></tr>
+  <tr><td>admins</td><td>id (uuid), name, email, password, remember_token</td></tr>
+  <tr><td>customers</td><td>id, name, email, phone, country_id, loyalty_points, referral_code</td></tr>
+  <tr><td>vendors</td><td>id, name, status, country_id, commission_rate, default_warehouse_id</td></tr>
+  <tr><td>vendor_admins</td><td>id, vendor_id, name, email, role</td></tr>
+  <tr><td>delivery_agents</td><td>id, name, zone_id, company_id, availability, vehicle_type</td></tr>
+  <tr><td>marketers</td><td>id, name, slug, email, commission_tier, status</td></tr>
+  <tr><td>travel_agencies</td><td>id, name, country_id, status, approval_date</td></tr>
+  <tr><td>shipping_company_supervisors</td><td>id, company_id, name, email</td></tr>
+</table>
+
+<h3>6.2 Product Catalog Tables</h3>
+<table>
+  <tr><th>Table</th><th>Key Columns</th></tr>
+  <tr><td>products</td><td>id, name, sku, gtin, category_id, brand_id, description, status</td></tr>
+  <tr><td>categories</td><td>id, name, parent_id, lft, rgt, depth, slug (nestedset)</td></tr>
+  <tr><td>product_variants</td><td>id, product_id, sku, price, stock_quantity</td></tr>
+  <tr><td>vendor_listings</td><td>id, vendor_id, product_id, variant_id, warehouse_id, price, stock</td></tr>
+  <tr><td>product_country_settings</td><td>id, product_id, country_id, price, is_available</td></tr>
+</table>
+
+<h3>6.3 Orders Tables</h3>
+<table>
+  <tr><th>Table</th><th>Key Columns</th></tr>
+  <tr><td>orders</td><td>id, customer_id, total, status, payment_status, coupon_id</td></tr>
+  <tr><td>sub_orders</td><td>id, order_id, vendor_id, warehouse_id, carrier_id, status, shipping_cost</td></tr>
+  <tr><td>order_items</td><td>id, sub_order_id, product_id, variant_id, qty, unit_price, total</td></tr>
+  <tr><td>shipments</td><td>id, sub_order_id, carrier_id, tracking_number, status</td></tr>
+  <tr><td>shipment_tracking_events</td><td>id, shipment_id, status, location, description, occurred_at</td></tr>
+</table>
+
+<h3>6.4 Financial Tables</h3>
+<table>
+  <tr><th>Table</th><th>Key Columns</th></tr>
+  <tr><td>wallets</td><td>id, walletable_type, walletable_id, balance, currency, is_frozen</td></tr>
+  <tr><td>wallet_transactions</td><td>id, wallet_id, type, amount, reference, balance_before, balance_after</td></tr>
+  <tr><td>commissions</td><td>id, vendor_id, order_id, type, rate, amount</td></tr>
+  <tr><td>payouts</td><td>id, vendor_id, total, status, period_start, period_end</td></tr>
+  <tr><td>ledger_entries</td><td>id, type, amount, reference_type, reference_id, notes</td></tr>
+  <tr><td>idempotency_keys</td><td>key, result, expires_at (prevents duplicate payments)</td></tr>
+</table>
+
+<h3>6.5 Other Domain Tables Summary</h3>
+<table>
+  <tr><th>Domain</th><th>Table Count</th><th>Key Tables</th></tr>
+  <tr><td>Shipping & Logistics</td><td>15</td><td>shipping_zones, shipping_rates, delivery_zones, delivery_assignments, carrier_claims</td></tr>
+  <tr><td>Flash Sales</td><td>8</td><td>flash_sales, flash_sale_submissions, flash_sale_invitations, flash_sale_analytics</td></tr>
+  <tr><td>Advertising</td><td>11</td><td>ad_campaigns, ad_impressions, ad_clicks, paid_ad_bookings, banners</td></tr>
+  <tr><td>Marketer / Affiliate</td><td>12</td><td>marketer_campaigns, marketer_clicks, marketer_conversions, marketer_qr_codes, marketer_payouts</td></tr>
+  <tr><td>Warehousing</td><td>7</td><td>warehouses, warehouse_inventories, inventory_movements, inventory_transfers, inbound_shipments</td></tr>
+  <tr><td>AI Features</td><td>4</td><td>ai_image_enhancement_jobs, ai_video_generation_jobs, virtual_tryon_sessions, ai_feature_credits</td></tr>
+  <tr><td>Travel</td><td>4</td><td>travel_agencies, travel_packages, travel_package_media, travel_bookings</td></tr>
+  <tr><td>Classifieds</td><td>7</td><td>classified_listings, classified_inquiries, classified_contract_templates</td></tr>
+  <tr><td>Radio</td><td>3</td><td>radio_channels, radio_schedule_slots, radio_listen_sessions</td></tr>
+  <tr><td>CMS / Pages</td><td>10</td><td>pages, page_revisions, page_blocks, page_block_revisions, slider_slides</td></tr>
+  <tr><td>Support & Disputes</td><td>9</td><td>support_tickets, ticket_messages, disputes, dispute_messages, dispute_evidences, reviews</td></tr>
+  <tr><td>Shared / Polymorphic</td><td>6</td><td>addresses, files, notifications, activities, settings, countries</td></tr>
+</table>
+
+<!-- ==================== JOBS ==================== -->
+<h2>7. Queue Jobs & Events</h2>
+
+<h3>7.1 Queue Jobs (34 Total)</h3>
+<table>
+  <tr><th>Job</th><th>Description</th></tr>
+  <tr><td>AutoCompleteOrdersJob</td><td>Marks orders as completed after delivery confirmation timeout</td></tr>
+  <tr><td>CheckSlaBreachJob</td><td>Monitors sub-orders for SLA compliance; flags and alerts admins on breach</td></tr>
+  <tr><td>RefundProcessingJob</td><td>Handles automated refund disbursement to customer wallet or payment method</td></tr>
+  <tr><td>ReverseMarketerConversionJob</td><td>Reverses affiliate commission when associated order is refunded or cancelled</td></tr>
+  <tr><td>FlashSaleSchedulerJob</td><td>Cron-driven evaluation of flash sale state transitions</td></tr>
+  <tr><td>TransitionFlashSaleStatusJob</td><td>Executes state machine transition: draft → upcoming → live → ended</td></tr>
+  <tr><td>FlashSaleInviteBulkJob</td><td>Bulk-sends flash sale invitations to eligible vendor pool</td></tr>
+  <tr><td>FlashSaleLiveNotificationJob</td><td>Notifies customers when a flash sale goes live</td></tr>
+  <tr><td>SubmissionApprovedNotificationJob</td><td>Notifies vendors of approved flash sale submissions</td></tr>
+  <tr><td>SubmissionRejectedNotificationJob</td><td>Notifies vendors of rejected submissions with reason</td></tr>
+  <tr><td>CampaignApprovedNotificationJob</td><td>Notifies marketers when their campaigns are approved</td></tr>
+  <tr><td>ProcessImageEnhancementJob</td><td>Sends product image to AI API, saves enhanced result, updates job status</td></tr>
+  <tr><td>ProcessVirtualTryOnJob</td><td>Runs AI virtual try-on — overlays product on customer photo, stores results</td></tr>
+  <tr><td>ReviewProductJob</td><td>Post-processing after product review submission (moderation, notification)</td></tr>
+  <tr><td>UpdateVendorMetricsJob</td><td>Recalculates vendor KPIs: on-time delivery rate, return rate, average rating</td></tr>
+  <tr><td>PauseListingsForProductJob</td><td>Cascades product disable to all vendor listings</td></tr>
+  <tr><td>FbnInboundReminderJob</td><td>Reminds vendors of pending FBN inbound shipments</td></tr>
+  <tr><td>UpdateExchangeRatesJob</td><td>Pulls latest currency exchange rates for multi-currency pricing</td></tr>
+  <tr><td>LaunchCountryJob</td><td>Provisions a new country market with defaults for currency, zones, payment methods</td></tr>
+  <tr><td>CityImportJob</td><td>Bulk-imports city data from uploaded CSV/Excel file</td></tr>
+</table>
+
+<h3>7.2 Events</h3>
+<table>
+  <tr><th>Event</th><th>Trigger</th><th>Downstream Effects</th></tr>
+  <tr><td><strong>SubOrderPlaced</strong></td><td>Customer completes checkout and order is persisted</td><td>Inventory deduction, commission calculation, vendor notification, delivery queue, marketer conversion attribution</td></tr>
+</table>
+
+<!-- ==================== DIRECTORY ==================== -->
+<h2>8. Directory Structure</h2>
+<table>
+  <tr><th>Path</th><th>Contents</th></tr>
+  <tr><td><code>app/Http/Controllers/Admin/</code></td><td>65+ admin panel controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/Partner/</code></td><td>18 vendor portal controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/Delivery/</code></td><td>7 delivery agent controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/MarketerPortal/</code></td><td>8 marketer portal controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/TravelAgencyPortal/</code></td><td>3 travel agency controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/CarrierPortal/</code></td><td>5 carrier/shipping controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/Storefront/</code></td><td>6 customer-facing storefront controllers</td></tr>
+  <tr><td><code>app/Http/Controllers/Portal/</code></td><td>2 vendor registration portal controllers</td></tr>
+  <tr><td><code>app/Http/Middleware/</code></td><td>13 custom middleware classes</td></tr>
+  <tr><td><code>app/Http/Requests/</code></td><td>31 form request validators</td></tr>
+  <tr><td><code>app/Models/</code></td><td>180 Eloquent models</td></tr>
+  <tr><td><code>app/Jobs/</code></td><td>34 queued job classes</td></tr>
+  <tr><td><code>app/Services/</code></td><td>48 business logic service classes</td></tr>
+  <tr><td><code>app/Events/</code></td><td>Event classes (SubOrderPlaced, etc.)</td></tr>
+  <tr><td><code>database/migrations/</code></td><td>187 migration files</td></tr>
+  <tr><td><code>routes/</code></td><td>10 route files (web, admin, api, partner, delivery, marketer, travel, carrier, portal, console)</td></tr>
+  <tr><td><code>resources/views/</code></td><td>Blade templates organized by portal</td></tr>
+  <tr><td><code>resources/js/</code></td><td>Alpine.js components, DataTables, Chart.js configs</td></tr>
+  <tr><td><code>resources/css/</code></td><td>Tailwind CSS source (compiled via Vite)</td></tr>
+</table>
+
+<br><br>
+<p style="text-align:center; color:#6b7280; font-size:9pt;">Marketplace Platform Developer Documentation &mdash; Generated June 2026 &mdash; Confidential</p>
+
+</body>
+</html>

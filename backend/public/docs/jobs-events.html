@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobs & Events — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800"><div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div><h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1></div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Tech Stack</a>
+    <a href="authentication.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Guards & Auth</a>
+    <a href="routes.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Routes & Pages</a>
+    <a href="models.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Models & Relations</a>
+    <a href="controllers.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Controllers & Actions</a>
+    <a href="database.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Database Schema</a>
+    <a href="jobs-events.html" class="block px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-4xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Async</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Jobs & Events</h1>
+  <p class="text-gray-400 mb-8">34 queue jobs handle all async processing. 1 core event drives order fulfillment workflows.</p>
+
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-4 text-center"><div class="text-2xl font-black text-yellow-400">34</div><div class="text-gray-400 text-xs mt-1">Queue Jobs</div></div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-4 text-center"><div class="text-2xl font-black text-blue-400">1</div><div class="text-gray-400 text-xs mt-1">Core Event</div></div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-4 text-center"><div class="text-2xl font-black text-green-400">48</div><div class="text-gray-400 text-xs mt-1">Service Classes</div></div>
+  </div>
+
+  <h2 class="text-lg font-bold text-white mb-4">Queue Jobs by Category</h2>
+
+  <div class="space-y-4 mb-8">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-yellow-900/20"><span class="text-yellow-300 font-semibold text-sm">Order & Fulfillment</span></div>
+      <div class="p-4 space-y-2 text-sm">
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">AutoCompleteOrdersJob</code><span class="text-gray-400">Automatically marks orders as completed after delivery confirmation timeout.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">CheckSlaBreachJob</code><span class="text-gray-400">Monitors sub-orders for SLA compliance. Flags breaches and alerts admins.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">RefundProcessingJob</code><span class="text-gray-400">Handles automated refund disbursement to customer wallets/payment methods.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">ReverseMarketerConversionJob</code><span class="text-gray-400">Reverses affiliate commission when an associated order is refunded/cancelled.</span></div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-pink-900/20"><span class="text-pink-300 font-semibold text-sm">Flash Sales</span></div>
+      <div class="p-4 space-y-2 text-sm">
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">FlashSaleSchedulerJob</code><span class="text-gray-400">Cron-driven job that evaluates which flash sales should transition states.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">TransitionFlashSaleStatusJob</code><span class="text-gray-400">Executes state machine transition (draft → upcoming → live → ended).</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">FlashSaleInviteBulkJob</code><span class="text-gray-400">Bulk-sends flash sale invitations to eligible vendors.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">FlashSaleLiveNotificationJob</code><span class="text-gray-400">Notifies customers when a flash sale goes live.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">SubmissionApprovedNotificationJob</code><span class="text-gray-400">Notifies vendors when flash sale submissions are approved.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">SubmissionRejectedNotificationJob</code><span class="text-gray-400">Notifies vendors of rejected flash sale submissions with reason.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">CampaignApprovedNotificationJob</code><span class="text-gray-400">Notifies marketers when their campaigns are approved.</span></div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-teal-900/20"><span class="text-teal-300 font-semibold text-sm">AI & Media Processing</span></div>
+      <div class="p-4 space-y-2 text-sm">
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">ProcessImageEnhancementJob</code><span class="text-gray-400">Sends product image to AI enhancement API, saves result, updates job status.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">ProcessVirtualTryOnJob</code><span class="text-gray-400">Processes AI virtual try-on request — overlays product on customer photo, stores result.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">ReviewProductJob</code><span class="text-gray-400">Post-processing after product review submission (moderation, notification).</span></div>
+      </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-blue-900/20"><span class="text-blue-300 font-semibold text-sm">Vendor & Platform Management</span></div>
+      <div class="p-4 space-y-2 text-sm">
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">UpdateVendorMetricsJob</code><span class="text-gray-400">Recalculates vendor KPIs: on-time delivery rate, return rate, avg rating.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">PauseListingsForProductJob</code><span class="text-gray-400">Cascades product disable to all vendor listings when a product is paused.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">FbnInboundReminderJob</code><span class="text-gray-400">Reminds vendors of pending FBN inbound shipments.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">UpdateExchangeRatesJob</code><span class="text-gray-400">Pulls latest currency exchange rates for multi-currency pricing.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">LaunchCountryJob</code><span class="text-gray-400">Provisions a new country market: creates defaults for currency, zones, payment methods.</span></div>
+        <div class="flex items-start gap-3"><code class="text-white font-mono text-xs bg-gray-800 px-2 py-1 rounded min-w-max">CityImportJob</code><span class="text-gray-400">Bulk-imports city data from CSV/Excel into the cities table.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Events -->
+  <h2 class="text-lg font-bold text-white mb-4">Events</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-8">
+    <div class="flex items-start gap-4">
+      <div class="bg-blue-500/20 text-blue-300 rounded-lg px-3 py-2 font-mono text-sm font-bold shrink-0">SubOrderPlaced</div>
+      <div>
+        <p class="text-gray-300 text-sm mb-2">Fired immediately after a customer completes checkout and the order is persisted.</p>
+        <p class="text-gray-400 text-sm">Triggers downstream: inventory deduction, commission calculation, vendor notification, delivery assignment queue, marketer conversion attribution.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <h2 class="text-lg font-bold text-white mb-4">Service Layer (48 Services)</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <p class="text-gray-400 text-sm mb-4">Business logic is extracted into service classes under <code class="bg-gray-800 px-1 rounded text-blue-300">app/Services/</code>. Controllers delegate to services, keeping them thin.</p>
+    <div class="grid grid-cols-3 gap-2 text-xs text-gray-400">
+      <span>OrderService</span><span>PayoutService</span><span>CommissionService</span>
+      <span>ShippingRateService</span><span>DeliveryAssignmentService</span><span>InventoryService</span>
+      <span>FlashSaleService</span><span>MarketerTrackingService</span><span>WalletService</span>
+      <span>AiImageService</span><span>VirtualTryOnService</span><span>RadioService</span>
+      <span>CouponService</span><span>RefundService</span><span>DisputeService</span>
+      <span>NotificationService</span><span>ExchangeRateService</span><span>PageBuilderService</span>
+      <span>VendorOnboardingService</span><span>FbnService</span><span>CarrierClaimService</span>
+      <span>TravelBookingService</span><span>ClassifiedService</span><span class="text-gray-600">...and 24 more</span>
+    </div>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

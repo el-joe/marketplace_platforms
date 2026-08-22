@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Stack — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800">
+    <div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div>
+    <h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1>
+  </div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Tech Stack</a>
+    <a href="authentication.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Guards & Auth</a>
+    <a href="routes.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Routes & Pages</a>
+    <a href="models.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Models & Relations</a>
+    <a href="controllers.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Controllers & Actions</a>
+    <a href="database.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Database Schema</a>
+    <a href="jobs-events.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-4xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Tech Stack</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Technologies & Dependencies</h1>
+  <p class="text-gray-400 mb-8">All frameworks, libraries, and tools used in the platform.</p>
+
+  <!-- Backend -->
+  <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Backend</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b border-gray-800 bg-gray-800/50"><th class="text-left px-5 py-3 text-gray-400 font-semibold">Technology</th><th class="text-left px-5 py-3 text-gray-400 font-semibold">Version</th><th class="text-left px-5 py-3 text-gray-400 font-semibold">Purpose</th></tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        <tr><td class="px-5 py-3 text-white font-medium">PHP</td><td class="px-5 py-3 text-blue-400 font-mono">8.3+</td><td class="px-5 py-3 text-gray-400">Runtime language</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Laravel</td><td class="px-5 py-3 text-blue-400 font-mono">13.8</td><td class="px-5 py-3 text-gray-400">Full-stack PHP framework (routing, ORM, queues, events)</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Laravel Sanctum</td><td class="px-5 py-3 text-blue-400 font-mono">4.3</td><td class="px-5 py-3 text-gray-400">API token authentication for mobile/SPA clients</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Spatie Laravel Permission</td><td class="px-5 py-3 text-blue-400 font-mono">7.4</td><td class="px-5 py-3 text-gray-400">Role-based access control (RBAC) for admin panel</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">endroid/qr-code</td><td class="px-5 py-3 text-blue-400 font-mono">6.0</td><td class="px-5 py-3 text-gray-400">QR code generation for marketer tracking</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">kalnoy/nestedset</td><td class="px-5 py-3 text-blue-400 font-mono">7.0</td><td class="px-5 py-3 text-gray-400">Nested set pattern for hierarchical product categories</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Frontend -->
+  <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Frontend</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b border-gray-800 bg-gray-800/50"><th class="text-left px-5 py-3 text-gray-400 font-semibold">Library</th><th class="text-left px-5 py-3 text-gray-400 font-semibold">Version</th><th class="text-left px-5 py-3 text-gray-400 font-semibold">Role</th></tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        <tr><td class="px-5 py-3 text-white font-medium">Vite</td><td class="px-5 py-3 text-green-400 font-mono">8.0</td><td class="px-5 py-3 text-gray-400">Build tool & asset bundler</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Tailwind CSS</td><td class="px-5 py-3 text-green-400 font-mono">4.0</td><td class="px-5 py-3 text-gray-400">Utility-first CSS framework (with forms, typography plugins)</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Alpine.js</td><td class="px-5 py-3 text-green-400 font-mono">3.14.1</td><td class="px-5 py-3 text-gray-400">Lightweight reactive JS for Blade templates</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">jQuery</td><td class="px-5 py-3 text-green-400 font-mono">3.7.1</td><td class="px-5 py-3 text-gray-400">DOM manipulation, AJAX, plugin compatibility</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">DataTables.net</td><td class="px-5 py-3 text-green-400 font-mono">2.3.2</td><td class="px-5 py-3 text-gray-400">Admin data grids with server-side processing</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Chart.js</td><td class="px-5 py-3 text-green-400 font-mono">4.4.0</td><td class="px-5 py-3 text-gray-400">Analytics charts (revenue, orders, performance)</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">FilePond</td><td class="px-5 py-3 text-green-400 font-mono">4.30.6</td><td class="px-5 py-3 text-gray-400">Rich drag-and-drop file upload UI</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Flatpickr</td><td class="px-5 py-3 text-green-400 font-mono">4.6.13</td><td class="px-5 py-3 text-gray-400">Date/time picker for forms and filters</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Select2</td><td class="px-5 py-3 text-green-400 font-mono">4.1.0</td><td class="px-5 py-3 text-gray-400">Searchable select dropdowns</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">SortableJS</td><td class="px-5 py-3 text-green-400 font-mono">1.15.7</td><td class="px-5 py-3 text-gray-400">Drag-and-drop reordering (images, blocks, products)</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Summernote</td><td class="px-5 py-3 text-green-400 font-mono">0.9.1</td><td class="px-5 py-3 text-gray-400">WYSIWYG rich text editor</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">TipTap</td><td class="px-5 py-3 text-green-400 font-mono">2.4.0</td><td class="px-5 py-3 text-gray-400">Modern rich text editor (with image/link extensions)</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">SweetAlert2</td><td class="px-5 py-3 text-green-400 font-mono">11.26</td><td class="px-5 py-3 text-gray-400">Beautiful modal alerts and confirmations</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Toastify-JS</td><td class="px-5 py-3 text-green-400 font-mono">1.12.0</td><td class="px-5 py-3 text-gray-400">Toast notifications</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Dev Tools -->
+  <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span> Dev Tools</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b border-gray-800 bg-gray-800/50"><th class="text-left px-5 py-3 text-gray-400 font-semibold">Tool</th><th class="text-left px-5 py-3 text-gray-400 font-semibold">Version</th><th class="text-left px-5 py-3 text-gray-400 font-semibold">Purpose</th></tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        <tr><td class="px-5 py-3 text-white font-medium">PHPUnit</td><td class="px-5 py-3 text-purple-400 font-mono">12.5.12</td><td class="px-5 py-3 text-gray-400">Unit & feature testing</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Faker</td><td class="px-5 py-3 text-purple-400 font-mono">1.23</td><td class="px-5 py-3 text-gray-400">Test data generation for factories/seeders</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Laravel Pint</td><td class="px-5 py-3 text-purple-400 font-mono">1.27</td><td class="px-5 py-3 text-gray-400">Opinionated PHP code formatter</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Laravel Pail</td><td class="px-5 py-3 text-purple-400 font-mono">1.2.5</td><td class="px-5 py-3 text-gray-400">Real-time log monitoring in terminal</td></tr>
+        <tr><td class="px-5 py-3 text-white font-medium">Mockery</td><td class="px-5 py-3 text-purple-400 font-mono">1.6</td><td class="px-5 py-3 text-gray-400">Test mocking framework</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Architecture Notes -->
+  <h2 class="text-lg font-bold text-white mb-3">Architecture Notes</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-blue-400 font-semibold mb-2">Template Engine</div>
+      <p class="text-gray-400 text-sm">Laravel Blade with Alpine.js for reactive components. No SPA framework — server-rendered with sprinkled reactivity.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-green-400 font-semibold mb-2">Queue Backend</div>
+      <p class="text-gray-400 text-sm">Laravel Queues (database or Redis driver). 34 background jobs handle async tasks from AI processing to notification dispatch.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-purple-400 font-semibold mb-2">Database</div>
+      <p class="text-gray-400 text-sm">MySQL / PostgreSQL via Laravel Eloquent ORM. 187 migrations, UUIDs for primary keys, soft deletes on core entities.</p>
+    </div>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

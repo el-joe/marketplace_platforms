@@ -1,0 +1,378 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>منصة ماركت بليس — توثيق المطورين</title>
+<!--[if gte mso 9]>
+<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom></w:WordDocument></xml>
+<![endif]-->
+<style>
+  body { font-family: 'Arial', 'Tahoma', sans-serif; font-size: 11pt; color: #1a1a1a; margin: 2cm 2.5cm; direction: rtl; text-align: right; }
+  h1 { font-size: 24pt; color: #1e3a8a; border-bottom: 3px solid #2563eb; padding-bottom: 6pt; margin-top: 0; }
+  h2 { font-size: 16pt; color: #1d4ed8; border-bottom: 1px solid #93c5fd; padding-bottom: 3pt; margin-top: 20pt; }
+  h3 { font-size: 13pt; color: #1e40af; margin-top: 14pt; }
+  table { width: 100%; border-collapse: collapse; margin: 10pt 0; font-size: 10pt; }
+  th { background: #1e3a8a; color: white; padding: 6pt 8pt; text-align: right; font-weight: bold; }
+  td { padding: 5pt 8pt; border: 1px solid #dbeafe; vertical-align: top; text-align: right; }
+  tr:nth-child(even) td { background: #eff6ff; }
+  code { font-family: Consolas, 'Courier New', monospace; background: #f1f5f9; padding: 1pt 3pt; border-radius: 2pt; font-size: 9pt; direction: ltr; display: inline-block; }
+  .section-intro { background: #eff6ff; border-right: 4px solid #2563eb; padding: 8pt 12pt; margin: 10pt 0; font-size: 10pt; }
+  .stat-box { display: inline-block; background: #1e3a8a; color: white; padding: 8pt 16pt; margin: 4pt; border-radius: 4pt; text-align: center; min-width: 80pt; }
+  .stat-num { font-size: 18pt; font-weight: bold; color: #93c5fd; }
+  .stat-label { font-size: 8pt; color: #bfdbfe; }
+  p { margin: 6pt 0; line-height: 1.8; }
+  ul li { margin-bottom: 3pt; }
+</style>
+</head>
+<body>
+
+<h1>منصة ماركت بليس — توثيق المطورين</h1>
+<p><strong>الإصدار:</strong> Laravel 13.8 &nbsp;|&nbsp; <strong>PHP:</strong> 8.3+ &nbsp;|&nbsp; <strong>تاريخ الإصدار:</strong> يونيو 2026</p>
+
+<div class="section-intro">
+منصة سوق إلكتروني متعدد البائعين مبنية على Laravel مع نظام مصادقة متعدد الحراسات، وإدارة لوجستية، وتسويق بالعمولة، وميزات مدعومة بالذكاء الاصطناعي، ونظام إدارة شامل يدعم 8 أدوار مستخدمين مختلفة عبر بوابات تعمل على نطاقات فرعية.
+</div>
+
+<div>
+  <div class="stat-box"><div class="stat-num">180</div><div class="stat-label">نموذج Eloquent</div></div>
+  <div class="stat-box"><div class="stat-num">113</div><div class="stat-label">متحكم</div></div>
+  <div class="stat-box"><div class="stat-num">187</div><div class="stat-label">هجرة قاعدة بيانات</div></div>
+  <div class="stat-box"><div class="stat-num">7</div><div class="stat-label">حارس مصادقة</div></div>
+  <div class="stat-box"><div class="stat-num">34</div><div class="stat-label">وظيفة قائمة انتظار</div></div>
+  <div class="stat-box"><div class="stat-num">48</div><div class="stat-label">خدمة</div></div>
+  <div class="stat-box"><div class="stat-num">8</div><div class="stat-label">نطاق فرعي</div></div>
+  <div class="stat-box"><div class="stat-num">AR/EN</div><div class="stat-label">لغة</div></div>
+</div>
+
+<!-- ==================== TECH STACK ==================== -->
+<h2>١. مكدس التقنيات</h2>
+
+<h3>١.١ الخلفية (Backend)</h3>
+<table>
+  <tr><th>التقنية</th><th>الإصدار</th><th>الغرض</th></tr>
+  <tr><td><strong>PHP</strong></td><td>8.3+</td><td>لغة البرمجة الأساسية</td></tr>
+  <tr><td><strong>Laravel</strong></td><td>13.8</td><td>إطار عمل PHP الشامل — التوجيه، ORM، قوائم الانتظار، الأحداث، البريد</td></tr>
+  <tr><td><strong>Laravel Sanctum</strong></td><td>4.3</td><td>مصادقة بالرمز المميز للعملاء المحمولين (عملاء التوصيل)</td></tr>
+  <tr><td><strong>Spatie Laravel Permission</strong></td><td>7.4</td><td>التحكم بالوصول القائم على الأدوار (RBAC) للوحة الإدارة</td></tr>
+  <tr><td><strong>endroid/qr-code</strong></td><td>6.0</td><td>توليد رموز QR لتتبع المسوقين بالعمولة</td></tr>
+  <tr><td><strong>kalnoy/nestedset</strong></td><td>7.0</td><td>نمط المجموعة المتداخلة لفئات المنتجات الهرمية</td></tr>
+</table>
+
+<h3>١.٢ الواجهة الأمامية (Frontend)</h3>
+<table>
+  <tr><th>المكتبة</th><th>الإصدار</th><th>الدور</th></tr>
+  <tr><td><strong>Vite</strong></td><td>8.0</td><td>أداة البناء وتجميع الأصول</td></tr>
+  <tr><td><strong>Tailwind CSS</strong></td><td>4.0</td><td>إطار CSS قائم على الأدوات المساعدة</td></tr>
+  <tr><td><strong>Alpine.js</strong></td><td>3.14.1</td><td>JavaScript تفاعلي خفيف الوزن لقوالب Blade</td></tr>
+  <tr><td><strong>jQuery</strong></td><td>3.7.1</td><td>معالجة DOM، طلبات AJAX، توافق المكونات الإضافية</td></tr>
+  <tr><td><strong>DataTables.net</strong></td><td>2.3.2</td><td>جداول بيانات متقدمة للإدارة مع معالجة جانب الخادم</td></tr>
+  <tr><td><strong>Chart.js</strong></td><td>4.4.0</td><td>مخططات تحليلية (الإيرادات، الطلبات، الأداء)</td></tr>
+  <tr><td><strong>FilePond</strong></td><td>4.30.6</td><td>واجهة رفع ملفات بالسحب والإفلات</td></tr>
+  <tr><td><strong>Flatpickr</strong></td><td>4.6.13</td><td>منتقي التاريخ والوقت للنماذج والفلاتر</td></tr>
+  <tr><td><strong>Select2</strong></td><td>4.1.0</td><td>قوائم منسدلة قابلة للبحث</td></tr>
+  <tr><td><strong>SortableJS</strong></td><td>1.15.7</td><td>إعادة الترتيب بالسحب والإفلات (الصور، الكتل، المنتجات)</td></tr>
+  <tr><td><strong>Summernote</strong></td><td>0.9.1</td><td>محرر نصوص غني WYSIWYG</td></tr>
+  <tr><td><strong>TipTap</strong></td><td>2.4.0</td><td>محرر نصوص حديث مع امتدادات الصور والروابط</td></tr>
+  <tr><td><strong>SweetAlert2</strong></td><td>11.26</td><td>نوافذ تنبيه وتأكيد جميلة</td></tr>
+  <tr><td><strong>Toastify-JS</strong></td><td>1.12.0</td><td>إشعارات Toast</td></tr>
+</table>
+
+<!-- ==================== AUTHENTICATION ==================== -->
+<h2>٢. حراسات المصادقة والوسيط</h2>
+
+<div class="section-intro">
+تستخدم المنصة نظام الحارس المتعدد في Laravel مع 7 حراسات مصادقة مختلفة — واحد لكل نوع مستخدم. كل حارس له نموذج Eloquent خاص به، ومحرك جلسة، ووسيط مرتبط. يتم التحكم في وصول المسؤول بالإضافة إلى ذلك عبر Spatie RBAC.
+</div>
+
+<h3>٢.١ حراسات المصادقة</h3>
+<table>
+  <tr><th>اسم الحارس</th><th>المحرك</th><th>نموذج Eloquent</th><th>البوابة</th></tr>
+  <tr><td><code>web</code></td><td>جلسة</td><td>Customer</td><td>واجهة المتجر — المتسوقون</td></tr>
+  <tr><td><code>admin</code></td><td>جلسة</td><td>Admin</td><td>لوحة الإدارة — إدارة المنصة الكاملة</td></tr>
+  <tr><td><code>vendor</code></td><td>جلسة</td><td>VendorAdmin</td><td>بوابة الشريك — أعضاء فريق البائع</td></tr>
+  <tr><td><code>delivery</code></td><td>جلسة + Sanctum</td><td>DeliveryAgent</td><td>تطبيق عامل التوصيل — يدعم رموز API</td></tr>
+  <tr><td><code>marketer</code></td><td>جلسة</td><td>Marketer</td><td>بوابة المسوق — المسوقون بالعمولة والمؤثرون</td></tr>
+  <tr><td><code>travel_agency</code></td><td>جلسة</td><td>TravelAgency</td><td>بوابة وكالة السفر</td></tr>
+  <tr><td><code>shipping_supervisor</code></td><td>جلسة</td><td>ShippingCompanySupervisor</td><td>بوابة الناقل — مشرفو شركات الشحن</td></tr>
+</table>
+
+<h3>٢.٢ الوسيط المخصص</h3>
+<table>
+  <tr><th>الوسيط</th><th>الوصف</th></tr>
+  <tr><td><code>AdminAuth</code></td><td>يفرض حارس auth:admin على جميع مسارات النطاق الفرعي للمسؤول</td></tr>
+  <tr><td><code>VendorAuth</code></td><td>يفرض حارس auth:vendor على مسارات بوابة الشريك</td></tr>
+  <tr><td><code>DeliveryAuth</code></td><td>يفرض حارس auth:delivery لجلسات عامل التوصيل</td></tr>
+  <tr><td><code>MarketerAuth</code></td><td>يفرض حارس auth:marketer لبوابة العمولة</td></tr>
+  <tr><td><code>CheckAdminPermission</code></td><td>فحوصات صلاحيات Spatie الدقيقة لكل مسار</td></tr>
+  <tr><td><code>VendorActive</code></td><td>يتحقق من أن حساب البائع نشط قبل الوصول إلى بوابة الشريك</td></tr>
+  <tr><td><code>VendorOnboarded</code></td><td>يتحقق من إكمال البائع لخطوات الإعداد</td></tr>
+  <tr><td><code>SetLocale / SetVendorLocale</code></td><td>يضبط لغة التطبيق إلى en أو ar بناءً على تفضيل المستخدم</td></tr>
+  <tr><td><code>SubdomainDetect</code></td><td>يقرأ النطاق الفرعي الوارد لتوجيه الطلبات إلى سياق البوابة الصحيح</td></tr>
+  <tr><td><code>TrackMarketerClick</code></td><td>يسجل نقرة المسوق قبل إعادة التوجيه إلى صفحة المنتج عبر /r/{slug}</td></tr>
+</table>
+
+<!-- ==================== ROUTES ==================== -->
+<h2>٣. المسارات والصفحات</h2>
+
+<h3>٣.١ نظرة عامة على ملفات المسارات</h3>
+<table>
+  <tr><th>الملف</th><th>النطاق الفرعي / البادئة</th><th>الحارس</th><th>الوصف</th></tr>
+  <tr><td><code>web.php</code></td><td>{domain}</td><td>web</td><td>المنسق الرئيسي ومسارات واجهة المتجر</td></tr>
+  <tr><td><code>admin.php</code></td><td>admin.{domain}</td><td>admin</td><td>لوحة الإدارة الكاملة لجميع الكيانات</td></tr>
+  <tr><td><code>partner.php</code></td><td>partner.{domain}</td><td>vendor</td><td>لوحة تحكم البائع — القوائم، الطلبات، المخزون</td></tr>
+  <tr><td><code>delivery.php</code></td><td>delivery.{domain}</td><td>delivery</td><td>تطبيق عامل التوصيل — التعيينات، الموقع</td></tr>
+  <tr><td><code>marketer.php</code></td><td>marketer.{domain}</td><td>marketer</td><td>بوابة المسوق — الحملات، رموز QR</td></tr>
+  <tr><td><code>travel.php</code></td><td>travel-agency.{domain}</td><td>travel_agency</td><td>إدارة حزم السفر</td></tr>
+  <tr><td><code>carrier.php</code></td><td>carrier.{domain}</td><td>shipping_supervisor</td><td>بوابة مشرف شركة الشحن</td></tr>
+  <tr><td><code>portal.php</code></td><td>portal.{domain}</td><td>— (عام)</td><td>صفحات تسجيل البائعين</td></tr>
+  <tr><td><code>api.php</code></td><td>/api/v1/*</td><td>sanctum</td><td>REST API للعملاء المحمولين</td></tr>
+  <tr><td><code>console.php</code></td><td>CLI</td><td>—</td><td>أوامر Artisan المخصصة</td></tr>
+</table>
+
+<h3>٣.٢ صفحات واجهة المتجر</h3>
+<table>
+  <tr><th>الرابط</th><th>الميزة</th><th>الوصف</th></tr>
+  <tr><td><code>/classifieds</code></td><td>الإعلانات المبوبة بين الأفراد</td><td>إعلانات P2P مع عرض الخريطة، مرفقات الصور، القوالب العقدية، استفسارات المشترين</td></tr>
+  <tr><td><code>/travel</code></td><td>حجز حزم السفر</td><td>تصفح وحجز حزم السفر من الوكالات مع معارض الوسائط</td></tr>
+  <tr><td><code>/try-on/{listing}</code></td><td>التجربة الافتراضية بالذكاء الاصطناعي</td><td>يرفع العميل صورة → يُطبّق الذكاء الاصطناعي المنتج → يُعيد صور نتائج التجربة</td></tr>
+  <tr><td><code>/radio/{country}</code></td><td>الراديو عبر الإنترنت</td><td>قنوات راديو خاصة بالدولة مع برامج مجدولة وتحليلات المستمعين</td></tr>
+  <tr><td><code>/now-nawy</code></td><td>خلاصة منتقاة من المسؤول</td><td>قوائم منتجات منتقاة يدوياً من قبل المسؤول كخلاصة تسوق مُنسقة</td></tr>
+  <tr><td><code>/r/{slug}</code></td><td>إعادة توجيه تتبع المسوق</td><td>روابط إحالة المسوق التي تسجل النقرات ثم تعيد التوجيه إلى صفحات المنتج</td></tr>
+</table>
+
+<!-- ==================== MODELS ==================== -->
+<h2>٤. النماذج والعلاقات</h2>
+
+<div class="section-intro">
+<strong>الرموز:</strong> HM = hasMany (لديه الكثير) | BT = belongsTo (ينتمي إلى) | BTM = belongsToMany (ينتمي إلى الكثير) | HT = hasOne (لديه واحد) | MM = morphMany (متعدد متعدد الأشكال)
+</div>
+
+<h3>٤.١ قلب التجارة الإلكترونية</h3>
+<table>
+  <tr><th>النموذج</th><th>العلاقات</th><th>ملاحظات</th></tr>
+  <tr><td><strong>Product (المنتج)</strong></td><td>BT: فئة، علامة تجارية | HM: متغيرات، صور، إعدادات الدولة | BTM: كوبونات</td><td>سجل المنتج الرئيسي. القوائم لكل بائع منفصلة.</td></tr>
+  <tr><td><strong>Category (الفئة)</strong></td><td>HM: منتجات، فئات فرعية | BT: فئة أم | BTM: خصائص</td><td>يستخدم kalnoy/nestedset لبنية الشجرة الهرمية</td></tr>
+  <tr><td><strong>Brand (العلامة التجارية)</strong></td><td>HM: منتجات</td><td></td></tr>
+  <tr><td><strong>Vendor (البائع)</strong></td><td>BT: دولة، عنوان العمل | HM: وثائق، مخالفات، فريق البائع، طلبات فرعية، مخازن، قوائم، حسابات بنكية | MM: عناوين، ملفات، إشعارات</td><td>كيان البائع الأساسي</td></tr>
+  <tr><td><strong>VendorListing (قائمة البائع)</strong></td><td>BT: بائع، منتج، مستودع | HM: أسعار</td><td>قائمة المنتج الخاصة بالبائع</td></tr>
+  <tr><td><strong>ProductVariant (متغير المنتج)</strong></td><td>BT: منتج | HM: قوائم | BTM: خصائص</td><td>وحدة SKU / متغير الحجم-اللون</td></tr>
+</table>
+
+<h3>٤.٢ الطلبات والإنجاز</h3>
+<table>
+  <tr><th>النموذج</th><th>العلاقات</th><th>ملاحظات</th></tr>
+  <tr><td><strong>Order (الطلب)</strong></td><td>BT: عميل، كوبون، طريقة دفع | HM: طلبات فرعية، عناصر، سجل الحالة، معاملات، استردادات، نزاعات | MM: ملفات</td><td>كيان الطلب الرئيسي</td></tr>
+  <tr><td><strong>SubOrder (الطلب الفرعي)</strong></td><td>BT: طلب، بائع، مستودع، طريقة شحن، ناقل | HM: عناصر، شحنات، استردادات، سجل الحالة، عناصر المدفوعات</td><td>جزء الطلب الخاص بكل بائع</td></tr>
+  <tr><td><strong>OrderItem (عنصر الطلب)</strong></td><td>BT: طلب فرعي، منتج، متغير</td><td>بند الطلب</td></tr>
+  <tr><td><strong>Shipment (الشحنة)</strong></td><td>BT: طلب فرعي، ناقل | HM: أحداث التتبع، مطالبات الناقل | MM: ملفات</td><td>سجل الشحنة الفعلية</td></tr>
+</table>
+
+<h3>٤.٣ العملاء والعربات</h3>
+<table>
+  <tr><th>النموذج</th><th>العلاقات</th></tr>
+  <tr><td><strong>Customer (العميل)</strong></td><td>BT: دولة، مُحيل | HM: إحالات، عربات، طلبات، طرق دفع، قوائم مفضلة، مراجعات، طلبات إرجاع، نزاعات، تذاكر دعم | MM: عناوين، ملفات، إشعارات</td></tr>
+  <tr><td><strong>Cart (عربة التسوق)</strong></td><td>BT: عميل | HM: عناصر، أقفال المخزون</td></tr>
+</table>
+
+<h3>٤.٤ المدفوعات والمحافظ</h3>
+<table>
+  <tr><th>النموذج</th><th>العلاقات والملاحظات</th></tr>
+  <tr><td><strong>Wallet (المحفظة)</strong></td><td>صاحب متعدد الأشكال (بائع / عميل / عامل توصيل) | HM: معاملات، طلبات سحب</td></tr>
+  <tr><td><strong>Commission (العمولة)</strong></td><td>BT: بائع، طلب، فئة | الأنواع: عمولة الطلب، البيع السريع، إلخ</td></tr>
+  <tr><td><strong>Payout (المدفوعات)</strong></td><td>BT: بائع | HM: عناصر | الجدول: أسبوعي أو شهري</td></tr>
+  <tr><td><strong>LedgerEntry (قيد دفتر الأستاذ)</strong></td><td>سجلات محاسبة القيد المزدوج</td></tr>
+</table>
+
+<h3>٤.٥ اللوجستيات</h3>
+<table>
+  <tr><th>النموذج</th><th>العلاقات</th></tr>
+  <tr><td><strong>ShippingZone (منطقة الشحن)</strong></td><td>HM: مدن، طرق الشحن، أسعار</td></tr>
+  <tr><td><strong>DeliveryAgent (عامل التوصيل)</strong></td><td>BT: دولة، منطقة، شركة شحن | HM: تعيينات، أرباح، مدفوعات، وثائق، مناوبات، سجل الموقع | MM: إشعارات</td></tr>
+  <tr><td><strong>DeliveryAssignment (تعيين التوصيل)</strong></td><td>BT: عامل، طلب فرعي، منطقة</td></tr>
+  <tr><td><strong>ShippingCompany (شركة الشحن)</strong></td><td>HM: مشرفون، عمال توصيل، قواعد احتياطية</td></tr>
+</table>
+
+<h3>٤.٦ العروض والتسويق بالعمولة</h3>
+<table>
+  <tr><th>النموذج</th><th>العلاقات</th></tr>
+  <tr><td><strong>FlashSale (البيع السريع)</strong></td><td>BT: فئة | HM: عروض مقدمة، دعوات، سجل الأسعار، تحليلات</td></tr>
+  <tr><td><strong>Marketer (المسوق)</strong></td><td>HM: حملات، نقرات، تحويلات، مدفوعات، شرائح العمولة، رموز QR، طلبات عينات</td></tr>
+  <tr><td><strong>MarketerConversion (تحويل المسوق)</strong></td><td>BT: مسوق، حملة، طلب | الحالة: معلق/موافق عليه/مُلغى</td></tr>
+  <tr><td><strong>AdCampaign (حملة إعلانية)</strong></td><td>BT: بائع | HM: مشاهدات، نقرات، كلمات مفتاحية، أهداف الفئة | HT: درجة الجودة</td></tr>
+  <tr><td><strong>Coupon (الكوبون)</strong></td><td>BTM: منتجات | HM: استخدامات | الحقول: الحد الأدنى للمبلغ، حد الاستخدام، تاريخ الانتهاء</td></tr>
+</table>
+
+<h3>٤.٧ الذكاء الاصطناعي والمحتوى وغيره</h3>
+<table>
+  <tr><th>النموذج</th><th>الوصف</th></tr>
+  <tr><td><strong>Page / PageBlock (الصفحة / كتلة الصفحة)</strong></td><td>أداة إنشاء صفحات CMS — كتل مع سجل مراجعات وقواعد رؤية</td></tr>
+  <tr><td><strong>VirtualTryonSession (جلسة التجربة الافتراضية)</strong></td><td>BT: قائمة، عميل | يخزن روابط صور نتائج الذكاء الاصطناعي كـ JSON</td></tr>
+  <tr><td><strong>AiImageEnhancementJob (وظيفة تحسين الصور)</strong></td><td>BT: منتج | الحالة: معلق/معالجة/مكتمل/فاشل</td></tr>
+  <tr><td><strong>RadioChannel (قناة الراديو)</strong></td><td>HM: فترات الجدول الزمني، جلسات الاستماع</td></tr>
+  <tr><td><strong>TravelPackage (حزمة السفر)</strong></td><td>BT: وكالة | HM: وسائط، حجوزات</td></tr>
+  <tr><td><strong>ClassifiedListing (الإعلان المبوب)</strong></td><td>BT: عميل، فئة | HM: صور، مرفقات، استفسارات | الحالة: معلق/موافق عليه</td></tr>
+  <tr><td><strong>SupportTicket (تذكرة الدعم)</strong></td><td>BT: مقدم الطلب، المعين | HM: رسائل، مرفقات | الحالة: مفتوح/قيد المراجعة/محلول</td></tr>
+  <tr><td><strong>Dispute (النزاع)</strong></td><td>BT: طلب | HM: أدلة، رسائل | القرار: الفائز / مبلغ الاسترداد</td></tr>
+  <tr><td><strong>Address / File / Notification</strong></td><td>متعدد الأشكال — يمكن أن ينتمي إلى أي كيان (عميل، بائع، عامل، إلخ)</td></tr>
+</table>
+
+<!-- ==================== CONTROLLERS ==================== -->
+<h2>٥. المتحكمات والإجراءات</h2>
+
+<h3>٥.١ متحكمات لوحة الإدارة (65+)</h3>
+<table>
+  <tr><th>المتحكم</th><th>الإجراءات الرئيسية</th></tr>
+  <tr><td>DashboardController (لوحة القيادة)</td><td>index, stats, revenueChart, ordersByStatus, recentOrders, topSellers, pendingItems, lowStock</td></tr>
+  <tr><td>ProductController (المنتجات)</td><td>CRUD + توليد المتغيرات، رفع الصور، فحص التكرار، إعدادات الدولة، جدول البيانات، الإجراءات الجماعية</td></tr>
+  <tr><td>VendorController (البائعون)</td><td>CRUD + الموافقة، الرفض، الإيقاف، إعادة التنشيط، القائمة السوداء، إصدار مخالفات، قائمة انتظار الطلبات</td></tr>
+  <tr><td>OrderController (الطلبات)</td><td>index, show, تحديث حالة الطلب الفرعي، إلغاء قسري، معالجة الاسترداد، تصعيد النزاع</td></tr>
+  <tr><td>FlashSaleController (البيع السريع)</td><td>CRUD + انتقال الحالة، دعوة البائعين، مراجعة العروض، البيانات المباشرة، التحليلات</td></tr>
+  <tr><td>PageBuilderController (بناء الصفحات)</td><td>30+ إجراء — CRUD كامل للصفحات/الكتل/الشرائح/المنتجات مع سجل المراجعات</td></tr>
+  <tr><td>MarketerController (المسوقون)</td><td>CRUD + الموافقة/الرفض/الإيقاف + الحملات، التحويلات، العينات، المدفوعات، الشرائح</td></tr>
+  <tr><td>DeliveryAgentController (عمال التوصيل)</td><td>CRUD + الإيقاف، التنشيط، التعيين للمنطقة، التحقق من الوثائق، ملخص الأرباح</td></tr>
+  <tr><td>WalletController (المحافظ)</td><td>index, show, تعديل الرصيد، تجميد/إلغاء تجميد، طلبات السحب، تسويات الدفع النقدي عند التسليم</td></tr>
+  <tr><td>RadioChannelController (قنوات الراديو)</td><td>مورد كامل + الجدول الزمني، إضافة/تحديث/حذف فترات البث</td></tr>
+</table>
+
+<h3>٥.٢ متحكمات بوابة الشريك (18)</h3>
+<table>
+  <tr><th>المتحكم</th><th>الإجراءات الرئيسية</th></tr>
+  <tr><td>ListingController (القوائم)</td><td>index, create, store, show, تحديث السعر، تبديل الحالة، تعديل المخزون</td></tr>
+  <tr><td>OrderController (الطلبات)</td><td>index, show, تأكيد، شحن، إلغاء</td></tr>
+  <tr><td>InventoryController (المخزون)</td><td>index, مخزون منخفض، غير متوفر، حركات المخزون</td></tr>
+  <tr><td>FlashSaleController (البيع السريع)</td><td>index, إنشاء، تقديم، فحص الأهلية</td></tr>
+  <tr><td>AiToolsController (أدوات الذكاء الاصطناعي)</td><td>تحسين الصور، توليد الفيديو، إدارة الاعتمادات</td></tr>
+  <tr><td>DisputeController (النزاعات)</td><td>index, show, رد</td></tr>
+  <tr><td>FulfillmentController (الإنجاز)</td><td>إدارة شحنات FBN الواردة</td></tr>
+</table>
+
+<h3>٥.٣ متحكمات عامل التوصيل (7)</h3>
+<table>
+  <tr><th>المتحكم</th><th>الإجراءات الرئيسية</th></tr>
+  <tr><td>AssignmentController (التعيينات)</td><td>index, show, قبول، استلام، توصيل، فشل</td></tr>
+  <tr><td>LocationController (الموقع)</td><td>تحديث الإحداثيات، تبديل التوفر</td></tr>
+  <tr><td>EarningsController (الأرباح)</td><td>index, ملخص الأرباح حسب الفترة</td></tr>
+  <tr><td>WalletController (المحفظة)</td><td>index, طلب سحب</td></tr>
+</table>
+
+<!-- ==================== DATABASE ==================== -->
+<h2>٦. مخطط قاعدة البيانات (187 هجرة)</h2>
+
+<h3>٦.١ جداول حسابات المستخدمين</h3>
+<table>
+  <tr><th>الجدول</th><th>الأعمدة الرئيسية</th></tr>
+  <tr><td>admins (المسؤولون)</td><td>id (uuid)، الاسم، البريد الإلكتروني، كلمة المرور</td></tr>
+  <tr><td>customers (العملاء)</td><td>id، الاسم، البريد الإلكتروني، الهاتف، country_id، نقاط الولاء، رمز الإحالة</td></tr>
+  <tr><td>vendors (البائعون)</td><td>id، الاسم، الحالة، country_id، معدل العمولة، default_warehouse_id</td></tr>
+  <tr><td>vendor_admins (مسؤولو البائع)</td><td>id، vendor_id، الاسم، البريد الإلكتروني، الدور</td></tr>
+  <tr><td>delivery_agents (عمال التوصيل)</td><td>id، الاسم، zone_id، company_id، التوفر، نوع المركبة</td></tr>
+  <tr><td>marketers (المسوقون)</td><td>id، الاسم، slug، البريد الإلكتروني، شريحة العمولة، الحالة</td></tr>
+  <tr><td>travel_agencies (وكالات السفر)</td><td>id، الاسم، country_id، الحالة، تاريخ الموافقة</td></tr>
+</table>
+
+<h3>٦.٢ جداول كتالوج المنتجات</h3>
+<table>
+  <tr><th>الجدول</th><th>الأعمدة الرئيسية</th></tr>
+  <tr><td>products (المنتجات)</td><td>id، الاسم، SKU، GTIN، category_id، brand_id، الوصف، الحالة</td></tr>
+  <tr><td>categories (الفئات)</td><td>id، الاسم، parent_id، lft، rgt، depth، slug (nestedset)</td></tr>
+  <tr><td>product_variants (متغيرات المنتج)</td><td>id، product_id، SKU، السعر، الكمية في المخزون</td></tr>
+  <tr><td>vendor_listings (قوائم البائعين)</td><td>id، vendor_id، product_id، variant_id، warehouse_id، السعر، المخزون</td></tr>
+  <tr><td>product_country_settings (إعدادات الدولة)</td><td>id، product_id، country_id، السعر، is_available</td></tr>
+</table>
+
+<h3>٦.٣ جداول الطلبات</h3>
+<table>
+  <tr><th>الجدول</th><th>الأعمدة الرئيسية</th></tr>
+  <tr><td>orders (الطلبات)</td><td>id، customer_id، الإجمالي، الحالة، حالة الدفع، coupon_id</td></tr>
+  <tr><td>sub_orders (الطلبات الفرعية)</td><td>id، order_id، vendor_id، warehouse_id، carrier_id، الحالة، تكلفة الشحن</td></tr>
+  <tr><td>order_items (عناصر الطلب)</td><td>id، sub_order_id، product_id، variant_id، الكمية، سعر الوحدة، الإجمالي</td></tr>
+  <tr><td>shipments (الشحنات)</td><td>id، sub_order_id، carrier_id، رقم التتبع، الحالة</td></tr>
+  <tr><td>shipment_tracking_events (أحداث التتبع)</td><td>id، shipment_id، الحالة، الموقع، الوصف، وقت الحدوث</td></tr>
+</table>
+
+<h3>٦.٤ الجداول المالية</h3>
+<table>
+  <tr><th>الجدول</th><th>الأعمدة الرئيسية</th></tr>
+  <tr><td>wallets (المحافظ)</td><td>id، walletable_type، walletable_id، الرصيد، العملة، is_frozen</td></tr>
+  <tr><td>wallet_transactions (معاملات المحفظة)</td><td>id، wallet_id، النوع، المبلغ، المرجع، الرصيد قبل/بعد</td></tr>
+  <tr><td>commissions (العمولات)</td><td>id، vendor_id، order_id، النوع، المعدل، المبلغ</td></tr>
+  <tr><td>payouts (المدفوعات)</td><td>id، vendor_id، الإجمالي، الحالة، بداية/نهاية الفترة</td></tr>
+  <tr><td>ledger_entries (قيود دفتر الأستاذ)</td><td>id، النوع، المبلغ، reference_type، reference_id، الملاحظات</td></tr>
+  <tr><td>idempotency_keys (مفاتيح التكافؤ)</td><td>key، النتيجة، expires_at (يمنع مدفوعات مكررة)</td></tr>
+</table>
+
+<h3>٦.٥ ملخص جداول النطاقات الأخرى</h3>
+<table>
+  <tr><th>النطاق</th><th>عدد الجداول</th><th>الجداول الرئيسية</th></tr>
+  <tr><td>الشحن واللوجستيات</td><td>15</td><td>مناطق الشحن، الأسعار، مناطق التوصيل، التعيينات، مطالبات الناقل</td></tr>
+  <tr><td>البيع السريع</td><td>8</td><td>flash_sales, flash_sale_submissions, flash_sale_invitations, flash_sale_analytics</td></tr>
+  <tr><td>الإعلانات</td><td>11</td><td>حملات الإعلانات، المشاهدات، النقرات، حجوزات الإعلانات المدفوعة، البانرات</td></tr>
+  <tr><td>المسوق / العمولة</td><td>12</td><td>حملات المسوق، النقرات، التحويلات، رموز QR، المدفوعات</td></tr>
+  <tr><td>التخزين</td><td>7</td><td>مستودعات، مخزون، حركات المخزون، نقل المخزون، شحنات واردة</td></tr>
+  <tr><td>ميزات الذكاء الاصطناعي</td><td>4</td><td>وظائف تحسين الصور، توليد الفيديو، جلسات التجربة الافتراضية، اعتمادات الذكاء الاصطناعي</td></tr>
+  <tr><td>السفر</td><td>4</td><td>وكالات السفر، حزم السفر، وسائط الحزم، الحجوزات</td></tr>
+  <tr><td>الإعلانات المبوبة</td><td>7</td><td>قوائم الإعلانات المبوبة، الاستفسارات، القوالب العقدية</td></tr>
+  <tr><td>الراديو</td><td>3</td><td>قنوات الراديو، فترات الجدول الزمني، جلسات الاستماع</td></tr>
+  <tr><td>إدارة المحتوى</td><td>10</td><td>صفحات، مراجعات الصفحات، كتل الصفحات، شرائح التمرير</td></tr>
+  <tr><td>الدعم والنزاعات</td><td>9</td><td>تذاكر الدعم، رسائل التذاكر، النزاعات، أدلة النزاعات، المراجعات</td></tr>
+  <tr><td>مشترك / متعدد الأشكال</td><td>6</td><td>عناوين، ملفات، إشعارات، أنشطة، إعدادات، دول</td></tr>
+</table>
+
+<!-- ==================== JOBS ==================== -->
+<h2>٧. وظائف قائمة الانتظار والأحداث</h2>
+
+<h3>٧.١ وظائف قائمة الانتظار (34 وظيفة)</h3>
+<table>
+  <tr><th>الوظيفة</th><th>الوصف</th></tr>
+  <tr><td>AutoCompleteOrdersJob</td><td>تعلم الطلبات مكتملة تلقائياً بعد انتهاء مهلة تأكيد التوصيل</td></tr>
+  <tr><td>CheckSlaBreachJob</td><td>يراقب الطلبات الفرعية للامتثال لاتفاقية مستوى الخدمة (SLA)؛ يُنبه المسؤولين عند الخرق</td></tr>
+  <tr><td>RefundProcessingJob</td><td>يعالج صرف الاسترداد التلقائي إلى محفظة العميل أو طريقة الدفع</td></tr>
+  <tr><td>ReverseMarketerConversionJob</td><td>يعكس عمولة المسوق عند استرداد الطلب المرتبط أو إلغاؤه</td></tr>
+  <tr><td>FlashSaleSchedulerJob</td><td>وظيفة مُجدولة تقيّم انتقالات حالة البيع السريع</td></tr>
+  <tr><td>TransitionFlashSaleStatusJob</td><td>ينفذ انتقال آلة الحالة: مسودة → قادم → مباشر → منتهٍ</td></tr>
+  <tr><td>FlashSaleInviteBulkJob</td><td>يرسل دعوات البيع السريع بالجملة إلى مجموعة البائعين المؤهلين</td></tr>
+  <tr><td>FlashSaleLiveNotificationJob</td><td>يُخطر العملاء عند بدء البيع السريع</td></tr>
+  <tr><td>SubmissionApprovedNotificationJob</td><td>يُخطر البائعين بالعروض المعتمدة للبيع السريع</td></tr>
+  <tr><td>ProcessImageEnhancementJob</td><td>يرسل صورة المنتج إلى واجهة برمجة الذكاء الاصطناعي، يحفظ النتيجة المحسّنة</td></tr>
+  <tr><td>ProcessVirtualTryOnJob</td><td>ينفذ التجربة الافتراضية بالذكاء الاصطناعي — يُطبّق المنتج على صورة العميل ويخزن النتائج</td></tr>
+  <tr><td>UpdateVendorMetricsJob</td><td>يعيد حساب مؤشرات أداء البائع: معدل التوصيل في الوقت المحدد، معدل الإرجاع، متوسط التقييم</td></tr>
+  <tr><td>PauseListingsForProductJob</td><td>يُوقف تسلسلياً جميع قوائم البائعين عند تعطيل منتج</td></tr>
+  <tr><td>UpdateExchangeRatesJob</td><td>يجلب أحدث أسعار صرف العملات للتسعير متعدد العملات</td></tr>
+  <tr><td>LaunchCountryJob</td><td>يُعدّ سوق دولة جديدة بالإعدادات الافتراضية للعملة والمناطق وطرق الدفع</td></tr>
+  <tr><td>CityImportJob</td><td>يستورد بيانات المدن بالجملة من ملف CSV/Excel محمّل</td></tr>
+</table>
+
+<h3>٧.٢ الأحداث</h3>
+<table>
+  <tr><th>الحدث</th><th>المشغّل</th><th>التأثيرات التالية</th></tr>
+  <tr><td><strong>SubOrderPlaced (تقديم الطلب الفرعي)</strong></td><td>يكمل العميل عملية الشراء ويُحفظ الطلب</td><td>خصم المخزون، حساب العمولة، إخطار البائع، قائمة انتظار التوصيل، نسب تحويل المسوق</td></tr>
+</table>
+
+<!-- ==================== DIRECTORY ==================== -->
+<h2>٨. هيكل المجلدات</h2>
+<table>
+  <tr><th>المسار</th><th>المحتويات</th></tr>
+  <tr><td><code>app/Http/Controllers/Admin/</code></td><td>65+ متحكم للوحة الإدارة</td></tr>
+  <tr><td><code>app/Http/Controllers/Partner/</code></td><td>18 متحكم لبوابة البائع</td></tr>
+  <tr><td><code>app/Http/Controllers/Delivery/</code></td><td>7 متحكمات لعامل التوصيل</td></tr>
+  <tr><td><code>app/Http/Controllers/MarketerPortal/</code></td><td>8 متحكمات لبوابة المسوق</td></tr>
+  <tr><td><code>app/Http/Controllers/TravelAgencyPortal/</code></td><td>3 متحكمات لوكالة السفر</td></tr>
+  <tr><td><code>app/Http/Controllers/CarrierPortal/</code></td><td>5 متحكمات للشحن والناقل</td></tr>
+  <tr><td><code>app/Http/Controllers/Storefront/</code></td><td>6 متحكمات لواجهة المتجر</td></tr>
+  <tr><td><code>app/Http/Middleware/</code></td><td>13 فئة وسيط مخصصة</td></tr>
+  <tr><td><code>app/Http/Requests/</code></td><td>31 فئة التحقق من صحة طلبات النماذج</td></tr>
+  <tr><td><code>app/Models/</code></td><td>180 نموذج Eloquent</td></tr>
+  <tr><td><code>app/Jobs/</code></td><td>34 وظيفة في قوائم الانتظار</td></tr>
+  <tr><td><code>app/Services/</code></td><td>48 فئة خدمة لمنطق الأعمال</td></tr>
+  <tr><td><code>app/Events/</code></td><td>فئات الأحداث (SubOrderPlaced، إلخ)</td></tr>
+  <tr><td><code>database/migrations/</code></td><td>187 ملف هجرة قاعدة بيانات</td></tr>
+  <tr><td><code>routes/</code></td><td>10 ملفات مسارات (web, admin, api, partner, delivery, marketer, travel, carrier, portal, console)</td></tr>
+  <tr><td><code>resources/views/</code></td><td>قوالب Blade منظمة حسب البوابة</td></tr>
+  <tr><td><code>resources/js/</code></td><td>مكونات Alpine.js، إعدادات DataTables، تكوينات Chart.js</td></tr>
+  <tr><td><code>resources/css/</code></td><td>مصدر Tailwind CSS (مُجمَّع عبر Vite)</td></tr>
+</table>
+
+<br><br>
+<p style="text-align:center; color:#6b7280; font-size:9pt;">توثيق المطورين لمنصة ماركت بليس — يونيو 2026 — سري</p>
+
+</body>
+</html>

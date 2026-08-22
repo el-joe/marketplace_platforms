@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guards & Auth — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800">
+    <div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div>
+    <h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1>
+  </div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Tech Stack</a>
+    <a href="authentication.html" class="block px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Guards & Auth</a>
+    <a href="routes.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Routes & Pages</a>
+    <a href="models.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Models & Relations</a>
+    <a href="controllers.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Controllers & Actions</a>
+    <a href="database.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Database Schema</a>
+    <a href="jobs-events.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-4xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Authentication</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Guards, Middleware & Auth</h1>
+  <p class="text-gray-400 mb-8">The platform uses Laravel's multi-guard authentication system with 7 distinct user types, each with its own session guard, Eloquent model, and middleware.</p>
+
+  <!-- Guards Table -->
+  <h2 class="text-lg font-bold text-white mb-3">Auth Guards</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b border-gray-800 bg-gray-800/50">
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Guard Name</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Driver</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Eloquent Model</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Portal / Use</th>
+      </tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-blue-300 px-2 py-0.5 rounded text-xs">web</code></td>
+          <td class="px-5 py-3 text-gray-300">session</td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">Customer</td>
+          <td class="px-5 py-3 text-gray-400">Storefront — shoppers browsing and placing orders</td>
+        </tr>
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-red-300 px-2 py-0.5 rounded text-xs">admin</code></td>
+          <td class="px-5 py-3 text-gray-300">session</td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">Admin</td>
+          <td class="px-5 py-3 text-gray-400">Admin panel — full platform management with Spatie RBAC</td>
+        </tr>
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-blue-300 px-2 py-0.5 rounded text-xs">vendor</code></td>
+          <td class="px-5 py-3 text-gray-300">session</td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">VendorAdmin</td>
+          <td class="px-5 py-3 text-gray-400">Partner portal — vendor team members managing the store</td>
+        </tr>
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-green-300 px-2 py-0.5 rounded text-xs">delivery</code></td>
+          <td class="px-5 py-3 text-gray-300">session + <span class="text-yellow-400 text-xs">Sanctum</span></td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">DeliveryAgent</td>
+          <td class="px-5 py-3 text-gray-400">Delivery app — mobile agents, also supports API tokens</td>
+        </tr>
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-purple-300 px-2 py-0.5 rounded text-xs">marketer</code></td>
+          <td class="px-5 py-3 text-gray-300">session</td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">Marketer</td>
+          <td class="px-5 py-3 text-gray-400">Marketer portal — affiliates and influencers</td>
+        </tr>
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-yellow-300 px-2 py-0.5 rounded text-xs">travel_agency</code></td>
+          <td class="px-5 py-3 text-gray-300">session</td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">TravelAgency</td>
+          <td class="px-5 py-3 text-gray-400">Travel agency portal — package management</td>
+        </tr>
+        <tr>
+          <td class="px-5 py-3"><code class="bg-gray-800 text-orange-300 px-2 py-0.5 rounded text-xs">shipping_supervisor</code></td>
+          <td class="px-5 py-3 text-gray-300">session</td>
+          <td class="px-5 py-3 text-gray-300 font-mono text-xs">ShippingCompanySupervisor</td>
+          <td class="px-5 py-3 text-gray-400">Carrier portal — shipping company supervisors</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Middleware -->
+  <h2 class="text-lg font-bold text-white mb-3">Custom Middleware</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">AdminAuth</div>
+      <p class="text-gray-400 text-sm">Enforces <code class="bg-gray-800 px-1 rounded text-xs">auth:admin</code> guard on all admin routes. Redirects unauthenticated requests to admin login.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">VendorAuth</div>
+      <p class="text-gray-400 text-sm">Enforces <code class="bg-gray-800 px-1 rounded text-xs">auth:vendor</code> guard. Used on all partner portal routes.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">DeliveryAuth</div>
+      <p class="text-gray-400 text-sm">Enforces <code class="bg-gray-800 px-1 rounded text-xs">auth:delivery</code> guard for delivery agent sessions.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">MarketerAuth</div>
+      <p class="text-gray-400 text-sm">Enforces <code class="bg-gray-800 px-1 rounded text-xs">auth:marketer</code> guard for the affiliate portal.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">TravelAgencyAuth</div>
+      <p class="text-gray-400 text-sm">Enforces <code class="bg-gray-800 px-1 rounded text-xs">auth:travel_agency</code> guard.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">ShippingCompanySupervisorAuth</div>
+      <p class="text-gray-400 text-sm">Enforces <code class="bg-gray-800 px-1 rounded text-xs">auth:shipping_supervisor</code> guard.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">CheckAdminPermission</div>
+      <p class="text-gray-400 text-sm">Checks Spatie permission names on individual admin routes. Granular RBAC beyond just role-level access.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">VendorActive / VendorOnboarded</div>
+      <p class="text-gray-400 text-sm">Ensures vendor account is active and has completed onboarding before accessing partner portal features.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">SetLocale / SetVendorLocale</div>
+      <p class="text-gray-400 text-sm">Sets <code class="bg-gray-800 px-1 rounded text-xs">App::setLocale()</code> based on user preference. Supports <strong>en</strong> and <strong>ar</strong>.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">SubdomainDetect</div>
+      <p class="text-gray-400 text-sm">Reads the incoming subdomain to route requests to the correct portal context.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="text-white font-semibold mb-1 font-mono text-sm">TrackMarketerClick</div>
+      <p class="text-gray-400 text-sm">Intercepts <code class="bg-gray-800 px-1 rounded text-xs">/r/{slug}</code> redirects to log a MarketerClick before forwarding to the product page.</p>
+    </div>
+  </div>
+
+  <!-- RBAC -->
+  <h2 class="text-lg font-bold text-white mb-3">Admin RBAC (Spatie)</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-8">
+    <p class="text-gray-400 text-sm mb-4">The <code class="bg-gray-800 px-1 rounded text-blue-300">Admin</code> model uses <strong class="text-white">spatie/laravel-permission</strong> for fine-grained role-based access control.</p>
+    <ul class="space-y-2 text-sm text-gray-400">
+      <li class="flex gap-2"><span class="text-blue-400">→</span> Roles and permissions stored in <code class="bg-gray-800 px-1 rounded text-xs">roles</code>, <code class="bg-gray-800 px-1 rounded text-xs">permissions</code>, <code class="bg-gray-800 px-1 rounded text-xs">model_has_roles</code>, <code class="bg-gray-800 px-1 rounded text-xs">model_has_permissions</code> tables.</li>
+      <li class="flex gap-2"><span class="text-blue-400">→</span> Admins can be assigned multiple roles (e.g. <em>super-admin</em>, <em>finance-manager</em>, <em>support-agent</em>).</li>
+      <li class="flex gap-2"><span class="text-blue-400">→</span> <code class="bg-gray-800 px-1 rounded text-xs">CheckAdminPermission</code> middleware enforces per-route permission checks.</li>
+      <li class="flex gap-2"><span class="text-blue-400">→</span> Admin impersonation feature allows admins to act as vendors for debugging.</li>
+      <li class="flex gap-2"><span class="text-blue-400">→</span> Login sessions are logged in <code class="bg-gray-800 px-1 rounded text-xs">admin_login_sessions</code> for audit trail.</li>
+    </ul>
+  </div>
+
+  <!-- API Auth -->
+  <h2 class="text-lg font-bold text-white mb-3">API Authentication (Sanctum)</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <p class="text-gray-400 text-sm mb-4">The REST API (<code class="bg-gray-800 px-1 rounded text-blue-300">/api/v1/*</code>) uses Laravel Sanctum token-based authentication.</p>
+    <ul class="space-y-2 text-sm text-gray-400">
+      <li class="flex gap-2"><span class="text-green-400">→</span> DeliveryAgent mobile app authenticates via <code class="bg-gray-800 px-1 rounded text-xs">auth:sanctum</code> guard.</li>
+      <li class="flex gap-2"><span class="text-green-400">→</span> Tokens are long-lived and associated to the <code class="bg-gray-800 px-1 rounded text-xs">delivery_agents</code> user provider.</li>
+      <li class="flex gap-2"><span class="text-green-400">→</span> Token abilities can be used for scoped access control.</li>
+    </ul>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controllers & Actions — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800">
+    <div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div>
+    <h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1>
+  </div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Tech Stack</a>
+    <a href="authentication.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Guards & Auth</a>
+    <a href="routes.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Routes & Pages</a>
+    <a href="models.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Models & Relations</a>
+    <a href="controllers.html" class="block px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Controllers & Actions</a>
+    <a href="database.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Database Schema</a>
+    <a href="jobs-events.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-5xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Controllers</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Controllers & Actions</h1>
+  <p class="text-gray-400 mb-8">113 controllers organized by portal. Each controller handles a specific domain area.</p>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-4 gap-4 mb-8">
+    <div class="bg-red-900/20 border border-red-800/40 rounded-xl p-4 text-center"><div class="text-2xl font-black text-red-400">65+</div><div class="text-gray-400 text-xs mt-1">Admin Controllers</div></div>
+    <div class="bg-blue-900/20 border border-blue-800/40 rounded-xl p-4 text-center"><div class="text-2xl font-black text-blue-400">18</div><div class="text-gray-400 text-xs mt-1">Partner Controllers</div></div>
+    <div class="bg-green-900/20 border border-green-800/40 rounded-xl p-4 text-center"><div class="text-2xl font-black text-green-400">7</div><div class="text-gray-400 text-xs mt-1">Delivery Controllers</div></div>
+    <div class="bg-purple-900/20 border border-purple-800/40 rounded-xl p-4 text-center"><div class="text-2xl font-black text-purple-400">8+</div><div class="text-gray-400 text-xs mt-1">Marketer Controllers</div></div>
+  </div>
+
+  <!-- Admin Controllers -->
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-3 h-3 rounded-full bg-red-500"></div>
+      <h2 class="text-white text-lg font-bold">Admin Panel Controllers</h2>
+      <code class="text-gray-500 text-xs font-mono">app/Http/Controllers/Admin/</code>
+    </div>
+    <div class="space-y-3">
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          DashboardController
+          <span class="text-gray-500 text-xs font-normal font-mono">index, stats, revenueChart, ordersByStatus, recentOrders, topSellers, pendingItems, lowStock</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          Main admin dashboard with live KPIs — total revenue, order counts, pending vendor applications, low-stock alerts. Chart.js-powered revenue and order trend visualizations.
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          ProductController
+          <span class="text-gray-500 text-xs font-normal font-mono">12 actions</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          <div class="grid grid-cols-3 gap-1">
+            <span>index</span><span>create</span><span>store</span><span>edit</span><span>update</span><span>destroy</span>
+            <span>generateVariants</span><span>uploadImage</span><span>deleteImage</span><span>checkDuplicate</span>
+            <span>checkGtin</span><span>reorderImages</span><span>countrySettings</span><span>updateCountrySetting</span>
+            <span>datatable</span><span>bulkAction</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          VendorController
+          <span class="text-gray-500 text-xs font-normal font-mono">Approve/reject/suspend/blacklist workflow</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          <div class="grid grid-cols-3 gap-1">
+            <span>index</span><span>create</span><span>store</span><span>show</span><span>update</span>
+            <span class="text-green-300">approve</span><span class="text-red-300">reject</span><span class="text-yellow-300">suspend</span>
+            <span>reactivate</span><span class="text-red-400">blacklist</span><span>assignManager</span><span>issueStrike</span>
+            <span>placeHold</span><span>releaseHold</span><span>documents</span><span>verifyDocument</span>
+            <span>rejectDocument</span><span>verifyBankAccount</span><span>performanceData</span>
+            <span>sendNotification</span><span>applicationQueue</span><span>bulkAction</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          FlashSaleController
+          <span class="text-gray-500 text-xs font-normal font-mono">Full lifecycle management</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          index, create, store, show, edit, update, destroy, datatable, invitationsDatatable, submissionsDatatable,
+          <strong class="text-white">transition</strong> (state machine), eligibleVendorCount, inviteVendors,
+          reviewSubmission, submissionDetail, priceHistory, bulkReviewSubmissions,
+          <strong class="text-white">liveMonitorData</strong>, analyticsData, submissionStats
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          PageBuilderController
+          <span class="text-gray-500 text-xs font-normal font-mono">30+ actions — CMS page builder</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          Page: loadPage, createPage, updatePage, deletePage, duplicatePage, publishPage, getPageRevisions, restorePageRevision<br>
+          Blocks: addBlock, getBlockConfig, updateBlockConfig, updateBlockVisibility, removeBlock, reorderBlocks, getRevisions, restoreBlockRevision<br>
+          Slides: getSlides, saveSlide, deleteSlide, reorderSlides<br>
+          Products/Sellers: addBlockProduct, removeBlockProduct, reorderBlockProducts, searchProducts, searchCategories, searchBrands, searchVendors
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          MarketerController
+          <span class="text-gray-500 text-xs font-normal font-mono">Full affiliate management</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          CRUD + approve/reject/suspend/activate, samplesIndex, approveSample, dispatchSample,
+          campaignsIndex, showCampaign, approveCampaign, rejectCampaign,
+          conversionsIndex, approveConversions, payoutsIndex, generatePayout, approvePayout, processPayout, tiersShow, storeTiers
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          DeliveryAgentController + DeliveryAssignmentController
+          <span class="text-gray-500 text-xs font-normal font-mono">Agent & logistics management</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          Agent: index, store, show, update, destroy, suspend, activate, resetPassword, assignToZone, verifyDocument, rejectDocument, earningsSummary<br>
+          Assignment: index, datatable, <strong class="text-white">autoAssign</strong>, manualAssign, <strong class="text-white">liveMap</strong>
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          WalletController
+          <span class="text-gray-500 text-xs font-normal font-mono">Financial wallet management</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          index, show, adjustBalance, freezeWallet, unfreezeWallet, withdrawalRequests, approveWithdrawal, rejectWithdrawal, markWithdrawalProcessed, codSettlements, runCodSettlement, markSettlementSettled
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          ShippingZoneController
+          <span class="text-gray-500 text-xs font-normal font-mono">Shipping zones and rate matrix</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          index, show, store, update, destroy, datatable, getRates, calculateEstimate, bulkRates, copyRates, storeRate, updateRate, destroyRate, toggleRate, getCities, assignCities, getUnassigned, unassignCity, toggleActive, duplicate
+        </div>
+      </details>
+
+      <details class="bg-gray-900 rounded-xl border border-gray-800">
+        <summary class="px-5 py-3 cursor-pointer flex items-center justify-between text-white font-semibold text-sm list-none">
+          Other Admin Controllers
+          <span class="text-gray-500 text-xs font-normal font-mono">40+ additional controllers</span>
+        </summary>
+        <div class="px-5 pb-4 pt-2 text-xs text-gray-400 border-t border-gray-800">
+          <div class="grid grid-cols-2 gap-1">
+            <span>OrderController</span><span>PayoutController</span>
+            <span>CouponController</span><span>CustomerController</span>
+            <span>BannerController</span><span>AdCampaignController</span>
+            <span>AdSlotController</span><span>PaidAdBookingController</span>
+            <span>ReviewController</span><span>PaymentMethodController</span>
+            <span>WarehouseController</span><span>FbnController</span>
+            <span>SubscriptionController</span><span>ClassifiedListingController</span>
+            <span>TravelAgencyController</span><span>TravelPackageController</span>
+            <span>ShippingCompanyController</span><span>RadioChannelController</span>
+            <span>CarrierClaimController</span><span>PackagingSupplyController</span>
+            <span>ActivityLogController</span><span>AnalyticsController</span>
+            <span>AiDashboardController</span><span>RoleController</span>
+            <span>SettingsController</span><span>AttributeController</span>
+            <span>CountryController</span><span>CityController</span>
+            <span>CurrencyController</span><span>LedgerController</span>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Partner Controllers -->
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+      <h2 class="text-white text-lg font-bold">Partner Portal Controllers</h2>
+      <code class="text-gray-500 text-xs font-mono">app/Http/Controllers/Partner/</code>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-800 bg-gray-800/50">
+          <th class="text-left px-5 py-3 text-gray-400 font-semibold">Controller</th>
+          <th class="text-left px-5 py-3 text-gray-400 font-semibold">Key Actions</th>
+        </tr></thead>
+        <tbody class="divide-y divide-gray-800 text-xs">
+          <tr><td class="px-5 py-3 text-white font-mono">ListingController</td><td class="px-5 py-3 text-gray-400">index, create, store, show, updatePrice, toggleStatus, adjustStock, datatable, productSearch</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">OrderController</td><td class="px-5 py-3 text-gray-400">index, show, confirm, ship, cancel, datatable</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">InventoryController</td><td class="px-5 py-3 text-gray-400">index, lowStock, outOfStock, movements, datatable</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">PayoutController</td><td class="px-5 py-3 text-gray-400">index, earningsSummary, show</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">FlashSaleController</td><td class="px-5 py-3 text-gray-400">index, datatable, create, submit, eligible</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">AiToolsController</td><td class="px-5 py-3 text-gray-400">Image enhancement, video generation, credits balance</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">DisputeController</td><td class="px-5 py-3 text-gray-400">index, show, reply</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">TeamController</td><td class="px-5 py-3 text-gray-400">Vendor admin team management</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">FulfillmentController</td><td class="px-5 py-3 text-gray-400">FBN inbound shipment management</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">ClaimController</td><td class="px-5 py-3 text-gray-400">Carrier damage/loss claims</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Delivery Controllers -->
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-3 h-3 rounded-full bg-green-500"></div>
+      <h2 class="text-white text-lg font-bold">Delivery Agent Controllers</h2>
+      <code class="text-gray-500 text-xs font-mono">app/Http/Controllers/Delivery/</code>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead><tr class="border-b border-gray-800 bg-gray-800/50">
+          <th class="text-left px-5 py-3 text-gray-400 font-semibold">Controller</th>
+          <th class="text-left px-5 py-3 text-gray-400 font-semibold">Key Actions</th>
+        </tr></thead>
+        <tbody class="divide-y divide-gray-800 text-xs">
+          <tr><td class="px-5 py-3 text-white font-mono">AssignmentController</td><td class="px-5 py-3 text-gray-400">index, show, <strong class="text-green-300">accept</strong>, <strong class="text-yellow-300">pickedUp</strong>, <strong class="text-blue-300">deliver</strong>, fail</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">LocationController</td><td class="px-5 py-3 text-gray-400">update location coordinates, toggle availability status</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">EarningsController</td><td class="px-5 py-3 text-gray-400">index, summary — earnings breakdown by period</td></tr>
+          <tr><td class="px-5 py-3 text-white font-mono">WalletController</td><td class="px-5 py-3 text-gray-400">index, requestWithdrawal</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Marketer + Others -->
+  <div class="grid grid-cols-2 gap-6">
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+        <h2 class="text-white font-bold">Marketer Portal</h2>
+      </div>
+      <div class="bg-gray-900 rounded-xl border border-gray-800 p-4 text-xs text-gray-400 space-y-2">
+        <div><code class="text-purple-300">CampaignController</code> — CRUD, analytics</div>
+        <div><code class="text-purple-300">QrCodeController</code> — generate, manage QR tracking codes</div>
+        <div><code class="text-purple-300">TrackingController</code> — redirect with click tracking</div>
+        <div><code class="text-purple-300">EarningsController</code> — view commissions and tiers</div>
+        <div><code class="text-purple-300">WalletController</code> — balance and withdrawal</div>
+      </div>
+    </div>
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+        <h2 class="text-white font-bold">Carrier & Travel Portals</h2>
+      </div>
+      <div class="bg-gray-900 rounded-xl border border-gray-800 p-4 text-xs text-gray-400 space-y-2">
+        <div><code class="text-orange-300">Carrier/AgentController</code> — manage agents</div>
+        <div><code class="text-orange-300">Carrier/AssignmentController</code> — shipment assignments</div>
+        <div><code class="text-orange-300">Carrier/SupervisorController</code> — supervisor ops</div>
+        <div><code class="text-yellow-300">TravelAgency/PackageController</code> — package CRUD</div>
+        <div><code class="text-yellow-300">TravelAgency/DashboardController</code> — agency stats</div>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

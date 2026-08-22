@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Database Schema — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800">
+    <div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div>
+    <h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1>
+  </div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Tech Stack</a>
+    <a href="authentication.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Guards & Auth</a>
+    <a href="routes.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Routes & Pages</a>
+    <a href="models.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Models & Relations</a>
+    <a href="controllers.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Controllers & Actions</a>
+    <a href="database.html" class="block px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Database Schema</a>
+    <a href="jobs-events.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-5xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Database</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Database Schema</h1>
+  <p class="text-gray-400 mb-4">187 migrations organized into domain groups. All primary keys are UUIDs. Core entities use soft deletes.</p>
+
+  <div class="bg-blue-900/20 border border-blue-800/40 rounded-xl p-4 mb-8 text-sm text-blue-300">
+    <strong>Key Conventions:</strong> UUID primary keys · Soft deletes on core entities · Polymorphic relationships for addresses, files, notifications · State machine enums for statuses · JSON columns for structured metadata
+  </div>
+
+  <div class="space-y-6">
+
+    <!-- Users / Auth -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-red-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-red-400"></span>
+        <span class="text-white font-bold text-sm">User Accounts & Auth</span>
+        <span class="ml-auto text-gray-500 text-xs">7 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">admins</div><div class="text-gray-500">name, email, password, roles via Spatie</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">customers</div><div class="text-gray-500">name, email, phone, country_id, loyalty_points, referral_code</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">vendors</div><div class="text-gray-500">name, status, country_id, commission_rate, subscription</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">vendor_admins</div><div class="text-gray-500">vendor_id, name, email, role, permissions</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">delivery_agents</div><div class="text-gray-500">name, zone_id, company_id, availability, vehicle_type</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketers</div><div class="text-gray-500">name, slug, email, commission_tier, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">travel_agencies</div><div class="text-gray-500">name, country_id, status, approval_date</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipping_company_supervisors</div><div class="text-gray-500">company_id, name, email, permissions</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">admin_login_sessions</div><div class="text-gray-500">admin_id, ip, user_agent, logged_in_at</div></div>
+      </div>
+    </div>
+
+    <!-- Products / Catalog -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-blue-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+        <span class="text-white font-bold text-sm">Product Catalog</span>
+        <span class="ml-auto text-gray-500 text-xs">13 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">products</div><div class="text-gray-500">name, sku, gtin, category_id, brand_id, description, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">categories</div><div class="text-gray-500">name, parent_id, lft, rgt, depth (nestedset), slug</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">brands</div><div class="text-gray-500">name, logo, slug, country_id</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">attributes</div><div class="text-gray-500">name, type (text/select/color), filterable</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">attribute_values</div><div class="text-gray-500">attribute_id, value, color_hex</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">product_variants</div><div class="text-gray-500">product_id, sku, price, stock_quantity</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">product_images</div><div class="text-gray-500">product_id, url, sort_order, is_primary</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">product_country_settings</div><div class="text-gray-500">product_id, country_id, price, is_available</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">vendor_listings</div><div class="text-gray-500">vendor_id, product_id, variant_id, warehouse_id, price, stock</div></div>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-green-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-green-400"></span>
+        <span class="text-white font-bold text-sm">Orders & Fulfillment</span>
+        <span class="ml-auto text-gray-500 text-xs">10 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">orders</div><div class="text-gray-500">customer_id, total, status, payment_status, coupon_id, shipping_address_id</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">sub_orders</div><div class="text-gray-500">order_id, vendor_id, warehouse_id, carrier_id, status, shipping_cost</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">order_items</div><div class="text-gray-500">sub_order_id, product_id, variant_id, qty, unit_price, total</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">order_status_histories</div><div class="text-gray-500">order_id, from_status, to_status, reason, admin_id</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">carts</div><div class="text-gray-500">customer_id, session_id, expires_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">cart_inventory_locks</div><div class="text-gray-500">cart_item_id, inventory_id, quantity, expires_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipments</div><div class="text-gray-500">sub_order_id, carrier_id, tracking_number, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipment_tracking_events</div><div class="text-gray-500">shipment_id, status, location, description, occurred_at</div></div>
+      </div>
+    </div>
+
+    <!-- Payments -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-yellow-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+        <span class="text-white font-bold text-sm">Payments, Wallets & Payouts</span>
+        <span class="ml-auto text-gray-500 text-xs">12 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">wallets</div><div class="text-gray-500">walletable_type, walletable_id (polymorphic), balance, currency, is_frozen</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">wallet_transactions</div><div class="text-gray-500">wallet_id, type, amount, reference, balance_before, balance_after</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">wallet_withdrawal_requests</div><div class="text-gray-500">wallet_id, amount, status, bank_details, processed_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">payment_transactions</div><div class="text-gray-500">order_id, gateway, amount, status, gateway_ref</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">commissions</div><div class="text-gray-500">vendor_id, order_id, type, rate, amount</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">payouts</div><div class="text-gray-500">vendor_id, total, status, period_start, period_end</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">refunds</div><div class="text-gray-500">order_id, sub_order_id, amount, reason, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ledger_entries</div><div class="text-gray-500">type, amount, reference_type, reference_id, notes</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">idempotency_keys</div><div class="text-gray-500">key, result, expires_at — prevents duplicate payments</div></div>
+      </div>
+    </div>
+
+    <!-- Shipping / Logistics -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-orange-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+        <span class="text-white font-bold text-sm">Shipping & Delivery Logistics</span>
+        <span class="ml-auto text-gray-500 text-xs">15 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipping_zones</div><div class="text-gray-500">name, country_id, is_active</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipping_rates</div><div class="text-gray-500">zone_id, method_id, carrier_id, base_cost, per_kg_cost</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipping_carriers</div><div class="text-gray-500">name, code, integration_type, is_active</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">delivery_zones</div><div class="text-gray-500">name, country_id, polygon (geo)</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">delivery_assignments</div><div class="text-gray-500">agent_id, sub_order_id, zone_id, status, assigned_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">delivery_agent_shifts</div><div class="text-gray-500">agent_id, start_time, end_time, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">carrier_claims</div><div class="text-gray-500">shipment_id, type, status, amount_claimed, resolution</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">shipping_fallback_rules</div><div class="text-gray-500">company_id, condition, fallback_carrier_id, priority</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">delivery_agent_cod_settlements</div><div class="text-gray-500">agent_id, amount, status, settled_at</div></div>
+      </div>
+    </div>
+
+    <!-- Flash Sales / Promotions / Ads -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-pink-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-pink-400"></span>
+        <span class="text-white font-bold text-sm">Flash Sales, Promotions & Advertising</span>
+        <span class="ml-auto text-gray-500 text-xs">25 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">flash_sales</div><div class="text-gray-500">name, category_id, starts_at, ends_at, status, max_discount</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">flash_sale_submissions</div><div class="text-gray-500">flash_sale_id, vendor_id, listing_id, sale_price, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">coupons</div><div class="text-gray-500">code, type, discount, min_amount, usage_limit, expires_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ad_campaigns</div><div class="text-gray-500">vendor_id, name, budget, bid_amount, type, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ad_impressions</div><div class="text-gray-500">campaign_id, customer_id, page, occurred_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ad_clicks</div><div class="text-gray-500">campaign_id, customer_id, ip, cost_per_click</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">paid_ad_slots</div><div class="text-gray-500">name, placement, max_dimensions, price_per_day</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">paid_ad_bookings</div><div class="text-gray-500">slot_id, vendor_id, starts_at, ends_at, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">banners</div><div class="text-gray-500">title, placement_definition_id, image, link, status</div></div>
+      </div>
+    </div>
+
+    <!-- Marketer -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-purple-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+        <span class="text-white font-bold text-sm">Marketer / Affiliate System</span>
+        <span class="ml-auto text-gray-500 text-xs">12 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_campaigns</div><div class="text-gray-500">marketer_id, name, slug, commission_rate, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_clicks</div><div class="text-gray-500">marketer_id, campaign_id, ip, user_agent, referrer, clicked_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_conversions</div><div class="text-gray-500">marketer_id, campaign_id, order_id, amount, commission, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_qr_codes</div><div class="text-gray-500">marketer_id, product_id, code, image_url, scan_count</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_commission_tiers</div><div class="text-gray-500">marketer_id, min_conversions, commission_rate</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_payouts</div><div class="text-gray-500">marketer_id, amount, status, period_start, period_end</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">marketer_sample_requests</div><div class="text-gray-500">marketer_id, status, shipping_address_id, dispatched_at</div></div>
+      </div>
+    </div>
+
+    <!-- Inventory / Warehouses -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-teal-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+        <span class="text-white font-bold text-sm">Warehousing & Inventory</span>
+        <span class="ml-auto text-gray-500 text-xs">7 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">warehouses</div><div class="text-gray-500">vendor_id, name, address_id, type (vendor/fbn), is_active</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">warehouse_inventories</div><div class="text-gray-500">warehouse_id, product_id, variant_id, quantity, reserved_qty</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">inventory_movements</div><div class="text-gray-500">inventory_id, type, quantity, reference_type, reference_id</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">inventory_transfers</div><div class="text-gray-500">from_warehouse_id, to_warehouse_id, status, shipped_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">inbound_shipments</div><div class="text-gray-500">vendor_id, warehouse_id, status, received_at (FBN)</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">fbn_storage_fees</div><div class="text-gray-500">vendor_id, period, units_stored, cost, status</div></div>
+      </div>
+    </div>
+
+    <!-- AI / Travel / Radio / Classifieds -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-indigo-900/20 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+        <span class="text-white font-bold text-sm">AI Features · Travel · Radio · Classifieds</span>
+        <span class="ml-auto text-gray-500 text-xs">18 tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ai_image_enhancement_jobs</div><div class="text-gray-500">product_id, vendor_id, status, output_url, credits_used</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ai_video_generation_jobs</div><div class="text-gray-500">listing_id, status, output_url</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">virtual_tryon_sessions</div><div class="text-gray-500">listing_id, customer_id, input_image, results (JSON)</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">ai_feature_credits</div><div class="text-gray-500">vendor_id, balance, lifetime_purchased, lifetime_used</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">travel_packages</div><div class="text-gray-500">agency_id, title, price, itinerary, max_guests, available_from</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">travel_bookings</div><div class="text-gray-500">package_id, customer_id, guests, total, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">radio_channels</div><div class="text-gray-500">name, country_id, stream_url, logo, is_active</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">radio_schedule_slots</div><div class="text-gray-500">channel_id, show_name, start_time, end_time, day_of_week</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">classified_listings</div><div class="text-gray-500">customer_id, category_id, title, price, location, status</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">classified_inquiries</div><div class="text-gray-500">listing_id, customer_id, message, status</div></div>
+      </div>
+    </div>
+
+    <!-- Polymorphic -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-800 bg-gray-800 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+        <span class="text-white font-bold text-sm">Shared / Polymorphic Tables</span>
+      </div>
+      <div class="p-4 grid grid-cols-3 gap-3 text-xs">
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">addresses</div><div class="text-gray-500">addressable_type, addressable_id, type, city_id, line1, zip</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">files</div><div class="text-gray-500">model_type, model_id, name, disk, path, mime, size</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">notifications</div><div class="text-gray-500">notifiable_type, notifiable_id, type, data (JSON), read_at</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">activities</div><div class="text-gray-500">log_name, subject_type, subject_id, causer_id, description, properties</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">settings</div><div class="text-gray-500">key, value (JSON), group, is_public</div></div>
+        <div class="bg-gray-800 rounded-lg p-3"><div class="text-white font-mono mb-1">countries / cities</div><div class="text-gray-500">name, code, currency_id, timezone, lat, lng</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mt-8 text-center bg-gray-900 rounded-xl border border-gray-800 p-5">
+    <div class="text-4xl font-black text-blue-400 mb-1">187</div>
+    <div class="text-gray-400">Total database migrations across all domains</div>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

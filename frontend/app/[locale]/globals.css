@@ -1,0 +1,273 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@plugin "@toolwind/corner-shape";
+
+/* @custom-variant dark (&:is(.dark *)); */
+
+/* @custom-variant dark (&:where(.dark, .dark *)); */
+
+html {
+  scroll-behavior: smooth;
+}
+
+:root {
+  /* colors */
+  --main-color: #feee00;
+  --color-text-primary: #0e0e0e;
+  --color-text-secondary: #212121;
+  --color-text-light: #404553;
+  --color-text-gray: #7e859b;
+  --bg-section: #e4f1ee;
+  --color-gray-borders: #e5e5e5;
+  --color-green: #38ae04;
+  --color-light-green: #effdf2;
+  --color-green-2: #11535f;
+  --color-green-3: #006300;
+  --color-green-4: #05af25;
+  --color-red: #e12413;
+  --color-light-red: #fff7ed;
+  --color-fg-red: #973414;
+  --color-white: #fff;
+  --color-text-blue: #3e72f7;
+  --color-blue: #2122b8;
+  --color-blue-2: #2b4cd7;
+  --color-light-blue: #f6f6fd;
+  --color-yellow: #f8b200;
+  --color-orange: #f36302;
+  --color-badge-1: #460173;
+  --color-gray-2: #f3f4f8;
+  --color-gray-3: #f7f7f7;
+  --color-gray-4: #f2f3f7;
+  --color-gray-5: #fcfcfd;
+  --background: #fafafa;
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: #0e0e0e0a;
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: #e7000b;
+  --border: #e5e5e5;
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --swiper-navigation-size: 20px !important;
+  --swiper-navigation-color: var(--color-text-primary);
+}
+/* .dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+} */
+
+@theme inline {
+  /* colors */
+  --color-main: var(--main-color);
+  --color-background: var(--background);
+  --color-primary: var(--color-text-primary);
+  --color-secondary: var(--color-text-secondary);
+  --color-blue-2: var(--color-text-blue);
+  --color-badge-1: var(--color-badge-1);
+  --color-light: var(--color-text-light);
+  --color-gray: var(--color-text-gray);
+  --color-section-bg: var(--bg-section);
+  --color-border-color: var(--color-gray-borders);
+  --color-green: var(--color-green);
+  --color-green-2: var(--color-green-2);
+  --color-green-3: var(--color-green-3);
+  --color-green-4: var(--color-green-4);
+  --color-light-green: var(--color-light-green);
+  --color-green-2: var(--color-green-2);
+  --color-red: var(--color-red);
+  --color-light-red: var(--color-light-red);
+  --color-fg-red: var(--color-fg-red);
+  --color-white: var(--color-white);
+  --color-blue: var(--color-blue);
+  --color-blue-3: var(--color-blue-2);
+  --color-light-blue: var(--color-light-blue);
+  --color-yellow: var(--color-yellow);
+  --color-orange: var(--color-orange);
+  --color-gray-2: var(--color-gray-2);
+  --color-gray-3: var(--color-gray-3);
+  --color-gray-4: var(--color-gray-4);
+  --color-gray-5: var(--color-gray-5);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-primary-foreground: var(--color-text-primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  /* rounded */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  /* fonts */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  /* animation */
+  --animate-inf-y-scroll: horizontal-scroll 20s linear infinite;
+}
+
+/* .dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+} */
+
+@utility container {
+  max-width: 1800px;
+  padding-inline: 1rem;
+  margin-inline: auto;
+}
+
+@layer utilities {
+  .bg-border-strip {
+    border-style: solid;
+    border-width: 0;
+    border-image-source: url("https://f.nooncdn.com/s/app/com/noon/images/promise-strip-v2.svg");
+    border-image-slice: 0 44 0 0 fill;
+    border-image-width: 0 44px 0 0;
+    border-image-repeat: stretch;
+  }
+}
+
+@keyframes horizontal-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+.swiper-auto-play-linear {
+  -webkit-transition-timing-function: linear !important;
+  -o-transition-timing-function: linear !important;
+  transition-timing-function: linear !important;
+}
+.swiper-button-next,
+.swiper-button-prev {
+  width: 40px !important;
+  height: 40px !important;
+  background-color: var(--background);
+  border: 1px solid #dadce3;
+  border-radius: 50%;
+  font-size: 14px !important;
+  transition: 0.2s;
+  transform: translateY(-50%) !important;
+  margin-top: unset !important;
+  svg {
+    width: 12px !important;
+  }
+  &:hover {
+    scale: 1.1;
+  }
+}
+.swiper-button-disabled {
+  opacity: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .swiper-button-next,
+  .swiper-button-prev {
+    display: none !important;
+  }
+}
+
+.productSwiperThumbs .swiper-slide-thumb-active {
+  opacity: 1;
+  border: 2px solid black;
+  @layer utilities {
+    .scrollbar-hide {
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
+}
+
+.responsive-ratio {
+  aspect-ratio: var(--banner-ratio);
+}
+
+@media (max-width: 767px) {
+  .responsive-ratio {
+    aspect-ratio: var(--banner-mobile-ratio);
+  }
+}

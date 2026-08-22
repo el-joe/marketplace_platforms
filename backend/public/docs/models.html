@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Models & Relations — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800">
+    <div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div>
+    <h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1>
+  </div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Tech Stack</a>
+    <a href="authentication.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Guards & Auth</a>
+    <a href="routes.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Routes & Pages</a>
+    <a href="models.html" class="block px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Models & Relations</a>
+    <a href="controllers.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Controllers & Actions</a>
+    <a href="database.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Database Schema</a>
+    <a href="jobs-events.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-5xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Data Layer</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Models & Relationships</h1>
+  <p class="text-gray-400 mb-4">180 Eloquent models organized into domain groups. Relationship legend: <span class="bg-gray-800 text-green-300 px-2 py-0.5 rounded text-xs font-mono">HM</span> hasMany <span class="bg-gray-800 text-blue-300 px-2 py-0.5 rounded text-xs font-mono">BT</span> belongsTo <span class="bg-gray-800 text-purple-300 px-2 py-0.5 rounded text-xs font-mono">BTM</span> belongsToMany <span class="bg-gray-800 text-yellow-300 px-2 py-0.5 rounded text-xs font-mono">HT</span> hasOne <span class="bg-gray-800 text-orange-300 px-2 py-0.5 rounded text-xs font-mono">MM</span> morphMany</p>
+
+  <!-- Legend -->
+  <div class="flex gap-3 flex-wrap mb-8">
+    <span class="bg-green-900/40 text-green-300 border border-green-800 px-3 py-1 rounded-full text-xs font-mono">HM = hasMany</span>
+    <span class="bg-blue-900/40 text-blue-300 border border-blue-800 px-3 py-1 rounded-full text-xs font-mono">BT = belongsTo</span>
+    <span class="bg-purple-900/40 text-purple-300 border border-purple-800 px-3 py-1 rounded-full text-xs font-mono">BTM = belongsToMany</span>
+    <span class="bg-yellow-900/40 text-yellow-300 border border-yellow-800 px-3 py-1 rounded-full text-xs font-mono">HT = hasOne</span>
+    <span class="bg-orange-900/40 text-orange-300 border border-orange-800 px-3 py-1 rounded-full text-xs font-mono">MM = morphMany (polymorphic)</span>
+  </div>
+
+  <!-- Model Groups -->
+  <div class="space-y-6">
+
+    <!-- E-commerce Core -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-blue-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <h2 class="text-white font-bold">E-Commerce Core</h2>
+        <span class="text-gray-500 text-xs ml-auto">Products, Categories, Brands, Listings</span>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Product</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-blue-300 font-mono">BT</span> Category, Brand, createdByAdmin</div>
+            <div><span class="text-green-300 font-mono">HM</span> variants, images, primaryImage, countrySettings</div>
+            <div><span class="text-purple-300 font-mono">BTM</span> coupons</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Category</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-green-300 font-mono">HM</span> products, childCategories, banners</div>
+            <div><span class="text-blue-300 font-mono">BT</span> parentCategory</div>
+            <div><span class="text-purple-300 font-mono">BTM</span> attributes</div>
+            <div class="text-gray-600 italic">Uses kalnoy/nestedset for hierarchical tree structure</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Brand</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-green-300 font-mono">HM</span> products</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Vendor</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-blue-300 font-mono">BT</span> country, businessAddress, defaultWarehouse</div>
+            <div><span class="text-green-300 font-mono">HM</span> documents, strikes, vendorAdmins, subOrders, warehouses, listings, bankAccounts, commissions, payouts</div>
+            <div><span class="text-orange-300 font-mono">MM</span> addresses, files, notifications</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">VendorListing</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> vendor, product, warehouse &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> pricing
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">ProductVariant</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> product &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> listings &nbsp;|&nbsp; <span class="text-purple-300 font-mono">BTM</span> attributes
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-green-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+        <h2 class="text-white font-bold">Orders & Fulfillment</h2>
+        <span class="text-gray-500 text-xs ml-auto">Order → SubOrder → OrderItem → Shipment</span>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Order</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-blue-300 font-mono">BT</span> customer, coupon, paymentMethod</div>
+            <div><span class="text-green-300 font-mono">HM</span> subOrders, items, statusHistories, transactions, refunds, returnRequests, disputes, couponUsages</div>
+            <div><span class="text-orange-300 font-mono">MM</span> files</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">SubOrder</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-blue-300 font-mono">BT</span> order, vendor, warehouse, shippingMethod, carrier</div>
+            <div><span class="text-green-300 font-mono">HM</span> items, shipments, refunds, statusHistories, payoutItems</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Shipment</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> subOrder, carrier &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> trackingEvents, carrierClaims &nbsp;|&nbsp; <span class="text-orange-300 font-mono">MM</span> files
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customers -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-purple-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+        <h2 class="text-white font-bold">Customer Management</h2>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Customer</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-blue-300 font-mono">BT</span> country, referredBy</div>
+            <div><span class="text-green-300 font-mono">HM</span> referrals, carts, orders, paymentMethods, wishlists, reviews, returnRequests, disputes, supportTickets</div>
+            <div><span class="text-orange-300 font-mono">MM</span> addresses, files, notifications</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Cart</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> customer &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> items, inventoryLocks
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments & Wallets -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-yellow-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+        <h2 class="text-white font-bold">Payments & Wallets</h2>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Wallet</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            Polymorphic owner (Vendor / Customer / DeliveryAgent) &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> transactions, withdrawalRequests
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">PaymentTransaction</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> order, wallet &nbsp;|&nbsp; type: payment / refund
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Commission</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> vendor, order, category &nbsp;|&nbsp; type: order_commission / flash_sale / etc
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Payout</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> vendor &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> items &nbsp;|&nbsp; schedule: weekly / monthly
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logistics -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-orange-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+        <h2 class="text-white font-bold">Shipping & Delivery Logistics</h2>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">ShippingZone</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-green-300 font-mono">HM</span> cities, shippingMethods, rates</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">DeliveryAgent</code></div>
+          <div class="col-span-2 text-xs text-gray-400 space-y-1">
+            <div><span class="text-blue-300 font-mono">BT</span> country, zone, shippingCompany</div>
+            <div><span class="text-green-300 font-mono">HM</span> assignments, earnings, payouts, documents, shifts, locationHistory</div>
+            <div><span class="text-orange-300 font-mono">MM</span> deviceTokens, notifications</div>
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">DeliveryAssignment</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-blue-300 font-mono">BT</span> agent, subOrder, zone</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">ShippingCompany</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-green-300 font-mono">HM</span> supervisors, deliveryAgents, fallbackRules</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Affiliate / Flash Sales / Ads -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-pink-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-pink-500"></span>
+        <h2 class="text-white font-bold">Promotions, Flash Sales & Advertising</h2>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">FlashSale</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-blue-300 font-mono">BT</span> category &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> submissions, invitations, priceHistories, analytics</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Marketer</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-green-300 font-mono">HM</span> campaigns, clicks, conversions, payouts, commissionTiers, qrCodes, sampleRequests</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">MarketerConversion</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-blue-300 font-mono">BT</span> marketer, campaign, order &nbsp;|&nbsp; status: pending / approved / reversed</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">AdCampaign</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> vendor &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> impressions, clicks, keywords, categoryTargets, productTargets, images &nbsp;|&nbsp; <span class="text-yellow-300 font-mono">HT</span> qualityScore
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Coupon</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-purple-300 font-mono">BTM</span> products &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> usages &nbsp;|&nbsp; fields: min_amount, usage_limit, expiry</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content & AI -->
+    <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800 bg-teal-900/20 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+        <h2 class="text-white font-bold">Content, AI & Misc</h2>
+      </div>
+      <div class="divide-y divide-gray-800">
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Page</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-green-300 font-mono">HM</span> blocks, sections, revisions &nbsp;|&nbsp; status: draft / published</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">PageBlock</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> page &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> products, sellers, categories, slides, revisions &nbsp;|&nbsp; visibility: country / segment
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">VirtualTryonSession</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-blue-300 font-mono">BT</span> listing, customer &nbsp;|&nbsp; images: JSON array of result URLs</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">AiImageEnhancementJob</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-blue-300 font-mono">BT</span> product &nbsp;|&nbsp; status: pending / processing / completed / failed</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">RadioChannel</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-green-300 font-mono">HM</span> scheduleSlots, listenSessions &nbsp;|&nbsp; fields: name, description, image</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">TravelPackage</code></div>
+          <div class="col-span-2 text-xs text-gray-400"><span class="text-blue-300 font-mono">BT</span> agency &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> media, bookings &nbsp;|&nbsp; fields: price, itinerary</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">ClassifiedListing</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> customer, category &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> images, attachments, inquiries, marketers &nbsp;|&nbsp; status: pending / approved
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">SupportTicket</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> requester, assignee &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> messages, attachments &nbsp;|&nbsp; status: open / in-review / resolved
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Dispute</code></div>
+          <div class="col-span-2 text-xs text-gray-400">
+            <span class="text-blue-300 font-mono">BT</span> order &nbsp;|&nbsp; <span class="text-green-300 font-mono">HM</span> evidences, messages &nbsp;|&nbsp; resolution: winner / refund_amount
+          </div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">Address</code></div>
+          <div class="col-span-2 text-xs text-gray-400">Polymorphic (addressable) — Customer / Vendor / etc &nbsp;|&nbsp; <span class="text-blue-300 font-mono">BT</span> city &nbsp;|&nbsp; type: billing / shipping</div>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-3 gap-4">
+          <div><code class="text-white font-bold font-mono">File</code></div>
+          <div class="col-span-2 text-xs text-gray-400">Polymorphic (model) — any entity &nbsp;|&nbsp; deduplication via hash</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Total count -->
+  <div class="mt-8 bg-gray-900 rounded-xl border border-gray-800 p-5 text-center">
+    <div class="text-4xl font-black text-blue-400 mb-1">180</div>
+    <div class="text-gray-400">Total Eloquent Models across 15+ domain groups</div>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

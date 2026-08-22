@@ -1,0 +1,572 @@
+import { IProduct } from "@/types";
+import { join } from "path";
+
+export const products: IProduct[] = [
+  {
+    id: 1,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 2,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title: "Samsung Galaxy S25 Ultra",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 3,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z2A7172342215DE5FA7D5Z/45/_/1779094781/4d45f60b-e9f3-4702-aa35-2d3447bf5940.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+    isAd: true,
+  },
+  {
+    id: 4,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/ZBC77B92B281816130A4CZ/45/_/1779705152/41e6d220-2e4b-46ac-a167-485a67f63b62.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 5,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 6,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z2A7172342215DE5FA7D5Z/45/_/1779094781/4d45f60b-e9f3-4702-aa35-2d3447bf5940.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 7,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 8,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 9,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 10,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 11,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title: "Samsung Galaxy S25 Ultra AI Dual SIM",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 12,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+  {
+    id: 13,
+    images: [
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091246/7e017007-5102-4ba4-8dc2-a36f28a8e364.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091243/d03464ab-c83e-41a1-92ba-09f194b3988e.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/8a019784-a037-464a-850c-7b4d205eb30b.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/a90ecffb-f2c5-4d50-ac0c-b28fa80a7e11.jpg?width=800",
+      "https://f.nooncdn.com/p/pzsku/Z6DDF492F196DEEEE71EBZ/45/_/1772091244/34d2d6a5-bc2f-4eb1-bbfb-3eac17bcfcb7.jpg?width=800",
+    ],
+    title:
+      "Samsung Galaxy S25 Ultra AI Dual SIM Titanium Grey 12GB RAM 256GB 5G - Middle East Version",
+    oldPrice: 5999,
+    price: 3160,
+    discount: 30,
+    label: "Best Seller",
+    rate: 4.5,
+    reviewsCount: "3.2K",
+    estimatedDelivery: "40 MiNS",
+  },
+];
+
+export const offersImages = [
+  "https://a.nooncdn.com/mpcms/EN0001/assets/f93f09fa-819b-43f9-818d-8395c60efa52.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/1cb9dcca-74e9-431e-9083-2a06f1da22f1.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/97196d45-8975-482a-a1fe-431da977d996.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/c3f22ab9-ca44-41b4-be24-c1d0418506ed.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0002/assets/f2b04994-488a-4872-853a-cb52dcff6723.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/f93f09fa-819b-43f9-818d-8395c60efa52.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/1cb9dcca-74e9-431e-9083-2a06f1da22f1.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/97196d45-8975-482a-a1fe-431da977d996.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/c3f22ab9-ca44-41b4-be24-c1d0418506ed.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0002/assets/f2b04994-488a-4872-853a-cb52dcff6723.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/f93f09fa-819b-43f9-818d-8395c60efa52.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/1cb9dcca-74e9-431e-9083-2a06f1da22f1.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/97196d45-8975-482a-a1fe-431da977d996.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/c3f22ab9-ca44-41b4-be24-c1d0418506ed.png?width=800",
+  "https://a.nooncdn.com/mpcms/EN0002/assets/f2b04994-488a-4872-853a-cb52dcff6723.png?width=800",
+];
+
+export const MaximizeYourSavingsImages = [
+  "https://a.nooncdn.com/mpcms/EN0001/assets/7f72ff61-12ed-4c4a-8600-11bfbe25098e.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/2e373ea3-a565-4a87-9b72-0e7852e02fda.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/62755455-8c4d-4ff8-9238-0599d3b554f6.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/4eb73bf5-e650-4afb-915f-21912e64de86.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/dd4c7bea-1484-4a3b-a836-65e0c7f88f57.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/0c59e39f-eb80-42cd-aea9-de8297042d73.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/0c4e9c86-f54e-4256-8ddf-9dc80921f7c5.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/f35c652a-4d81-479f-a931-c3fc82d80586.png?width=2400",
+];
+
+export const travelStoreImages = [
+  "https://a.nooncdn.com/mpcms/EN0001/assets/f94f64e2-2abd-4f71-b21b-e04cde8f7636.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/92f6e85f-2630-4ff9-9a49-da845866e271.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/d87ede91-895e-45fa-ac0c-c677b7fc3f9d.png?width=2400",
+  "https://a.nooncdn.com/mpcms/EN0001/assets/b9ec07f0-262a-4118-8a98-436b481b3187.png?width=2400",
+];
+export const spotlightDealsData = [
+  {
+    image:
+      "https://f.nooncdn.com/p/pzsku/Z84A93B64A64910DC4D38Z/45/_/1772091066/96e65269-b2a6-4ad5-87ae-dc53bf6d5b40.jpg?width=320",
+    title:
+      "Galaxy S25 AI Dual SIM Pinkgold 12GB RAM 128GB 5G - Middle East Version",
+    oldPrice: 200,
+    price: 190,
+    label: "Monitors",
+  },
+  {
+    image:
+      "https://f.nooncdn.com/p/pzsku/ZFFB4409AFF2F401AB837Z/45/_/1779095085/5f9f3e90-1ed2-4a77-9315-ab45e42b1aed.jpg?width=320",
+    title:
+      "New 2026 MacBook Air MDHE4 13 Inch Display |  M5 Air 10-Core CPU 8-Core GPU | 16GB RAM | 512GB SSD | macOS | English  Keyboard | Midnight",
+    oldPrice: 200,
+    price: 190,
+    label: "Monitors",
+  },
+  {
+    image:
+      "https://f.nooncdn.com/p/pzsku/ZB1D03E02001D2B3B5AC3Z/45/_/1777376132/44c7e9c6-4575-41bc-978c-54afb45c7ee0.jpg?width=320",
+    title:
+      "New 2026 MacBook Air MDHE4 13 Inch Display |  M5 Air 10-Core CPU 8-Core GPU | 16GB RAM | 512GB SSD | macOS | English  Keyboard | Midnight",
+    oldPrice: 200,
+    price: 190,
+    label: "",
+  },
+  {
+    image:
+      "https://f.nooncdn.com/p/pzsku/Z9B8ACB29B8A37093B4DAZ/45/_/1778155588/2aaacc62-12b6-4b83-b9ec-ae9c386a7aab.jpg?width=320",
+    title:
+      "New 2026 MacBook Air MDHE4 13 Inch Display |  M5 Air 10-Core CPU 8-Core GPU | 16GB RAM | 512GB SSD | macOS | English  Keyboard | Midnight",
+    oldPrice: 200,
+    price: 190,
+    label: "",
+  },
+  {
+    image:
+      "https://f.nooncdn.com/p/pzsku/ZD371DEC294186E5732FFZ/45/_/1777393889/99bf1300-6a11-490f-b664-500a7dc5cf22.jpg?width=320",
+    title:
+      "New 2026 MacBook Air MDHE4 13 Inch Display |  M5 Air 10-Core CPU 8-Core GPU | 16GB RAM | 512GB SSD | macOS | English  Keyboard | Midnight",
+    oldPrice: 200,
+    price: 190,
+    label: "Monitors",
+  },
+  {
+    image:
+      "https://f.nooncdn.com/p/pzsku/ZD371DEC294186E5732FFZ/45/_/1777393889/99bf1300-6a11-490f-b664-500a7dc5cf22.jpg?width=320",
+    title:
+      "New 2026 MacBook Air MDHE4 13 Inch Display |  M5 Air 10-Core CPU 8-Core GPU | 16GB RAM | 512GB SSD | macOS | English  Keyboard | Midnight",
+    oldPrice: 200,
+    price: 190,
+    label: "Monitors",
+  },
+];
+
+export const uptoOffersData = [
+  {
+    header:
+      "https://a.nooncdn.com/mpcms/EN0001/assets/a831f2ac-2290-4755-af0f-bb1012cf601e.png?width=2400",
+    images: [
+      "https://a.nooncdn.com/mpcms/EN0001/assets/a4d2ca1f-5647-4389-b749-e6ae784ed491.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/20c24b48-5347-4240-9c3c-cbdcd4eb1c53.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/b7df5eea-2e7d-4faa-b4df-d3f0b501055e.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/4a57ad5d-ba7b-4da8-a690-74cd178e4b6a.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/67122ed5-1f12-4831-b0fe-05bbbab1ebf9.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/06457bff-fd10-4c8f-8f0d-22f30fd6c426.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/ce8a094d-a128-4f21-a5a2-cc2d6b58fbb4.png?width=2400",
+    ],
+  },
+  {
+    header:
+      "https://a.nooncdn.com/mpcms/EN0001/assets/42643cc2-4098-4b9d-a8c0-b6ba0f18c0e1.png?width=2400",
+    images: [
+      "https://a.nooncdn.com/mpcms/EN0001/assets/7c355f8f-0ca3-4956-8854-375ed86fc513.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/30d3c0c4-124e-44e5-8854-dbcdc3b653a8.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/9190f2a7-72e2-4620-944c-5b563ff73fbe.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/f08053d2-9a35-44b7-9551-1803515e3a77.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/b618ecff-c50a-4570-bd03-a979764ebd04.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/f83a0261-64a0-4080-9a2f-5bf65f115f1b.png?width=2400",
+      "https://a.nooncdn.com/mpcms/EN0001/assets/7a1cb15e-db2d-4036-881b-ee88fe619f30.png?width=2400",
+    ],
+  },
+];
+
+export const popularSearchData = [
+  "Body Mist",
+  "Labubu",
+  "S25 Ultra",
+  "Samsung S25",
+  "Dyson",
+  "Sunscreen",
+  "Vitamin C Serum",
+  "Self Tanner",
+  "Travel Luggage",
+  "Aldo Bags",
+  "Cosmetics",
+  "Razor",
+  "iPhone 17 Price",
+  "iPhone 17 Pro",
+  "Tablet",
+  "iPhone 17 Air",
+  "iPhone 17 Features",
+  "iPhone 17 Pro Max",
+  "iPhone 17 Series",
+  "Barbie",
+  "Lattafa Perfume",
+  "Rasasi Perfume",
+  "Versace Perfume",
+  "Chanel Perfume",
+  "Dior Perfume",
+  "Nothing Phone",
+  "Best Laptops",
+  "Sunglasses Men",
+  "Flip flops",
+  "Birkenstock",
+  "Handbags",
+  "Sunglasses Women",
+  "LG Fridge",
+  "Samsung Fridge",
+  "Whirlpool Fridge",
+  "Ninja Air Fryer",
+  "Philips Air Fryer",
+  "Nutricook Air Fryer",
+  "Apple iMac",
+  "Mac Studio",
+  "Squishmallows",
+  "Monopoly",
+  "Lego",
+  "MacBook Air",
+  "MacBook Pro",
+  "Samsung S24",
+  "iPhone 14",
+  "iPhone 15 Pro",
+  "iPhone 16",
+  "Samsung S22 Ultra",
+  "iPhone 14 Pro Max",
+  "Samsung S23 Ultra",
+  "iPhone 16 Plus",
+  "iPhone 15 Pro Max",
+  "iPhone 16 Pro",
+  "Samsung Galaxy S24 Ultra",
+  "iPhone 15",
+  "Samsung S23",
+  "iPhone 14 Pro",
+  "iPhone 16 Pro Max",
+];
+
+export const footerLinks = [
+  {
+    linksType: "Electronics",
+    links: [
+      "Mobiles",
+      "Tablets",
+      "Laptops",
+      "Desktops",
+      "Wearables",
+      "Headphones",
+      "Camera, Photo & Video",
+      "Televisions",
+    ],
+  },
+  {
+    linksType: "Fashion",
+    links: [
+      "Women's Fashion",
+      "Men's Fashion",
+      "Kids Fashion",
+      "Fragrances",
+      "Watches",
+      "Jewellery",
+      "Eyewear",
+      "Footwear",
+    ],
+  },
+  {
+    linksType: "Home and Kitchen",
+    links: [
+      " Large Appliances",
+      "Small Appliances",
+      "Bedroom Furniture",
+      "Storage",
+      "Cookware",
+      "Furniture",
+      "Home Fragrance",
+      "Drinkware",
+    ],
+  },
+  {
+    linksType: "Beauty",
+    links: [
+      "Fragrance",
+      "Skincare",
+      "Haircare",
+      "Personal Care",
+      "Makeup",
+      "Makeup Tools",
+      "Men's Grooming",
+      "Health Care Essentials",
+    ],
+  },
+  {
+    linksType: "Baby & Toys",
+    links: [
+      " Nursing & Feeding",
+      "Diapering",
+      "Baby Transport",
+      "Baby & Toddler Toys",
+      "Tricycles & Scooters",
+      "Board Games & Cards",
+      "Baby Food",
+    ],
+  },
+  {
+    linksType: "Top Brands",
+    links: [
+      " Apple",
+      "Samsung",
+      "Xiaomi",
+      "Sony",
+      "Adidas",
+      "Philips",
+      "Lattafa",
+      "Huawei",
+      "Geepas",
+    ],
+  },
+  {
+    linksType: "Discover Now",
+    links: [
+      "Blogs",
+      "Brand Glossary",
+      "Trending Searches",
+      "noon Affiliate Program",
+      "Dubai Traders Program",
+      "noon Grocery",
+      "noon Food",
+      "noon Minutes",
+      "noon Supermall",
+    ],
+  },
+  {
+    linksType: "Popular",
+    links: [
+      "iPhone 17 Series",
+      "iPhone 17",
+      "iPhone 17 Air",
+      "iPhone 17 Pro",
+      "iPhone 17 Pro Max",
+      "Eid Sale & Gift Ideas",
+      "IPL 2026 Live Streaming",
+    ],
+  },
+  {
+    linksType: "GCC",
+    links: ["Kuwait", "Bahrain", "Oman", "Qatar"],
+  },
+];
+
+export const socialLinks = [
+  {
+    icon: "images/facebook-social.svg",
+    link: "/",
+  },
+  {
+    icon: "images/facebook-social.svg",
+    link: "/",
+  },
+  {
+    icon: "images/facebook-social.svg",
+    link: "/",
+  },
+  {
+    icon: "images/facebook-social.svg",
+    link: "/",
+  },
+];
+
+export const payMethodsImages = [
+  "https://f.nooncdn.com/s/app/com/noon/design-system/payment-methods-v2/mastercard-v3.svg",
+  "https://f.nooncdn.com/s/app/com/noon/design-system/payment-methods-v2/visa-v3.svg",
+  "https://f.nooncdn.com/s/app/com/noon/design-system/payment-methods-v2/tabby-3.svg",
+  "https://f.nooncdn.com/s/app/com/noon/design-system/payment-methods-v2/tamara-3.svg",
+];

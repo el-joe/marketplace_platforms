@@ -1,0 +1,61 @@
+import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
+
+export interface IProduct {
+  listing_id: string;
+  listing_type: string;
+  listing_ref: string;
+  sku: string;
+  vendor_sku: null | string;
+  product_id: string;
+  product_slug: string;
+  slug: string;
+  variant_id: string;
+  variant_slug: string;
+  product_url: string;
+  url_param: string;
+  variant_name: string;
+  variant_image: string;
+  primary_image: string;
+  name_en: string;
+  name_ar: string;
+  thumbnail: string;
+  price: number;
+  price_formatted: string;
+  currency: CurrencyCode;
+  condition: Condition;
+  is_admin_listing: boolean;
+  is_express_fbn: boolean;
+  fulfillment_model: FulfillmentModel;
+  vendor: Vendor | null;
+  shipping_badge: ShippingBadge | null;
+  rating_avg: number;
+  rating_count: number;
+  total_sold: number;
+  is_wishlisted: boolean;
+  is_sponsored: boolean;
+}
+
+export enum Condition {
+  LikeNew = "like_new",
+  New = "new",
+}
+
+export enum FulfillmentModel {
+  Fbm = "fbm",
+  Fbn = "fbn",
+}
+
+export interface ShippingBadge {
+  label_en: string;
+  label_ar: string;
+  color_hex: string;
+  text_color_hex: string;
+  delivery_days_min: number;
+  delivery_days_max: number;
+}
+
+export interface Vendor {
+  id: string;
+  store_name: string;
+  rating: number;
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Routes & Pages — Marketplace Platform Docs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
+<div class="flex min-h-screen">
+<aside class="w-64 bg-gray-900 border-r border-gray-800 fixed top-0 left-0 h-full overflow-y-auto z-10">
+  <div class="p-6 border-b border-gray-800">
+    <div class="text-blue-500 text-xs font-semibold uppercase tracking-widest mb-1">Developer Docs</div>
+    <h1 class="text-white text-lg font-bold leading-tight">Marketplace<br>Platform</h1>
+  </div>
+  <nav class="p-4 space-y-1">
+    <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Overview</a>
+    <a href="tech-stack.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Tech Stack</a>
+    <a href="authentication.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Guards & Auth</a>
+    <a href="routes.html" class="block px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">Routes & Pages</a>
+    <a href="models.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Models & Relations</a>
+    <a href="controllers.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Controllers & Actions</a>
+    <a href="database.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Database Schema</a>
+    <a href="jobs-events.html" class="block px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 text-sm">Jobs & Events</a>
+  </nav>
+</aside>
+<main class="ml-64 flex-1 p-10">
+<div class="max-w-5xl mx-auto">
+  <div class="mb-2 text-blue-400 text-xs font-semibold uppercase tracking-widest">Routing</div>
+  <h1 class="text-3xl font-extrabold text-white mb-2">Routes & Pages</h1>
+  <p class="text-gray-400 mb-8">10 route files handle different portals via subdomain-based routing. Each file has its own middleware stack and auth guard.</p>
+
+  <!-- Route files overview -->
+  <h2 class="text-lg font-bold text-white mb-3">Route Files</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b border-gray-800 bg-gray-800/50">
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">File</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Subdomain / Prefix</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Guard</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Description</th>
+      </tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        <tr><td class="px-5 py-3 font-mono text-blue-300 text-xs">web.php</td><td class="px-5 py-3 text-gray-300">{domain}</td><td class="px-5 py-3 text-gray-400">web</td><td class="px-5 py-3 text-gray-400">Main orchestrator — loads other route files + storefront routes</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-red-300 text-xs">admin.php</td><td class="px-5 py-3 text-gray-300">admin.{domain}</td><td class="px-5 py-3 text-gray-400">admin</td><td class="px-5 py-3 text-gray-400">Full admin panel CRUD for all platform entities</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-blue-300 text-xs">partner.php</td><td class="px-5 py-3 text-gray-300">partner.{domain}</td><td class="px-5 py-3 text-gray-400">vendor</td><td class="px-5 py-3 text-gray-400">Vendor dashboard for listings, orders, inventory, payouts</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-green-300 text-xs">delivery.php</td><td class="px-5 py-3 text-gray-300">delivery.{domain}</td><td class="px-5 py-3 text-gray-400">delivery</td><td class="px-5 py-3 text-gray-400">Delivery agent app — assignments, location, earnings</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-purple-300 text-xs">marketer.php</td><td class="px-5 py-3 text-gray-300">marketer.{domain}</td><td class="px-5 py-3 text-gray-400">marketer</td><td class="px-5 py-3 text-gray-400">Affiliate portal — campaigns, QR codes, commissions</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-yellow-300 text-xs">travel.php</td><td class="px-5 py-3 text-gray-300">travel-agency.{domain}</td><td class="px-5 py-3 text-gray-400">travel_agency</td><td class="px-5 py-3 text-gray-400">Travel agency package management</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-orange-300 text-xs">carrier.php</td><td class="px-5 py-3 text-gray-300">carrier.{domain}</td><td class="px-5 py-3 text-gray-400">shipping_supervisor</td><td class="px-5 py-3 text-gray-400">Shipping company supervisor portal</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-teal-300 text-xs">portal.php</td><td class="px-5 py-3 text-gray-300">portal.{domain}</td><td class="px-5 py-3 text-gray-400">—</td><td class="px-5 py-3 text-gray-400">Public vendor registration landing pages</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-pink-300 text-xs">api.php</td><td class="px-5 py-3 text-gray-300">/api/v1/*</td><td class="px-5 py-3 text-gray-400">sanctum</td><td class="px-5 py-3 text-gray-400">REST API skeleton for mobile clients</td></tr>
+        <tr><td class="px-5 py-3 font-mono text-gray-300 text-xs">console.php</td><td class="px-5 py-3 text-gray-300">CLI</td><td class="px-5 py-3 text-gray-400">—</td><td class="px-5 py-3 text-gray-400">Custom Artisan commands</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Storefront Routes -->
+  <h2 class="text-lg font-bold text-white mb-3">Storefront Pages (web.php)</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="font-mono text-blue-300 text-sm mb-1">/classifieds</div>
+      <div class="text-white font-semibold text-sm mb-1">P2P Classified Listings</div>
+      <p class="text-gray-400 text-xs">Browse peer-to-peer listings. Filter by category, location. Map-based view. Submit inquiries. Supports image + contract attachments.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="font-mono text-blue-300 text-sm mb-1">/travel</div>
+      <div class="text-white font-semibold text-sm mb-1">Travel Package Booking</div>
+      <p class="text-gray-400 text-xs">Browse travel packages from agencies. View details, media, pricing. Book with confirmation flow.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="font-mono text-blue-300 text-sm mb-1">/try-on/{listing}</div>
+      <div class="text-white font-semibold text-sm mb-1">AI Virtual Try-On</div>
+      <p class="text-gray-400 text-xs">Customer uploads a photo → AI overlays the product → returns try-on result images. Session stored in DB.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="font-mono text-blue-300 text-sm mb-1">/radio/{country}</div>
+      <div class="text-white font-semibold text-sm mb-1">Internet Radio</div>
+      <p class="text-gray-400 text-xs">Country-specific radio channels. Scheduled programming. Listen session analytics tracked per user.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="font-mono text-blue-300 text-sm mb-1">/now-nawy</div>
+      <div class="text-white font-semibold text-sm mb-1">Admin Curated Feed</div>
+      <p class="text-gray-400 text-xs">Admin-hand-picked product listings displayed as a curated feed. Browsable by category.</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-5">
+      <div class="font-mono text-blue-300 text-sm mb-1">/r/{slug}</div>
+      <div class="text-white font-semibold text-sm mb-1">Marketer Tracking Redirect</div>
+      <p class="text-gray-400 text-xs">Intercepts marketer referral links, logs click with <code class="bg-gray-800 px-1 rounded">TrackMarketerClick</code> middleware, then forwards to product page.</p>
+    </div>
+  </div>
+
+  <!-- Admin Routes Summary -->
+  <h2 class="text-lg font-bold text-white mb-3">Admin Panel Key Routes (admin.php)</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden mb-8">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b border-gray-800 bg-gray-800/50">
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Area</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">URL Pattern</th>
+        <th class="text-left px-5 py-3 text-gray-400 font-semibold">Key Actions</th>
+      </tr></thead>
+      <tbody class="divide-y divide-gray-800">
+        <tr><td class="px-5 py-3 text-white">Dashboard</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/dashboard</td><td class="px-5 py-3 text-gray-400 text-xs">Stats, revenue chart, recent orders, pending items</td></tr>
+        <tr><td class="px-5 py-3 text-white">Products</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/products/*</td><td class="px-5 py-3 text-gray-400 text-xs">CRUD, variant generation, country settings, image management, bulk actions</td></tr>
+        <tr><td class="px-5 py-3 text-white">Categories</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/categories/*</td><td class="px-5 py-3 text-gray-400 text-xs">Nested tree, reorder, bulk commission, attribute sync</td></tr>
+        <tr><td class="px-5 py-3 text-white">Vendors</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/vendors/*</td><td class="px-5 py-3 text-gray-400 text-xs">Application queue, approve/reject/suspend/blacklist, strikes, document verify, bank account verify</td></tr>
+        <tr><td class="px-5 py-3 text-white">Orders</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/orders/*</td><td class="px-5 py-3 text-gray-400 text-xs">View, update sub-order status, force cancel, process refunds, escalate disputes</td></tr>
+        <tr><td class="px-5 py-3 text-white">Flash Sales</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/flash-sales/*</td><td class="px-5 py-3 text-gray-400 text-xs">Create, invite vendors, review submissions, live monitor, analytics</td></tr>
+        <tr><td class="px-5 py-3 text-white">Page Builder</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/page-builder/*</td><td class="px-5 py-3 text-gray-400 text-xs">Create/edit pages, manage blocks, slides, revision history, visibility rules</td></tr>
+        <tr><td class="px-5 py-3 text-white">Marketers</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/marketers/*</td><td class="px-5 py-3 text-gray-400 text-xs">CRUD, campaigns, conversions, sample requests, payouts, tier management</td></tr>
+        <tr><td class="px-5 py-3 text-white">Delivery</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/delivery/*</td><td class="px-5 py-3 text-gray-400 text-xs">Agent management, zones, live map, assignments, payouts, COD settlement</td></tr>
+        <tr><td class="px-5 py-3 text-white">Wallets</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/wallets/*</td><td class="px-5 py-3 text-gray-400 text-xs">Balance adjustments, freeze/unfreeze, withdrawal approvals, COD settlements</td></tr>
+        <tr><td class="px-5 py-3 text-white">Advertising</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/ads/*</td><td class="px-5 py-3 text-gray-400 text-xs">Campaign management, fraud detection, paid ad bookings, banner management</td></tr>
+        <tr><td class="px-5 py-3 text-white">Warehouses</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/warehouses/*</td><td class="px-5 py-3 text-gray-400 text-xs">Inventory management, stock adjustments, inter-warehouse transfers, FBN</td></tr>
+        <tr><td class="px-5 py-3 text-white">Settings</td><td class="px-5 py-3 text-blue-300 font-mono text-xs">/settings/*</td><td class="px-5 py-3 text-gray-400 text-xs">Countries, currencies, payment gateways, shipping rates, roles, system config</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Portal Routes -->
+  <h2 class="text-lg font-bold text-white mb-3">Vendor Registration Portal (portal.php)</h2>
+  <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-4">
+    <div class="grid grid-cols-2 gap-3 text-sm">
+      <div><code class="text-blue-300 font-mono">/</code> <span class="text-gray-400 ml-2">Landing page</span></div>
+      <div><code class="text-blue-300 font-mono">/how-it-works</code> <span class="text-gray-400 ml-2">Seller guide</span></div>
+      <div><code class="text-blue-300 font-mono">/faq</code> <span class="text-gray-400 ml-2">FAQ page</span></div>
+      <div><code class="text-blue-300 font-mono">/fulfillment</code> <span class="text-gray-400 ml-2">FBN info</span></div>
+      <div><code class="text-blue-300 font-mono">/smart-tools</code> <span class="text-gray-400 ml-2">AI tools promo</span></div>
+      <div><code class="text-blue-300 font-mono">/register</code> <span class="text-gray-400 ml-2">Multi-step registration wizard</span></div>
+    </div>
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>

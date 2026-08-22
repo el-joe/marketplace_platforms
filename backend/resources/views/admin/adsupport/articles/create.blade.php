@@ -1,0 +1,201 @@
+@extends('layouts.admin')
+
+@push('styles')
+    @vite(['resources/js/components/rich-editor.js'])
+@endpush
+
+@section('title', __('admin.adsupport.new_article'))
+
+@section('content')
+<div class="p-6">
+
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.adsupport.new_article') }}</h1>
+            <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.adsupport.fill_content_below') }}</p>
+        </div>
+        <a href="{{ route('admin.adsupport.articles.index') }}" class="btn btn-secondary btn-sm">{{ __('admin.adsupport.back_to_articles') }}</a>
+    </div>
+
+    @if(session('success'))
+        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">{{ session('success') }}</div>
+    @endif
+
+    <form id="article-form" method="POST" action="{{ route('admin.adsupport.articles.store') }}">
+        @csrf
+        <input type="hidden" name="action" id="form-action" value="draft">
+
+        <div class="flex flex-col lg:flex-row gap-6 items-start">
+
+            {{-- LEFT COLUMN --}}
+            <div class="flex-1 min-w-0 space-y-5">
+                <x-card title="{{ __('admin.adsupport.title') }}">
+                    <div class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">{{ __('admin.adsupport.article_title') }} (English) <span class="text-red-500">*</span></label>
+                                <input type="text" name="title_en" id="title-input" required maxlength="255"
+                                       value="{{ old('title_en') }}"
+                                       class="form-input w-full @error('title_en') is-invalid @enderror"
+                                       placeholder="{{ __('admin.adsupport.title_placeholder') }}">
+                                @error('title_en') <p class="form-error">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="form-label">{{ __('admin.adsupport.article_title') }} (Arabic) <span class="text-red-500">*</span></label>
+                                <input type="text" name="title_ar" required maxlength="255" dir="rtl"
+                                       value="{{ old('title_ar') }}"
+                                       class="form-input w-full @error('title_ar') is-invalid @enderror">
+                                @error('title_ar') <p class="form-error">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label">{{ __('admin.adsupport.slug') }}</label>
+                            <input type="text" name="slug" id="slug-input" maxlength="255"
+                                   value="{{ old('slug') }}"
+                                   class="form-input w-full text-sm font-mono @error('slug') is-invalid @enderror"
+                                   placeholder="{{ __('admin.adsupport.slug_auto_generated') }}">
+                            @error('slug') <p class="form-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="form-label">{{ __('admin.adsupport.excerpt') }} (English)</label>
+                                    <span class="text-xs text-gray-400" data-char-counter="excerpt_en" data-max="500">0 / 500</span>
+                                </div>
+                                <textarea name="excerpt_en" id="excerpt" rows="2" maxlength="500"
+                                          class="form-textarea w-full @error('excerpt_en') is-invalid @enderror"
+                                          placeholder="{{ __('admin.adsupport.excerpt_placeholder') }}">{{ old('excerpt_en') }}</textarea>
+                                @error('excerpt_en') <p class="form-error">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="form-label">{{ __('admin.adsupport.excerpt') }} (Arabic)</label>
+                                    <span class="text-xs text-gray-400" data-char-counter="excerpt_ar" data-max="500">0 / 500</span>
+                                </div>
+                                <textarea name="excerpt_ar" rows="2" maxlength="500" dir="rtl"
+                                          class="form-textarea w-full @error('excerpt_ar') is-invalid @enderror">{{ old('excerpt_ar') }}</textarea>
+                                @error('excerpt_ar') <p class="form-error">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <x-form.rich-editor
+                                name="body_en"
+                                label="{{ __('admin.adsupport.body') }} (English)"
+                                :required="true"
+                                profile="full"
+                                :minHeight="400"
+                                :value="old('body_en', '')"
+                            />
+                            @error('body_en') <p class="form-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <x-form.rich-editor
+                                name="body_ar"
+                                label="{{ __('admin.adsupport.body') }} (Arabic)"
+                                :required="true"
+                                profile="full"
+                                :minHeight="400"
+                                :value="old('body_ar', '')"
+                            />
+                            @error('body_ar') <p class="form-error">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </x-card>
+
+                <div class="flex items-center gap-3">
+                    <button type="button" class="btn btn-secondary" onclick="submitForm('draft')">{{ __('admin.adsupport.save_draft') }}</button>
+                    <button type="button" class="btn bg-emerald-600 text-white hover:bg-emerald-700" onclick="submitForm('publish')">{{ __('admin.adsupport.publish_now') }}</button>
+                </div>
+            </div>
+
+            {{-- RIGHT COLUMN --}}
+            <div class="w-full lg:w-80 flex-shrink-0 space-y-4">
+                <x-card title="{{ __('admin.adsupport.publish_settings') }}">
+                    <div class="p-4 space-y-2">
+                        <button type="button" class="btn btn-secondary w-full text-sm" onclick="submitForm('draft')">{{ __('admin.adsupport.save_draft') }}</button>
+                        <button type="button" class="btn bg-emerald-600 text-white hover:bg-emerald-700 w-full text-sm" onclick="submitForm('publish')">{{ __('admin.adsupport.publish_now') }}</button>
+                    </div>
+                </x-card>
+
+                <x-card title="{{ __('admin.adsupport.organization') }}">
+                    <div class="p-4 space-y-4">
+                        <div>
+                            <label class="form-label text-xs">{{ __('admin.adsupport.collection_label') }} <span class="text-red-500">*</span></label>
+                            <select name="ad_support_collection_id" class="form-input w-full text-sm @error('ad_support_collection_id') is-invalid @enderror">
+                                <option value="">{{ __('admin.adsupport.select_collection') }}</option>
+                                @foreach($collections as $parent)
+                                    <optgroup label="{{ $parent->name }}">
+                                        <option value="{{ $parent->id }}" {{ old('ad_support_collection_id') == $parent->id ? 'selected' : '' }}>
+                                            {{ $parent->name }}
+                                        </option>
+                                        @foreach($parent->children as $child)
+                                            <option value="{{ $child->id }}" {{ old('ad_support_collection_id') == $child->id ? 'selected' : '' }}>
+                                                ↳ {{ $child->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                            @error('ad_support_collection_id') <p class="form-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" name="is_featured" value="1" class="rounded text-primary-600" {{ old('is_featured') ? 'checked' : '' }}>
+                            <span class="text-sm text-gray-700">{{ __('admin.adsupport.is_featured') }}</span>
+                        </label>
+                        <p class="text-xs text-gray-400">{{ __('admin.adsupport.is_featured_hint') }}</p>
+                    </div>
+                </x-card>
+
+                <x-card title="{{ __('admin.adsupport.related_articles') }}">
+                    <div class="p-4 space-y-2">
+                        <select name="related_article_ids[]" multiple size="6" class="form-input w-full text-sm">
+                            @foreach($allArticles as $a)
+                                <option value="{{ $a->id }}" {{ in_array($a->id, old('related_article_ids', [])) ? 'selected' : '' }}>{{ $a->title }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400">{{ __('admin.adsupport.related_articles_hint') }}</p>
+                    </div>
+                </x-card>
+            </div>
+        </div>
+    </form>
+</div>
+
+@push('scripts')
+<script>
+(function () {
+    const titleInput = document.getElementById('title-input');
+    const slugInput = document.getElementById('slug-input');
+    let slugManual = false;
+
+    slugInput.addEventListener('input', () => { slugManual = true; });
+    titleInput.addEventListener('input', () => {
+        if (!slugManual) {
+            slugInput.value = titleInput.value.toLowerCase().trim()
+                .replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '');
+        }
+    });
+
+    document.querySelectorAll('[data-char-counter]').forEach(counter => {
+        const fieldName = counter.dataset.charCounter;
+        const max = parseInt(counter.dataset.max);
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (!field) return;
+        const update = () => { counter.textContent = `${field.value.length} / ${max}`; };
+        field.addEventListener('input', update);
+        update();
+    });
+
+    window.submitForm = function (action) {
+        document.getElementById('form-action').value = action;
+        document.getElementById('article-form').submit();
+    };
+})();
+</script>
+@endpush
+@endsection

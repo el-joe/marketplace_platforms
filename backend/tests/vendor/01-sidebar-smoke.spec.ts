@@ -1,0 +1,82 @@
+/**
+ * Phase 1 — Vendor Sidebar Smoke Tests
+ *
+ * For every sidebar page: navigate directly, assert no Laravel error page,
+ * assert HTTP status is not 4xx/5xx, assert the expected heading is visible,
+ * and assert no uncaught JS console errors.
+ *
+ * CRUD actions are NOT tested here — see Phase 2.
+ * Three sidebar items are skipped because their routes don't exist yet:
+ *   المرتجعات (partner.returns.index)
+ *   المعاملات (partner.finance.transactions)
+ *   الإعلانات (partner.ads.index)
+ */
+
+import { test, expect, type ConsoleMessage } from '@playwright/test';
+import { vendorSidebarPages } from './fixtures/sidebar-pages';
+import { assertNoErrorPage, isAssetUrl } from '../helpers/smoke';
+
+test.describe('Vendor Sidebar Smoke — every page loads without errors', () => {
+  for (const entry of vendorSidebarPages) {
+    const testTitle = `[${entry.section}] ${entry.label} → ${entry.path}`;
+
+    if (entry.skip) {
+      test(testTitle, async () => {
+        test.skip(true, entry.skip!);
+      });
+      continue;
+    }
+
+    test(testTitle, async ({ page }) => {
+      const consoleErrors: string[] = [];
+      page.on('console', (msg: ConsoleMessage) => {
+        if (msg.type() === 'error') {
+          consoleErrors.push(`[console.error] ${msg.text()}`);
+        }
+      });
+
+      const apiFailures: string[] = [];
+      page.on('response', (response) => {
+        const url = response.url();
+        const status = response.status();
+        if (status >= 400 && !isAssetUrl(url)) {
+          apiFailures.push(`${status} ${url}`);
+        }
+      });
+
+      const response = await page.goto(entry.path, { waitUntil: 'domcontentloaded' });
+
+      // 1. HTTP status on the main document
+      const status = response?.status() ?? 0;
+      expect(
+        status,
+        `Expected a non-error HTTP status for "${entry.path}", got ${status}`
+      ).toBeLessThan(400);
+
+      // 2. No Laravel error page
+      await assertNoErrorPage(page);
+
+      // 3. Expected heading/text is visible
+      const headingLocator = page.getByText(entry.expectedHeading).first();
+      await expect(headingLocator).toBeVisible({ timeout: 10_000 });
+
+      // 4. Allow deferred JS to fire, then check for errors
+      await page.waitForTimeout(800);
+
+      const jsErrors = consoleErrors.filter(
+        (e) => !e.includes('Failed to load resource')
+      );
+
+      const problems: string[] = [
+        ...jsErrors,
+        ...apiFailures.map((f) => `[api-failure] ${f}`),
+      ];
+
+      if (problems.length > 0) {
+        throw new Error(
+          `Problems on "${entry.path}":\n${problems.join('\n')}`
+        );
+      }
+    });
+  }
+});

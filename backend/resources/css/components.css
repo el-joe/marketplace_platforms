@@ -1,0 +1,490 @@
+/* Tailwind v4: @reference makes utilities available for @apply in this file */
+@reference "tailwindcss";
+
+/* =========================================================
+   BUTTONS
+   Base styles shared across all btn variants via multi-selector.
+   Variant classes only add colour/border overrides.
+   ========================================================= */
+
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-success,
+.btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-sm {
+    @apply px-3 py-1.5 text-xs rounded-md;
+}
+
+.btn-lg {
+    @apply px-5 py-2.5 text-base;
+}
+
+.btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+}
+
+.btn-secondary {
+    @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500;
+}
+
+.btn-danger {
+    @apply bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500;
+}
+
+.btn-success {
+    @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+}
+
+.btn-ghost {
+    @apply bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-400;
+}
+
+/* =========================================================
+   FORM CONTROLS
+   ========================================================= */
+
+.form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.form-label-required::after {
+    content: ' *';
+    color: var(--color-danger-500, #ef4444);
+}
+
+/* Base field — shared by input, select, textarea via multi-selector */
+.form-input,
+.form-select,
+.form-textarea {
+    @apply block w-full rounded-lg border-gray-300 shadow-sm text-sm placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.form-select {
+    @apply pr-9 bg-white;
+}
+
+.form-input.is-invalid,
+.form-select.is-invalid,
+.form-textarea.is-invalid {
+    @apply border-danger-500 focus:border-danger-500 focus:ring-danger-500;
+}
+
+.form-error {
+    @apply mt-1 text-sm text-danger-600;
+}
+
+.form-hint {
+    @apply mt-1 text-xs text-gray-500;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.table-base {
+    @apply min-w-full divide-y divide-gray-200 text-sm;
+}
+
+.table-base thead {
+    @apply bg-gray-50;
+}
+
+.table-base thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500;
+}
+
+.table-base tbody tr {
+    @apply hover:bg-gray-50 transition-colors;
+}
+
+.table-base tbody td {
+    @apply px-4 py-3 text-gray-700 border-b border-gray-100;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors duration-150;
+}
+
+.nav-item.is-active {
+    @apply bg-primary-600 text-white hover:bg-primary-600;
+}
+
+.nav-item-icon {
+    @apply w-5 h-5 flex-shrink-0;
+}
+
+.sidebar-group-label {
+    @apply px-3 mt-4 mb-1 text-[11px] uppercase tracking-wider text-gray-500 font-semibold;
+}
+
+.sidebar-badge {
+    @apply ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-danger-600 text-white;
+}
+
+/* ---- Grouped dropdown navigation ---- */
+
+.nav-group {
+    @apply mb-0.5;
+}
+
+.nav-group-header {
+    @apply w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors duration-150 cursor-pointer;
+}
+
+.nav-group-header.is-active {
+    @apply text-white;
+}
+
+.nav-group-chevron {
+    @apply w-4 h-4 flex-shrink-0 text-gray-500 transition-transform duration-200 ease-out;
+}
+
+.nav-group.is-open > .nav-group-header .nav-group-chevron {
+    @apply text-gray-300;
+    transform: rotate(90deg);
+}
+
+html[dir="rtl"] .nav-group.is-open > .nav-group-header .nav-group-chevron {
+    transform: rotate(-90deg);
+}
+
+.nav-group-header .sidebar-badge {
+    @apply bg-gray-700;
+}
+
+.nav-group-items {
+    @apply grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 200ms ease;
+}
+
+.nav-group-items-inner {
+    @apply overflow-hidden pl-2 border-l border-gray-800 ms-[1.15rem] mt-0.5 space-y-0.5;
+    min-height: 0;
+}
+
+.nav-group.is-open > .nav-group-items {
+    grid-template-rows: 1fr;
+}
+
+.nav-group-items > .nav-subitem {
+    @apply text-[13px] py-1.5;
+}
+
+body.sidebar-collapsed .nav-group-header {
+    @apply justify-center px-0;
+}
+
+body.sidebar-collapsed .nav-group-items {
+    display: none;
+}
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+.modal-backdrop {
+    @apply fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4;
+}
+
+.modal-backdrop.hidden {
+    display: none;
+}
+
+.modal-panel,
+.modal-box {
+    @apply bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto p-6;
+    animation: fade-in 200ms ease-out;
+}
+
+.modal-sm {
+    @apply max-w-sm;
+}
+
+.modal-md {
+    @apply max-w-md;
+}
+
+.modal-lg {
+    @apply max-w-2xl;
+}
+
+.modal-xl {
+    @apply max-w-4xl;
+}
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+
+.badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* =========================================================
+   SELECT2 — Tailwind-compatible theme
+   ========================================================= */
+
+/* Container */
+.select2-container {
+    @apply w-full;
+}
+
+/* Single selection trigger */
+.select2-container--default .select2-selection--single {
+    @apply block w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 transition;
+    height: auto;
+    padding-top: 0.375rem;
+    /* py-1.5 equivalent */
+    padding-bottom: 0.375rem;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single {
+    @apply border-primary-500 outline-none;
+    box-shadow: 0 0 0 3px rgb(186 230 253 / 0.5);
+    /* ring-primary-200 */
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    @apply text-sm text-gray-900 p-0 leading-normal;
+    line-height: 1.5rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    @apply text-gray-400;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    height: auto;
+    width: auto;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__clear {
+    @apply text-gray-400 hover:text-gray-600 font-bold;
+    margin-right: 1.5rem;
+}
+
+/* Multiple selection trigger */
+.select2-container--default .select2-selection--multiple {
+    @apply block w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 transition;
+    min-height: 2.375rem;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    @apply border-primary-500 outline-none;
+    box-shadow: 0 0 0 3px rgb(186 230 253 / 0.5);
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    @apply bg-primary-100 text-primary-700 border border-primary-200 rounded px-2 py-0.5 text-xs mt-0.5 mb-0.5 mr-1 inline-flex items-center gap-1;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    @apply text-primary-500 hover:text-primary-700 font-bold mr-0.5;
+    border: none;
+    background: none;
+    order: -1;
+}
+
+/* Dropdown panel */
+.select2-dropdown {
+    @apply border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden;
+    z-index: 9999;
+}
+
+.select2-container--default .select2-search--dropdown {
+    @apply p-2;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field {
+    @apply block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none;
+    box-shadow: none;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+    @apply border-primary-500;
+    box-shadow: 0 0 0 3px rgb(186 230 253 / 0.5);
+}
+
+/* Options */
+.select2-results__options {
+    @apply py-1;
+}
+
+.select2-results__option {
+    @apply px-3 py-2 text-sm text-gray-700 cursor-pointer select-none;
+}
+
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    @apply bg-primary-600 text-white;
+}
+
+.select2-container--default .select2-results__option--selected {
+    @apply bg-gray-100 text-gray-900;
+}
+
+.select2-container--default .select2-results__option--disabled {
+    @apply text-gray-400 cursor-not-allowed;
+}
+
+.select2-container--default .select2-results__group {
+    @apply px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50;
+}
+
+/* Loading / empty states */
+.select2-results__option.loading-results,
+.select2-results__option.select2-results__message {
+    @apply text-gray-400 text-sm;
+}
+
+/* =========================================================
+   Summernote theme overrides
+   ========================================================= */
+
+/* Editor wrapper */
+.note-editor.note-frame {
+    @apply rounded-lg border border-gray-300 overflow-hidden shadow-none;
+}
+
+.note-editor.note-frame.focus {
+    @apply border-primary-500 ring-1 ring-primary-300;
+}
+
+/* Toolbar */
+.note-editor .note-toolbar {
+    @apply bg-gray-50 border-b border-gray-200 px-2 py-1.5 flex flex-wrap gap-0.5;
+}
+
+.note-editor .note-btn {
+    @apply bg-transparent border-0 text-gray-600 rounded p-1 hover:bg-gray-200 text-sm;
+}
+
+.note-editor .note-btn:hover {
+    @apply bg-gray-200 text-gray-900;
+}
+
+.note-editor .note-btn.active {
+    @apply bg-gray-200 text-gray-900;
+}
+
+.note-editor .note-btn-group {
+    @apply flex gap-0;
+}
+
+/* Editing area */
+.note-editor .note-editable {
+    @apply px-3 py-2 text-sm text-gray-800 bg-white;
+}
+
+/* Dropdown menus */
+.note-editor .dropdown-menu,
+.note-popover .popover-content {
+    @apply bg-white border border-gray-200 rounded-lg shadow-md py-1 min-w-32;
+}
+
+.note-editor .dropdown-item,
+.note-popover .dropdown-item {
+    @apply block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer;
+}
+
+/* Status bar */
+.note-editor .note-statusbar {
+    @apply bg-gray-50 border-t border-gray-200;
+}
+
+.note-editor .note-statusbar .note-resizebar {
+    @apply cursor-row-resize;
+}
+
+/* Resize handle */
+.note-editor .note-resizebar .note-icon-bar {
+    @apply border-gray-300;
+}
+
+/* Code view */
+.note-editor .note-codable {
+    @apply bg-gray-900 text-gray-100 font-mono text-sm px-3 py-2;
+}
+
+/* Placeholder */
+.note-editable[contenteditable=true]:empty:before,
+.note-placeholder {
+    @apply text-gray-400 pointer-events-none;
+}
+
+/* Link / image modals — inherit from Bootstrap-less Summernote lite */
+.note-modal .note-modal-content {
+    @apply bg-white rounded-xl shadow-xl border border-gray-200;
+}
+
+.note-modal .note-modal-header {
+    @apply px-4 py-3 border-b border-gray-200 flex items-center justify-between;
+}
+
+.note-modal .note-modal-title {
+    @apply text-sm font-semibold text-gray-800;
+}
+
+.note-modal .note-modal-footer {
+    @apply px-4 py-3 border-t border-gray-200 flex justify-end gap-2;
+}
+
+.note-modal .note-input {
+    @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500;
+}
+
+.note-modal .note-btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2 rounded-lg;
+}
+
+.note-modal .note-btn-default {
+    @apply bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg border border-gray-300;
+}
+
+/* Popover (link edit) */
+.note-popover .popover-content {
+    @apply flex gap-0.5 p-1;
+}
+
+/* =========================================================
+   DOCS (admin.docs.* pages)
+   ========================================================= */
+.docs-section { @apply mb-10; }
+.docs-h2      { @apply text-xl font-semibold text-gray-800 mb-3 mt-8 flex items-center gap-2; }
+.docs-h3      { @apply text-base font-semibold text-gray-700 mb-2 mt-5; }
+.docs-p       { @apply text-gray-600 leading-relaxed mb-3; }
+
+.docs-badge        { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium; }
+.docs-badge-blue   { @apply bg-blue-100 text-blue-700; }
+.docs-badge-green  { @apply bg-green-100 text-green-700; }
+.docs-badge-amber  { @apply bg-amber-100 text-amber-700; }
+.docs-badge-red    { @apply bg-red-100 text-red-700; }
+.docs-badge-purple { @apply bg-purple-100 text-purple-700; }
+
+.docs-table    { @apply w-full text-sm border-collapse; }
+.docs-table th { @apply bg-gray-50 text-left px-4 py-2 font-semibold text-gray-700 border border-gray-200; }
+.docs-table td { @apply px-4 py-2 border border-gray-200 text-gray-600; }
+
+.docs-callout { @apply rounded-lg p-4 mb-4 border-l-4 text-sm; }
+.docs-info    { @apply bg-blue-50 border-blue-400 text-blue-800; }
+.docs-warning { @apply bg-amber-50 border-amber-400 text-amber-800; }
+.docs-success { @apply bg-green-50 border-green-400 text-green-700; }
+.docs-danger  { @apply bg-red-50 border-red-400 text-red-700; }
+
+.docs-step     { @apply flex gap-3 mb-4; }
+.docs-step-num { @apply flex-shrink-0 w-6 h-6 rounded-full bg-primary-600 text-white text-xs flex items-center justify-center font-bold; }
+
+.docs-route { @apply font-mono text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded; }

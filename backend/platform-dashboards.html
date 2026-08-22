@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دليل لوحات التحكم — منصة السوق الإلكتروني</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-size: 14px;
+    direction: rtl;
+    user-select: none;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Title Bar (Windows style) ── */
+  .title-bar {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+  .title-bar-left { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .title-bar-icon { font-size: 16px; }
+  .title-bar-btns { display: flex; gap: 1px; }
+  .title-bar-btn {
+    width: 46px; height: 32px; border: none; cursor: pointer;
+    font-size: 16px; color: white; background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .title-bar-btn:hover { background: rgba(255,255,255,0.15); }
+  .title-bar-btn.close:hover { background: #e81123; }
+
+  /* ── Ribbon ── */
+  .ribbon {
+    background: #f5f5f5;
+    border-bottom: 1px solid #d0d0d0;
+    padding: 4px 12px 0;
+    flex-shrink: 0;
+  }
+  .ribbon-tabs { display: flex; gap: 0; }
+  .ribbon-tab {
+    padding: 6px 16px; font-size: 12px; cursor: pointer;
+    border: 1px solid transparent; border-bottom: none;
+    border-radius: 3px 3px 0 0; background: transparent;
+    color: #333; transition: all 0.15s;
+  }
+  .ribbon-tab.active {
+    background: white; border-color: #d0d0d0;
+    margin-bottom: -1px; color: #1e3a5f; font-weight: 600;
+  }
+  .ribbon-tab:hover:not(.active) { background: #e8e8e8; }
+
+  /* ── Address Bar ── */
+  .address-bar {
+    background: white;
+    border-bottom: 1px solid #d0d0d0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    width: 28px; height: 28px; border: 1px solid transparent;
+    background: transparent; cursor: pointer; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #555; transition: all 0.15s;
+  }
+  .nav-btn:hover { background: #e8e8e8; border-color: #c0c0c0; }
+  .nav-btn:disabled { color: #bbb; cursor: default; }
+  .nav-btn:disabled:hover { background: transparent; border-color: transparent; }
+  .address-input {
+    flex: 1; height: 26px; border: 1px solid #b0b8c0;
+    border-radius: 3px; padding: 0 8px; font-size: 12px;
+    background: #f8f8f8; color: #333; direction: ltr;
+    text-align: left;
+  }
+  .address-input:focus { outline: 1px solid #1e3a5f; border-color: #1e3a5f; }
+  .search-box {
+    width: 160px; height: 26px; border: 1px solid #b0b8c0;
+    border-radius: 13px; padding: 0 10px 0 28px; font-size: 12px;
+    background: #f8f8f8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 8px center no-repeat;
+    direction: ltr;
+  }
+  .search-box:focus { outline: 1px solid #1e3a5f; border-color: #1e3a5f; }
+
+  /* ── Main Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar / Navigation Pane ── */
+  .sidebar {
+    width: 220px;
+    background: white;
+    border-left: 1px solid #d0d0d0;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-section { margin-bottom: 4px; }
+  .sidebar-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600;
+    color: #444; cursor: pointer; background: transparent;
+    border: none; width: 100%; text-align: right;
+    transition: background 0.1s;
+  }
+  .sidebar-header:hover { background: #f0f4ff; }
+  .sidebar-header .chevron {
+    font-size: 10px; color: #888; margin-right: auto; margin-left: 0;
+    transition: transform 0.2s;
+  }
+  .sidebar-header.collapsed .chevron { transform: rotate(-90deg); }
+  .sidebar-items { padding: 0 0 4px 0; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 12px 5px 24px; font-size: 12px; color: #333;
+    cursor: pointer; border: none; background: transparent;
+    width: 100%; text-align: right; transition: all 0.1s;
+    border-right: 3px solid transparent;
+  }
+  .sidebar-item:hover { background: #e8f0fe; }
+  .sidebar-item.active {
+    background: #dceaff; border-right-color: #1e3a5f;
+    color: #1e3a5f; font-weight: 600;
+  }
+  .sidebar-item .icon { font-size: 14px; flex-shrink: 0; }
+
+  /* ── Content Area ── */
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+    background: #fafafa;
+    padding: 0;
+  }
+
+  /* ── Content Header ── */
+  .content-header {
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 16px 24px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .content-header h1 { font-size: 20px; color: #1e3a5f; margin-bottom: 4px; }
+  .content-header .subtitle { font-size: 12px; color: #888; }
+
+  /* ── Cards Grid ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+    padding: 20px 24px;
+  }
+
+  /* ── Dashboard Card ── */
+  .dash-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .dash-card:hover {
+    border-color: #1e3a5f;
+    box-shadow: 0 4px 12px rgba(30,58,95,0.12);
+    transform: translateY(-1px);
+  }
+  .dash-card.selected {
+    border-color: #1e3a5f;
+    box-shadow: 0 0 0 2px rgba(30,58,95,0.2);
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .card-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .card-title { flex: 1; }
+  .card-title h3 { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+  .card-title .badge {
+    display: inline-block; padding: 1px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .card-body { padding: 14px 16px; }
+  .card-desc { font-size: 13px; color: #444; line-height: 1.65; margin-bottom: 12px; }
+
+  /* ── Permissions / Features List ── */
+  .feature-list { display: flex; flex-direction: column; gap: 5px; }
+  .feature-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 12px; color: #555; line-height: 1.5;
+  }
+  .feature-item .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 5px;
+  }
+
+  /* ── Table inside card ── */
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .mini-table th {
+    background: #f5f7ff; padding: 5px 8px; text-align: right;
+    font-weight: 600; color: #555; border-bottom: 1px solid #e8e8e8;
+  }
+  .mini-table td { padding: 5px 8px; border-bottom: 1px solid #f5f5f5; color: #444; }
+  .mini-table tr:last-child td { border-bottom: none; }
+
+  /* ── Section Divider ── */
+  .section-divider {
+    display: flex; align-items: center; gap: 12px;
+    padding: 20px 24px 8px;
+  }
+  .section-divider .section-label {
+    font-size: 11px; font-weight: 700; color: #888;
+    text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+  }
+  .section-divider .line { flex: 1; height: 1px; background: #e0e0e0; }
+
+  /* ── Status Bar ── */
+  .status-bar {
+    background: #f0f0f0;
+    border-top: 1px solid #c0c0c0;
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 12px; height: 22px; font-size: 11px; color: #666;
+    flex-shrink: 0;
+  }
+  .status-bar span { display: flex; align-items: center; gap: 4px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; }
+
+  /* ── Color themes for card icons ── */
+  .bg-admin     { background: #1e3a5f; color: white; }
+  .bg-partner   { background: #0f6b3c; color: white; }
+  .bg-carrier   { background: #7b2d8b; color: white; }
+  .bg-delivery  { background: #c0392b; color: white; }
+  .bg-marketer  { background: #d97706; color: white; }
+  .bg-travel    { background: #0891b2; color: white; }
+  .bg-portal    { background: #475569; color: white; }
+  .bg-ai        { background: #6d28d9; color: white; }
+
+  .badge-admin    { background: #e8eef7; color: #1e3a5f; }
+  .badge-partner  { background: #e6f4ed; color: #0f6b3c; }
+  .badge-carrier  { background: #f3e8f7; color: #7b2d8b; }
+  .badge-delivery { background: #fde8e8; color: #c0392b; }
+  .badge-marketer { background: #fef3cd; color: #92400e; }
+  .badge-travel   { background: #e0f5fa; color: #0891b2; }
+  .badge-portal   { background: #f1f5f9; color: #475569; }
+  .badge-ai       { background: #ede9fe; color: #6d28d9; }
+
+  .dot-admin    { background: #1e3a5f; }
+  .dot-partner  { background: #0f6b3c; }
+  .dot-carrier  { background: #7b2d8b; }
+  .dot-delivery { background: #c0392b; }
+  .dot-marketer { background: #d97706; }
+  .dot-travel   { background: #0891b2; }
+  .dot-portal   { background: #475569; }
+  .dot-ai       { background: #6d28d9; }
+
+  /* ── Detail Panel (right side) ── */
+  .detail-panel {
+    width: 300px;
+    background: white;
+    border-right: 1px solid #d0d0d0;
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: none;
+  }
+  .detail-panel.visible { display: block; }
+  .detail-panel-header {
+    background: #1e3a5f; color: white; padding: 16px;
+    font-size: 13px; font-weight: 700;
+  }
+  .detail-panel-body { padding: 16px; }
+  .detail-field { margin-bottom: 12px; }
+  .detail-field label { display: block; font-size: 10px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .detail-field p { font-size: 13px; color: #333; }
+
+  /* ── Scrollbar styling ── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #f0f0f0; }
+  ::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
+
+  /* ── Print / export hidden ── */
+  @media print {
+    .title-bar, .ribbon, .address-bar, .sidebar, .status-bar { display: none; }
+    body { overflow: visible; height: auto; }
+    .main { overflow: visible; }
+    .content-area { overflow: visible; }
+    .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Title Bar ── -->
+<div class="title-bar">
+  <div class="title-bar-left">
+    <span class="title-bar-icon">📁</span>
+    <span>دليل لوحات التحكم — منصة السوق الإلكتروني</span>
+  </div>
+  <div class="title-bar-btns">
+    <button class="title-bar-btn">─</button>
+    <button class="title-bar-btn">□</button>
+    <button class="title-bar-btn close">✕</button>
+  </div>
+</div>
+
+<!-- ── Ribbon Tabs ── -->
+<div class="ribbon">
+  <div class="ribbon-tabs">
+    <div class="ribbon-tab active">الرئيسية</div>
+    <div class="ribbon-tab">مشاركة</div>
+    <div class="ribbon-tab">عرض</div>
+  </div>
+</div>
+
+<!-- ── Address Bar ── -->
+<div class="address-bar">
+  <button class="nav-btn" disabled>&#8592;</button>
+  <button class="nav-btn" disabled>&#8594;</button>
+  <button class="nav-btn" title="أعلى">&#8593;</button>
+  <input class="address-input" type="text" value="marketplace_platform > dashboards > كل اللوحات" readonly>
+  <input class="search-box" type="text" placeholder="بحث في الدليل...">
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+
+    <div class="sidebar-section">
+      <button class="sidebar-header" onclick="toggleSection(this)">
+        <span>⭐</span> المفضلة
+        <span class="chevron">▼</span>
+      </button>
+      <div class="sidebar-items">
+        <button class="sidebar-item active" onclick="showSection('all')">
+          <span class="icon">🏠</span> كل اللوحات
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="sidebar-header" onclick="toggleSection(this)">
+        <span>🖥</span> لوحات التحكم
+        <span class="chevron">▼</span>
+      </button>
+      <div class="sidebar-items">
+        <button class="sidebar-item" onclick="showSection('admin')">
+          <span class="icon">🛡️</span> لوحة الأدمن
+        </button>
+        <button class="sidebar-item" onclick="showSection('partner')">
+          <span class="icon">🏪</span> بوابة التاجر
+        </button>
+        <button class="sidebar-item" onclick="showSection('carrier')">
+          <span class="icon">🚚</span> بوابة الشحن
+        </button>
+        <button class="sidebar-item" onclick="showSection('delivery')">
+          <span class="icon">🛵</span> تطبيق المندوب
+        </button>
+        <button class="sidebar-item" onclick="showSection('marketer')">
+          <span class="icon">📣</span> بوابة المسوق
+        </button>
+        <button class="sidebar-item" onclick="showSection('travel')">
+          <span class="icon">✈️</span> بوابة السياحة
+        </button>
+        <button class="sidebar-item" onclick="showSection('portal')">
+          <span class="icon">🌐</span> بوابة التسجيل
+        </button>
+        <button class="sidebar-item" onclick="showSection('ai')">
+          <span class="icon">🤖</span> لوحة الذكاء الاصطناعي
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="sidebar-header" onclick="toggleSection(this)">
+        <span>📊</span> إحصائيات
+        <span class="chevron">▼</span>
+      </button>
+      <div class="sidebar-items">
+        <button class="sidebar-item">
+          <span class="icon">📈</span> 8 لوحات رئيسية
+        </button>
+        <button class="sidebar-item">
+          <span class="icon">👤</span> 6 أنواع مستخدمين
+        </button>
+        <button class="sidebar-item">
+          <span class="icon">🔐</span> 6 Guards مختلفة
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Content Area ── -->
+  <div class="content-area" id="contentArea">
+
+    <!-- ── SECTION: ALL / Overview ── -->
+    <div id="section-all">
+
+      <div class="content-header">
+        <h1>📋 دليل لوحات التحكم الكاملة</h1>
+        <div class="subtitle">منصة السوق الإلكتروني — marketplace_platform — 8 لوحات تحكم، 6 أنواع مستخدمين</div>
+      </div>
+
+      <!-- ═══ ADMIN ═══ -->
+      <div class="section-divider">
+        <div class="section-label">🛡️ الإدارة العليا</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <!-- Admin Main Dashboard -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">🛡️</div>
+            <div class="card-title">
+              <h3>لوحة تحكم الأدمن الرئيسية</h3>
+              <span class="badge badge-admin">Admin Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              المركز العام للإشراف على المنصة بأكملها. تعرض إحصائيات حية يمكن فلترتها بالفترة الزمنية (اليوم / الأسبوع / الشهر) والدولة. تحتوي على رسوم بيانية تفاعلية، وجدول الطلبات الأخيرة، وأفضل البائعين أداءً، وتنبيهات المخزون المنخفض.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>بطاقات الإحصاء:</strong> GMV الإجمالي، عدد الطلبات، صافي الإيرادات (العمولات)، عدد البائعين النشطين — مع نسبة التغيير مقارنة بالفترة السابقة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مخطط الإيرادات:</strong> خط زمني يعرض GMV والعمولات لآخر 7 أو 30 أو 90 يوم</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>توزيع الطلبات:</strong> دونات شارت يوزع الطلبات حسب الحالة (pending، processing، shipped، delivered…)</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>العناصر المعلقة:</strong> منتجات بانتظار المراجعة، بائعون، نزاعات، طلبات سحب، طلبات الإرجاع</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المخزون المنخفض:</strong> قائمة المنتجات التي وصلت لـ 5 قطع أو أقل</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>أفضل البائعين:</strong> Top 10 بائعين بالـ GMV في آخر 30 يوم مع التقييم وعدد الطلبات</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">📊</div>
+            <div class="card-title">
+              <h3>لوحة التحليلات المتقدمة</h3>
+              <span class="badge badge-admin">Analytics Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              تحليلات عميقة تتجاوز الأرقام الأساسية — مخصصة لاتخاذ القرارات الاستراتيجية. تدعم الفلترة بالدولة وتعرض البيانات عبر AJAX endpoints متعددة.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>نظرة عامة:</strong> ملخص شامل لأداء المنصة في الفترة المختارة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مخطط الإيرادات:</strong> تحليل زمني تفصيلي مع فلترة متقدمة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الطلبات بالحالة:</strong> توزيع مرئي لحالات جميع الطلبات</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الطلبات بطريقة الدفع:</strong> تحليل وسائل الدفع المستخدمة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>أفضل المنتجات والبائعين والتصنيفات:</strong> ترتيب الأداء عبر أبعاد متعددة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">📦</div>
+            <div class="card-title">
+              <h3>إدارة الطلبات</h3>
+              <span class="badge badge-admin">Orders Management</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              مركز الإشراف على جميع الطلبات في المنصة. الأدمن يرى جميع الطلبات من جميع البائعين والدول.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span>عرض وبحث وفلترة جميع الطلبات</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span>تغيير حالة الطلبات يدوياً</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span>عرض تفاصيل كاملة مع تاريخ التغييرات</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span>إدارة طلبات الإرجاع والمبالغ المستردة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendors -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">🏪</div>
+            <div class="card-title">
+              <h3>إدارة البائعين والمتاجر</h3>
+              <span class="badge badge-admin">Vendors Management</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              الموافقة على المتاجر الجديدة ومراقبة أداء البائعين وفرض العقوبات. يشمل إدارة طلبات الانضمام والتطبيقات.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>طلبات الانضمام (Vendor Applications):</strong> مراجعة وقبول أو رفض طلبات التسجيل الجديدة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>إدارة المتاجر:</strong> تفعيل، تعليق، حذف المتاجر</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الضربات (Strikes):</strong> فرض عقوبات على البائعين المخالفين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الأدوار والصلاحيات:</strong> تحديد ما يمكن لكل بائع فعله</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Finance & Payouts -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">💰</div>
+            <div class="card-title">
+              <h3>المالية والمدفوعات</h3>
+              <span class="badge badge-admin">Finance & Payouts</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              إدارة كاملة لدورة المال في المنصة: من العمولات المستحقة إلى صرف المبالغ للبائعين والمندوبين، مع سجل محاسبي تفصيلي.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المدفوعات (Payouts):</strong> مراجعة وإتمام طلبات السحب للبائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مدفوعات المندوبين:</strong> صرف رواتب ومكافآت مناديب التوصيل</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>دفتر الأستاذ (Ledger):</strong> سجل محاسبي لجميع الحركات المالية</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المحافظ الإلكترونية:</strong> الإشراف على أرصدة المستخدمين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المعاملات (Transactions):</strong> عرض شامل لجميع العمليات المالية</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>طرق الدفع:</strong> إدارة وتفعيل/تعطيل وسائل الدفع المتاحة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Products & Catalog -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">🏷️</div>
+            <div class="card-title">
+              <h3>إدارة المنتجات والكتالوج</h3>
+              <span class="badge badge-admin">Products & Catalog</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              السيطرة الكاملة على كتالوج المنتجات: التصنيفات، الماركات، الخصائص، مراجعة المنتجات المقدمة من البائعين، وإدارة تكاليف المنتجات.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المنتجات:</strong> مراجعة وقبول/رفض منتجات البائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>التصنيفات والماركات:</strong> بناء وتنظيم شجرة التصنيف</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الخصائص (Attributes):</strong> تعريف مواصفات المنتجات (اللون، المقاس…)</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>قوائم الأدمن:</strong> منتجات يديرها الأدمن مباشرة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>تكاليف المنتجات:</strong> تحديد هامش الربح والتسعير</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shipping & Delivery -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">🚛</div>
+            <div class="card-title">
+              <h3>إدارة الشحن والتوصيل</h3>
+              <span class="badge badge-admin">Shipping Management</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              التحكم الكامل في منظومة الشحن: الشركات، المناديب، مناطق التغطية، التعيينات، بالإضافة لقواعد الاحتياط عندما لا تغطي شركة منطقة معينة.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>شركات الشحن:</strong> قبول، تفعيل، تعليق شركات الشحن المسجلة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مناديب التوصيل:</strong> متابعة وإدارة جميع المناديب</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مناطق الشحن والتوصيل:</strong> تحديد التغطية الجغرافية لكل ناقل</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>التعيينات (Assignments):</strong> مراقبة تعيين الطلبات على المناديب</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>قواعد الاحتياط (Fallback Rules):</strong> توجيه الطلبات لشركة بديلة عند عدم تغطية منطقة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>بطاقة أداء الناقل (Scorecard):</strong> تقييم أداء شركات الشحن بمؤشرات دقيقة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Marketing & Promotions -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">🎯</div>
+            <div class="card-title">
+              <h3>التسويق والعروض</h3>
+              <span class="badge badge-admin">Marketing & Promotions</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              منظومة متكاملة للتسويق: من الكوبونات والعروض الخاطفة إلى حملات الإعلانات المدفوعة والبانرات والعروض السرية.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الكوبونات:</strong> إنشاء وإدارة أكواد الخصم</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>العروض الخاطفة (Flash Sales):</strong> جدولة تخفيضات محدودة الوقت</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>حملات الإعلانات (Ad Campaigns):</strong> إدارة حملات الدفع مقابل الظهور</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مواقع الإعلان (Ad Slots):</strong> تحديد أماكن ظهور الإعلانات</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>حجوزات الإعلانات المدفوعة:</strong> متابعة الإعلانات المحجوزة من البائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>العروض السرية (Secret Promotions):</strong> عروض خاصة لشرائح محددة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>البانرات:</strong> رفع وتنظيم بانرات الصفحة الرئيسية</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المسوقون (Marketers):</strong> إدارة حسابات المسوقين بالعمولة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FBN / Fulfillment -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">🏭</div>
+            <div class="card-title">
+              <h3>الوفاء بالطلبات (FBN)</h3>
+              <span class="badge badge-admin">Fulfillment by Nawy</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              نظام الوفاء بالطلبات المتكامل حيث تخزن المنصة منتجات البائعين في مستودعاتها وترسلها مباشرة للعملاء (نظير FBA في أمازون).
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>طلبات الاستقبال (Inbound):</strong> إدارة إرسال البائعين لمنتجاتهم للمستودع</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>المستودعات (Warehouses):</strong> إدارة المستودعات والمخزون الداخلي</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>رسوم التخزين (Storage Fees):</strong> احتساب وإدارة رسوم تخزين منتجات البائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>قواعد شحن السوق:</strong> تحديد قواعد الشحن الخاصة بالمنتجات المخزنة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Classified Listings -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">📋</div>
+            <div class="card-title">
+              <h3>الإعلانات المبوبة</h3>
+              <span class="badge badge-admin">Classified Listings</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              قسم الإعلانات المبوبة (مشابه لـ OLX) داخل المنصة — يسمح للمستخدمين بنشر إعلانات بيع وشراء بموافقة الأدمن وعقود رسمية.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>تصنيفات المبوبة:</strong> بناء شجرة تصنيف خاصة بالإعلانات</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>قوالب العقود:</strong> نماذج عقود قانونية لكل نوع إعلان</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مراجعة الإعلانات:</strong> قبول ورفض الإعلانات المقدمة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Support & Disputes -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">⚖️</div>
+            <div class="card-title">
+              <h3>الدعم والنزاعات</h3>
+              <span class="badge badge-admin">Support & Disputes</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              إدارة تذاكر الدعم الفني والنزاعات بين العملاء والبائعين، والمطالبات ضد شركات الشحن في حالة تلف أو فقدان الشحنات.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>تذاكر الدعم:</strong> استقبال وإدارة شكاوى العملاء والبائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>النزاعات (Disputes):</strong> الفصل في الخلافات بين العملاء والبائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مطالبات الناقل (Carrier Claims):</strong> متابعة التعويضات عن شحنات تالفة أو مفقودة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>التقييمات والمراجعات:</strong> الإشراف على تقييمات المنتجات</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Platform Settings -->
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-admin">⚙️</div>
+            <div class="card-title">
+              <h3>إعدادات المنصة والبنية التحتية</h3>
+              <span class="badge badge-admin">Platform Settings</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              التحكم في الإعدادات العامة للمنصة: الدول، المدن، العملات، الاشتراكات، بناء الصفحات، سجل النشاطات.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الدول والمدن والعملات:</strong> ضبط التغطية الجغرافية والعملات المدعومة</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الاشتراكات (Subscriptions):</strong> إدارة خطط اشتراك البائعين</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>بناء الصفحات (Page Builder):</strong> تصميم صفحات المنصة بدون كود</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>الراديو الرقمي:</strong> إدارة قنوات وجداول البث الصوتي/المرئي</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>سجل النشاطات (Activity Log):</strong> تتبع جميع تصرفات الأدمن</span></div>
+              <div class="feature-item"><div class="dot dot-admin"></div><span><strong>مستلزمات التغليف:</strong> إدارة وتوريد مواد التغليف للبائعين</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ PARTNER / VENDOR ═══ -->
+      <div class="section-divider">
+        <div class="section-label">🏪 بوابة التاجر (Partner Portal)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-partner">🏪</div>
+            <div class="card-title">
+              <h3>لوحة تحكم التاجر الرئيسية</h3>
+              <span class="badge badge-partner">Partner Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              واجهة التاجر المركزية — تعرض أداء المتجر الخاص به فقط. تُحسَب البيانات كل 5 دقائق (Cache) مع عرض فوري للطلبات الأخيرة.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>إيرادات الشهر:</strong> مجموع مستحقات التاجر من الطلبات المكتملة</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>طلبات اليوم:</strong> عدد الطلبات الواردة اليوم</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>الطلبات المعلقة:</strong> طلبات تحتاج تدخلاً فورياً (حالة placed)</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>تنبيهات SLA:</strong> طلبات ستتأخر عن موعد الشحن خلال أقل من ساعتين</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>المخزون المنخفض:</strong> منتجات قاربت على النفاد</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>النزاعات والضربات:</strong> تنبيهات بالمخالفات والنزاعات المفتوحة</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>مخطط الإيرادات:</strong> منحنى يومي لآخر 7 أيام</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-partner">📋</div>
+            <div class="card-title">
+              <h3>إدارة الطلبات — التاجر</h3>
+              <span class="badge badge-partner">Partner Orders</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              التاجر يرى طلباته (Sub-Orders) فقط. يتحكم في مراحل تجهيز الطلب من القبول حتى الشحن، مع أسماء عملاء مقنّعة لحماية الخصوصية.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-partner"></div><span>عرض وفلترة الطلبات حسب الحالة والتاريخ</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span>قبول/رفض الطلبات والتجهيز للشحن</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span>تحديث حالة الشحن ورفع أرقام التتبع</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span>اسم العميل مخفي جزئياً (Ahmed M.) لحماية الخصوصية</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-partner">📦</div>
+            <div class="card-title">
+              <h3>المنتجات والمخزون</h3>
+              <span class="badge badge-partner">Listings & Inventory</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              إدارة كتالوج التاجر الخاص وكميات المخزون في المستودعات مع تتبع حركات الدخول والخروج.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>قوائم المنتجات (Listings):</strong> إضافة وتعديل منتجات المتجر</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>المخزون (Inventory):</strong> تحديث الكميات المتاحة والمحجوزة</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>وفاء الطلبات (Fulfillment):</strong> تحضير وإرسال الطلبات المحجوزة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-partner">💸</div>
+            <div class="card-title">
+              <h3>المالية والمحفظة — التاجر</h3>
+              <span class="badge badge-partner">Partner Finance</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              متابعة المستحقات المالية، طلب السحب، وعرض سجل جميع العمليات المالية الخاصة بالمتجر.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>المحفظة (Wallet):</strong> الرصيد الحالي وسجل الحركات</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>طلبات الصرف (Payouts):</strong> طلب تحويل الأرباح للحساب البنكي</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>الحسابات البنكية:</strong> إضافة وإدارة حسابات السحب</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>الأداء (Performance):</strong> مؤشرات تفصيلية لأداء المتجر</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-partner">🤝</div>
+            <div class="card-title">
+              <h3>التسويق والفريق — التاجر</h3>
+              <span class="badge badge-partner">Partner Growth</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              أدوات نمو المتجر: إنشاء حملات تسويق بالعمولة، العروض الخاطفة الخاصة، وإدارة فريق المتجر الداخلي.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>حملات المسوقين:</strong> إنشاء حملات تسويق وتعيين مسوقين لها</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>عينات المسوقين:</strong> إرسال منتجات تجريبية للمسوقين</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>العروض الخاطفة:</strong> الانضمام لعروض المنصة أو إنشاء عروض خاصة</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>الفريق (Team):</strong> إضافة موظفين بصلاحيات محددة</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>العروض السرية:</strong> إنشاء عروض لفئات العملاء المختارة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-partner">🤖</div>
+            <div class="card-title">
+              <h3>أدوات الذكاء الاصطناعي — التاجر</h3>
+              <span class="badge badge-partner">AI Tools (Partner)</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              أدوات AI متاحة للتاجر مباشرة: تحسين صور المنتجات، التجربة الافتراضية للملابس، وتوليد فيديوهات المنتجات — كل حسب الكريديت المتاح.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>تحسين الصور:</strong> رفع صور وتحسينها بالـ AI تلقائياً</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>التجربة الافتراضية (Virtual Try-on):</strong> تجربة ملابس افتراضياً</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span><strong>توليد الفيديو:</strong> إنشاء فيديوهات تسويقية للمنتجات</span></div>
+              <div class="feature-item"><div class="dot dot-partner"></div><span>كل خدمة تستهلك كريديت يمنحه الأدمن</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ CARRIER PORTAL ═══ -->
+      <div class="section-divider">
+        <div class="section-label">🚚 بوابة شركة الشحن (Carrier Portal)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-carrier">🚚</div>
+            <div class="card-title">
+              <h3>لوحة تحكم شركة الشحن</h3>
+              <span class="badge badge-carrier">Carrier Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              واجهة المشرف في شركة الشحن — تعرض حالة أسطول المناديب والتسليمات الجارية والمكتملة اليوم، كل ذلك مرتبط بشركته فقط.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>إجمالي المناديب / النشطون:</strong> حجم الأسطول وحالته</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>التعيينات المعلقة:</strong> طلبات محالة لم يقبلها مندوب بعد</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>قيد التنفيذ:</strong> طلبات مقبولة أو تم استلامها من المتجر</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>تسليمات اليوم:</strong> عدد الطلبات التي سُلِّمت اليوم</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>آخر التعيينات:</strong> قائمة بأحدث 10 تعيينات مع اسم المندوب</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-carrier">👷</div>
+            <div class="card-title">
+              <h3>إدارة المناديب والمشرفين</h3>
+              <span class="badge badge-carrier">Agents & Supervisors</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              المشرف الرئيسي (مالك صلاحية manage_agents) يدير مناديب التوصيل التابعين للشركة، وكذلك المشرفين الآخرين وصلاحياتهم.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>المناديب (Agents):</strong> إضافة، تعديل، تفعيل/تعطيل مناديب التوصيل</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>المشرفون (Supervisors):</strong> إنشاء حسابات مشرفين فرعيين بصلاحيات محددة</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span><strong>الصلاحيات:</strong> manage_agents / view_orders / assign_orders / view_reports</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span>عزل كامل — المشرف لا يرى بيانات شركات شحن أخرى</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-carrier">📍</div>
+            <div class="card-title">
+              <h3>إدارة التعيينات — الشحن</h3>
+              <span class="badge badge-carrier">Carrier Assignments</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              الإشراف على توزيع الطلبات على المناديب، ومتابعة مسار كل شحنة من لحظة التعيين حتى التسليم.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-carrier"></div><span>المشرف يرى جميع التعيينات (بما فيها غير المقبولة بعد)</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span>إعادة توزيع الطلبات بين المناديب عند الحاجة</span></div>
+              <div class="feature-item"><div class="dot dot-carrier"></div><span>متابعة حالة كل شحنة في الوقت الفعلي</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ DELIVERY AGENT ═══ -->
+      <div class="section-divider">
+        <div class="section-label">🛵 تطبيق مندوب التوصيل (Delivery App)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-delivery">🛵</div>
+            <div class="card-title">
+              <h3>لوحة تحكم المندوب</h3>
+              <span class="badge badge-delivery">Delivery Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              واجهة المندوب اليومية — تعرض إحصائيات يومه الحالي والطلبات التي يجب أن يتصرف معها الآن.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>إحصائيات اليوم:</strong> إجمالي مهام اليوم، المكتمل، الفاشل، النشط</span></div>
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>أرباح اليوم:</strong> المبلغ المكتسب حتى اللحظة</span></div>
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>الطلبات المعلقة:</strong> ما يحتاج لقبول أو التقاط أو توصيل (آخر 5)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-delivery">📦</div>
+            <div class="card-title">
+              <h3>التعيينات والأرباح — المندوب</h3>
+              <span class="badge badge-delivery">Agent Assignments</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              إدارة مهام التوصيل اليومية مع تحديث الحالة في الوقت الفعلي، وعرض تفصيلي للأرباح والمحفظة.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>التعيينات:</strong> قبول/رفض مهام التوصيل، تحديث الحالة</span></div>
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>الموقع (Location):</strong> مشاركة الموقع اللحظي للتتبع</span></div>
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>الأرباح (Earnings):</strong> سجل تفصيلي بكل مهمة وقيمتها</span></div>
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>المحفظة (Wallet):</strong> رصيد المندوب وطلبات السحب</span></div>
+              <div class="feature-item"><div class="dot dot-delivery"></div><span><strong>الملف الشخصي:</strong> تحديث البيانات وصورة البطاقة وثائق</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ MARKETER ═══ -->
+      <div class="section-divider">
+        <div class="section-label">📣 بوابة المسوق بالعمولة (Marketer Portal)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-marketer">📣</div>
+            <div class="card-title">
+              <h3>لوحة تحكم المسوق</h3>
+              <span class="badge badge-marketer">Marketer Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              واجهة المسوق بالعمولة — يرى أداء حملاته، نسبة التحويل، وتقدمه في نظام الدرجات (Tiers) الذي يرفع عمولته كلما أنجز مبيعات أكثر.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>نقرات اليوم والتحويلات:</strong> أداء الروابط الترويجية لحظة بلحظة</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>الأرباح المعلقة والمدفوعة:</strong> تتبع العمولات</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>نسبة التحويل:</strong> نقرة → مبيعة (Conversion Rate)</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>أفضل 5 حملات:</strong> الحملات الأكثر إنتاجية</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>منحنى الإيرادات:</strong> 30 يوم الأخيرة</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>نظام الدرجات (Tiers):</strong> درجتك الحالية والتالية والعمولة الجديدة</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-marketer">🔗</div>
+            <div class="card-title">
+              <h3>الحملات وأدوات التسويق</h3>
+              <span class="badge badge-marketer">Campaigns & Tools</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              إنشاء روابط ترويجية مخصصة، رموز QR، وتتبع أداء كل رابط بشكل مستقل.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>الحملات:</strong> إنشاء وإدارة حملات مع روابط تتبع فريدة</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>رموز QR:</strong> توليد QR Codes للحملات</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>التتبع (Tracking):</strong> تفصيل النقرات والتحويلات لكل رابط</span></div>
+              <div class="feature-item"><div class="dot dot-marketer"></div><span><strong>المحفظة والأرباح:</strong> سحب الأرباح المتراكمة</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ TRAVEL AGENCY ═══ -->
+      <div class="section-divider">
+        <div class="section-label">✈️ بوابة وكالة السياحة (Travel Agency Portal)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-travel">✈️</div>
+            <div class="card-title">
+              <h3>لوحة تحكم وكالة السياحة</h3>
+              <span class="badge badge-travel">Travel Agency Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              بوابة مستقلة لوكالات السياحة لنشر وإدارة باقاتهم السياحية ورحلاتهم على المنصة. بانتظار موافقة الأدمن على كل باقة قبل نشرها.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-travel"></div><span><strong>توزيع الباقات:</strong> عدد الباقات بكل حالة (مسودة، منشورة، مؤرشفة)</span></div>
+              <div class="feature-item"><div class="dot dot-travel"></div><span><strong>الباقات الأخيرة:</strong> آخر 5 باقات أضافتها الوكالة</span></div>
+              <div class="feature-item"><div class="dot dot-travel"></div><span><strong>الباقات (Packages):</strong> إنشاء وتعديل وحذف الباقات السياحية</span></div>
+              <div class="feature-item"><div class="dot dot-travel"></div><span>Guard مستقل: travel_agency — معزول تماماً عن باقي المستخدمين</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ PORTAL / REGISTRATION ═══ -->
+      <div class="section-divider">
+        <div class="section-label">🌐 بوابة التسجيل العامة (Public Portal)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-portal">🌐</div>
+            <div class="card-title">
+              <h3>بوابة التسجيل والانضمام</h3>
+              <span class="badge badge-portal">Public Registration Portal</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              الوجهة الأولى للأطراف الجديدة الراغبة في الانضمام للمنصة. تحتوي على صفحات تعريفية ونماذج تسجيل للبائعين وشركات الشحن ووكالات السياحة والمسوقين.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-portal"></div><span><strong>الصفحة التعريفية (Landing):</strong> عرض مزايا المنصة لكل فئة</span></div>
+              <div class="feature-item"><div class="dot dot-portal"></div><span><strong>نماذج التسجيل:</strong> طلبات انضمام مخصصة لكل نوع (Vendor / Carrier / Travel / Marketer)</span></div>
+              <div class="feature-item"><div class="dot dot-portal"></div><span>الطلبات ترسل للأدمن للمراجعة والموافقة</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ AI DASHBOARD ═══ -->
+      <div class="section-divider">
+        <div class="section-label">🤖 لوحة الذكاء الاصطناعي (AI Dashboard)</div>
+        <div class="line"></div>
+      </div>
+      <div class="cards-grid">
+
+        <div class="dash-card" onclick="selectCard(this)">
+          <div class="card-header">
+            <div class="card-icon bg-ai">🤖</div>
+            <div class="card-title">
+              <h3>لوحة تحكم الذكاء الاصطناعي</h3>
+              <span class="badge badge-ai">AI Operations Dashboard</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              لوحة تشغيلية تحت إشراف الأدمن — تراقب صحة خدمات AI وتعرض حالة المهام الجارية والفاشلة، مع إمكانية توزيع الكريديت على البائعين والمسوقين.
+            </p>
+            <div class="feature-list">
+              <div class="feature-item"><div class="dot dot-ai"></div><span><strong>تحسين الصور:</strong> queued / processing / completed / failed</span></div>
+              <div class="feature-item"><div class="dot dot-ai"></div><span><strong>التجربة الافتراضية (Virtual Try-on):</strong> إحصائيات جلسات التجربة</span></div>
+              <div class="feature-item"><div class="dot dot-ai"></div><span><strong>توليد الفيديو:</strong> متابعة مهام إنشاء الفيديوهات</span></div>
+              <div class="feature-item"><div class="dot dot-ai"></div><span><strong>الأخطاء الأخيرة:</strong> آخر 10 مهام فاشلة مع رسالة الخطأ</span></div>
+              <div class="feature-item"><div class="dot dot-ai"></div><span><strong>ملخص الكريديت:</strong> الكريديت المتبقي والمستخدم لكل خدمة</span></div>
+              <div class="feature-item"><div class="dot dot-ai"></div><span><strong>منح الكريديت:</strong> توزيع كريديت على بائع أو مسوق محدد</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═══ Summary Table ═══ -->
+      <div class="section-divider">
+        <div class="section-label">📊 جدول مقارنة شامل</div>
+        <div class="line"></div>
+      </div>
+
+      <div style="padding: 0 24px 32px;">
+        <div style="background: white; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+          <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="background: #1e3a5f; color: white;">
+                <th style="padding: 12px 16px; text-align:right; font-weight:600;">اللوحة</th>
+                <th style="padding: 12px 16px; text-align:right; font-weight:600;">المستخدم</th>
+                <th style="padding: 12px 16px; text-align:right; font-weight:600;">Guard</th>
+                <th style="padding: 12px 16px; text-align:right; font-weight:600;">نطاق البيانات</th>
+                <th style="padding: 12px 16px; text-align:right; font-weight:600;">الوصف المختصر</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #f0f0f0; background:#f9fbff;">
+                <td style="padding:10px 16px; font-weight:600; color:#1e3a5f;">🛡️ لوحة الأدمن</td>
+                <td style="padding:10px 16px;">مدير المنصة</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">admin</td>
+                <td style="padding:10px 16px;">كل المنصة</td>
+                <td style="padding:10px 16px;">مركز القيادة الكامل — إشراف على كل شيء</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:10px 16px; font-weight:600; color:#0f6b3c;">🏪 بوابة التاجر</td>
+                <td style="padding:10px 16px;">البائع / موظفوه</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">vendor</td>
+                <td style="padding:10px 16px;">متجره فقط</td>
+                <td style="padding:10px 16px;">إدارة المنتجات والطلبات والأرباح الخاصة</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0; background:#f9fbff;">
+                <td style="padding:10px 16px; font-weight:600; color:#7b2d8b;">🚚 بوابة الشحن</td>
+                <td style="padding:10px 16px;">مشرف شركة الشحن</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">shipping_supervisor</td>
+                <td style="padding:10px 16px;">شركته فقط</td>
+                <td style="padding:10px 16px;">إدارة المناديب والشحنات لشركة واحدة</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:10px 16px; font-weight:600; color:#c0392b;">🛵 تطبيق المندوب</td>
+                <td style="padding:10px 16px;">مندوب التوصيل</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">delivery</td>
+                <td style="padding:10px 16px;">مهامه فقط</td>
+                <td style="padding:10px 16px;">قبول وتنفيذ مهام التوصيل اليومية</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0; background:#f9fbff;">
+                <td style="padding:10px 16px; font-weight:600; color:#d97706;">📣 بوابة المسوق</td>
+                <td style="padding:10px 16px;">المسوق بالعمولة</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">marketer</td>
+                <td style="padding:10px 16px;">حملاته فقط</td>
+                <td style="padding:10px 16px;">إنشاء روابط ترويجية وتتبع العمولات</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:10px 16px; font-weight:600; color:#0891b2;">✈️ بوابة السياحة</td>
+                <td style="padding:10px 16px;">وكالة السياحة</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">travel_agency</td>
+                <td style="padding:10px 16px;">باقاتها فقط</td>
+                <td style="padding:10px 16px;">نشر وإدارة الباقات السياحية</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f0f0f0; background:#f9fbff;">
+                <td style="padding:10px 16px; font-weight:600; color:#475569;">🌐 بوابة التسجيل</td>
+                <td style="padding:10px 16px;">زوار جدد</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">— (عام)</td>
+                <td style="padding:10px 16px;">نماذج التسجيل</td>
+                <td style="padding:10px 16px;">بوابة انضمام الأطراف الجديدة</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 16px; font-weight:600; color:#6d28d9;">🤖 لوحة الذكاء الاصطناعي</td>
+                <td style="padding:10px 16px;">الأدمن</td>
+                <td style="padding:10px 16px; font-family:monospace; font-size:12px;">admin</td>
+                <td style="padding:10px 16px;">كل خدمات AI</td>
+                <td style="padding:10px 16px;">مراقبة وإدارة خدمات AI وتوزيع الكريديت</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- end section-all -->
+
+  </div><!-- end content-area -->
+
+</div><!-- end main -->
+
+<!-- ── Status Bar ── -->
+<div class="status-bar">
+  <span><div class="status-dot"></div> متصل</span>
+  <span>📁 marketplace_platform</span>
+  <span>🗂 8 لوحات تحكم</span>
+  <span>👤 6 أنواع مستخدمين</span>
+  <span>🔐 6 Guards</span>
+  <span style="margin-right:auto; color:#aaa;">آخر تحديث: يونيو 2026</span>
+</div>
+
+<script>
+  function toggleSection(btn) {
+    btn.classList.toggle('collapsed');
+    const items = btn.nextElementSibling;
+    items.style.display = btn.classList.contains('collapsed') ? 'none' : '';
+  }
+
+  function showSection(name) {
+    // Update sidebar active state
+    document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    // All sections live in section-all, so for now just scroll to top
+    document.getElementById('contentArea').scrollTop = 0;
+
+    // Update address bar
+    const labels = {
+      all: 'marketplace_platform > dashboards > كل اللوحات',
+      admin: 'marketplace_platform > dashboards > لوحة الأدمن',
+      partner: 'marketplace_platform > dashboards > بوابة التاجر',
+      carrier: 'marketplace_platform > dashboards > بوابة الشحن',
+      delivery: 'marketplace_platform > dashboards > تطبيق المندوب',
+      marketer: 'marketplace_platform > dashboards > بوابة المسوق',
+      travel: 'marketplace_platform > dashboards > بوابة السياحة',
+      portal: 'marketplace_platform > dashboards > بوابة التسجيل',
+      ai: 'marketplace_platform > dashboards > لوحة الذكاء الاصطناعي',
+    };
+    document.querySelector('.address-input').value = labels[name] || labels.all;
+  }
+
+  function selectCard(card) {
+    document.querySelectorAll('.dash-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  }
+
+  // Search functionality
+  document.querySelector('.search-box').addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    document.querySelectorAll('.dash-card').forEach(card => {
+      const text = card.innerText.toLowerCase();
+      card.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  });
+</script>
+</body>
+</html>
