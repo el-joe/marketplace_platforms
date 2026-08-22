@@ -12,6 +12,9 @@ export const placeOrderService = (orderPayload: IPlaceOrderPayload) =>
 export const createPrepareCheckoutService = (orderPayload: {
   address_id: number;
   country_payment_gateway_id: string;
+  receiver_id?: string | null;
+  coupon_code?: string | null;
+  warranty_selections?: { listing_id: string; warranty_plan_id: string }[];
 }) =>
   fetchInstance<{ data: IPrepareCheckout }>("/checkout/prepare", {
     method: "POST",

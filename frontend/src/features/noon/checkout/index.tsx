@@ -24,6 +24,8 @@ export default function Checkout() {
     isCreatingOrder,
     selectedGatewayId,
     isGettingGateways,
+    selectedInstruction,
+    setSelectedInstruction,
   } = useCheckout();
   if (
     (isPreparingCheckout && !checkoutData) ||
@@ -67,7 +69,9 @@ export default function Checkout() {
               <div className="flex gap-5 flex-wrap">
                 <OrderReceiverCard />
                 <DeliveryInstructionsCard
-                  instructions={checkoutData?.delivery_instructions}
+                  instructions={checkoutData?.delivery_instructions ?? []}
+                  selectedInstruction={selectedInstruction}
+                  onSelect={setSelectedInstruction}
                 />
               </div>
               <ItemsList shipment_groups={checkoutData?.shipment_groups} />

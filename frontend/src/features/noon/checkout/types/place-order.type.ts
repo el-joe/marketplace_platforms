@@ -40,4 +40,7 @@ export interface IPlaceOrderPayload {
   address_id: number;
   idempotency_key: string;
   country_payment_gateway_id: string;
+  receiver_id?: string | null;
+  delivery_instruction?: string | null;
+  coupon_code?: string | null;
 }

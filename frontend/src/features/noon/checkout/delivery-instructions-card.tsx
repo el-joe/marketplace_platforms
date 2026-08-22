@@ -1,3 +1,4 @@
+"use client";
 import { Checkbox } from "@/src/components/ui/base-inputs/checkbox";
 import { FieldLabel } from "@/src/components/ui/field";
 import { CircleQuestionMarkIcon, DoorOpenIcon, TreesIcon } from "lucide-react";
@@ -7,12 +8,16 @@ import { IPrepareCheckout } from "./types/checkout.type";
 
 export default function DeliveryInstructionsCard({
   instructions,
+  selectedInstruction,
+  onSelect,
 }: {
   instructions: IPrepareCheckout["delivery_instructions"];
+  selectedInstruction: string | null;
+  onSelect: (value: string | null) => void;
 }) {
   const t = useTranslations("checkout");
-  if (!instructions.length) {
-    return;
+  if (!instructions || !instructions.length) {
+    return null;
   }
   return (
     <div className="p-3 rounded-2xl bg-white flex-1">
@@ -20,10 +25,10 @@ export default function DeliveryInstructionsCard({
         {t("deliveryInstructions")}
       </h4>
       <div className="flex gap-3">
-        {instructions?.map((s) => (
+        {instructions.map((s) => (
           <FieldLabel
             key={s.value}
-            className="flex items-center flex-1 p-3 bg-gray-2 rounded-lg gap-3"
+            className="flex items-center flex-1 p-3 bg-gray-2 rounded-lg gap-3 cursor-pointer"
           >
             {s.value === "get_items_together" ? (
               <TreesIcon />
@@ -33,7 +38,10 @@ export default function DeliveryInstructionsCard({
               <CircleQuestionMarkIcon />
             )}
             <p className="text-gray text-sm">{s.label}</p>
-            <Checkbox />
+            <Checkbox
+              checked={selectedInstruction === s.value}
+              onCheckedChange={(checked) => onSelect(checked ? s.value : null)}
+            />
           </FieldLabel>
         ))}
       </div>

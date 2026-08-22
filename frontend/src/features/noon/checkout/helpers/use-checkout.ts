@@ -14,6 +14,10 @@ export const useCheckout = () => {
     IPrepareCheckout | undefined
   >(undefined);
 
+  const [selectedInstruction, setSelectedInstruction] = useState<
+    string | null
+  >(null);
+
   const gateways = useQuery({
     queryKey: ["payment-gateways"],
     queryFn: getPaymentGateways,
@@ -78,6 +82,7 @@ export const useCheckout = () => {
       address_id: Number(selectedAddress.id),
       country_payment_gateway_id: selectedGatewayId,
       idempotency_key: uuidv4(),
+      delivery_instruction: selectedInstruction ?? undefined,
     });
   };
 
@@ -110,5 +115,8 @@ export const useCheckout = () => {
     createOrder,
     isCreatingOrder: placeOrder.isPending,
     createOrderError: placeOrder.error,
+
+    selectedInstruction,
+    setSelectedInstruction,
   };
 };
