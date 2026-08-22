@@ -713,6 +713,10 @@
     "packagesAvailable": "{count, plural, one {# package available} other {# packages available}}",
     "noPackagesFound": "No packages found",
     "tryAdjustingFilter": "Check back soon for new packages.",
+    "allTrips": "All Trips",
+    "heroEyebrow": "Travel Packages",
+    "heroTitle": "Discover Your Next Adventure",
+    "heroSubtitle": "Curated travel packages at the best prices",
     "packageCard": {
       "persons": "persons",
       "days": "days",

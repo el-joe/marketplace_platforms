@@ -605,6 +605,10 @@
     "packagesAvailable": "{count, plural, one {# باقة متاحة} two {باقتان متاحتان} few {# باقات متاحة} many {# باقة متاحة} other {# باقة متاحة}}",
     "noPackagesFound": "لم يتم العثور على باقات",
     "tryAdjustingFilter": "يرجى المحاولة لاحقًا لمزيد من الباقات.",
+    "allTrips": "كل الرحلات",
+    "heroEyebrow": "باقات سفر",
+    "heroTitle": "اكتشف وجهتك القادمة",
+    "heroSubtitle": "باقات سياحية متكاملة بأفضل الأسعار",
     "packageCard": {
       "persons": "أشخاص",
       "days": "أيام",
