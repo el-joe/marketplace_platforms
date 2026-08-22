@@ -356,17 +356,10 @@
     "deleteAccountWarning": "Please note that you will not be able to create a new account using the same email address associated with the deleted account, and all related information, including but not limited to orders, returns, warranty claims, bank transfer records, account balance, and Noon credits - will no longer be accessible. While the same email address cannot be reused immediately, some data may be retained as required by law.",
     "deleteAccountTimingNote": "These changes may take 3-5 minutes to reflect on all devices",
     "deleteAccountTermsLabel": "I have read the terms and conditions",
-    "paymentsTitle": "Manage your cards",
-    "paymentsSubtitle": "We use encrypted methods to save your card details securely",
-    "paymentMethodDeleted": "Payment method removed",
-    "paymentMethodDeleteFailed": "Failed to remove payment method. Please try again.",
-    "paymentMethodSetDefault": "Default payment method updated",
-    "paymentMethodSetDefaultFailed": "Failed to update default payment method. Please try again.",
-    "deletePaymentMethodConfirmTitle": "Remove this payment method?",
-    "deletePaymentMethodConfirmDescription": "This will permanently remove this payment method and cannot be undone.",
-    "deletePaymentMethodConfirmButton": "Remove",
-    "paymentsEmptyTitle": "No Saved Cards",
-    "paymentsEmptyMessage": "Cards saved during the checkout process will display here. We use encrypted methods to store your details securely",
+    "paymentsTitle": "Payment History",
+    "paymentsSubtitle": "A record of your past payment transactions",
+    "paymentsEmptyTitle": "No Payments Yet",
+    "paymentsEmptyMessage": "Your payment transactions will appear here once you make a purchase",
     "cardNumber": "Card number",
     "expDate": "Exp. date",
     "setDefault": "Set Default",
@@ -463,7 +456,14 @@
     "getItTomorrow": "Get It Tomorrow",
     "verified": "Verified",
     "cardPayment": "Card",
-    "myBookings": "My Bookings"
+    "myBookings": "My Bookings",
+    "orderLabel": "Order",
+    "paymentStatus": {
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    }
   },
   "giftCards": {
     "home": "Home",

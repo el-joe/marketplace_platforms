@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\Customer\NewsletterController;
 use App\Http\Controllers\Api\Customer\AnnouncementBarController;
 use App\Http\Controllers\Api\Customer\PaymentCallbackController;
+use App\Http\Controllers\Api\Customer\PaymentHistoryController;
 
 // ── Home composite (public) ───────────────────────────────────────────
 
@@ -269,6 +270,10 @@ use Illuminate\Support\Facades\Route;
             Route::prefix('announcement-bars')->name('customer.announcement-bars.')->group(function (): void {
                 Route::post('{id}/dismiss', [AnnouncementBarController::class, 'dismiss'])->name('dismiss');
             });
+
+            // Payment transaction history (read-only)
+            Route::get('payment-history', [PaymentHistoryController::class, 'index'])
+                ->name('customer.payment-history.index');
 
             // Profile
             Route::prefix('profile')->name('customer.profile.')->group(function (): void {

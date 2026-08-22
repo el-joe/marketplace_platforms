@@ -9,24 +9,21 @@ export type GiftCardStatus = "active" | "redeemed" | "expired" | "cancelled";
 export type MyGiftCard = {
   id: string;
   code: string;
-  denomination_cents: number;
-  balance_cents: number;
+  denomination: number;
+  balance: number;
   currency: string;
   status: GiftCardStatus;
-  recipient_name: string;
   recipient_email: string | null;
-  personal_message: string | null;
   expires_at: string;
-  created_at: string;
 };
 
 export type PurchaseGiftCardPayload = {
-  denomination_cents: number;
-  currency: string;
-  recipient_name: string;
+  gift_card_batch_id: string;
+  quantity?: number;
+  country_payment_gateway_id: string;
   recipient_email?: string;
-  recipient_phone?: string;
-  personal_message?: string;
+  recipient_name?: string;
+  gift_message?: string;
 };
 
 /** GET /gift-card-store/available — a purchasable gift card offer (public catalog). */

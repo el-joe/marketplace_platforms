@@ -7,7 +7,7 @@ import { buttonVariants } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
-import { cn, centsToAmount } from "@/src/lib/utils";
+import { cn } from "@/src/lib/utils";
 import { bookingStatusVariant } from "../../helpers/to-booking-status";
 import type { TravelBooking } from "../../helpers/types";
 
@@ -61,7 +61,7 @@ export default function BookingCard({ booking }: Props) {
         </p>
 
         <div className="flex items-end justify-between mt-auto pt-3 border-t border-border">
-          <Price currentPrice={centsToAmount(booking.total_price_cents)} size="lg" />
+          <Price currentPrice={booking.total_price / 100} size="lg" />
           <Link
             href={`/my-bookings/${booking.id}`}
             className={cn(

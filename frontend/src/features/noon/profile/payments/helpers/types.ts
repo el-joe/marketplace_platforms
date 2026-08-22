@@ -4,39 +4,40 @@ export type ApiEnvelope<T> = {
   data: T;
 };
 
-export type PaymentMethodType = "card" | "wallet" | "bank";
+export type PaymentTransactionType =
+  | "authorization"
+  | "capture"
+  | "sale"
+  | "refund"
+  | "void"
+  | "chargeback";
 
-export type PaymentMethodBillingAddress = {
-  id: number;
-  label: string;
-  recipient_name: string;
-  recipient_phone: string;
-  street_address: string;
-  area: string;
-  full_address: string;
-};
+export type PaymentTransactionStatus =
+  | "pending"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
 
-export type PaymentMethod = {
+export type PaymentTransaction = {
   id: string;
-  type: PaymentMethodType;
+  order_number: string | null;
+  type: PaymentTransactionType;
   gateway: string;
-  card_brand: string | null;
-  card_last4: string | null;
-  card_exp_month: number | null;
-  card_exp_year: number | null;
-  is_default: boolean;
-  card_display: string;
-  billing_address: PaymentMethodBillingAddress | null;
+  amount: number; // base-currency units — display directly, no division
+  currency: string;
+  status: PaymentTransactionStatus;
+  processed_at: string | null;
+  created_at: string;
 };
 
-export type AddPaymentMethodPayload = {
-  type: PaymentMethodType;
-  gateway: string;
-  gateway_token: string;
-  card_brand?: string;
-  card_last4?: string;
-  card_exp_month?: number;
-  card_exp_year?: number;
-  billing_address_id?: number;
-  is_default?: boolean;
+export type PaymentHistoryMeta = {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+};
+
+export type PaymentHistoryResponse = {
+  items: PaymentTransaction[];
+  meta: PaymentHistoryMeta;
 };

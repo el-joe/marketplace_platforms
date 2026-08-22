@@ -51,15 +51,19 @@ export default function GiftCardForm({ category }: Props) {
     protectedWithAuth(async () => {
       setIsSubmitting(true);
       try {
-        await purchaseGiftCards(
-          {
-            denomination_cents: Math.round(amount * 100),
-            currency: "AED",
-            recipient_name: receiverName,
-            recipient_email: receiverEmail,
-          },
-          quantity,
+        // TODO: batch selection — the form has no batch_id or gateway_id yet.
+        // This will fail validation until it's connected to the batch catalog.
+        console.warn(
+          "[GiftCardForm] Purchase not yet wired to batch selection. " +
+            "gift_card_batch_id and country_payment_gateway_id are required.",
         );
+        await purchaseGiftCards({
+          gift_card_batch_id: "",
+          country_payment_gateway_id: "",
+          quantity,
+          recipient_name: receiverName,
+          recipient_email: receiverEmail,
+        });
       } catch {
         // Toasted in the hook — keep the form as-is so the user can retry.
       } finally {

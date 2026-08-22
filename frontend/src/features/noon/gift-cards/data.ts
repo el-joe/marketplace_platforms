@@ -47,7 +47,10 @@ export const giftCardCategories: GiftCardCategory[] = [
   },
 ];
 
-/** Must match the API's denomination_cents enum (5000, 10000, 25000, 50000, 100000). */
+/**
+ * Fallback display amounts (major-unit AED values) used when no batch catalog is loaded.
+ * In production, amounts come from GET /gift-card-store/available → GiftCardBatch.amount / 100.
+ */
 export const giftCardAmounts = [50, 100, 250, 500, 1000] as const;
 
 export const giftCardBrandLogos = [

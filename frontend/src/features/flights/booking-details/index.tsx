@@ -7,7 +7,6 @@ import Card from "@/src/components/shared/Card";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import CancelBookingDialog from "./components/cancel-booking-dialog";
 import {
   bookingStatusVariant,
@@ -75,7 +74,7 @@ export default async function BookingDetails({ booking }: Props) {
             label={t("myBookings.totalPrice")}
             value={
               <Price
-                currentPrice={centsToAmount(booking.total_price_cents)}
+                currentPrice={booking.total_price / 100}
                 size="sm"
               />
             }
@@ -137,7 +136,7 @@ export default async function BookingDetails({ booking }: Props) {
             <div className="flex items-center justify-between text-sm">
               <p className="text-gray">{t("myBookings.pricePerPerson")}</p>
               <Price
-                currentPrice={centsToAmount(booking.package.price_cents)}
+                currentPrice={booking.package.price / 100}
                 size="xs"
               />
             </div>

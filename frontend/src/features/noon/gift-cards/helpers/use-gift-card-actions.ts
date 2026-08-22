@@ -8,22 +8,16 @@ import { purchaseGiftCard } from "../api/gift-cards.actions";
 import type { PurchaseGiftCardPayload } from "./types";
 
 /**
- * Feature-level gift card purchase action. POST /gift-cards/purchase issues one
- * card per call, so buying a `quantity` > 1 loops sequential requests — if one
- * fails partway through, the ones already purchased still stand.
+ * Feature-level gift card purchase action. POST /gift-card-store/purchase takes
+ * `quantity` in the payload, so buying multiple cards is a single request.
  */
 export function useGiftCardActions() {
   const t = useTranslations("giftCards");
   const router = useRouter();
 
-  const purchaseGiftCards = async (
-    payload: PurchaseGiftCardPayload,
-    quantity: number,
-  ) => {
+  const purchaseGiftCards = async (payload: PurchaseGiftCardPayload) => {
     try {
-      for (let i = 0; i < quantity; i += 1) {
-        await purchaseGiftCard(payload);
-      }
+      await purchaseGiftCard(payload);
       toast.success(t("giftCardPurchased"));
       router.push("/gift-cards");
     } catch (error) {

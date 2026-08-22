@@ -1,73 +1,89 @@
-"use client";
-
+import { format } from "date-fns";
 import { useTranslations } from "next-intl";
+import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  AlertCircleIcon,
+} from "lucide-react";
 import Card from "@/src/components/shared/Card";
-import { Switch } from "@/src/components/ui/base-inputs/switch";
-import ConfirmDialog from "@/src/components/shared/dialogs/confirm-dialog/confirm-dialog";
-import { usePaymentActions } from "../helpers/use-payment-actions";
-import type { PaymentMethod } from "../helpers/types";
+import Price from "@/src/components/shared/Price";
+import { Link } from "@/i18n/navigation";
+import type { PaymentTransaction } from "../helpers/types";
 
 type Props = {
-  paymentMethod: PaymentMethod;
+  transaction: PaymentTransaction;
 };
 
-export default function PaymentMethodCard({ paymentMethod }: Props) {
+const STATUS_ICON = {
+  succeeded: <CheckCircleIcon className="size-4 text-green" />,
+  failed: <XCircleIcon className="size-4 text-red" />,
+  pending: <ClockIcon className="size-4 text-yellow-500" />,
+  cancelled: <AlertCircleIcon className="size-4 text-gray" />,
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  succeeded: "text-green",
+  failed: "text-red",
+  pending: "text-yellow-500",
+  cancelled: "text-gray",
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  authorization: "Authorization",
+  capture: "Capture",
+  sale: "Payment",
+  refund: "Refund",
+  void: "Void",
+  chargeback: "Chargeback",
+};
+
+export default function PaymentTransactionCard({ transaction }: Props) {
   const t = useTranslations("profile");
-  const { deletePaymentMethod, setDefaultPaymentMethod } = usePaymentActions();
+
+  const statusColor = STATUS_COLOR[transaction.status] ?? "text-gray";
+  const typeLabel = TYPE_LABEL[transaction.type] ?? transaction.type;
 
   return (
-    <Card className="overflow-hidden">
-      <div className="bg-[radial-gradient(circle_at_70%_35%,#2a45c2,#0a1340_70%)] p-6 text-white">
-        <div className="flex items-center justify-between">
-          <span className="font-bold">
-            {paymentMethod.billing_address?.recipient_name ?? paymentMethod.card_display}
-          </span>
-          <span className="text-xl font-bold italic uppercase">
-            {paymentMethod.card_brand ?? paymentMethod.type}
-          </span>
+    <Card className="p-5 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold text-sm">{typeLabel}</p>
+          <p className="text-xs text-gray mt-0.5 uppercase tracking-wide">
+            {transaction.gateway}
+          </p>
         </div>
-
-        <div className="mt-10 flex items-end justify-between">
-          <div>
-            <p className="text-xs text-white/60">{t("cardNumber")}</p>
-            <p className="mt-1 font-mono tracking-wide">
-              <span className="text-white/60">XXXX-XXXX-XXXX-</span>
-              <span className="font-bold">{paymentMethod.card_last4 ?? "----"}</span>
-            </p>
-          </div>
-          {paymentMethod.card_exp_month && paymentMethod.card_exp_year && (
-            <div className="text-right">
-              <p className="text-xs text-white/60">{t("expDate")}</p>
-              <p className="mt-1 font-bold">
-                {String(paymentMethod.card_exp_month).padStart(2, "0")}/
-                {String(paymentMethod.card_exp_year).slice(-2)}
-              </p>
-            </div>
-          )}
-        </div>
+        <span
+          className={`flex items-center gap-1 text-xs font-medium ${statusColor}`}
+        >
+          {STATUS_ICON[transaction.status]}
+          {t(`paymentStatus.${transaction.status}` as never, {
+            defaultValue: transaction.status,
+          })}
+        </span>
       </div>
 
-      <div className="flex items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{t("setDefault")}</span>
-          <Switch
-            checked={paymentMethod.is_default}
-            disabled={paymentMethod.is_default}
-            onCheckedChange={() => setDefaultPaymentMethod(paymentMethod.id)}
-          />
-        </div>
-
-        <ConfirmDialog
-          variant="danger"
-          triggerText={t("delete")}
-          triggerClassName="h-auto px-3 py-1.5 text-xs"
-          title={t("deletePaymentMethodConfirmTitle")}
-          description={t("deletePaymentMethodConfirmDescription")}
-          confirmText={t("deletePaymentMethodConfirmButton")}
-          cancelText={t("deleteAddressCancelButton")}
-          onConfirm={() => deletePaymentMethod(paymentMethod.id)}
+      <div className="flex items-center justify-between">
+        <Price
+          currentPrice={transaction.amount}
+          currency={transaction.currency}
+          size="sm"
         />
+        <span className="text-xs text-gray">
+          {transaction.processed_at
+            ? format(new Date(transaction.processed_at), "dd MMM yyyy, hh:mm a")
+            : format(new Date(transaction.created_at), "dd MMM yyyy")}
+        </span>
       </div>
+
+      {transaction.order_number && (
+        <Link
+          href={`/orders/${transaction.order_number}`}
+          className="text-xs text-blue-2 hover:underline"
+        >
+          {t("orderLabel")} #{transaction.order_number}
+        </Link>
+      )}
     </Card>
   );
 }

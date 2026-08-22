@@ -13,7 +13,7 @@ export type BookingStatus =
 export type BookingPackageSummary = {
   id: string;
   title: string;
-  price_cents: number;
+  price: number;
   currency: string;
   agency: { id: string; name: string };
   cover_image: string;
@@ -24,7 +24,7 @@ export type TravelBooking = {
   booking_number: string;
   status: BookingStatus;
   travelers_count: number;
-  total_price_cents: number;
+  total_price: number;
   passport_uploaded: boolean;
   contract_signed_at: string | null;
   created_at: string;
@@ -71,7 +71,7 @@ export type TravelPackageSummary = {
   return_date: string;
   duration_days: number;
   duration_nights: number;
-  price_cents: number;
+  price: number;
   price_formatted: string;
   currency: string;
   available_seats: number;
@@ -134,7 +134,7 @@ export type TravelPackageDetail = {
   description_ar: string | null;
   destination_country: string;
   destination_city: string;
-  price_cents: number;
+  price: number;
   currency: string;
   duration_days: number;
   duration_nights: number;

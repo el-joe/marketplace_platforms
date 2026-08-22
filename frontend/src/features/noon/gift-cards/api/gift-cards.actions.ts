@@ -3,7 +3,6 @@ import type {
   ApiEnvelope,
   GiftCardBatch,
   GiftCardPurchasesResponse,
-  MyGiftCard,
   PurchaseGiftCardPayload,
 } from "../helpers/types";
 
@@ -27,13 +26,15 @@ export async function getMyGiftCardPurchases(
   return envelope.data;
 }
 
-/** Feature-only: POST /gift-cards/purchase — purchases a new gift card for a recipient. */
+/** Feature-only: POST /gift-card-store/purchase — purchases a gift card batch for a recipient. */
 export async function purchaseGiftCard(
   payload: PurchaseGiftCardPayload,
-): Promise<MyGiftCard> {
-  const envelope = await fetchInstance<ApiEnvelope<MyGiftCard>>(
-    "/gift-cards/purchase",
-    { method: "POST", body: JSON.stringify(payload) },
-  );
+): Promise<{ order_id: string; purchases: unknown[] }> {
+  const envelope = await fetchInstance<
+    ApiEnvelope<{ order_id: string; purchases: unknown[] }>
+  >("/gift-card-store/purchase", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
   return envelope.data;
 }

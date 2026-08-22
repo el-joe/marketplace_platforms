@@ -318,17 +318,10 @@
     "deleteAccountWarning": "يُرجى العلم أنه لن يمكنك إنشاء حساب جديد باستخدام نفس عنوان البريد الإلكتروني المرتبط بالحساب المحذوف، وأن جميع المعلومات ذات الصلة، بما في ذلك على سبيل المثال لا الحصر الطلبات والمرتجعات ومطالبات الضمان وسجلات التحويلات البنكية ورصيد الحساب ورصيد نون، لن تعد متاحة. وبينما لا يمكن إعادة استخدام نفس البريد الإلكتروني فورًا، قد يتم الاحتفاظ ببعض البيانات وفقًا لما يقتضيه القانون.",
     "deleteAccountTimingNote": "قد تستغرق هذه التغييرات من 3 إلى 5 دقائق لتنعكس على جميع الأجهزة",
     "deleteAccountTermsLabel": "لقد قرأت الشروط والأحكام",
-    "paymentsTitle": "إدارة بطاقاتك",
-    "paymentsSubtitle": "نستخدم طرقًا مشفرة لحفظ بيانات بطاقتك بأمان",
-    "paymentMethodDeleted": "تمت إزالة طريقة الدفع",
-    "paymentMethodDeleteFailed": "فشلت إزالة طريقة الدفع. حاول مرة أخرى.",
-    "paymentMethodSetDefault": "تم تحديث طريقة الدفع الافتراضية",
-    "paymentMethodSetDefaultFailed": "فشل تحديث طريقة الدفع الافتراضية. حاول مرة أخرى.",
-    "deletePaymentMethodConfirmTitle": "إزالة طريقة الدفع هذه؟",
-    "deletePaymentMethodConfirmDescription": "سيتم إزالة طريقة الدفع هذه بشكل نهائي ولا يمكن التراجع عن ذلك.",
-    "deletePaymentMethodConfirmButton": "إزالة",
-    "paymentsEmptyTitle": "لا توجد بطاقات محفوظة",
-    "paymentsEmptyMessage": "سيتم عرض البطاقات المحفوظة أثناء عملية الدفع هنا. نحن نستخدم طرقًا مشفرة لحفظ تفاصيلك بأمان",
+    "paymentsTitle": "سجل المدفوعات",
+    "paymentsSubtitle": "سجل بعمليات الدفع السابقة",
+    "paymentsEmptyTitle": "لا توجد مدفوعات بعد",
+    "paymentsEmptyMessage": "ستظهر معاملات الدفع الخاصة بك هنا بعد إتمام عملية شراء",
     "cardNumber": "رقم البطاقة",
     "expDate": "تاريخ الانتهاء",
     "setDefault": "تعيين كافتراضي",
@@ -425,7 +418,14 @@
     "getItTomorrow": "استلمه غدًا",
     "verified": "موثّق",
     "cardPayment": "بطاقة",
-    "myBookings": "حجوزاتي"
+    "myBookings": "حجوزاتي",
+    "orderLabel": "الطلب",
+    "paymentStatus": {
+      "succeeded": "ناجحة",
+      "failed": "فاشلة",
+      "pending": "قيد الانتظار",
+      "cancelled": "ملغاة"
+    }
   },
   "giftCards": {
     "home": "الرئيسية",
