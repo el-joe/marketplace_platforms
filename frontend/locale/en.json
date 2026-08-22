@@ -318,6 +318,7 @@
     "language": "Language",
     "marketingPreferences": "Marketing Preferences",
     "marketingPreferencesHint": "Opting out halts promotional messages, but you'll still receive important service updates.",
+    "preferencesUpdateFailed": "Failed to update preference. Please try again.",
     "securitySettingsTitle": "Security Settings",
     "manageDevicesTitle": "Manage Devices",
     "manageDevicesHint": "Review and sign out of individual devices",

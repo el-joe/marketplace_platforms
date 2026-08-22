@@ -1,24 +1,75 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { MailIcon, MessageCircleIcon, MessageSquareIcon } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import Card from "@/src/components/shared/Card";
-import { Select } from "@/src/components/ui/base-inputs/select";
 import { Switch } from "@/src/components/ui/base-inputs/switch";
+import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+  type NotificationPreferences,
+} from "./api/notifications.actions";
 
-const languages = [
-  { label: "English", value: "en" },
-  { label: "العربية", value: "ar" },
-];
+const PREFS_QUERY_KEY = ["notification-preferences"];
 
 export default function Notifications() {
   const t = useTranslations("profile");
+  const queryClient = useQueryClient();
 
-  const [language, setLanguage] = useState("ar");
-  const [email, setEmail] = useState(true);
-  const [sms, setSms] = useState(true);
-  const [whatsapp, setWhatsapp] = useState(true);
+  const { data: prefs, isLoading } = useQuery({
+    queryKey: PREFS_QUERY_KEY,
+    queryFn: getNotificationPreferences,
+  });
+
+  const updatePref = useMutation({
+    mutationFn: (payload: Partial<NotificationPreferences>) =>
+      updateNotificationPreferences(payload),
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: PREFS_QUERY_KEY });
+      const previous =
+        queryClient.getQueryData<NotificationPreferences>(PREFS_QUERY_KEY);
+      queryClient.setQueryData<NotificationPreferences>(
+        PREFS_QUERY_KEY,
+        (old) => (old ? { ...old, ...payload } : old),
+      );
+      return { previous };
+    },
+    onError: (_err, _payload, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(PREFS_QUERY_KEY, context.previous);
+      }
+      toast.error(t("preferencesUpdateFailed"));
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: PREFS_QUERY_KEY });
+    },
+  });
+
+  const toggle =
+    (key: keyof NotificationPreferences) => (checked: boolean) => {
+      updatePref.mutate({ [key]: checked });
+    };
+
+  if (isLoading) {
+    return (
+      <>
+        <h1 className="text-[28px] font-bold  text-light">
+          {t("notificationsTitle")}
+        </h1>
+        <Card className="mt-4 p-6">
+          <Skeleton className="h-6 w-48 mb-4" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-14 rounded-lg" />
+            ))}
+          </div>
+        </Card>
+      </>
+    );
+  }
 
   return (
     <>
@@ -27,40 +78,26 @@ export default function Notifications() {
       </h1>
 
       <Card className="mt-4 p-6">
-        <h2 className="text-lg font-bold">{t("receiveCommunicationsIn")}</h2>
-
-        <div className="mt-4 max-w-sm">
-          <Select
-            label={t("language")}
-            items={languages}
-            value={language}
-            onValueChange={(value) => value && setLanguage(value)}
-            triggerClass="h-12! w-full justify-between rounded-lg px-3"
-          />
-        </div>
-      </Card>
-
-      <Card className="mt-4 p-6">
         <h2 className="text-lg font-bold">{t("marketingPreferences")}</h2>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <PreferenceToggle
             icon={<MailIcon className="size-5" />}
             label={t("email")}
-            checked={email}
-            onCheckedChange={setEmail}
+            checked={prefs?.email ?? false}
+            onCheckedChange={toggle("email")}
           />
           <PreferenceToggle
             icon={<MessageSquareIcon className="size-5" />}
             label={t("sms")}
-            checked={sms}
-            onCheckedChange={setSms}
+            checked={prefs?.sms ?? false}
+            onCheckedChange={toggle("sms")}
           />
           <PreferenceToggle
             icon={<MessageCircleIcon className="size-5" />}
             label={t("whatsapp")}
-            checked={whatsapp}
-            onCheckedChange={setWhatsapp}
+            checked={prefs?.whatsapp ?? false}
+            onCheckedChange={toggle("whatsapp")}
           />
         </div>
 

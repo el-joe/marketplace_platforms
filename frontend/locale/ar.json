@@ -280,6 +280,7 @@
     "language": "اللغة",
     "marketingPreferences": "تفضيلات التسويق",
     "marketingPreferencesHint": "إلغاء الاشتراك يوقف الرسائل التسويقية، وستظل تصلك التحديثات المهمة المتعلقة بالخدمة.",
+    "preferencesUpdateFailed": "فشل تحديث التفضيلات. يرجى المحاولة مرة أخرى.",
     "securitySettingsTitle": "إعدادات الأمان",
     "manageDevicesTitle": "إدارة الأجهزة",
     "manageDevicesHint": "مراجعة الأجهزة وتسجيل الخروج منها",
