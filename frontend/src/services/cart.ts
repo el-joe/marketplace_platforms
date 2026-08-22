@@ -65,6 +65,15 @@ export const applyCouponCartService = (code: string) =>
 export const removeCouponCartService = () =>
   fetchInstance<ICartResponseBody>("/cart/coupon", { method: "DELETE" });
 
+export const applyPromoCodeCartService = (code: string) =>
+  fetchInstance<ICartResponseBody>("/cart/promo-code", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+
+export const removePromoCodeCartService = () =>
+  fetchInstance<ICartResponseBody>("/cart/promo-code", { method: "DELETE" });
+
 export const mergeGuestCartService = (guest_cart_token: string) =>
   fetchInstance<ICartResponseBody>("/cart/merge", {
     method: "POST",

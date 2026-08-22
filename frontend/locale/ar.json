@@ -301,6 +301,7 @@
     "allDevicesSignOutFailed": "فشل تسجيل الخروج من الأجهزة الأخرى. حاول مرة أخرى.",
     "qrCodeTitle": "رمز QR",
     "qrCodeSubtitle": "استخدم رمز QR الخاص بـ noon لاستلام طلباتك من نقاط التجميع",
+    "qrCodeUnavailable": "رمز QR غير متاح حاليًا",
     "referralCodeLabel": "رمز الإحالة",
     "accountDeletion": "حذف الحساب",
     "deleteAccount": "حذف حسابك",

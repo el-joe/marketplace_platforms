@@ -339,6 +339,7 @@
     "allDevicesSignOutFailed": "Failed to sign out other devices. Please try again.",
     "qrCodeTitle": "QR Code",
     "qrCodeSubtitle": "Use the noon QR code to pickup your orders at collection points",
+    "qrCodeUnavailable": "QR code is currently unavailable",
     "referralCodeLabel": "Referral Code",
     "accountDeletion": "Account Deletion",
     "deleteAccount": "Delete your account",

@@ -11,11 +11,13 @@ import {
   addItemCartService,
   addItemsBulkCartService,
   applyCouponCartService,
+  applyPromoCodeCartService,
   clearCartService,
   getCartService,
   ICartResponseBodyWithData,
   mergeGuestCartService,
   removeCouponCartService,
+  removePromoCodeCartService,
   removeItemCartService,
   updateItemQuantityCartService,
 } from "../services/cart";
@@ -134,6 +136,18 @@ export function useCart() {
     onError,
   });
 
+  const applyPromoCode = useMutation({
+    mutationFn: (code: string) => applyPromoCodeCartService(code),
+    onSuccess: invalidate,
+    onError,
+  });
+
+  const removePromoCode = useMutation({
+    mutationFn: () => removePromoCodeCartService(),
+    onSuccess: invalidate,
+    onError,
+  });
+
   // merge guest cart into the account cart after login
   const mergeCart = useMutation({
     mutationFn: async () => {
@@ -172,6 +186,9 @@ export function useCart() {
     applyCoupon: applyCoupon.mutateAsync,
     applyCouponErr: applyCoupon?.error,
     removeCoupon: removeCoupon.mutateAsync,
+    applyPromoCode: applyPromoCode.mutateAsync,
+    applyPromoCodeErr: applyPromoCode?.error,
+    removePromoCode: removePromoCode.mutateAsync,
     mergeCart: mergeCart.mutateAsync,
     resetGuestCart,
 
@@ -191,6 +208,8 @@ export function useCart() {
       clearCart.isPending ||
       applyCoupon.isPending ||
       removeCoupon.isPending ||
+      applyPromoCode.isPending ||
+      removePromoCode.isPending ||
       mergeCart.isPending,
   };
 }
