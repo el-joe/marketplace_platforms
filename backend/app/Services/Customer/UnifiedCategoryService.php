@@ -22,6 +22,9 @@ class UnifiedCategoryService
     {
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
 
+        // Cache key is per-country, but productTree()/classifiedTree()/travelTree() query
+        // globally with no country filter — category trees are shared across all countries
+        // by design, so $country is only used to namespace the cache entry.
         return Cache::remember("unified_nav_v{$version}_{$country->id}", 600, function () {
             return [
                 ['section' => 'products', 'nodes' => $this->productTree()],

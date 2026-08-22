@@ -53,6 +53,12 @@ class ClassifiedListing extends Model
             // is_vendor_listing derives from seller_type — never set it independently
             $listing->is_vendor_listing = $listing->seller_type === Vendor::class;
         });
+
+        static::saved(function (self $listing) {
+            if ($listing->isDirty('status')) {
+                \App\Services\Customer\UnifiedCategoryService::flushCache();
+            }
+        });
     }
 
     public function seller(): MorphTo

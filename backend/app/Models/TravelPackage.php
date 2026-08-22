@@ -53,6 +53,16 @@ class TravelPackage extends Model
             } while (static::where('slug', $slug)->exists());
             $package->slug = $slug;
         });
+
+        static::saved(function (self $package) {
+            if ($package->isDirty('status')) {
+                \App\Services\Customer\UnifiedCategoryService::flushCache();
+
+                if (\Illuminate\Support\Facades\Cache::supportsTags()) {
+                    \Illuminate\Support\Facades\Cache::tags(['pages'])->flush();
+                }
+            }
+        });
     }
 
     protected function casts(): array

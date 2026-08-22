@@ -108,9 +108,12 @@ export const listingItems: IDemoListing[] = [
 type props = {
   title: string;
   showViewAllButton?: boolean;
+  items?: IDemoListing[];
 };
 
-const CarouselListings = ({ title, showViewAllButton }: props) => {
+const CarouselListings = ({ title, showViewAllButton, items = listingItems }: props) => {
+  if (!items.length) return null;
+
   return (
     <div className="container py-6">
       <SectionTitle title={title} showVewAllButton={showViewAllButton} />
@@ -128,7 +131,7 @@ const CarouselListings = ({ title, showViewAllButton }: props) => {
           },
         }}
       >
-        {listingItems.map((listing) => (
+        {items.map((listing) => (
           <SwiperSlide key={listing.id} className="w-fit! h-auto!">
             <ListingCard listingData={listing} />
           </SwiperSlide>

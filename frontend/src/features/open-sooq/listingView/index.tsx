@@ -13,7 +13,6 @@ import { Separator } from "@/src/components/ui/separator";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import Price from "@/src/components/shared/Price";
 import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
-import CarouselListings from "@/src/components/shared/carousel-listing";
 import ListingGallery from "./components/listing-gallery";
 import InquiryDialog from "./components/inquiry-dialog";
 import { getClassifiedListing } from "./api/listing.actions";
@@ -240,10 +239,6 @@ export default async function ClassifiedListingView({ slug }: Props) {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="mt-12">
-        <CarouselListings title="Similar Listings" />
       </div>
     </div>
   );

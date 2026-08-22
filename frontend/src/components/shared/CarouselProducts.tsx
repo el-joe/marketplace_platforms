@@ -17,10 +17,14 @@ const CarouselProducts = ({ title, showViewAllButton }: props) => {
   const { isLoading, data, isError, error } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      const { data } = await fetchInstance<{ data: { items: IProduct[] } }>(
-        "/products",
-      );
-      return data;
+      try {
+        const { data } = await fetchInstance<{ data: { items: IProduct[] } }>(
+          "/products",
+        );
+        return data ?? { items: [] };
+      } catch {
+        return { items: [] };
+      }
     },
   });
   return (
@@ -40,7 +44,7 @@ const CarouselProducts = ({ title, showViewAllButton }: props) => {
           },
         }}
       >
-        {data?.items.map((product) => (
+        {(data?.items ?? []).map((product) => (
           <SwiperSlide key={product.listing_id} className="w-fit! h-auto!">
             <ProductCard productData={product} />
           </SwiperSlide>
