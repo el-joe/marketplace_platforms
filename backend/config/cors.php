@@ -8,6 +8,7 @@ return [
     'allowed_origins' => [
         'https://noon.codefanz.com',
         'https://admin.noon.codefanz.com',
+        'https://api.noon.codefanz.com',
     ],
 
     'allowed_origins_patterns' => [],
