@@ -8,7 +8,6 @@ import React from "react";
 import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
-import { centsToAmount } from "@/src/lib/utils";
 
 const warranties = [
   {
@@ -126,7 +125,7 @@ export default function ExtendedWarranty({
               </ul>
               <div className="flex justify-between items-center">
                 <Price
-                  currentPrice={centsToAmount(warranty.price)}
+                  currentPrice={warranty.price}
                   currency={warranty.currency}
                 />
                 <Button

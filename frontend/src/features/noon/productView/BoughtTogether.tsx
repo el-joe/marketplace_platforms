@@ -9,7 +9,6 @@ import React from "react";
 import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
-import { centsToAmount } from "@/src/lib/utils";
 import useLocale from "@/src/hooks/use-locale";
 
 const products = [
@@ -125,7 +124,7 @@ export default function BoughtTogether({
       >
         {t("buy")} {boughtTogetherData?.items.length} {t("togetherFor")}{" "}
         <Price
-          currentPrice={centsToAmount(boughtTogetherData?.total_price)}
+          currentPrice={boughtTogetherData?.total_price}
           currency={boughtTogetherData?.currency}
         />
       </Button>

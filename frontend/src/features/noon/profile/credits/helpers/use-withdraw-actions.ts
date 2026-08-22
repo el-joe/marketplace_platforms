@@ -36,7 +36,7 @@ export function useWithdrawActions({ onSuccess }: Params) {
     setIsSubmitting(true);
     try {
       await requestWithdrawal({
-        amount_cents: Math.round(Number(data.amount) * 100),
+        amount: Number(data.amount),
         bank_name: data.bankName,
         bank_iban: data.bankIban,
       });

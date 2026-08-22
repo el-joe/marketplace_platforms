@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import type { OrderDetail } from "../../helpers/types";
 
 type Props = {
@@ -15,9 +14,8 @@ export default async function OrderDetailsCard({ order }: Props) {
     .flatMap((subOrder) => subOrder.items)
     .reduce((total, item) => total + item.quantity, 0);
 
-  const { subtotal_cents, discount_cents, shipping_cents, cod_fee_cents, tax_cents, total_cents } =
-    order.summary;
-  const fees = shipping_cents + cod_fee_cents;
+  const { subtotal, discount, shipping, cod_fee, tax, total } = order.summary;
+  const fees = shipping + cod_fee;
 
   return (
     <Card className="border border-border p-6">
@@ -30,26 +28,26 @@ export default async function OrderDetailsCard({ order }: Props) {
             count: itemCount,
           })}
         </p>
-        <Price currentPrice={centsToAmount(subtotal_cents)} size="xs" />
+        <Price currentPrice={subtotal} size="xs" />
       </div>
 
       <div className="mt-2 flex items-center justify-between text-sm">
         <p className="text-gray">{t("feesLabel")}</p>
-        <Price currentPrice={centsToAmount(fees)} size="xs" />
+        <Price currentPrice={fees} size="xs" />
       </div>
 
-      {discount_cents > 0 && (
+      {discount > 0 && (
         <div className="mt-2 flex items-center justify-between text-sm">
           <p className="text-gray">{t("discountLabel")}</p>
           <p className="text-green">
-            -<Price currentPrice={centsToAmount(discount_cents)} size="xs" />
+            -<Price currentPrice={discount} size="xs" />
           </p>
         </div>
       )}
 
       <div className="mt-2 flex items-center justify-between text-sm">
         <p className="text-gray">{t("taxLabel")}</p>
-        <Price currentPrice={centsToAmount(tax_cents)} size="xs" />
+        <Price currentPrice={tax} size="xs" />
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
@@ -57,7 +55,7 @@ export default async function OrderDetailsCard({ order }: Props) {
           {t("orderTotalLabel")}{" "}
           <span className="font-normal text-gray text-xs">({t("incVat")})</span>
         </p>
-        <Price currentPrice={centsToAmount(total_cents)} size="sm" />
+        <Price currentPrice={total} size="sm" />
       </div>
     </Card>
   );

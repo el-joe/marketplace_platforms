@@ -6,7 +6,6 @@ import Image from "next/image";
 import { InfoIcon } from "lucide-react";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import { Checkbox } from "@/src/components/ui/base-inputs/checkbox";
 import { Select } from "@/src/components/ui/base-inputs/select";
 import { Button } from "@/src/components/ui/button";
@@ -60,7 +59,7 @@ export default function CancelItemsForm({ orderNumber, items }: Props) {
                 <p className="font-medium text-primary">{name}</p>
                 <p className="mt-2 font-bold">
                   <Price
-                    currentPrice={centsToAmount(item.line_total_cents)}
+                    currentPrice={item.line_total}
                     size="sm"
                   />
                 </p>

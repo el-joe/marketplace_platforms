@@ -7,7 +7,7 @@ export type ApiEnvelope<T> = {
 export type Wallet = {
   id: string;
   balance: number;
-  pending_balance_cents: number;
+  pending_balance: number;
   currency: string;
   formatted_balance: string;
   is_frozen: boolean;
@@ -18,8 +18,8 @@ export type WalletTransactionType = "credit" | "debit";
 export type WalletTransaction = {
   id: string;
   type: WalletTransactionType;
-  amount_cents: number;
-  balance_after_cents: number;
+  amount: number;
+  balance_after: number;
   source_type: string;
   description: string;
   created_at: string;
@@ -38,14 +38,14 @@ export type WalletTransactionsResponse = {
 };
 
 export type RequestWithdrawalPayload = {
-  amount_cents: number;
+  amount: number;
   bank_name: string;
   bank_iban: string;
 };
 
 export type WithdrawalRequest = {
   id: string;
-  amount_cents: number;
+  amount: number;
   status: string;
   created_at: string;
 };

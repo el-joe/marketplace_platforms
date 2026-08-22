@@ -2,7 +2,6 @@ import Price from "@/src/components/shared/Price";
 import Image from "next/image";
 import React from "react";
 import { IPrepareCheckout } from "./types/checkout.type";
-import { centsToAmount } from "@/src/lib/utils";
 import { useTranslations } from "next-intl";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useLocale from "@/src/hooks/use-locale";
@@ -74,7 +73,7 @@ const Shipment = ({
                     ? item.product_name_ar
                     : item.product_name_en}
                 </h4>
-                <Price currentPrice={centsToAmount(item.unit_price)} />
+                <Price currentPrice={item.unit_price} />
               </div>
             </div>
           </SwiperSlide>

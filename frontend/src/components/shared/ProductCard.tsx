@@ -9,7 +9,6 @@ import { Button } from "../ui/button";
 import { ChevronRightIcon, HeartIcon, PlusIcon, StarIcon } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
-import { centsToAmount } from "@/src/lib/utils";
 import { Product } from "@/src/features/noon/home/types";
 
 type Props = {
@@ -104,7 +103,7 @@ const ProductCard = ({ productData }: Props) => {
             </p>
           </div>
           <Price
-            currentPrice={centsToAmount(productData.price)}
+            currentPrice={productData.price}
             // discountPercent={productData.discount}
             // oldPrice={productData.oldPrice}
             currency={productData.currency}

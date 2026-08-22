@@ -11,7 +11,6 @@ import { getTranslations } from "next-intl/server";
 import React from "react";
 import { IProductDetails } from "./types";
 import getLocale from "@/src/helpers/getLocale";
-import { centsToAmount } from "@/src/lib/utils";
 
 type Props = {
   product: IProductDetails;
@@ -56,7 +55,7 @@ export default async function BaseInfo({ product }: Props) {
       <div className="flex mt-4 mb-2">
         <Price
           size="xl"
-          currentPrice={centsToAmount(product.listing.price)}
+          currentPrice={product.listing.price}
           currency={product.listing.currency}
           // oldPrice={product.oldPrice}
           // discountPercent={product.discount}

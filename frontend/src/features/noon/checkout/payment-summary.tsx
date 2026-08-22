@@ -1,5 +1,4 @@
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import React from "react";
 import { IPrepareCheckout } from "./types/checkout.type";
 import { useTranslations } from "next-intl";
@@ -25,25 +24,25 @@ export default function PaymentSummary({
       <div className="flex justify-between mb-3">
         <p className=" text-gray">{t("subtotal")}</p>
         <Price
-          currentPrice={centsToAmount(checkoutSummary.subtotal)}
-          oldPrice={centsToAmount(checkoutSummary.discount)}
+          currentPrice={checkoutSummary.subtotal}
+          oldPrice={checkoutSummary.discount}
           size="xs"
         />
       </div>
       {/* shipping fee */}
       <div className="flex justify-between mb-3">
         <p className=" text-gray">{t("shippingFee")}</p>
-        <p className="text-gray">{centsToAmount(checkoutSummary.shipping)}</p>
+        <p className="text-gray">{checkoutSummary.shipping}</p>
       </div>
       {/* tax */}
       <div className="flex justify-between pb-4 border-b border-border border-dashed mb-4">
         <p className=" text-gray">{t("tax")}</p>
-        <p className="text-gray">{centsToAmount(checkoutSummary.tax)}</p>
+        <p className="text-gray">{checkoutSummary.tax}</p>
       </div>
       {/* total */}
       <div className="flex justify-between">
         <p className=" text-lg font-bold">{t("total")}</p>
-        <Price currentPrice={centsToAmount(checkoutSummary.total)} />
+        <Price currentPrice={checkoutSummary.total} />
       </div>
     </div>
   );

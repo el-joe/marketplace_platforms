@@ -108,8 +108,8 @@ export type OrderDetailItem = {
   name_ar: string;
   thumbnail: string | null;
   quantity: number;
-  unit_price_cents: number;
-  line_total_cents: number;
+  unit_price: number;
+  line_total: number;
   fulfillment_status: string;
   return_eligible_until: string | null;
   can_return: boolean;
@@ -152,12 +152,12 @@ export type OrderDetail = {
   placed_at: string;
   currency: string;
   summary: {
-    subtotal_cents: number;
-    discount_cents: number;
-    shipping_cents: number;
-    cod_fee_cents: number;
-    tax_cents: number;
-    total_cents: number;
+    subtotal: number;
+    discount: number;
+    shipping: number;
+    cod_fee: number;
+    tax: number;
+    total: number;
   };
   shipping_address: {
     recipient_name: string;
@@ -219,8 +219,8 @@ export type ReturnItemProductSnapshot = {
   name_ar?: string;
   sku?: string;
   thumbnail?: string | null;
-  unit_price_cents?: number;
-  line_total_cents?: number;
+  unit_price?: number;
+  line_total?: number;
 };
 
 export type ReturnListItemLine = {

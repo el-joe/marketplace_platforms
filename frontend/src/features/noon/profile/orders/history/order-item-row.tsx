@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import type { OrderDetailItem } from "../helpers/types";
 import type { ReactNode } from "react";
 
@@ -43,7 +42,7 @@ export default async function OrderItemRow({
           </p>
         )}
         <p className="font-bold mt-2">
-          <Price currentPrice={centsToAmount(item.line_total_cents)} size="sm" />
+          <Price currentPrice={item.line_total} size="sm" />
         </p>
       </div>
 

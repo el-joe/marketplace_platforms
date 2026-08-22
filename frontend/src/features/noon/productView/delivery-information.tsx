@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
 import formatTimeRemaining from "./helpers/formatTimeRemaining";
 import { useQueryState } from "nuqs";
-import { centsToAmount, cn } from "@/src/lib/utils";
+import { cn } from "@/src/lib/utils";
 
 type Props = {
   deliveryOptions: IProductDetails["delivery_options"];
@@ -91,7 +91,7 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
                   ) : (
                     <span className="ms-auto flex items-center">
                       <Price
-                        currentPrice={centsToAmount(option?.shipping_fee)}
+                        currentPrice={option?.shipping_fee}
                       />
                       <ArrowUpRight />
                     </span>

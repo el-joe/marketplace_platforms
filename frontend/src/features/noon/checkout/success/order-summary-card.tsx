@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { CreditCard, Receipt, ShieldCheck } from "lucide-react";
 import Price from "@/src/components/shared/Price";
 import { IPlaceOrderResponse } from "../types/place-order.type";
-import { centsToAmount } from "@/src/lib/utils";
 
 interface Props {
   order: IPlaceOrderResponse;
@@ -23,28 +22,17 @@ export default function OrderSummaryCard({ order }: Props) {
     0,
   );
 
-  const isSubtotalInCents = rawSubtotal >= 100 && rawSubtotal % 1 === 0;
-  const itemsSubtotal = isSubtotalInCents
-    ? centsToAmount(rawSubtotal)
-    : rawSubtotal;
+  const itemsSubtotal = rawSubtotal ?? 0;
 
   const totalDeliveryFee = (order.sub_orders || []).reduce((acc, so) => {
     if (so.is_free_delivery) return acc;
-    const fee =
-      so.delivery_fee > 100
-        ? centsToAmount(so.delivery_fee)
-        : so.delivery_fee || 0;
-    return acc + fee;
+    return acc + (so.delivery_fee || 0);
   }, 0);
 
   const rawTotal = order.total || rawSubtotal + totalDeliveryFee;
-  const isTotalInCents = rawTotal >= 100 && rawTotal % 1 === 0;
-  const grandTotal = isTotalInCents ? centsToAmount(rawTotal) : rawTotal;
+  const grandTotal = rawTotal ?? 0;
 
-  const warrantyTotal =
-    order.warranty_total > 100
-      ? centsToAmount(order.warranty_total)
-      : order.warranty_total || 0;
+  const warrantyTotal = order.warranty_total ?? 0;
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-border shadow-xs flex flex-col gap-5">

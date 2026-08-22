@@ -6,7 +6,6 @@ import { Badge } from "@/src/components/ui/badge";
 import { Package, Store, Truck, Zap } from "lucide-react";
 import { SubOrder } from "../types/place-order.type";
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 
 interface Props {
@@ -115,11 +114,7 @@ function ShipmentCard({
               t("freeDelivery")
             ) : (
               <Price
-                currentPrice={
-                  subOrder.delivery_fee > 100
-                    ? centsToAmount(subOrder.delivery_fee)
-                    : subOrder.delivery_fee
-                }
+                currentPrice={subOrder.delivery_fee}
                 size="xs"
                 currency={currency}
               />
@@ -131,15 +126,8 @@ function ShipmentCard({
       {/* Items List */}
       <div className="divide-y divide-border/60 p-2 sm:p-4">
         {subOrder.items.map((item, itemIdx) => {
-          // Normalize prices: if the API returns cents (> 100 typically compared to item value)
-          // or standard amount
-          const isCents = item.unit_price >= 100 && item.unit_price % 1 === 0;
-          const unitPrice = isCents
-            ? centsToAmount(item.unit_price)
-            : item.unit_price;
-          const lineTotal = isCents
-            ? centsToAmount(item.line_total)
-            : item.line_total;
+          const unitPrice = item.unit_price;
+          const lineTotal = item.line_total;
 
           return (
             <div

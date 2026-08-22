@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import OrderGroupCard from "@/src/components/shared/order-group-card";
 import Card from "@/src/components/shared/Card";
-import { centsToAmount } from "@/src/lib/utils";
 import {
   getReturnStatusLabelKey,
   isNegativeReturnStatus,
@@ -32,11 +31,10 @@ export default async function ReturnsList({ returns }: Props) {
                   line.product_snapshot.name_en ??
                   line.product_snapshot.sku ??
                   line.order_item_id,
-                amount: centsToAmount(
-                  line.product_snapshot.line_total_cents ??
-                    line.product_snapshot.unit_price_cents ??
-                    0,
-                ),
+                amount:
+                  line.product_snapshot.line_total ??
+                  line.product_snapshot.unit_price ??
+                  0,
                 href: `/returns/${returnRequest.return_number}`,
               }))}
               footer={t("returnIdLabel", { id: returnRequest.return_number })}

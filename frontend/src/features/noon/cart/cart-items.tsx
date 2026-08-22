@@ -10,7 +10,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import CouponDetailsModal from "./coupon-details-modal";
 import { useCartContext } from "@/src/providers/cart-provider";
 import useLocale from "@/src/hooks/use-locale";
-import { centsToAmount } from "@/src/lib/utils";
 
 export default function CartItems() {
   const { cart, updateItemQuantity, isMutating, removeItem } = useCartContext();
@@ -94,7 +93,7 @@ export default function CartItems() {
                       </Link>
                       {/* price */}
                       <Price
-                        currentPrice={centsToAmount(item.unit_price)}
+                        currentPrice={item.unit_price}
                         // discountPercent={item.discountPercentage}
                         // oldPrice={item.oldPrice}
                         // size="lg"
@@ -118,7 +117,7 @@ export default function CartItems() {
                     </p>
                     {/* small screen price */}
                     <Price
-                      currentPrice={centsToAmount(item.unit_price)}
+                      currentPrice={item.unit_price}
                       // discountPercent={item.discountPercentage}
                       // oldPrice={item.oldPrice}
                       className="lg:hidden"

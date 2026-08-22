@@ -9,7 +9,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** API prices are always cents (minor currency units) — converts to the major-unit amount `Price` expects. */
+/**
+ * @deprecated The marketplace API already returns values in major currency units.
+ * Only use this for third-party APIs (e.g., flights) that genuinely return minor units.
+ * Do NOT call this for any marketplace endpoint (cart, orders, checkout, wallet, product prices).
+ */
 export function centsToAmount(cents: number): number {
   return cents / 100;
 }

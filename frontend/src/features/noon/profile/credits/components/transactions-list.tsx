@@ -1,7 +1,6 @@
 import { format } from "date-fns";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
-import { centsToAmount } from "@/src/lib/utils";
 import type { WalletTransaction } from "../helpers/types";
 
 type Props = {
@@ -31,7 +30,7 @@ export default async function TransactionsList({ transactions }: Props) {
             <p className={isCredit ? "text-green" : "text-red"}>
               {isCredit ? "+" : "-"}
               <Price
-                currentPrice={centsToAmount(transaction.amount_cents)}
+                currentPrice={transaction.amount}
                 size="sm"
               />
             </p>
