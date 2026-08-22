@@ -26,6 +26,7 @@ use App\Models\ProductVariant;
 use App\Models\VendorListing;
 use App\Enums\VendorGlobalStatus;
 use App\Support\Bilingual;
+use App\Support\SafeCache;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -273,7 +274,7 @@ class PageRendererService
     {
         $ttl = max(1, (int) $block->cache_ttl_seconds);
 
-        return Cache::remember(
+        return SafeCache::remember(
             "page_block:{$block->id}:{$country->id}",
             $ttl,
             fn() => $this->hydrateBlock($block, $country, $customer),

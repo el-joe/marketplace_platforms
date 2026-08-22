@@ -94,6 +94,12 @@ use Illuminate\Support\Facades\Route;
         Route::get('listings/{type}/{slug}', [ListingController::class, 'show'])
             ->name('customer.listings.show');
 
+        // ── Similar classified listings (public — same category, excludes current) ──
+        Route::get(
+            'listings/classified/{slug}/similar',
+            [ListingController::class, 'similarClassified']
+        )->name('customer.listings.classified.similar');
+
         // ── Classified inquiry (authenticated) ────────────────────────────────
         // POST /listings/classified/{slug}/inquiries
         Route::post(

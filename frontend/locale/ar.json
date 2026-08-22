@@ -701,6 +701,11 @@
   "reachOutToUsThroughAnyOfTheseSupportChannels": "تواصل معنا عبر أي من قنوات الدعم التالية",
   "helpCenter": "مركز المساعدة",
   "emailSupport": "الدعم عبر البريد الإلكتروني",
+  "openSooq": {
+    "listingView": {
+      "similarListings": "إعلانات مشابهة"
+    }
+  },
   "support": {
     "ticketsTitle": "تذاكر الدعم",
     "ticketsSubtitle": "تابع طلبات الدعم الخاصة بك",

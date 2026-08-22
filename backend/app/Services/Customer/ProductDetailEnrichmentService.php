@@ -14,6 +14,7 @@ use App\Models\ShippingZone;
 use App\Models\VendorListing;
 use App\Models\Wallet;
 use App\Services\ShippingMethodResolverService;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -101,7 +102,7 @@ class ProductDetailEnrichmentService
         $cacheKey = "product_delivery_options:{$product->id}:{$country->id}:{$zoneId}:{$buyBoxListing->id}:"
             . ($addressResolved ? 'addr' : 'base');
 
-        return Cache::remember($cacheKey, 300, function () use ($buyBoxListing, $zoneId, $availableMethodIds) {
+        return SafeCache::remember($cacheKey, 300, function () use ($buyBoxListing, $zoneId, $availableMethodIds) {
             $variant = $buyBoxListing->productVariant;
             $weightGrams = (int) ceil((($variant?->weight_grams ?? 0) / 100)) * 100;
 
@@ -214,7 +215,7 @@ class ProductDetailEnrichmentService
         $couponsCacheVersion = Cache::get('product_coupons:version', 1);
         $cacheKey = "product_coupons:v{$couponsCacheVersion}:{$product->id}:{$country->id}:" . ($customer?->id ?? 'guest');
 
-        $coupons = Cache::remember($cacheKey, 120, function () use ($product, $customer, $buyBoxListing) {
+        $coupons = SafeCache::remember($cacheKey, 120, function () use ($product, $customer, $buyBoxListing) {
             $productCategory = $product->category;
 
             $query = Coupon::query()
@@ -399,19 +400,12 @@ class ProductDetailEnrichmentService
     // ── Shared cache helper ──────────────────────────────────────────────────
 
     /**
-     * Cache::tags() is not supported by the 'database' cache driver configured in
-     * this project (CACHE_STORE=database) — only by taggable stores like
-     * redis/memcached. Fall back to a plain (untagged) remember() when tags aren't
-     * supported; tags will kick in for free once the cache store is switched.
+     * SafeCache::tags() falls back to a plain (untagged) remember() when the
+     * active store isn't taggable (e.g. 'database', configured via CACHE_STORE
+     * in this project) — tags kick in for free once the store is switched.
      */
     private function cacheRememberTagged(string $key, int $ttl, array $tags, \Closure $callback): mixed
     {
-        $store = Cache::getStore();
-
-        if ($store instanceof \Illuminate\Cache\TaggableStore) {
-            return Cache::tags($tags)->remember($key, $ttl, $callback);
-        }
-
-        return Cache::remember($key, $ttl, $callback);
+        return SafeCache::tags($tags)->remember($key, $ttl, $callback);
     }
 }

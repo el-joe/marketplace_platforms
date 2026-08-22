@@ -12,9 +12,11 @@ use App\Http\Resources\Customer\TravelBookingSubmittedResource;
 use App\Http\Resources\Customer\TravelContractResource;
 use App\Http\Resources\Customer\TravelPackageDetailResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Services\Customer\ClassifiedDetailService;
 use App\Services\Customer\ClassifiedInquiryService;
+use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\TravelBookingService;
 use App\Services\Customer\TravelPackageDetailService;
 use App\Services\Customer\BuyBoxService;
@@ -25,6 +27,7 @@ use App\Models\Product;
 use App\Models\Wishlist;
 use App\Models\WishlistItem;
 use App\Http\Resources\Customer\ProductDetailResource;
+use App\Support\SafeCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -40,6 +43,7 @@ class ListingController extends Controller
         private readonly ProductViewService $viewService,
         private readonly ProductDetailEnrichmentService $enrichment,
         private readonly ReviewService $reviewService,
+        private readonly ListingQueryService $listings,
     ) {}
 
     public function show(Request $request,$country, string $type, string $slug): JsonResponse
@@ -113,6 +117,47 @@ class ListingController extends Controller
         $booking  = $this->bookingService->signContract($customer, $bookingNumber, $request->validated()['signature_data']);
 
         return ApiResponse::success(new TravelContractResource($booking), __('common.exceptions.listing.contract_signed'));
+    }
+
+    /**
+     * GET /listings/classified/{slug}/similar
+     * Returns up to 12 active listings in the same category and country,
+     * excluding the current listing, ordered by most recent.
+     */
+    public function similarClassified(Request $request, $country, string $slug): JsonResponse
+    {
+        $country = $request->attributes->get('country');
+
+        $listing = ClassifiedListing::where('slug', $slug)
+            ->where('status', 'active')
+            ->where('country_id', $country->id)
+            ->select(['id', 'classified_category_id', 'country_id'])
+            ->first();
+
+        if (! $listing) {
+            return ApiResponse::success(['items' => []]);
+        }
+
+        $items = SafeCache::remember(
+            "similar_classified:{$listing->id}",
+            300,
+            fn () => ClassifiedListing::where('status', 'active')
+                ->where('classified_category_id', $listing->classified_category_id)
+                ->where('country_id', $listing->country_id)
+                ->where('id', '!=', $listing->id)
+                ->with([
+                    'images' => fn ($q) => $q->orderBy('position')->limit(1),
+                    'city:id,name_en,name_ar',
+                ])
+                ->orderByDesc('created_at')
+                ->limit(12)
+                ->get()
+                ->map(fn ($l) => $this->listings->toClassifiedCardShape($l))
+                ->values()
+                ->all()
+        );
+
+        return ApiResponse::success(['items' => $items]);
     }
 
     // ── Private branch methods ────────────────────────────────────────────────

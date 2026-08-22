@@ -9,6 +9,7 @@ use App\Models\AnnouncementBar;
 use App\Models\AppContextCountry;
 use App\Models\Page;
 use App\Services\Customer\PageRendererService;
+use App\Support\SafeCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -29,7 +30,7 @@ class AppConfigController extends Controller
 
         $countryId = $validated['country_id'];
 
-        $data = Cache::remember("app_config_{$countryId}", 300, function () use ($countryId) {
+        $data = SafeCache::remember("app_config_{$countryId}", 300, function () use ($countryId) {
             $contextCountries = AppContextCountry::query()
                 ->where('country_id', $countryId)
                 ->where('is_active', true)

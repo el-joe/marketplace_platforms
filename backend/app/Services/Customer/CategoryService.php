@@ -11,6 +11,7 @@ use App\Models\Country;
 use App\Models\Page;
 use App\Models\TravelCategory;
 use App\Services\PageBuilderService;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 
 class CategoryService
@@ -32,7 +33,7 @@ class CategoryService
     {
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
 
-        return Cache::remember("category_tree_v{$version}_{$country->id}", 600, function () {
+        return SafeCache::remember("category_tree_v{$version}_{$country->id}", 600, function () {
                 // toTree() builds the hierarchy in PHP from a single lft/rgt-ordered query.
                 $productNodes = Category::where('is_active', true)
                     ->where('is_visible', true)
@@ -86,7 +87,7 @@ class CategoryService
      */
     public function productCount(Category $category, Country $country): int
     {
-        return Cache::tags(['categories'])
+        return SafeCache::tags(['categories'])
             ->remember("category_product_count:{$country->id}:{$category->id}", 600, function () use ($category) {
                 return (int) $category->product_count;
             });
@@ -114,7 +115,7 @@ class CategoryService
 
             // Wrap result in an array so Cache::remember can safely store a "not found" state
             // without ambiguity around null values.
-            $cached = Cache::tags(['pages'])
+            $cached = SafeCache::tags(['pages'])
                 ->remember($cacheKey, 300, function () use ($node, $country) {
                     $page = Page::where('page_type', 'category')
                         ->where('reference_id', $node->id)

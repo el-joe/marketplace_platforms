@@ -704,7 +704,8 @@
       "soldBy": "Sold by",
       "positive": "Positive",
       "memberSince": "Member Since",
-      "greatRecentRating": "Great recent rating"
+      "greatRecentRating": "Great recent rating",
+      "similarListings": "Similar Listings"
     }
   },
   "flights": {

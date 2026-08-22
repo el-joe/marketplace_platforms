@@ -11,6 +11,7 @@ use App\Models\Country;
 use App\Models\Page;
 use App\Models\TravelCategory;
 use App\Services\PageBuilderService;
+use App\Support\SafeCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -147,7 +148,7 @@ class BrowseService
         foreach ($chain as $node) {
             $cacheKey = "browse_page_blocks:{$pageType}:{$country->id}:{$node->id}";
 
-            $cached = Cache::tags(['pages'])->remember($cacheKey, 300, function () use ($pageType, $node, $country) {
+            $cached = SafeCache::tags(['pages'])->remember($cacheKey, 300, function () use ($pageType, $node, $country) {
                 $page = Page::where('page_type', $pageType)
                     ->where('reference_id', $node->id)
                     ->where('country_id', $country->id)

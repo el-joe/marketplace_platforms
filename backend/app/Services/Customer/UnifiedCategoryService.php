@@ -7,6 +7,7 @@ use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\TravelCategory;
 use App\Support\Bilingual;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 
 class UnifiedCategoryService
@@ -25,7 +26,7 @@ class UnifiedCategoryService
         // Cache key is per-country, but productTree()/classifiedTree()/travelTree() query
         // globally with no country filter — category trees are shared across all countries
         // by design, so $country is only used to namespace the cache entry.
-        return Cache::remember("unified_nav_v{$version}_{$country->id}", 600, function () {
+        return SafeCache::remember("unified_nav_v{$version}_{$country->id}", 600, function () {
             return [
                 ['section' => 'products', 'nodes' => $this->productTree()],
                 ['section' => 'classifieds', 'nodes' => $this->classifiedTree()],

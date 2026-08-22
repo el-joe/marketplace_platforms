@@ -38,9 +38,13 @@ class SafeCache
         return (new self())->doRemember($key, $ttl, $callback);
     }
 
-    public function remember(string $key, int $ttl, Closure $callback): mixed
+    public function __call(string $name, array $arguments): mixed
     {
-        return $this->doRemember($key, $ttl, $callback);
+        if ($name === 'remember') {
+            return $this->doRemember(...$arguments);
+        }
+
+        throw new \BadMethodCallException("Method [{$name}] does not exist on " . static::class);
     }
 
     private function store(): \Illuminate\Contracts\Cache\Repository

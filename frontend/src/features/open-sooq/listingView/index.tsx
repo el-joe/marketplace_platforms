@@ -15,7 +15,9 @@ import Price from "@/src/components/shared/Price";
 import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import ListingGallery from "./components/listing-gallery";
 import InquiryDialog from "./components/inquiry-dialog";
+import SimilarListingsCarousel from "./components/similar-listings-carousel";
 import { getClassifiedListing } from "./api/listing.actions";
+import { getSimilarListings } from "./api/similar.actions";
 import { ApiRequestError } from "@/src/lib/utils";
 
 type Props = {
@@ -26,8 +28,12 @@ export default async function ClassifiedListingView({ slug }: Props) {
   const locale = await getLocale();
 
   let listing;
+  let similarListings;
   try {
-    listing = await getClassifiedListing(slug);
+    [listing, similarListings] = await Promise.all([
+      getClassifiedListing(slug),
+      getSimilarListings(slug),
+    ]);
   } catch (err) {
     if (err instanceof ApiRequestError && err.status === 404) notFound();
     throw err;
@@ -240,6 +246,8 @@ export default async function ClassifiedListingView({ slug }: Props) {
           </div>
         </div>
       </div>
+
+      <SimilarListingsCarousel listings={similarListings} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\TravelCategory;
+use App\Support\SafeCache;
 use Illuminate\Support\Facades\Cache;
 
 class NavigationService
@@ -30,7 +31,7 @@ class NavigationService
      */
     public function getTree(Country $country): array
     {
-        return Cache::remember("nav_tree:{$country->id}", 600, function () {
+        return SafeCache::remember("nav_tree:{$country->id}", 600, function () {
             return array_merge(
                 $this->productNodes(),
                 $this->classifiedNodes(),
