@@ -66,3 +66,16 @@ export async function updateAddress(
   );
   return data.data;
 }
+
+/** Shared: delete an address. DELETE /addresses/:id */
+export async function deleteAddress(id: string): Promise<void> {
+  await axiosInstance.delete(`/addresses/${id}`);
+}
+
+/** Shared: mark an address as the default shipping address. PUT /addresses/:id/set-default */
+export async function setDefaultAddress(id: string): Promise<Address> {
+  const { data } = await axiosInstance.put<{ data: Address }>(
+    `/addresses/${id}/set-default`,
+  );
+  return data.data;
+}
