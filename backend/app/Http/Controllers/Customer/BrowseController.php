@@ -125,8 +125,10 @@ class BrowseController extends Controller
             auth('customer')->check() ? 'authenticated' : 'guest',
         );
 
-        $perPage   = $request->integer('per_page', 20);
-        $paginator = $this->listings->paginateForClassifiedCategory($category->id, $perPage);
+        $perPage = $request->integer('per_page', 20);
+        $filters = $request->only(['listing_purpose', 'seller_type', 'min_price', 'max_price']);
+
+        $paginator = $this->listings->paginateForClassifiedCategory($category->id, $perPage, $filters);
 
         $items = $paginator->getCollection()
             ->map(fn ($listing) => $this->listings->toClassifiedCardShape($listing))

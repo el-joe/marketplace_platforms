@@ -76,7 +76,7 @@ export default function TravelPackageCard({ pkg }: Props) {
             <p className="text-xs text-gray mt-0.5">{t("perPerson")}</p>
           </div>
           <Link
-            href={`/flights/packages/${pkg.slug}`}
+            href={`/travel/${pkg.slug}`}
             className={cn(
               buttonVariants({ size: "sm" }),
               "bg-blue-3 hover:bg-blue text-white border-transparent",

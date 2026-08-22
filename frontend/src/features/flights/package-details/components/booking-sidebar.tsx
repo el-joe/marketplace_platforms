@@ -28,6 +28,23 @@ export default async function BookingSidebar({ pkg }: Props) {
             className="text-blue-3"
           />
           <span className="text-gray text-xs">{t("perPerson")}</span>
+          {pkg.seats_remaining !== null && pkg.seats_remaining > 0 && (
+            <div className="flex items-center gap-1.5 mt-2">
+              <span
+                className={`inline-block size-2 rounded-full ${
+                  pkg.seats_remaining <= 5 ? "bg-red" : "bg-green"
+                }`}
+              />
+              <span className="text-xs text-gray">
+                {pkg.seats_remaining <= 5
+                  ? `Only ${pkg.seats_remaining} seats left!`
+                  : `${pkg.seats_remaining} seats available`}
+              </span>
+            </div>
+          )}
+          {pkg.seats_remaining === 0 && (
+            <p className="text-xs text-red font-semibold mt-2">Sold Out</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-4 mb-8">

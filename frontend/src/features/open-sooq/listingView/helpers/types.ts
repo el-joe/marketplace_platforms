@@ -26,6 +26,10 @@ export type ClassifiedDetail = {
   seller: {
     type: "vendor" | "individual";
     display_name: string;
+    positive_rating: number | null;
+    member_since: string | null;
+    years_active: number | null;
+    active_listings: number;
   };
   views_count: number;
   expires_at: string | null;

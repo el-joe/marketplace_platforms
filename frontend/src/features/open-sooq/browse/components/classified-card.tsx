@@ -63,6 +63,11 @@ const ClassifiedCard = ({ listing }: Props) => {
         >
           <HeartIcon className="size-4 text-gray" />
         </Button>
+        {listing.images_count > 1 && (
+          <span className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+            📷 {listing.images_count}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-1.5 p-3 flex-1 min-w-0">

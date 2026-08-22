@@ -475,17 +475,35 @@ class ListingQueryService
     public function paginateForClassifiedCategory(
         string $categoryId,
         int $perPage = 20,
+        array $filters = [],
     ): LengthAwarePaginator {
         $childIds = ClassifiedCategory::where('parent_id', $categoryId)->pluck('id');
 
-        return ClassifiedListing::where('status', ClassifiedListingStatus::Active->value)
+        $query = ClassifiedListing::where('status', ClassifiedListingStatus::Active->value)
             ->where(function ($q) use ($categoryId, $childIds) {
                 $q->where('classified_category_id', $categoryId)
                     ->orWhereIn('classified_category_id', $childIds);
             })
-            ->with(['images', 'seller'])
-            ->orderByDesc('created_at')
-            ->paginate($perPage);
+            ->with(['images', 'seller', 'city'])
+            ->orderByDesc('created_at');
+
+        if (!empty($filters['listing_purpose'])) {
+            $query->where('listing_purpose', $filters['listing_purpose']);
+        }
+
+        if (!empty($filters['seller_type'])) {
+            $query->where('seller_type', $filters['seller_type'] === 'vendor' ? Vendor::class : \App\Models\Customer::class);
+        }
+
+        if (!empty($filters['min_price'])) {
+            $query->where('price', '>=', (int) $filters['min_price']);
+        }
+
+        if (!empty($filters['max_price'])) {
+            $query->where('price', '<=', (int) $filters['max_price']);
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**
@@ -510,6 +528,7 @@ class ListingQueryService
             'listing_purpose' => $listing->listing_purpose,
             'location' => $listing->city?->name_en,
             'seller_type' => $listing->seller_type === Vendor::class ? 'vendor' : 'customer',
+            'images_count' => $listing->images->count(),
             'created_at' => $listing->created_at?->toIso8601String(),
         ];
     }

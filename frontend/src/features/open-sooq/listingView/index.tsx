@@ -166,19 +166,56 @@ export default async function ClassifiedListingView({ slug }: Props) {
           <div className="border border-border rounded-2xl overflow-hidden">
             <div className="p-4">
               <div className="flex items-center gap-3">
-                <div className="size-11 rounded-full bg-gray-2 flex items-center justify-center">
+                <div className="size-12 rounded-full bg-gray-2 flex items-center justify-center shrink-0">
                   {listing.seller.type === "vendor" ? (
-                    <StoreIcon className="size-5 text-gray" />
+                    <StoreIcon className="size-6 text-gray" />
                   ) : (
-                    <UserIcon className="size-5 text-gray" />
+                    <UserIcon className="size-6 text-gray" />
                   )}
                 </div>
-                <div>
-                  <p className="font-semibold text-sm text-primary">
+                <div className="min-w-0">
+                  <p className="font-bold text-sm text-primary truncate">
                     {listing.seller.display_name}
                   </p>
-                  <p className="text-xs text-gray capitalize">
-                    {listing.seller.type}
+                  <p className="text-xs text-gray capitalize mt-0.5">
+                    {listing.seller.type === "vendor"
+                      ? locale === "ar"
+                        ? "متجر"
+                        : "Store"
+                      : locale === "ar"
+                        ? "فرد"
+                        : "Individual"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {listing.seller.positive_rating !== null && (
+                  <div className="bg-gray-2 rounded-xl px-3 py-2 text-center">
+                    <p className="text-xs text-gray">
+                      {locale === "ar" ? "تقييم إيجابي" : "Positive Rating"}
+                    </p>
+                    <p className="font-bold text-green text-sm mt-0.5">
+                      {listing.seller.positive_rating}%
+                    </p>
+                  </div>
+                )}
+                {listing.seller.member_since !== null && (
+                  <div className="bg-gray-2 rounded-xl px-3 py-2 text-center">
+                    <p className="text-xs text-gray">
+                      {locale === "ar" ? "عضو منذ" : "Member Since"}
+                    </p>
+                    <p className="font-bold text-primary text-sm mt-0.5">
+                      {listing.seller.member_since}
+                    </p>
+                  </div>
+                )}
+                <div className="bg-gray-2 rounded-xl px-3 py-2 text-center col-span-2">
+                  <p className="text-xs text-gray">
+                    {locale === "ar" ? "إعلانات نشطة" : "Active Listings"}
+                  </p>
+                  <p className="font-bold text-primary text-sm mt-0.5">
+                    {listing.seller.active_listings}
                   </p>
                 </div>
               </div>

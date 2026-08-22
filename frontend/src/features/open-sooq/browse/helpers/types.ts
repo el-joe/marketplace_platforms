@@ -19,6 +19,7 @@ export type ClassifiedListing = {
   listing_purpose: "sale" | "rent";
   location: string | null;
   seller_type: "vendor" | "customer";
+  images_count: number;
   created_at: string;
 };
 

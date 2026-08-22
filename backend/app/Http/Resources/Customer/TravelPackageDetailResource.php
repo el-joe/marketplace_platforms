@@ -20,7 +20,11 @@ class TravelPackageDetailResource extends JsonResource
             'destination_country' => $this->destination_country,
             'destination_city'    => $this->destination_city,
             'price'         => $this->price,
+            'price_formatted'     => number_format($this->price / 100, 2),
             'currency'            => $this->currency,
+            'available_seats'     => $this->available_seats,
+            'seats_remaining'     => $this->seatsRemaining(),
+            'seats_booked'        => $this->seats_booked,
             'price_tiers'         => ($this->pricing_tiers_enabled && $this->show_pricing_tiers_to_customer && $this->relationLoaded('pricingTiers'))
                 ? $this->pricingTiers->map(fn ($tier) => [
                     'travelers_count' => $tier->travelers_count,

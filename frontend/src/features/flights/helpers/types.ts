@@ -133,7 +133,11 @@ export type TravelPackageDetail = {
   destination_country: string;
   destination_city: string;
   price: number;
+  price_formatted: string;
   currency: string;
+  available_seats: number | null;
+  seats_remaining: number | null;
+  seats_booked: number;
   price_tiers: { travelers_count: number; price: number }[] | null;
   duration_days: number;
   duration_nights: number;
