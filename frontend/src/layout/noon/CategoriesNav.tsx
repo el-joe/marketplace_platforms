@@ -10,6 +10,34 @@ import { useQuery } from "@tanstack/react-query";
 import useLocale from "@/src/hooks/use-locale";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { getCategoriesTree } from "@/src/services/get";
+import { CategoryNavTree, Type } from "@/types/category-nav-tree.type";
+
+function categoryHref(category: CategoryNavTree): string {
+  switch (category.type) {
+    case Type.ClassiFied:
+      return `/classified/${category.id}`;
+    case Type.Travel:
+      return category.slug ? `/travel?category=${category.slug}` : "/travel";
+    case Type.Product:
+    default:
+      return `/${category.slug}`;
+  }
+}
+
+function subCategoryHref(
+  child: CategoryNavTree,
+  parent?: CategoryNavTree,
+): string {
+  switch (child.type ?? parent?.type) {
+    case Type.ClassiFied:
+      return `/classified/${child.id}`;
+    case Type.Travel:
+      return child.slug ? `/travel?category=${child.slug}` : "/travel";
+    case Type.Product:
+    default:
+      return `/${child.slug}`;
+  }
+}
 
 const CategoriesNav = () => {
   const [hoveredCategory, setHoveredCategory] = useState<null | string>(null);
@@ -47,8 +75,8 @@ const CategoriesNav = () => {
         {data?.map((category, i) => (
           <SwiperSlide key={i} className="w-fit! h-fit!">
             <Link
-              href={"/"}
-              className={`py-1 block border-b border-transparent hover:border-black ${hoveredCategory === category.id ? "border-b-black" : ""}`}
+              href={categoryHref(category)}
+              className={`py-1 block border-b border-transparent hover:border-black ${hoveredCategory === category.id ? "border-b-black" : ""} ${category.type === Type.ClassiFied ? "text-orange-600" : ""} ${category.type === Type.Travel ? "text-blue-3" : ""}`}
               onMouseEnter={() => {
                 if (!hoveredCategory) {
                   timeoutRef.current = setTimeout(() => {
@@ -88,7 +116,12 @@ const CategoriesNav = () => {
                   ?.find((category) => category.id === hoveredCategory)
                   ?.children.map((subCategory) => (
                     <li key={subCategory.id}>
-                      <Link href={"/"}>
+                      <Link
+                        href={subCategoryHref(
+                          subCategory,
+                          data?.find((c) => c.id === hoveredCategory),
+                        )}
+                      >
                         <h4 className="font-semibold mb-3">
                           {subCategory.name[locale]}
                         </h4>
@@ -97,7 +130,9 @@ const CategoriesNav = () => {
                       <ul className="text-sm flex flex-col gap-2">
                         {subCategory.children.map((e) => (
                           <li key={e.id}>
-                            <Link href={"/"}>{e.name[locale]}</Link>
+                            <Link href={subCategoryHref(e, subCategory)}>
+                              {e.name[locale]}
+                            </Link>
                           </li>
                         ))}
                       </ul>

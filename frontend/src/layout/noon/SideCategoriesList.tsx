@@ -17,6 +17,23 @@ import useLocale from "@/src/hooks/use-locale";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import { CategoryNavTree } from "@/types";
+import { Type } from "@/types/category-nav-tree.type";
+import { useRouter } from "../../../i18n/navigation";
+
+function subCategoryHref(
+  child: CategoryNavTree,
+  parent?: CategoryNavTree,
+): string {
+  switch (child.type ?? parent?.type) {
+    case Type.ClassiFied:
+      return `/classified/${child.id}`;
+    case Type.Travel:
+      return child.slug ? `/travel?category=${child.slug}` : "/travel";
+    case Type.Product:
+    default:
+      return `/${child.slug}`;
+  }
+}
 
 const SideCategoriesList = () => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryNavTree[]>(
@@ -24,6 +41,7 @@ const SideCategoriesList = () => {
   );
   const t = useTranslations("header");
   const locale = useLocale();
+  const router = useRouter();
   const { data, isLoading } = useQuery({
     queryKey: ["categoriesTree"],
     queryFn: getCategoriesTree,
@@ -66,6 +84,8 @@ const SideCategoriesList = () => {
                   onClick={() => {
                     if (!!category.children.length) {
                       setSelectedCategory([category]);
+                    } else {
+                      router.push(subCategoryHref(category));
                     }
                   }}
                 >
@@ -116,6 +136,10 @@ const SideCategoriesList = () => {
                     onClick={() => {
                       if (!!category.children.length) {
                         setSelectedCategory((p) => [...p, category]);
+                      } else {
+                        router.push(
+                          subCategoryHref(category, selectedCategory.slice(-1)[0]),
+                        );
                       }
                     }}
                   >
