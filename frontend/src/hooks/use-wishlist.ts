@@ -12,6 +12,7 @@ import { ApiRequestError } from "../lib/utils";
 import toast from "react-hot-toast";
 import {
   addWishlistItemService,
+  checkWishlistItemService,
   createWishlistGroupService,
   getWishlistGroupService,
   getWishlistGroupsService,
@@ -121,6 +122,11 @@ export function useWishlist() {
     onSuccess: () => invalidateGroup(),
   });
 
+  const checkItem = useCallback(
+    (listingId: string) => checkWishlistItemService(listingId),
+    [],
+  );
+
   const moveItem = useMutation({
     mutationFn: ({
       itemIds,
@@ -158,6 +164,7 @@ export function useWishlist() {
     addItem: addItem.mutateAsync,
     removeItem: removeItem.mutateAsync,
     moveItem: moveItem.mutateAsync,
+    checkItem,
 
     isMutating:
       createGroup.isPending ||

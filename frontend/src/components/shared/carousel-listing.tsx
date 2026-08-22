@@ -2,10 +2,9 @@
 import SectionTitle from "../../features/noon/home/section-title";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-import ListingCard from "./listing-card";
-import { IListing } from "@/types";
+import ListingCard, { IDemoListing } from "./listing-card";
 
-export const listingItems: IListing[] = [
+export const listingItems: IDemoListing[] = [
   {
     id: 1,
     images: [

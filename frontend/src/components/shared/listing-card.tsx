@@ -1,5 +1,4 @@
 "use client";
-import { IListing } from "@/types";
 import Image from "next/image";
 import React, { useRef } from "react";
 import { Autoplay, Pagination } from "swiper/modules";
@@ -10,8 +9,19 @@ import { HeartIcon } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
 
+export interface IDemoListing {
+  id: number;
+  images: string[];
+  title: string;
+  price: number;
+  shortDescription: string;
+  status: "new" | "used";
+  phone: string;
+  location: string;
+}
+
 type Props = {
-  listingData: IListing;
+  listingData: IDemoListing;
 };
 
 const ListingCard = ({ listingData }: Props) => {

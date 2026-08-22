@@ -72,3 +72,18 @@ export const moveWishlistItemService = (body: {
     method: "POST",
     body: JSON.stringify(body),
   });
+
+export interface IWishlistCheckResponse {
+  success: string;
+  message: string;
+  data: {
+    is_wishlisted: boolean;
+    group_id: string | null;
+  };
+}
+
+export const checkWishlistItemService = (listingId: string) =>
+  fetchInstance<IWishlistCheckResponse>(
+    `/wishlist/check?listing_id=${listingId}`,
+    { method: "GET" },
+  );
