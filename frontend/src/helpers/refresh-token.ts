@@ -14,6 +14,7 @@ export async function refreshAccessToken(): Promise<string | null> {
       const res = await refreshTokenService(refreshToken);
 
       if (!res.ok) {
+        await deleteCookie("access_token");
         await deleteCookie("refresh_token");
         return null;
       }
