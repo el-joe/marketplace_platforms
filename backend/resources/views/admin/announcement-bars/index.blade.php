@@ -24,7 +24,7 @@
                     <tr>
                         <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.name') }}</th>
                         <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.country') }}</th>
-                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.image') ?? 'Image' }}</th>
+                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.image') }}</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700">{{ __('admin.announcement_bars.priority') }}</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700">{{ __('admin.announcement_bars.status') }}</th>
                         <th class="px-4 py-3 text-end font-semibold text-gray-700">{{ __('common.actions') }}</th>
@@ -62,7 +62,7 @@
                                     <img src="{{ $bar->image_url }}" alt="{{ $bar->name }}"
                                          class="h-8 w-auto max-w-[160px] rounded object-cover border border-gray-200">
                                 @else
-                                    <span class="text-gray-400 text-xs italic">No image</span>
+                                    <span class="text-gray-400 text-xs italic">{{ __('admin.announcement_bars.no_image') }}</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-center text-gray-600">{{ $bar->priority }}</td>
@@ -125,26 +125,32 @@
             </div>
         </div>
 
-        {{-- Image URL --}}
+        {{-- Image upload --}}
         <div>
             <label class="block text-xs font-medium text-gray-700 mb-1">
-                Banner Image URL <span class="text-red-500">*</span>
+                {{ __('admin.announcement_bars.banner_image') }} <span class="text-red-500">*</span>
             </label>
-            <input type="text" id="f-image-url" required maxlength="1000" class="form-input w-full text-sm"
-                   placeholder="https://cdn.example.com/banner.jpg  or  /storage/banners/banner.jpg">
-            <div id="image-preview-wrap" class="mt-2 hidden">
-                <img id="image-preview" src="" alt="Preview"
+            <input type="hidden" id="f-image-url" required>
+            <input type="file" id="f-image-file" accept="image/png,image/jpeg,image/webp" class="form-input w-full text-sm">
+            <p class="mt-1 text-xs text-gray-400">{{ __('admin.announcement_bars.image_upload_hint') }}</p>
+            <div id="image-preview-wrap" class="mt-2 hidden relative inline-block">
+                <img id="image-preview" src="" alt="{{ __('admin.announcement_bars.image') }}"
                      class="w-full max-h-20 object-cover rounded-lg border border-gray-200">
+                <span id="image-uploading" class="hidden text-xs text-gray-500">{{ __('admin.announcement_bars.uploading_image') }}</span>
+                <button type="button" id="btn-remove-image" class="mt-1 text-xs text-red-500 hover:underline block">
+                    {{ __('admin.announcement_bars.remove_image') }}
+                </button>
             </div>
+            <div id="image-error" class="hidden mt-1 text-xs text-red-600"></div>
         </div>
 
         {{-- Link URL --}}
         <div>
             <label class="block text-xs font-medium text-gray-700 mb-1">
-                Link URL (where clicking the banner goes)
+                {{ __('admin.announcement_bars.link_url') }}
             </label>
             <input type="text" id="f-cta-url" maxlength="500" class="form-input w-full text-sm"
-                   placeholder="https://example.com/offer  or  /products?brand=rakbank">
+                   placeholder="{{ __('admin.announcement_bars.link_url_hint') }}">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -225,15 +231,16 @@
         ['f-name', 'f-image-url', 'f-cta-url', 'f-starts-at', 'f-ends-at'].forEach(id => {
             document.getElementById(id).value = '';
         });
+        document.getElementById('f-image-file').value = '';
         document.getElementById('f-country-id').value = '';
         document.getElementById('f-priority').value = '0';
         document.getElementById('f-is-active').checked = false;
         document.getElementById('image-preview-wrap').classList.add('hidden');
+        document.getElementById('image-error').classList.add('hidden');
         document.getElementById('form-error').classList.add('hidden');
     }
 
-    document.getElementById('f-image-url').addEventListener('input', function () {
-        const url = this.value.trim();
+    function showImagePreview(url) {
         const wrap = document.getElementById('image-preview-wrap');
         const img  = document.getElementById('image-preview');
         if (url) {
@@ -242,13 +249,53 @@
         } else {
             wrap.classList.add('hidden');
         }
-    });
+    }
 
     const i18n = {
         newBar: @json(__('admin.announcement_bars.new_bar_title')),
         editBar: @json(__('admin.announcement_bars.edit_bar_title')),
         couldNotDelete: @json(__('admin.announcement_bars.could_not_delete')),
+        imageRequired: @json(__('admin.announcement_bars.image_required')),
+        imageUploadError: @json(__('admin.announcement_bars.image_upload_error')),
     };
+
+    document.getElementById('f-image-file').addEventListener('change', async function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const errEl = document.getElementById('image-error');
+        errEl.classList.add('hidden');
+        document.getElementById('image-uploading').classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const res = await fetch('{{ route("admin.announcement-bars.upload-image") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body: formData,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.url) {
+                throw new Error(data.message ?? i18n.imageUploadError);
+            }
+            document.getElementById('f-image-url').value = data.url;
+            showImagePreview(data.url);
+        } catch (e) {
+            errEl.textContent = e.message || i18n.imageUploadError;
+            errEl.classList.remove('hidden');
+            this.value = '';
+        } finally {
+            document.getElementById('image-uploading').classList.add('hidden');
+        }
+    });
+
+    document.getElementById('btn-remove-image').addEventListener('click', () => {
+        document.getElementById('f-image-url').value = '';
+        document.getElementById('f-image-file').value = '';
+        showImagePreview('');
+    });
 
     document.getElementById('btn-new-bar').addEventListener('click', () => {
         resetForm();
@@ -268,12 +315,7 @@
             document.getElementById('f-ends-at').value = toDatetimeLocal(bar.ends_at);
             document.getElementById('f-priority').value = bar.priority ?? 0;
             document.getElementById('f-is-active').checked = !!bar.is_active;
-            if (bar.image_url) {
-                document.getElementById('image-preview').src = bar.image_url;
-                document.getElementById('image-preview-wrap').classList.remove('hidden');
-            } else {
-                document.getElementById('image-preview-wrap').classList.add('hidden');
-            }
+            showImagePreview(bar.image_url ?? '');
             document.querySelector('#bar-modal [id$="-title"]').textContent = i18n.editBar;
             document.getElementById('form-error').classList.add('hidden');
             openModal('bar-modal');
@@ -282,10 +324,19 @@
 
     document.getElementById('btn-save-bar').addEventListener('click', async () => {
         const id = document.getElementById('form-bar-id').value;
+        const imageUrl = document.getElementById('f-image-url').value.trim();
+        const errEl = document.getElementById('form-error');
+
+        if (!imageUrl) {
+            errEl.textContent = i18n.imageRequired;
+            errEl.classList.remove('hidden');
+            return;
+        }
+
         const payload = {
             country_id: document.getElementById('f-country-id').value || null,
             name: document.getElementById('f-name').value.trim(),
-            image_url: document.getElementById('f-image-url').value.trim(),
+            image_url: imageUrl,
             cta_url: document.getElementById('f-cta-url').value.trim() || null,
             starts_at: document.getElementById('f-starts-at').value || null,
             ends_at: document.getElementById('f-ends-at').value || null,
@@ -295,7 +346,6 @@
 
         const url = id ? `${base}/${id}` : base;
         const method = id ? 'PUT' : 'POST';
-        const errEl = document.getElementById('form-error');
 
         const { ok, data } = await req(url, method, payload);
         if (ok) {

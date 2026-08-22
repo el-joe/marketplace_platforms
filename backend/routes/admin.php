@@ -847,6 +847,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     // ─── Announcement Bars ────────────────────────────────────────────────────────
     Route::prefix('announcement-bars')->name('announcement-bars.')->middleware('admin.permission:announcement_bars.view')->group(function () {
         Route::get('/', [AnnouncementBarController::class, 'index'])->name('index');
+        Route::post('/upload-image', [AnnouncementBarController::class, 'uploadImage'])->name('upload-image');
         Route::post('/', [AnnouncementBarController::class, 'store'])->name('store')->middleware('admin.permission:announcement_bars.create');
         Route::put('/{announcementBar}', [AnnouncementBarController::class, 'update'])->name('update')->middleware('admin.permission:announcement_bars.edit');
         Route::delete('/{announcementBar}', [AnnouncementBarController::class, 'destroy'])->name('destroy')->middleware('admin.permission:announcement_bars.delete');

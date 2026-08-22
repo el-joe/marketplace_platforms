@@ -8,6 +8,8 @@ use App\Models\Country;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AnnouncementBarController extends Controller
@@ -122,6 +124,25 @@ class AnnouncementBarController extends Controller
         $this->bustCache($countryId);
 
         return response()->json(['success' => true, 'message' => __('admin.announcement_bars.deleted_flash')]);
+    }
+
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('announcement_bars.create') || $admin->hasPermissionTo('announcement_bars.edit'), 403);
+
+        $request->validate([
+            'image' => ['required', 'image', 'max:5120'],
+        ]);
+
+        $file = $request->file('image');
+        $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
+        $path = $file->storeAs('announcement-bars', Str::uuid() . '.' . $ext, 'public');
+
+        return response()->json([
+            'success' => true,
+            'url' => Storage::disk('public')->url($path),
+        ]);
     }
 
     public function toggle(AnnouncementBar $announcementBar): JsonResponse
