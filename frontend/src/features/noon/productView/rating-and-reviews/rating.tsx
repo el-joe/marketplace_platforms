@@ -1,14 +1,14 @@
 import { RatingStars } from "@/src/components/ui/RatingStars";
 
 import { StarIcon } from "lucide-react";
-import { IProductDetails } from "../types";
+import { Reviews } from "../types/product-details";
 import { getTranslations } from "next-intl/server";
 import getStarSColorByCount from "../helpers/get-stars-color-by-count";
 
 type Props = {
-  ratingAVG: IProductDetails["rating_avg"];
-  ratingCount: IProductDetails["rating_count"];
-  ratingBreakdown: IProductDetails["rating_breakdown"];
+  ratingAVG: Reviews["rating_avg"];
+  ratingCount: Reviews["rating_count"];
+  ratingBreakdown: Reviews["rating_breakdown"];
 };
 
 export default async function Rating({

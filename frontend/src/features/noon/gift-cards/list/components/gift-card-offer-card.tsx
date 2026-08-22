@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import type { GiftCardBatch } from "../../helpers/types";
 
 type Props = {
@@ -25,7 +26,7 @@ export default function GiftCardOfferCard({ giftCard, title }: Props) {
         <p className="truncate text-sm font-bold">{title}</p>
         <Price
           currentPrice={Number(giftCard.amount)}
-          currency={giftCard.currency_code}
+          currency={giftCard.currency_code as CurrencyCode}
           size="sm"
           className="mt-1"
         />

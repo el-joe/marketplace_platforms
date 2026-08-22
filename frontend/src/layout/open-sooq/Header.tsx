@@ -19,10 +19,12 @@ import LocationDialog from "@/src/components/shared/dialogs/LocationDialog";
 import AuthDialog from "@/src/components/shared/dialogs/AuthDialog";
 import CategoriesNav from "./categories-nav";
 import SideCategoriesList from "./side-categories-list";
+import { useAuthContext } from "@/src/providers/auth-provider";
 
 const Header = () => {
   const t = useTranslations("openSooq.header");
   const toggleLang = useToggleLang();
+  const { setAuthDialogIsOpen } = useAuthContext();
   return (
     <header className="md:fixed top-0 w-screen z-20 bg-white">
       {/* main header */}
@@ -59,16 +61,14 @@ const Header = () => {
             className="hidden md:inline-flex"
           />
           {/* login button */}
-          <AuthDialog
-            triggerButton={
-              <HeaderButton
-                Icon={UserCircleIcon}
-                text={t("login")}
-                title={t("loginButtonLabel")}
-                className="hidden md:inline-flex"
-              />
-            }
+          <HeaderButton
+            Icon={UserCircleIcon}
+            text={t("login")}
+            title={t("loginButtonLabel")}
+            onClick={() => setAuthDialogIsOpen(true)}
+            className="hidden md:inline-flex"
           />
+          <AuthDialog />
 
           {/* links */}
           {/* listings link */}

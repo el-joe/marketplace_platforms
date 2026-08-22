@@ -11,6 +11,7 @@ import {
 } from "@/src/components/shared/dialogs/confirm-dialog";
 import { Button } from "@/src/components/ui/button";
 import Price from "@/src/components/shared/Price";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { ApiRequestError } from "@/src/lib/utils";
 import { getMyGiftCardPurchases } from "../../api/gift-cards.actions";
 import type { GiftCardPurchase } from "../../helpers/types";
@@ -100,7 +101,7 @@ export default function MyGiftCardsDialog() {
                 </div>
                 <Price
                   currentPrice={Number(purchase.amount_paid)}
-                  currency={purchase.currency_code}
+                  currency={purchase.currency_code as CurrencyCode}
                   size="sm"
                 />
               </div>

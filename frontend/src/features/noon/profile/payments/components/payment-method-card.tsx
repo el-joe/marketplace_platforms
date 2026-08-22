@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Link } from "@/i18n/navigation";
 import type { PaymentTransaction } from "../helpers/types";
 
@@ -57,7 +58,7 @@ export default function PaymentTransactionCard({ transaction }: Props) {
           className={`flex items-center gap-1 text-xs font-medium ${statusColor}`}
         >
           {STATUS_ICON[transaction.status]}
-          {t(`paymentStatus.${transaction.status}` as never, {
+          {t(`paymentStatus.${transaction.status}` as any, {
             defaultValue: transaction.status,
           })}
         </span>
@@ -66,7 +67,7 @@ export default function PaymentTransactionCard({ transaction }: Props) {
       <div className="flex items-center justify-between">
         <Price
           currentPrice={transaction.amount}
-          currency={transaction.currency}
+          currency={transaction.currency as CurrencyCode}
           size="sm"
         />
         <span className="text-xs text-gray">

@@ -1,5 +1,4 @@
 "use client";
-import AdBanner from "@/src/components/shared/ad-badge";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import React from "react";

@@ -1,12 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { UsersIcon } from "lucide-react";
 import Price from "@/src/components/shared/Price";
+import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 
 type Tier = { travelers_count: number; price: number };
 
 type Props = {
   tiers: Tier[];
-  currency: string;
+  currency: CurrencyCode;
 };
 
 export default async function PricingTiers({ tiers, currency }: Props) {

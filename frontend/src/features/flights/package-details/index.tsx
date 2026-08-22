@@ -8,6 +8,7 @@ import GuidelinesAccordion from "./components/guidelines-accordion";
 import PricingTiers from "./components/pricing-tiers";
 import BookingSidebar from "./components/booking-sidebar";
 import type { TravelPackageDetail } from "../helpers/types";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 
 type Props = {
   pkg: TravelPackageDetail;
@@ -100,7 +101,10 @@ export default async function PackageDetails({ pkg }: Props) {
 
           {pkg.price_tiers && pkg.price_tiers.length > 0 && (
             <Card className="border border-border shadow-sm p-6">
-              <PricingTiers tiers={pkg.price_tiers} currency={pkg.currency} />
+              <PricingTiers
+                tiers={pkg.price_tiers}
+                currency={pkg.currency as CurrencyCode}
+              />
             </Card>
           )}
         </div>

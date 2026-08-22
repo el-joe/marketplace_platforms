@@ -60,7 +60,7 @@ export const addWishlistItemService = (body: {
     body: JSON.stringify(body),
   });
 export const removeWishlistItemService = (itemId: string) =>
-  fetchInstance(`/wishlist/items/${itemId}`, {
+  fetchInstance<IWishlistGroupResponseBody>(`/wishlist/items/${itemId}`, {
     method: "DELETE",
   });
 

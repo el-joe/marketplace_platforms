@@ -11,6 +11,5 @@ export function toFormValues(profile: ICustomerProfile): ProfileFormValues {
     date_of_birth: profile.date_of_birth ?? "",
     gender: undefined,
     nationality: undefined,
-    isTourist: undefined,
   };
 }
