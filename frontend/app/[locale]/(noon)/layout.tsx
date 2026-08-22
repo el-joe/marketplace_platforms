@@ -21,7 +21,12 @@ async function getAnnouncementBar(): Promise<BarData | null> {
       success: boolean;
       data: { data: BarData[] };
     }>("/announcement-bars", { next: { revalidate: 300 } });
-    return res?.data?.data?.[0] ?? null;
+
+    const bar = res?.data?.data?.[0] ?? null;
+
+    if (!bar?.image_url) return null;
+
+    return bar;
   } catch {
     return null;
   }

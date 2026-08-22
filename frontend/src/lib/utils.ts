@@ -49,9 +49,9 @@ async function fetchWithAuth<T>(
   if (cartToken) headers.set("X-Cart-Token", cartToken);
 
   const res = await fetch(`${baseUrl}${path}`, {
+    cache: "no-store",
     ...init,
     headers,
-    cache: "no-store",
   });
 
   if (res.status === 401 && !_isRetry) {
