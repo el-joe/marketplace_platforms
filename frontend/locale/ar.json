@@ -645,7 +645,11 @@
       "badgeLuxuryGold": "السفر الفاخر الذهبي",
       "conciergeTitle": "هل تحتاج برنامجًا مخصصًا؟",
       "conciergeCta": "تحدث مع خبير",
-      "conciergeBody": "يمكن لفريق خدماتنا الخاص تخصيص هذه التجربة وفق رغباتك."
+      "conciergeBody": "يمكن لفريق خدماتنا الخاص تخصيص هذه التجربة وفق رغباتك.",
+      "groupPricingTitle": "أسعار المجموعات",
+      "travelersCount": "{count, plural, one {# مسافر} other {# مسافرين}}",
+      "agencyTitle": "وكالة السفر",
+      "licenseLabel": "رقم الترخيص:"
     },
     "myBookings": {
       "title": "حجوزاتي",

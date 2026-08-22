@@ -753,7 +753,11 @@
       "badgeLuxuryGold": "Luxury Travel Gold",
       "conciergeTitle": "Need a bespoke itinerary?",
       "conciergeBody": "Our private concierge can tailor this experience to your specific desires.",
-      "conciergeCta": "Chat with an Expert"
+      "conciergeCta": "Chat with an Expert",
+      "groupPricingTitle": "Group Pricing",
+      "travelersCount": "{count, plural, one {# traveler} other {# travelers}}",
+      "agencyTitle": "Travel Agency",
+      "licenseLabel": "License:"
     },
     "myBookings": {
       "title": "My Bookings",

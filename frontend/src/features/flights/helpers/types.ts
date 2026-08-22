@@ -128,26 +128,29 @@ export type TravelPackageImage = {
 export type TravelPackageDetail = {
   id: string;
   slug: string;
-  title_en: string;
-  title_ar: string;
-  description_en: string | null;
-  description_ar: string | null;
+  title: { en: string; ar: string | null };
+  description: { en: string | null; ar: string | null };
   destination_country: string;
   destination_city: string;
   price: number;
   currency: string;
+  price_tiers: { travelers_count: number; price: number }[] | null;
   duration_days: number;
   duration_nights: number;
   departure_date: string;
   return_date: string;
-  inclusions: string[];
+  inclusions: { id: string; name: string; icon: string }[];
   images: TravelPackageImage[];
-  categories: { id: string; name: string; slug: string }[];
+  categories: {
+    id: string;
+    name: { en: string; ar: string | null };
+    slug: string;
+  }[];
   agency: {
     id: string;
     name: string;
     logo_url: string | null;
     license_number: string;
-  };
+  } | null;
   status: string;
 };

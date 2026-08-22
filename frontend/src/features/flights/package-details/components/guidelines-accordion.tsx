@@ -9,7 +9,7 @@ import {
 } from "@/src/components/ui/accordion";
 
 type Props = {
-  included: string[];
+  included: { id: string; name: string; icon: string }[];
 };
 
 export default async function GuidelinesAccordion({ included }: Props) {
@@ -50,10 +50,10 @@ export default async function GuidelinesAccordion({ included }: Props) {
               <ul className="flex flex-col gap-2 border-t border-border pt-4">
                 {included.map((item) => (
                   <li
-                    key={item}
+                    key={item.id}
                     className="text-sm text-light leading-relaxed"
                   >
-                    — {item}
+                    — {item.name}
                   </li>
                 ))}
               </ul>
