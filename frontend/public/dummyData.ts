@@ -1,7 +1,6 @@
-import { IProduct } from "@/types";
-import { join } from "path";
-
-export const products: IProduct[] = [
+// Legacy dummy data — no longer used in production pages.
+// Kept for reference only.
+export const products: unknown[] = [
   {
     id: 1,
     images: [

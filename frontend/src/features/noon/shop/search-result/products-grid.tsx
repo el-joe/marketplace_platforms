@@ -9,7 +9,7 @@ const ProductsGrid = ({ products }: Props) => {
   return (
     <div className="flex flex-wrap gap-3 lg:gap-4">
       {products.map((product, index) => (
-        <ProductCard key={`${product.id}-${index}`} productData={product} />
+        <ProductCard key={`${product.listing_id}-${index}`} productData={product} />
       ))}
     </div>
   );
