@@ -98,12 +98,8 @@ class AppConfigController extends Controller
 
         return [
             'id' => $bar->id,
-            'message' => ['en' => $bar->message_en, 'ar' => $bar->message_ar],
-            'cta_label' => ['en' => $bar->cta_label_en, 'ar' => $bar->cta_label_ar],
+            'image_url' => $bar->image_url,
             'cta_url' => $bar->cta_url,
-            'bg_color_hex' => $bar->bg_color_hex,
-            'text_color_hex' => $bar->text_color_hex,
-            'is_dismissible' => $bar->is_dismissible,
         ];
     }
 

@@ -54,8 +54,7 @@ class HomeService
     }
 
     /**
-     * Sitewide announcement bar payload for this country, matching the ar/en text-pair
-     * convention used by Bilingual::pair() elsewhere in this service.
+     * Sitewide announcement bar payload for this country: a full-width clickable image.
      */
     private function announcementBar(Country $country): ?array
     {
@@ -67,12 +66,8 @@ class HomeService
 
         return [
             'id' => $bar->id,
-            'message' => Bilingual::pairFromKeys($bar, 'message_ar', 'message_en'),
-            'cta_label' => Bilingual::pairFromKeys($bar, 'cta_label_ar', 'cta_label_en'),
+            'image_url' => $bar->image_url,
             'cta_url' => $bar->cta_url,
-            'bg_color_hex' => $bar->bg_color_hex,
-            'text_color_hex' => $bar->text_color_hex,
-            'is_dismissible' => $bar->is_dismissible,
         ];
     }
 

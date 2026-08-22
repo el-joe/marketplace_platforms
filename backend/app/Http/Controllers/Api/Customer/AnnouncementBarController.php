@@ -6,13 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\AnnouncementBar;
 use App\Models\Country;
-use App\Support\Bilingual;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AnnouncementBarController extends Controller
 {
@@ -46,45 +42,12 @@ class AnnouncementBarController extends Controller
         return ApiResponse::success(['data' => [$shaped]]);
     }
 
-    public function dismiss(Request $request, string $id): JsonResponse
-    {
-        $bar = AnnouncementBar::where('id', $id)
-            ->where('is_dismissible', true)
-            ->first();
-
-        if (!$bar) {
-            throw new NotFoundHttpException();
-        }
-
-        $customerId = auth('customer')->id();
-
-        $updated = DB::table('customer_dismissed_announcement_bars')
-            ->where('customer_id', $customerId)
-            ->where('announcement_bar_id', $bar->id)
-            ->update(['dismissed_at' => now()]);
-
-        if (!$updated) {
-            DB::table('customer_dismissed_announcement_bars')->insert([
-                'id' => (string) Str::uuid(),
-                'customer_id' => $customerId,
-                'announcement_bar_id' => $bar->id,
-                'dismissed_at' => now(),
-            ]);
-        }
-
-        return ApiResponse::success(['success' => true]);
-    }
-
     private function shape(AnnouncementBar $bar): array
     {
         return [
             'id' => $bar->id,
-            'message' => Bilingual::pairFromKeys($bar, 'message_ar', 'message_en'),
-            'cta_label' => Bilingual::pairFromKeys($bar, 'cta_label_ar', 'cta_label_en'),
+            'image_url' => $bar->image_url,
             'cta_url' => $bar->cta_url,
-            'bg_color_hex' => $bar->bg_color_hex,
-            'text_color_hex' => $bar->text_color_hex,
-            'is_dismissible' => $bar->is_dismissible,
         ];
     }
 }

@@ -34,6 +34,7 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
       { protocol: "https", hostname: "api.noon.codefanz.com" },
+      { protocol: "https", hostname: "**" },
     ],
   },
 };

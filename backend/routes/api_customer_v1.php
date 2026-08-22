@@ -272,11 +272,6 @@ use Illuminate\Support\Facades\Route;
                     ->name('resend-verification');
             });
 
-            // Announcement bars
-            Route::prefix('announcement-bars')->name('customer.announcement-bars.')->group(function (): void {
-                Route::post('{id}/dismiss', [AnnouncementBarController::class, 'dismiss'])->name('dismiss');
-            });
-
             // Payment transaction history (read-only)
             Route::get('payment-history', [PaymentHistoryController::class, 'index'])
                 ->name('customer.payment-history.index');

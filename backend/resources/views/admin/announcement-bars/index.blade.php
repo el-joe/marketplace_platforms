@@ -24,7 +24,7 @@
                     <tr>
                         <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.name') }}</th>
                         <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.country') }}</th>
-                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.message_english') }}</th>
+                        <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.announcement_bars.image') ?? 'Image' }}</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700">{{ __('admin.announcement_bars.priority') }}</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700">{{ __('admin.announcement_bars.status') }}</th>
                         <th class="px-4 py-3 text-end font-semibold text-gray-700">{{ __('common.actions') }}</th>
@@ -57,7 +57,14 @@
                                     <span class="text-gray-400 text-xs">{{ __('admin.announcement_bars.all_countries') }}</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 max-w-sm truncate text-gray-600">{{ $bar->message_en }}</td>
+                            <td class="px-4 py-3">
+                                @if($bar->image_url)
+                                    <img src="{{ $bar->image_url }}" alt="{{ $bar->name }}"
+                                         class="h-8 w-auto max-w-[160px] rounded object-cover border border-gray-200">
+                                @else
+                                    <span class="text-gray-400 text-xs italic">No image</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-center text-gray-600">{{ $bar->priority }}</td>
                             <td class="px-4 py-3 text-center">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $statusColor }}-100 text-{{ $statusColor }}-700">
@@ -71,7 +78,7 @@
                                     <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform {{ $bar->is_active ? 'translate-x-4' : 'translate-x-0.5' }}"></span>
                                 </button>
                                 <button type="button" class="btn-edit-bar text-xs text-primary-600 font-medium hover:underline"
-                                        data-bar="{{ json_encode($bar->only(['id','country_id','name','message_en','message_ar','cta_label_en','cta_label_ar','cta_url','bg_color_hex','text_color_hex','is_dismissible','starts_at','ends_at','priority','is_active'])) }}">
+                                        data-bar="{{ json_encode($bar->only(['id','country_id','name','image_url','cta_url','starts_at','ends_at','priority','is_active'])) }}">
                                     {{ __('common.edit') }}
                                 </button>
                                 <button type="button" class="btn-delete-bar ms-2 text-xs text-red-500 hover:underline"
@@ -99,11 +106,16 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.name') }} <span class="text-red-500">*</span></label>
-                <input type="text" id="f-name" required maxlength="150" class="form-input w-full text-sm">
+                <label class="block text-xs font-medium text-gray-700 mb-1">
+                    {{ __('admin.announcement_bars.name') }} <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="f-name" required maxlength="150" class="form-input w-full text-sm"
+                       placeholder="e.g. Rakbank Offer — UAE — Aug 2026">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.country') }}</label>
+                <label class="block text-xs font-medium text-gray-700 mb-1">
+                    {{ __('admin.announcement_bars.country') }}
+                </label>
                 <select id="f-country-id" class="form-input w-full text-sm">
                     <option value="">{{ __('admin.announcement_bars.all_countries') }}</option>
                     @foreach($countries as $country)
@@ -113,42 +125,26 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.message_english') }} <span class="text-red-500">*</span></label>
-                <textarea id="f-message-en" required rows="2" maxlength="500" class="form-input w-full text-sm"></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.message_arabic') }} <span class="text-red-500">*</span></label>
-                <textarea id="f-message-ar" required rows="2" maxlength="500" dir="rtl" class="form-input w-full text-sm"></textarea>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.cta_label_english') }}</label>
-                <input type="text" id="f-cta-label-en" maxlength="100" class="form-input w-full text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.cta_label_arabic') }}</label>
-                <input type="text" id="f-cta-label-ar" maxlength="100" dir="rtl" class="form-input w-full text-sm">
-            </div>
-        </div>
-
+        {{-- Image URL --}}
         <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.cta_url') }}</label>
-            <input type="text" id="f-cta-url" maxlength="500" class="form-input w-full text-sm">
+            <label class="block text-xs font-medium text-gray-700 mb-1">
+                Banner Image URL <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="f-image-url" required maxlength="1000" class="form-input w-full text-sm"
+                   placeholder="https://cdn.example.com/banner.jpg  or  /storage/banners/banner.jpg">
+            <div id="image-preview-wrap" class="mt-2 hidden">
+                <img id="image-preview" src="" alt="Preview"
+                     class="w-full max-h-20 object-cover rounded-lg border border-gray-200">
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.bg_color') }}</label>
-                <input type="color" id="f-bg-color" value="#111827" class="form-input w-full h-9">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.text_color') }}</label>
-                <input type="color" id="f-text-color" value="#ffffff" class="form-input w-full h-9">
-            </div>
+        {{-- Link URL --}}
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">
+                Link URL (where clicking the banner goes)
+            </label>
+            <input type="text" id="f-cta-url" maxlength="500" class="form-input w-full text-sm"
+                   placeholder="https://example.com/offer  or  /products?brand=rakbank">
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -167,10 +163,6 @@
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.announcement_bars.priority') }}</label>
                 <input type="number" id="f-priority" value="0" min="0" class="form-input w-28 text-sm">
             </div>
-            <label class="flex items-center gap-2 cursor-pointer select-none mt-4">
-                <input type="checkbox" id="f-is-dismissible" class="rounded text-primary-600" checked>
-                <span class="text-sm text-gray-700">{{ __('admin.announcement_bars.is_dismissible') }}</span>
-            </label>
             <label class="flex items-center gap-2 cursor-pointer select-none mt-4">
                 <input type="checkbox" id="f-is-active" class="rounded text-primary-600">
                 <span class="text-sm text-gray-700">{{ __('common.active') }}</span>
@@ -230,17 +222,27 @@
 
     function resetForm() {
         document.getElementById('form-bar-id').value = '';
-        ['f-name', 'f-message-en', 'f-message-ar', 'f-cta-label-en', 'f-cta-label-ar', 'f-cta-url', 'f-starts-at', 'f-ends-at'].forEach(id => {
+        ['f-name', 'f-image-url', 'f-cta-url', 'f-starts-at', 'f-ends-at'].forEach(id => {
             document.getElementById(id).value = '';
         });
         document.getElementById('f-country-id').value = '';
-        document.getElementById('f-bg-color').value = '#111827';
-        document.getElementById('f-text-color').value = '#ffffff';
         document.getElementById('f-priority').value = '0';
-        document.getElementById('f-is-dismissible').checked = true;
         document.getElementById('f-is-active').checked = false;
+        document.getElementById('image-preview-wrap').classList.add('hidden');
         document.getElementById('form-error').classList.add('hidden');
     }
+
+    document.getElementById('f-image-url').addEventListener('input', function () {
+        const url = this.value.trim();
+        const wrap = document.getElementById('image-preview-wrap');
+        const img  = document.getElementById('image-preview');
+        if (url) {
+            img.src = url;
+            wrap.classList.remove('hidden');
+        } else {
+            wrap.classList.add('hidden');
+        }
+    });
 
     const i18n = {
         newBar: @json(__('admin.announcement_bars.new_bar_title')),
@@ -260,18 +262,18 @@
             document.getElementById('form-bar-id').value = bar.id;
             document.getElementById('f-country-id').value = bar.country_id ?? '';
             document.getElementById('f-name').value = bar.name;
-            document.getElementById('f-message-en').value = bar.message_en;
-            document.getElementById('f-message-ar').value = bar.message_ar;
-            document.getElementById('f-cta-label-en').value = bar.cta_label_en ?? '';
-            document.getElementById('f-cta-label-ar').value = bar.cta_label_ar ?? '';
+            document.getElementById('f-image-url').value = bar.image_url ?? '';
             document.getElementById('f-cta-url').value = bar.cta_url ?? '';
-            document.getElementById('f-bg-color').value = bar.bg_color_hex ?? '#111827';
-            document.getElementById('f-text-color').value = bar.text_color_hex ?? '#ffffff';
             document.getElementById('f-starts-at').value = toDatetimeLocal(bar.starts_at);
             document.getElementById('f-ends-at').value = toDatetimeLocal(bar.ends_at);
             document.getElementById('f-priority').value = bar.priority ?? 0;
-            document.getElementById('f-is-dismissible').checked = !!bar.is_dismissible;
             document.getElementById('f-is-active').checked = !!bar.is_active;
+            if (bar.image_url) {
+                document.getElementById('image-preview').src = bar.image_url;
+                document.getElementById('image-preview-wrap').classList.remove('hidden');
+            } else {
+                document.getElementById('image-preview-wrap').classList.add('hidden');
+            }
             document.querySelector('#bar-modal [id$="-title"]').textContent = i18n.editBar;
             document.getElementById('form-error').classList.add('hidden');
             openModal('bar-modal');
@@ -282,18 +284,12 @@
         const id = document.getElementById('form-bar-id').value;
         const payload = {
             country_id: document.getElementById('f-country-id').value || null,
-            name: document.getElementById('f-name').value,
-            message_en: document.getElementById('f-message-en').value,
-            message_ar: document.getElementById('f-message-ar').value,
-            cta_label_en: document.getElementById('f-cta-label-en').value || null,
-            cta_label_ar: document.getElementById('f-cta-label-ar').value || null,
-            cta_url: document.getElementById('f-cta-url').value || null,
-            bg_color_hex: document.getElementById('f-bg-color').value,
-            text_color_hex: document.getElementById('f-text-color').value,
+            name: document.getElementById('f-name').value.trim(),
+            image_url: document.getElementById('f-image-url').value.trim(),
+            cta_url: document.getElementById('f-cta-url').value.trim() || null,
             starts_at: document.getElementById('f-starts-at').value || null,
             ends_at: document.getElementById('f-ends-at').value || null,
             priority: parseInt(document.getElementById('f-priority').value) || 0,
-            is_dismissible: document.getElementById('f-is-dismissible').checked ? 1 : 0,
             is_active: document.getElementById('f-is-active').checked ? 1 : 0,
         };
 

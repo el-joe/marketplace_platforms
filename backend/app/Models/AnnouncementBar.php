@@ -12,7 +12,6 @@ class AnnouncementBar extends Model
     use HasUuids;
 
     protected $casts = [
-        'is_dismissible' => 'boolean',
         'is_active' => 'boolean',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
@@ -21,14 +20,8 @@ class AnnouncementBar extends Model
     protected $fillable = [
         'country_id',
         'name',
-        'message_en',
-        'message_ar',
-        'cta_label_en',
-        'cta_label_ar',
+        'image_url',
         'cta_url',
-        'bg_color_hex',
-        'text_color_hex',
-        'is_dismissible',
         'starts_at',
         'ends_at',
         'is_active',
