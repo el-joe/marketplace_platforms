@@ -1,124 +1,213 @@
-import { products } from "@/public/dummyData";
-import { Breadcrumb } from "@/src/components/ui/breadcrumb";
-import { Button } from "@/src/components/ui/button";
-import { Separator } from "@/src/components/ui/separator";
-import FloatingCartButton from "@/src/features/noon/productView/floating-cart-button";
+import { notFound } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import {
-  ChevronLeft,
-  ChevronRight,
-  PhoneIcon,
-  Redo2Icon,
-  ShieldCheckIcon,
-  StarIcon,
+  EyeIcon,
+  MapPinIcon,
+  TagIcon,
+  CalendarIcon,
   StoreIcon,
+  UserIcon,
 } from "lucide-react";
-import { getLocale, getTranslations } from "next-intl/server";
-import Image from "next/image";
-import React from "react";
-import ProductImagesPreview from "./listing-images-preview";
-import ListingDescription from "./description";
-import BaseInfo from "./base-info";
+import { format } from "date-fns";
+import { Separator } from "@/src/components/ui/separator";
+import { Breadcrumb } from "@/src/components/ui/breadcrumb";
+import Price from "@/src/components/shared/Price";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import CarouselListings from "@/src/components/shared/carousel-listing";
+import ListingGallery from "./components/listing-gallery";
+import InquiryDialog from "./components/inquiry-dialog";
+import { getClassifiedListing } from "./api/listing.actions";
+import { ApiRequestError } from "@/src/lib/utils";
 
-const breadCrumbList = [
-  { label: "Home", href: "/" },
-  { label: "lorem1", href: "#" },
-  { label: "lorem2", href: "#" },
-  { label: "lorem3", href: "#" },
-];
+type Props = {
+  slug: string;
+};
 
-export default async function Find() {
-  const t = await getTranslations("openSooq.listingView");
+export default async function ClassifiedListingView({ slug }: Props) {
   const locale = await getLocale();
+
+  let listing;
+  try {
+    listing = await getClassifiedListing(slug);
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) notFound();
+    throw err;
+  }
+
+  const title = locale === "ar" ? listing.title.ar : listing.title.en;
+  const description =
+    locale === "ar" ? listing.description.ar : listing.description.en;
+  const cityName = listing.location.city
+    ? locale === "ar"
+      ? listing.location.city.ar
+      : listing.location.city.en
+    : null;
+  const categoryName = listing.category?.name
+    ? locale === "ar"
+      ? listing.category.name.ar
+      : listing.category.name.en
+    : null;
+
+  const breadcrumbs = [
+    { label: "Home", href: "/" },
+    ...(categoryName && listing.category
+      ? [{ label: categoryName, href: `/classified/${listing.category.id}` }]
+      : []),
+    { label: listing.listing_number, href: "#" },
+  ];
+
+  const PURPOSE_LABEL: Record<string, string> = {
+    sale: locale === "ar" ? "للبيع" : "For Sale",
+    rent: locale === "ar" ? "للإيجار" : "For Rent",
+  };
+
+  const attributes = listing.attributes
+    ? Object.entries(listing.attributes).filter(
+        ([, v]) => v !== null && v !== "",
+      )
+    : [];
+
   return (
-    <div className="container">
-      {/* breadcrumb */}
-      <Breadcrumb list={breadCrumbList} />
-      {/* top three cols (images overview, core info & shipping options..., add to cart box) */}
-      <div className="grid grid-cols-1 lg:grid-cols-22 md:gap-3 lg:gap-6 items-start">
-        {/* product images preview - col one */}
-        <div className="lg:col-span-8 lg:sticky top-22.5">
-          <ProductImagesPreview
-            images={[
-              "https://opensooq-images.os-cdn.com/previews/1024x0/24/ae/24aec2746d189c2beb8d1d58c6bb0ecb8880853050857c9cb245b9a8a8287ae5.jpg.webp",
-              "https://opensooq-images.os-cdn.com/previews/400x0/9b/fa/9bfa55df81d0cf939cbea74a7ebfa3e4108d663408ddfa1f89215c6561126b04.jpg.webp",
-              "https://opensooq-images.os-cdn.com/previews/0x240/65/76/657616d448dc42df4a7e5a2f2137294e8dca18358ef3ab1bbc1bdb489c45550c.jpg.webp",
-              "https://opensooq-images.os-cdn.com/previews/1024x0/36/fe/36fec9684f790f413c11cd9bceb745beb960c0dfa36597d725cc0d9f014c8797.jpg.webp",
-              "https://opensooq-images.os-cdn.com/previews/1024x0/bb/eb/bbeb9ae7904ea02e9ef7ff8e427fa009680024b5f7da207f1d9b85480dbf0457.jpg.webp",
-              "https://opensooq-images.os-cdn.com/previews/1024x0/2e/e1/2ee1041a57aa7e0807a7f9525157b18cd0eeb8348019b47aea07ace0955becd1.jpg.webp",
-            ]}
-          />
+    <div className="container py-4">
+      <Breadcrumb list={breadcrumbs} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-22 gap-4 lg:gap-6 mt-4 items-start">
+        {/* col one — gallery */}
+        <div className="lg:col-span-8 lg:sticky top-28">
+          <ListingGallery images={listing.images} title={title} />
         </div>
-        {/* col two */}
+
+        {/* col two — core info */}
         <div className="lg:col-span-9">
-          <BaseInfo product={products[0]} />
-          <Separator className={"my-6"} />
-          <ListingDescription />
-        </div>
-        {/* col three */}
-        <div className="lg:col-span-5">
-          <div className="border border-border rounded-md mb-6">
-            {/* "sold by" info */}
-            <div className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="flex pace-items-center bg-gray-2 rounded-lg p-2">
-                  <StoreIcon />
-                </div>
-                <div className="text-sm">
-                  <p className="flex">
-                    {t("soldBy")}
-                    <span className="font-bold ps-1">Seller</span>
-                    {locale === "ar" ? (
-                      <ChevronLeft className="w-5 h-5" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5" />
-                    )}
-                  </p>
-                  <div className="flex gap-1 items-center text-green">
-                    <StarIcon className="fill-green w-4" />
-                    <p>4.2</p>
-                    <Separator orientation="vertical" className={"mx-1"} />
-                    <p className="text-gray">86% {t("positive")}</p>
+          <div className="flex items-start gap-2 flex-wrap">
+            <span
+              className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                listing.listing_purpose === "rent"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-green-100 text-green-700"
+              }`}
+            >
+              {PURPOSE_LABEL[listing.listing_purpose]}
+            </span>
+            <span className="text-xs text-gray flex items-center gap-1">
+              <EyeIcon className="size-3" />
+              {listing.views_count.toLocaleString()} views
+            </span>
+          </div>
+
+          <h1 className="text-xl font-bold text-primary mt-2 leading-snug">
+            {title}
+          </h1>
+
+          <div className="flex items-center gap-3 mt-3">
+            <Price
+              currentPrice={listing.price}
+              currency={listing.currency as CurrencyCode}
+              size="xl"
+            />
+            {listing.price_negotiable && (
+              <span className="text-xs border border-border rounded-full px-3 py-1 text-gray">
+                {locale === "ar" ? "قابل للتفاوض" : "Negotiable"}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-3 mt-4 text-sm text-gray">
+            {cityName && (
+              <span className="flex items-center gap-1.5 bg-gray-2 rounded-full px-3 py-1">
+                <MapPinIcon className="size-3.5 shrink-0" />
+                {cityName}
+              </span>
+            )}
+            {categoryName && (
+              <span className="flex items-center gap-1.5 bg-gray-2 rounded-full px-3 py-1">
+                <TagIcon className="size-3.5 shrink-0" />
+                {categoryName}
+              </span>
+            )}
+            <span className="flex items-center gap-1.5 bg-gray-2 rounded-full px-3 py-1">
+              <CalendarIcon className="size-3.5 shrink-0" />
+              {format(new Date(listing.created_at), "dd MMM yyyy")}
+            </span>
+          </div>
+
+          <Separator className="my-5" />
+
+          {attributes.length > 0 && (
+            <div className="mb-5">
+              <h2 className="font-bold text-sm mb-3">Details</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {attributes.map(([key, value]) => (
+                  <div key={key} className="bg-gray-2 rounded-xl px-4 py-2.5">
+                    <p className="text-xs text-gray capitalize">
+                      {key.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-sm font-semibold mt-0.5 text-primary">
+                      {String(value)}
+                    </p>
                   </div>
-                </div>
+                ))}
               </div>
-              <div className="flex flex-col gap-2 items-stretch mt-4">
-                <div className="flex items-center justify-between bg-gray-2 py-1 px-2 text-gray text-sm rounded-md">
-                  <p>{t("memberSince")}</p>
-                  <p className="text-green font-bold">5+ Y</p>
+            </div>
+          )}
+
+          {description && (
+            <div>
+              <h2 className="font-bold text-sm mb-2">Description</h2>
+              <p className="text-sm text-gray leading-relaxed whitespace-pre-line">
+                {description}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* col three — seller card */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+          <div className="border border-border rounded-2xl overflow-hidden">
+            <div className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="size-11 rounded-full bg-gray-2 flex items-center justify-center">
+                  {listing.seller.type === "vendor" ? (
+                    <StoreIcon className="size-5 text-gray" />
+                  ) : (
+                    <UserIcon className="size-5 text-gray" />
+                  )}
                 </div>
-                <div className="flex items-center justify-between bg-gray-2 py-1 px-2 text-gray text-sm rounded-md">
-                  <p>{t("greatRecentRating")}</p>
+                <div>
+                  <p className="font-semibold text-sm text-primary">
+                    {listing.seller.display_name}
+                  </p>
+                  <p className="text-xs text-gray capitalize">
+                    {listing.seller.type}
+                  </p>
                 </div>
               </div>
             </div>
+
             <Separator />
-            <div className="p-4 text-sm hidden lg:block">
-              <Button
-                size={"lg"}
-                className={
-                  "mx-auto bg-blue text-white min-h-9! flex text-lg w-full py-2 rounded-xl uppercase"
-                }
-              >
-                <PhoneIcon />
-                <span>01111111111</span>
-              </Button>
+
+            <div className="p-4 flex flex-col gap-3">
+              <InquiryDialog
+                slug={listing.slug}
+                sellerName={listing.seller.display_name}
+              />
             </div>
           </div>
-          <Image
-            src={
-              "https://eg.opensooq.com/_next/image?url=https%3A%2F%2Fopensooq-images.os-cdn.com%2Foriginals%2Fmedia%2F40%2F35%2F40352566628d710e079bc8de7d4c29b55a395311b51b2921050a16f408b95022.png&w=1080&q=65"
-            }
-            alt="banner"
-            width={800}
-            height={260}
-          />
+
+          <div className="bg-gray-2 rounded-xl p-3 text-xs text-gray text-center">
+            Listing #{listing.listing_number}
+            {listing.expires_at && (
+              <span className="block mt-0.5">
+                Expires {format(new Date(listing.expires_at), "dd MMM yyyy")}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      <CarouselListings title={t("customersAlsoViewed")} />
-      {/* floating add to cart button */}
-      <FloatingCartButton />
+      <div className="mt-12">
+        <CarouselListings title="Similar Listings" />
+      </div>
     </div>
   );
 }
