@@ -30,7 +30,7 @@ export const Banner = ({ data }: { data: Block }) => {
           //     "--banner-mobile-ratio": mobileAspectRatio,
           //   } as React.CSSProperties
           // }
-          width={1200}
+          width={2400}
           height={400}
         />
       </picture>

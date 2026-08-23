@@ -50,10 +50,10 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
           <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col!">
             {row.map((i) => (
               <Link
-                href={"/"}
+                href={i?.link_url || "#"}
                 key={i.id}
                 className={cn(
-                  "block relative",
+                  "block relative mb-2",
                   row.length === Number(data?.config?.rows) && "flex-1",
                 )}
               >

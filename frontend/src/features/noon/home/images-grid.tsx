@@ -15,8 +15,10 @@ export default function ImagesGrid({ data }: { data: Block }) {
       className="flex-1 p-3"
       style={{ backgroundColor: data?.background_color as string }}
     >
-      {!!data?.title?.[locale] && (
-        <h3 className="text-2xl mb-4 font-semibold">{data?.title[locale]}</h3>
+      {!!data?.config?.title_en && (
+        <h3 className="text-2xl mb-4 font-semibold">
+          {locale === "ar" ? data?.config?.title_ar : data?.config?.title_en}
+        </h3>
       )}
       <div className="flex gap-4 flex-wrap">
         {isPromoTiles

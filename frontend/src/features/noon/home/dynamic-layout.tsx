@@ -26,7 +26,7 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
           // backgroundSize: "contain",
           backgroundPositionX: "center",
           backgroundRepeat: "no-repeat",
-          maxWidth: section.max_width || "100%",
+          // maxWidth: section.max_width || "100%",
           paddingTop: `${section.padding_top}px`,
           paddingBottom: `${section.padding_bottom}px`,
         }}
