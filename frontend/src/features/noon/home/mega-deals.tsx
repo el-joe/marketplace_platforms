@@ -9,8 +9,6 @@ import getLocale from "@/src/helpers/getLocale";
 import { cn } from "@/src/lib/utils";
 
 const MegaDeals = async ({ data }: { data: Block }) => {
-  const date =
-    new Date(data?.config?.ends_at || "").getTime() + 2 * 24 * 60 * 60 * 1000;
   const t = await getTranslations("home");
   const locale = await getLocale();
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -23,7 +21,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 flex items-start">
         <svg
           className={cn(
-            "w-3 h-8 text-gray -ms-px block",
+            "w-3 h-8 text-gray  block",
             dir === "rtl" && " rotate-y-180",
           )}
           viewBox="0 0 12 32"
@@ -38,7 +36,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
             fill="var(--color-gray)"
           ></path>
         </svg>
-        <CountDown targetDate={new Date(date).toDateString()} />
+        <CountDown targetDate={data?.config?.ends_at as string} />
         <svg
           className={cn(
             "w-3 h-8 text-gray -ms-0.5 block",

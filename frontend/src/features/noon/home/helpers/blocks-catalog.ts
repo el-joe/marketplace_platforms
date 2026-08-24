@@ -1,4 +1,5 @@
 import { Banner } from "../banner";
+import { FlashSale } from "../flash-sale";
 import HeroSlider from "../hero-slider";
 import ImagesGrid from "../images-grid";
 import { ImagesSlider } from "../images-slider";
@@ -13,4 +14,5 @@ export const blocks = {
   product_row: ProductsSlider,
   ad_images_2col: ImagesGrid,
   promo_tiles: ImagesGrid,
+  flash_sale: FlashSale,
 };

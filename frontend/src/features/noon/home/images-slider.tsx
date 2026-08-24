@@ -11,9 +11,9 @@ import { AdBadge } from "@/src/components/shared/ad-badge";
 import { chunks } from "./helpers/chunks-arr";
 
 const heights = {
-  small: "min-h-[80px]",
-  medium: "min-h-[140px]",
-  large: "min-h-[200px]",
+  small: "min-h-[80px] max-h-[140px]",
+  medium: "min-h-[140px] max-h-[180px]",
+  large: "min-h-[200px] max-h-[240px]",
 } as const;
 
 const rounded = {
