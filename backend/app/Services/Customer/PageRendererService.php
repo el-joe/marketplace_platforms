@@ -413,6 +413,8 @@ class PageRendererService
             'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'source' => $source,
             'items_per_row' => $cfg['items_per_row'] ?? 4,
+            'rows_count' => (int) ($cfg['rows_count'] ?? 1),
+            'card_style' => $cfg['card_style'] ?? 'normal',
             'scrollable_row' => (bool) ($cfg['scrollable_row'] ?? true),
             'show_view_all' => (bool) ($cfg['show_view_all'] ?? true),
             'show_ratings' => (bool) ($cfg['show_ratings'] ?? true),
@@ -427,7 +429,7 @@ class PageRendererService
     private function productRowManual(PageBlock $block, Country $country): array
     {
         $blockProducts = PageBlockProduct::where('page_block_id', $block->id)
-            ->with(['productVariant.product.images', 'productVariant.images'])
+            ->with(['productVariant.product.images', 'productVariant.product.category', 'productVariant.images'])
             ->orderBy('position')
             ->get();
 

@@ -81,6 +81,8 @@ export interface Block {
   show_view_all?: boolean;
   tabs?: ColumnTab[];
   tiles?: ColumnTile[];
+  rows_count?: number;
+  card_style?: "normal" | "special";
 }
 
 export interface Category {
@@ -130,6 +132,8 @@ export interface BlockConfig {
   grid_cols?: string;
   grid_rows?: string;
   is_announcement?: boolean;
+  rows_count?: string;
+  card_style?: string;
 }
 
 export interface BlockItem {
@@ -167,8 +171,10 @@ export interface Product {
   name_en: string;
   name_ar: string;
   thumbnail: string;
+  category_name?: { en: string | null; ar: string | null };
   price: number;
   price_formatted: string;
+  compare_at_price?: number | null;
   currency: CurrencyCode;
   condition: string;
   is_admin_listing: boolean;

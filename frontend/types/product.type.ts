@@ -19,8 +19,10 @@ export interface IProduct {
   name_en: string;
   name_ar: string;
   thumbnail: string;
+  category_name?: { en: string | null; ar: string | null };
   price: number;
   price_formatted: string;
+  compare_at_price?: number | null;
   currency: CurrencyCode;
   condition: Condition;
   is_admin_listing: boolean;

@@ -52,6 +52,11 @@ class ProductListResource extends JsonResource
                 'min' => $this->min_price !== null ? round($this->min_price / 100, 2) : null,
                 'max' => $this->max_price !== null ? round($this->max_price / 100, 2) : null,
             ],
+            'category_name'       => [
+                'en' => $this->category_name_en,
+                'ar' => $this->category_name_ar,
+            ],
+            'compare_at_price'    => $this->buy_box_compare_at_price !== null ? (int) $this->buy_box_compare_at_price : null,
             'rating_avg'          => (float) $this->rating_avg,
             'rating_count'        => (int) $this->rating_count,
             'seller_count'        => (int) ($this->active_seller_count ?? $this->seller_count ?? 0),
