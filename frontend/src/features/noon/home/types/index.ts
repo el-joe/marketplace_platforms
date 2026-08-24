@@ -80,7 +80,6 @@ export interface Block {
   seconds_remaining?: number;
   ends_at?: Date;
   show_view_all?: boolean;
-  tabs?: ColumnTab[];
   tiles?: ColumnTile[];
   rows_count?: number;
   card_style?: "normal" | "special";
@@ -126,7 +125,6 @@ export interface BlockConfig {
   show_product_count?: number;
   banner_id?: string;
   mobile_aspect_ratio?: string;
-  tabs?: ConfigTab[];
   ends_at?: string;
   show_countdown?: number;
   tiles?: ConfigTile[];
@@ -239,12 +237,6 @@ export interface Banner {
   mobile_aspect_ratio: string;
 }
 
-export interface ConfigTab {
-  label_ar: null | string;
-  label_en: null | string;
-  max_products: string;
-}
-
 export interface ConfigTile {
   label_ar: null | string;
   label_en: null | string;
@@ -252,11 +244,6 @@ export interface ConfigTile {
   image_url: string;
   badge_label_ar: null | string;
   badge_label_en: null | string;
-}
-
-export interface ColumnTab {
-  label: Name;
-  products: Product[];
 }
 
 export interface ColumnTile {

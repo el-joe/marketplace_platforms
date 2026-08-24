@@ -370,23 +370,19 @@ class PageBuilderService
 
         if ($b->block_type === 'mega_deals') {
             $cfg  = $b->config ?? [];
-            $tabs = collect($cfg['tabs'] ?? [])->values()->map(function ($tab, $i) use ($b, $country) {
-                $maxProducts = (int) ($tab['max_products'] ?? 4);
 
-                $productIds = \App\Models\PageBlockProduct::where('page_block_id', $b->id)
-                    ->where('tab_index', $i)
-                    ->with('productVariant:id,product_id')
-                    ->orderBy('position')
-                    ->limit($maxProducts)
-                    ->get()
-                    ->pluck('productVariant.product_id')
-                    ->filter()
-                    ->unique()
-                    ->values();
+            $productIds = \App\Models\PageBlockProduct::where('page_block_id', $b->id)
+                ->with('productVariant:id,product_id')
+                ->orderBy('position')
+                ->get()
+                ->pluck('productVariant.product_id')
+                ->filter()
+                ->unique()
+                ->values();
 
-                if ($productIds->isEmpty()) return null;
-
-                $products = Product::query()
+            $products = [];
+            if ($productIds->isNotEmpty()) {
+                $productModels = Product::query()
                     ->whereIn('id', $productIds)
                     ->where('status', 'active')
                     ->whereNotIn('id', ProductCountrySetting::where('country_id', $country->id)
@@ -397,14 +393,8 @@ class PageBuilderService
                     ->sortBy(fn ($p) => $productIds->search($p->id))
                     ->values();
 
-                $cards = $this->productsToCards($products, $country);
-                if (empty($cards)) return null;
-
-                return [
-                    'label'    => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
-                    'products' => $cards,
-                ];
-            })->filter()->values()->all();
+                $products = $this->productsToCards($productModels, $country);
+            }
 
             $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
             $data['title']           = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
@@ -413,7 +403,7 @@ class PageBuilderService
             $data['ends_at']         = $endsAt?->toIso8601String();
             $data['columns']         = (int) ($cfg['columns'] ?? 2);
             $data['show_view_all']   = (bool) ($cfg['show_view_all'] ?? true);
-            $data['tabs']            = $tabs;
+            $data['products']        = $products;
         }
 
         if ($b->block_type === 'image_slider') {

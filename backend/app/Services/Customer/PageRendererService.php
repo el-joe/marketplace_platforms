@@ -999,20 +999,8 @@ class PageRendererService
     {
         $cfg  = $block->config ?? [];
         $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
-        $tabs = $cfg['tabs'] ?? [];
 
-        $resolvedTabs = collect($tabs)->values()->map(function ($tab, $i) use ($block, $country) {
-            $maxProducts = (int) ($tab['max_products'] ?? 4);
-
-            $products = $this->productRowManual($block, $country, $i, $maxProducts);
-
-            if (empty($products)) return null;
-
-            return [
-                'label'    => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
-                'products' => $products,
-            ];
-        })->filter()->values()->all();
+        $products = $this->productRowManual($block, $country);
 
         return [
             'title'          => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
@@ -1021,7 +1009,7 @@ class PageRendererService
             'ends_at'        => $endsAt?->toIso8601String(),
             'columns'        => (int) ($cfg['columns'] ?? 2),
             'show_view_all'  => (bool) ($cfg['show_view_all'] ?? true),
-            'tabs'           => $resolvedTabs,
+            'products'       => $products,
         ];
     }
 
