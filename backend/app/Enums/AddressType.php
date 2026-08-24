@@ -8,6 +8,8 @@ enum AddressType: string
 {
     use EnumHelpers;
 
+    case Home = 'home';
+    case Work = 'work';
     case Shipping = 'shipping';
     case Billing = 'billing';
     case Both = 'both';

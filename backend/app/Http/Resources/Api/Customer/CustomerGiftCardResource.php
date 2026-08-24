@@ -12,12 +12,15 @@ class CustomerGiftCardResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
-            'denomination' => $this->getRawOriginal('denomination'),
-            'balance' => $this->getRawOriginal('balance'),
-            'currency' => $this->currency,
+            'amount' => $this->amount,
+            'remaining_balance' => $this->remaining_balance,
+            'currency' => $this->currency_code,
             'status' => $this->status,
             'recipient_email' => $this->recipient_email,
+            'recipient_name' => $this->recipient_name,
+            'redeemed_at' => $this->redeemed_at?->toIso8601String(),
             'expires_at' => $this->expires_at?->toIso8601String(),
+            'purchased_at' => $this->created_at?->toIso8601String(),
         ];
     }
 }

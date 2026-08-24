@@ -51,7 +51,6 @@ class OrderTrackingService
     {
         $order->load([
             'country:id,name_en,name_ar',
-            'marketerCampaign:id,tracking_url_slug',
             'subOrders' => fn ($q) => $q->with([
                 'vendor:id,store_name',
                 'carrier',
@@ -87,7 +86,6 @@ class OrderTrackingService
             'sub_orders'        => $order->subOrders->map(
                 fn (SubOrder $subOrder) => $this->buildSubOrder($subOrder, $reviewedItemIds)
             )->all(),
-            'marketer_ref' => $order->marketerCampaign?->tracking_url_slug,
         ];
     }
 

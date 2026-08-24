@@ -15,8 +15,12 @@ class CustomerResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
+            'gender' => $this->gender,
+            'nationality' => $this->nationality,
+            'is_tourist' => (bool) $this->is_tourist,
             'status' => $this->status?->value,
             'date_of_birth' => $this->date_of_birth?->toDateString(),
+            'profile_completion' => $this->profileCompletion(),
             'total_orders' => $this->total_orders,
             'total_spent' => (float) $this->total_spent,
             'loyalty_points' => (float) $this->loyalty_points,
@@ -37,6 +41,30 @@ class CustomerResource extends JsonResource
                 'sms' => $this->marketing_sms_enabled,
                 'whatsapp' => $this->marketing_whatsapp_enabled,
             ],
+        ];
+    }
+
+    private function profileCompletion(): array
+    {
+        $fields = [
+            'name' => filled($this->name),
+            'email' => filled($this->email),
+            'phone' => filled($this->phone),
+            'date_of_birth' => filled($this->date_of_birth),
+            'gender' => filled($this->gender),
+            'nationality' => filled($this->nationality),
+            'email_verified' => $this->email_verified_at !== null,
+            'phone_verified' => $this->phone_verified_at !== null,
+        ];
+
+        $completed = count(array_filter($fields));
+        $total = count($fields);
+
+        return [
+            'percentage' => (int) round(($completed / $total) * 100),
+            'completed' => $completed,
+            'total' => $total,
+            'missing' => array_keys(array_filter($fields, fn ($v) => !$v)),
         ];
     }
 

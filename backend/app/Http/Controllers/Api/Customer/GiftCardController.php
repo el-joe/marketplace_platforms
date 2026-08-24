@@ -21,7 +21,7 @@ class GiftCardController extends Controller
 
         $giftCard = GiftCard::where('code', $data['code'])
             ->where('status', 'active')
-            ->where('currency', $data['currency'])
+            ->where('currency_code', $data['currency'])
             ->where(function ($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
