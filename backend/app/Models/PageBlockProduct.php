@@ -14,12 +14,14 @@ class PageBlockProduct extends Model
 
     protected $fillable = [
         'page_block_id',
+        'tab_index',
         'product_variant_id',
         'position',
         'added_by_admin_id',
     ];
 
     protected $casts = [
+        'tab_index' => 'integer',
         'position' => 'integer',
     ];
 

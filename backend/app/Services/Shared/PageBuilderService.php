@@ -370,33 +370,39 @@ class PageBuilderService
 
         if ($b->block_type === 'mega_deals') {
             $cfg  = $b->config ?? [];
-            $tabs = collect($cfg['tabs'] ?? [])->map(function ($tab) use ($country) {
-                if (empty($tab['category_id'])) return null;
-
+            $tabs = collect($cfg['tabs'] ?? [])->values()->map(function ($tab, $i) use ($b, $country) {
                 $maxProducts = (int) ($tab['max_products'] ?? 4);
-                $categoryIds = [];
-                $rootCat = Category::find($tab['category_id']);
-                if ($rootCat) {
-                    $categoryIds = app(\App\Services\Customer\CategoryService::class)
-                        ->getDescendantIds($rootCat);
-                }
+
+                $productIds = \App\Models\PageBlockProduct::where('page_block_id', $b->id)
+                    ->where('tab_index', $i)
+                    ->with('productVariant:id,product_id')
+                    ->orderBy('position')
+                    ->limit($maxProducts)
+                    ->get()
+                    ->pluck('productVariant.product_id')
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                if ($productIds->isEmpty()) return null;
 
                 $products = Product::query()
+                    ->whereIn('id', $productIds)
                     ->where('status', 'active')
-                    ->whereIn('category_id', $categoryIds)
                     ->whereNotIn('id', ProductCountrySetting::where('country_id', $country->id)
                         ->where('is_available', false)
                         ->pluck('product_id'))
                     ->with(['variants', 'images'])
-                    ->orderByDesc('total_sold')
-                    ->limit($maxProducts)
-                    ->get();
+                    ->get()
+                    ->sortBy(fn ($p) => $productIds->search($p->id))
+                    ->values();
+
+                $cards = $this->productsToCards($products, $country);
+                if (empty($cards)) return null;
 
                 return [
-                    'label'       => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
-                    'category_id' => $tab['category_id'],
-                    'browse_url'  => "/browse/product/{$tab['category_id']}",
-                    'products'    => $this->productsToCards($products, $country),
+                    'label'    => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
+                    'products' => $cards,
                 ];
             })->filter()->values()->all();
 

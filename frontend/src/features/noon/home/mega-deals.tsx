@@ -1,5 +1,5 @@
 import CountDown from "@/src/components/shared/CountDown";
-import MegaDealsCard from "@/src/components/shared/MegaDealsCard";
+import MegaDealsTabs from "./mega-deals-tabs";
 import { Button } from "@/src/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
@@ -69,12 +69,8 @@ const MegaDeals = async ({ data }: { data: Block }) => {
           </Link>
         )}
       </div>
-      {/* mega deals cards */}
-      <div className="flex gap-4 flex-wrap">
-        {data?.tabs?.[0]?.products?.map((deal) => (
-          <MegaDealsCard key={deal.slug} data={deal} />
-        ))}
-      </div>
+      {/* mega deals tabs + cards */}
+      <MegaDealsTabs tabs={data?.tabs || []} />
     </div>
   );
 };

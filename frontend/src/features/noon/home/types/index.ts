@@ -242,7 +242,6 @@ export interface Banner {
 export interface ConfigTab {
   label_ar: null | string;
   label_en: null | string;
-  category_id: string;
   max_products: string;
 }
 
@@ -257,8 +256,6 @@ export interface ConfigTile {
 
 export interface ColumnTab {
   label: Name;
-  category_id: string;
-  browse_url: string;
   products: Product[];
 }
 

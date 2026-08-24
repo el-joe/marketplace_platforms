@@ -426,11 +426,13 @@ class PageRendererService
         ];
     }
 
-    private function productRowManual(PageBlock $block, Country $country): array
+    private function productRowManual(PageBlock $block, Country $country, ?int $tabIndex = null, ?int $limit = null): array
     {
         $blockProducts = PageBlockProduct::where('page_block_id', $block->id)
+            ->when($tabIndex !== null, fn ($q) => $q->where('tab_index', $tabIndex))
             ->with(['productVariant.product.images', 'productVariant.product.category', 'productVariant.images'])
             ->orderBy('position')
+            ->when($limit !== null, fn ($q) => $q->limit($limit))
             ->get();
 
         if ($blockProducts->isEmpty()) {
@@ -999,25 +1001,16 @@ class PageRendererService
         $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
         $tabs = $cfg['tabs'] ?? [];
 
-        $resolvedTabs = collect($tabs)->map(function ($tab) use ($country) {
-            if (empty($tab['category_id'])) return null;
-
-            $categoryIds = [];
-            $rootCat = \App\Models\Category::find($tab['category_id']);
-            if ($rootCat) {
-                $categoryIds = app(\App\Services\Customer\CategoryService::class)
-                    ->getDescendantIds($rootCat);
-            }
-
+        $resolvedTabs = collect($tabs)->values()->map(function ($tab, $i) use ($block, $country) {
             $maxProducts = (int) ($tab['max_products'] ?? 4);
 
-            $listings = $this->getBuyBoxProducts($country, $categoryIds, $maxProducts);
+            $products = $this->productRowManual($block, $country, $i, $maxProducts);
+
+            if (empty($products)) return null;
 
             return [
-                'label'       => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
-                'category_id' => $tab['category_id'],
-                'browse_url'  => "/browse/product/{$tab['category_id']}",
-                'products'    => $listings,
+                'label'    => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
+                'products' => $products,
             ];
         })->filter()->values()->all();
 
@@ -1159,31 +1152,6 @@ class PageRendererService
             'play_store_badge_url' => $cfg['play_store_badge_url'] ?? null,
             'phone_mockup_url'     => $cfg['phone_mockup_url']     ?? null,
         ];
-    }
-
-    /**
-     * Helper: get buy-box product cards for a set of category IDs.
-     */
-    private function getBuyBoxProducts(Country $country, array $categoryIds, int $limit): array
-    {
-        $products = \App\Models\Product::whereIn('category_id', $categoryIds)
-            ->where('status', 'active')
-            ->whereHas('productCountrySettings', fn ($q) =>
-                $q->where('country_id', $country->id)->where('is_available', true)
-            )
-            ->with(['variants', 'images'])
-            ->orderByDesc('rating_avg')
-            ->limit($limit)
-            ->get();
-
-        $buyBox = $this->listingQuery->getBuyBoxForProducts($products, $country);
-
-        return $products
-            ->map(fn ($p) => [$p, $buyBox[$p->id] ?? null])
-            ->filter(fn ($pair) => $pair[1] !== null)
-            ->map(fn ($pair) => $this->listingQuery->toMixedCardShape($pair[1], $pair[0], $country))
-            ->values()
-            ->all();
     }
 
     // ─── Cache helper ───────────────────────────────────────────────────────

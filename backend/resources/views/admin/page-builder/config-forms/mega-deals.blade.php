@@ -29,10 +29,10 @@
         Show "View All" button
     </label>
 
-    {{-- Tabs (category tabs) --}}
+    {{-- Tabs (each tab has its own manually-selected product list) --}}
     <div class="mt-4">
         <div class="flex items-center justify-between mb-2">
-            <label class="text-sm font-medium text-gray-700">Category Tabs</label>
+            <label class="text-sm font-medium text-gray-700">Product Tabs</label>
             <button type="button" id="add-mega-tab"
                 class="text-xs text-primary-600 hover:text-primary-700">+ Add Tab</button>
         </div>
@@ -50,13 +50,6 @@
                             placeholder="اسم التبويب" dir="rtl"
                             class="text-sm border border-gray-300 rounded px-2 py-1">
                     </div>
-                    <select name="tabs[{{ $i }}][category_id]" data-async-select
-                        data-config='{{ json_encode(["url" => route("admin.page-builder.search.categories"), "param" => "q", "minLength" => 0, "delay" => 300]) }}'
-                        class="block w-full text-sm border border-gray-300 rounded px-2 py-1">
-                        @if(!empty($tab['category_id']) && !empty($tab['category_label']))
-                            <option value="{{ $tab['category_id'] }}" selected>{{ $tab['category_label'] }}</option>
-                        @endif
-                    </select>
                     <div class="flex items-center gap-2">
                         <input type="number" name="tabs[{{ $i }}][max_products]"
                             value="{{ $tab['max_products'] ?? 4 }}" min="2" max="20"
@@ -64,6 +57,8 @@
                         <span class="text-xs text-gray-400">max products</span>
                         <button type="button" class="ml-auto text-xs text-rose-500 remove-mega-tab">Remove</button>
                     </div>
+
+                    @include('admin.page-builder.config-forms.partials.mega-tab-products', ['block' => $block, 'tabIndex' => $i])
                 </div>
             @endforeach
         </div>
@@ -74,30 +69,43 @@
     <script>
     (function() {
         let idx = {{ count($tabs) }};
-        const searchCategoriesUrl = @json(route('admin.page-builder.search.categories'));
         document.getElementById('add-mega-tab')?.addEventListener('click', function() {
+            const i = idx;
             const row = document.createElement('div');
             row.className = 'mega-tab-row p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-2';
+            row.dataset.index = i;
             row.innerHTML = `
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" name="tabs[${idx}][label_en]" placeholder="Tab label (EN)" dir="ltr"
+                    <input type="text" name="tabs[${i}][label_en]" placeholder="Tab label (EN)" dir="ltr"
                         class="text-sm border border-gray-300 rounded px-2 py-1">
-                    <input type="text" name="tabs[${idx}][label_ar]" placeholder="اسم التبويب" dir="rtl"
+                    <input type="text" name="tabs[${i}][label_ar]" placeholder="اسم التبويب" dir="rtl"
                         class="text-sm border border-gray-300 rounded px-2 py-1">
                 </div>
-                <select name="tabs[${idx}][category_id]" data-async-select
-                    data-config='${JSON.stringify({url: searchCategoriesUrl, param: "q", minLength: 0, delay: 300})}'
-                    class="block w-full text-sm border border-gray-300 rounded px-2 py-1">
-                </select>
                 <div class="flex items-center gap-2">
-                    <input type="number" name="tabs[${idx}][max_products]" value="4" min="2" max="20"
+                    <input type="number" name="tabs[${i}][max_products]" value="4" min="2" max="20"
                         class="w-20 text-sm border border-gray-300 rounded px-2 py-1">
                     <span class="text-xs text-gray-400">max products</span>
                     <button type="button" class="ml-auto text-xs text-rose-500 remove-mega-tab">Remove</button>
                 </div>
+                <section class="pt-3 mt-1 border-t border-gray-200" data-mega-tab-products data-tab-index="${i}" data-block-id="{{ $block?->id }}">
+                    <div class="relative mb-2">
+                        <input type="search"
+                            class="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="Search products…" data-action="search-mega-tab-products" data-tab-index="${i}" data-block-id="{{ $block?->id }}" />
+                        <svg class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                        </svg>
+                    </div>
+                    <div data-mega-tab-product-search-results data-tab-index="${i}" data-block-id="{{ $block?->id }}"
+                        class="hidden mb-2 rounded-lg border border-gray-200 bg-white shadow-sm text-sm divide-y divide-gray-100 max-h-48 overflow-y-auto"></div>
+                    <div data-mega-tab-products-list data-tab-index="${i}" data-block-id="{{ $block?->id }}" class="space-y-1 text-sm text-gray-500">
+                        <div class="text-xs text-gray-400 px-2 py-3 text-center">No products added yet.</div>
+                    </div>
+                </section>
             `;
             document.getElementById('mega-tabs-list').appendChild(row);
-            if (window.initSelect2) window.initSelect2($(row));
             idx++;
         });
         document.getElementById('mega-tabs-list')?.addEventListener('click', function(e) {

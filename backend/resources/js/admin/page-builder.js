@@ -757,6 +757,9 @@ function openConfigPanel(blockId) {
             if ($('#config-form-body [data-block-sellers-list]').length) loadPickerList('sellers', blockId);
             if ($('#config-form-body [data-block-brands-list]').length) loadPickerList('brands', blockId);
             if ($('#config-form-body [data-ad-images-panel]').length) loadAdImagesPanel(blockId);
+            $('#config-form-body [data-mega-tab-products-list]').each(function () {
+                loadMegaTabProducts(blockId, $(this).data('tab-index'));
+            });
         });
     }).fail(() => {
         $('#config-form-body').html('<div class="text-sm text-rose-600 text-center py-8">Failed to load config form.</div>');
@@ -905,6 +908,96 @@ $(document).on('click', '[data-action="remove-picker-item"]', function () {
 
     ajax({ url: cfg.removeUrl(itemId), method: 'DELETE' }).done(() => {
         loadPickerList(kind, blockId);
+    }).fail(() => Toast.error(t('admin.page_builder.could_not_remove_item')));
+});
+
+/* ─── Mega Deals: per-tab manual product picker ─────────────────────────── */
+function loadMegaTabProducts(blockId, tabIndex) {
+    const $container = $(`#config-form-body [data-mega-tab-products-list][data-tab-index="${tabIndex}"][data-block-id="${blockId}"]`);
+    if (!$container.length) return;
+
+    ajax({ url: ROUTES.blockProducts(blockId), method: 'GET', data: { tab_index: tabIndex } }).done((res) => {
+        const rows = res.results || [];
+        if (!rows.length) {
+            $container.html('<div class="text-xs text-gray-400 px-2 py-3 text-center">No products added yet. Search above to add some.</div>');
+            return;
+        }
+        $container.html(rows.map((row) => `
+            <div class="flex items-center gap-2 px-2 py-1.5 border border-gray-100 rounded hover:bg-gray-50" data-mega-tab-product-id="${row.id}">
+                <span class="drag-handle text-gray-300 cursor-move">⠿</span>
+                <span class="flex-1 truncate text-sm text-gray-700">${escapeHtml(row.text || '')}</span>
+                <button type="button" class="text-xs text-rose-500 hover:text-rose-700" data-action="remove-mega-tab-product" data-item-id="${row.id}" data-tab-index="${tabIndex}" data-block-id="${blockId}">Remove</button>
+            </div>
+        `).join(''));
+
+        if (window.Sortable) {
+            Sortable.create($container[0], {
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: () => {
+                    const ordered = $container.find('[data-mega-tab-product-id]').map(function (i) {
+                        return { id: $(this).data('mega-tab-product-id'), position: i };
+                    }).get();
+                    ajax({
+                        url: ROUTES.blockProductReorder(blockId), method: 'POST',
+                        data: JSON.stringify({ products: ordered }), contentType: 'application/json',
+                    });
+                },
+            });
+        }
+    });
+}
+
+$(document).on('input', '[data-action="search-mega-tab-products"]', function () {
+    const $input = $(this);
+    const blockId = $input.data('block-id');
+    const tabIndex = $input.data('tab-index');
+    const q = $input.val().trim();
+    const $results = $(`#config-form-body [data-mega-tab-product-search-results][data-tab-index="${tabIndex}"][data-block-id="${blockId}"]`);
+
+    clearTimeout($input.data('searchTimer'));
+    if (q.length < 2) { $results.addClass('hidden').empty(); return; }
+
+    $input.data('searchTimer', setTimeout(() => {
+        ajax({ url: ROUTES.searchProducts, method: 'GET', data: { q } }).done((res) => {
+            const rows = res.results || [];
+            if (!rows.length) {
+                $results.removeClass('hidden').html(`<div class="px-3 py-2 text-gray-400">${t('admin.page_builder.no_results')}</div>`);
+                return;
+            }
+            $results.removeClass('hidden').html(rows.map((row) => `
+                <button type="button" class="w-full text-left px-3 py-2 hover:bg-gray-50" data-action="add-mega-tab-product" data-item-id="${row.id}" data-tab-index="${tabIndex}" data-block-id="${blockId}">
+                    ${escapeHtml(row.text || '')}
+                </button>
+            `).join(''));
+        });
+    }, 300));
+});
+
+$(document).on('click', '[data-action="add-mega-tab-product"]', function () {
+    const $btn = $(this);
+    const blockId = $btn.data('block-id');
+    const tabIndex = $btn.data('tab-index');
+    const itemId = $btn.data('item-id');
+
+    ajax({
+        url: ROUTES.blockProducts(blockId), method: 'POST',
+        data: JSON.stringify({ product_variant_id: itemId, tab_index: tabIndex }), contentType: 'application/json',
+    }).done(() => {
+        $(`#config-form-body [data-mega-tab-product-search-results][data-tab-index="${tabIndex}"][data-block-id="${blockId}"]`).addClass('hidden').empty();
+        $(`#config-form-body [data-action="search-mega-tab-products"][data-tab-index="${tabIndex}"][data-block-id="${blockId}"]`).val('');
+        loadMegaTabProducts(blockId, tabIndex);
+    }).fail((xhr) => Toast.error(xhr.responseJSON?.message || t('admin.page_builder.could_not_add_item')));
+});
+
+$(document).on('click', '[data-action="remove-mega-tab-product"]', function () {
+    const $btn = $(this);
+    const blockId = $btn.data('block-id');
+    const tabIndex = $btn.data('tab-index');
+    const itemId = $btn.data('item-id');
+
+    ajax({ url: ROUTES.blockProductRemove(itemId), method: 'DELETE' }).done(() => {
+        loadMegaTabProducts(blockId, tabIndex);
     }).fail(() => Toast.error(t('admin.page_builder.could_not_remove_item')));
 });
 
