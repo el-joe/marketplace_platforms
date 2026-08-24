@@ -629,6 +629,22 @@ class PageBuilderController extends Controller
         if ($blockType->code === 'full_banner') {
             $extra['banners'] = Banner::orderBy('name')->get(['id', 'name']);
         }
+        if ($blockType->code === 'mega_deals' && !empty($config['tabs'])) {
+            $categoryIds = collect($config['tabs'])
+                ->pluck('category_id')
+                ->filter()
+                ->unique()
+                ->values();
+
+            $names = Category::whereIn('id', $categoryIds)->pluck('name_en', 'id');
+
+            $config['tabs'] = array_map(function ($tab) use ($names) {
+                if (!empty($tab['category_id']) && empty($tab['category_label'])) {
+                    $tab['category_label'] = $names[$tab['category_id']] ?? null;
+                }
+                return $tab;
+            }, $config['tabs']);
+        }
 
         return response()->view($view, array_merge([
             'blockType' => $blockType,
