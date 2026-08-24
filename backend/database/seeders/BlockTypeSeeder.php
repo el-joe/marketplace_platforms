@@ -62,8 +62,8 @@ class BlockTypeSeeder extends Seeder
                 'code' => 'mega_deals', 'group' => 'products',
                 'label_en' => 'Mega Deals', 'label_ar' => 'عروض ميجا',
                 'icon' => 'fire', 'max_per_page' => 2,
-                'config_schema' => ['title_en', 'title_ar', 'ends_at', 'show_countdown', 'tabs', 'show_view_all', 'columns'],
-                'default_config' => ['show_countdown' => true, 'columns' => 2, 'show_view_all' => true, 'tabs' => []],
+                'config_schema' => ['title_en', 'title_ar', 'ends_at', 'show_countdown', 'show_view_all', 'columns'],
+                'default_config' => ['show_countdown' => true, 'columns' => 2, 'show_view_all' => true],
             ],
 
             // ── Ads & Banners ───────────────────────────────────────────────

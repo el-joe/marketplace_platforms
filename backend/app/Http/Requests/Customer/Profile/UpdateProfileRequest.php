@@ -25,6 +25,9 @@ class UpdateProfileRequest extends FormRequest
                 'max:20',
                 Rule::unique('customers', 'phone')->ignore($customerId),
             ],
+            'gender' => ['nullable', 'string', 'in:male,female,prefer_not_to_say'],
+            'nationality' => ['nullable', 'string', 'max:100'],
+            'is_tourist' => ['nullable', 'boolean'],
         ];
     }
 }

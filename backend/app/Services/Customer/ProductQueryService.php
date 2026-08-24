@@ -244,6 +244,13 @@ class ProductQueryService
                 .' as admin_listing_count',
                 [$country->id],
             )
+            // ── buy_box_compare_at_price ───────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('al_b.compare_at_price').', '.$vl('vl_b.compare_at_price').') as buy_box_compare_at_price',
+                [$country->id, $country->id, 'active'],
+            )
+            ->addSelect('cat.name_en as category_name_en', 'cat.name_ar as category_name_ar')
+            ->leftJoin('categories as cat', 'cat.id', '=', 'products.category_id')
             ->leftJoin('product_country_settings as pcs', function ($j) use ($country) {
                 $j->on('pcs.product_id', '=', 'products.id')
                     ->where('pcs.country_id', $country->id)
@@ -275,7 +282,7 @@ class ProductQueryService
             })
             ->leftJoin('warehouse_inventories as wi', 'wi.vendor_listing_id', '=', 'vl.id')
             ->where('products.status', 'active')
-            ->groupBy('products.id', 'pcs.name_override_en', 'pcs.name_override_ar');
+            ->groupBy('products.id', 'pcs.name_override_en', 'pcs.name_override_ar', 'cat.name_en', 'cat.name_ar');
     }
 
     public function applyFilters($builder, array $filters)

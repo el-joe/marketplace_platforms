@@ -47,6 +47,7 @@ export interface PageBuilderSection {
   columns_config: ColumnsConfig | null;
   background_color: null | string;
   background_image_url: null | string;
+  background_image_type?: "section" | "header";
   max_width: null | string;
   padding_top: number;
   padding_bottom: number;
@@ -79,8 +80,9 @@ export interface Block {
   seconds_remaining?: number;
   ends_at?: Date;
   show_view_all?: boolean;
-  tabs?: ColumnTab[];
   tiles?: ColumnTile[];
+  rows_count?: number;
+  card_style?: "normal" | "special";
 }
 
 export interface Category {
@@ -123,13 +125,14 @@ export interface BlockConfig {
   show_product_count?: number;
   banner_id?: string;
   mobile_aspect_ratio?: string;
-  tabs?: ConfigTab[];
   ends_at?: string;
   show_countdown?: number;
   tiles?: ConfigTile[];
   grid_cols?: string;
   grid_rows?: string;
   is_announcement?: boolean;
+  rows_count?: string;
+  card_style?: string;
 }
 
 export interface BlockItem {
@@ -167,8 +170,10 @@ export interface Product {
   name_en: string;
   name_ar: string;
   thumbnail: string;
+  category_name?: { en: string | null; ar: string | null };
   price: number;
   price_formatted: string;
+  compare_at_price?: number | null;
   currency: CurrencyCode;
   condition: string;
   is_admin_listing: boolean;
@@ -232,13 +237,6 @@ export interface Banner {
   mobile_aspect_ratio: string;
 }
 
-export interface ConfigTab {
-  label_ar: null | string;
-  label_en: null | string;
-  category_id: string;
-  max_products: string;
-}
-
 export interface ConfigTile {
   label_ar: null | string;
   label_en: null | string;
@@ -246,13 +244,6 @@ export interface ConfigTile {
   image_url: string;
   badge_label_ar: null | string;
   badge_label_en: null | string;
-}
-
-export interface ColumnTab {
-  label: Name;
-  category_id: string;
-  browse_url: string;
-  products: Product[];
 }
 
 export interface ColumnTile {

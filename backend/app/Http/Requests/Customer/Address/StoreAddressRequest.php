@@ -19,7 +19,7 @@ class StoreAddressRequest extends FormRequest
             'label' => ['nullable', 'string', 'max:100'],
             'recipient_name' => ['required', 'string', 'max:255'],
             'recipient_phone' => ['required', 'string', 'max:20'],
-            'city_id' => ['required', 'uuid', 'exists:cities,id'],
+            'city_id' => ['nullable', 'uuid'],
             'area' => ['nullable', 'string', 'max:255'],
             'street_address' => ['required', 'string', 'max:500'],
             'building' => ['nullable', 'string', 'max:100'],

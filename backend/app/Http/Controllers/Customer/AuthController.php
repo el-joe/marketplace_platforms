@@ -10,12 +10,14 @@ use App\Http\Requests\Customer\Auth\RegisterRequest;
 use App\Http\Requests\Customer\Auth\ResetPasswordRequest;
 use App\Http\Requests\Customer\Auth\VerifyEmailRequest;
 use App\Enums\CustomerStatus;
+use App\Enums\DeviceTokenPlatform;
 use App\Http\Resources\Customer\CustomerResource;
 use App\Http\Responses\ApiResponse;
 use App\Jobs\SendVerificationEmailJob;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerOtpToken;
+use App\Models\DeviceToken;
 use App\Services\Customer\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -106,7 +108,17 @@ class AuthController extends Controller
 
     public function logout(): JsonResponse
     {
+        $customer = auth('customer')->user();
+        $token = JWTAuth::getToken()?->get();
+
         auth('customer')->logout();
+
+        if ($customer && $token) {
+            DeviceToken::where('tokenable_type', Customer::class)
+                ->where('tokenable_id', $customer->id)
+                ->where('token', hash('sha256', $token))
+                ->update(['is_active' => false]);
+        }
 
         return ApiResponse::success(null, __('common.exceptions.auth.logged_out'));
     }
@@ -246,6 +258,19 @@ class AuthController extends Controller
             'type' => 'refresh',
             'guard' => 'customer',
         ])->fromUser($customer);
+
+        DeviceToken::updateOrCreate(
+            [
+                'tokenable_type' => Customer::class,
+                'tokenable_id' => $customer->id,
+                'token' => hash('sha256', $accessToken),
+            ],
+            [
+                'platform' => DeviceTokenPlatform::Web,
+                'is_active' => true,
+                'last_used_at' => now(),
+            ]
+        );
 
         return [
             'access_token' => $accessToken,

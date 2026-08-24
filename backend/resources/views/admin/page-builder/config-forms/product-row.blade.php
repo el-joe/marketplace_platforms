@@ -38,10 +38,16 @@
             :min-length="0" />
     </div>
 
-    <div class="grid grid-cols-2 gap-3 mt-3">
+    <div class="grid grid-cols-3 gap-3 mt-3">
         <x-form.input name="items_per_row" type="number" label="{{ __('admin.page_builder.config_forms.product_row.items_per_row') }}" :value="$config['items_per_row'] ?? 4" min="1" max="8" />
+        <x-form.input name="rows_count" type="number" label="Rows Count" :value="$config['rows_count'] ?? 1" min="1" max="4" title="Number of card rows. 1 = single horizontal scroll. 2+ = grid scroll." />
         <x-form.input name="max_products"  type="number" label="{{ __('admin.page_builder.config_forms.product_row.max_products') }}"  :value="$config['max_products']  ?? 12" min="1" max="50" />
     </div>
+
+    <x-form.select name="card_style" label="Card Style" :value="$config['card_style'] ?? 'normal'" class="mt-3">
+        <option value="normal">Normal — Standard product card with rating &amp; delivery badge</option>
+        <option value="special">Special — Large image, category badge, strikethrough price</option>
+    </x-form.select>
 
     <div class="grid grid-cols-2 gap-3 mt-3">
         <x-form.toggle name="show_view_all"  label="{{ __('admin.page_builder.config_forms.product_row.view_all_link') }}" :value="$config['show_view_all'] ?? true" />

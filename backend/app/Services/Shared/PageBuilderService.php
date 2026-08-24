@@ -126,6 +126,7 @@ class PageBuilderService
                         : $section->columns_config,
                     'background_color'     => $section->background_color,
                     'background_image_url' => $section->background_image_url,
+                    'background_image_type' => $section->background_image_type ?? 'section',
                     'max_width'            => $section->max_width,
                     'padding_top'          => $section->padding_top,
                     'padding_bottom'       => $section->padding_bottom,
@@ -145,6 +146,7 @@ class PageBuilderService
                     : $section->columns_config,
                 'background_color'     => $section->background_color,
                 'background_image_url' => $section->background_image_url,
+                'background_image_type' => $section->background_image_type ?? 'section',
                 'max_width'        => $section->max_width,
                 'padding_top'      => $section->padding_top,
                 'padding_bottom'   => $section->padding_bottom,
@@ -368,35 +370,31 @@ class PageBuilderService
 
         if ($b->block_type === 'mega_deals') {
             $cfg  = $b->config ?? [];
-            $tabs = collect($cfg['tabs'] ?? [])->map(function ($tab) use ($country) {
-                if (empty($tab['category_id'])) return null;
 
-                $maxProducts = (int) ($tab['max_products'] ?? 4);
-                $categoryIds = [];
-                $rootCat = Category::find($tab['category_id']);
-                if ($rootCat) {
-                    $categoryIds = app(\App\Services\Customer\CategoryService::class)
-                        ->getDescendantIds($rootCat);
-                }
+            $productIds = \App\Models\PageBlockProduct::where('page_block_id', $b->id)
+                ->with('productVariant:id,product_id')
+                ->orderBy('position')
+                ->get()
+                ->pluck('productVariant.product_id')
+                ->filter()
+                ->unique()
+                ->values();
 
-                $products = Product::query()
+            $products = [];
+            if ($productIds->isNotEmpty()) {
+                $productModels = Product::query()
+                    ->whereIn('id', $productIds)
                     ->where('status', 'active')
-                    ->whereIn('category_id', $categoryIds)
                     ->whereNotIn('id', ProductCountrySetting::where('country_id', $country->id)
                         ->where('is_available', false)
                         ->pluck('product_id'))
                     ->with(['variants', 'images'])
-                    ->orderByDesc('total_sold')
-                    ->limit($maxProducts)
-                    ->get();
+                    ->get()
+                    ->sortBy(fn ($p) => $productIds->search($p->id))
+                    ->values();
 
-                return [
-                    'label'       => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
-                    'category_id' => $tab['category_id'],
-                    'browse_url'  => "/browse/product/{$tab['category_id']}",
-                    'products'    => $this->productsToCards($products, $country),
-                ];
-            })->filter()->values()->all();
+                $products = $this->productsToCards($productModels, $country);
+            }
 
             $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
             $data['title']           = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
@@ -405,7 +403,7 @@ class PageBuilderService
             $data['ends_at']         = $endsAt?->toIso8601String();
             $data['columns']         = (int) ($cfg['columns'] ?? 2);
             $data['show_view_all']   = (bool) ($cfg['show_view_all'] ?? true);
-            $data['tabs']            = $tabs;
+            $data['products']        = $products;
         }
 
         if ($b->block_type === 'image_slider') {

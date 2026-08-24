@@ -18,6 +18,7 @@ class PageSection extends Model
         'is_visible',
         'background_color',
         'background_image_url',
+        'background_image_type',
         'padding_top',
         'padding_bottom',
         'max_width',

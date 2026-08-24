@@ -413,6 +413,8 @@ class PageRendererService
             'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'source' => $source,
             'items_per_row' => $cfg['items_per_row'] ?? 4,
+            'rows_count' => (int) ($cfg['rows_count'] ?? 1),
+            'card_style' => $cfg['card_style'] ?? 'normal',
             'scrollable_row' => (bool) ($cfg['scrollable_row'] ?? true),
             'show_view_all' => (bool) ($cfg['show_view_all'] ?? true),
             'show_ratings' => (bool) ($cfg['show_ratings'] ?? true),
@@ -424,11 +426,13 @@ class PageRendererService
         ];
     }
 
-    private function productRowManual(PageBlock $block, Country $country): array
+    private function productRowManual(PageBlock $block, Country $country, ?int $tabIndex = null, ?int $limit = null): array
     {
         $blockProducts = PageBlockProduct::where('page_block_id', $block->id)
-            ->with(['productVariant.product.images', 'productVariant.images'])
+            ->when($tabIndex !== null, fn ($q) => $q->where('tab_index', $tabIndex))
+            ->with(['productVariant.product.images', 'productVariant.product.category', 'productVariant.images'])
             ->orderBy('position')
+            ->when($limit !== null, fn ($q) => $q->limit($limit))
             ->get();
 
         if ($blockProducts->isEmpty()) {
@@ -995,29 +999,8 @@ class PageRendererService
     {
         $cfg  = $block->config ?? [];
         $endsAt = isset($cfg['ends_at']) ? \Carbon\Carbon::parse($cfg['ends_at']) : null;
-        $tabs = $cfg['tabs'] ?? [];
 
-        $resolvedTabs = collect($tabs)->map(function ($tab) use ($country) {
-            if (empty($tab['category_id'])) return null;
-
-            $categoryIds = [];
-            $rootCat = \App\Models\Category::find($tab['category_id']);
-            if ($rootCat) {
-                $categoryIds = app(\App\Services\Customer\CategoryService::class)
-                    ->getDescendantIds($rootCat);
-            }
-
-            $maxProducts = (int) ($tab['max_products'] ?? 4);
-
-            $listings = $this->getBuyBoxProducts($country, $categoryIds, $maxProducts);
-
-            return [
-                'label'       => ['ar' => $tab['label_ar'] ?? null, 'en' => $tab['label_en'] ?? null],
-                'category_id' => $tab['category_id'],
-                'browse_url'  => "/browse/product/{$tab['category_id']}",
-                'products'    => $listings,
-            ];
-        })->filter()->values()->all();
+        $products = $this->productRowManual($block, $country);
 
         return [
             'title'          => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
@@ -1026,7 +1009,7 @@ class PageRendererService
             'ends_at'        => $endsAt?->toIso8601String(),
             'columns'        => (int) ($cfg['columns'] ?? 2),
             'show_view_all'  => (bool) ($cfg['show_view_all'] ?? true),
-            'tabs'           => $resolvedTabs,
+            'products'       => $products,
         ];
     }
 
@@ -1157,31 +1140,6 @@ class PageRendererService
             'play_store_badge_url' => $cfg['play_store_badge_url'] ?? null,
             'phone_mockup_url'     => $cfg['phone_mockup_url']     ?? null,
         ];
-    }
-
-    /**
-     * Helper: get buy-box product cards for a set of category IDs.
-     */
-    private function getBuyBoxProducts(Country $country, array $categoryIds, int $limit): array
-    {
-        $products = \App\Models\Product::whereIn('category_id', $categoryIds)
-            ->where('status', 'active')
-            ->whereHas('productCountrySettings', fn ($q) =>
-                $q->where('country_id', $country->id)->where('is_available', true)
-            )
-            ->with(['variants', 'images'])
-            ->orderByDesc('rating_avg')
-            ->limit($limit)
-            ->get();
-
-        $buyBox = $this->listingQuery->getBuyBoxForProducts($products, $country);
-
-        return $products
-            ->map(fn ($p) => [$p, $buyBox[$p->id] ?? null])
-            ->filter(fn ($pair) => $pair[1] !== null)
-            ->map(fn ($pair) => $this->listingQuery->toMixedCardShape($pair[1], $pair[0], $country))
-            ->values()
-            ->all();
     }
 
     // ─── Cache helper ───────────────────────────────────────────────────────

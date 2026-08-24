@@ -69,7 +69,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
       </div>
       {/* mega deals cards */}
       <div className="flex gap-4 flex-wrap">
-        {data?.tabs?.[0]?.products?.map((deal) => (
+        {data?.products?.map((deal) => (
           <MegaDealsCard key={deal.slug} data={deal} />
         ))}
       </div>

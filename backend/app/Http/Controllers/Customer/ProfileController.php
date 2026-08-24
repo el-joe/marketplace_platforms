@@ -25,7 +25,7 @@ class ProfileController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $data = $request->only(['name', 'date_of_birth']);
+        $data = $request->only(['name', 'date_of_birth', 'gender', 'nationality', 'is_tourist']);
 
         // Phone change: if new phone differs from stored, clear verification
         if ($request->filled('phone') && $request->phone !== $customer->phone) {

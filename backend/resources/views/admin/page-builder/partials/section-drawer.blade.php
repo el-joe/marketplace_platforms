@@ -82,6 +82,17 @@
                 </label>
             </div>
 
+            <div id="sd-bg-image-type-row">
+                <label class="block text-xs font-medium text-gray-600 mb-1">
+                    Background image type
+                </label>
+                <select id="sd-background-image-type"
+                        class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                    <option value="section">Section background — covers the whole section</option>
+                    <option value="header">Header background — covers the title / header area only</option>
+                </select>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Padding top</label>

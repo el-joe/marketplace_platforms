@@ -526,12 +526,13 @@ class PageBuilderService
     // Block products
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function addBlockProduct(PageBlock $block, string $productVariantId, Admin $admin): PageBlockProduct
+    public function addBlockProduct(PageBlock $block, string $productVariantId, Admin $admin, int $tabIndex = 0): PageBlockProduct
     {
         return PageBlockProduct::firstOrCreate(
-            ['page_block_id' => $block->id, 'product_variant_id' => $productVariantId],
+            ['page_block_id' => $block->id, 'tab_index' => $tabIndex, 'product_variant_id' => $productVariantId],
             [
-                'position' => (int) PageBlockProduct::where('page_block_id', $block->id)->max('position') + 1,
+                'position' => (int) PageBlockProduct::where('page_block_id', $block->id)
+                    ->where('tab_index', $tabIndex)->max('position') + 1,
                 'added_by_admin_id' => $admin->id,
             ]
         );

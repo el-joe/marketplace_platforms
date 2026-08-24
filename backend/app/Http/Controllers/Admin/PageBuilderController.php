@@ -208,6 +208,7 @@ class PageBuilderController extends Controller
             'layout'          => ['nullable', 'in:stack,columns'],
             'columns_config'  => ['nullable', 'string', 'max:100'],
             'background_image_url' => ['nullable', 'string', 'max:500'],
+            'background_image_type' => ['nullable', 'in:section,header'],
             'background_color' => ['nullable', 'string', 'max:20'],
             'max_width'       => ['nullable', 'string', 'max:20'],
             'padding_top'     => ['nullable', 'integer', 'min:0', 'max:200'],
@@ -242,6 +243,7 @@ class PageBuilderController extends Controller
             'is_visible'        => ['sometimes', 'boolean'],
             'background_color'  => ['nullable', 'string', 'max:20'],
             'background_image_url' => ['nullable', 'string', 'max:500'],
+            'background_image_type' => ['nullable', 'in:section,header'],
             'padding_top'       => ['nullable', 'integer', 'min:0'],
             'padding_bottom'    => ['nullable', 'integer', 'min:0'],
             'max_width'         => ['nullable', 'string', 'max:20'],
@@ -627,7 +629,6 @@ class PageBuilderController extends Controller
         if ($blockType->code === 'full_banner') {
             $extra['banners'] = Banner::orderBy('name')->get(['id', 'name']);
         }
-
         return response()->view($view, array_merge([
             'blockType' => $blockType,
             'block' => $block,
@@ -938,9 +939,15 @@ class PageBuilderController extends Controller
     // Block products
     // ─────────────────────────────────────────────────────────────────────
 
-    public function getBlockProducts(PageBlock $block)
+    public function getBlockProducts(Request $request, PageBlock $block)
     {
-        $items = $block->blockProducts()->with('productVariant.product:id,name_en')->get();
+        $tabIndex = $request->query('tab_index');
+
+        $items = $block->blockProducts()
+            ->when($tabIndex !== null, fn ($q) => $q->where('tab_index', (int) $tabIndex))
+            ->orderBy('position')
+            ->with('productVariant.product:id,name_en')
+            ->get();
 
         return response()->json([
             'results' => $items->map(fn($item) => [
@@ -958,9 +965,10 @@ class PageBuilderController extends Controller
 
         $data = $request->validate([
             'product_variant_id' => 'required|uuid|exists:product_variants,id',
+            'tab_index' => 'nullable|integer|min:0',
         ]);
 
-        $item = $this->service->addBlockProduct($block, $data['product_variant_id'], $this->admin());
+        $item = $this->service->addBlockProduct($block, $data['product_variant_id'], $this->admin(), (int) ($data['tab_index'] ?? 0));
         return response()->json(['item' => $item]);
     }
 

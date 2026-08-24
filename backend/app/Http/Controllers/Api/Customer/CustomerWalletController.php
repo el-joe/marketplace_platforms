@@ -30,6 +30,8 @@ class CustomerWalletController extends Controller
 
         $wallets = CustomerWallet::where('customer_id', $customer->id)->get();
 
+        $country = $request->attributes->get('country')?->site_code;
+
         return ApiResponse::success([
             'wallets' => $wallets->map(fn (CustomerWallet $wallet) => [
                 'currency_code' => $wallet->currency_code,
@@ -37,6 +39,12 @@ class CustomerWalletController extends Controller
                 'balance_display' => $wallet->currency_code.' '.$wallet->balance,
                 'updated_at' => $wallet->updated_at?->toIso8601String(),
             ]),
+            'actions' => [
+                'redeem_gift_card' => route('customer.api.gift-card-wallet.redeem-gift-card', [$country]),
+                'redeem_voucher' => route('customer.api.gift-card-wallet.redeem.voucher', [$country]),
+                'transactions' => route('customer.api.gift-card-wallet.transactions', [$country]),
+                'gift_card_balance' => route('customer.api.gift-card-wallet.gift_card.balance', [$country]),
+            ],
         ]);
     }
 
