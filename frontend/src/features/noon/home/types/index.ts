@@ -47,6 +47,7 @@ export interface PageBuilderSection {
   columns_config: ColumnsConfig | null;
   background_color: null | string;
   background_image_url: null | string;
+  background_image_type?: "section" | "header";
   max_width: null | string;
   padding_top: number;
   padding_bottom: number;
