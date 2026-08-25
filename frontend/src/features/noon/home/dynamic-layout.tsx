@@ -1,6 +1,7 @@
 import { cn } from "@/src/lib/utils";
 import { blocks } from "./helpers/blocks-catalog";
 import { PageBuilderSection } from "./types";
+import Image from "next/image";
 
 const widthClasses: Record<string, string> = {
   "1/3": "w-1/3 flex-1",
@@ -14,25 +15,45 @@ const widthClasses: Record<string, string> = {
 export function DynamicLayout({ section }: { section: PageBuilderSection }) {
   const widths = section.columns_config?.widths?.split(" ") ?? [];
 
+  const hasHeaderBg =
+    section.background_image_type === "header" && section.background_image_url;
+  const hasSectionBg =
+    section.background_image_type === "section" && section.background_image_url;
+
   return (
     <div className="container">
       <section
-        className="w-full"
+        className={cn("w-full mb-6a", section?.position > 0 && "mb-1")}
         style={{
           backgroundColor: section.background_color ?? undefined,
-          backgroundImage: section.background_image_url
+          backgroundImage: hasSectionBg
             ? `url(${section.background_image_url})`
             : undefined,
-          // backgroundSize: "contain",
+          backgroundSize: "cover",
           backgroundPositionX: "center",
           backgroundRepeat: "no-repeat",
           // maxWidth: section.max_width || "100%",
-          paddingTop: `${section.padding_top}px`,
-          paddingBottom: `${section.padding_bottom}px`,
+          // paddingTop: `${section.padding_top}px`,
+          // paddingBottom: `${section.padding_bottom}px`,
         }}
       >
+        {hasHeaderBg && (
+          <div className="relative h-28">
+            <Image
+              src={section?.background_image_url || ""}
+              alt={section?.name}
+              fill
+              className="object-cover"
+            />
+          </div>
+        )}
         {section.layout === "columns" && (
-          <div className="flex w-full gap-2">
+          <div
+            className={cn(
+              "flex w-full",
+              section?.columns.length > 2 && "gap-2",
+            )}
+          >
             {section.columns.map((block, i) => {
               const b = block[0];
               const BlockComponent =
@@ -64,6 +85,7 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
               <div
                 className={cn(
                   "w-full",
+                  section.position > 1 && (hasHeaderBg ? "pb-6" : "py-6"),
                   b.device_target === "desktop"
                     ? "hidden lg:block"
                     : b.device_target === "mobile"

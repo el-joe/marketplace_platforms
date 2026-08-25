@@ -1,5 +1,5 @@
 import CountDown from "@/src/components/shared/CountDown";
-import MegaDealsCard from "@/src/components/shared/MegaDealsCard";
+import MegaDealsCard from "@/src/features/noon/home/mega-deals-card";
 import { Button } from "@/src/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
@@ -14,7 +14,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
   const dir = locale === "ar" ? "rtl" : "ltr";
   return (
     <div
-      className="p-3 pt-9 relative h-full"
+      className="p-3 relative h-full flex flex-col"
       style={{ backgroundColor: data?.background_color as string }}
     >
       {/* countdown */}
@@ -68,7 +68,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
         )}
       </div>
       {/* mega deals cards */}
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-4 flex-wrap flex-1">
         {data?.products?.map((deal) => (
           <MegaDealsCard key={deal.slug} data={deal} />
         ))}

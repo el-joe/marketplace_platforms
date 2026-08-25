@@ -4,10 +4,12 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import RootProviders from "@/src/providers";
 
-import "./globals.css";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
+import "swiper/css/grid";
+import "./globals.css";
+
 import getLocale from "@/src/helpers/getLocale";
 import AuthDialog from "@/src/components/shared/dialogs/AuthDialog";
 

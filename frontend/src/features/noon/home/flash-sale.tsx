@@ -7,7 +7,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Block, Product } from "./types";
 import { cn } from "@/src/lib/utils";
 import SectionTitle from "./section-title";
-import { AdBadge } from "@/src/components/shared/ad-badge";
 import { chunks } from "./helpers/chunks-arr";
 import { Button } from "@/src/components/ui/button";
 import { PlusIcon } from "lucide-react";
@@ -19,7 +18,7 @@ import { Spinner } from "@/src/components/ui/spinner";
 export const FlashSale = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.products || [], 2);
   return (
-    <div className="container px-0 md:px-4">
+    <div className="px-4">
       {data?.config?.title_en && (
         <SectionTitle title={data?.config?.title_en} />
       )}
@@ -41,13 +40,13 @@ export const FlashSale = ({ data }: { data: Block }) => {
         }}
       >
         {chunksRows.map((row, rowIndex) => (
-          <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col!">
+          <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col! gap-4">
             {row.map((p) => (
               <Link
                 href={`products/${p?.url_param}`}
                 key={p.listing_id}
                 className={cn(
-                  "block relative mb-2",
+                  "block relative",
                   row.length === Number(data?.config?.rows) && "flex-1",
                 )}
               >
@@ -93,7 +92,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             {isMutating ? <Spinner /> : <PlusIcon className={`size-4`} />}
           </Button>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col justify-evenly h-32">
           <h4 className="line-clamp-2">
             {locale === "ar" ? p.name_ar : p.name_en}
           </h4>

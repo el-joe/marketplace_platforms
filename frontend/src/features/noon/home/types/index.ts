@@ -82,7 +82,7 @@ export interface Block {
   show_view_all?: boolean;
   tiles?: ColumnTile[];
   rows_count?: number;
-  card_style?: "normal" | "special";
+  // card_style?: "normal" | "special";
 }
 
 export interface Category {
@@ -132,7 +132,7 @@ export interface BlockConfig {
   grid_rows?: string;
   is_announcement?: boolean;
   rows_count?: string;
-  card_style?: string;
+  card_style?: "normal" | "special";
 }
 
 export interface BlockItem {

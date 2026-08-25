@@ -61,6 +61,7 @@ export default function HeroSlider({ data }: Props) {
           clickable: true,
         }
       }
+      autoplay={{ delay: Number(data?.config?.autoplay_seconds) * 1000 }}
       loop={!!data?.config?.loop}
       speed={1500}
       className="flex-1 pb-6! md:pb-0! h-full max-h-100"

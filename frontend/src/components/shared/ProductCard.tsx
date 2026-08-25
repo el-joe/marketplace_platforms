@@ -29,7 +29,7 @@ const ProductCard = ({ productData }: Props) => {
   };
   return (
     <div
-      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2"
+      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white"
       onMouseEnter={() => handleAutoplay("start")}
       onMouseLeave={() => handleAutoplay("stop")}
     >
