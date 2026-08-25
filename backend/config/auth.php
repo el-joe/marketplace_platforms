@@ -53,6 +53,11 @@ return [
             'driver' => 'session',
             'provider' => 'vendor_admins',
         ],
+        // Partner app mobile (JWT)
+        'vendor_api' => [
+            'driver'   => 'jwt',
+            'provider' => 'vendor_admins',
+        ],
         // Delivery agent app: pure token auth via Sanctum. The 'session'
         // driver is declared so first-party flows still work if needed.
         'delivery' => [

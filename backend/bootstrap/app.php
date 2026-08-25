@@ -41,6 +41,11 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('api/travel-agency')
                 ->group(base_path('routes/api_travel_agency.php'));
+
+            // Partner app mobile API (vendor_api JWT guard, read-only)
+            Route::middleware('api')
+                ->prefix('api/partner')
+                ->group(base_path('routes/api_partner.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -77,6 +82,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'carrier.api.auth' => \App\Http\Middleware\CarrierApiAuth::class,
             'carrier.api.active' => \App\Http\Middleware\CarrierApiActive::class,
             'carrier.permission' => \App\Http\Middleware\CarrierPermission::class,
+            'vendor.api.auth' => \App\Http\Middleware\VendorApiAuth::class,
+            'vendor.api.active' => \App\Http\Middleware\VendorApiActive::class,
             'detect.country' => \App\Http\Middleware\DetectCountry::class,
             'guest.cart.token' => \App\Http\Middleware\GuestCartToken::class,
         ]);
