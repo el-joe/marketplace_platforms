@@ -11,9 +11,9 @@ import { AdBadge } from "@/src/components/shared/ad-badge";
 import { chunks } from "./helpers/chunks-arr";
 
 const heights = {
-  small: "min-h-[80px]",
-  medium: "min-h-[140px]",
-  large: "min-h-[200px]",
+  small: "min-h-[80px] max-h-[140px]",
+  medium: "min-h-[140px] max-h-[200px]",
+  large: "min-h-[200px] max-h-[280px]",
 } as const;
 
 const rounded = {
@@ -25,7 +25,7 @@ const rounded = {
 export const ImagesSlider = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.items || [], Number(data?.config?.rows) || 1);
   return (
-    <div className="container px-0 md:px-4">
+    <div className="px-4">
       {data?.config?.title_en && (
         <SectionTitle title={data?.config?.title_en} />
       )}
@@ -47,7 +47,7 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
         }}
       >
         {chunksRows.map((row, rowIndex) => (
-          <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col!">
+          <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col! gap-4">
             {row.map((i) => (
               <Link
                 href={i?.link_url || "#"}

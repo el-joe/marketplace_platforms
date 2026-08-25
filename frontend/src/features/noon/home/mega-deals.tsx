@@ -1,5 +1,5 @@
 import CountDown from "@/src/components/shared/CountDown";
-import MegaDealsCard from "@/src/components/shared/MegaDealsCard";
+import MegaDealsCard from "@/src/features/noon/home/mega-deals-card";
 import { Button } from "@/src/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
@@ -9,21 +9,19 @@ import getLocale from "@/src/helpers/getLocale";
 import { cn } from "@/src/lib/utils";
 
 const MegaDeals = async ({ data }: { data: Block }) => {
-  const date =
-    new Date(data?.config?.ends_at || "").getTime() + 2 * 24 * 60 * 60 * 1000;
   const t = await getTranslations("home");
   const locale = await getLocale();
   const dir = locale === "ar" ? "rtl" : "ltr";
   return (
     <div
-      className="p-3 pt-9 relative h-full"
+      className="p-3 relative h-full flex flex-col"
       style={{ backgroundColor: data?.background_color as string }}
     >
       {/* countdown */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 flex items-start">
         <svg
           className={cn(
-            "w-3 h-8 text-gray -ms-px block",
+            "w-3 h-8 text-gray  block",
             dir === "rtl" && " rotate-y-180",
           )}
           viewBox="0 0 12 32"
@@ -38,7 +36,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
             fill="var(--color-gray)"
           ></path>
         </svg>
-        <CountDown targetDate={new Date(date).toDateString()} />
+        <CountDown targetDate={data?.config?.ends_at as string} />
         <svg
           className={cn(
             "w-3 h-8 text-gray -ms-0.5 block",
@@ -70,7 +68,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
         )}
       </div>
       {/* mega deals cards */}
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-4 flex-wrap flex-1">
         {data?.products?.map((deal) => (
           <MegaDealsCard key={deal.slug} data={deal} />
         ))}
