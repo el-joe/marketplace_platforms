@@ -18,7 +18,7 @@ class AddCartItemRequest extends FormRequest
             'vendor_listing_id'   => ['required_unless:listing_type,admin', 'nullable', 'uuid', 'exists:vendor_listings,id'],
             'admin_listing_id' => ['required_if:listing_type,admin', 'nullable', 'uuid', 'exists:admin_listings,id'],
             'quantity'            => ['required', 'integer', 'min:1', 'max:999'],
-            'shipping_method_id'  => ['required', 'uuid', 'exists:shipping_methods,id'],
+            'shipping_method_id'  => ['nullable', 'uuid', 'exists:shipping_methods,id'],
         ];
     }
 }
