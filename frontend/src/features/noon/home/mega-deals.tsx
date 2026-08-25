@@ -55,7 +55,7 @@ const MegaDeals = async ({ data }: { data: Block }) => {
           ></path>
         </svg>
       </div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 pt-5 lg:pt-0">
         <h3 className="text-2xl font-semibold">
           {locale === "ar" ? data?.config?.title_ar : data?.config?.title_en}
         </h3>

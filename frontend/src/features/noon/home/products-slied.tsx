@@ -10,7 +10,6 @@ import SectionTitle from "./section-title";
 import useLocale from "@/src/hooks/use-locale";
 import SpotlightCard from "./spotlight-card";
 import { chunks } from "./helpers/chunks-arr";
-import { cn } from "@/src/lib/utils";
 
 export const ProductsSlider = ({ data }: { data: Block }) => {
   const locale = useLocale();
@@ -21,14 +20,14 @@ export const ProductsSlider = ({ data }: { data: Block }) => {
 
   const rowsCount = data.rows_count ?? 1;
   const cardStyle = data?.config?.card_style ?? "normal";
-  const itemsPerRow =
-    parseInt(String(data.config?.items_per_row ?? "4"), 10) || 4;
+  // const itemsPerRow =
+  //   parseInt(String(data.config?.items_per_row ?? "4"), 10) || 4;
 
   const isSpecial = cardStyle === "special";
   const isMultiRow = rowsCount > 1;
 
   return (
-    <div className={cn(isSpecial && "px-4")}>
+    <div>
       {(locale === "ar" ? data.config?.title_ar : data.config?.title_en) && (
         <SectionTitle
           title={

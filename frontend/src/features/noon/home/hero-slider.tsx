@@ -51,6 +51,7 @@ export default function HeroSlider({ data }: Props) {
   return (
     <Swiper
       modules={[Navigation, Pagination, Autoplay]}
+      style={{ "--swiper-pagination-bottom": "0" } as React.CSSProperties}
       navigation={!!data?.config?.show_arrows}
       pagination={
         !!data?.config?.show_dots && {
@@ -64,7 +65,7 @@ export default function HeroSlider({ data }: Props) {
       autoplay={{ delay: Number(data?.config?.autoplay_seconds) * 1000 }}
       loop={!!data?.config?.loop}
       speed={1500}
-      className="flex-1 pb-6! md:pb-0! h-full max-h-100"
+      className="flex-1 apb-6! md:pb-0! h-full max-h-100"
       spaceBetween={20}
       slidesPerView={1.2}
       breakpoints={{ 768: { spaceBetween: 0, slidesPerView: 1 } }}

@@ -38,7 +38,7 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
         }}
       >
         {hasHeaderBg && (
-          <div className="relative h-28">
+          <div className="relative h-20 lg:h-28">
             <Image
               src={section?.background_image_url || ""}
               alt={section?.name}
@@ -85,7 +85,9 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
               <div
                 className={cn(
                   "w-full",
-                  section.position > 1 && (hasHeaderBg ? "pb-6" : "py-6"),
+                  section.position > 1 &&
+                    (hasHeaderBg ? "pb-3 xl:pb-6 pt-1" : "py-6"),
+                  section.background_color && "px-4",
                   b.device_target === "desktop"
                     ? "hidden lg:block"
                     : b.device_target === "mobile"

@@ -25,14 +25,14 @@ const rounded = {
 export const ImagesSlider = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.items || [], Number(data?.config?.rows) || 1);
   return (
-    <div className="px-4">
+    <div>
       {data?.config?.title_en && (
         <SectionTitle title={data?.config?.title_en} />
       )}
       <Swiper
         modules={[Navigation]}
         navigation
-        slidesPerView={Number(data?.config?.columns) / 3 || "auto"}
+        slidesPerView={Number(data?.config?.columns) / 3.3 || "auto"}
         spaceBetween={16}
         breakpoints={{
           520: {
