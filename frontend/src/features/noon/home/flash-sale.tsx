@@ -62,13 +62,13 @@ export const FlashSale = ({ data }: { data: Block }) => {
 
 const FlashSaleCard = ({ p }: { p: Product }) => {
   const locale = useLocale();
-  const { addItem, isMutating } = useCartContext();
+  const { addItem, isMutating, targetItemMutating } = useCartContext();
   return (
     <div className="rounded-lg overflow-hidden">
       <div className="flex gap-2 items-center p-3 bg-white">
         <div className="w-35 rounded-lg bg-gray-2 relative overflow-hidden">
           <div className="bg-purple-800 rounded-ee-lg px-2 py-1 text-main font-bold line-clamp-1 text-xs w-fit">
-            {p?.vendor?.store_name}
+            {p?.category_name?.[locale]}
           </div>
           <Image
             src={p?.thumbnail}
@@ -83,13 +83,17 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             className={
               "absolute bottom-1 lg:bottom-2 right-2 z-10 p-2!  min-w-0! min-h-0! aspect-square"
             }
-            disabled={isMutating}
+            disabled={isMutating && targetItemMutating === p.listing_id}
             onClick={(e) => {
               e.preventDefault();
               addItem({ quantity: 1, vendorListingId: p.listing_id });
             }}
           >
-            {isMutating ? <Spinner /> : <PlusIcon className={`size-4`} />}
+            {isMutating && targetItemMutating === p.listing_id ? (
+              <Spinner />
+            ) : (
+              <PlusIcon className={`size-4`} />
+            )}
           </Button>
         </div>
         <div className="flex-1 flex flex-col justify-evenly h-32">
@@ -100,9 +104,11 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
         </div>
       </div>
       <div className="text-center bg-black text-white">
-        {locale === "ar"
-          ? p.shipping_badge?.label_ar
-          : p.shipping_badge?.label_en}
+        {!!p.shipping_badge
+          ? locale === "ar"
+            ? p.shipping_badge?.label_ar
+            : p.shipping_badge?.label_en
+          : p.vendor?.store_name}
       </div>
     </div>
   );

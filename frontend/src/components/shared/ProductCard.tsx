@@ -1,7 +1,7 @@
 "use client";
 import { IProduct } from "@/types";
 import Image from "next/image";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
@@ -10,12 +10,27 @@ import { ChevronRightIcon, HeartIcon, PlusIcon, StarIcon } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
 import { Product } from "@/src/features/noon/home/types";
+import { useCartContext } from "@/src/providers/cart-provider";
+import { useWishlistContext } from "@/src/providers/wishlist-provider";
+import { Spinner } from "../ui/spinner";
+import useLocale from "@/src/hooks/use-locale";
 
 type Props = {
   productData: IProduct | Product;
 };
 
 const ProductCard = ({ productData }: Props) => {
+  const [isWishlisted, setIsWishlisted] = useState<boolean>(
+    productData.is_wishlisted,
+  );
+  const locale = useLocale();
+  const { addItem, isMutating, targetItemMutating } = useCartContext();
+  const {
+    addItem: addToWishlist,
+    isMutating: isAddingWishlist,
+    targetItemMutating: targetAddingWishlist,
+    // checkItem,
+  } = useWishlistContext();
   const swiperRef = useRef<null | SwiperType>(null);
   const handleAutoplay = (state: "start" | "stop") => {
     const swiper = swiperRef.current;
@@ -27,6 +42,13 @@ const ProductCard = ({ productData }: Props) => {
       swiper.slideTo(0);
     }
   };
+  // useEffect(() => {
+  //   (async () => {
+  //     const { data } = await checkItem(productData.listing_id);
+  //     const { in_wishlist } = data;
+  //     setIsWishlisted(in_wishlist);
+  //   })();
+  // }, [checkItem, productData.listing_id, isAddingWishlist]);
   return (
     <div
       className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white"
@@ -36,9 +58,9 @@ const ProductCard = ({ productData }: Props) => {
       {/* card top (images slide, topleft badge, wishlist but, cart btn) */}
       <div className="relative h-43 md:h-52 lg:h-60 xl:h-92">
         {/* top left badge */}
-        {!!productData.vendor?.store_name && (
+        {!!productData?.category_name?.[locale] && (
           <div className="absolute top-0 left-0 rounded-br-lg bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10">
-            {productData.vendor?.store_name}
+            {productData?.category_name?.[locale]}
           </div>
         )}
         {/* wishlist button */}
@@ -47,10 +69,25 @@ const ProductCard = ({ productData }: Props) => {
           className={
             "absolute top-0 md:top-1 lg:top-2 p-0! right-1 lg:right-2 z-10 rounded-full aspect-square"
           }
+          disabled={
+            isAddingWishlist && targetAddingWishlist === productData.listing_id
+          }
+          onClick={(e) => {
+            e.preventDefault();
+            addToWishlist({
+              listingId: productData.listing_id,
+              productVariantId: productData.variant_id,
+            }).then((d) => setIsWishlisted((p) => p || !!d?.success));
+          }}
         >
-          <HeartIcon
-            className={`size-4 md:size-6 ${productData.is_wishlisted ? "text-red fill-red" : ""} `}
-          />
+          {isAddingWishlist &&
+          targetAddingWishlist === productData.listing_id ? (
+            <Spinner />
+          ) : (
+            <HeartIcon
+              className={`size-4 md:size-6 ${isWishlisted ? "text-red fill-red" : ""} `}
+            />
+          )}
         </Button>
         {/* cart button */}
         <Button
@@ -58,8 +95,17 @@ const ProductCard = ({ productData }: Props) => {
           className={
             "absolute bottom-1 lg:bottom-2 right-2 z-10 p-1! xl:p-3! min-w-0! min-h-0! aspect-square"
           }
+          disabled={isMutating && targetItemMutating === productData.listing_id}
+          onClick={(e) => {
+            e.preventDefault();
+            addItem({ quantity: 1, vendorListingId: productData.listing_id });
+          }}
         >
-          <PlusIcon className={`size-4 lg:size-6 `} />
+          {isMutating && targetItemMutating === productData.listing_id ? (
+            <Spinner />
+          ) : (
+            <PlusIcon className={`size-4 lg:size-6 `} />
+          )}
         </Button>
         <Swiper
           modules={[Pagination, Autoplay]}
@@ -72,13 +118,16 @@ const ProductCard = ({ productData }: Props) => {
           }}
         >
           {[productData.thumbnail].map((image) => (
-            <SwiperSlide key={image}>
+            <SwiperSlide
+              key={image}
+              className="flex! justify-center! items-center!"
+            >
               <Image
                 src={image}
                 alt={productData.name_en}
                 width={500}
                 height={600}
-                className="max-h-full"
+                className=""
               />
             </SwiperSlide>
           ))}

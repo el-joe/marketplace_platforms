@@ -21,7 +21,7 @@ interface IAuthContext {
   register: (credential: registerFormValues) => void;
   registerError: Error | null;
   registerIsError: boolean;
-  protectedWithAuth: (fn: () => void) => void;
+  protectedWithAuth: <T>(fn: () => T) => T | undefined;
   updateCustomer: (data: UpdateProfilePayload) => void;
   updateCustomerError: Error | null;
   updateCustomerIsPending: boolean;

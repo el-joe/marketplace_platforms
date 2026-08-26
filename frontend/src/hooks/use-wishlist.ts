@@ -31,7 +31,7 @@ export const WISHLIST_GROUP_QUERY_KEY = ["wishlistGroup"] as const;
 // ------------------------------------------
 export function useWishlist() {
   const queryClient = useQueryClient();
-  const { isLogged } = useAuthContext();
+  const { isLogged, protectedWithAuth } = useAuthContext();
 
   const wishlistGroupsQuery: UseQueryResult<IWishlistGroup[], ApiRequestError> =
     useQuery({
@@ -161,10 +161,18 @@ export function useWishlist() {
     updateGroupError: updateGroup.error,
     removeGroup: removeGroup.mutateAsync,
     removeGroupError: removeGroup.error,
-    addItem: addItem.mutateAsync,
+    addItem: async (variables: {
+      listingId: string;
+      productVariantId: string;
+      groupId?: string;
+    }) => protectedWithAuth(() => addItem.mutateAsync(variables)),
     removeItem: removeItem.mutateAsync,
     moveItem: moveItem.mutateAsync,
     checkItem,
+
+    targetItemMutating:
+      (addItem.isPending && addItem.variables.listingId) ||
+      (removeItem.isPending && removeItem.variables),
 
     isMutating:
       createGroup.isPending ||

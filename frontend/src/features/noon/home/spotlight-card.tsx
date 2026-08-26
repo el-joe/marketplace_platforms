@@ -11,7 +11,7 @@ import { Spinner } from "@/src/components/ui/spinner";
 
 const SpotlightCard = ({ data }: { data: Product }) => {
   const locale = useLocale();
-  const { addItem, isMutating } = useCartContext();
+  const { addItem, isMutating, targetItemMutating } = useCartContext();
   return (
     <Link
       href={`/products/${data?.url_param}`}
@@ -31,13 +31,17 @@ const SpotlightCard = ({ data }: { data: Product }) => {
           className={
             "absolute bottom-1 lg:bottom-2 right-2 z-10 rounded-md! p-1! xl:p-3! min-w-0! min-h-0! aspect-square"
           }
-          disabled={isMutating}
+          disabled={isMutating && targetItemMutating === data.listing_id}
           onClick={(e) => {
             e.preventDefault();
             addItem({ quantity: 1, vendorListingId: data.listing_id });
           }}
         >
-          {isMutating ? <Spinner /> : <PlusIcon className={`size-4`} />}
+          {isMutating && targetItemMutating === data.listing_id ? (
+            <Spinner />
+          ) : (
+            <PlusIcon className={`size-4`} />
+          )}
         </Button>
         {/* image */}
         <Image

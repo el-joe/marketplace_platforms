@@ -2,7 +2,7 @@
 import { Button } from "@/src/components/ui/button";
 import { ChevronLeft, ChevronRight, HeartIcon } from "lucide-react";
 import Image from "next/image";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FreeMode, Navigation, Pagination, Thumbs } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper/types";
@@ -15,11 +15,20 @@ type Props = {
 };
 
 export default function ProductImagesPreview({ product }: Props) {
+  const [isWishlisted, setIsWishlisted] = useState<boolean>(
+    product.listing.is_wishlisted,
+  );
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType>();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
-  const { addItem, isMutating } = useWishlistContext();
-
+  const { addItem, isMutating, checkItem } = useWishlistContext();
+  useEffect(() => {
+    (async () => {
+      const { data } = await checkItem(product.listing.listing_id);
+      const { in_wishlist } = data;
+      setIsWishlisted(in_wishlist);
+    })();
+  }, [checkItem, product.listing.listing_id]);
   return (
     <div>
       <div className="md:px-8 xl:px-20 relative">
@@ -41,7 +50,7 @@ export default function ProductImagesPreview({ product }: Props) {
             <Spinner />
           ) : (
             <HeartIcon
-              className={`size-4 md:size-6 ${product.listing.is_wishlisted ? "text-red fill-red" : ""} `}
+              className={`size-4 md:size-6 ${isWishlisted ? "text-red fill-red" : ""} `}
             />
           )}
         </Button>

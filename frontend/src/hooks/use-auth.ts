@@ -134,10 +134,10 @@ export const useAuth = () => {
   );
 
   const protectedWithAuth = useCallback(
-    (fn: () => void) => {
+    <T>(fn: () => T): T | undefined => {
       if (!isLogged) {
         setAuthDialogIsOpen(true);
-        return;
+        return undefined;
       }
       return fn();
     },

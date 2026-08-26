@@ -76,7 +76,7 @@ const CategoriesNav = () => {
           <SwiperSlide key={i} className="w-fit! h-fit!">
             <Link
               href={categoryHref(category)}
-              className={`py-1 block border-b border-transparent hover:border-black ${hoveredCategory === category.id ? "border-b-black" : ""} ${category.type === Type.ClassiFied ? "text-orange-600" : ""} ${category.type === Type.Travel ? "text-blue-3" : ""}`}
+              className={`py-1 block border-b border-transparent hover:border-black ${hoveredCategory === category.id ? "border-b-black" : ""} ${category.type === Type.ClassiFied ? "text-orange-600" : ""}`}
               onMouseEnter={() => {
                 if (!hoveredCategory) {
                   timeoutRef.current = setTimeout(() => {
@@ -141,6 +141,7 @@ const CategoriesNav = () => {
               </ul>
             </div>
             {/* image banner */}
+            {}
             <div className="col-start-4 col-end-4 row-span-2 relative">
               <Image
                 src={

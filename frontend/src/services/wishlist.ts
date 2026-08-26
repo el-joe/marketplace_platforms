@@ -77,8 +77,14 @@ export interface IWishlistCheckResponse {
   success: string;
   message: string;
   data: {
-    is_wishlisted: boolean;
-    group_id: string | null;
+    in_wishlist: boolean;
+    groups: [
+      {
+        id: string;
+        name: string;
+        is_default: boolean;
+      },
+    ];
   };
 }
 
