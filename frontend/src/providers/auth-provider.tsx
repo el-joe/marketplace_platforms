@@ -3,7 +3,6 @@ import { ICustomerProfile } from "@/types";
 import { createContext, useContext } from "react";
 import { loginFormValues } from "../components/shared/auth/login/schema";
 import { registerFormValues } from "../components/shared/auth/register/schema";
-import { ProfileFormValues } from "../features/noon/profile/profile/helpers/profile.schema";
 import { useAuth } from "../hooks/use-auth";
 import { UpdateProfilePayload } from "../services/profile";
 
@@ -42,7 +41,7 @@ const initialState: IAuthContext = {
   register: () => {},
   registerError: null,
   registerIsError: false,
-  protectedWithAuth() {},
+  protectedWithAuth: () => undefined,
   updateCustomer: () => {},
   updateCustomerError: null,
   updateCustomerIsPending: false,

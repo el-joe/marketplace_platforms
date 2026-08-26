@@ -26,7 +26,9 @@ type ProductsResponse = {
 export default async function ShopPage({ params, searchParams }: Props) {
   const { categorySlug } = await params;
   const sp = await searchParams;
-  const categoryName = formatCategoryName(categorySlug);
+  const isSearch = categorySlug?.[0] === "search" || !!sp.q;
+  const categoryName =
+    isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
 
   let products: IProduct[] = [];
   let totalPages = TOTAL_PAGES;
@@ -38,10 +40,12 @@ export default async function ShopPage({ params, searchParams }: Props) {
     if (sp.sort) queryParams.set("sort", sp.sort);
     if (sp.min_price) queryParams.set("price_min", sp.min_price);
     if (sp.max_price) queryParams.set("price_max", sp.max_price);
+    if (sp.q) queryParams.set("q", sp.q);
 
+    const endpoint = isSearch ? "/search" : "/products";
     const query = queryParams.toString();
     const res = await fetchInstance<ProductsResponse>(
-      `/products${query ? `?${query}` : ""}`,
+      `${endpoint}${query ? `?${query}` : ""}`,
     );
     products = res.data?.items ?? [];
     totalPages = res.data?.meta?.last_page ?? TOTAL_PAGES;

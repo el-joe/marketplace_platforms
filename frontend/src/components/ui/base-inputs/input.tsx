@@ -23,7 +23,7 @@ function Input({
   const inputId = id ?? generatedId;
 
   const input = (
-    <div className="relative">
+    <div className="relative flex-1">
       {startIcon && (
         <div className="absolute left-2 top-1/2 -translate-y-1/2">
           {startIcon}

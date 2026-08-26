@@ -1,7 +1,7 @@
 "use client";
 import { IProduct } from "@/types";
 import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
@@ -42,13 +42,6 @@ const ProductCard = ({ productData }: Props) => {
       swiper.slideTo(0);
     }
   };
-  // useEffect(() => {
-  //   (async () => {
-  //     const { data } = await checkItem(productData.listing_id);
-  //     const { in_wishlist } = data;
-  //     setIsWishlisted(in_wishlist);
-  //   })();
-  // }, [checkItem, productData.listing_id, isAddingWishlist]);
   return (
     <div
       className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white"
@@ -127,7 +120,7 @@ const ProductCard = ({ productData }: Props) => {
                 alt={productData.name_en}
                 width={500}
                 height={600}
-                className=""
+                className="max-h-full"
               />
             </SwiperSlide>
           ))}
