@@ -319,6 +319,16 @@ class ProductController extends Controller
 
         $this->attachBestListingUrls($variants);
 
+        $variantImageCounts = ProductImage::query()
+            ->whereIn('product_variant_id', $variants->pluck('id'))
+            ->selectRaw('product_variant_id, count(*) as total')
+            ->groupBy('product_variant_id')
+            ->pluck('total', 'product_variant_id');
+
+        $variants->each(function (ProductVariant $variant) use ($variantImageCounts) {
+            $variant->images_count = (int) ($variantImageCounts[$variant->id] ?? 0);
+        });
+
         $images = ProductImage::query()->from('product_images as pi')
             ->where('pi.product_id', $product)
             ->orderBy('pi.position')
@@ -733,19 +743,26 @@ class ProductController extends Controller
         $request->validate([
             'images' => 'required|array|min:1',
             'images.*' => 'image|max:5120', // 5 MB per image
+            'variant_id' => 'nullable|string',
         ]);
+
+        $variantId = $request->input('variant_id');
+        $variant = $variantId ? ProductVariant::query()->find($variantId) : null;
 
         $images = $request->file('images');
         $ids = [];
 
         foreach ($images as $file) {
-            $path = $file->store('products/images', 'public');
+            $path = $variant
+                ? $file->store("products/variants/{$variant->id}", 'public')
+                : $file->store('products/images', 'public');
 
             $imageId = (string) Str::uuid();
 
             ProductImage::query()->insert([
                 'id' => $imageId,
-                'product_id' => null, // assigned when the product form is saved
+                'product_id' => $variant?->product_id,
+                'product_variant_id' => $variant?->id,
                 'path' => $path,
                 'disk' => 'public',
                 'mime_type' => $file->getMimeType(),
@@ -858,6 +875,51 @@ class ProductController extends Controller
 
         $model = Product::findOrFail($product);
         $this->productService->reorderImages($model, $request->input('ordered_ids'));
+
+        return response()->json(['success' => true]);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Variant image management
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function variantImages(string $product, string $variant): JsonResponse
+    {
+        $variantModel = ProductVariant::query()
+            ->where('id', $variant)
+            ->where('product_id', $product)
+            ->firstOrFail();
+
+        $images = ProductImage::query()
+            ->where('product_variant_id', $variantModel->id)
+            ->orderBy('position')
+            ->get(['id', 'path', 'disk', 'is_primary', 'position']);
+
+        return response()->json([
+            'images' => $images->map(fn(ProductImage $image) => [
+                'id' => $image->id,
+                'url' => $image->url,
+                'is_primary' => $image->is_primary,
+                'position' => $image->position,
+            ])->values(),
+        ]);
+    }
+
+    public function reorderVariantImages(Request $request, string $product, string $variant): JsonResponse
+    {
+        $request->validate(['ordered_ids' => ['required', 'array'], 'ordered_ids.*' => ['string']]);
+
+        $variantModel = ProductVariant::query()
+            ->where('id', $variant)
+            ->where('product_id', $product)
+            ->firstOrFail();
+
+        foreach ($request->input('ordered_ids') as $pos => $imageId) {
+            ProductImage::query()
+                ->where('id', $imageId)
+                ->where('product_variant_id', $variantModel->id)
+                ->update(['position' => $pos]);
+        }
 
         return response()->json(['success' => true]);
     }

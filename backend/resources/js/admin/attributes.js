@@ -233,6 +233,70 @@ function initEditValueActions() {
         });
     });
 
+    // Swatch image: click preview to open file picker
+    $(document).on('click', '.swatch-image-preview', function () {
+        $(this).closest('.swatch-image-widget').find('.swatch-image-input').trigger('click');
+    });
+
+    // Swatch image: upload on file select
+    $(document).on('change', '.swatch-image-input', function () {
+        const file = this.files?.[0];
+        if (!file) return;
+
+        const $widget = $(this).closest('.swatch-image-widget');
+        const uploadUrl = $widget.data('upload-url');
+        if (!uploadUrl) return;
+
+        const formData = new FormData();
+        formData.append('swatch_image', file);
+
+        $.ajax({
+            url: uploadUrl,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        }).done(function (res) {
+            $widget.find('.swatch-image-preview')
+                .css('background-image', `url('${res.swatch_image_url}')`)
+                .find('svg').remove();
+            if (!$widget.find('.swatch-image-remove').length) {
+                $widget.append(`<button type="button" class="swatch-image-remove text-[10px] text-red-500 hover:underline block mt-0.5">${esc(T().remove || 'Remove')}</button>`);
+            }
+            window.Toast?.success(res.message || t('admin.attributes.swatch_uploaded'));
+        }).fail(function (xhr) {
+            window.Toast?.error(xhr.responseJSON?.message || t('admin.attributes.swatch_upload_failed'));
+        });
+    });
+
+    // Swatch image: remove
+    $(document).on('click', '.swatch-image-remove', async function () {
+        const $widget = $(this).closest('.swatch-image-widget');
+        const deleteUrl = $widget.data('delete-url');
+        if (!deleteUrl) return;
+
+        const confirmed = window.confirmDelete
+            ? await window.confirmDelete(t('admin.attributes.delete_swatch_confirm') || 'Remove this swatch image?')
+            : window.confirm('Remove this swatch image?');
+        if (!confirmed) return;
+
+        $.ajax({
+            url: deleteUrl,
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        }).done(function (res) {
+            $widget.find('.swatch-image-preview').css('background-image', '').html(`
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-300">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 4.5h18v15H3v-15z" />
+                </svg>`);
+            $widget.find('.swatch-image-remove').remove();
+            window.Toast?.success(res.message || t('admin.attributes.swatch_removed'));
+        }).fail(function (xhr) {
+            window.Toast?.error(xhr.responseJSON?.message || t('admin.attributes.swatch_remove_failed'));
+        });
+    });
+
     // Regenerate variant slugs
     $(document).on('click', '.regenerate-slugs-btn', function () {
         const id = $(this).data('id');
@@ -269,8 +333,18 @@ function showSlugWarning(id, count, regenerateUrl) {
 function buildValueRow(v) {
     const destroyUrl = (window.ROUTES_ATTR_EDIT?.destroyValue ?? '').replace(':value_id', v.id);
     const regenerateUrl = (window.ROUTES_ATTR_EDIT?.regenerateVariantSlugs ?? '').replace(':value_id', v.id);
+    const uploadSwatchUrl = v.upload_swatch_url ?? '';
+    const deleteSwatchUrl = v.delete_swatch_url ?? '';
     return `
         <div class="flex items-center gap-3 px-4 py-2.5 bg-white value-item" data-id="${v.id}">
+            <div class="swatch-image-widget flex-shrink-0" data-id="${v.id}" data-upload-url="${esc(uploadSwatchUrl)}" data-delete-url="${esc(deleteSwatchUrl)}">
+                <div class="swatch-image-preview w-8 h-8 rounded border border-gray-200 bg-gray-50 bg-cover bg-center flex items-center justify-center cursor-pointer overflow-hidden" title="${esc(T().swatchImageLabel || 'Swatch image')}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-gray-300">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 4.5h18v15H3v-15z" />
+                    </svg>
+                </div>
+                <input type="file" class="swatch-image-input hidden" accept="image/png,image/jpeg,image/webp" />
+            </div>
             <span class="flex-1 text-sm text-gray-800">${esc(v.value_en)}</span>
             <span class="text-sm text-gray-400" dir="rtl">${esc(v.value_ar ?? '')}</span>
             <span class="text-xs font-mono text-gray-400 value-slug">${esc(v.slug ?? '')}</span>

@@ -395,6 +395,7 @@ class ProductDetailController extends Controller
                     'value_en' => $attributeValue->value_en,
                     'value_ar' => $attributeValue->value_ar,
                     'code_hex' => $attribute->type === AttributeType::Color ? $attributeValue->color_hex : null,
+                    'swatch_image_url' => $attributeValue->swatch_image_url,
                     'is_selected' => $isSelected,
                     'is_available' => $targetVariant !== null && $targetListing !== null,
                     'target_variant_id' => $targetVariant?->id,

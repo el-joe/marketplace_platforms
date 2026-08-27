@@ -124,6 +124,7 @@ class ProductDetailResource extends JsonResource
                             'en' => $va->attributeValue?->value_en ?? $va->value_text_en ?? $va->value_number,
                         ],
                         'color_hex'      => $va->attributeValue?->code_hex,
+                        'swatch_image_url' => $va->attributeValue?->swatch_image_url,
                     ]),
                 ])->values()
             ),

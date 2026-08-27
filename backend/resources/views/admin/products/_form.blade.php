@@ -339,6 +339,7 @@
                                     <th class="px-4 py-3 text-start text-xs font-semibold text-gray-500 uppercase tracking-wider w-56">{{ __('admin.products.customer_url_column') ?? 'Customer URL' }}</th>
                                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-20">{{ __('admin.products.default_column') }}</th>
                                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">{{ __('admin.products.active_column') }}</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">{{ __('admin.products.images_column') ?? 'Images' }}</th>
                                     <th class="px-4 py-3 w-10"></th>
                                 </tr>
                             </thead>
@@ -423,6 +424,17 @@
                                             class="rounded text-primary-600 border-gray-300"
                                             {{ $variant->is_active ? 'checked' : '' }} />
                                     </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <button type="button" class="manage-variant-images inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
+                                            data-variant-id="{{ $variant->id }}"
+                                            data-variant-name="{{ $variant->name ?? __('admin.products.default_variant') }}"
+                                            data-images-url="{{ route('admin.products.variants.images', [$product->id, $variant->id]) }}"
+                                            data-reorder-url="{{ route('admin.products.variants.reorder-images', [$product->id, $variant->id]) }}"
+                                            data-upload-url="{{ route('admin.products.upload-image') }}">
+                                            <x-heroicon name="photo" class="w-4 h-4" />
+                                            <span class="variant-images-count">{{ $variant->images_count ?? 0 }}</span>
+                                        </button>
+                                    </td>
                                     <td class="px-4 py-3">
                                         <button type="button" class="remove-variant-row text-gray-400 hover:text-red-600 transition-colors" title="{{ __('admin.products.remove') }}">
                                             <x-heroicon name="x-circle" class="w-4 h-4" />
@@ -489,6 +501,58 @@
                             </dd>
                         </div>
                     </dl>
+                </div>
+            </div>
+
+            {{-- Variant images slide-over panel --}}
+            <div
+                id="variant-images-panel"
+                x-data="variantImagesPanel()"
+                x-show="open"
+                x-cloak
+                @open-variant-images.window="open_panel($event.detail)"
+                class="fixed inset-0 z-50 flex justify-end"
+            >
+                <div class="absolute inset-0 bg-black/40" @click="open = false"></div>
+                <div @click.stop class="relative bg-white w-full max-w-md h-full shadow-xl flex flex-col">
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                        <h3 class="text-sm font-semibold text-gray-800" x-text="variantName"></h3>
+                        <button type="button" @click="open = false" class="text-gray-400 hover:text-gray-600">
+                            <x-heroicon name="x-mark" class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div x-show="loading" class="text-sm text-gray-400">{{ __('admin.loading') ?? 'Loading…' }}</div>
+
+                        <div x-show="!loading">
+                            <input type="file" x-ref="fileInput" multiple accept="image/jpeg,image/png,image/webp"
+                                class="hidden" @change="uploadFiles($event.target.files)" />
+                            <button type="button" @click="$refs.fileInput.click()"
+                                class="btn btn-outline btn-sm w-full justify-center mb-4">
+                                <x-heroicon name="plus" class="w-4 h-4 mr-1" />
+                                {{ __('admin.products.upload_images') ?? 'Upload images' }}
+                            </button>
+
+                            <div id="variant-images-list" class="space-y-2">
+                                <template x-for="image in images" :key="image.id">
+                                    <div class="variant-image-item flex items-center gap-3 p-2 border border-gray-200 rounded-lg bg-white" :data-id="image.id">
+                                        <span class="drag-handle cursor-move text-gray-300">
+                                            <x-heroicon name="bars-3" class="w-4 h-4" />
+                                        </span>
+                                        <img :src="image.url" class="w-12 h-12 object-cover rounded border border-gray-100" />
+                                        <span class="flex-1 text-xs text-gray-400" x-text="image.is_primary ? '{{ __('admin.products.primary_image') ?? 'Primary' }}' : ''"></span>
+                                        <button type="button" class="text-xs text-red-500 hover:underline" @click="removeImage(image.id)">
+                                            {{ __('common.remove') }}
+                                        </button>
+                                    </div>
+                                </template>
+                                <p x-show="images.length === 0" class="text-sm text-gray-400 italic">
+                                    {{ __('admin.products.no_variant_images') ?? 'No images for this variant yet.' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -904,34 +968,6 @@
             pendingUrlHint: @json(__('admin.products.pending_url_hint') ?? 'Save the product to generate a URL'),
         });
 
-        $(document).on('click', '.copy-variant-url', function () {
-            const T = window.TRANSLATIONS || {};
-            const value = $(this).attr('data-url');
-            if (!value) return;
-
-            const done = () => window.Toast && window.Toast.success(T.urlCopied || 'Copied to clipboard');
-            const fail = () => window.Toast && window.Toast.error(T.urlCopyFailed || 'Could not copy to clipboard');
-
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(value).then(done).catch(fail);
-            } else {
-                const tmp = document.createElement('textarea');
-                tmp.value = value;
-                tmp.style.position = 'fixed';
-                tmp.style.opacity = '0';
-                document.body.appendChild(tmp);
-                tmp.select();
-                try {
-                    document.execCommand('copy');
-                    done();
-                } catch (e) {
-                    fail();
-                } finally {
-                    document.body.removeChild(tmp);
-                }
-            }
-        });
-
         function variantDetailPanel() {
             return {
                 open: false,
@@ -952,12 +988,159 @@
             };
         }
 
-        $(document).on('click', '.view-variant-detail', function () {
-            const variantId = $(this).data('variant-id');
-            const basePath = window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '');
-            window.dispatchEvent(new CustomEvent('open-variant-detail', {
-                detail: { url: basePath + '/variants/' + variantId },
-            }));
+        function variantImagesPanel() {
+            return {
+                open: false,
+                loading: false,
+                variantId: null,
+                variantName: '',
+                imagesUrl: '',
+                reorderUrl: '',
+                uploadUrl: '',
+                images: [],
+                sortable: null,
+
+                open_panel(detail) {
+                    this.open = true;
+                    this.loading = true;
+                    this.variantId = detail.variantId;
+                    this.variantName = detail.variantName;
+                    this.imagesUrl = detail.imagesUrl;
+                    this.reorderUrl = detail.reorderUrl;
+                    this.uploadUrl = detail.uploadUrl;
+
+                    fetch(this.imagesUrl, { headers: { 'Accept': 'application/json' } })
+                        .then((res) => res.json())
+                        .then((res) => {
+                            this.images = res.images ?? [];
+                        })
+                        .finally(() => {
+                            this.loading = false;
+                            this.$nextTick(() => this.initSortable());
+                        });
+                },
+
+                initSortable() {
+                    const list = document.getElementById('variant-images-list');
+                    if (!list || !window.Sortable) return;
+                    this.sortable?.destroy();
+                    this.sortable = new window.Sortable(list, {
+                        handle: '.drag-handle',
+                        animation: 150,
+                        onEnd: () => this.persistOrder(),
+                    });
+                },
+
+                persistOrder() {
+                    const orderedIds = Array.from(document.querySelectorAll('#variant-images-list .variant-image-item'))
+                        .map((el) => el.dataset.id);
+
+                    $.ajax({
+                        url: this.reorderUrl,
+                        method: 'POST',
+                        data: JSON.stringify({ ordered_ids: orderedIds }),
+                        contentType: 'application/json',
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    }).fail(() => {
+                        window.Toast?.error(window.TRANSLATIONS?.variantImagesReorderFailed || 'Failed to save image order.');
+                    });
+                },
+
+                uploadFiles(fileList) {
+                    if (!fileList || fileList.length === 0) return;
+
+                    const formData = new FormData();
+                    Array.from(fileList).forEach((file) => formData.append('images[]', file));
+                    formData.append('variant_id', this.variantId);
+
+                    $.ajax({
+                        url: this.uploadUrl,
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    }).done(() => {
+                        this.refreshImages();
+                    }).fail(() => {
+                        window.Toast?.error(window.TRANSLATIONS?.variantImagesUploadFailed || 'Failed to upload image.');
+                    });
+                },
+
+                removeImage(imageId) {
+                    const basePath = window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '');
+                    $.ajax({
+                        url: basePath + '/delete-image/' + imageId,
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    }).done(() => {
+                        this.refreshImages();
+                    }).fail(() => {
+                        window.Toast?.error(window.TRANSLATIONS?.variantImagesDeleteFailed || 'Failed to delete image.');
+                    });
+                },
+
+                refreshImages() {
+                    fetch(this.imagesUrl, { headers: { 'Accept': 'application/json' } })
+                        .then((res) => res.json())
+                        .then((res) => {
+                            this.images = res.images ?? [];
+                            const $btn = $(`.manage-variant-images[data-variant-id="${this.variantId}"]`);
+                            $btn.find('.variant-images-count').text(this.images.length);
+                            this.$nextTick(() => this.initSortable());
+                        });
+                },
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            $(document).on('click', '.copy-variant-url', function () {
+                const T = window.TRANSLATIONS || {};
+                const value = $(this).attr('data-url');
+                if (!value) return;
+
+                const done = () => window.Toast && window.Toast.success(T.urlCopied || 'Copied to clipboard');
+                const fail = () => window.Toast && window.Toast.error(T.urlCopyFailed || 'Could not copy to clipboard');
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(value).then(done).catch(fail);
+                } else {
+                    const tmp = document.createElement('textarea');
+                    tmp.value = value;
+                    tmp.style.position = 'fixed';
+                    tmp.style.opacity = '0';
+                    document.body.appendChild(tmp);
+                    tmp.select();
+                    try {
+                        document.execCommand('copy');
+                        done();
+                    } catch (e) {
+                        fail();
+                    } finally {
+                        document.body.removeChild(tmp);
+                    }
+                }
+            });
+
+            $(document).on('click', '.view-variant-detail', function () {
+                const variantId = $(this).data('variant-id');
+                const basePath = window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '');
+                window.dispatchEvent(new CustomEvent('open-variant-detail', {
+                    detail: { url: basePath + '/variants/' + variantId },
+                }));
+            });
+
+            $(document).on('click', '.manage-variant-images', function () {
+                window.dispatchEvent(new CustomEvent('open-variant-images', {
+                    detail: {
+                        variantId: $(this).data('variant-id'),
+                        variantName: $(this).data('variant-name'),
+                        imagesUrl: $(this).data('images-url'),
+                        reorderUrl: $(this).data('reorder-url'),
+                        uploadUrl: $(this).data('upload-url'),
+                    },
+                }));
+            });
         });
     </script>
 

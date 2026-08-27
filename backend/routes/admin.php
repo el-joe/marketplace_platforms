@@ -153,6 +153,11 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::patch('/{product}/variants/{variant}/regenerate-slug', [ProductController::class, 'regenerateVariantSlug'])
             ->name('variants.regenerate-slug')
             ->middleware('admin.permission:products.edit');
+        Route::get('/{product}/variants/{variant}/images', [ProductController::class, 'variantImages'])
+            ->name('variants.images');
+        Route::post('/{product}/variants/{variant}/reorder-images', [ProductController::class, 'reorderVariantImages'])
+            ->name('variants.reorder-images')
+            ->middleware('admin.permission:products.edit');
 
         // ── Frequently bought together ─────────────────────────────────────────
         Route::prefix('/{product}/frequently-bought-together')->name('frequently-bought-together.')->group(function () {
@@ -301,6 +306,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::put('/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('values.update');
         Route::delete('/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('values.destroy');
         Route::post('/{attribute}/values/reorder', [AttributeController::class, 'reorderValues'])->name('values.reorder');
+        Route::post('/{attribute}/values/{value}/upload-swatch', [AttributeController::class, 'uploadValueSwatch'])
+            ->name('values.upload-swatch')
+            ->middleware('admin.permission:attributes.edit');
+        Route::delete('/{attribute}/values/{value}/delete-swatch', [AttributeController::class, 'deleteValueSwatch'])
+            ->name('values.delete-swatch')
+            ->middleware('admin.permission:attributes.edit');
         Route::post('/{attribute}/values/{value}/regenerate-variant-slugs', [AttributeController::class, 'regenerateVariantSlugs'])
             ->name('values.regenerate-variant-slugs')
             ->middleware('admin.permission:attributes.edit');

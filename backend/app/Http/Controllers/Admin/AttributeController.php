@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -274,6 +275,8 @@ class AttributeController extends Controller
                 'slug' => $slug,
                 'color_hex' => $request->color_hex,
                 'sort_order' => (int) ($request->sort_order ?? 0),
+                'upload_swatch_url' => route('admin.attributes.values.upload-swatch', [$attribute, $id]),
+                'delete_swatch_url' => route('admin.attributes.values.delete-swatch', [$attribute, $id]),
             ],
         ]);
     }
@@ -387,6 +390,62 @@ class AttributeController extends Controller
         });
 
         return response()->json(['success' => true]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Value Swatch Image Upload / Delete
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function uploadValueSwatch(Request $request, string $attribute, string $value): JsonResponse
+    {
+        $attributeValue = AttributeValue::query()
+            ->where('id', $value)
+            ->where('attribute_id', $attribute)
+            ->firstOrFail();
+
+        $request->validate([
+            'swatch_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        if ($attributeValue->swatch_image_path && str_contains($attributeValue->swatch_image_path, '/')) {
+            Storage::disk('public')->delete($attributeValue->swatch_image_path);
+        }
+
+        $file = $request->file('swatch_image');
+        $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
+        $path = $file->storeAs(
+            'attribute-values/' . $attributeValue->id,
+            'swatch_' . Str::random(8) . '.' . $ext,
+            'public'
+        );
+
+        $attributeValue->update(['swatch_image_path' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('admin.attributes_section.swatch_uploaded'),
+            'swatch_image_url' => $attributeValue->fresh()->swatch_image_url,
+        ]);
+    }
+
+    public function deleteValueSwatch(string $attribute, string $value): JsonResponse
+    {
+        $attributeValue = AttributeValue::query()
+            ->where('id', $value)
+            ->where('attribute_id', $attribute)
+            ->firstOrFail();
+
+        if (!$attributeValue->swatch_image_path) {
+            return response()->json(['message' => __('admin.attributes_section.no_swatch_to_remove')], 404);
+        }
+
+        if (str_contains($attributeValue->swatch_image_path, '/')) {
+            Storage::disk('public')->delete($attributeValue->swatch_image_path);
+        }
+
+        $attributeValue->update(['swatch_image_path' => null]);
+
+        return response()->json(['success' => true, 'message' => __('admin.attributes_section.swatch_removed')]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

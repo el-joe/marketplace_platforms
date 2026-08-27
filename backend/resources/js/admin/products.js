@@ -14,6 +14,8 @@
  */
 
 import $ from 'jquery';
+import Sortable from 'sortablejs';
+window.Sortable = Sortable;
 import FilePond, { registerPlugin } from 'filepond';
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';

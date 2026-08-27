@@ -188,6 +188,21 @@
                     <div id="values-list" class="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
                         @forelse($attribute->values as $val)
                         <div class="flex items-center gap-3 px-4 py-2.5 bg-white value-item" data-id="{{ $val->id }}">
+                            <div class="swatch-image-widget flex-shrink-0" data-id="{{ $val->id }}"
+                                data-upload-url="{{ route('admin.attributes.values.upload-swatch', [$attribute->id, $val->id]) }}"
+                                data-delete-url="{{ route('admin.attributes.values.delete-swatch', [$attribute->id, $val->id]) }}">
+                                <div class="swatch-image-preview w-8 h-8 rounded border border-gray-200 bg-gray-50 bg-cover bg-center flex items-center justify-center cursor-pointer overflow-hidden"
+                                    @if($val->swatch_image_url) style="background-image:url('{{ $val->swatch_image_url }}')" @endif
+                                    title="{{ __('admin.attributes_section.swatch_image') }}">
+                                    @unless($val->swatch_image_url)
+                                    <x-heroicon name="photo" class="w-4 h-4 text-gray-300" />
+                                    @endunless
+                                </div>
+                                <input type="file" class="swatch-image-input hidden" accept="image/png,image/jpeg,image/webp" />
+                                @if($val->swatch_image_url)
+                                <button type="button" class="swatch-image-remove text-[10px] text-red-500 hover:underline block mt-0.5">{{ __('common.remove') }}</button>
+                                @endif
+                            </div>
                             <span class="flex-1 text-sm text-gray-800">{{ $val->value_en }}</span>
                             <span class="text-sm text-gray-400" dir="rtl">{{ $val->value_ar }}</span>
                             <span class="text-xs font-mono text-gray-400 value-slug" title="{{ __('admin.attributes_section.slug') }}">{{ $val->slug }}</span>

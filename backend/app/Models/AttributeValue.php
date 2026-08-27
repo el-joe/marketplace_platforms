@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AttributeValue extends Model
@@ -19,6 +20,7 @@ class AttributeValue extends Model
         'slug',
         'color_hex',
         'sort_order',
+        'swatch_image_path',
     ];
 
     protected $casts = [
@@ -55,5 +57,14 @@ class AttributeValue extends Model
     public function productVariantAttributes(): HasMany
     {
         return $this->hasMany(ProductVariantAttribute::class, 'attribute_value_id');
+    }
+
+    public function getSwatchImageUrlAttribute(): ?string
+    {
+        if (!$this->swatch_image_path) {
+            return null;
+        }
+
+        return str_contains($this->swatch_image_path, '/') ? Storage::url($this->swatch_image_path) : $this->swatch_image_path;
     }
 }

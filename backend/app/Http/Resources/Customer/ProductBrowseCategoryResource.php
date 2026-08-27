@@ -37,6 +37,7 @@ class ProductBrowseCategoryResource extends JsonResource
                         'id'        => $value->id,
                         'value'     => Bilingual::pair($value, 'value'),
                         'color_hex' => $value->color_hex,
+                        'swatch_image_url' => $value->swatch_image_url,
                     ])->values()->all(),
                 ])->values()->all(),
             'children' => $this->children()
