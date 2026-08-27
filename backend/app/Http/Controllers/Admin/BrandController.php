@@ -14,6 +14,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class BrandController extends Controller
@@ -163,6 +165,59 @@ class BrandController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Logo Upload / Delete
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function uploadLogo(Request $request, string $brand): JsonResponse
+    {
+        abort_unless(auth('admin')->user()->can('brands.edit'), 403);
+
+        $model = Brand::findOrFail($brand);
+
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+        ]);
+
+        if ($model->logo_media_id && str_contains($model->logo_media_id, '/')) {
+            Storage::disk('public')->delete($model->logo_media_id);
+        }
+
+        $file = $request->file('logo');
+        $ext  = $file->getClientOriginalExtension() ?: $file->guessExtension();
+        $path = $file->storeAs(
+            'brands/' . $model->id,
+            'logo_' . Str::random(8) . '.' . $ext,
+            'public'
+        );
+
+        $model->update(['logo_media_id' => $path]);
+
+        return response()->json([
+            'message'  => 'Logo uploaded successfully.',
+            'logo_url' => $model->fresh()->logo_url,
+        ]);
+    }
+
+    public function deleteLogo(Request $request, string $brand): JsonResponse
+    {
+        abort_unless(auth('admin')->user()->can('brands.edit'), 403);
+
+        $model = Brand::findOrFail($brand);
+
+        if (!$model->logo_media_id) {
+            return response()->json(['message' => 'No logo to remove.'], 404);
+        }
+
+        if (str_contains($model->logo_media_id, '/')) {
+            Storage::disk('public')->delete($model->logo_media_id);
+        }
+
+        $model->update(['logo_media_id' => null]);
+
+        return response()->json(['message' => 'Logo removed.']);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

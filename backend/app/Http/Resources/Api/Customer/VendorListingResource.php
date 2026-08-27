@@ -68,6 +68,12 @@ class VendorListingResource extends JsonResource
             'rating_count' => (int) $listing->rating_count,
             'total_sold' => (int) $listing->total_sold,
             'vendor_covers_delivery' => (bool) $listing->vendor_covers_delivery,
+            'brand' => $product->brand ? [
+                'id'       => $product->brand->id,
+                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug'     => $product->brand->slug,
+                'logo_url' => $product->brand->logo_url,
+            ] : null,
             'product' => [
                 'id' => $product->id,
                 'slug' => $product->slug,

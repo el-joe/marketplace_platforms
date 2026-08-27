@@ -64,6 +64,12 @@ class AdminListingResource extends JsonResource
             'status' => $listing->status?->value,
             'rating_avg' => (float) $listing->rating_avg,
             'rating_count' => (int) $listing->rating_count,
+            'brand' => $product->brand ? [
+                'id'       => $product->brand->id,
+                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug'     => $product->brand->slug,
+                'logo_url' => $product->brand->logo_url,
+            ] : null,
             'product' => [
                 'id' => $product->id,
                 'slug' => $product->slug,

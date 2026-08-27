@@ -200,6 +200,7 @@ class ListingController extends Controller
                 'productVariant.images',
                 'productVariant.product.images',
                 'productVariant.product.category',
+                'productVariant.product.brand',
             ]);
 
         if ($categoryId = $request->query('category_id')) {
@@ -229,6 +230,7 @@ class ListingController extends Controller
                 'productVariant.images',
                 'productVariant.product.images',
                 'productVariant.product.category',
+                'productVariant.product.brand',
             ]);
 
         if ($categoryId = $request->query('category_id')) {
@@ -269,7 +271,7 @@ class ListingController extends Controller
     {
         $query = AdminListing::where('country_id', $country->id)
             ->where('status', AdminListingStatus::Active->value)
-            ->with(['productVariant.images', 'productVariant.product.images', 'productVariant.product.category']);
+            ->with(['productVariant.images', 'productVariant.product.images', 'productVariant.product.category', 'productVariant.product.brand']);
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
             return $query->where('id', $identifier)->first();

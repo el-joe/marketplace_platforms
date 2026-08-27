@@ -61,9 +61,10 @@ class ProductDetailResource extends JsonResource
             'rating_breakdown' => $this->ratingBreakdown,
             'total_sold'       => (int) $this->total_sold,
             'brand'            => $this->whenLoaded('brand', fn() => [
-                'id'   => $this->brand->id,
-                'name' => Bilingual::pair($this->brand, 'name'),
-                'slug' => $this->brand->slug,
+                'id'       => $this->brand->id,
+                'name'     => Bilingual::pair($this->brand, 'name'),
+                'slug'     => $this->brand->slug,
+                'logo_url' => $this->brand->logo_url,
             ]),
             'category'         => $this->whenLoaded('category', fn() => [
                 'id'   => $this->category->id,

@@ -206,6 +206,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
         Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
+        Route::post('/{brand}/upload-logo',  [\App\Http\Controllers\Admin\BrandController::class, 'uploadLogo'])
+            ->name('upload-logo');
+        Route::delete('/{brand}/delete-logo', [\App\Http\Controllers\Admin\BrandController::class, 'deleteLogo'])
+            ->name('delete-logo');
     });
 
     // ─── Warranty Plans ─────────────────────────────────────────────────────────────

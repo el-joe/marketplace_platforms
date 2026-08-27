@@ -261,10 +261,10 @@ class ProductDetailController extends Controller
             'short_desc_en' => $product->short_desc_en,
             'short_desc_ar' => $product->short_desc_ar,
             'brand' => $product->brand ? [
-                'id' => $product->brand->id,
-                'name_en' => $product->brand->name_en,
-                'name_ar' => $product->brand->name_ar,
-                'logo_path' => $product->brand->logo_url,
+                'id'       => $product->brand->id,
+                'name_en'  => $product->brand->name_en,
+                'name_ar'  => $product->brand->name_ar,
+                'logo_url' => $product->brand->logo_url,
             ] : null,
             'category' => $product->category ? [
                 'id' => $product->category->id,

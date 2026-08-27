@@ -257,6 +257,7 @@ class ListingQueryService
                 'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
                 'productVariant:id,sku,slug,variant_name,product_id',
                 'productVariant.images',
+                'productVariant.product.brand',
             ])
             ->orderBy('price')
             ->get()
@@ -273,6 +274,7 @@ class ListingQueryService
                 'vendor:id,store_name,store_rating_avg',
                 'productVariant:id,sku,slug,variant_name,product_id',
                 'productVariant.images',
+                'productVariant.product.brand',
             ])
             ->orderByRaw('score IS NULL, score DESC')
             ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
@@ -353,6 +355,12 @@ class ListingQueryService
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
             ],
+            'brand' => $product->brand ? [
+                'id'       => $product->brand->id,
+                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug'     => $product->brand->slug,
+                'logo_url' => $product->brand->logo_url,
+            ] : null,
             'price' => $listing->price,
             'price_formatted' => number_format($listing->price / 100, 2),
             'compare_at_price' => $listing->compare_at_price ?? null,
@@ -451,6 +459,12 @@ class ListingQueryService
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
             ],
+            'brand'            => $product->brand ? [
+                'id'       => $product->brand->id,
+                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug'     => $product->brand->slug,
+                'logo_url' => $product->brand->logo_url,
+            ] : null,
             'price'            => $listing->price,
             'price_formatted'  => number_format($listing->price / 100, 2),
             'compare_at_price' => $listing->compare_at_price ?? null,

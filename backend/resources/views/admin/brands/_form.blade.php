@@ -156,6 +156,89 @@
         {{-- ═══════════════════════════════════════════════════════════════ --}}
         <div class="w-full lg:w-72 flex-shrink-0 space-y-4">
 
+            {{-- Brand Logo --}}
+            <div
+                class="bg-white rounded-xl border border-gray-200 shadow-sm"
+                x-data="{
+                    uploading: false,
+                    logoUrl: '{{ $isEdit ? ($brand->logo_url ?? '') : '' }}',
+                    uploadUrl: '{{ $isEdit ? route('admin.brands.upload-logo', $brand->id) : '' }}',
+                    deleteUrl: '{{ $isEdit ? route('admin.brands.delete-logo', $brand->id) : '' }}',
+                    async upload(event) {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        this.uploading = true;
+                        const fd = new FormData();
+                        fd.append('logo', file);
+                        fd.append('_token', document.querySelector('meta[name=csrf-token]').content);
+                        try {
+                            const res  = await fetch(this.uploadUrl, { method: 'POST', body: fd });
+                            const data = await res.json();
+                            if (res.ok) { this.logoUrl = data.logo_url; }
+                            else { alert(data.message || 'Upload failed'); }
+                        } catch(e) { alert('Network error'); }
+                        this.uploading = false;
+                        event.target.value = '';
+                    },
+                    async remove() {
+                        if (!confirm('Remove logo?')) return;
+                        const res = await fetch(this.deleteUrl, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                'Accept': 'application/json',
+                            }
+                        });
+                        if (res.ok) { this.logoUrl = ''; }
+                        else { alert('Delete failed'); }
+                    }
+                }"
+            >
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.brands_section.logo_heading') }}</h2>
+                </div>
+                <div class="px-5 py-5 space-y-3">
+
+                    {{-- Preview area --}}
+                    <div
+                        class="relative rounded-lg overflow-hidden bg-gray-50 border border-dashed border-gray-300 flex items-center justify-center"
+                        style="min-height: 100px"
+                    >
+                        <template x-if="logoUrl">
+                            <img :src="logoUrl" alt="Brand logo" class="max-w-full max-h-32 object-contain p-2" />
+                        </template>
+                        <template x-if="!logoUrl">
+                            <span class="text-xs text-gray-400">{{ __('admin.brands_section.no_logo_yet') }}</span>
+                        </template>
+
+                        {{-- Remove button --}}
+                        <template x-if="logoUrl && uploadUrl">
+                            <button
+                                type="button"
+                                @click="remove()"
+                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                                title="{{ __('admin.banners.remove') }}"
+                            >✕</button>
+                        </template>
+                    </div>
+
+                    @if($isEdit)
+                        <input
+                            type="file"
+                            accept="image/*"
+                            @change="upload($event)"
+                            :disabled="uploading"
+                            class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer disabled:opacity-50"
+                        />
+                        <p x-show="uploading" class="text-xs text-primary-600 animate-pulse">{{ __('admin.brands_section.uploading') }}…</p>
+                        <p class="text-xs text-gray-400">{{ __('admin.brands_section.logo_hint') }}</p>
+                    @else
+                        <p class="text-xs text-gray-400">{{ __('admin.brands_section.save_first_for_logo') }}</p>
+                    @endif
+
+                </div>
+            </div>
+
             {{-- Save card ---------------------------------------------------- --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div class="px-5 py-4 border-b border-gray-100">
