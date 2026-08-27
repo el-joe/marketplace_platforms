@@ -55,7 +55,7 @@ export default async function BaseInfo({ product }: Props) {
       <div className="flex mt-4 mb-2">
         <Price
           size="xl"
-          currentPrice={product.listing.price}
+          currentPrice={product.listing.price / 100}
           currency={product.listing.currency}
           // oldPrice={product.oldPrice}
           // discountPercent={product.discount}
