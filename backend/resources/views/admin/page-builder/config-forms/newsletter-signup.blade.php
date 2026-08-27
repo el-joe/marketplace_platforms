@@ -12,5 +12,6 @@
         <x-form.textarea name="subtitle_ar" label="{{ __('admin.page_builder.config_forms.newsletter_signup.subtitle_ar') }}" rows="2" :value="$config['subtitle_ar'] ?? ''" dir="rtl" />
     </div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

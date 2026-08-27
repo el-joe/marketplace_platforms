@@ -117,18 +117,20 @@
 
                     <div class="flex items-center gap-8 pt-2">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="hidden" name="is_express_type" value="0">
-                            <input type="checkbox" name="is_express_type" value="1" class="sr-only peer" {{ $bool('is_express_type') ? 'checked' : '' }}>
-                            <span class="relative inline-flex w-10 h-5" dir="ltr">
-                                <span class="absolute inset-0 bg-gray-200 peer-checked:bg-primary-600 rounded-full transition-colors duration-200"></span>
+                            <span class="relative inline-flex items-center" dir="ltr">
+                                <input type="hidden" name="is_express_type" value="0">
+                                <input type="checkbox" name="is_express_type" value="1" class="sr-only peer" {{ $bool('is_express_type') ? 'checked' : '' }}>
+                                <span class="relative w-10 h-5 bg-gray-200 peer-checked:bg-primary-600 rounded-full transition-colors duration-200 block"></span>
+                                <span class="absolute top-0.5 left-[2px] bg-white rounded-full h-4 w-4 transition-transform peer-checked:translate-x-5 pointer-events-none"></span>
                             </span>
                             <span class="text-sm text-gray-700">{{ __('admin.shipping_section.express_type') }}</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="hidden" name="show_estimated_price" value="0">
-                            <input type="checkbox" name="show_estimated_price" value="1" class="sr-only peer" {{ $bool('show_estimated_price', true) ? 'checked' : '' }}>
-                            <span class="relative inline-flex w-10 h-5" dir="ltr">
-                                <span class="absolute inset-0 bg-gray-200 peer-checked:bg-primary-600 rounded-full transition-colors duration-200"></span>
+                            <span class="relative inline-flex items-center" dir="ltr">
+                                <input type="hidden" name="show_estimated_price" value="0">
+                                <input type="checkbox" name="show_estimated_price" value="1" class="sr-only peer" {{ $bool('show_estimated_price', true) ? 'checked' : '' }}>
+                                <span class="relative w-10 h-5 bg-gray-200 peer-checked:bg-primary-600 rounded-full transition-colors duration-200 block"></span>
+                                <span class="absolute top-0.5 left-[2px] bg-white rounded-full h-4 w-4 transition-transform peer-checked:translate-x-5 pointer-events-none"></span>
                             </span>
                             <span class="text-sm text-gray-700">{{ __('admin.shipping_section.show_estimated_price') }}</span>
                         </label>
@@ -191,8 +193,87 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label for="delivery_label_en" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.delivery_panel_label_en') }}</label>
+                    {{-- Badge Image --}}
+                    <div
+                        class="pt-2"
+                        x-data="{
+                            uploading: false,
+                            imageUrl: '{{ $shippingMethod->badge_image_url ?? '' }}',
+                            uploadUrl: '{{ $shippingMethod->id ? route('admin.shipping-methods.upload-badge-image', $shippingMethod->id) : '' }}',
+                            deleteUrl: '{{ $shippingMethod->id ? route('admin.shipping-methods.delete-badge-image', $shippingMethod->id) : '' }}',
+                            async upload(event) {
+                                const file = event.target.files[0];
+                                if (!file) return;
+                                this.uploading = true;
+                                const fd = new FormData();
+                                fd.append('image', file);
+                                fd.append('_token', document.querySelector('meta[name=csrf-token]').content);
+                                try {
+                                    const res  = await fetch(this.uploadUrl, { method: 'POST', body: fd });
+                                    const data = await res.json();
+                                    if (res.ok) { this.imageUrl = data.badge_image_url; }
+                                    else { alert(data.message || 'Upload failed'); }
+                                } catch(e) { alert('Network error'); }
+                                this.uploading = false;
+                                event.target.value = '';
+                            },
+                            async remove() {
+                                if (!confirm('Remove badge image?')) return;
+                                const res = await fetch(this.deleteUrl, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                        'Accept': 'application/json',
+                                    },
+                                });
+                                if (res.ok) { this.imageUrl = ''; }
+                                else { alert('Delete failed'); }
+                            }
+                        }"
+                    >
+                        <label class="block text-xs font-medium text-gray-700 mb-2">
+                            {{ __('admin.shipping_section.badge_image') }}
+                            <span class="font-normal text-gray-400">{{ __('admin.shipping_section.badge_image_hint') }}</span>
+                        </label>
+
+                        <div
+                            class="relative inline-flex items-center justify-center w-24 h-24 rounded-lg border border-dashed border-gray-300 bg-gray-50 overflow-hidden mb-2"
+                            :style="imageUrl ? 'border-style:solid' : ''"
+                        >
+                            <template x-if="imageUrl">
+                                <img :src="imageUrl" alt="Badge image" class="max-w-full max-h-full object-contain p-1" />
+                            </template>
+                            <template x-if="!imageUrl">
+                                <x-heroicon name="photo" class="w-8 h-8 text-gray-300" />
+                            </template>
+                            <template x-if="imageUrl && uploadUrl">
+                                <button
+                                    type="button"
+                                    @click.prevent="remove()"
+                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-600"
+                                    title="{{ __('admin.banners.remove') }}"
+                                >✕</button>
+                            </template>
+                        </div>
+
+                        @if($shippingMethod->id)
+                            <div>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    @change="upload($event)"
+                                    :disabled="uploading"
+                                    class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer disabled:opacity-50"
+                                />
+                                <p x-show="uploading" class="text-xs text-primary-600 mt-1 animate-pulse">{{ __('admin.brands_section.uploading') }}…</p>
+                            </div>
+                        @else
+                            <p class="text-xs text-gray-400">{{ __('admin.shipping_section.save_first_for_image') }}</p>
+                        @endif
+                    </div>
+
+                    <div>
+                        <label for="delivery_label_en" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.delivery_panel_label_en') }}</label>
                             <input type="text" id="delivery_label_en" name="delivery_label_en" value="{{ $val('delivery_label_en') }}" maxlength="100"
                                    placeholder="Delivered within 2-4 days" class="input w-full @error('delivery_label_en') border-red-400 @enderror">
                             @error('delivery_label_en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

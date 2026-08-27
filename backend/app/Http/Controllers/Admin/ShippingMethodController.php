@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShippingMethod;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ShippingMethodController extends Controller
 {
@@ -66,6 +69,44 @@ class ShippingMethodController extends Controller
 
         return redirect()->route('admin.shipping-methods.index')
             ->with('success', __('admin.shipping_section.shipping_method_deleted'));
+    }
+
+    public function uploadBadgeImage(Request $request, ShippingMethod $shippingMethod): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:1024'],
+        ]);
+
+        if ($shippingMethod->badge_image_path) {
+            Storage::disk('public')->delete($shippingMethod->badge_image_path);
+        }
+
+        $file = $request->file('image');
+        $ext  = $file->getClientOriginalExtension() ?: $file->guessExtension();
+        $path = $file->storeAs(
+            'shipping-methods/' . $shippingMethod->id,
+            'badge_' . Str::random(8) . '.' . $ext,
+            'public'
+        );
+
+        $shippingMethod->update(['badge_image_path' => $path]);
+
+        return response()->json([
+            'message'         => 'Badge image uploaded.',
+            'badge_image_url' => Storage::disk('public')->url($path),
+        ]);
+    }
+
+    public function deleteBadgeImage(ShippingMethod $shippingMethod): JsonResponse
+    {
+        if (!$shippingMethod->badge_image_path) {
+            return response()->json(['message' => 'No image to remove.'], 404);
+        }
+
+        Storage::disk('public')->delete($shippingMethod->badge_image_path);
+        $shippingMethod->update(['badge_image_path' => null]);
+
+        return response()->json(['message' => 'Badge image removed.']);
     }
 
     private function validateData(Request $request, ?ShippingMethod $shippingMethod = null): array

@@ -251,11 +251,18 @@ class PageRendererService
                 return [
                     'id'                => $block->id,
                     'type'              => $block->block_type,
+                    'column_index'      => (int) $block->column_index,
                     'position'          => $block->position,
                     'device_target'     => $block->device_target,
                     'audience'          => $block->audience,
                     'cache_ttl_seconds' => $block->cache_ttl_seconds,
-                    'background_color'  => ($block->config['background_color'] ?? null),
+                    'background_color'  => $block->config['background_color'] ?? null,
+                    'padding_top'       => isset($block->config['padding_top'])
+                                            ? (int) $block->config['padding_top']
+                                            : null,
+                    'padding_bottom'    => isset($block->config['padding_bottom'])
+                                            ? (int) $block->config['padding_bottom']
+                                            : null,
                     'data'              => $cached,
                 ];
             })
@@ -458,7 +465,7 @@ class PageRendererService
             ->where('status', 'active')
             ->whereNull('deleted_at')
             ->with([
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
                 'productVariant:id,sku,slug,variant_name',
                 'productVariant.images',
             ])
@@ -473,7 +480,7 @@ class PageRendererService
             ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
             ->with([
                 'vendor:id,store_name,store_rating_avg',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
                 'productVariant:id,sku,slug,variant_name',
                 'productVariant.images',
             ])
@@ -553,7 +560,7 @@ class PageRendererService
             ->whereIn('status', ['approved', 'live'])
             ->with([
                 'vendorListing.vendor:id,store_name,store_rating_avg',
-                'vendorListing.primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
+                'vendorListing.primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
                 'vendorListing.productVariant.product.images',
                 'vendorListing.productVariant.images',
             ])

@@ -17,5 +17,6 @@
         <x-form.input name="margin_bottom" type="number" label="{{ __('admin.page_builder.config_forms.divider.margin_bottom') }}" :value="$config['margin_bottom'] ?? 16" min="0" />
     </div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

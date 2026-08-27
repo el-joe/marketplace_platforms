@@ -92,6 +92,7 @@ class ShippingMethodResolverService
             'badge_label_ar' => $method->badge_label_ar,
             'badge_color_hex' => $method->badge_color_hex,
             'badge_text_color_hex' => $method->badge_text_color_hex,
+            'badge_image_url' => $method->badge_image_url,
             'delivery_label_en' => $method->delivery_label_en,
             'delivery_label_ar' => $method->delivery_label_ar,
             'is_express_type' => (bool) $method->is_express_type,

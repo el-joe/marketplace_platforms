@@ -57,5 +57,6 @@
         label="{{ __('admin.page_builder.config_forms.deal_of_day.deal_ends_at') }}"
         enableTime :value="$config['ends_at'] ?? ''" class="mt-3" />
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

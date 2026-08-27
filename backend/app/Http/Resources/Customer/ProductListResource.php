@@ -78,6 +78,22 @@ class ProductListResource extends JsonResource
             'is_in_stock'         => (int) ($this->total_stock ?? 0) > 0,
             'is_sponsored'        => (bool) ($this->is_sponsored ?? false),
             'is_wishlisted'       => (bool) ($this->is_wishlisted ?? false),
+            'shipping_badge' => ($this->buy_box_shipping_label_en || $this->buy_box_shipping_label_ar)
+                ? [
+                    'label'            => [
+                        'ar' => $this->buy_box_shipping_label_ar,
+                        'en' => $this->buy_box_shipping_label_en,
+                    ],
+                    'color_hex'        => $this->buy_box_shipping_color_hex,
+                    'text_color_hex'   => $this->buy_box_shipping_text_color_hex,
+                    'badge_image_url'  => $this->buy_box_shipping_badge_image_path
+                        ? \Storage::disk('public')->url($this->buy_box_shipping_badge_image_path)
+                        : null,
+                    'delivery_days_min' => $this->buy_box_shipping_days_min !== null ? (int) $this->buy_box_shipping_days_min : null,
+                    'delivery_days_max' => $this->buy_box_shipping_days_max !== null ? (int) $this->buy_box_shipping_days_max : null,
+                    'is_express'       => (bool) $this->buy_box_shipping_is_express,
+                ]
+                : null,
         ];
     }
 }

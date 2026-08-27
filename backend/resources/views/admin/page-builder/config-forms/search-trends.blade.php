@@ -24,5 +24,6 @@
         <x-form.toggle name="show_icons" label="{{ __('admin.page_builder.config_forms.search_trends.show_icons') }}" :value="$config['show_icons'] ?? true" />
     </div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

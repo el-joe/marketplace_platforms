@@ -15,5 +15,6 @@
         <x-form.input name="max_width" label="{{ __('admin.page_builder.config_forms.text_block.max_width') }}" :value="$config['max_width'] ?? '1200px'" />
     </div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

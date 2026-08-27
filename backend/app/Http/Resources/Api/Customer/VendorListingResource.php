@@ -68,6 +68,18 @@ class VendorListingResource extends JsonResource
             'rating_count' => (int) $listing->rating_count,
             'total_sold' => (int) $listing->total_sold,
             'vendor_covers_delivery' => (bool) $listing->vendor_covers_delivery,
+            'shipping_badge' => $listing->primaryShippingMethod ? [
+                'label'            => [
+                    'ar' => $listing->primaryShippingMethod->badge_label_ar,
+                    'en' => $listing->primaryShippingMethod->badge_label_en,
+                ],
+                'color_hex'        => $listing->primaryShippingMethod->badge_color_hex,
+                'text_color_hex'   => $listing->primaryShippingMethod->badge_text_color_hex,
+                'badge_image_url'  => $listing->primaryShippingMethod->badge_image_url,
+                'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
+                'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
+                'is_express'       => (bool) $listing->primaryShippingMethod->is_express_type,
+            ] : null,
             'brand' => $product->brand ? [
                 'id'       => $product->brand->id,
                 'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],

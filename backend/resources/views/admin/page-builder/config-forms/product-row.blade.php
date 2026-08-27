@@ -62,5 +62,6 @@
         @include('admin.page-builder.config-forms.partials.manual-products-manager', ['block' => $block])
     </div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

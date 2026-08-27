@@ -55,7 +55,7 @@ class ProductController extends Controller
                 'productVariant.images',
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
         // Apply category filter to admin listings if requested
@@ -84,7 +84,7 @@ class ProductController extends Controller
                 'productVariant.images',
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
         $vendorBuilder = $this->listings->applyFilters($vendorBuilder, $filters);

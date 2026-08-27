@@ -201,6 +201,7 @@ class ListingController extends Controller
                 'productVariant.product.images',
                 'productVariant.product.category',
                 'productVariant.product.brand',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
         if ($categoryId = $request->query('category_id')) {
@@ -231,6 +232,7 @@ class ListingController extends Controller
                 'productVariant.product.images',
                 'productVariant.product.category',
                 'productVariant.product.brand',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
         if ($categoryId = $request->query('category_id')) {
@@ -271,7 +273,13 @@ class ListingController extends Controller
     {
         $query = AdminListing::where('country_id', $country->id)
             ->where('status', AdminListingStatus::Active->value)
-            ->with(['productVariant.images', 'productVariant.product.images', 'productVariant.product.category', 'productVariant.product.brand']);
+            ->with([
+                'productVariant.images',
+                'productVariant.product.images',
+                'productVariant.product.category',
+                'productVariant.product.brand',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
+            ]);
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
             return $query->where('id', $identifier)->first();

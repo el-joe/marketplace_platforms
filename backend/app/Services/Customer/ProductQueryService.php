@@ -165,6 +165,7 @@ class ProductQueryService
         $al = fn(string $col) =>
             '(SELECT '.$col.' FROM admin_listings al_b'
             .' JOIN product_variants pv_b ON pv_b.id = al_b.product_variant_id'
+            .' LEFT JOIN shipping_methods sm_b ON sm_b.id = al_b.primary_shipping_method_id'
             ." WHERE pv_b.product_id = products.id AND al_b.country_id = ? AND al_b.status = 'active' AND al_b.deleted_at IS NULL"
             .' ORDER BY al_b.price ASC LIMIT 1)';
 
@@ -172,6 +173,7 @@ class ProductQueryService
         $vl = fn(string $col) =>
             '(SELECT '.$col.' FROM vendor_listings vl_b'
             .' JOIN product_variants pv_b ON pv_b.id = vl_b.product_variant_id'
+            .' LEFT JOIN shipping_methods sm_b ON sm_b.id = vl_b.primary_shipping_method_id'
             ." WHERE pv_b.product_id = products.id AND vl_b.country_id = ? AND vl_b.status = ? AND vl_b.deleted_at IS NULL"
             ." ORDER BY FIELD(vl_b.global_system_type,'express_fbn','merchant_fbp','marketplace'), vl_b.price ASC LIMIT 1)";
 
@@ -247,6 +249,46 @@ class ProductQueryService
             // ── buy_box_compare_at_price ───────────────────────────────────────
             ->selectRaw(
                 'COALESCE('.$al('al_b.compare_at_price').', '.$vl('vl_b.compare_at_price').') as buy_box_compare_at_price',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_label_en ──────────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.badge_label_en').', '.$vl('sm_b.badge_label_en').') as buy_box_shipping_label_en',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_label_ar ──────────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.badge_label_ar').', '.$vl('sm_b.badge_label_ar').') as buy_box_shipping_label_ar',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_color_hex ─────────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.badge_color_hex').', '.$vl('sm_b.badge_color_hex').') as buy_box_shipping_color_hex',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_text_color_hex ───────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.badge_text_color_hex').', '.$vl('sm_b.badge_text_color_hex').') as buy_box_shipping_text_color_hex',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_days_min ──────────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.min_delivery_days').', '.$vl('sm_b.min_delivery_days').') as buy_box_shipping_days_min',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_days_max ──────────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.max_delivery_days').', '.$vl('sm_b.max_delivery_days').') as buy_box_shipping_days_max',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_is_express ────────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.is_express_type').', '.$vl('sm_b.is_express_type').') as buy_box_shipping_is_express',
+                [$country->id, $country->id, 'active'],
+            )
+            // ── buy_box_shipping_badge_image_path ──────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('sm_b.badge_image_path').', '.$vl('sm_b.badge_image_path').') as buy_box_shipping_badge_image_path',
                 [$country->id, $country->id, 'active'],
             )
             ->addSelect('cat.name_en as category_name_en', 'cat.name_ar as category_name_ar')

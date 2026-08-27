@@ -11,5 +11,6 @@
                      rows="10"
                      :value="json_encode($config, JSON_PRETTY_PRINT)" />
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

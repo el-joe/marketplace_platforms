@@ -26,7 +26,7 @@ class BuyBoxService
             ->with([
                 'vendor:id,store_name,store_slug,store_rating_avg,store_rating_count,created_at,warranty_months,easy_returns_enabled,secure_payments_enabled',
                 'warehouseInventories',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,min_delivery_days,max_delivery_days',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ])
             ->whereIn('product_variant_id', $variantIds)
             ->where('country_id', $country->id)

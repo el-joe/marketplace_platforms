@@ -25,5 +25,6 @@
         {{ __('admin.page_builder.config_forms.full_banner.link_managed_on_banner') }}
     </div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

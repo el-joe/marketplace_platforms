@@ -29,7 +29,6 @@
         <x-form.input name="badge_label_ar" label="{{ __('admin.page_builder.config_forms.flash_sale.badge_label_ar') }}" :value="$config['badge_label_ar'] ?? ''" dir="rtl" />
     </div>
 
-    <x-form.input name="background_color" type="color" label="{{ __('admin.page_builder.config_forms.flash_sale.background_color') }}" :value="$config['background_color'] ?? '#fef3c7'" class="mt-3" />
-
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

@@ -40,5 +40,6 @@
         {{ __('admin.page_builder.config_forms.video_banner.autoplay_muted_warning') }}
     </p>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

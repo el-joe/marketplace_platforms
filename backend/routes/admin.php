@@ -1189,6 +1189,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{shipping_method}/edit', [ShippingMethodController::class, 'edit'])->name('edit')->middleware('admin.permission:settings.edit');
         Route::put('/{shipping_method}', [ShippingMethodController::class, 'update'])->name('update')->middleware('admin.permission:settings.edit');
         Route::delete('/{shipping_method}', [ShippingMethodController::class, 'destroy'])->name('destroy')->middleware('admin.permission:settings.edit');
+        Route::post('/{shipping_method}/upload-badge-image', [ShippingMethodController::class, 'uploadBadgeImage'])->name('upload-badge-image')->middleware('admin.permission:settings.edit');
+        Route::delete('/{shipping_method}/delete-badge-image', [ShippingMethodController::class, 'deleteBadgeImage'])->name('delete-badge-image')->middleware('admin.permission:settings.edit');
     });
 
     // ─── Shipping Settings: Carriers / Rates / Country Settings ───────────────

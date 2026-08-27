@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class ShippingMethod extends Model
 {
@@ -25,6 +26,7 @@ class ShippingMethod extends Model
         'badge_label_ar',
         'badge_color_hex',
         'badge_text_color_hex',
+        'badge_image_path',
         'delivery_label_en',
         'delivery_label_ar',
         'is_express_type',
@@ -68,6 +70,15 @@ class ShippingMethod extends Model
     public function categoryShippingMethods(): HasMany
     {
         return $this->hasMany(CategoryShippingMethod::class);
+    }
+
+    public function getBadgeImageUrlAttribute(): ?string
+    {
+        if (!$this->badge_image_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->badge_image_path);
     }
 
     /**

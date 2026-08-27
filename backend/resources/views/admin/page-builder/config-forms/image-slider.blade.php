@@ -92,5 +92,6 @@
     {{-- Images list --}}
     <div data-ad-images-panel data-block-id="{{ $block?->id }}" class="mt-4"></div>
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>

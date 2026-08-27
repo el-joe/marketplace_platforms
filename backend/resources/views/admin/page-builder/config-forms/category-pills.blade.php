@@ -14,5 +14,6 @@
 
     @include('admin.page-builder.config-forms.partials.categories-manager', ['block' => $block])
 
+    @include('admin.page-builder.config-forms.partials.block-styling', ['config' => $config])
     @include('admin.page-builder.config-forms.partials.visibility', ['block' => $block])
 </form>
