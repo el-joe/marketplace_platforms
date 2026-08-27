@@ -60,7 +60,7 @@ const ProductCard = ({ productData }: Props) => {
         <Button
           variant={"ghost"}
           className={
-            "absolute top-0 md:top-1 lg:top-2 p-0! right-1 lg:right-2 z-10 rounded-full aspect-square"
+            "absolute top-0 md:top-1 lg:top-2 p-1! right-1 lg:right-2 z-10 rounded-full aspect-square bg-white/60"
           }
           disabled={
             isAddingWishlist && targetAddingWishlist === productData.listing_id
@@ -86,7 +86,7 @@ const ProductCard = ({ productData }: Props) => {
         <Button
           variant={"outline"}
           className={
-            "absolute bottom-1 lg:bottom-2 right-2 z-10 p-1! xl:p-3! min-w-0! min-h-0! aspect-square"
+            "absolute bottom-1 lg:bottom-2 right-2 z-10 p-1! min-w-0! min-h-0! aspect-square bg-gray-2"
           }
           disabled={isMutating && targetItemMutating === productData.listing_id}
           onClick={(e) => {
@@ -110,14 +110,14 @@ const ProductCard = ({ productData }: Props) => {
             swiper.autoplay.stop();
           }}
         >
-          {[productData.thumbnail].map((image) => (
+          {productData?.images?.map((image) => (
             <SwiperSlide
-              key={image}
+              key={image.id}
               className="flex! justify-center! items-center!"
             >
               <Image
-                src={image}
-                alt={productData.name_en}
+                src={image.url}
+                alt={image?.alt[locale] as string}
                 width={500}
                 height={600}
                 className="max-h-full"
@@ -136,16 +136,16 @@ const ProductCard = ({ productData }: Props) => {
           </h3>
           {/* rating */}
           <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5">
-            <StarIcon className="size-2 md:size-3 lg:size-4 text-green fill-green" />
-            <p className="font-semibold text-[8px] md:text-xs lg:text-base ">
+            <StarIcon className="size-2 md:size-3 text-green fill-green" />
+            <p className="font-semibold text-[8px] md:text-xs ">
               {productData.rating_avg}
             </p>
-            <p className="text-gray text-[8px] md:text-xs lg:text-base">
+            <p className="text-gray text-[8px] md:text-xs lg:text-sm">
               ({productData.rating_count})
             </p>
           </div>
           <Price
-            currentPrice={productData.price}
+            currentPrice={productData.price_formatted}
             // discountPercent={productData.discount}
             // oldPrice={productData.oldPrice}
             currency={productData.currency}

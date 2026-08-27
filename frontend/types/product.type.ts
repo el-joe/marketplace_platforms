@@ -35,6 +35,16 @@ export interface IProduct {
   total_sold: number;
   is_wishlisted: boolean;
   is_sponsored: boolean;
+  images?: Images[];
+}
+
+export interface Images {
+  id: string;
+  url: string;
+  alt: { en: string | null; ar: string | null };
+  is_primary: boolean;
+  position: number;
+  variant_id: null | string;
 }
 
 export enum Condition {

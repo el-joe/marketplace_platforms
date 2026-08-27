@@ -102,7 +102,7 @@ const CategoriesNav = () => {
         className={`fixed top-26 w-screen left-0 z-30 bg-[#0000005b] h-screen  ${hoveredCategory ? "" : "hidden"}`}
       >
         <div
-          className="h-[calc(100vh-200px)] max-h-121 overflow-auto bg-white container p-5 z-30"
+          className="h-[calc(100vh-200px)]s max-h-121s overflow-auto bg-white p-5 z-30"
           onMouseLeave={() => {
             setHoveredCategory(null);
           }}
@@ -141,18 +141,19 @@ const CategoriesNav = () => {
               </ul>
             </div>
             {/* image banner */}
-            {}
-            <div className="col-start-4 col-end-4 row-span-2 relative">
-              <Image
-                src={
-                  data?.find((category) => category.id === hoveredCategory)
-                    ?.image_url ?? ""
-                }
-                alt=""
-                fill
-                sizes="100%"
-              />
-            </div>
+            {data?.find((c) => c.id === hoveredCategory)?.image_url && (
+              <div className="col-start-4 col-end-4 row-span-2 relative h-[30vh]">
+                <Image
+                  src={
+                    data?.find((category) => category.id === hoveredCategory)
+                      ?.image_url ?? ""
+                  }
+                  alt=""
+                  fill
+                  sizes="100%"
+                />
+              </div>
+            )}
             {/* top brands list */}
             {!!data?.find((category) => category.id === hoveredCategory)?.brands
               ?.length && (
