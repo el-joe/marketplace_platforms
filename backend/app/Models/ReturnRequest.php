@@ -7,6 +7,7 @@ use App\Enums\ReturnRequestLiability;
 use App\Enums\ReturnRequestReason;
 use App\Enums\ReturnRequestStatus;
 use App\Enums\ReturnRequestType;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ReturnRequest extends Model
 {
+    use HasUuids;
     protected function casts(): array
     {
         return [
