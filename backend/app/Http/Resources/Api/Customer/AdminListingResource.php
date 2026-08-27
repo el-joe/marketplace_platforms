@@ -23,6 +23,29 @@ class AdminListingResource extends JsonResource
             ?? $product->images->firstWhere('is_primary', true)
             ?? $product->images->first();
 
+        $variantImagesSlider = $variant->images
+            ->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_primary' => (bool) $img->is_primary,
+                'position'   => (int) $img->position,
+                'variant_id' => $img->product_variant_id,
+            ])->values()->all();
+
+        $productImagesSlider = $product->images
+            ->filter(fn ($img) => $img->product_variant_id === null)
+            ->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_primary' => (bool) $img->is_primary,
+                'position'   => (int) $img->position,
+                'variant_id' => null,
+            ])->values()->all();
+
+        $imagesSlider = array_values(array_merge($variantImagesSlider, $productImagesSlider));
+
         $url = route('customer.listing.show', [$this->country->site_code, $variant->id .'--' . $listing->id]);
         $url_param = $variant->id .'--' . $listing->id;
 
@@ -34,6 +57,7 @@ class AdminListingResource extends JsonResource
             'variant_name' => $variant->variant_name ?? $variant->sku,
             'product_url' => $url, // ✓ correct UUID format
             'primary_image' => $primaryImage?->url,
+            'images' => $imagesSlider,
             'price' => (int) $listing->getRawOriginal('price'),
             'compare_at_price' => null,
             'currency' => $listing->currency ?? $this->country->currency_code,
@@ -51,8 +75,12 @@ class AdminListingResource extends JsonResource
                     'name_en' => $product->category->name_en,
                 ] : null,
                 'images' => $product->images->map(fn ($image) => [
-                    'url' => $image->url,
+                    'id'         => $image->id,
+                    'url'        => $image->url,
+                    'alt'        => ['ar' => $image->alt_text_ar, 'en' => $image->alt_text_en],
                     'is_primary' => (bool) $image->is_primary,
+                    'position'   => (int) $image->position,
+                    'variant_id' => $image->product_variant_id,
                 ])->values()->all(),
             ],
             'variant' => [

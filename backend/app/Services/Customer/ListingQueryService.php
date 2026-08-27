@@ -323,6 +323,7 @@ class ListingQueryService
     ): array {
         $variant = $listing->productVariant;
         $variantImage = $variant->images->first()?->url ?? $product->images->first()?->url ?? null;
+        $imagesSlider = $this->buildImagesSlider($variant, $product);
 
         $url = route('customer.listing.show', [$country->site_code, $variant->id .'--' . $listing->id]);
         $url_param = $variant->id .'--' . $listing->id;
@@ -344,6 +345,7 @@ class ListingQueryService
             'variant_name' => $variant->variant_name ?? $variant->sku,
             'variant_image' => $variantImage,
             'primary_image' => $variantImage,
+            'images' => $imagesSlider,
             'name_en' => $product->name_en,
             'name_ar' => $product->name_ar,
             'thumbnail' => $product->images->first()?->url ?? null,
@@ -381,6 +383,36 @@ class ListingQueryService
     }
 
     /**
+     * Builds the ordered image slider array for a variant/product pair:
+     * variant-specific images first, then product-level images (no variant FK).
+     */
+    private function buildImagesSlider($variant, Product $product): array
+    {
+        $variantImages = $variant->images
+            ->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_primary' => (bool) $img->is_primary,
+                'position'   => (int) $img->position,
+                'variant_id' => $img->product_variant_id,
+            ])->values()->all();
+
+        $productImages = $product->images
+            ->filter(fn ($img) => $img->product_variant_id === null)
+            ->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_primary' => (bool) $img->is_primary,
+                'position'   => (int) $img->position,
+                'variant_id' => null,
+            ])->values()->all();
+
+        return array_values(array_merge($variantImages, $productImages));
+    }
+
+    /**
      * Shape an AdminListing into the same card shape as toCardShape().
      * listing_type = 'admin', vendor = null (platform sells directly).
      */
@@ -392,6 +424,7 @@ class ListingQueryService
     ): array {
         $variant = $listing->productVariant;
         $variantImage = $variant->images->first()?->url ?? $product->images->first()?->url ?? null;
+        $imagesSlider = $this->buildImagesSlider($variant, $product);
 
         return [
             'listing_id'       => $listing->id,
@@ -408,6 +441,7 @@ class ListingQueryService
             'variant_name'     => $variant->variant_name ?? $variant->sku,
             'variant_image'    => $variantImage,
             'primary_image'    => $variantImage,
+            'images'           => $imagesSlider,
             'product_url'      => "/products/p-{$listing->id}",
             'url_param'        => "p-{$listing->id}",
             'name'             => ['ar' => $product->name_ar, 'en' => $product->name_en],

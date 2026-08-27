@@ -18,6 +18,18 @@ class ProductListResource extends JsonResource
             ? \Storage::disk($this->buy_box_variant_image_disk)->url($this->buy_box_variant_image_path)
             : null;
 
+        $imagesSlider = $this->whenLoaded('images', function () {
+            return $this->images
+                ->map(fn ($img) => [
+                    'id'         => $img->id,
+                    'url'        => \Storage::disk($img->disk ?? 'public')->url($img->path),
+                    'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                    'is_primary' => (bool) $img->is_primary,
+                    'position'   => (int) $img->position,
+                    'variant_id' => $img->product_variant_id,
+                ])->values()->all();
+        }, []);
+
         // listing_type is now driven by the actual buy-box winner ('admin' or 'vendor')
         $listingType = $this->buy_box_listing_type ?? 'vendor';
 
@@ -48,6 +60,7 @@ class ProductListResource extends JsonResource
                 $primary = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
                 return $primary ? \Storage::disk($primary->disk)->url($primary->path) : null;
             }),
+            'images'              => $imagesSlider,
             'price_range'         => [
                 'min' => $this->min_price !== null ? round($this->min_price / 100, 2) : null,
                 'max' => $this->max_price !== null ? round($this->max_price / 100, 2) : null,

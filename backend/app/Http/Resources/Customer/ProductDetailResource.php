@@ -104,6 +104,15 @@ class ProductDetailResource extends JsonResource
                     'variant_name' => $v->variant_name,
                     'is_default'   => $v->is_default,
                     'position'     => $v->position,
+                    'images'       => $v->relationLoaded('images')
+                        ? $v->images->map(fn ($img) => [
+                            'id'         => $img->id,
+                            'url'        => $img->url,
+                            'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                            'is_primary' => (bool) $img->is_primary,
+                            'position'   => (int) $img->position,
+                        ])->values()->all()
+                        : [],
                     'attributes'   => $v->variantAttributes->map(fn($va) => [
                         'attribute_id'   => $va->attribute_id,
                         'attribute_code' => $va->attribute?->code,

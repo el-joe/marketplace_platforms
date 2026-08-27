@@ -493,22 +493,29 @@ class ProductDetailController extends Controller
     {
         $variantImages = ProductImage::where('product_variant_id', $variant->id)
             ->orderBy('position')
-            ->get();
+            ->get()
+            ->map(fn (ProductImage $img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_primary' => (bool) $img->is_primary,
+                'position'   => (int) $img->position,
+                'variant_id' => $img->product_variant_id,
+            ])->values()->all();
 
         $productImages = ProductImage::where('product_id', $product->id)
             ->whereNull('product_variant_id')
             ->orderBy('position')
-            ->get();
-
-        return $variantImages->concat($productImages)
-            ->map(fn (ProductImage $image) => [
-                'id' => $image->id,
-                'path' => $image->path,
-                'disk' => $image->disk,
-                'alt_text_en' => $image->alt_text_en,
-                'alt_text_ar' => $image->alt_text_ar,
-                'position' => $image->position,
-                'is_primary' => (bool) $image->is_primary,
+            ->get()
+            ->map(fn (ProductImage $img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
+                'is_primary' => (bool) $img->is_primary,
+                'position'   => (int) $img->position,
+                'variant_id' => null,
             ])->values()->all();
+
+        return array_values(array_merge($variantImages, $productImages));
     }
 }

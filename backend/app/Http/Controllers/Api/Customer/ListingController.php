@@ -269,7 +269,7 @@ class ListingController extends Controller
     {
         $query = AdminListing::where('country_id', $country->id)
             ->where('status', AdminListingStatus::Active->value)
-            ->with(['productVariant.product.images', 'productVariant.product.category']);
+            ->with(['productVariant.images', 'productVariant.product.images', 'productVariant.product.category']);
 
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
             return $query->where('id', $identifier)->first();
