@@ -1875,6 +1875,14 @@ return [
     // ─── Categories ──────────────────────────────────────────────────────────
     'categories' => [
         'title'                 => 'Categories',
+        'category_image'                => 'Category Image',
+        'no_image_yet'                  => 'No image yet',
+        'uploading'                     => 'Uploading',
+        'image_hint'                    => 'Recommended: 400×400px, PNG/WebP/JPG. Max 4 MB.',
+        'save_category_first_for_image' => 'Save the category first to upload an image.',
+        'image_uploaded'                => 'Image uploaded successfully.',
+        'image_deleted'                 => 'Image deleted.',
+        'image_not_found'               => 'No image found.',
         'commission_fbp'        => 'FBP Commission',
         'commission_fbn'        => 'FBN Commission',
         'save_changes'          => 'Save Changes',

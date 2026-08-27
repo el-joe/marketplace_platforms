@@ -435,6 +435,81 @@
         {{-- ═══════════════════════════════════════════ --}}
         <div class="w-full lg:w-72 flex-shrink-0 space-y-4">
 
+            {{-- Category Image --}}
+            <div
+                class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-3"
+                x-data="{
+                    uploading: false,
+                    imageUrl: '{{ $isEdit ? ($category->image_url ?? '') : '' }}',
+                    uploadUrl: '{{ $isEdit ? route('admin.categories.upload-image', $category->id) : '' }}',
+                    deleteUrl: '{{ $isEdit ? route('admin.categories.delete-image', $category->id) : '' }}',
+                    async upload(event) {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        this.uploading = true;
+                        const fd = new FormData();
+                        fd.append('image', file);
+                        fd.append('_token', document.querySelector('meta[name=csrf-token]').content);
+                        try {
+                            const res = await fetch(this.uploadUrl, { method: 'POST', body: fd });
+                            const data = await res.json();
+                            if (res.ok) { this.imageUrl = data.url; }
+                            else { alert(data.message || 'Upload failed'); }
+                        } catch(e) { alert('Network error'); }
+                        this.uploading = false;
+                        event.target.value = '';
+                    },
+                    async remove() {
+                        if (!confirm('Remove image?')) return;
+                        const res = await fetch(this.deleteUrl, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                'Accept': 'application/json',
+                            }
+                        });
+                        if (res.ok) { this.imageUrl = ''; }
+                        else { alert('Delete failed'); }
+                    }
+                }"
+            >
+                <h3 class="text-sm font-semibold text-gray-900">{{ __('admin.categories.category_image') }}</h3>
+
+                <div class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center" style="min-height:120px">
+                    <template x-if="imageUrl">
+                        <img :src="imageUrl" alt="Category image" class="max-w-full max-h-48 object-contain" />
+                    </template>
+                    <template x-if="!imageUrl">
+                        <span class="text-xs text-gray-400">{{ __('admin.categories.no_image_yet') }}</span>
+                    </template>
+
+                    <template x-if="imageUrl && uploadUrl">
+                        <button
+                            type="button"
+                            @click="remove()"
+                            class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                            title="{{ __('admin.banners.remove') }}"
+                        >✕</button>
+                    </template>
+                </div>
+
+                @if($isEdit)
+                    <div>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            @change="upload($event)"
+                            :disabled="uploading"
+                            class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer disabled:opacity-50"
+                        />
+                        <p x-show="uploading" class="text-xs text-primary-600 mt-1 animate-pulse">{{ __('admin.categories.uploading') }}…</p>
+                    </div>
+                    <p class="text-xs text-gray-400">{{ __('admin.categories.image_hint') }}</p>
+                @else
+                    <p class="text-xs text-gray-400">{{ __('admin.categories.save_category_first_for_image') }}</p>
+                @endif
+            </div>
+
             {{-- Visibility --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-3">
                 <h3 class="text-sm font-semibold text-gray-900">{{ __('admin.visibility') }}</h3>

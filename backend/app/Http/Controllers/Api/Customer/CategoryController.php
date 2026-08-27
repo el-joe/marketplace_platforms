@@ -49,7 +49,8 @@ class CategoryController extends Controller
     {
         $query = Category::whereNull('deleted_at')
             ->where('is_active', 1)
-            ->where('is_visible', 1);
+            ->where('is_visible', 1)
+            ->with('primaryImage');
 
         $query->orderBy('sort_order');
 
@@ -88,6 +89,7 @@ class CategoryController extends Controller
             'parent_id' => $category->parent_id,
             'depth' => $category->depth,
             'is_featured' => (bool) $category->is_featured,
+            'image_url' => $category->image_url,
         ];
     }
 

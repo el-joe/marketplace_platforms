@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Activity;
 use App\Models\Attribute;
 use App\Models\Category;
+use App\Models\File;
 use App\Services\CategoryService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -176,7 +178,7 @@ class CategoryController extends Controller
 
     public function edit(string $category): View
     {
-        $categoryModel = Category::with('categoryAttributes.attribute')
+        $categoryModel = Category::with(['categoryAttributes.attribute', 'primaryImage'])
             ->whereNull('deleted_at')
             ->findOrFail($category);
 
@@ -287,6 +289,82 @@ class CategoryController extends Controller
         //     Log::error('Category update failed', ['id' => $category, 'error' => $e->getMessage()]);
         //     return response()->json(['message' => 'Failed to update category.'], 500);
         // }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Image Upload
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function uploadImage(Request $request, string $category): JsonResponse
+    {
+        abort_unless(auth('admin')->user()->can('categories.edit'), 403);
+
+        $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
+
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+        ]);
+
+        DB::beginTransaction();
+
+        $existing = $categoryModel->primaryImage()->first();
+        if ($existing) {
+            Storage::disk($existing->storage_type ?: 'public')->delete($existing->path);
+            $existing->delete();
+        }
+
+        $uploadedFile = $request->file('image');
+        $ext = $uploadedFile->getClientOriginalExtension() ?: $uploadedFile->guessExtension();
+        $path = $uploadedFile->storeAs(
+            'categories/' . $categoryModel->id,
+            'image_' . Str::random(8) . '.' . $ext,
+            'public'
+        );
+
+        $file = File::create([
+            'key' => 'categories/' . $categoryModel->id . '/image',
+            'path' => $path,
+            'storage_type' => 'public',
+            'file_type' => 'category_image',
+            'mime_type' => $uploadedFile->getMimeType(),
+            'extension' => $ext,
+            'size' => $uploadedFile->getSize(),
+            'model_type' => Category::class,
+            'model_id' => $categoryModel->id,
+            'is_primary' => 1,
+            'position' => 0,
+        ]);
+
+        DB::commit();
+
+        return response()->json([
+            'message' => __('admin.categories.image_uploaded'),
+            'file_id' => $file->id,
+            'url' => $file->full_path,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Image Delete
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function deleteImage(Request $request, string $category): JsonResponse
+    {
+        abort_unless(auth('admin')->user()->can('categories.edit'), 403);
+
+        $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
+
+        $file = $categoryModel->primaryImage()->first()
+            ?? $categoryModel->files()->orderBy('position')->first();
+
+        if (!$file) {
+            return response()->json(['message' => __('admin.categories.image_not_found')], 404);
+        }
+
+        Storage::disk($file->storage_type ?: 'public')->delete($file->path);
+        $file->delete();
+
+        return response()->json(['message' => __('admin.categories.image_deleted')]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

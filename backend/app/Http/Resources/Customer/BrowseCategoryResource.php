@@ -87,10 +87,11 @@ class BrowseCategoryResource extends JsonResource
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($c) => [
-                'id'   => $c->id,
-                'name' => Bilingual::pair($c, 'name'),
-                'slug' => $c->slug,
-                'type' => $this->type,
+                'id'        => $c->id,
+                'name'      => Bilingual::pair($c, 'name'),
+                'slug'      => $c->slug,
+                'type'      => $this->type,
+                'image_url' => $c->image_url,
             ])
             ->toArray();
     }

@@ -246,6 +246,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('toggle-featured');
         Route::post('/{category}/sync-attributes', [CategoryController::class, 'syncAttributes'])->name('sync-attributes');
         Route::post('/{category}/marketer-commission', [CategoryController::class, 'updateMarketerCommission'])->name('marketer-commission.update');
+        Route::post('/{category}/upload-image', [CategoryController::class, 'uploadImage'])->name('upload-image');
+        Route::delete('/{category}/delete-image', [CategoryController::class, 'deleteImage'])->name('delete-image');
 
         Route::prefix('{category}/shipping-methods')->name('shipping-methods.')->group(function () {
             Route::get('/', [CategoryShippingMethodController::class, 'index'])->name('index');

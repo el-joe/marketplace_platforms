@@ -18,6 +18,7 @@ class ProductBrowseCategoryResource extends JsonResource
             'id'             => $this->id,
             'name'           => Bilingual::pair($this->resource, 'name'),
             'slug'           => $this->slug,
+            'image_url'      => $this->image_url,
             'description'    => Bilingual::pair($this->resource, 'description'),
             'parent'         => $this->parent ? [
                 'id'      => $this->parent->id,
@@ -42,12 +43,14 @@ class ProductBrowseCategoryResource extends JsonResource
                 ->where('is_active', true)
                 ->where('is_visible', true)
                 ->orderBy('sort_order')
+                ->with('primaryImage')
                 ->get()
                 ->map(fn ($child) => [
-                    'id'      => $child->id,
-                    'name'    => Bilingual::pair($child, 'name'),
-                    'slug'    => $child->slug,
-                    'icon'    => $child->icon,
+                    'id'        => $child->id,
+                    'name'      => Bilingual::pair($child, 'name'),
+                    'slug'      => $child->slug,
+                    'icon'      => $child->icon,
+                    'image_url' => $child->image_url,
                 ])
                 ->toArray(),
         ];

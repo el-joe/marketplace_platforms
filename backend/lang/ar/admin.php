@@ -1832,6 +1832,14 @@ return [
     // ─── Categories ──────────────────────────────────────────────────────────
     'categories' => [
         'title'                 => 'الفئات',
+        'category_image'                => 'صورة الفئة',
+        'no_image_yet'                  => 'لا توجد صورة',
+        'uploading'                     => 'جارٍ الرفع',
+        'image_hint'                    => 'يُنصح: 400×400 بكسل، PNG/WebP/JPG. الحد الأقصى 4 ميجابايت.',
+        'save_category_first_for_image' => 'احفظ الفئة أولاً لرفع الصورة.',
+        'image_uploaded'                => 'تم رفع الصورة بنجاح.',
+        'image_deleted'                 => 'تم حذف الصورة.',
+        'image_not_found'               => 'لم يتم العثور على صورة.',
         'commission_fbp'        => 'عمولة FBP',
         'commission_fbn'        => 'عمولة FBN',
         'marketer_sample_quota' => 'حصة عينات المسوّق',
