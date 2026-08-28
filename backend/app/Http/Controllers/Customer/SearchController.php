@@ -38,11 +38,11 @@ class SearchController extends Controller
         }
 
         if ($sourceType === 'classified') {
-            return $this->searchClassified($data, $perPage);
+            return $this->searchClassified($data, $perPage, $country);
         }
 
         if ($sourceType === 'travel') {
-            return $this->searchTravel($data, $perPage);
+            return $this->searchTravel($data, $perPage, $country);
         }
 
         $result = $this->search->search(
@@ -73,9 +73,19 @@ class SearchController extends Controller
         ]);
     }
 
-    private function searchClassified(array $data, int $perPage): JsonResponse
+    private function searchClassified(array $data, int $perPage, Country $country): JsonResponse
     {
         $paginator = $this->search->searchClassifieds($data['q'], $data, $perPage);
+
+        dispatch(new \App\Jobs\LogSearchJob(
+            query: $data['q'],
+            countryId: $country->id,
+            resultsCount: $paginator->total(),
+            filters: $data,
+            customerId: auth('customer')->id(),
+            sessionId: '',
+            language: app()->getLocale(),
+        ))->afterResponse();
 
         $items = $paginator->getCollection()
             ->map(fn($listing) => $this->listings->toClassifiedCardShape($listing))
@@ -94,9 +104,19 @@ class SearchController extends Controller
         ]);
     }
 
-    private function searchTravel(array $data, int $perPage): JsonResponse
+    private function searchTravel(array $data, int $perPage, Country $country): JsonResponse
     {
         $paginator = $this->search->searchTravel($data['q'], $perPage);
+
+        dispatch(new \App\Jobs\LogSearchJob(
+            query: $data['q'],
+            countryId: $country->id,
+            resultsCount: $paginator->total(),
+            filters: $data,
+            customerId: auth('customer')->id(),
+            sessionId: '',
+            language: app()->getLocale(),
+        ))->afterResponse();
 
         $items = $paginator->getCollection()
             ->map(fn($package) => $this->listings->toTravelCardShape($package))
@@ -189,12 +209,23 @@ class SearchController extends Controller
 
     public function suggestions(Request $request, $country): JsonResponse
     {
-
         $country = $request->attributes->get('country');
 
-        $request->validate(['q' => ['required', 'string', 'min:1', 'max:255']]);
+        $request->validate(['q' => ['nullable', 'string', 'max:255']]);
 
-        $results = $this->search->suggestions($country, $request->query('q'));
+        $q = trim($request->query('q', ''));
+
+        if (strlen($q) < 2) {
+            return ApiResponse::success([
+                'trending' => $this->search->trendingKeywords($country),
+                'queries' => [],
+                'products' => [],
+                'categories' => [],
+                'vendors' => [],
+            ]);
+        }
+
+        $results = $this->search->suggestions($country, $q);
 
         return ApiResponse::success($results);
     }

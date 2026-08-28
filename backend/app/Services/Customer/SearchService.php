@@ -6,10 +6,12 @@ use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\SearchSuggestion;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class SearchService
 {
@@ -206,12 +208,33 @@ class SearchService
                 'rating' => $vendor->store_rating_avg,
             ]);
 
+        $trending = SearchSuggestion::where('country_id', $country->id)
+            ->where('is_blocked', false)
+            ->where('keyword_normalized', 'like', Str::lower(trim($query)) . '%')
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('search_count')
+            ->limit(5)
+            ->pluck('keyword')
+            ->toArray();
+
         return [
+            'trending' => $trending,
             'queries' => $queries,
             'products' => $productSuggestions->toArray(),
             'categories' => $this->unifiedCategories->search($query),
             'vendors' => $vendors->toArray(),
         ];
+    }
+
+    public function trendingKeywords(Country $country, int $limit = 10): array
+    {
+        return SearchSuggestion::where('country_id', $country->id)
+            ->where('is_blocked', false)
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('search_count')
+            ->limit($limit)
+            ->pluck('keyword')
+            ->toArray();
     }
 
     // Delegates to ProductQueryService so /search and /products share one query implementation.

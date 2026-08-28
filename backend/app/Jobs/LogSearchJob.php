@@ -3,11 +3,13 @@
 namespace App\Jobs;
 
 use App\Models\SearchLog;
+use App\Models\SearchSuggestion;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LogSearchJob implements ShouldQueue
@@ -37,5 +39,29 @@ class LogSearchJob implements ShouldQueue
             'language'         => $this->language,
             'country_id'       => $this->countryId,
         ]);
+
+        $normalized = Str::lower(trim($this->query));
+
+        if (strlen($normalized) >= 2 && !is_numeric($normalized)) {
+            SearchSuggestion::upsert(
+                [[
+                    'id'                 => (string) Str::uuid(),
+                    'keyword'            => trim($this->query),
+                    'keyword_normalized' => $normalized,
+                    'country_id'         => $this->countryId,
+                    'search_count'       => 1,
+                    'is_pinned'          => false,
+                    'is_blocked'         => false,
+                    'created_at'         => now(),
+                    'updated_at'         => now(),
+                ]],
+                uniqueBy: ['keyword_normalized', 'country_id'],
+                update: [
+                    'search_count' => DB::raw('search_count + 1'),
+                    'keyword'      => trim($this->query),
+                    'updated_at'   => now(),
+                ],
+            );
+        }
     }
 }
