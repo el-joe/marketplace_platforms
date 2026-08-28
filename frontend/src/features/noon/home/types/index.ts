@@ -92,8 +92,8 @@ export interface Category {
 }
 
 export interface Name {
-  ar: null | "ar" | "en";
-  en: null | "ar" | "en";
+  ar: null | string;
+  en: null | string;
 }
 
 export interface BlockConfig {
@@ -170,6 +170,7 @@ export interface Product {
   name_en: string;
   name_ar: string;
   thumbnail: string;
+  images: [];
   category_name?: { en: string | null; ar: string | null };
   price: number;
   price_formatted: string;
@@ -186,6 +187,15 @@ export interface Product {
   total_sold: number;
   is_wishlisted: boolean;
   is_sponsored: boolean;
+}
+
+export interface Images {
+  id: string;
+  url: string;
+  alt: Name;
+  is_primary: boolean;
+  position: number;
+  variant_id: null | string;
 }
 
 export interface ShippingBadge {

@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Grid } from "swiper/modules";
 import "swiper/css/grid";
 
-import ProductCard from "@/src/components/shared/ProductCard";
+import ProductCard from "@/src/components/shared/product-card";
 import SpecialProductCard from "@/src/components/shared/SpecialProductCard";
 import { Block, Product } from "./types";
 import SectionTitle from "./section-title";

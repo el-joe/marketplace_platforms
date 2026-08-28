@@ -2,11 +2,18 @@
 import { IProduct } from "@/types";
 import Image from "next/image";
 import React, { useRef, useState } from "react";
-import { Autoplay, Pagination } from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
 import { Button } from "../ui/button";
-import { ChevronRightIcon, HeartIcon, PlusIcon, StarIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronRightIcon,
+  HeartIcon,
+  PlusIcon,
+  StarIcon,
+} from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
 import { Product } from "@/src/features/noon/home/types";
@@ -24,6 +31,8 @@ const ProductCard = ({ productData }: Props) => {
     productData.is_wishlisted,
   );
   const locale = useLocale();
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
   const { addItem, isMutating, targetItemMutating } = useCartContext();
   const {
     addItem: addToWishlist,
@@ -44,7 +53,7 @@ const ProductCard = ({ productData }: Props) => {
   };
   return (
     <div
-      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white"
+      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
       onMouseEnter={() => handleAutoplay("start")}
       onMouseLeave={() => handleAutoplay("stop")}
     >
@@ -60,7 +69,7 @@ const ProductCard = ({ productData }: Props) => {
         <Button
           variant={"ghost"}
           className={
-            "absolute top-0 md:top-1 lg:top-2 p-0! right-1 lg:right-2 z-10 rounded-full aspect-square"
+            "absolute top-0 md:top-1 lg:top-2 p-1! right-1 lg:right-2 z-10 rounded-full aspect-square bg-white/60"
           }
           disabled={
             isAddingWishlist && targetAddingWishlist === productData.listing_id
@@ -86,7 +95,7 @@ const ProductCard = ({ productData }: Props) => {
         <Button
           variant={"outline"}
           className={
-            "absolute bottom-1 lg:bottom-2 right-2 z-10 p-1! xl:p-3! min-w-0! min-h-0! aspect-square"
+            "absolute bottom-1 lg:bottom-2 right-2 z-10 p-1! min-w-0! min-h-0! aspect-square bg-gray-2"
           }
           disabled={isMutating && targetItemMutating === productData.listing_id}
           onClick={(e) => {
@@ -100,9 +109,32 @@ const ProductCard = ({ productData }: Props) => {
             <PlusIcon className={`size-4 lg:size-6 `} />
           )}
         </Button>
+        {/* navigation buttons */}
+        <button
+          ref={prevRef}
+          className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer opacity-0 group-hover:opacity-35 transition duration-200 bg-black text-white px-0.5 py-2 rounded-e-sm"
+        >
+          <ChevronLeft size={"28px"} />
+        </button>
+        <button
+          ref={nextRef}
+          className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer opacity-0 group-hover:opacity-35 transition duration-200 bg-black text-white px-0.5 py-2 rounded-s-sm"
+        >
+          <ChevronRight size={"28px"} />
+        </button>
         <Swiper
-          modules={[Pagination, Autoplay]}
+          modules={[Pagination, Autoplay, Navigation]}
           pagination
+          loop
+          onBeforeInit={(swiper) => {
+            if (
+              swiper.params.navigation &&
+              typeof swiper.params.navigation !== "boolean"
+            ) {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+            }
+          }}
           autoplay={{ delay: 900, disableOnInteraction: true }}
           className="bg-gray-2 h-full"
           onSwiper={(swiper) => {
@@ -110,14 +142,14 @@ const ProductCard = ({ productData }: Props) => {
             swiper.autoplay.stop();
           }}
         >
-          {[productData.thumbnail].map((image) => (
+          {productData?.images?.map((image) => (
             <SwiperSlide
-              key={image}
+              key={image.id}
               className="flex! justify-center! items-center!"
             >
               <Image
-                src={image}
-                alt={productData.name_en}
+                src={image.url}
+                alt={image?.alt[locale] as string}
                 width={500}
                 height={600}
                 className="max-h-full"
@@ -136,16 +168,16 @@ const ProductCard = ({ productData }: Props) => {
           </h3>
           {/* rating */}
           <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5">
-            <StarIcon className="size-2 md:size-3 lg:size-4 text-green fill-green" />
-            <p className="font-semibold text-[8px] md:text-xs lg:text-base ">
+            <StarIcon className="size-2 md:size-3 text-green fill-green" />
+            <p className="font-semibold text-[8px] md:text-xs ">
               {productData.rating_avg}
             </p>
-            <p className="text-gray text-[8px] md:text-xs lg:text-base">
+            <p className="text-gray text-[8px] md:text-xs lg:text-sm">
               ({productData.rating_count})
             </p>
           </div>
           <Price
-            currentPrice={productData.price}
+            currentPrice={productData.price / 100}
             // discountPercent={productData.discount}
             // oldPrice={productData.oldPrice}
             currency={productData.currency}

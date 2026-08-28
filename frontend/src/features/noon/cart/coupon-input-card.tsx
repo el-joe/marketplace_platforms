@@ -25,19 +25,24 @@ export default function CouponInputCard() {
     <div className="p-4 rounded-[16px] bg-white">
       <h3 className="font-bold mb-3">{t("gotACoupon")}</h3>
       {!!cart?.cart.coupon ? (
-        <div className="flex gap-2 items-center bg-light-green text-green border border-green rounded-lg px-3 py-2">
-          <Tag className="size-4" />
-          <p className="font-bold tracking-wider text-lg">
-            {cart?.cart.coupon?.code ?? "Saeed"}
+        <div>
+          <div className="flex gap-2 items-center bg-light-green text-green border border-green rounded-lg px-3 py-2">
+            <Tag className="size-4" />
+            <p className="font-bold tracking-wider text-lg">
+              {cart?.cart.coupon?.code ?? "Saeed"}
+            </p>
+            <Button
+              className={"ms-auto"}
+              variant={"ghost"}
+              onClick={() => removeCoupon()}
+              disabled={isMutating}
+            >
+              <X className="size-6" />
+            </Button>
+          </div>
+          <p className="text-sm text-gray mt-2">
+            {cart?.cart?.coupon?.description}
           </p>
-          <Button
-            className={"ms-auto"}
-            variant={"ghost"}
-            onClick={() => removeCoupon()}
-            disabled={isMutating}
-          >
-            <X className="size-6" />
-          </Button>
         </div>
       ) : (
         <>

@@ -23,7 +23,11 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
   return (
     <div className="container">
       <section
-        className={cn("w-full mb-6a", section?.position > 0 && "mb-1")}
+        className={cn(
+          "w-full mb-6a",
+          section?.position > 0 && "mb-1",
+          section.position === 0 && "mb-1 lg:mb-0",
+        )}
         style={{
           backgroundColor: section.background_color ?? undefined,
           backgroundImage: hasSectionBg
@@ -52,6 +56,11 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
             className={cn(
               "flex w-full",
               section?.columns.length > 2 && "gap-2",
+              section.position === 1 &&
+                (hasHeaderBg ? "py-2 lg:pb-0" : "py-3 lg:py-0"),
+              section.position > 1 &&
+                (hasHeaderBg ? "pb-3 xl:pb-6 pt-1" : "py-6"),
+              section.background_color && "px-4",
             )}
           >
             {section.columns.map((block, i) => {
@@ -85,6 +94,10 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
               <div
                 className={cn(
                   "w-full",
+                  section.position === 1 &&
+                    (hasHeaderBg
+                      ? "pb-3 lg:pb-0 pt-3 lg:pt-0"
+                      : "py-6 lg:py-0"),
                   section.position > 1 &&
                     (hasHeaderBg ? "pb-3 xl:pb-6 pt-1" : "py-6"),
                   section.background_color && "px-4",

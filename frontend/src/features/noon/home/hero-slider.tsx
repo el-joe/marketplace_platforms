@@ -52,7 +52,7 @@ export default function HeroSlider({ data }: Props) {
     <Swiper
       modules={[Navigation, Pagination, Autoplay]}
       style={{ "--swiper-pagination-bottom": "0" } as React.CSSProperties}
-      navigation={!!data?.config?.show_arrows}
+      navigation={{ enabled: !!data?.config?.show_arrows, hideOnClick: true }}
       pagination={
         !!data?.config?.show_dots && {
           bulletClass:
@@ -65,22 +65,43 @@ export default function HeroSlider({ data }: Props) {
       autoplay={{ delay: Number(data?.config?.autoplay_seconds) * 1000 }}
       loop={!!data?.config?.loop}
       speed={1500}
-      className="flex-1 apb-6! md:pb-0! h-full max-h-100"
+      className="flex-1 apb-6! md:pb-0! h-full max-h-100 swiper-hidden-navigation"
       spaceBetween={20}
       slidesPerView={1.2}
       breakpoints={{ 768: { spaceBetween: 0, slidesPerView: 1 } }}
     >
       {data?.slides?.map((banner) => (
         <SwiperSlide key={banner.title[locale]} className="h-auto! max-h-100">
-          <Link href={banner?.cta_url || "#"} className="block relative h-full">
-            <Image
-              src={banner?.desktop_url || banner?.mobile_url}
-              alt="banner"
-              width={2400}
-              height={400}
-              quality={100}
-              className="rounded-4xl md:rounded-none h-full"
-            />
+          <Link
+            href={banner?.cta_url || "#"}
+            className="block relative h-full"
+            target={banner.cta_open_new_tab ? "_blank" : "_self"}
+          >
+            <picture>
+              <source
+                media="(min-width: 768px)"
+                srcSet={banner?.desktop_url || ""}
+              />
+              <source
+                media="(max-width: 767px)"
+                srcSet={banner?.mobile_url || ""}
+              />
+              <Image
+                src={
+                  data.banner?.image_url || data.banner?.mobile_image_url || ""
+                }
+                alt={banner?.title[locale] || ""}
+                className={"object-cover responsive-ratio h-full max-h-100"}
+                // style={
+                //   {
+                //     "--banner-ratio": aspectRatio,
+                //     "--banner-mobile-ratio": mobileAspectRatio,
+                //   } as React.CSSProperties
+                // }
+                width={2400}
+                height={400}
+              />
+            </picture>
             {banner?.is_paid && <AdBadge />}
           </Link>
         </SwiperSlide>
