@@ -5,18 +5,19 @@ namespace App\Services;
 use App\Models\AdminListing;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\Country;
 use App\Models\Customer;
 use App\Models\FrequentlyBoughtTogetherItem;
-use App\Models\ProductImage;
 use App\Models\ProductView;
 use App\Models\VendorListing;
+use App\Services\Customer\ListingQueryService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class CartRecommendationService
 {
     private const SECTION_LIMIT = 12;
-    private const CACHE_TTL = 300;
+    private const CACHE_TTL     = 300;
     private const SECTIONS_ORDER = [
         'frequently_bought_together',
         'from_your_categories',
@@ -24,42 +25,73 @@ class CartRecommendationService
         'recently_viewed',
     ];
 
+    // Eager-load columns needed by toCardShape() / toAdminCardShape()
+    private const VENDOR_WITH = [
+        'productVariant.images',
+        'productVariant.product.images',
+        'productVariant.product.category:id,name_en,name_ar,slug',
+        'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+        'vendor:id,store_name,store_rating_avg',
+        'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
+    ];
+
+    private const ADMIN_WITH = [
+        'productVariant.images',
+        'productVariant.product.images',
+        'productVariant.product.category:id,name_en,name_ar,slug',
+        'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+        'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
+    ];
+
+    public function __construct(
+        private readonly ListingQueryService $listingQuery,
+    ) {}
+
     public function getRecommendations(Cart $cart, ?Customer $customer, bool $isNawyNow): array
     {
-        $cartItems = CartItem::where('cart_id', $cart->id)->get();
-
-        $cartListingIds = $this->extractListingIds($cartItems, $isNawyNow);
-        $cartProductIds = $this->extractProductIds($cartItems, $isNawyNow);
+        $cartItems       = CartItem::where('cart_id', $cart->id)->get();
+        $cartListingIds  = $this->extractListingIds($cartItems, $isNawyNow);
+        $cartProductIds  = $this->extractProductIds($cartItems, $isNawyNow);
         $cartCategoryIds = $this->extractCategoryIds($cartItems, $isNawyNow);
-        $countryId = $cart->country_id;
-        $currency = $cart->currency;
+        $countryId       = $cart->country_id;
+        $currency        = $cart->currency;
+        $country         = Country::find($countryId);
+
+        // wishlist IDs for the authenticated customer (empty for guests)
+        $wishlistIds = $this->listingQuery->wishlistListingIds($customer?->id);
 
         $sections = [];
 
         foreach (self::SECTIONS_ORDER as $type) {
-            $listings = match ($type) {
+            $items = match ($type) {
                 'frequently_bought_together' => $this->fbtSection(
-                    $cartProductIds, $cartListingIds, $countryId, $currency, $isNawyNow
+                    $cartProductIds, $cartListingIds, $countryId, $currency,
+                    $isNawyNow, $country, $wishlistIds,
                 ),
                 'from_your_categories' => $this->fromCategoriesSection(
-                    $cartCategoryIds, $cartListingIds, $countryId, $currency, $isNawyNow
+                    $cartCategoryIds, $cartListingIds, $countryId, $currency,
+                    $isNawyNow, $country, $wishlistIds,
                 ),
                 'best_sellers' => $this->bestSellersSection(
-                    $cartListingIds, $countryId, $currency, $isNawyNow
+                    $cartListingIds, $countryId, $currency,
+                    $isNawyNow, $country, $wishlistIds,
                 ),
                 'recently_viewed' => $customer
                     ? $this->recentlyViewedSection(
-                        $customer, $cartProductIds, $cartListingIds, $countryId, $currency, $isNawyNow
+                        $customer, $cartProductIds, $cartListingIds, $countryId, $currency,
+                        $isNawyNow, $country, $wishlistIds,
                     )
                     : collect(),
             };
 
-            if ($listings->isNotEmpty()) {
+            if ($items->isNotEmpty()) {
                 $sections[] = [
                     'section_type' => $type,
-                    'title_en' => $this->sectionTitle($type, 'en'),
-                    'title_ar' => $this->sectionTitle($type, 'ar'),
-                    'listings' => $listings->values()->toArray(),
+                    'title'        => [
+                        'en' => $this->sectionTitle($type, 'en'),
+                        'ar' => $this->sectionTitle($type, 'ar'),
+                    ],
+                    'listings'     => $items->values()->toArray(),
                 ];
             }
         }
@@ -67,12 +99,12 @@ class CartRecommendationService
         return $sections;
     }
 
+    // ─── Section builders ─────────────────────────────────────────────────────
+
     private function fbtSection(
-        array $cartProductIds,
-        array $cartListingIds,
-        string $countryId,
-        string $currency,
-        bool $isNawyNow
+        array $cartProductIds, array $cartListingIds,
+        string $countryId, string $currency,
+        bool $isNawyNow, ?Country $country, array $wishlistIds,
     ): Collection {
         if (empty($cartProductIds)) {
             return collect();
@@ -81,7 +113,8 @@ class CartRecommendationService
         $cacheKey = 'cart_recs:fbt:' . md5(implode(',', $cartProductIds)) . ":{$countryId}:{$isNawyNow}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
-            $cartProductIds, $cartListingIds, $countryId, $currency, $isNawyNow
+            $cartProductIds, $cartListingIds, $countryId, $currency,
+            $isNawyNow, $country, $wishlistIds,
         ) {
             $relatedProductIds = FrequentlyBoughtTogetherItem::whereIn('product_id', $cartProductIds)
                 ->orderBy('position')
@@ -94,22 +127,17 @@ class CartRecommendationService
             }
 
             return $this->resolveListingsForProducts(
-                $relatedProductIds->toArray(),
-                $cartListingIds,
-                $countryId,
-                $currency,
-                $isNawyNow,
-                self::SECTION_LIMIT
+                $relatedProductIds->toArray(), $cartListingIds,
+                $countryId, $currency, $isNawyNow, $country, $wishlistIds,
+                self::SECTION_LIMIT,
             );
         });
     }
 
     private function fromCategoriesSection(
-        array $cartCategoryIds,
-        array $cartListingIds,
-        string $countryId,
-        string $currency,
-        bool $isNawyNow
+        array $cartCategoryIds, array $cartListingIds,
+        string $countryId, string $currency,
+        bool $isNawyNow, ?Country $country, array $wishlistIds,
     ): Collection {
         if (empty($cartCategoryIds)) {
             return collect();
@@ -118,7 +146,8 @@ class CartRecommendationService
         $cacheKey = 'cart_recs:categories:' . md5(implode(',', $cartCategoryIds)) . ":{$countryId}:{$isNawyNow}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
-            $cartCategoryIds, $cartListingIds, $countryId, $currency, $isNawyNow
+            $cartCategoryIds, $cartListingIds, $countryId, $currency,
+            $isNawyNow, $country, $wishlistIds,
         ) {
             if ($isNawyNow) {
                 return AdminListing::where('country_id', $countryId)
@@ -128,9 +157,10 @@ class CartRecommendationService
                     ->whereNotIn('id', $cartListingIds)
                     ->orderByDesc('rating_avg')
                     ->limit(self::SECTION_LIMIT)
-                    ->with('productVariant.product')
+                    ->with(self::ADMIN_WITH)
                     ->get()
-                    ->map(fn ($l) => $this->adminListingCard($l));
+                    ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                    ->filter();
             }
 
             return VendorListing::where('country_id', $countryId)
@@ -144,22 +174,22 @@ class CartRecommendationService
                 ->orderByDesc('score')
                 ->orderByDesc('total_sold')
                 ->limit(self::SECTION_LIMIT)
-                ->with(['vendor:id,name', 'productVariant.product'])
+                ->with(self::VENDOR_WITH)
                 ->get()
-                ->map(fn ($l) => $this->vendorListingCard($l));
+                ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                ->filter();
         });
     }
 
     private function bestSellersSection(
-        array $cartListingIds,
-        string $countryId,
-        string $currency,
-        bool $isNawyNow
+        array $cartListingIds, string $countryId, string $currency,
+        bool $isNawyNow, ?Country $country, array $wishlistIds,
     ): Collection {
         $cacheKey = "cart_recs:best_sellers:{$countryId}:{$currency}:{$isNawyNow}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
-            $cartListingIds, $countryId, $currency, $isNawyNow
+            $cartListingIds, $countryId, $currency,
+            $isNawyNow, $country, $wishlistIds,
         ) {
             if ($isNawyNow) {
                 return AdminListing::where('country_id', $countryId)
@@ -169,9 +199,10 @@ class CartRecommendationService
                     ->orderByDesc('rating_count')
                     ->orderByDesc('rating_avg')
                     ->limit(self::SECTION_LIMIT)
-                    ->with('productVariant.product')
+                    ->with(self::ADMIN_WITH)
                     ->get()
-                    ->map(fn ($l) => $this->adminListingCard($l));
+                    ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                    ->filter();
             }
 
             return VendorListing::where('country_id', $countryId)
@@ -182,19 +213,18 @@ class CartRecommendationService
                 ->orderByDesc('total_sold')
                 ->orderByDesc('score')
                 ->limit(self::SECTION_LIMIT)
-                ->with(['vendor:id,name', 'productVariant.product'])
+                ->with(self::VENDOR_WITH)
                 ->get()
-                ->map(fn ($l) => $this->vendorListingCard($l));
+                ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                ->filter();
         });
     }
 
     private function recentlyViewedSection(
         Customer $customer,
-        array $cartProductIds,
-        array $cartListingIds,
-        string $countryId,
-        string $currency,
-        bool $isNawyNow
+        array $cartProductIds, array $cartListingIds,
+        string $countryId, string $currency,
+        bool $isNawyNow, ?Country $country, array $wishlistIds,
     ): Collection {
         $recentProductIds = ProductView::where('customer_id', $customer->id)
             ->whereNotIn('product_id', $cartProductIds)
@@ -210,30 +240,26 @@ class CartRecommendationService
         }
 
         return $this->resolveListingsForProducts(
-            $recentProductIds->toArray(),
-            $cartListingIds,
-            $countryId,
-            $currency,
-            $isNawyNow,
-            self::SECTION_LIMIT
+            $recentProductIds->toArray(), $cartListingIds,
+            $countryId, $currency, $isNawyNow, $country, $wishlistIds,
+            self::SECTION_LIMIT,
         );
     }
 
+    // ─── Listing resolver ─────────────────────────────────────────────────────
+
     private function resolveListingsForProducts(
-        array $productIds,
-        array $excludeListingIds,
-        string $countryId,
-        string $currency,
-        bool $isNawyNow,
-        int $limit
+        array $productIds, array $excludeListingIds,
+        string $countryId, string $currency,
+        bool $isNawyNow, ?Country $country, array $wishlistIds,
+        int $limit,
     ): Collection {
         if (empty($productIds)) {
             return collect();
         }
 
         if ($isNawyNow) {
-            $listings = AdminListing::whereHas('productVariant', fn ($q) => $q
-                    ->whereIn('product_id', $productIds))
+            return AdminListing::whereHas('productVariant', fn ($q) => $q->whereIn('product_id', $productIds))
                 ->where('country_id', $countryId)
                 ->where('currency', $currency)
                 ->where('status', 'active')
@@ -242,18 +268,17 @@ class CartRecommendationService
                 ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
                 ->orderByDesc('rating_count')
                 ->orderBy('price')
-                ->with('productVariant.product')
+                ->with(self::ADMIN_WITH)
                 ->get()
                 ->groupBy(fn ($l) => $l->productVariant->product_id)
                 ->map(fn ($group) => $group->first())
                 ->values()
-                ->take($limit);
-
-            return $listings->map(fn ($l) => $this->adminListingCard($l));
+                ->take($limit)
+                ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                ->filter();
         }
 
-        $listings = VendorListing::whereHas('productVariant', fn ($q) => $q
-                ->whereIn('product_id', $productIds))
+        return VendorListing::whereHas('productVariant', fn ($q) => $q->whereIn('product_id', $productIds))
             ->where('country_id', $countryId)
             ->where('currency', $currency)
             ->where('status', 'active')
@@ -263,94 +288,48 @@ class CartRecommendationService
             ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
             ->orderByDesc('rating_count')
             ->orderBy('price')
-            ->with(['vendor:id,name', 'productVariant.product'])
+            ->with(self::VENDOR_WITH)
             ->get()
             ->groupBy(fn ($l) => $l->productVariant->product_id)
             ->map(fn ($group) => $group->first())
             ->values()
-            ->take($limit);
-
-        return $listings->map(fn ($l) => $this->vendorListingCard($l));
+            ->take($limit)
+            ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+            ->filter();
     }
 
-    private function vendorListingCard(VendorListing $listing): array
-    {
-        $variant = $listing->productVariant;
-        $product = $variant?->product;
+    // ─── Card shape dispatch ──────────────────────────────────────────────────
 
-        return [
-            'id' => $listing->id,
-            'listing_type' => 'vendor_listing',
-            'price' => $listing->price,
-            'compare_at_price' => $listing->compare_at_price,
-            'currency' => $listing->currency,
-            'condition' => $listing->condition,
-            'rating_avg' => $listing->rating_avg,
-            'rating_count' => $listing->rating_count,
-            'vendor_covers_delivery' => (bool) $listing->vendor_covers_delivery,
-            'vendor' => $listing->vendor
-                ? ['id' => $listing->vendor->id, 'name' => $listing->vendor->name]
-                : null,
-            'product_variant' => $variant ? [
-                'id' => $variant->id,
-                'sku' => $variant->sku,
-                'name_en' => $variant->name_en,
-                'name_ar' => $variant->name_ar,
-            ] : null,
-            'product' => $product ? [
-                'id' => $product->id,
-                'name_en' => $product->name_en,
-                'name_ar' => $product->name_ar,
-                'slug' => $product->slug,
-            ] : null,
-            'primary_image_url' => $this->primaryImage($product),
-        ];
-    }
+    private function toCard(
+        VendorListing|AdminListing $listing,
+        ?Country $country,
+        array $wishlistIds,
+        bool $isNawyNow,
+    ): ?array {
+        $product = $listing->productVariant?->product;
 
-    private function adminListingCard(AdminListing $listing): array
-    {
-        $variant = $listing->productVariant;
-        $product = $variant?->product;
-
-        return [
-            'id' => $listing->id,
-            'listing_type' => 'admin_listing',
-            'price' => $listing->getRawOriginal('price'),
-            'compare_at_price' => null,
-            'currency' => $listing->currency,
-            'shipping_cost' => $listing->shipping_cost,
-            'fulfillment_type' => $listing->fulfillment_type,
-            'rating_avg' => $listing->rating_avg,
-            'rating_count' => $listing->rating_count,
-            'product_variant' => $variant ? [
-                'id' => $variant->id,
-                'sku' => $variant->sku,
-                'name_en' => $variant->name_en,
-                'name_ar' => $variant->name_ar,
-            ] : null,
-            'product' => $product ? [
-                'id' => $product->id,
-                'name_en' => $product->name_en,
-                'name_ar' => $product->name_ar,
-                'slug' => $product->slug,
-            ] : null,
-            'primary_image_url' => $this->primaryImage($product),
-        ];
-    }
-
-    private function primaryImage(?object $product): ?string
-    {
-        if (!$product) {
+        if ($product === null || $country === null) {
             return null;
         }
 
-        $image = ProductImage::where('product_id', $product->id)
-            ->orderByDesc('is_primary')
-            ->orderBy('position')
-            ->first();
+        if ($isNawyNow || $listing instanceof AdminListing) {
+            return $this->listingQuery->toAdminCardShape(
+                listing:      $listing,
+                product:      $product,
+                country:      $country,
+                isWishlisted: in_array($listing->id, $wishlistIds),
+            );
+        }
 
-        return $image?->url;
+        return $this->listingQuery->toCardShape(
+            listing:      $listing,
+            product:      $product,
+            country:      $country,
+            isWishlisted: in_array($listing->id, $wishlistIds),
+        );
     }
+
+    // ─── Cart extraction helpers ──────────────────────────────────────────────
 
     private function extractListingIds(Collection $items, bool $isNawyNow): array
     {
@@ -364,6 +343,7 @@ class CartRecommendationService
     private function extractProductIds(Collection $items, bool $isNawyNow): array
     {
         $listingIds = $this->extractListingIds($items, $isNawyNow);
+
         if (empty($listingIds)) {
             return [];
         }
@@ -386,6 +366,7 @@ class CartRecommendationService
     private function extractCategoryIds(Collection $items, bool $isNawyNow): array
     {
         $listingIds = $this->extractListingIds($items, $isNawyNow);
+
         if (empty($listingIds)) {
             return [];
         }
@@ -405,18 +386,20 @@ class CartRecommendationService
             ->filter()->unique()->values()->toArray();
     }
 
+    // ─── Section titles ───────────────────────────────────────────────────────
+
     private function sectionTitle(string $type, string $lang): string
     {
         return match ("{$type}:{$lang}") {
             'frequently_bought_together:en' => 'Frequently Bought Together',
             'frequently_bought_together:ar' => 'اشترى معاً في أغلب الأحيان',
-            'from_your_categories:en' => 'More From Your Categories',
-            'from_your_categories:ar' => 'المزيد من فئاتك',
-            'best_sellers:en' => 'Best Sellers',
-            'best_sellers:ar' => 'الأكثر مبيعاً',
-            'recently_viewed:en' => 'Recently Viewed',
-            'recently_viewed:ar' => 'شاهدته مؤخراً',
-            default => $type,
+            'from_your_categories:en'       => 'More From Your Categories',
+            'from_your_categories:ar'       => 'المزيد من فئاتك',
+            'best_sellers:en'               => 'Best Sellers',
+            'best_sellers:ar'               => 'الأكثر مبيعاً',
+            'recently_viewed:en'            => 'Recently Viewed',
+            'recently_viewed:ar'            => 'شاهدته مؤخراً',
+            default                         => $type,
         };
     }
 }
