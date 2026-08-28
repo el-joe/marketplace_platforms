@@ -12,7 +12,13 @@ import { useCartContext } from "@/src/providers/cart-provider";
 import useLocale from "@/src/hooks/use-locale";
 
 export default function CartItems() {
-  const { cart, updateItemQuantity, isMutating, removeItem } = useCartContext();
+  const {
+    cart,
+    updateItemQuantity,
+    isMutating,
+    removeItem,
+    targetItemMutating,
+  } = useCartContext();
   const t = useTranslations("cart");
   const locale = useLocale();
   return (
@@ -71,7 +77,7 @@ export default function CartItems() {
                         })
                       }
                       disabled={isMutating}
-                      loading={isMutating}
+                      loading={isMutating && targetItemMutating === item.id}
                       onDelete={() => removeItem(item.id)}
                       max={item?.max_order_quantity || 10}
                     />

@@ -14,7 +14,7 @@ type props = {
 };
 
 const CarouselProducts = ({ title, showViewAllButton }: props) => {
-  const { isLoading, data, isError, error } = useQuery({
+  const { data } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       try {
