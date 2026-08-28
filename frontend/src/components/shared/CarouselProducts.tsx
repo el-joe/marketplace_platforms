@@ -2,7 +2,7 @@
 import SectionTitle from "../../features/noon/home/section-title";
 import { Swiper, SwiperSlide } from "swiper/react";
 // import { products } from "@/public/dummyData";
-import ProductCard from "@/src/components/shared/ProductCard";
+import ProductCard from "@/src/components/shared/product-card";
 import { Navigation } from "swiper/modules";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInstance } from "@/src/lib/utils";

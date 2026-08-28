@@ -2,11 +2,18 @@
 import { IProduct } from "@/types";
 import Image from "next/image";
 import React, { useRef, useState } from "react";
-import { Autoplay, Pagination } from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
 import { Button } from "../ui/button";
-import { ChevronRightIcon, HeartIcon, PlusIcon, StarIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronRightIcon,
+  HeartIcon,
+  PlusIcon,
+  StarIcon,
+} from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
 import { Product } from "@/src/features/noon/home/types";
@@ -24,6 +31,8 @@ const ProductCard = ({ productData }: Props) => {
     productData.is_wishlisted,
   );
   const locale = useLocale();
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
   const { addItem, isMutating, targetItemMutating } = useCartContext();
   const {
     addItem: addToWishlist,
@@ -44,7 +53,7 @@ const ProductCard = ({ productData }: Props) => {
   };
   return (
     <div
-      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white"
+      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
       onMouseEnter={() => handleAutoplay("start")}
       onMouseLeave={() => handleAutoplay("stop")}
     >
@@ -100,9 +109,32 @@ const ProductCard = ({ productData }: Props) => {
             <PlusIcon className={`size-4 lg:size-6 `} />
           )}
         </Button>
+        {/* navigation buttons */}
+        <button
+          ref={prevRef}
+          className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer opacity-0 group-hover:opacity-35 transition duration-200 bg-black text-white px-0.5 py-2 rounded-e-sm"
+        >
+          <ChevronLeft size={"28px"} />
+        </button>
+        <button
+          ref={nextRef}
+          className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer opacity-0 group-hover:opacity-35 transition duration-200 bg-black text-white px-0.5 py-2 rounded-s-sm"
+        >
+          <ChevronRight size={"28px"} />
+        </button>
         <Swiper
-          modules={[Pagination, Autoplay]}
+          modules={[Pagination, Autoplay, Navigation]}
           pagination
+          loop
+          onBeforeInit={(swiper) => {
+            if (
+              swiper.params.navigation &&
+              typeof swiper.params.navigation !== "boolean"
+            ) {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
+            }
+          }}
           autoplay={{ delay: 900, disableOnInteraction: true }}
           className="bg-gray-2 h-full"
           onSwiper={(swiper) => {

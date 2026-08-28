@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-import ProductCard from "@/src/components/shared/ProductCard";
+import ProductCard from "@/src/components/shared/product-card";
 import { getRecommendationsService } from "./api/get";
 import useLocale from "@/src/hooks/use-locale";
 

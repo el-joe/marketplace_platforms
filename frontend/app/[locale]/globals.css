@@ -219,6 +219,18 @@ html {
   -o-transition-timing-function: linear !important;
   transition-timing-function: linear !important;
 }
+
+.swiper-hidden-navigation .swiper-button-next,
+.swiper-hidden-navigation .swiper-button-prev {
+  opacity: 0 !important;
+}
+.swiper-hidden-navigation:hover .swiper-button-next,
+.swiper-hidden-navigation:hover .swiper-button-prev {
+  opacity: 0.6 !important;
+  &:hover {
+    opacity: 1 !important;
+  }
+}
 .swiper-button-next,
 .swiper-button-prev {
   width: 40px !important;
@@ -230,11 +242,12 @@ html {
   transition: 0.2s;
   transform: translateY(-50%) !important;
   margin-top: unset !important;
+  opacity: 0.6 !important;
   svg {
-    width: 12px !important;
+    width: 8px !important;
   }
   &:hover {
-    scale: 1.1;
+    opacity: 1 !important;
   }
 }
 .swiper-button-disabled {
