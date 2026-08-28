@@ -99,6 +99,7 @@ export const useAuth = () => {
       });
       setProfileData(data.customer);
       mergeCart();
+      localStorage.removeItem("_mkt_ref");
       toast.success(`${t("welcome")} ${data.customer.name}`);
     },
   });

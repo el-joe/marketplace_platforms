@@ -20,11 +20,20 @@ export const loginService = (body: loginFormValues) =>
     method: "POST",
     body: JSON.stringify(body),
   });
-export const registerService = (body: registerFormValues) =>
-  fetchInstance<IAuthResponseBody>("/auth/register", {
+export const registerService = (body: registerFormValues) => {
+  const referralCode =
+    typeof window !== "undefined"
+      ? localStorage.getItem("_mkt_ref")
+      : null;
+
+  return fetchInstance<IAuthResponseBody>("/auth/register", {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      ...body,
+      ...(referralCode ? { referral_code: referralCode } : {}),
+    }),
   });
+};
 
 export const refreshTokenService = (refreshToken: string) =>
   fetch(`${apiBaseUrl}/auth/refresh-token`, {

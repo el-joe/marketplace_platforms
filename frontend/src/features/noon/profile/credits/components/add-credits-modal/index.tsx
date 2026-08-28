@@ -20,10 +20,16 @@ type Props = {
 
 export default function AddCreditsModal({ trigger }: Props) {
   const t = useTranslations("profile");
+  const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("select");
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) setStep("select");
+  };
+
   return (
-    <Dialog onOpenChange={(open) => !open && setStep("select")}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={trigger} />
       <DialogContent className="max-w-md gap-0" showCloseButton>
         <DialogHeader className="-mx-4 -mt-4 mb-4 border-b border-border px-6 py-5">
@@ -37,7 +43,7 @@ export default function AddCreditsModal({ trigger }: Props) {
         {step === "select" ? (
           <SelectMethod onSelectGiftcards={() => setStep("redeem-giftcard")} />
         ) : (
-          <RedeemGiftCard />
+          <RedeemGiftCard onSuccess={() => handleOpenChange(false)} />
         )}
       </DialogContent>
     </Dialog>

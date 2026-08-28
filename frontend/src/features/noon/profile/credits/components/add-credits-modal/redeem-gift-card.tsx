@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
@@ -11,13 +10,26 @@ import {
 } from "@/src/components/ui/tabs";
 import { Input } from "@/src/components/ui/base-inputs/input";
 import { Button } from "@/src/components/ui/button";
+import { useRedeemActions } from "../../helpers/use-redeem-actions";
 
-export default function RedeemGiftCard() {
+type Props = {
+  onSuccess?: () => void;
+};
+
+export default function RedeemGiftCard({ onSuccess = () => {} }: Props) {
   const t = useTranslations("profile");
 
-  const [giftCardNumber, setGiftCardNumber] = useState("");
-  const [pin, setPin] = useState("");
-  const [voucherCode, setVoucherCode] = useState("");
+  const {
+    giftCardNumber,
+    setGiftCardNumber,
+    pin,
+    setPin,
+    voucherCode,
+    setVoucherCode,
+    isSubmitting,
+    submitGiftCard,
+    submitVoucher,
+  } = useRedeemActions({ onSuccess });
 
   return (
     <Tabs defaultValue="gift-card">
@@ -61,7 +73,8 @@ export default function RedeemGiftCard() {
         </div>
 
         <Button
-          disabled={!giftCardNumber || !pin}
+          disabled={!giftCardNumber || !pin || isSubmitting}
+          onClick={submitGiftCard}
           className="bg-black text-white uppercase font-semibold h-12 rounded-md w-full disabled:bg-gray-2 disabled:text-gray"
         >
           {t("redeem")}
@@ -82,7 +95,8 @@ export default function RedeemGiftCard() {
         </div>
 
         <Button
-          disabled={!voucherCode}
+          disabled={!voucherCode || isSubmitting}
+          onClick={submitVoucher}
           className="bg-black text-white uppercase font-semibold h-12 rounded-md w-full disabled:bg-gray-2 disabled:text-gray"
         >
           {t("redeem")}

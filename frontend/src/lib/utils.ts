@@ -4,6 +4,7 @@ import { region } from "@/src/utils/region";
 import resolveCookie from "@/src/helpers/resolveCookie";
 import { CART_TOKEN_KEY } from "../hooks/use-cart";
 import { refreshAccessToken } from "../helpers/refresh-token";
+import { getOrCreateSessionId } from "./session-id";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -47,6 +48,9 @@ async function fetchWithAuth<T>(
     }
   }
   if (cartToken) headers.set("X-Cart-Token", cartToken);
+
+  const sessionId = getOrCreateSessionId();
+  if (sessionId) headers.set("X-Session-Id", sessionId);
 
   const res = await fetch(`${baseUrl}${path}`, {
     cache: "no-store",

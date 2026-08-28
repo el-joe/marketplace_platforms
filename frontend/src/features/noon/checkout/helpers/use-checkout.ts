@@ -56,6 +56,10 @@ export const useCheckout = () => {
           console.error("Failed to save order to sessionStorage:", e);
         }
       }
+      if (order?.requires_redirect && order?.payment_redirect_url) {
+        window.location.href = order.payment_redirect_url;
+        return;
+      }
       if (orderNumber) {
         router.push(`/checkout/success?order_number=${orderNumber}`);
       } else {
@@ -83,6 +87,12 @@ export const useCheckout = () => {
       country_payment_gateway_id: selectedGatewayId,
       idempotency_key: uuidv4(),
       delivery_instruction: selectedInstruction ?? undefined,
+      coupon_code: checkoutData?.coupon?.code ?? null,
+      wallet_amount_to_use: checkoutData?.wallet_applicable
+        ? checkoutData.wallet_balance > 0
+          ? checkoutData.wallet_balance
+          : null
+        : null,
     });
   };
 

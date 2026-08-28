@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\Customer;
 
+use App\Models\MarketerCampaignConversion;
 use App\Models\OrderStatusHistory;
 use App\Models\SubOrder;
 use Illuminate\Http\Request;
@@ -11,6 +12,14 @@ class OrderDetailResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $conversion = MarketerCampaignConversion::where('order_id', $this->id)
+            ->with('invitation.marketer:id,store_slug,store_name')
+            ->first();
+
+        $marketerRef = $conversion?->invitation?->marketer
+            ? ($conversion->invitation->marketer->store_slug ?? $conversion->invitation->marketer->store_name)
+            : null;
+
         return [
             'order_number' => $this->order_number,
             'status' => $this->status?->value,
@@ -38,6 +47,7 @@ class OrderDetailResource extends JsonResource
                 'reason' => $history->reason,
                 'created_at' => $history->created_at?->toIso8601String(),
             ]),
+            'marketer_ref' => $marketerRef,
         ];
     }
 }

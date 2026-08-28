@@ -26,7 +26,8 @@ class ReferralTrackingController extends Controller
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
 
         if (!$invitation) {
-            return redirect($frontendUrl);
+            return redirect($frontendUrl . '?ref=' . urlencode($code))
+                ->cookie('mkt_ref', $code, 60 * 24 * 30, '/', null, true, false);
         }
 
         $sessionId = $request->header('X-Session-Id')
@@ -36,13 +37,15 @@ class ReferralTrackingController extends Controller
         $this->attributionService->recordClick($code, $sessionId);
 
         $vendorListing = $invitation->campaign?->vendorListing;
-        $variantId = $vendorListing?->productVariant?->id;
         $listingId = $vendorListing?->id;
 
-        if (!$variantId || !$listingId) {
-            return redirect($frontendUrl);
-        }
+        $destination = $listingId
+            ? "{$frontendUrl}/products/{$listingId}?ref=" . urlencode($code)
+            : $frontendUrl . '?ref=' . urlencode($code);
 
-        return redirect("{$frontendUrl}/products/{$variantId}/{$listingId}");
+        // 30-day cookie so the referral code survives registration even if
+        // the customer browses before signing up.
+        return redirect($destination)
+            ->cookie('mkt_ref', $code, 60 * 24 * 30, '/', null, true, false);
     }
 }

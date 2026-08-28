@@ -7,14 +7,19 @@ import CreditsEmptyState from "./components/empty-state";
 import TransactionsList from "./components/transactions-list";
 import WithdrawToBank from "./components/withdraw-to-bank";
 import AddCreditsModal from "./components/add-credits-modal";
-import { Wallet, WalletTransaction } from "./helpers/types";
+import { GiftCardWallet, Wallet, WalletTransaction } from "./helpers/types";
 
 interface Props {
   wallet: Wallet;
   transactions: WalletTransaction[];
+  giftCardWallets: GiftCardWallet[];
 }
 
-export default async function Credits({ wallet, transactions }: Props) {
+export default async function Credits({
+  wallet,
+  transactions,
+  giftCardWallets,
+}: Props) {
   const t = await getTranslations("profile");
 
   const isEmpty = transactions.length === 0;
@@ -66,6 +71,27 @@ export default async function Credits({ wallet, transactions }: Props) {
           }
         />
       </Card>
+
+      {giftCardWallets.length > 0 && (
+        <Card className="mt-4 px-6 py-5">
+          <p className="text-sm text-gray mb-2">{t("giftcardsAndVouchers")}</p>
+          <div className="flex flex-col gap-1">
+            {giftCardWallets.map((giftCardWallet) => (
+              <div
+                key={giftCardWallet.currency_code}
+                className="flex items-center justify-between"
+              >
+                <span className="text-sm text-gray">
+                  {giftCardWallet.currency_code}
+                </span>
+                <span className="font-semibold text-light">
+                  {giftCardWallet.balance_display}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {isEmpty ? (
         <CreditsEmptyState />

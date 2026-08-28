@@ -49,3 +49,32 @@ export type WithdrawalRequest = {
   status: string;
   created_at: string;
 };
+
+export type GiftCardWallet = {
+  currency_code: string;
+  balance: number;
+  balance_display: string;
+  updated_at: string | null;
+};
+
+export type GiftCardWalletResponse = {
+  wallets: GiftCardWallet[];
+  actions: Record<string, string>;
+};
+
+export type RedeemGiftCardPayload = {
+  code: string;
+  pin: string;
+};
+
+export type RedeemVoucherPayload = {
+  code: string;
+};
+
+export type RedeemResult = {
+  wallet: {
+    currency_code: string;
+    new_balance: number;
+    new_balance_display: string;
+  };
+};

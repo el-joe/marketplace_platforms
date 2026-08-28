@@ -1,6 +1,6 @@
 "use client";
 import { ICustomerProfile } from "@/types";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { loginFormValues } from "../components/shared/auth/login/schema";
 import { registerFormValues } from "../components/shared/auth/register/schema";
 import { useAuth } from "../hooks/use-auth";
@@ -71,6 +71,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     updateCustomerIsPending,
     updateCustomerIsError,
   } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref && /^[A-Z0-9]{8}$/.test(ref)) {
+      localStorage.setItem("_mkt_ref", ref);
+    }
+  }, []);
+
   return (
     <authContext.Provider
       value={{
