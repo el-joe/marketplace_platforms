@@ -52,6 +52,6 @@ class Brand extends Model
             return null;
         }
 
-        return str_contains($this->logo_media_id, '/') ? Storage::url($this->logo_media_id) : $this->logo_media_id;
+        return str_contains($this->logo_media_id, '/') ? url(Storage::url($this->logo_media_id)) : $this->logo_media_id;
     }
 }
