@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 class ClassifiedListing extends Model
 {
-    use HasUuids, SoftDeletes;
+    use HasUuids, SoftDeletes, Searchable;
 
     protected $fillable = [
         'listing_number', 'slug', 'seller_type', 'seller_id',
@@ -148,5 +149,35 @@ class ClassifiedListing extends Model
     public function getTitleAttribute(): string
     {
         return app()->getLocale() === 'ar' ? $this->title_ar : $this->title_en;
+    }
+
+    public function searchableAs(): string
+    {
+        return 'classified_listings';
+    }
+
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing(['images', 'classifiedCategory', 'city']);
+
+        return [
+            'id' => $this->id,
+            'status' => $this->status?->value,
+            'title_en' => $this->title_en,
+            'title_ar' => $this->title_ar,
+            'description_en' => $this->description_en,
+            'price' => $this->price,
+            'classified_category_id' => $this->classified_category_id,
+            'city_id' => $this->city_id,
+            'created_at' => $this->created_at?->timestamp,
+            'thumbnail' => $this->images->first()?->file_path
+                ? Storage::url($this->images->first()->file_path)
+                : null,
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === \App\Enums\ClassifiedListingStatus::Active;
     }
 }

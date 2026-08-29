@@ -25,3 +25,13 @@ Some zones are "exceptional" — expensive or remote. The platform offers free d
 
 
 php artisan db:seed --class=CartCardOfferSeeder
+
+
+# On the VPS — run these yourself after Claude Code commits
+curl -L https://install.meilisearch.com | sh
+mv ./meilisearch /usr/local/bin/
+# ... systemd setup from the prompt
+php artisan scout:sync-index-settings
+php artisan scout:import "App\Models\VendorListing"
+php artisan scout:import "App\Models\ClassifiedListing"
+php artisan scout:import "App\Models\TravelPackage"

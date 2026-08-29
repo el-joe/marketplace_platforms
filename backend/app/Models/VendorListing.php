@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 
 class VendorListing extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Searchable;
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -130,6 +131,60 @@ class VendorListing extends Model
     public function primaryShippingMethod(): BelongsTo
     {
         return $this->belongsTo(ShippingMethod::class, 'primary_shipping_method_id');
+    }
+
+    public function searchableAs(): string
+    {
+        return 'vendor_listings';
+    }
+
+    /**
+     * Indexed into Meilisearch. Scalar values only, no nested objects.
+     * Monetary values are BIGINT — never divide by 100 here.
+     */
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing([
+            'productVariant.product.brand',
+            'productVariant.product.category',
+            'productVariant.images',
+            'productVariant.product.images',
+        ]);
+
+        $product = $this->productVariant->product;
+        $variant = $this->productVariant;
+
+        return [
+            'id' => $this->id,
+            'country_id' => $this->country_id,
+            'status' => $this->status?->value,
+            'product_name_en' => $product->name_en,
+            'product_name_ar' => $product->name_ar,
+            'short_desc_en' => $product->short_desc_en,
+            'model_number' => $product->model_number,
+            'vendor_sku' => $this->vendor_sku,
+            'brand_id' => $product->brand_id,
+            'brand_name' => $product->brand?->name_en,
+            'category_id' => $product->category_id,
+            'category_name_en' => $product->category?->name_en,
+            'category_name_ar' => $product->category?->name_ar,
+            'price' => $this->price,
+            'compare_at_price' => $this->compare_at_price,
+            'condition' => $this->condition,
+            'fulfillment_model' => $this->fulfillment_model,
+            'global_system_type' => $this->global_system_type?->value,
+            'rating_avg' => (float) $this->rating_avg,
+            'rating_count' => (int) $this->rating_count,
+            'total_sold' => (int) $this->total_sold,
+            'created_at' => $this->created_at?->timestamp,
+            'primary_image' => $variant->images->first()?->url
+                ?? $product->images->first()?->url,
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === VendorListingStatus::Active;
     }
 
     /**

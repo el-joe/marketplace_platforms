@@ -19,6 +19,7 @@ class SearchService
         private readonly ProductQueryService $productQuery,
         private readonly ListingQueryService $listings,
         private readonly UnifiedCategoryService $unifiedCategories,
+        private readonly MeilisearchSearchService $meili,
     ) {
     }
 
@@ -35,7 +36,62 @@ class SearchService
         ?string $customerId = null,
         string $sessionId = '',
     ): array {
+        try {
+            $result = $this->meili->search(
+                country: $country,
+                query: $query,
+                filters: $filters,
+                perPage: $perPage,
+                page: (int) ($filters['page'] ?? 1),
+                customerId: $customerId,
+                sessionId: $sessionId,
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            $result = $this->dbSearch($country, $query, $filters, $perPage, $customerId, $sessionId);
+        }
 
+        // Prepend admin listings (platform stock always surfaces first).
+        $adminListings = $this->adminListingSearch($country, $query, 4);
+        $wishlistIds   = $this->listings->wishlistListingIds($customerId ?? auth('customer')->id());
+
+        $adminItems = $adminListings->map(function (AdminListing $al) use ($country, $wishlistIds) {
+            $product = $al->productVariant->product;
+            return $this->listings->toAdminCardShape($al, $product, $country,
+                in_array($al->id, $wishlistIds));
+        })->values()->all();
+
+        // Deduplicate by product_id so the same product doesn't appear twice
+        // if it has both an admin and vendor listing.
+        $seenProductIds = array_column($adminItems, 'product_id');
+        $vendorItems    = array_filter($result['items'], fn ($i) => !in_array($i['product_id'], $seenProductIds));
+
+        $result['items'] = array_merge($adminItems, array_values($vendorItems));
+
+        dispatch(new \App\Jobs\LogSearchJob(
+            query: $query,
+            countryId: $country->id,
+            resultsCount: $result['paginator']->total(),
+            filters: $filters,
+            customerId: $customerId,
+            sessionId: $sessionId,
+            language: app()->getLocale(),
+        ))->afterResponse();
+
+        return $result;
+    }
+
+    /**
+     * Legacy DB-driven fallback, used when Meilisearch is unreachable.
+     */
+    private function dbSearch(
+        Country $country,
+        string $query,
+        array $filters = [],
+        int $perPage = 20,
+        ?string $customerId = null,
+        string $sessionId = '',
+    ): array {
         $builder = $this->listings->baseSearchQuery($country, $query)
             ->with([
                 'vendor:id,store_name,store_rating_avg',
@@ -51,16 +107,6 @@ class SearchService
 
         $paginator = $builder->paginate($perPage);
 
-        dispatch(new \App\Jobs\LogSearchJob(
-            query: $query,
-            countryId: $country->id,
-            resultsCount: $paginator->total(),
-            filters: $filters,
-            customerId: $customerId,
-            sessionId: $sessionId,
-            language: app()->getLocale(),
-        ))->afterResponse();
-
         $wishlistIds = $this->listings->wishlistListingIds($customerId ?? auth('customer')->id());
 
         $items = [];
@@ -75,22 +121,6 @@ class SearchService
                 isSponsored: false,
             );
         }
-
-        // Prepend admin listings (platform stock always surfaces first).
-        $adminListings = $this->adminListingSearch($country, $query, 4);
-
-        $adminItems = $adminListings->map(function (AdminListing $al) use ($country, $wishlistIds) {
-            $product = $al->productVariant->product;
-            return $this->listings->toAdminCardShape($al, $product, $country,
-                in_array($al->id, $wishlistIds));
-        })->values()->all();
-
-        // Deduplicate by product_id so the same product doesn't appear twice
-        // if it has both an admin and vendor listing.
-        $seenProductIds = array_column($adminItems, 'product_id');
-        $vendorItems    = array_filter($items, fn ($i) => !in_array($i['product_id'], $seenProductIds));
-
-        $items = array_merge($adminItems, array_values($vendorItems));
 
         return [
             'items' => $items,
@@ -129,43 +159,103 @@ class SearchService
 
     public function searchClassifieds(string $query, array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        return ClassifiedListing::where('status', 'active')
-            ->where(function ($q) use ($query) {
-                $q->where('title_en', 'like', "%{$query}%")
-                    ->orWhere('title_ar', 'like', "%{$query}%")
-                    ->orWhere('description_en', 'like', "%{$query}%");
-            })
-            ->with(['images', 'classifiedCategory', 'city'])
-            ->when(!empty($filters['category']), fn($q) => $q->where('classified_category_id', $filters['category']))
-            ->when(!empty($filters['price_min']), fn($q) => $q->where('price', '>=', (int) ($filters['price_min'] * 100)))
-            ->when(!empty($filters['price_max']), fn($q) => $q->where('price', '<=', (int) ($filters['price_max'] * 100)))
-            ->orderByDesc('created_at')
-            ->paginate($perPage);
+        try {
+            return $this->meili->searchClassifieds(
+                query: $query,
+                filters: $filters,
+                perPage: $perPage,
+                page: (int) ($filters['page'] ?? 1),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+
+            return ClassifiedListing::where('status', 'active')
+                ->where(function ($q) use ($query) {
+                    $q->where('title_en', 'like', "%{$query}%")
+                        ->orWhere('title_ar', 'like', "%{$query}%")
+                        ->orWhere('description_en', 'like', "%{$query}%");
+                })
+                ->with(['images', 'classifiedCategory', 'city'])
+                ->when(!empty($filters['category']), fn($q) => $q->where('classified_category_id', $filters['category']))
+                ->when(!empty($filters['price_min']), fn($q) => $q->where('price', '>=', (int) ($filters['price_min'] * 100)))
+                ->when(!empty($filters['price_max']), fn($q) => $q->where('price', '<=', (int) ($filters['price_max'] * 100)))
+                ->orderByDesc('created_at')
+                ->paginate($perPage);
+        }
     }
 
     public function searchTravel(string $query, int $perPage = 20): LengthAwarePaginator
     {
-        return TravelPackage::where('status', 'active')
-            ->where(function ($q) use ($query) {
-                $q->where('title_en', 'like', "%{$query}%")
-                    ->orWhere('title_ar', 'like', "%{$query}%")
-                    ->orWhere('destination_country', 'like', "%{$query}%")
-                    ->orWhere('destination_city', 'like', "%{$query}%");
-            })
-            ->with([
-                'agency:id,name',
-                'categories:id,name_en,name_ar,slug',
-                'media' => fn($q) => $q->orderBy('position'),
-            ])
-            ->orderByDesc('departure_date')
-            ->paginate($perPage);
+        try {
+            return $this->meili->searchTravel($query, $perPage);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return TravelPackage::where('status', 'active')
+                ->where(function ($q) use ($query) {
+                    $q->where('title_en', 'like', "%{$query}%")
+                        ->orWhere('title_ar', 'like', "%{$query}%")
+                        ->orWhere('destination_country', 'like', "%{$query}%")
+                        ->orWhere('destination_city', 'like', "%{$query}%");
+                })
+                ->with([
+                    'agency:id,name',
+                    'categories:id,name_en,name_ar,slug',
+                    'media' => fn($q) => $q->orderBy('position'),
+                ])
+                ->orderByDesc('departure_date')
+                ->paginate($perPage);
+        }
     }
 
     public function suggestions(Country $country, string $query): array
     {
-        // Listing-centric, same as search(): one row per active vendor listing
-        // matching the query, so a product sold by several vendors can surface
-        // more than once here too.
+        try {
+            $meiliResult = $this->meili->suggestions($country, $query);
+            $productSuggestions = collect($meiliResult['products']);
+            $queries = $meiliResult['queries'];
+        } catch (\Throwable $e) {
+            report($e);
+            [$productSuggestions, $queries] = $this->dbSuggestions($country, $query);
+        }
+
+        $vendors = Vendor::query()
+            ->where('store_name', 'like', "%{$query}%")
+            ->where('global_status', 'active')
+            ->select('id', 'store_name', 'store_slug', 'store_rating_avg')
+            ->limit(3)
+            ->get()
+            ->map(fn($vendor) => [
+                'id' => $vendor->id,
+                'store_name' => $vendor->store_name,
+                'slug' => $vendor->store_slug,
+                'rating' => $vendor->store_rating_avg,
+            ]);
+
+        $trending = SearchSuggestion::where('country_id', $country->id)
+            ->where('is_blocked', false)
+            ->where('keyword_normalized', 'like', Str::lower(trim($query)) . '%')
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('search_count')
+            ->limit(5)
+            ->pluck('keyword')
+            ->toArray();
+
+        return [
+            'trending' => $trending,
+            'queries' => $queries,
+            'products' => $productSuggestions->toArray(),
+            'categories' => $this->unifiedCategories->search($query),
+            'vendors' => $vendors->toArray(),
+        ];
+    }
+
+    /**
+     * Legacy DB-driven suggestions fallback, used when Meilisearch is unreachable.
+     * Returns [productSuggestions (Collection), queries (array)].
+     */
+    private function dbSuggestions(Country $country, string $query): array
+    {
         $listings = VendorListing::where('country_id', $country->id)
             ->where('status', 'active')
             ->whereHas('productVariant.product', function ($q) use ($query) {
@@ -204,35 +294,7 @@ class SearchService
 
         $queries = $productSuggestions->pluck('name')->filter()->unique()->values()->take(5)->all();
 
-        $vendors = Vendor::query()
-            ->where('store_name', 'like', "%{$query}%")
-            ->where('global_status', 'active')
-            ->select('id', 'store_name', 'store_slug', 'store_rating_avg')
-            ->limit(3)
-            ->get()
-            ->map(fn($vendor) => [
-                'id' => $vendor->id,
-                'store_name' => $vendor->store_name,
-                'slug' => $vendor->store_slug,
-                'rating' => $vendor->store_rating_avg,
-            ]);
-
-        $trending = SearchSuggestion::where('country_id', $country->id)
-            ->where('is_blocked', false)
-            ->where('keyword_normalized', 'like', Str::lower(trim($query)) . '%')
-            ->orderByDesc('is_pinned')
-            ->orderByDesc('search_count')
-            ->limit(5)
-            ->pluck('keyword')
-            ->toArray();
-
-        return [
-            'trending' => $trending,
-            'queries' => $queries,
-            'products' => $productSuggestions->toArray(),
-            'categories' => $this->unifiedCategories->search($query),
-            'vendors' => $vendors->toArray(),
-        ];
+        return [$productSuggestions, $queries];
     }
 
     public function trendingKeywords(Country $country, int $limit = 10): array

@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 class TravelPackage extends Model
 {
-    use HasUuids;
+    use HasUuids, Searchable;
 
     protected $fillable = [
         'travel_agency_id',
@@ -222,5 +223,33 @@ class TravelPackage extends Model
     public function coverImage(): ?TravelPackageMedia
     {
         return $this->media->where('media_type', 'image')->first();
+    }
+
+    public function searchableAs(): string
+    {
+        return 'travel_packages';
+    }
+
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing(['media', 'agency', 'categories']);
+
+        return [
+            'id' => $this->id,
+            'status' => $this->status?->value,
+            'title_en' => $this->title_en,
+            'title_ar' => $this->title_ar,
+            'destination_country' => $this->destination_country,
+            'destination_city' => $this->destination_city,
+            'price' => $this->price,
+            'departure_date' => $this->departure_date?->timestamp,
+            'created_at' => $this->created_at?->timestamp,
+            'thumbnail' => $this->media->first()?->url(),
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === TravelPackageStatus::Active;
     }
 }
