@@ -155,7 +155,7 @@ class SearchService
             ->with([
                 'agency:id,name',
                 'categories:id,name_en,name_ar,slug',
-                'media' => fn($q) => $q->orderBy('position')->limit(1),
+                'media' => fn($q) => $q->orderBy('position'),
             ])
             ->orderByDesc('departure_date')
             ->paginate($perPage);
@@ -176,12 +176,18 @@ class SearchService
                     });
             })
             ->whereHas('vendor', fn($q) => $q->where('global_status', 'active'))
-            ->with(['productVariant.product:id,name_en,name_ar,slug', 'vendor:id,store_name'])
+            ->with([
+                'productVariant.product:id,name_en,name_ar,slug',
+                'productVariant.images',
+                'productVariant.product.images',
+                'vendor:id,store_name',
+            ])
             ->limit(10)
             ->get();
 
         $productSuggestions = $listings->map(function ($listing) {
             $product = $listing->productVariant->product;
+            $variant = $listing->productVariant;
 
             return [
                 'id' => $listing->id,
@@ -190,6 +196,9 @@ class SearchService
                 'name' => app()->getLocale() === 'ar' ? $product->name_ar : $product->name_en,
                 'vendor' => $listing->vendor->store_name,
                 'type' => 'product',
+                'primary_image' => $variant?->images->first()?->url
+                    ?? $product->images->first()?->url
+                    ?? null,
             ];
         });
 

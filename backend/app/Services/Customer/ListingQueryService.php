@@ -588,6 +588,12 @@ class ListingQueryService
             'thumbnail' => $listing->images->first()?->file_path
                 ? \Illuminate\Support\Facades\Storage::url($listing->images->first()->file_path)
                 : null,
+            'images' => $listing->images->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => \Illuminate\Support\Facades\Storage::url($img->file_path),
+                'is_primary' => (bool) ($img->is_primary ?? false),
+                'position'   => (int) ($img->position ?? 0),
+            ])->values()->all(),
             'price' => $listing->price,
             'price_formatted' => number_format($listing->price / 100, 2),
             'currency' => $listing->currency,
@@ -631,6 +637,11 @@ class ListingQueryService
             'title_ar' => $package->title_ar,
             'slug' => $package->id,
             'thumbnail' => $package->media->first()?->url(),
+            'images' => $package->media->map(fn ($m) => [
+                'id'       => $m->id,
+                'url'      => $m->url(),
+                'position' => (int) ($m->order_column ?? $m->position ?? 0),
+            ])->values()->all(),
             'destination_country' => $package->destination_country,
             'destination_city' => $package->destination_city,
             'departure_date' => $package->departure_date?->toDateString(),
