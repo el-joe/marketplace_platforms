@@ -4,8 +4,9 @@ import { Suspense } from "react";
 
 export default function page() {
   return (
-    <Suspense fallback={<HomeSkeleton />}>
-      <Home />
-    </Suspense>
+    <HomeSkeleton />
+    // <Suspense fallback={<HomeSkeleton />}>
+    //   <Home />
+    // </Suspense>
   );
 }
