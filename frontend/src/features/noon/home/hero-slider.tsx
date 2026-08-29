@@ -52,7 +52,7 @@ export default function HeroSlider({ data }: Props) {
     <Swiper
       modules={[Navigation, Pagination, Autoplay]}
       style={{ "--swiper-pagination-bottom": "0" } as React.CSSProperties}
-      navigation={{ enabled: !!data?.config?.show_arrows, hideOnClick: true }}
+      navigation={!!data?.config?.show_arrows}
       pagination={
         !!data?.config?.show_dots && {
           bulletClass:
