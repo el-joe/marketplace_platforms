@@ -14,8 +14,8 @@ class ProductListRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category'          => ['nullable', 'uuid'],
-            'brand'             => ['nullable', 'uuid'],
+            'category'          => ['nullable'],
+            'brand'             => ['nullable'],
             'price_min'         => ['nullable', 'numeric', 'min:0'],
             'price_max'         => ['nullable', 'numeric', 'min:0'],
             'rating_min'        => ['nullable', 'numeric', 'between:1,5'],
