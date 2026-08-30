@@ -32,6 +32,7 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
       ) : cart?.cart.items.find((item) => item.listing_id === listingId) ? (
         <Counter
           className="w-full bg-blue text-white min-h-11 text-lg"
+          loading={isMutating}
           value={
             cart?.cart?.items.find((item) => item.listing_id === listingId)
               ?.quantity as number

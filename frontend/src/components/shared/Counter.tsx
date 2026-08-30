@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { BanIcon, Minus, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { Spinner } from "../ui/spinner";
@@ -52,22 +52,30 @@ export function Counter({
           type="button"
           variant="ghost"
           size="icon"
-          onClick={onDelete}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onDelete();
+          }}
           disabled={disabled}
           className=" rounded-none rounded-l-lg"
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="size-5" />
         </Button>
       ) : (
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          onClick={decrement}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            decrement();
+          }}
           disabled={disabled || value <= min}
           className=" rounded-none rounded-l-lg"
         >
-          <Minus className="h-3 w-3" />
+          <Minus className="size-5" />
         </Button>
       )}
 
@@ -79,11 +87,19 @@ export function Counter({
         type="button"
         variant="ghost"
         size="icon"
-        onClick={increment}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          increment();
+        }}
         disabled={disabled || value >= max}
         className=" rounded-none rounded-r-lg"
       >
-        <Plus className="h-3 w-3" />
+        {value >= max ? (
+          <BanIcon className="size-5" />
+        ) : (
+          <Plus className="size-5" />
+        )}
       </Button>
     </div>
   );
