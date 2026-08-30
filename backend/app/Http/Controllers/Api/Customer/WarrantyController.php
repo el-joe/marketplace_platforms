@@ -89,7 +89,7 @@ class WarrantyController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $orderItem = OrderItem::with(['order', 'productVariant', 'warrantyPurchase'])
+        $orderItem = OrderItem::with(['order', 'subOrder', 'productVariant', 'warrantyPurchase'])
             ->findOrFail($request->validated('order_item_id'));
 
         $productId = $orderItem->productVariant?->product_id
@@ -108,9 +108,11 @@ class WarrantyController extends Controller
             'listing_type' => $listingType,
             'issue_type' => $request->validated('issue_type'),
             'issue_description' => $request->validated('issue_description'),
-            'purchase_date' => $orderItem->order->placed_at?->toDateString(),
+            'purchase_date' => ($orderItem->subOrder?->delivered_at
+                ?? $orderItem->order->completed_at
+                ?? $orderItem->order->placed_at)?->toDateString(),
             'warranty_expires_at' => $orderItem->warrantyPurchase->coverage_ends_at,
-            'covered_by_platform_warranty' => true,
+            'covered_by_platform_warranty' => $orderItem->warrantyPurchase !== null,
             'status' => WarrantyClaim::STATUS_SUBMITTED,
         ]);
 

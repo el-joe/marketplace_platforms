@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import Price from "@/src/components/shared/Price";
+import { Link } from "@/i18n/navigation";
+import { ShieldCheck } from "lucide-react";
 import type { OrderDetailItem } from "../helpers/types";
 import type { ReactNode } from "react";
 
@@ -40,6 +42,15 @@ export default async function OrderItemRow({
           <p className="text-xs text-gray mt-1">
             {t("cannotExchangeOrReturn")}
           </p>
+        )}
+        {item.can_claim_warranty && (
+          <Link
+            href={`/warranty-claims/create?order_item_id=${item.id}`}
+            className="text-xs font-medium text-blue-600 hover:underline flex items-center gap-1 mt-1"
+          >
+            <ShieldCheck className="size-3.5" />
+            {t("fileWarrantyClaim")}
+          </Link>
         )}
         <p className="font-bold mt-2">
           <Price currentPrice={item.line_total} size="sm" />
