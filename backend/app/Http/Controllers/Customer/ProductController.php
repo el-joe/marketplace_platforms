@@ -9,12 +9,14 @@ use App\Http\Resources\Customer\ProductDetailResource;
 use App\Http\Responses\ApiResponse;
 use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
+use App\Models\Category;
 use App\Models\Country;
 use App\Models\Product;
 use App\Models\VendorListing;
 use App\Models\Wishlist;
 use App\Models\WishlistItem;
 use App\Services\Customer\BuyBoxService;
+use App\Services\Customer\CategoryService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\ProductViewService;
@@ -64,10 +66,14 @@ class ProductController extends Controller
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
-        // Apply category filter to admin listings if requested
+        // Apply category filter to admin listings if requested (includes all descendants)
         if (!empty($filters['category'])) {
+            $cat = Category::find($filters['category']);
+            $categoryIds = $cat
+                ? app(CategoryService::class)->getDescendantIds($cat)
+                : [$filters['category']];
             $adminBuilder->whereHas('productVariant.product',
-                fn ($q) => $q->where('category_id', $filters['category'])
+                fn ($q) => $q->whereIn('category_id', $categoryIds)
             );
         }
         if (!empty($filters['price_min'])) {

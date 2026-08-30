@@ -9,6 +9,7 @@ use App\Enums\TravelPackageStatus;
 use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorListingStatus;
 use App\Models\AdminListing;
+use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
@@ -71,7 +72,11 @@ class ListingQueryService
     public function applyFilters($builder, array $filters)
     {
         if (!empty($filters['category'])) {
-            $builder->whereHas('productVariant.product', fn($q) => $q->where('category_id', $filters['category']));
+            $category = Category::find($filters['category']);
+            $categoryIds = $category
+                ? app(CategoryService::class)->getDescendantIds($category)
+                : [$filters['category']];
+            $builder->whereHas('productVariant.product', fn($q) => $q->whereIn('category_id', $categoryIds));
         }
         if (!empty($filters['brand'])) {
             $builder->whereHas('productVariant.product', fn($q) => $q->where('brand_id', $filters['brand']));
