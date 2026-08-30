@@ -55,13 +55,19 @@ class ProductController extends Controller
         $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
 
         // ── Admin listings (always first) ────────────────────────────────────────
-        $adminBuilder = AdminListing::where('country_id', $country->id)
-            ->where('status', AdminListingStatus::Active->value)
-            ->whereHas('productVariant.product', fn ($q) => $q->where('status', 'active'))
+        $adminBuilder = AdminListing::query()
+            ->join('product_variants as pv', 'pv.id', '=', 'admin_listings.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->where('admin_listings.country_id', $country->id)
+            ->where('admin_listings.status', AdminListingStatus::Active->value)
+            ->whereNull('admin_listings.deleted_at')
+            ->where('p.status', 'active')
+            ->whereNull('p.deleted_at')
+            ->select('admin_listings.*')
             ->with([
                 'productVariant:id,sku,slug,variant_name,product_id',
-                'productVariant.images',
-                'productVariant.product.images',
+                'productVariant.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
+                'productVariant.product.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
@@ -72,29 +78,34 @@ class ProductController extends Controller
             $categoryIds = $cat
                 ? app(CategoryService::class)->getDescendantIds($cat)
                 : [$filters['category']];
-            $adminBuilder->whereHas('productVariant.product',
-                fn ($q) => $q->whereIn('category_id', $categoryIds)
-            );
+            $adminBuilder->whereIn('p.category_id', $categoryIds);
         }
         if (!empty($filters['price_min'])) {
-            $adminBuilder->where('price', '>=', (int) $filters['price_min']);
+            $adminBuilder->where('admin_listings.price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $adminBuilder->where('price', '<=', (int) $filters['price_max']);
+            $adminBuilder->where('admin_listings.price', '<=', (int) $filters['price_max']);
         }
 
-        $adminListings = $adminBuilder->orderBy('search_boost', 'desc')->orderBy('price')->get();
+        $adminListings = $adminBuilder->orderBy('admin_listings.search_boost', 'desc')->orderBy('admin_listings.price')->get();
 
         // ── Vendor listings ───────────────────────────────────────────────────────
-        $vendorBuilder = VendorListing::where('country_id', $country->id)
-            ->where('status', 'active')
-            ->whereHas('productVariant.product', fn ($q) => $q->where('status', 'active'))
-            ->whereHas('vendor', fn ($q) => $q->where('global_status', 'active'))
+        $vendorBuilder = VendorListing::query()
+            ->join('product_variants as pv', 'pv.id', '=', 'vendor_listings.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->join('vendors as v', 'v.id', '=', 'vendor_listings.vendor_id')
+            ->where('vendor_listings.country_id', $country->id)
+            ->where('vendor_listings.status', 'active')
+            ->whereNull('vendor_listings.deleted_at')
+            ->where('p.status', 'active')
+            ->whereNull('p.deleted_at')
+            ->where('v.global_status', 'active')
+            ->select('vendor_listings.*')
             ->with([
                 'vendor:id,store_name,store_rating_avg',
                 'productVariant:id,sku,slug,variant_name,product_id',
-                'productVariant.images',
-                'productVariant.product.images',
+                'productVariant.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
+                'productVariant.product.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);

@@ -21,14 +21,17 @@ class CartService
 {
     private const MAX_ITEMS = 50;
 
-    private const ITEM_EAGER_LOADS = [
-        'items.vendorListing.vendor',
-        'items.vendorListing.productVariant.product.images',
-        'items.vendorListing.primaryShippingMethod',
-        'items.vendorListing.warehouseInventories',
-        'items.adminListing.productVariant.product.images',
-        'items.selectedShippingMethod',
-    ];
+    private static function itemEagerLoads(): array
+    {
+        return [
+            'items.vendorListing.vendor',
+            'items.vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'items.vendorListing.primaryShippingMethod',
+            'items.vendorListing.warehouseInventories',
+            'items.adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'items.selectedShippingMethod',
+        ];
+    }
 
     public function __construct(
         private readonly CheckoutCalculationService $calculationService,
@@ -363,7 +366,7 @@ class CartService
      */
     private function recalculateCart(Cart $cart): void
     {
-        $cart->load(array_merge(self::ITEM_EAGER_LOADS, ['coupon', 'customer']));
+        $cart->load(array_merge(self::itemEagerLoads(), ['coupon', 'customer']));
 
         $priceChanges = [];
 
@@ -395,7 +398,7 @@ class CartService
         }
 
         $cart->unsetRelation('items');
-        $cart->load(self::ITEM_EAGER_LOADS);
+        $cart->load(self::itemEagerLoads());
 
         $subtotal = (int) $cart->items->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
 

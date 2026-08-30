@@ -31,8 +31,10 @@ class OrderController extends Controller
         $customer = auth('customer')->user();
 
         $query = Order::where('customer_id', $customer->id)
+            ->select(['id', 'customer_id', 'order_number', 'status', 'payment_status', 'currency', 'total', 'placed_at'])
             ->withCount('subOrders')
-            ->with('subOrders.shippingMethod')
+            ->with(['subOrders' => fn ($q) => $q->select(['id', 'order_id', 'sub_order_number', 'shipping_method_id']),
+                'subOrders.shippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex'])
             ->orderByDesc('placed_at');
 
         if ($request->filled('status')) {

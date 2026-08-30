@@ -26,7 +26,12 @@ class WarrantyClaimController extends Controller
         $customer = auth('customer')->user();
 
         $paginator = WarrantyClaim::where('customer_id', $customer->id)
-            ->with(['product', 'vendor'])
+            ->select(['id', 'claim_number', 'customer_id', 'product_id', 'vendor_id', 'status', 'resolution', 'issue_type', 'issue_description', 'purchase_date', 'warranty_expires_at', 'covered_by_platform_warranty', 'evidence_files', 'resolved_at', 'created_at'])
+            ->with([
+                'product:id,name_en',
+                'product.images' => fn ($q) => $q->select('id', 'product_id', 'path', 'disk', 'is_primary', 'position')->orderByDesc('is_primary')->orderBy('position'),
+                'vendor:id,store_name',
+            ])
             ->orderByDesc('created_at')
             ->paginate(10);
 
@@ -107,8 +112,9 @@ class WarrantyClaimController extends Controller
         $claim = WarrantyClaim::where('id', $id)
             ->where('customer_id', $customer->id)
             ->with([
-                'product',
-                'vendor',
+                'product:id,name_en',
+                'product.images' => fn ($q) => $q->select('id', 'product_id', 'path', 'disk', 'is_primary', 'position')->orderByDesc('is_primary')->orderBy('position'),
+                'vendor:id,store_name',
                 'messages' => fn ($q) => $q->where('is_internal_note', false),
             ])
             ->first();

@@ -33,13 +33,18 @@ class ListingQueryService
      */
     public function baseCategoryQuery(Country $country, array $categoryIds)
     {
-        return VendorListing::where('country_id', $country->id)
-            ->where('status', VendorListingStatus::Active->value)
-            ->whereHas(
-                'productVariant.product',
-                fn($q) => $q->whereIn('category_id', $categoryIds)->where('status', ProductStatus::Active->value),
-            )
-            ->whereHas('vendor', fn($q) => $q->where('global_status', VendorGlobalStatus::Active->value));
+        return VendorListing::query()
+            ->join('product_variants as pv', 'pv.id', '=', 'vendor_listings.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->join('vendors as v', 'v.id', '=', 'vendor_listings.vendor_id')
+            ->where('vendor_listings.country_id', $country->id)
+            ->where('vendor_listings.status', VendorListingStatus::Active->value)
+            ->whereNull('vendor_listings.deleted_at')
+            ->whereIn('p.category_id', $categoryIds)
+            ->where('p.status', ProductStatus::Active->value)
+            ->whereNull('p.deleted_at')
+            ->where('v.global_status', VendorGlobalStatus::Active->value)
+            ->select('vendor_listings.*');
     }
 
     /**
@@ -49,18 +54,44 @@ class ListingQueryService
      */
     public function baseSearchQuery(Country $country, string $query)
     {
-        return VendorListing::where('country_id', $country->id)
-            ->where('status', VendorListingStatus::Active->value)
-            ->whereHas('productVariant.product', function ($q) use ($query) {
-                $q->where('status', ProductStatus::Active->value)
-                    ->where(function ($q2) use ($query) {
-                        $q2->where('name_en', 'like', "%{$query}%")
-                            ->orWhere('name_ar', 'like', "%{$query}%")
-                            ->orWhere('short_desc_en', 'like', "%{$query}%")
-                            ->orWhere('model_number', 'like', "%{$query}%");
-                    });
-            })
-            ->whereHas('vendor', fn($q) => $q->where('global_status', VendorGlobalStatus::Active->value));
+        $builder = VendorListing::query()
+            ->join('product_variants as pv', 'pv.id', '=', 'vendor_listings.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->join('vendors as v', 'v.id', '=', 'vendor_listings.vendor_id')
+            ->where('vendor_listings.country_id', $country->id)
+            ->where('vendor_listings.status', VendorListingStatus::Active->value)
+            ->whereNull('vendor_listings.deleted_at')
+            ->where('p.status', ProductStatus::Active->value)
+            ->whereNull('p.deleted_at')
+            ->where('v.global_status', VendorGlobalStatus::Active->value)
+            ->select('vendor_listings.*');
+
+        if (mb_strlen($query) < 3) {
+            return $builder->where(function ($q2) use ($query) {
+                $q2->where('p.name_en', 'like', "%{$query}%")
+                    ->orWhere('p.name_ar', 'like', "%{$query}%")
+                    ->orWhere('p.short_desc_en', 'like', "%{$query}%")
+                    ->orWhere('p.model_number', 'like', "%{$query}%");
+            });
+        }
+
+        $boolean = $this->toBooleanModeQuery($query);
+
+        return $builder->whereRaw(
+            'MATCH(p.name_en, p.name_ar, p.short_desc_en, p.model_number) AGAINST (? IN BOOLEAN MODE)',
+            [$boolean],
+        );
+    }
+
+    /**
+     * Turn a free-text query into a MySQL BOOLEAN MODE fulltext expression:
+     * every term becomes a required (+) prefix (*) match.
+     */
+    private function toBooleanModeQuery(string $query): string
+    {
+        $terms = preg_split('/\s+/', trim($query), -1, PREG_SPLIT_NO_EMPTY);
+
+        return implode(' ', array_map(fn ($term) => '+' . $term . '*', $terms));
     }
 
     /**
@@ -76,25 +107,25 @@ class ListingQueryService
             $categoryIds = $category
                 ? app(CategoryService::class)->getDescendantIds($category)
                 : [$filters['category']];
-            $builder->whereHas('productVariant.product', fn($q) => $q->whereIn('category_id', $categoryIds));
+            $builder->whereIn('p.category_id', $categoryIds);
         }
         if (!empty($filters['brand'])) {
-            $builder->whereHas('productVariant.product', fn($q) => $q->where('brand_id', $filters['brand']));
+            $builder->where('p.brand_id', $filters['brand']);
         }
         if (!empty($filters['price_min'])) {
-            $builder->where('price', '>=', (int) $filters['price_min']);
+            $builder->where('vendor_listings.price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $builder->where('price', '<=', (int) $filters['price_max']);
+            $builder->where('vendor_listings.price', '<=', (int) $filters['price_max']);
         }
         if (!empty($filters['rating_min'])) {
-            $builder->where('rating_avg', '>=', $filters['rating_min']);
+            $builder->where('vendor_listings.rating_avg', '>=', $filters['rating_min']);
         }
         if (!empty($filters['condition'])) {
-            $builder->where('condition', $filters['condition']);
+            $builder->where('vendor_listings.condition', $filters['condition']);
         }
         if (!empty($filters['fulfillment_model'])) {
-            $builder->where('fulfillment_model', $filters['fulfillment_model']);
+            $builder->where('vendor_listings.fulfillment_model', $filters['fulfillment_model']);
         }
         if (empty($filters['include_oos'])) {
             $builder->whereHas('warehouseInventories', fn($q) => $q->where('quantity_available', '>', 0));
@@ -124,16 +155,16 @@ class ListingQueryService
     public function applySort($builder, string $sort)
     {
         return match ($sort) {
-            'price_asc' => $builder->orderBy('price', 'asc'),
-            'price_desc' => $builder->orderBy('price', 'desc'),
-            'rating' => $builder->orderByDesc('rating_avg'),
-            'newest' => $builder->orderByDesc('created_at'),
-            'best_selling' => $builder->orderByDesc('total_sold'),
+            'price_asc' => $builder->orderBy('vendor_listings.price', 'asc'),
+            'price_desc' => $builder->orderBy('vendor_listings.price', 'desc'),
+            'rating' => $builder->orderByDesc('vendor_listings.rating_avg'),
+            'newest' => $builder->orderByDesc('vendor_listings.created_at'),
+            'best_selling' => $builder->orderByDesc('vendor_listings.total_sold'),
             default => $builder
-                ->orderByRaw('score IS NULL, score DESC')
-                ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
-                ->orderByDesc('rating_count')
-                ->orderBy('price'),
+                ->orderByRaw('vendor_listings.score IS NULL, vendor_listings.score DESC')
+                ->orderByRaw('vendor_listings.rating_avg IS NULL, vendor_listings.rating_avg DESC')
+                ->orderByDesc('vendor_listings.rating_count')
+                ->orderBy('vendor_listings.price'),
         };
     }
 
@@ -531,10 +562,13 @@ class ListingQueryService
             return [];
         }
 
-        $items = WishlistItem::where('customer_id', $customerId)->get(['vendor_listing_id', 'admin_listing_id']);
+        $rows = DB::table('wishlist_items')
+            ->where('customer_id', $customerId)
+            ->select('vendor_listing_id', 'admin_listing_id')
+            ->get();
 
-        return $items->pluck('vendor_listing_id')
-            ->merge($items->pluck('admin_listing_id'))
+        return $rows->pluck('vendor_listing_id')
+            ->merge($rows->pluck('admin_listing_id'))
             ->filter()
             ->unique()
             ->values()

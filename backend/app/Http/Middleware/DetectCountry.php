@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Country;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class DetectCountry
@@ -12,7 +13,12 @@ class DetectCountry
     public function handle(Request $request, Closure $next): Response
     {
         $siteCode = $request->route('country');
-        $country = Country::where('site_code', $siteCode)->where('is_active', true)->first();
+
+        $country = Cache::remember(
+            "country:code:{$siteCode}",
+            300,
+            fn () => Country::where('site_code', $siteCode)->where('is_active', true)->first(),
+        );
 
         if (!$country) {
             return response()->json([
