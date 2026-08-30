@@ -191,25 +191,25 @@
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.total_budget') }}</dt>
-                                <dd class="font-semibold">${{ number_format($campaign->budget_total, 2) }}</dd>
+                                <dd class="font-semibold">{{ number_format($campaign->budget_total, 2) }} {{ $currency }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.daily_budget') }}</dt>
                                 <dd class="font-semibold">
-                                    {{ $campaign->budget_daily ? '$' . number_format($campaign->budget_daily, 2) : '—' }}
+                                    {{ $campaign->budget_daily ? number_format($campaign->budget_daily, 2) . ' ' . $currency : '—' }}
                                 </dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.bid') }}</dt>
-                                <dd class="font-semibold">${{ number_format($campaign->bid, 4) }}</dd>
+                                <dd class="font-semibold">{{ number_format($campaign->bid, 4) }} {{ $currency }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.spent_total') }}</dt>
-                                <dd class="font-semibold text-orange-600">${{ number_format($campaign->budget_spent_total, 2) }}</dd>
+                                <dd class="font-semibold text-orange-600">{{ number_format($campaign->budget_spent_total, 2) }} {{ $currency }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.spent_today') }}</dt>
-                                <dd class="font-semibold">${{ number_format($campaign->budget_spent_today, 2) }}</dd>
+                                <dd class="font-semibold">{{ number_format($campaign->budget_spent_today, 2) }} {{ $currency }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.utilization') }}</dt>
@@ -263,7 +263,7 @@
                                 <div class="text-xs text-gray-500 mt-1">{{ __('admin.ad_campaigns.conversions') }}</div>
                             </div>
                             <div class="text-center p-3 rounded-lg bg-gray-50">
-                                <div class="text-2xl font-bold text-primary-600">${{ number_format($perfSummary['spend'], 2) }}</div>
+                                <div class="text-2xl font-bold text-primary-600">{{ number_format($perfSummary['spend'], 2) }} {{ $currency }}</div>
                                 <div class="text-xs text-gray-500 mt-1">{{ __('admin.ad_campaigns.spend') }}</div>
                             </div>
                             <div class="text-center p-3 rounded-lg bg-gray-50">
@@ -275,7 +275,7 @@
                                 <div class="text-xs text-gray-500 mt-1">{{ __('admin.ad_campaigns.acos') }}</div>
                             </div>
                             <div class="text-center p-3 rounded-lg bg-gray-50 sm:col-span-2">
-                                <div class="text-2xl font-bold text-success-600">${{ number_format($perfSummary['revenue_attributed'], 2) }}</div>
+                                <div class="text-2xl font-bold text-success-600">{{ number_format($perfSummary['revenue_attributed'], 2) }} {{ $currency }}</div>
                                 <div class="text-xs text-gray-500 mt-1">{{ __('admin.ad_campaigns.revenue_attributed') }}</div>
                             </div>
                         </div>
@@ -381,7 +381,7 @@
                                             </span>
                                         </td>
                                         <td class="py-2 pr-4">
-                                            {{ $kw->bid_override ? '$' . number_format($kw->bid_override, 4) : '—' }}
+                                            {{ $kw->bid_override ? number_format($kw->bid_override, 4) . ' ' . $currency : '—' }}
                                         </td>
                                         <td class="py-2 pr-4">
                                             @if($kw->is_negative)
@@ -428,7 +428,7 @@
                                             {{ $ct->category?->name_en ?? $ct->category_id }}
                                         </td>
                                         <td class="py-2 pr-4">
-                                            {{ $ct->bid_override ? '$' . number_format($ct->bid_override, 4) : '—' }}
+                                            {{ $ct->bid_override ? number_format($ct->bid_override, 4) . ' ' . $currency : '—' }}
                                         </td>
                                         <td class="py-2">
                                             @if($ct->is_active)
@@ -483,7 +483,7 @@
                                     <td class="py-2 pr-4">{{ number_format($stat->clicks) }}</td>
                                     <td class="py-2 pr-4">{{ number_format((float)$stat->ctr * 100, 2) }}%</td>
                                     <td class="py-2 pr-4">{{ number_format($stat->conversions) }}</td>
-                                    <td class="py-2 pr-4 font-medium">${{ number_format($stat->spend, 2) }}</td>
+                                    <td class="py-2 pr-4 font-medium">{{ number_format($stat->spend, 2) }} {{ $currency }}</td>
                                     <td class="py-2">{{ number_format((float)$stat->acos * 100, 2) }}%</td>
                                 </tr>
                             @empty

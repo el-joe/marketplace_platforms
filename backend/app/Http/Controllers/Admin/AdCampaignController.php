@@ -255,6 +255,8 @@ class AdCampaignController extends Controller
         // All daily stats for table
         $dailyStats = $campaign->dailyStats()->orderBy('date', 'desc')->take(30)->get();
 
+        $currency = $campaign->country?->currency_code ?? '';
+
         return view('admin.ad-campaigns.show', compact(
             'campaign',
             'perfSummary',
@@ -262,7 +264,8 @@ class AdCampaignController extends Controller
             'chartLabels',
             'chartImpressions',
             'chartClicks',
-            'dailyStats'
+            'dailyStats',
+            'currency'
         ));
     }
 
