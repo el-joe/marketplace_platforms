@@ -19,7 +19,7 @@ class SellerListingResource extends JsonResource
             'url'               => $country ? route('customer.listing.show', [$country->site_code, $this->product_variant_id . '--' . $this->id]) : null,
             'seller_name'       => $this->vendor?->store_name,
             'seller_slug'       => $this->vendor?->store_slug,
-            'price'             => round($this->price / 100, 2),
+            'price'             => $this->price,
             'currency'          => $this->currency,
             'condition'         => $this->condition,
             'condition_notes'   => $this->condition_notes,

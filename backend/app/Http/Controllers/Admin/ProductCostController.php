@@ -141,9 +141,9 @@ class ProductCostController extends Controller
             'profit' => $profit,
             'margin_pct' => $marginPct,
             'below_cost' => $belowCost,
-            'selling_formatted' => number_format($selling / 100, 2) . ' EGP',
-            'landed_formatted' => number_format($landed / 100, 2) . ' EGP',
-            'profit_formatted' => number_format($profit / 100, 2) . ' EGP',
+            'selling_formatted' => number_format($selling, 2) . ' EGP',
+            'landed_formatted' => number_format($landed, 2) . ' EGP',
+            'profit_formatted' => number_format($profit, 2) . ' EGP',
         ]);
     }
 
@@ -189,7 +189,7 @@ class ProductCostController extends Controller
                 $price = $this->extractPriceFromHtml($html);
 
                 if ($price !== null) {
-                    $link['price'] = (int) round($price * 100);
+                    $link['price'] = (int) round($price);
                     $updated++;
                 }
                 $link['last_checked'] = $checkedAt;

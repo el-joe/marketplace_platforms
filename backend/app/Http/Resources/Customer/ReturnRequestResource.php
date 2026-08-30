@@ -17,7 +17,7 @@ class ReturnRequestResource extends JsonResource
             'reason_description' => $this->reason_description,
             'return_type'       => $this->return_type?->value,
             'status'            => $this->status?->value,
-            'refund_amount'     => $this->refund_amount !== null ? $this->refund_amount / 100 : null,
+            'refund_amount'     => $this->refund_amount,
             'rejection_reason'  => $this->rejection_reason,
             'created_at'        => $this->created_at?->toIso8601String(),
             'items'             => $this->whenLoaded('items', fn () =>

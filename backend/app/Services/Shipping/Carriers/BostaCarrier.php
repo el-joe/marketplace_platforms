@@ -79,7 +79,7 @@ class BostaCarrier implements ShippingCarrierInterface
                     trackingNumber: $body['trackingNumber'] ?? '',
                     awbLabelUrl: $body['labelUrl'] ?? '',
                     awbLabelBase64: null,
-                    shippingCostCents: (int) (($body['cod'] ?? 0) * 100),
+                    shippingCost: (int) (($body['cod'] ?? 0) * 100),
                     currency: 'EGP',
                     carrierReferenceId: $body['_id'] ?? null,
                     errorMessage: null,

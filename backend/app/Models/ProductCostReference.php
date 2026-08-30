@@ -79,7 +79,7 @@ class ProductCostReference extends Model
     public function manufacturerCostFormatted(): string
     {
         return $this->manufacturer_cost !== null
-            ? number_format($this->manufacturer_cost / 100, 2) . ' EGP'
+            ? number_format($this->manufacturer_cost, 2) . ' EGP'
             : '—';
     }
 
@@ -87,7 +87,7 @@ class ProductCostReference extends Model
     public function shippingCostFormatted(): string
     {
         return $this->shipping_cost !== null
-            ? number_format($this->shipping_cost / 100, 2) . ' EGP'
+            ? number_format($this->shipping_cost, 2) . ' EGP'
             : '—';
     }
 
@@ -95,7 +95,7 @@ class ProductCostReference extends Model
     public function landedCostFormatted(): string
     {
         return $this->landed_cost !== null
-            ? number_format($this->landed_cost / 100, 2) . ' EGP'
+            ? number_format($this->landed_cost, 2) . ' EGP'
             : '—';
     }
 

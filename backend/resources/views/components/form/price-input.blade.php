@@ -1,6 +1,6 @@
 <div class="space-y-1">
     @if($label)
-        <label for="{{ $name }}-display" class="block text-sm font-medium text-gray-700">
+        <label for="{{ $name }}" class="block text-sm font-medium text-gray-700">
             {{ $label }}
             @if($required)
                 <span class="text-danger-500 ml-0.5" aria-hidden="true">*</span>
@@ -15,13 +15,14 @@
         </span>
         <input
             type="number"
-            id="{{ $name }}-display"
-            step="0.01"
-            min="{{ $minDisplay() }}"
-            @if($maxDisplay() !== null) max="{{ $maxDisplay() }}" @endif
-            value="{{ $displayValue }}"
-            placeholder="0.00"
-            data-price-display="{{ $name }}"
+            id="{{ $name }}"
+            name="{{ $name }}"
+            step="1"
+            min="{{ $min }}"
+            @if($max !== null) max="{{ $max }}" @endif
+            value="{{ $storedValue }}"
+            placeholder="0"
+            data-price-input="{{ $name }}"
             class="block w-full rounded-r-lg border border-gray-300 px-3 py-2 text-sm
                    text-gray-900 bg-white placeholder-gray-400
                    focus:outline-none focus:ring-2 focus:ring-offset-0
@@ -31,12 +32,6 @@
             aria-invalid="{{ $hasError ? 'true' : 'false' }}"
             @if($hasError) aria-describedby="{{ $name }}-error" @endif
         >
-        {{-- Hidden cents input — this is what gets submitted --}}
-        <input type="hidden"
-               name="{{ $name }}"
-               id="{{ $name }}"
-               value="{{ $centsValue }}"
-               data-price-cents="{{ $name }}">
     </div>
 
     @if($helpText && !$hasError)

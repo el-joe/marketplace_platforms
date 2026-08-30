@@ -66,7 +66,7 @@ class CarrierClaim extends Model
 
     public function getClaimedAmountFormattedAttribute(): string
     {
-        return number_format($this->claimed_amount / 100, 2);
+        return number_format($this->claimed_amount, 2);
     }
 
     public function getCompensatedAmountFormattedAttribute(): string
@@ -74,7 +74,7 @@ class CarrierClaim extends Model
         if ($this->compensated_amount === null) {
             return '—';
         }
-        return number_format($this->compensated_amount / 100, 2);
+        return number_format($this->compensated_amount, 2);
     }
 
     public function isResolved(): bool

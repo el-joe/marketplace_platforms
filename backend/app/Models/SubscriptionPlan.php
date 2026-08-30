@@ -50,7 +50,7 @@ class SubscriptionPlan extends Model
 
     public function priceFormatted(): string
     {
-        return number_format($this->price / 100, 2) . ' ' . $this->currency;
+        return number_format($this->price, 2) . ' ' . $this->currency;
     }
 
     public function hasUnlimitedListings(): bool

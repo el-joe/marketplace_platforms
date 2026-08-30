@@ -40,8 +40,8 @@ class WalletWithdrawalRequest extends Model
         return $this->belongsTo(Admin::class, 'approved_by_admin_id');
     }
 
-    public function getAmountAttribute(): float
+    public function getFormattedAmountAttribute(): string
     {
-        return $this->amount / 100;
+        return (string) $this->amount;
     }
 }

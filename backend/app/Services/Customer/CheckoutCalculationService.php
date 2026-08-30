@@ -221,7 +221,7 @@ class CheckoutCalculationService
 
         $discount = match ($coupon->type) {
             \App\Enums\CouponType::Percentage => (int) round($applicableSubtotal * ((float) $coupon->value / 100)),
-            \App\Enums\CouponType::FixedAmount => (int) round((float) $coupon->value * 100),
+            \App\Enums\CouponType::FixedAmount => (int) round((float) $coupon->value),
             \App\Enums\CouponType::FreeShipping => 0,
             \App\Enums\CouponType::Bogo => $this->cheapestQualifyingItemPrice($coupon, $cartItems),
             default => 0,

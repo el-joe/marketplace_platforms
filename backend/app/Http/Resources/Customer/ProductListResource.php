@@ -62,8 +62,8 @@ class ProductListResource extends JsonResource
             }),
             'images'              => $imagesSlider,
             'price_range'         => [
-                'min' => $this->min_price !== null ? round($this->min_price / 100, 2) : null,
-                'max' => $this->max_price !== null ? round($this->max_price / 100, 2) : null,
+                'min' => $this->min_price,
+                'max' => $this->max_price,
             ],
             'category_name'       => [
                 'en' => $this->category_name_en,

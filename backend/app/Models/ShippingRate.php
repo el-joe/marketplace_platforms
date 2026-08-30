@@ -63,23 +63,23 @@ class ShippingRate extends Model
 
     public function getBaseFeeFormattedAttribute(): string
     {
-        return number_format($this->base_fee / 100, 2);
+        return number_format($this->base_fee, 2);
     }
 
     public function getRatePerKgFormattedAttribute(): string
     {
-        return number_format($this->rate_per_kg / 100, 2);
+        return number_format($this->rate_per_kg, 2);
     }
 
     public function getCodExtraFeeFormattedAttribute(): string
     {
-        return number_format($this->cod_extra_fee / 100, 2);
+        return number_format($this->cod_extra_fee, 2);
     }
 
     public function getFreeThresholdFormattedAttribute(): ?string
     {
         return $this->free_shipping_threshold
-            ? number_format($this->free_shipping_threshold / 100, 2)
+            ? number_format($this->free_shipping_threshold, 2)
             : null;
     }
 

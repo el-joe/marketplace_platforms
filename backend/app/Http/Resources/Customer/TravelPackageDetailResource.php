@@ -20,7 +20,7 @@ class TravelPackageDetailResource extends JsonResource
             'destination_country' => $this->destination_country,
             'destination_city'    => $this->destination_city,
             'price'         => $this->price,
-            'price_formatted'     => number_format($this->price / 100, 2),
+            'price_formatted'     => number_format($this->price, 2),
             'currency'            => $this->currency,
             'available_seats'     => $this->available_seats,
             'seats_remaining'     => $this->seatsRemaining(),

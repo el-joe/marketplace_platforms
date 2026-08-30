@@ -12,7 +12,7 @@ class RefundResource extends JsonResource
         return [
             'id'          => $this->id,
             'order_number' => $this->order?->order_number,
-            'amount'      => $this->amount / 100,
+            'amount'      => $this->amount,
             'currency'    => $this->currency,
             'reason'      => $this->reason?->value,
             'refund_type' => $this->refund_type?->value,

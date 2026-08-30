@@ -109,7 +109,7 @@ class FedexCarrier implements ShippingCarrierInterface
                     trackingNumber: $result['masterTrackingNumber'] ?? '',
                     awbLabelUrl: $result['pieceResponses'][0]['packageDocuments'][0]['url'] ?? '',
                     awbLabelBase64: null,
-                    shippingCostCents: 0,
+                    shippingCost: 0,
                     currency: 'USD',
                     carrierReferenceId: $result['masterTrackingNumber'] ?? null,
                     errorMessage: null,

@@ -137,8 +137,8 @@ class SearchService
             })
             ->with(['images', 'classifiedCategory', 'city'])
             ->when(!empty($filters['category']), fn($q) => $q->where('classified_category_id', $filters['category']))
-            ->when(!empty($filters['price_min']), fn($q) => $q->where('price', '>=', (int) ($filters['price_min'] * 100)))
-            ->when(!empty($filters['price_max']), fn($q) => $q->where('price', '<=', (int) ($filters['price_max'] * 100)))
+            ->when(!empty($filters['price_min']), fn($q) => $q->where('price', '>=', (int) $filters['price_min']))
+            ->when(!empty($filters['price_max']), fn($q) => $q->where('price', '<=', (int) $filters['price_max']))
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }

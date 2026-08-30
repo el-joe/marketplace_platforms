@@ -77,10 +77,10 @@ class ProductController extends Controller
             );
         }
         if (!empty($filters['price_min'])) {
-            $adminBuilder->where('price', '>=', (int) ($filters['price_min'] * 100));
+            $adminBuilder->where('price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $adminBuilder->where('price', '<=', (int) ($filters['price_max'] * 100));
+            $adminBuilder->where('price', '<=', (int) $filters['price_max']);
         }
 
         $adminListings = $adminBuilder->orderBy('search_boost', 'desc')->orderBy('price')->get();

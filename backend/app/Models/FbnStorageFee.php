@@ -79,7 +79,7 @@ class FbnStorageFee extends Model
 
     public function totalFormatted(): string
     {
-        return number_format($this->total_fee / 100, 2) . ' ' . $this->currency;
+        return number_format($this->total_fee, 2) . ' ' . $this->currency;
     }
 
     public function monthLabel(): string

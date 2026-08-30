@@ -38,7 +38,7 @@ trait HasCurrencyAwareAggregates
         );
 
         return $byCurrency->sum(fn ($row) =>
-            ($row->{$totalKey} / 100) / ($rates[$row->currency] ?? 1)
+            $row->{$totalKey} / ($rates[$row->currency] ?? 1)
         );
     }
 

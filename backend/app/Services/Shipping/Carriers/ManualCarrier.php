@@ -40,7 +40,7 @@ class ManualCarrier implements ShippingCarrierInterface
             trackingNumber: $placeholder,
             awbLabelUrl: '',
             awbLabelBase64: null,
-            shippingCostCents: 0,
+            shippingCost: 0,
             currency: '',
             carrierReferenceId: null,
             errorMessage: null,

@@ -78,7 +78,7 @@ class CarrierClaimController extends Controller
         ]);
 
         $compensatedCents = isset($data['compensated_amount'])
-            ? (int) round($data['compensated_amount'] * 100)
+            ? (int) round($data['compensated_amount'])
             : null;
 
         $this->service->resolve(

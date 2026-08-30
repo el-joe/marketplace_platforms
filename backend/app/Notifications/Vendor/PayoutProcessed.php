@@ -16,7 +16,7 @@ class PayoutProcessed extends BaseDatabaseBroadcastNotification
 
     public function notificationData(object $notifiable): array
     {
-        $amount = number_format($this->payout->net_amount / 100, 2) . ' ' . $this->payout->currency;
+        $amount = number_format($this->payout->net_amount, 2) . ' ' . $this->payout->currency;
 
         return [
             'title'     => 'Payout Approved',

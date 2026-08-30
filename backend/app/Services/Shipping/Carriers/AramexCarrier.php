@@ -92,7 +92,7 @@ class AramexCarrier implements ShippingCarrierInterface
                 trackingNumber: $shipment['ID'] ?? '',
                 awbLabelUrl: $body['Labels'][0]['LabelURL'] ?? '',
                 awbLabelBase64: null,
-                shippingCostCents: (int) (($shipment['TotalAmount']['Value'] ?? 0) * 100),
+                shippingCost: (int) (($shipment['TotalAmount']['Value'] ?? 0) * 100),
                 currency: $shipment['TotalAmount']['CurrencyCode'] ?? 'USD',
                 carrierReferenceId: $shipment['ID'] ?? null,
                 errorMessage: null,

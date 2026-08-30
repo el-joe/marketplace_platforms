@@ -119,8 +119,8 @@ class ProductsController extends Controller
             'vendor_id' => fn($q, $v) => $q->where('products.vendor_id', $v),
             'date_from' => fn($q, $v) => $q->whereDate('products.created_at', '>=', $v),
             'date_to' => fn($q, $v) => $q->whereDate('products.created_at', '<=', $v),
-            'price_min' => fn($q, $v) => $q->where('products.price', '>=', (int) round((float) $v * 100)),
-            'price_max' => fn($q, $v) => $q->where('products.price', '<=', (int) round((float) $v * 100)),
+            'price_min' => fn($q, $v) => $q->where('products.price', '>=', (int) round((float) $v)),
+            'price_max' => fn($q, $v) => $q->where('products.price', '<=', (int) round((float) $v)),
         ]);
 
         return $this->dataTableResponse(

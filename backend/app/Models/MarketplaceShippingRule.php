@@ -62,7 +62,7 @@ class MarketplaceShippingRule extends Model
 
     public function extraFeeFormatted(): string
     {
-        return number_format($this->extra_delivery_fee / 100, 2) . ' EGP';
+        return number_format($this->extra_delivery_fee, 2) . ' EGP';
     }
 
     public function hasSpecialRequirements(): bool

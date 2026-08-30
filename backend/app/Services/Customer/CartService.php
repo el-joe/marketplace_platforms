@@ -332,7 +332,7 @@ class CartService
         $subtotal = (int) $cart->items()->get()->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
 
         if ($coupon->min_order_amount !== null && $subtotal < $coupon->min_order_amount) {
-            $minFormatted = number_format($coupon->min_order_amount / 100, 2);
+            $minFormatted = number_format($coupon->min_order_amount, 2);
             throw new \DomainException(__('common.exceptions.cart.coupon_min_order_required', ['amount' => $minFormatted, 'currency' => $cart->currency]));
         }
 

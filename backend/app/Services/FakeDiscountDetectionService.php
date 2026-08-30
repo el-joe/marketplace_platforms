@@ -89,7 +89,7 @@ class FakeDiscountDetectionService
             'confidence'                  => $confidence,
             'reasons'                     => $reasons,
             'average_price_30d'           => $avgPrice30d,
-            'average_price_30d_formatted' => number_format($avgPrice30d / 100, 2),
+            'average_price_30d_formatted' => number_format($avgPrice30d, 2),
             'price_history_count'         => $history->count(),
             'checks' => [
                 'is_price_barely_below_avg'   => $isPriceBarellyBelowAvg,

@@ -362,7 +362,7 @@ class ReturnController extends Controller
                 'shipment_id' => $shipment->id,
                 'claim_type' => 'damaged',
                 'description' => 'Item found damaged in transit during return inspection for ' . $returnRequest->return_number,
-                'claimed_amount' => $returnRequest->refund_amount_cents ?? 0,
+                'claimed_amount' => $returnRequest->refund_amount ?? 0,
                 'status' => 'submitted',
             ]);
         }

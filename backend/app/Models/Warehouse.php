@@ -104,7 +104,7 @@ class Warehouse extends Model
     public function getStorageRateFormattedAttribute(): ?string
     {
         return $this->storage_rate_per_m3_price
-            ? number_format($this->storage_rate_per_m3_price / 100, 2) . ' ' . $this->storage_currency
+            ? number_format($this->storage_rate_per_m3_price, 2) . ' ' . $this->storage_currency
             : null;
     }
 

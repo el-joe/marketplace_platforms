@@ -82,10 +82,10 @@ class ListingQueryService
             $builder->whereHas('productVariant.product', fn($q) => $q->where('brand_id', $filters['brand']));
         }
         if (!empty($filters['price_min'])) {
-            $builder->where('price', '>=', (int) ($filters['price_min'] * 100));
+            $builder->where('price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $builder->where('price', '<=', (int) ($filters['price_max'] * 100));
+            $builder->where('price', '<=', (int) $filters['price_max']);
         }
         if (!empty($filters['rating_min'])) {
             $builder->where('rating_avg', '>=', $filters['rating_min']);
@@ -367,7 +367,7 @@ class ListingQueryService
                 'logo_url' => $product->brand->logo_url,
             ] : null,
             'price' => $listing->price,
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
             'compare_at_price' => $listing->compare_at_price ?? null,
             'currency' => $country->currency_code,
             'condition' => $listing->condition,
@@ -475,7 +475,7 @@ class ListingQueryService
                 'logo_url' => $product->brand->logo_url,
             ] : null,
             'price'            => $listing->price,
-            'price_formatted'  => number_format($listing->price / 100, 2),
+            'price_formatted'  => number_format($listing->price, 2),
             'compare_at_price' => $listing->compare_at_price ?? null,
             'currency'         => $country->currency_code,
             'condition'        => $listing->condition,
@@ -600,7 +600,7 @@ class ListingQueryService
                 'position'   => (int) ($img->position ?? 0),
             ])->values()->all(),
             'price' => $listing->price,
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
             'currency' => $listing->currency,
             'price_negotiable' => (bool) $listing->price_negotiable,
             'listing_purpose' => $listing->listing_purpose,
@@ -654,7 +654,7 @@ class ListingQueryService
             'duration_days' => $package->duration_days,
             'duration_nights' => $package->duration_nights,
             'price' => $package->price,
-            'price_formatted' => number_format($package->price / 100, 2),
+            'price_formatted' => number_format($package->price, 2),
             'currency' => $package->currency,
             'available_seats' => $package->available_seats,
             'seats_remaining' => $package->seatsRemaining(),
