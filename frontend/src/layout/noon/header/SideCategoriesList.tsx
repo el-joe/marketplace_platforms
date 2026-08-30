@@ -11,18 +11,19 @@ import {
 } from "@/src/components/ui/sheet";
 import Logo from "@/src/components/shared/Logo";
 import { useQuery } from "@tanstack/react-query";
-import { getCategoriesTree } from "@/src/services/get";
+// import { getCategoriesTree } from "@/src/services/get";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
-import { CategoryNavTree } from "@/types";
-import { Type } from "@/types/category-nav-tree.type";
-import { useRouter } from "../../../i18n/navigation";
+import { Type } from "@/src/layout/noon/header/types/category-nav-tree.type";
+import { useRouter } from "../../../../i18n/navigation";
+import { getCategoriesTreeService } from "./api/get";
+import { ICategoryNavTree } from "./types";
 
 function subCategoryHref(
-  child: CategoryNavTree,
-  parent?: CategoryNavTree,
+  child: ICategoryNavTree,
+  parent?: ICategoryNavTree,
 ): string {
   switch (child.type ?? parent?.type) {
     case Type.ClassiFied:
@@ -36,7 +37,7 @@ function subCategoryHref(
 }
 
 const SideCategoriesList = () => {
-  const [selectedCategory, setSelectedCategory] = useState<CategoryNavTree[]>(
+  const [selectedCategory, setSelectedCategory] = useState<ICategoryNavTree[]>(
     [],
   );
   const t = useTranslations("header");
@@ -44,7 +45,7 @@ const SideCategoriesList = () => {
   const router = useRouter();
   const { data, isLoading } = useQuery({
     queryKey: ["categoriesTree"],
-    queryFn: getCategoriesTree,
+    queryFn: getCategoriesTreeService,
   });
   return (
     <Sheet>
@@ -138,7 +139,10 @@ const SideCategoriesList = () => {
                         setSelectedCategory((p) => [...p, category]);
                       } else {
                         router.push(
-                          subCategoryHref(category, selectedCategory.slice(-1)[0]),
+                          subCategoryHref(
+                            category,
+                            selectedCategory.slice(-1)[0],
+                          ),
                         );
                       }
                     }}

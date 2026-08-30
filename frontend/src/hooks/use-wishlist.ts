@@ -22,6 +22,8 @@ import {
   updateWishlistGroupService,
 } from "../services/wishlist";
 import { useAuthContext } from "../providers/auth-provider";
+import { Input } from "../components/ui/base-inputs/input";
+import { AddedItemToast } from "../features/noon/wishlist/added-item-toast";
 
 // -----------------------------------------------
 
@@ -113,7 +115,11 @@ export function useWishlist() {
         product_variant_id: productVariantId,
         group_id: groupId,
       }),
-    onSuccess: (_, { groupId }) => invalidateGroup(groupId),
+    onSuccess: (data, { groupId }) => {
+      invalidateGroup(groupId);
+      // toast.success(`Add to "${data.data?.group?.name}" wishlist`);
+      AddedItemToast({ wishlist: data.data });
+    },
     onError,
   });
 

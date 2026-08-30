@@ -11,16 +11,15 @@ import {
   ChevronRight,
   ChevronRightIcon,
   HeartIcon,
-  PlusIcon,
   StarIcon,
 } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
 import { Product } from "@/src/features/noon/home/types";
-import { useCartContext } from "@/src/providers/cart-provider";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Spinner } from "../ui/spinner";
 import useLocale from "@/src/hooks/use-locale";
+import AddToCartButton from "./add-to-cart-button";
 
 type Props = {
   productData: IProduct | Product;
@@ -33,7 +32,6 @@ const ProductCard = ({ productData }: Props) => {
   const locale = useLocale();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
-  const { addItem, isMutating, targetItemMutating } = useCartContext();
   const {
     addItem: addToWishlist,
     isMutating: isAddingWishlist,
@@ -92,23 +90,7 @@ const ProductCard = ({ productData }: Props) => {
           )}
         </Button>
         {/* cart button */}
-        <Button
-          variant={"outline"}
-          className={
-            "absolute bottom-1 lg:bottom-2 right-2 z-10 p-1! min-w-0! min-h-0! aspect-square bg-gray-2"
-          }
-          disabled={isMutating && targetItemMutating === productData.listing_id}
-          onClick={(e) => {
-            e.preventDefault();
-            addItem({ quantity: 1, vendorListingId: productData.listing_id });
-          }}
-        >
-          {isMutating && targetItemMutating === productData.listing_id ? (
-            <Spinner />
-          ) : (
-            <PlusIcon className={`size-4 lg:size-6 `} />
-          )}
-        </Button>
+        <AddToCartButton listingId={productData.listing_id} />
         {/* navigation buttons */}
         <button
           ref={prevRef}

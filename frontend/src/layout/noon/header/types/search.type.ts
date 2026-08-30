@@ -1,5 +1,4 @@
-import { fetchInstance } from "@/src/lib/utils";
-import type { IProduct } from "@/types";
+import { IProduct } from "@/types";
 
 export interface ISearchSuggestionProduct {
   id: number | string;
@@ -34,6 +33,7 @@ export interface ISearchSuggestionsData {
   products: ISearchSuggestionProduct[];
   categories: ISearchSuggestionCategory[];
   vendors: ISearchSuggestionVendor[];
+  trending: string[];
 }
 
 export interface ISearchSuggestionsResponse {
@@ -56,33 +56,3 @@ export interface ISearchResponse {
     };
   };
 }
-
-export const getSearchSuggestionsService = (
-  query: string,
-  signal?: AbortSignal,
-) => {
-  return fetchInstance<ISearchSuggestionsResponse>(
-    `/search/suggestions?q=${encodeURIComponent(query)}`,
-    {
-      method: "GET",
-      signal,
-    },
-  );
-};
-
-export const searchService = (
-  query: string,
-  params?: Record<string, string | number>,
-) => {
-  const queryParams = new URLSearchParams({ q: query });
-  if (params) {
-    Object.entries(params).forEach(([key, val]) => {
-      if (val !== undefined && val !== null && val !== "") {
-        queryParams.set(key, String(val));
-      }
-    });
-  }
-  return fetchInstance<ISearchResponse>(`/search?${queryParams.toString()}`, {
-    method: "GET",
-  });
-};

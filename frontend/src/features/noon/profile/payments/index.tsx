@@ -6,12 +6,7 @@ import { getPaymentHistory } from "./api/payments.actions";
 export default async function Payments() {
   const t = await getTranslations("profile");
 
-  let history = null;
-  try {
-    history = await getPaymentHistory();
-  } catch {
-    // show empty state on error
-  }
+  const history = await getPaymentHistory();
 
   const transactions = history?.items ?? [];
 
