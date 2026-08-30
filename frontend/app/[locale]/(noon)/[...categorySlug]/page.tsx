@@ -5,6 +5,10 @@ import { Product } from "@/types/globals";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
 import { ShopResponse } from "@/src/features/noon/shop/types";
 import FilterSidebar from "@/src/features/noon/shop/filter/desktop-view";
+import {
+  FILTER_PREFIX,
+  resolveApiFilters,
+} from "@/src/helpers/resolveApiFilters";
 
 const TOTAL_PAGES = 5;
 
@@ -29,13 +33,24 @@ export default async function ShopPage({ params, searchParams }: Props) {
   try {
     const queryParams = new URLSearchParams();
     if (categorySlug) queryParams.set("category", categorySlug?.[0]);
-    if (sp.page) queryParams.set("page", sp.page);
-    if (sp.sort) queryParams.set("sort", sp.sort);
-    if (sp.min_price) queryParams.set("price_min", sp.min_price);
-    if (sp.max_price) queryParams.set("price_max", sp.max_price);
-    if (sp.q) queryParams.set("q", sp.q);
+    Object.entries(sp).forEach(([key, value]) => {
+      if (value && !key.startsWith(`${FILTER_PREFIX}_`)) {
+        queryParams.set(key, value);
+      }
+    });
 
     const endpoint = isSearch ? "/search" : "/products";
+    const urlSegments = endpoint.split("/").filter(Boolean);
+    const apiFilters = await resolveApiFilters();
+    const endpointFilter = apiFilters.find((filter) =>
+      urlSegments.includes(filter.targetEndpoint),
+    );
+    if (endpointFilter) {
+      Object.entries(endpointFilter.filters).forEach(([key, value]) => {
+        queryParams.set(key, value);
+      });
+    }
+
     const query = queryParams.toString();
     const res = await fetchInstance<ShopResponse>(
       `${endpoint}${query ? `?${query}` : ""}`,
@@ -55,7 +70,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
   return (
     <main className="container flex flex-col gap-4 py-4 lg:flex-row lg:gap-6">
       <aside className="w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide">
-        <FilterSidebar />
+        <FilterSidebar facets={facets as ShopResponse["data"]["facets"]} />
       </aside>
       <div className="min-w-0 flex-1">
         <Shop

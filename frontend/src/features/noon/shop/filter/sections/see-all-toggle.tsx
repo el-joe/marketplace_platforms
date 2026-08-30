@@ -8,12 +8,16 @@ type SeeAllToggleProps = {
   onToggle: () => void;
 };
 
-const SeeAllToggle = ({ expanded, totalCount, onToggle }: SeeAllToggleProps) => (
+const SeeAllToggle = ({
+  expanded,
+  totalCount,
+  onToggle,
+}: SeeAllToggleProps) => (
   <Button
     type="button"
     variant="link"
     size="sm"
-    className="h-auto self-start p-0 text-xs"
+    className="h-auto self-start p-0 text-xs text-blue"
     onClick={onToggle}
   >
     {expanded ? "See less" : `See all (${totalCount})`}
