@@ -1,5 +1,5 @@
 "use client";
-import SectionTitle from "../../features/noon/home/section-title";
+import SectionTitle from "./page-builder/sections/section-title";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import ListingCard, { IDemoListing } from "./listing-card";
@@ -111,7 +111,11 @@ type props = {
   items?: IDemoListing[];
 };
 
-const CarouselListings = ({ title, showViewAllButton, items = listingItems }: props) => {
+const CarouselListings = ({
+  title,
+  showViewAllButton,
+  items = listingItems,
+}: props) => {
   if (!items.length) return null;
 
   return (

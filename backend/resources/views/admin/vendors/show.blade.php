@@ -361,7 +361,7 @@
             {{-- ── Performance ──────────────────────────────────────────────── --}}
             <div x-show="tab === 'performance'" id="performance-tab">
                 <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-                    <x-stat-card title="{{ __('admin.vendors.total_gmv_stat') }}"    :value="'$' . number_format($vendor->total_sales, 2)"    icon="currency-dollar" icon-bg="bg-success-100 text-success-600"/>
+                    <x-stat-card title="{{ __('admin.vendors.total_gmv_stat') }}"    :value="number_format($vendor->total_sales, 2)"    icon="currency-dollar" icon-bg="bg-success-100 text-success-600"/>
                     <x-stat-card title="{{ __('admin.vendors.total_orders_stat') }}" :value="number_format($vendor->total_orders)"             icon="shopping-bag"    icon-bg="bg-primary-100 text-primary-600"/>
                     <x-stat-card title="{{ __('admin.vendors.avg_rating_stat') }}"   :value="number_format($vendor->store_rating_avg, 1) . ' / 5'" icon="star"       icon-bg="bg-warning-100 text-warning-600"/>
                     <x-stat-card title="{{ __('admin.vendors.return_rate_stat') }}"  :value="$vendor->return_rate_pct . '%'"                   icon="arrow-uturn-left" icon-bg="bg-danger-100 text-danger-600"/>
@@ -374,7 +374,7 @@
                     <div class="grid grid-cols-3 gap-6 text-sm text-center">
                         <div>
                             <div class="text-xs text-gray-500 mb-1">{{ __('admin.vendors.total_gmv') }}</div>
-                            <div class="text-lg font-bold text-gray-900">${{ number_format($vendor->total_sales, 0) }}</div>
+                            <div class="text-lg font-bold text-gray-900">{{ number_format($vendor->total_sales, 0) }}</div>
                             <div class="text-xs text-gray-400">{{ __('admin.vendors.avg_label') }} <span id="avg-gmv">—</span></div>
                         </div>
                         <div>
@@ -782,7 +782,7 @@
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.total_gmv') }}</dt>
-                    <dd class="font-medium text-gray-900">${{ number_format($vendor->total_sales, 2) }}</dd>
+                    <dd class="font-medium text-gray-900">{{ number_format($vendor->total_sales, 2) }}</dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.payout_hold') }}</dt>

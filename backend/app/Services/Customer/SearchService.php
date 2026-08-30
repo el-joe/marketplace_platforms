@@ -40,8 +40,8 @@ class SearchService
             ->with([
                 'vendor:id,store_name,store_rating_avg',
                 'productVariant:id,sku,slug,variant_name,product_id',
-                'productVariant.images',
-                'productVariant.product.images',
+                'productVariant.images' => fn ($q) => $q->orderBy('position')->limit(1),
+                'productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
@@ -105,24 +105,40 @@ class SearchService
      */
     private function adminListingSearch(Country $country, string $query, int $limit = 4): \Illuminate\Support\Collection
     {
-        return AdminListing::where('country_id', $country->id)
-            ->where('status', AdminListingStatus::Active->value)
-            ->whereHas('productVariant.product', function ($q) use ($query) {
-                $q->where('status', 'active')
-                  ->where(function ($q2) use ($query) {
-                      $q2->where('name_en', 'like', "%{$query}%")
-                         ->orWhere('name_ar', 'like', "%{$query}%");
-                  });
-            })
+        $builder = AdminListing::query()
+            ->join('product_variants as pv', 'pv.id', '=', 'admin_listings.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->where('admin_listings.country_id', $country->id)
+            ->where('admin_listings.status', AdminListingStatus::Active->value)
+            ->whereNull('admin_listings.deleted_at')
+            ->where('p.status', 'active')
+            ->whereNull('p.deleted_at')
+            ->select('admin_listings.*');
+
+        if (mb_strlen($query) < 3) {
+            $builder->where(function ($q2) use ($query) {
+                $q2->where('p.name_en', 'like', "%{$query}%")
+                    ->orWhere('p.name_ar', 'like', "%{$query}%");
+            });
+        } else {
+            $terms = preg_split('/\s+/', trim($query), -1, PREG_SPLIT_NO_EMPTY);
+            $boolean = implode(' ', array_map(fn ($term) => '+' . $term . '*', $terms));
+            $builder->whereRaw(
+                'MATCH(p.name_en, p.name_ar, p.short_desc_en, p.model_number) AGAINST (? IN BOOLEAN MODE)',
+                [$boolean],
+            );
+        }
+
+        return $builder
             ->with([
-                'productVariant.product.images',
-                'productVariant.images',
+                'productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+                'productVariant.images' => fn ($q) => $q->orderBy('position')->limit(1),
                 'productVariant.variantAttributes.attribute',
                 'productVariant.variantAttributes.attributeValue',
                 'primaryShippingMethod',
             ])
-            ->orderBy('search_boost', 'desc')
-            ->orderBy('price', 'asc')
+            ->orderBy('admin_listings.search_boost', 'desc')
+            ->orderBy('admin_listings.price', 'asc')
             ->limit($limit)
             ->get();
     }
@@ -166,39 +182,53 @@ class SearchService
         // Listing-centric, same as search(): one row per active vendor listing
         // matching the query, so a product sold by several vendors can surface
         // more than once here too.
-        $listings = VendorListing::where('country_id', $country->id)
-            ->where('status', 'active')
-            ->whereHas('productVariant.product', function ($q) use ($query) {
-                $q->where('status', 'active')
-                    ->where(function ($q2) use ($query) {
-                        $q2->where('name_en', 'like', "%{$query}%")
-                            ->orWhere('name_ar', 'like', "%{$query}%");
-                    });
+        $prefix = Str::lower(trim($query)) . '%';
+
+        $rows = \Illuminate\Support\Facades\DB::table('vendor_listings as vl')
+            ->join('product_variants as pv', 'pv.id', '=', 'vl.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->join('vendors as v', 'v.id', '=', 'vl.vendor_id')
+            ->where('vl.country_id', $country->id)
+            ->where('vl.status', 'active')
+            ->whereNull('vl.deleted_at')
+            ->where('p.status', 'active')
+            ->whereNull('p.deleted_at')
+            ->where('v.global_status', 'active')
+            ->where(function ($q) use ($prefix) {
+                $q->whereRaw('LOWER(p.name_en) like ?', [$prefix])
+                    ->orWhereRaw('LOWER(p.name_ar) like ?', [$prefix]);
             })
-            ->whereHas('vendor', fn($q) => $q->where('global_status', 'active'))
-            ->with([
-                'productVariant.product:id,name_en,name_ar,slug',
-                'productVariant.images',
-                'productVariant.product.images',
-                'vendor:id,store_name',
+            ->select([
+                'vl.id as listing_id',
+                'p.id as product_id',
+                'p.slug',
+                'p.name_en',
+                'p.name_ar',
+                'v.store_name',
             ])
             ->limit(10)
             ->get();
 
-        $productSuggestions = $listings->map(function ($listing) {
-            $product = $listing->productVariant->product;
-            $variant = $listing->productVariant;
+        $productIds = $rows->pluck('product_id')->unique()->values()->all();
+        $images = \Illuminate\Support\Facades\DB::table('product_images')
+            ->whereIn('product_id', $productIds)
+            ->whereNull('product_variant_id')
+            ->orderBy('position')
+            ->get(['product_id', 'path', 'disk'])
+            ->unique('product_id')
+            ->keyBy('product_id');
+
+        $productSuggestions = $rows->map(function ($row) use ($images) {
+            $image = $images->get($row->product_id);
 
             return [
-                'id' => $listing->id,
-                'product_id' => $product->id,
-                'slug' => $product->slug,
-                'name' => app()->getLocale() === 'ar' ? $product->name_ar : $product->name_en,
-                'vendor' => $listing->vendor->store_name,
+                'id' => $row->listing_id,
+                'product_id' => $row->product_id,
+                'slug' => $row->slug,
+                'name' => app()->getLocale() === 'ar' ? $row->name_ar : $row->name_en,
+                'vendor' => $row->store_name,
                 'type' => 'product',
-                'primary_image' => $variant?->images->first()?->url
-                    ?? $product->images->first()?->url
-                    ?? null,
+                'primary_image' => $image ? \Illuminate\Support\Facades\Storage::disk($image->disk)->url($image->path) : null,
             ];
         });
 

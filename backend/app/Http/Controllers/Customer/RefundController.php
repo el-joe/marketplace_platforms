@@ -15,7 +15,8 @@ class RefundController extends Controller
         $customer = auth('customer')->user();
 
         $paginator = Refund::where('initiated_by_customer_id', $customer->id)
-            ->with('order')
+            ->select(['id', 'order_id', 'initiated_by_customer_id', 'amount', 'currency', 'reason', 'refund_type', 'status', 'created_at'])
+            ->with('order:id,order_number')
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -28,7 +29,7 @@ class RefundController extends Controller
 
         $refund = Refund::where('id', $id)
             ->where('initiated_by_customer_id', $customer->id)
-            ->with('order')
+            ->with('order:id,order_number')
             ->first();
 
         if (!$refund) {

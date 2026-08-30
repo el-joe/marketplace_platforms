@@ -25,3 +25,5 @@ Some zones are "exceptional" — expensive or remote. The platform offers free d
 
 
 php artisan db:seed --class=CartCardOfferSeeder
+
+php artisan schema:dump --prune

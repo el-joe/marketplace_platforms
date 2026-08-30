@@ -99,6 +99,30 @@ class CartRecommendationService
         return $sections;
     }
 
+    // ─── Cache helper ───────────────────────────────────────────────────────
+
+    /**
+     * Like Cache::remember(), but discards and recomputes on a corrupt/stale
+     * cached value (e.g. __PHP_Incomplete_Class from a renamed model after deploy).
+     */
+    private function cacheRememberCollection(string $key, \Closure $callback): Collection
+    {
+        $value = Cache::get($key);
+
+        if ($value instanceof Collection) {
+            return $value;
+        }
+
+        if ($value !== null) {
+            Cache::forget($key);
+        }
+
+        $value = $callback();
+        Cache::put($key, $value, self::CACHE_TTL);
+
+        return $value;
+    }
+
     // ─── Section builders ─────────────────────────────────────────────────────
 
     private function fbtSection(
@@ -112,7 +136,7 @@ class CartRecommendationService
 
         $cacheKey = 'cart_recs:fbt:' . md5(implode(',', $cartProductIds)) . ":{$countryId}:{$isNawyNow}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
+        return $this->cacheRememberCollection($cacheKey, function () use (
             $cartProductIds, $cartListingIds, $countryId, $currency,
             $isNawyNow, $country, $wishlistIds,
         ) {
@@ -145,7 +169,7 @@ class CartRecommendationService
 
         $cacheKey = 'cart_recs:categories:' . md5(implode(',', $cartCategoryIds)) . ":{$countryId}:{$isNawyNow}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
+        return $this->cacheRememberCollection($cacheKey, function () use (
             $cartCategoryIds, $cartListingIds, $countryId, $currency,
             $isNawyNow, $country, $wishlistIds,
         ) {
@@ -187,7 +211,7 @@ class CartRecommendationService
     ): Collection {
         $cacheKey = "cart_recs:best_sellers:{$countryId}:{$currency}:{$isNawyNow}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
+        return $this->cacheRememberCollection($cacheKey, function () use (
             $cartListingIds, $countryId, $currency,
             $isNawyNow, $country, $wishlistIds,
         ) {

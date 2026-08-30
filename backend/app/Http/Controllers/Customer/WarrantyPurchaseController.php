@@ -23,7 +23,11 @@ class WarrantyPurchaseController extends Controller
         ]);
 
         $query = WarrantyPurchase::forCustomer($customer->id)
-            ->with(['orderItem', 'plan'])
+            ->select(['id', 'customer_id', 'order_id', 'order_item_id', 'warranty_plan_id', 'plan_snapshot', 'price_paid', 'currency', 'status', 'coverage_starts_at', 'coverage_ends_at', 'created_at'])
+            ->with([
+                'orderItem:id,sku,product_snapshot',
+                'plan:id,duration_months',
+            ])
             ->orderByDesc('created_at');
 
         if ($request->filled('status')) {
@@ -44,7 +48,10 @@ class WarrantyPurchaseController extends Controller
 
         $purchase = WarrantyPurchase::where('id', $id)
             ->where('customer_id', $customer->id)
-            ->with(['orderItem', 'plan'])
+            ->with([
+                'orderItem:id,sku,product_snapshot',
+                'plan:id,duration_months',
+            ])
             ->first();
 
         if (!$purchase) {
