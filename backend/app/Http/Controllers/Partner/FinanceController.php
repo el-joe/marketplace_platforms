@@ -243,15 +243,15 @@ class FinanceController extends Controller
             $shipment->created_at->format('Y-m-d'),
             $shipment->sub_order_number,
             $shipment->order?->order_number,
-            number_format($shipment->shipping / 100, 2, '.', ''),
-            number_format($shipment->admin_subsidy_amount / 100, 2, '.', ''),
-            number_format($shipment->vendor_contribution_amount / 100, 2, '.', ''),
-            $shipment->shipping_gap > 0 ? number_format($shipment->vendor_contribution_amount / 100, 2, '.', '') : '',
+            number_format($shipment->shipping , 2, '.', ''),
+            number_format($shipment->admin_subsidy_amount , 2, '.', ''),
+            number_format($shipment->vendor_contribution_amount , 2, '.', ''),
+            $shipment->shipping_gap > 0 ? number_format($shipment->vendor_contribution_amount , 2, '.', '') : '',
             $currency,
         ]);
 
         $totalExceptionalDeduction = $shipments->where('shipping_gap', '>', 0)->sum('vendor_contribution_amount');
-        $rows->push(['', '', '', '', '', '', 'Exceptional Zone Deduction Subtotal (' . $currency . ')', number_format($totalExceptionalDeduction / 100, 2, '.', '')]);
+        $rows->push(['', '', '', '', '', '', 'Exceptional Zone Deduction Subtotal (' . $currency . ')', number_format($totalExceptionalDeduction , 2, '.', '')]);
 
         $filename = 'sales-report-' . $dateFrom->toDateString() . '-to-' . $dateTo->toDateString();
         $format = $request->input('format', 'csv');

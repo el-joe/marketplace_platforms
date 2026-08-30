@@ -13,8 +13,8 @@ class VendorFbpSubsidySetting extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'admin_subsidy_cents',
-        'full_coverage_threshold_cents',
+        'admin_subsidy',
+        'full_coverage_threshold',
         'exceptional_zone_shipping_zone_ids',
         'is_active',
     ];

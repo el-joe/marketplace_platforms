@@ -80,8 +80,8 @@ class TransactionController extends Controller
             'gateway' => fn($q, $v) => $q->where('payment_transactions.gateway', $v),
             'date_from' => fn($q, $v) => $q->whereDate('payment_transactions.created_at', '>=', $v),
             'date_to' => fn($q, $v) => $q->whereDate('payment_transactions.created_at', '<=', $v),
-            'amount_min' => fn($q, $v) => $q->where('payment_transactions.amount', '>=', (int) round($v * 100)),
-            'amount_max' => fn($q, $v) => $q->where('payment_transactions.amount', '<=', (int) round($v * 100)),
+            'amount_min' => fn($q, $v) => $q->where('payment_transactions.amount', '>=', (int) round($v)),
+            'amount_max' => fn($q, $v) => $q->where('payment_transactions.amount', '<=', (int) round($v)),
         ]);
     }
 
@@ -100,7 +100,7 @@ class TransactionController extends Controller
         $rows = $transactions->map(fn($tx) => [
             $tx->gateway_transaction_id,
             $tx->payment_method_type,
-            number_format($tx->amount / 100, 2),
+            number_format($tx->amount, 2),
             strtoupper($tx->currency),
             $tx->status?->value,
             $tx->gateway,
@@ -175,7 +175,7 @@ class TransactionController extends Controller
                 'customer' => $customerLink,
                 'type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $typeBadge . '">' . e($tx->type->value) . '</span>',
                 'gateway' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">' . e($tx->gateway) . '</span>',
-                'amount' => '<span class="font-semibold tabular-nums text-sm">' . number_format($tx->amount / 100, 2) . ' ' . e($tx->currency) . '</span>',
+                'amount' => '<span class="font-semibold tabular-nums text-sm">' . number_format($tx->amount, 2) . ' ' . e($tx->currency) . '</span>',
                 'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($tx->status->value) . '</span>',
                 'failure_code' => $tx->failure_code
                     ? '<span class="font-mono text-xs text-red-600" title="' . e($tx->failure_message) . '">' . e($tx->failure_code) . '</span>'
@@ -263,7 +263,7 @@ class TransactionController extends Controller
                 $rejectUrl = route('admin.transactions.refunds.reject', $refund->id);
                 $actions = '<div class="flex items-center gap-1">'
                     . '<button class="btn btn-xs btn-success js-approve-refund" data-url="' . $approveUrl . '">Approve</button>'
-                    . '<button class="btn btn-xs btn-danger js-reject-refund" data-url="' . $rejectUrl . '" data-amount="' . number_format($refund->amount / 100, 2) . ' ' . e($refund->currency) . '">Reject</button>'
+                    . '<button class="btn btn-xs btn-danger js-reject-refund" data-url="' . $rejectUrl . '" data-amount="' . number_format($refund->amount, 2) . ' ' . e($refund->currency) . '">Reject</button>'
                     . '</div>';
             }
 
@@ -271,7 +271,7 @@ class TransactionController extends Controller
                 'DT_RowId' => 'refund-' . $refund->id,
                 'order' => $orderLink,
                 'customer' => '<span class="text-sm">' . e($refund->customer_name ?? '—') . '</span>',
-                'amount' => '<span class="font-semibold tabular-nums text-sm">' . number_format($refund->amount / 100, 2) . ' ' . e($refund->currency) . '</span>',
+                'amount' => '<span class="font-semibold tabular-nums text-sm">' . number_format($refund->amount, 2) . ' ' . e($refund->currency) . '</span>',
                 'reason' => '<span class="text-sm text-gray-700">' . e($refund->reason->value) . '</span>',
                 'refund_type' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">' . e(str_replace('_', ' ', $refund->refund_type->value)) . '</span>',
                 'vendor_charged_back' => $chargedBack,

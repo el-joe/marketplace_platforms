@@ -696,6 +696,10 @@ class AdminListingController extends Controller
 
     private function serializeRef(ProductCostReference $ref): array
     {
+        $currency = $ref->adminListing?->currency
+            ?? $ref->vendorListing?->currency
+            ?? '';
+
         return [
             'id' => $ref->id,
             'product_id' => $ref->product_id,
@@ -705,6 +709,7 @@ class AdminListingController extends Controller
             'manufacturer_cost' => $ref->manufacturer_cost,
             'shipping_cost' => $ref->shipping_cost,
             'landed_cost' => $ref->landed_cost,
+            'currency' => $currency,
             'platform_margin_pct' => $ref->platform_margin_pct,
             'competitor_links' => $ref->competitorLinksNormalized(),
             'competitor_last_checked' => $ref->competitor_last_checked?->toISOString(),
@@ -712,9 +717,9 @@ class AdminListingController extends Controller
             'created_by' => $ref->createdByAdmin?->name ?? 'System',
             'updated_by' => $ref->updatedByAdmin?->name ?? null,
             'updated_at' => $ref->updated_at?->toISOString(),
-            'manufacturer_cost_formatted' => $ref->manufacturerCostFormatted(),
-            'shipping_cost_formatted' => $ref->shippingCostFormatted(),
-            'landed_cost_formatted' => $ref->landedCostFormatted(),
+            'manufacturer_cost_formatted' => $ref->manufacturerCostFormatted($currency),
+            'shipping_cost_formatted' => $ref->shippingCostFormatted($currency),
+            'landed_cost_formatted' => $ref->landedCostFormatted($currency),
         ];
     }
 

@@ -4,7 +4,7 @@ import { Button } from "@/src/components/ui/button";
 import { ArrowBigRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
@@ -66,11 +66,30 @@ const warranties = [
 
 export default function ExtendedWarranty({
   warrantiesData,
+  listingId,
 }: {
   warrantiesData: IProductDetails["warranty_plans"];
+  listingId: string;
 }) {
   const t = useTranslations("productView");
   const locale = useLocale();
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
+  const selectPlan = (planId: string) => {
+    const next = selectedPlanId === planId ? null : planId;
+    setSelectedPlanId(next);
+    try {
+      const key = `warranty-selection:${listingId}`;
+      if (next) {
+        sessionStorage.setItem(key, next);
+      } else {
+        sessionStorage.removeItem(key);
+      }
+    } catch {
+      // sessionStorage unavailable (private browsing, SSR) — selection still works in-memory.
+    }
+  };
+
   return (
     <>
       <h5 className="text-gray font-semibold mb-3">
@@ -90,7 +109,9 @@ export default function ExtendedWarranty({
         {warrantiesData.map((warranty) => (
           <SwiperSlide key={warranty.id} className="">
             <div
-              className={`p-3 rounded-md border border-border cursor-pointer transition-all hover:border-black`}
+              className={`p-3 rounded-md border cursor-pointer transition-all hover:border-black ${
+                selectedPlanId === warranty.id ? "border-blue-3" : "border-border"
+              }`}
             >
               <div className="flex gap-2 items-center">
                 <Image
@@ -129,12 +150,15 @@ export default function ExtendedWarranty({
                   currency={warranty.currency}
                 />
                 <Button
-                  variant={"outline"}
+                  variant={selectedPlanId === warranty.id ? "default" : "outline"}
+                  onClick={() => selectPlan(warranty.id)}
                   className={
-                    "bg-transparent! px-12 py-2 text-lg text-blue font-bold border-blue"
+                    selectedPlanId === warranty.id
+                      ? "px-12 py-2 text-lg font-bold bg-blue-3 text-white border-blue-3"
+                      : "bg-transparent! px-12 py-2 text-lg text-blue font-bold border-blue"
                   }
                 >
-                  {t("select")}
+                  {selectedPlanId === warranty.id ? t("selected") : t("select")}
                 </Button>
               </div>
             </div>

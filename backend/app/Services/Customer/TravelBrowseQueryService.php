@@ -38,10 +38,10 @@ class TravelBrowseQueryService
             });
 
         if (!empty($filters['price_min'])) {
-            $query->where('price', '>=', (int) ($filters['price_min'] * 100));
+            $query->where('price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $query->where('price', '<=', (int) ($filters['price_max'] * 100));
+            $query->where('price', '<=', (int) $filters['price_max']);
         }
         if (!empty($filters['duration_min'])) {
             $query->where('duration_days', '>=', (int) $filters['duration_min']);
@@ -99,8 +99,8 @@ class TravelBrowseQueryService
 
         return [
             'price_range' => [
-                'min' => $range ? round($range->low / 100, 2) : 0,
-                'max' => $range ? round($range->high / 100, 2) : 0,
+                'min' => $range ? (int) $range->low : 0,
+                'max' => $range ? (int) $range->high : 0,
             ],
             'duration_range' => [
                 'min' => $range ? (int) $range->dur_min : 0,

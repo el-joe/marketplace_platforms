@@ -45,7 +45,7 @@ Object.assign(window.TRANSLATIONS, {
 
     {{-- ─── Stats ──────────────────────────────────────────────────────────────── --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
-        <x-stat-card title="{{ __('admin.transactions.volume_today') }}" :value="'$' . number_format($stats['volume_today'] / 100, 2)"
+        <x-stat-card title="{{ __('admin.transactions.volume_today') }}" :value="number_format($stats['volume_today'], 2)"
             iconBg="bg-green-100 text-green-600" />
         <x-stat-card title="{{ __('admin.transactions.succeeded_today') }}" :value="number_format($stats['succeeded_today'])"
             iconBg="bg-success-100 text-success-600" />

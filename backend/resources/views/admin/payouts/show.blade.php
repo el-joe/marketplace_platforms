@@ -9,7 +9,7 @@
 @section('content')
     @php
         $currency = strtoupper($payout->currency);
-        $fmt = fn($cents) => $currency . ' ' . number_format($cents / 100, 2);
+        $fmt = fn($cents) => $currency . ' ' . number_format($cents, 2);
 
         $statusColors = [
             'pending'    => 'gray',

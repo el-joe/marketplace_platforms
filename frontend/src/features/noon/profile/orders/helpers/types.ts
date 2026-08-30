@@ -100,6 +100,16 @@ export type TrackingEvent = {
   occurred_at: string;
 };
 
+export type OrderWarrantySummary = {
+  id: string;
+  status: "pending" | "active" | "expired" | "cancelled";
+  coverage_starts_at: string | null;
+  coverage_ends_at: string | null;
+  price_paid: number;
+  currency: string;
+  is_claimable: boolean;
+};
+
 export type OrderDetailItem = {
   id: string;
   sku: string;
@@ -114,6 +124,8 @@ export type OrderDetailItem = {
   return_eligible_until: string | null;
   can_return: boolean;
   can_review: boolean;
+  warranty: OrderWarrantySummary | null;
+  can_claim_warranty: boolean;
 };
 
 export type OrderDetailSubOrder = {

@@ -110,7 +110,7 @@ Renders the appropriate input type based on the setting's decoded PHP value.
                 @if($isCents)
                     <span class="text-xs text-gray-500">
                         = <strong class="js-cents-display"
-                            data-cents="{{ $display }}">{{ number_format(($display ?? 0) / 100, 2) }}</strong> ({{ __('admin.settings_section.currency_units_suffix') }})
+                            data-value="{{ $display }}">{{ number_format(($display ?? 0), 2) }}</strong> ({{ __('admin.settings_section.currency_units_suffix') }})
                     </span>
                 @endif
             </div>

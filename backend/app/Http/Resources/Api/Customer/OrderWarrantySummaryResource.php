@@ -17,6 +17,9 @@ class OrderWarrantySummaryResource extends JsonResource
             'status' => $this->status,
             'coverage_starts_at' => $this->coverage_starts_at?->toDateString(),
             'coverage_ends_at' => $this->coverage_ends_at?->toDateString(),
+            'is_claimable' => $this->status === 'active'
+                && $this->coverage_ends_at !== null
+                && $this->coverage_ends_at->greaterThanOrEqualTo(today()),
         ];
     }
 }

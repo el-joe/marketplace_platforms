@@ -43,10 +43,17 @@ class WarrantyPurchaseResource extends JsonResource
                 'sku' => $this->orderItem?->sku,
             ],
             'order_id' => $this->order_id,
+            'order_item_id' => $this->order_item_id,
             'created_at' => $this->created_at?->toIso8601String(),
             'is_claimable' => $this->status === 'active'
                 && $this->coverage_ends_at !== null
-                && $this->coverage_ends_at->greaterThanOrEqualTo(today()),
+                && $this->coverage_ends_at->greaterThanOrEqualTo(today())
+                && ! \App\Models\WarrantyClaim::where('order_item_id', $this->order_item_id)
+                    ->whereNotIn('status', [
+                        \App\Models\WarrantyClaim::STATUS_REJECTED,
+                        \App\Models\WarrantyClaim::STATUS_RESOLVED,
+                    ])
+                    ->exists(),
         ];
     }
 }

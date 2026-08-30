@@ -108,7 +108,8 @@ class CouponController extends Controller
     public function create(): View
     {
         $vendor = Auth::guard('vendor')->user()->vendor()->with('country')->first();
-        $vendorCurrency = $vendor->country?->currency_code ?? 'SAR';
+        $vendorCurrency = $vendor->country?->currency_code
+            ?? throw new \RuntimeException("Vendor {$vendor->id} has no country configured.");
 
         return view('vendor.coupons.create', [
             'coupon' => null,
@@ -213,7 +214,10 @@ class CouponController extends Controller
         $couponData = VendorCouponResource::make($coupon)->resolve();
 
         $vendor = $actor->vendor()->with('country')->first();
-        $vendorCurrency = $vendor->country?->currency_code ?? $couponData['currency'] ?? 'SAR';
+        $vendorCurrency = $vendor->country?->currency_code ?? $couponData['currency'] ?? null;
+        if (! $vendorCurrency) {
+            abort(422, 'Cannot determine currency for this coupon.');
+        }
 
         return view('vendor.coupons.create', [
             'coupon' => $couponData,

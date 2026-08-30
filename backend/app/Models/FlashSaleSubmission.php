@@ -132,12 +132,12 @@ class FlashSaleSubmission extends Model
 
     public function getFlashPriceFormattedAttribute(): string
     {
-        return number_format($this->flash_price / 100, 2) . ' ' . ($this->flash_price_currency ?? '');
+        return number_format($this->flash_price, 2) . ' ' . ($this->flash_price_currency ?? '');
     }
 
     public function getOriginalPriceFormattedAttribute(): string
     {
-        return number_format($this->original_price / 100, 2) . ' ' . ($this->flash_price_currency ?? '');
+        return number_format($this->original_price, 2) . ' ' . ($this->flash_price_currency ?? '');
     }
 
     public function getDiscountSavingsAttribute(): int
@@ -152,7 +152,7 @@ class FlashSaleSubmission extends Model
 
     public function getRevenueFormattedAttribute(): string
     {
-        return number_format($this->getRevenueAttribute() / 100, 2) . ' ' . ($this->flash_price_currency ?? '');
+        return number_format($this->getRevenueAttribute(), 2) . ' ' . ($this->flash_price_currency ?? '');
     }
 
     /** Returns whichever listing FK is set (vendor_listing_id XOR admin_listing_id). */

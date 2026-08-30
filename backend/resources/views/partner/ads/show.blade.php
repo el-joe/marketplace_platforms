@@ -248,7 +248,7 @@
                                         {{ __('partner.ads.match_types.' . $kw->match_type->value) }}
                                     </span>
                                     @if ($kw->bid_override)
-                                        <span class="text-xs text-amber-600">{{ number_format($kw->bid_override / 100, 2) }} {{ $adCurrency }}</span>
+                                        <span class="text-xs text-amber-600">{{ number_format($kw->bid_override, 2) }} {{ $adCurrency }}</span>
                                     @endif
                                 </div>
                             @empty
@@ -267,7 +267,7 @@
                                 <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
                                     {{ $ct->category?->name_ar ?? $ct->category?->name_en ?? '—' }}
                                     @if ($ct->bid_override)
-                                        <span class="ms-1 text-xs text-amber-600">{{ number_format($ct->bid_override / 100, 2) }}</span>
+                                        <span class="ms-1 text-xs text-amber-600">{{ number_format($ct->bid_override, 2) }}</span>
                                     @endif
                                 </span>
                             @empty

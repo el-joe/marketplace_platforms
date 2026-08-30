@@ -321,7 +321,7 @@ class SubscriptionController extends Controller
                 '<span class="font-mono text-xs">' . e($row->invoice_number) . '</span>',
                 e($row->store_name),
                 e($row->plan_name_en),
-                number_format($row->amount / 100, 2) . ' ' . $row->currency,
+                number_format($row->amount, 2) . ' ' . $row->currency,
                 '<span class="badge badge-' . $sc . '">' . ucfirst($row->status->value) . '</span>',
                 $row->period_start,
                 $row->paid_at ?? '—',

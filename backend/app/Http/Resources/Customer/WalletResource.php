@@ -14,7 +14,7 @@ class WalletResource extends JsonResource
             'balance'         => $this->balance,
             'pending_balance' => $this->pending_balance,
             'currency'              => $this->currency,
-            'formatted_balance'     => number_format($this->balance / 100, 2, '.', ''),
+            'formatted_balance'     => number_format($this->balance, 0, '.', ''),
             'is_frozen'             => $this->is_frozen,
         ];
     }

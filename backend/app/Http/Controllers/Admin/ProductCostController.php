@@ -28,6 +28,7 @@ class ProductCostController extends Controller
 
         $product = Product::where('id', $productId)->whereNull('deleted_at')->firstOrFail();
         $ref = ProductCostReference::where('product_id', $productId)->first();
+        $ref?->load(['vendorListing', 'adminListing']);
 
         // Lowest active vendor listing price — used for margin alert
         $lowestPriceCents = VendorListing::query()
@@ -97,7 +98,7 @@ class ProductCostController extends Controller
         return response()->json([
             'success' => true,
             'message' => $message,
-            'ref' => $this->serializeRef($ref->fresh()),
+            'ref' => $this->serializeRef($ref->fresh()->load(['vendorListing', 'adminListing'])),
         ]);
     }
 
@@ -118,7 +119,10 @@ class ProductCostController extends Controller
             'manufacturer_cost' => ['nullable', 'integer', 'min:0'],
             'shipping_cost' => ['nullable', 'integer', 'min:0'],
             'landed_cost' => ['nullable', 'integer', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
         ]);
+
+        $currency = strtoupper($data['currency'] ?? '');
 
         $selling = (int) $data['selling_price'];
 
@@ -134,6 +138,7 @@ class ProductCostController extends Controller
         $marginPct = round(($selling - $landed) / $selling * 100, 2);
         $profit = $selling - $landed;
         $belowCost = $selling <= $landed;
+        $suffix = $currency ? ' ' . $currency : '';
 
         return response()->json([
             'selling_price' => $selling,
@@ -141,9 +146,10 @@ class ProductCostController extends Controller
             'profit' => $profit,
             'margin_pct' => $marginPct,
             'below_cost' => $belowCost,
-            'selling_formatted' => number_format($selling / 100, 2) . ' EGP',
-            'landed_formatted' => number_format($landed / 100, 2) . ' EGP',
-            'profit_formatted' => number_format($profit / 100, 2) . ' EGP',
+            'currency' => $currency,
+            'selling_formatted' => number_format($selling, 2) . $suffix,
+            'landed_formatted' => number_format($landed, 2) . $suffix,
+            'profit_formatted' => number_format($profit, 2) . $suffix,
         ]);
     }
 
@@ -189,7 +195,7 @@ class ProductCostController extends Controller
                 $price = $this->extractPriceFromHtml($html);
 
                 if ($price !== null) {
-                    $link['price'] = (int) round($price * 100);
+                    $link['price'] = (int) round($price);
                     $updated++;
                 }
                 $link['last_checked'] = $checkedAt;
@@ -281,6 +287,10 @@ class ProductCostController extends Controller
 
     private function serializeRef(ProductCostReference $ref): array
     {
+        $currency = $ref->vendorListing?->currency
+            ?? $ref->adminListing?->currency
+            ?? '';
+
         return [
             'id' => $ref->id,
             'product_id' => $ref->product_id,
@@ -291,6 +301,7 @@ class ProductCostController extends Controller
             'manufacturer_cost' => $ref->manufacturer_cost,
             'shipping_cost' => $ref->shipping_cost,
             'landed_cost' => $ref->landed_cost,
+            'currency' => $currency,
             'platform_margin_pct' => $ref->platform_margin_pct,
             'competitor_links' => $ref->competitorLinksNormalized(),
             'competitor_last_checked' => $ref->competitor_last_checked?->toISOString(),
@@ -299,9 +310,9 @@ class ProductCostController extends Controller
             'updated_by' => $ref->updatedByAdmin?->name ?? null,
             'updated_at' => $ref->updated_at?->toISOString(),
             // formatted helpers
-            'manufacturer_cost_formatted' => $ref->manufacturerCostFormatted(),
-            'shipping_cost_formatted' => $ref->shippingCostFormatted(),
-            'landed_cost_formatted' => $ref->landedCostFormatted(),
+            'manufacturer_cost_formatted' => $ref->manufacturerCostFormatted($currency),
+            'shipping_cost_formatted' => $ref->shippingCostFormatted($currency),
+            'landed_cost_formatted' => $ref->landedCostFormatted($currency),
         ];
     }
 }

@@ -217,8 +217,8 @@ class AssignmentController extends Controller
             if ($diffCents > 5 && $diffPct > 0.05) {
                 // More than 5% discrepancy — require a note
                 if (empty($validated['discrepancy_note'])) {
-                    $expectedFormatted = number_format($expectedCents / 100, 2);
-                    $collectedFormatted = number_format($collectedCents / 100, 2);
+                    $expectedFormatted = number_format($expectedCents, 2);
+                    $collectedFormatted = number_format($collectedCents, 2);
                     return response()->json([
                         'message' => __('delivery.messages.assignments.cod_amount_mismatch', [
                             'collected' => $collectedFormatted,

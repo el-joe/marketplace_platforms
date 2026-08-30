@@ -48,14 +48,4 @@ class Wallet extends Model
     {
         return $this->hasMany(WalletWithdrawalRequest::class)->orderByDesc('created_at');
     }
-
-    public function getBalanceAttribute(): float
-    {
-        return $this->attributes['balance'] / 100;
-    }
-
-    public function getPendingBalanceAttribute(): float
-    {
-        return $this->attributes['pending_balance'] / 100;
-    }
 }

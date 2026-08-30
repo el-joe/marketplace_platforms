@@ -54,7 +54,7 @@ class FlashSaleController extends Controller
             'live_count' => FlashSale::where('status', 'live')->count(),
             'upcoming_count' => FlashSale::whereIn('status', ['approved', 'submission_open'])->count(),
             'total_this_month_units' => (int) FlashSaleAnalytic::whereMonth('date', now()->month)->sum('units_sold'),
-            'total_this_month_revenue' => (float) (FlashSaleAnalytic::whereMonth('date', now()->month)->sum('gross_revenue') / 100),
+            'total_this_month_revenue' => (float) FlashSaleAnalytic::whereMonth('date', now()->month)->sum('gross_revenue'),
         ];
 
         return view('admin.flash-sales.index', compact('countries', 'stats'));
@@ -477,8 +477,8 @@ class FlashSaleController extends Controller
                 'product_image_url' => $productImage?->url ?? null,
                 'vendor_store_name' => $isAdminListing ? null : e($row->vendor_store_name),
                 'vendor_id' => $row->vendor_id,
-                'original_price_formatted' => number_format($row->original_price / 100, 2) . ' ' . $row->flash_price_currency,
-                'flash_price_formatted' => number_format($row->flash_price / 100, 2) . ' ' . $row->flash_price_currency,
+                'original_price_formatted' => number_format($row->original_price, 2) . ' ' . $row->flash_price_currency,
+                'flash_price_formatted' => number_format($row->flash_price, 2) . ' ' . $row->flash_price_currency,
                 'flash_price_raw' => $row->flash_price,
                 'calculated_discount_pct' => $discountPct,
                 'discount_ok' => $discountPct >= $minPct,
@@ -736,7 +736,7 @@ class FlashSaleController extends Controller
             ->map(fn($r) => [
                 'date' => $r->recorded_at->toDateString(),
                 'price_raw' => $r->price,
-                'price_formatted' => number_format($r->price / 100, 2),
+                'price_formatted' => number_format($r->price, 2),
             ]);
 
         $listing = $isAdminListing ? $submission->adminListing : $submission->vendorListing;
@@ -762,8 +762,8 @@ class FlashSaleController extends Controller
                 'admin_listing_id' => $submission->admin_listing_id,
                 'flash_price_raw' => $submission->flash_price,
                 'original_price_raw' => $submission->original_price,
-                'flash_price_formatted' => number_format($submission->flash_price / 100, 2) . ' ' . $submission->flash_price_currency,
-                'original_price_formatted' => number_format($submission->original_price / 100, 2) . ' ' . $submission->flash_price_currency,
+                'flash_price_formatted' => number_format($submission->flash_price, 2) . ' ' . $submission->flash_price_currency,
+                'original_price_formatted' => number_format($submission->original_price, 2) . ' ' . $submission->flash_price_currency,
                 'calculated_discount_pct' => (float) $submission->calculated_discount_pct,
                 'admin_notes' => $submission->admin_notes,
                 'vendor_notes' => $submission->vendor_notes,
@@ -801,7 +801,7 @@ class FlashSaleController extends Controller
             'data' => $rows->map(fn($r) => [
                 'date' => $r->recorded_at->toDateString(),
                 'price_raw' => $r->price,
-                'price_formatted' => number_format($r->price / 100, 2),
+                'price_formatted' => number_format($r->price, 2),
             ])
         ]);
     }
@@ -843,13 +843,13 @@ class FlashSaleController extends Controller
                 'vendor_name' => '',
                 'quantity_sold' => $s->quantity_sold,
                 'quantity_remaining' => $s->quantity_remaining,  // virtual column
-                'revenue_formatted' => number_format(($s->flash_price * $s->quantity_sold) / 100, 2),
+                'revenue_formatted' => number_format($s->flash_price * $s->quantity_sold, 2),
             ]);
 
         return response()->json([
             'data' => [
                 'total_units_sold' => (int) ($totals->units ?? 0),
-                'total_revenue' => (float) (($totals->revenue ?? 0) / 100),
+                'total_revenue' => (float) ($totals->revenue ?? 0),
                 'sold_out_count' => (int) ($totals->sold_out ?? 0),
                 'time_remaining_seconds' => max(0, now()->diffInSeconds($flashSale->sale_ends_at, false)),
                 'top_submissions' => $top,

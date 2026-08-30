@@ -13,7 +13,7 @@
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
             <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.shipping_charged_to_customers') }}</p>
             <p class="text-2xl font-bold text-gray-800">
-                {{ number_format($totals->total_shipping_charged / 100, 2) }}
+                {{ number_format($totals->total_shipping_charged, 2) }}
                 <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
             </p>
             <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.shipping_charged_to_customers_desc') }}</p>
@@ -22,7 +22,7 @@
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
             <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.platform_delivery_subsidy') }}</p>
             <p class="text-2xl font-bold text-green-600">
-                {{ number_format($totals->total_platform_subsidy / 100, 2) }}
+                {{ number_format($totals->total_platform_subsidy, 2) }}
                 <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
             </p>
             <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.platform_delivery_subsidy_desc') }}</p>
@@ -32,7 +32,7 @@
             <div class="bg-white rounded-2xl border border-gray-200 p-5">
                 <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.delivery_cost_you_covered') }}</p>
                 <p class="text-2xl font-bold text-red-500">
-                    {{ number_format($totals->total_vendor_contribution / 100, 2) }}
+                    {{ number_format($totals->total_vendor_contribution, 2) }}
                     <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
                 </p>
                 <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.delivery_cost_you_covered_desc') }}</p>
@@ -43,7 +43,7 @@
             <div class="bg-white rounded-2xl border border-orange-200 p-5">
                 <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.exceptional_zone_deduction') }}</p>
                 <p class="text-2xl font-bold text-orange-600">
-                    {{ number_format($exceptionalTotals->total_exceptional_deduction / 100, 2) }}
+                    {{ number_format($exceptionalTotals->total_exceptional_deduction, 2) }}
                     <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
                 </p>
                 <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.exceptional_zone_deduction_desc') }}</p>
@@ -105,20 +105,20 @@
                                     <span class="block text-xs text-gray-400">{{ $shipment->order?->order_number }}</span>
                                 </td>
                                 <td class="py-3 px-4 text-left text-gray-800 whitespace-nowrap">
-                                    {{ number_format($shipment->shipping / 100, 2) }} {{ $currency }}
+                                    {{ number_format($shipment->shipping, 2) }} {{ $currency }}
                                 </td>
                                 <td class="py-3 px-4 text-left text-green-600 whitespace-nowrap">
-                                    {{ number_format($shipment->admin_subsidy_amount / 100, 2) }} {{ $currency }}
+                                    {{ number_format($shipment->admin_subsidy_amount, 2) }} {{ $currency }}
                                 </td>
                                 @if($hasVendorContribution)
                                     <td class="py-3 px-4 text-left text-red-500 whitespace-nowrap">
-                                        {{ number_format($shipment->vendor_contribution_amount / 100, 2) }} {{ $currency }}
+                                        {{ number_format($shipment->vendor_contribution_amount, 2) }} {{ $currency }}
                                     </td>
                                 @endif
                                 @if($hasExceptionalDeduction)
                                     <td class="py-3 px-4 text-left text-orange-600 whitespace-nowrap">
                                         @if($shipment->shipping_gap > 0)
-                                            - {{ number_format($shipment->vendor_contribution_amount / 100, 2) }} {{ $currency }}
+                                            - {{ number_format($shipment->vendor_contribution_amount, 2) }} {{ $currency }}
                                         @else
                                             —
                                         @endif

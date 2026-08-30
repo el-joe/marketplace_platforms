@@ -172,7 +172,7 @@
                         <div class="bg-slate-800 rounded-xl p-4 mb-3 text-center">
                             <p class="text-xs text-slate-400 mb-1">{{ __('delivery.cod.expected_amount') }}</p>
                             <p class="text-3xl font-extrabold text-yellow-300">
-                                {{ number_format($expectedCodCents / 100, 2) }}
+                                {{ number_format($expectedCodCents, 2) }}
                                 <span class="text-sm font-normal text-slate-400">{{ $order->currency }}</span>
                             </p>
                         </div>
@@ -182,11 +182,11 @@
                             </label>
                             <input type="number" id="cod-amount-input" x-model.number="codAmountCollected"
                                 min="0" step="1"
-                                placeholder="{{ number_format($expectedCodCents / 100, 2) }}"
+                                placeholder="{{ number_format($expectedCodCents, 2) }}"
                                 class="w-full bg-slate-700 text-slate-100 rounded-xl p-3 text-center text-xl font-bold border-2 border-slate-600 focus:border-yellow-400 focus:outline-none transition-colors"
                                 inputmode="decimal">
                             <p class="text-xs text-slate-500 mt-1 text-center">
-                                {{ __('delivery.cod.enter_collected_amount_hint') }}: {{ number_format($expectedCodCents / 100, 2) }}
+                                {{ __('delivery.cod.enter_collected_amount_hint') }}: {{ number_format($expectedCodCents, 2) }}
                             </p>
                         </div>
 
@@ -328,7 +328,7 @@
                 _toastTimer: null,
                 isCod: @json($isCod),
                 expectedCodCents: @json($expectedCodCents),
-                codAmountCollected: @json($isCod ? number_format($expectedCodCents / 100, 2) : 'null'),
+                codAmountCollected: @json($isCod ? number_format($expectedCodCents, 2) : 'null'),
                 discrepancyNote: '',
                 get showDiscrepancyNote() {
                     if (!this.isCod || !this.codAmountCollected) return false;

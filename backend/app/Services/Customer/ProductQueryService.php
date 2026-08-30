@@ -64,12 +64,19 @@ class ProductQueryService
             ->selectRaw('MIN(vl.price) as low, MAX(vl.price) as high')
             ->first();
 
+        if (empty($categoryIds) && !empty($filters['category'])) {
+            $cat = \App\Models\Category::find($filters['category']);
+            $categoryIds = $cat
+                ? app(CategoryService::class)->getDescendantIds($cat)
+                : [$filters['category']];
+        }
+
         return [
             'price_range' => [
-                'min' => $priceRange ? round($priceRange->low / 100, 2) : 0,
-                'max' => $priceRange ? round($priceRange->high / 100, 2) : 0,
+                'min' => $priceRange ? (int) $priceRange->low : 0,
+                'max' => $priceRange ? (int) $priceRange->high : 0,
             ],
-            'attributes' => $this->attributeFacets($base, $categoryIds ?? (!empty($filters['category']) ? [$filters['category']] : [])),
+            'attributes' => $this->attributeFacets($base, $categoryIds ?? []),
         ];
     }
 
@@ -330,16 +337,20 @@ class ProductQueryService
     public function applyFilters($builder, array $filters)
     {
         if (!empty($filters['category'])) {
-            $builder->where('products.category_id', $filters['category']);
+            $category = \App\Models\Category::find($filters['category']);
+            $categoryIds = $category
+                ? app(CategoryService::class)->getDescendantIds($category)
+                : [$filters['category']];
+            $builder->whereIn('products.category_id', $categoryIds);
         }
         if (!empty($filters['brand'])) {
             $builder->where('products.brand_id', $filters['brand']);
         }
         if (!empty($filters['price_min'])) {
-            $builder->havingRaw('MIN(vl.price) >= ?', [(int) ($filters['price_min'] * 100)]);
+            $builder->havingRaw('MIN(vl.price) >= ?', [(int) $filters['price_min']]);
         }
         if (!empty($filters['price_max'])) {
-            $builder->havingRaw('MAX(vl.price) <= ?', [(int) ($filters['price_max'] * 100)]);
+            $builder->havingRaw('MAX(vl.price) <= ?', [(int) $filters['price_max']]);
         }
         if (!empty($filters['rating_min'])) {
             $builder->havingRaw('COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0) >= ?', [$filters['rating_min']]);

@@ -153,7 +153,7 @@ class ShippingWeightSlabController extends Controller
             'max_weight_grams' => $slab->max_weight_grams,
             'weight_range' => $range,
             'extra_fee' => $slab->extra_fee,
-            'extra_fee_formatted' => number_format($slab->extra_fee / 100, 2),
+            'extra_fee_formatted' => number_format($slab->extra_fee, 2),
             'is_active' => $slab->is_active,
             'active_badge' => $slab->is_active
                 ? '<span class="badge badge-success">Active</span>'

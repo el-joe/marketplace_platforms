@@ -37,6 +37,7 @@ class SubOrderDetailResource extends JsonResource
                 'sku' => $item->sku,
                 'name_en' => $item->product_snapshot['name_en'] ?? null,
                 'name_ar' => $item->product_snapshot['name_ar'] ?? null,
+                'thumbnail' => $item->product_snapshot['thumbnail'] ?? $item->product_snapshot['image'] ?? null,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'line_subtotal' => $item->line_subtotal,
@@ -44,7 +45,10 @@ class SubOrderDetailResource extends JsonResource
                 'line_tax' => $item->line_tax,
                 'line_total' => $item->line_total,
                 'fulfillment_status' => $item->fulfillment_status?->value,
-                'warranty' => $item->warrantyPurchase ? (new OrderWarrantySummaryResource($item->warrantyPurchase))->toArray($request) : null,
+                'warranty' => $item->warrantyPurchase
+                    ? (new OrderWarrantySummaryResource($item->warrantyPurchase))->toArray($request)
+                    : null,
+                'can_claim_warranty' => $this->resolveCanClaim($item),
                 'shipping_method' => self::itemShippingMethodPayload($item),
             ]),
             'shipments' => $subOrder->relationLoaded('shipments')
@@ -93,5 +97,25 @@ class SubOrderDetailResource extends JsonResource
             'badge_color_hex' => $method->badge_color_hex,
             'delivery_label_en' => $method->delivery_label_en,
         ];
+    }
+
+    private function resolveCanClaim(OrderItem $item): bool
+    {
+        $purchase = $item->warrantyPurchase;
+
+        if (! $purchase || $purchase->status !== 'active') {
+            return false;
+        }
+
+        if (! $purchase->coverage_ends_at || $purchase->coverage_ends_at->lt(today())) {
+            return false;
+        }
+
+        return ! \App\Models\WarrantyClaim::where('order_item_id', $item->id)
+            ->whereNotIn('status', [
+                \App\Models\WarrantyClaim::STATUS_REJECTED,
+                \App\Models\WarrantyClaim::STATUS_RESOLVED,
+            ])
+            ->exists();
     }
 }

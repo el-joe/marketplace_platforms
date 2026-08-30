@@ -181,7 +181,7 @@ class ListingController extends Controller
         $rows = $items->map(fn($row) => [
             $row->sku,
             $row->name_en,
-            number_format($row->price / 100, 2),
+            number_format($row->price, 2),
             $row->currency,
             $row->fulfillment_model instanceof \BackedEnum ? $row->fulfillment_model->value : $row->fulfillment_model,
             $row->status instanceof VendorListingStatus ? $row->status->value : $row->status,
@@ -236,7 +236,7 @@ class ListingController extends Controller
                 'variant_name' => $row->variant_name ?: '—',
                 'sku' => $row->sku,
                 'status' => $row->status instanceof VendorListingStatus ? $row->status->value : $row->status,
-                'price' => number_format($row->price / 100, 2),
+                'price' => number_format($row->price, 2),
                 'price_raw' => $row->price,
                 'available_stock' => $stockHtml,
                 'available_raw' => $available,
@@ -775,7 +775,7 @@ class ListingController extends Controller
                 'vendor_id' => $vendorId,
                 'product_variant_id' => $resolvedVariantId,
                 'country_id' => $request->country_id,
-                'price' => (int) round((float) $request->price * 100),
+                'price' => (int) round((float) $request->price),
                 'currency' => $currency,
                 'condition' => $request->condition,
                 'fulfillment_model' => $request->fulfillment_model,
@@ -973,7 +973,7 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($listing, $validated, $request, $weightClass) {
             $listing->update([
-                'price' => (int) round((float) $validated['price'] * 100),
+                'price' => (int) round((float) $validated['price']),
                 'condition' => $validated['condition'],
                 'fulfillment_model' => $validated['fulfillment_model'],
                 'vendor_sku' => $validated['vendor_sku'] ?? null,
@@ -1057,13 +1057,13 @@ class ListingController extends Controller
         ]);
 
         $listing->update([
-            'price' => (int) round((float) $request->price * 100),
+            'price' => (int) round((float) $request->price),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث السعر بنجاح.',
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
         ]);
     }
 

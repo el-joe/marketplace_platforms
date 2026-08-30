@@ -109,7 +109,7 @@ class FedexCarrier implements ShippingCarrierInterface
                     trackingNumber: $result['masterTrackingNumber'] ?? '',
                     awbLabelUrl: $result['pieceResponses'][0]['packageDocuments'][0]['url'] ?? '',
                     awbLabelBase64: null,
-                    shippingCostCents: 0,
+                    shippingCost: 0,
                     currency: 'USD',
                     carrierReferenceId: $result['masterTrackingNumber'] ?? null,
                     errorMessage: null,
@@ -166,7 +166,7 @@ class FedexCarrier implements ShippingCarrierInterface
         return false; // FedEx does not support programmatic cancel via REST
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
         try {
             $token = $this->getAccessToken();

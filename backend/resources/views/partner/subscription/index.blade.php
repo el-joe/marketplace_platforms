@@ -79,7 +79,7 @@
                     <p class="text-xs text-gray-400 mb-3">{{ session('locale', 'ar') === 'ar' ? $plan->description_ar : $plan->description_en }}</p>
 
                     <p class="text-2xl font-extrabold text-gray-900 mb-1">
-                        {{ number_format($plan->price / 100) }}
+                        {{ number_format($plan->price ) }}
                         <span class="text-sm font-medium text-gray-400">{{ $plan->currency }}{{ __('partner.subscriptions.per_month') }}</span>
                     </p>
 

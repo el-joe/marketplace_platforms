@@ -297,7 +297,7 @@
                     @if($returnRequest->refund)
                         <div>
                             <dt class="text-xs text-gray-500 mb-0.5">{{ __('admin.returns_section.refund') }}</dt>
-                            <dd class="text-sm text-gray-700">{{ number_format($returnRequest->refund->amount / 100, 2) }} {{ $currency }}</dd>
+                            <dd class="text-sm text-gray-700">{{ number_format($returnRequest->refund->amount, 2) }} {{ $currency }}</dd>
                         </div>
                     @endif
 

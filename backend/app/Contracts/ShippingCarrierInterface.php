@@ -25,13 +25,15 @@ interface ShippingCarrierInterface
 
     /**
      * Calculate shipping cost.
+     * @param  string  $currency  ISO 4217 currency code for the origin country (e.g. 'SAR', 'AED', 'EGP')
      * Returns: { rate: int, currency: string, estimated_days: int, service_name: string }
      */
     public function calculateRate(
         array $fromAddress,
         array $toAddress,
         int $weightGrams,
-        array $dimensions = []
+        array $dimensions = [],
+        string $currency = '',
     ): array;
 
     /**

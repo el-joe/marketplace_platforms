@@ -74,7 +74,10 @@ export default async function ProductView({ slug }: { slug: string }) {
           {!!productData.warranty_plans.length && (
             <>
               <Separator className={"my-6"} />
-              <ExtendedWarranty warrantiesData={productData.warranty_plans} />
+              <ExtendedWarranty
+                warrantiesData={productData.warranty_plans}
+                listingId={productData.listing.listing_id}
+              />
             </>
           )}
           {productData.frequently_bought_together.items.length > 1 && (

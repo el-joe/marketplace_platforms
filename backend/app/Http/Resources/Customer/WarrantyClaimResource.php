@@ -28,7 +28,7 @@ class WarrantyClaimResource extends JsonResource
                     ?? $this->product?->images?->first()?->url,
             ],
             'vendor' => [
-                'name' => $this->vendor?->name,
+                'name' => $this->vendor?->store_name,
             ],
             'messages' => $this->whenLoaded('messages', function () {
                 return $this->messages

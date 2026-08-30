@@ -146,7 +146,7 @@ class OrderController extends Controller
         $rows = $orders->map(fn($row) => [
             $row->sub_order_number,
             $row->status->value,
-            number_format($row->vendor_payout / 100, 2),
+            number_format($row->vendor_payout, 2),
             $row->item_count,
             optional($row->sla_ship_deadline)->format('Y-m-d H:i'),
             $row->created_at->format('Y-m-d H:i'),
@@ -199,7 +199,7 @@ class OrderController extends Controller
                     ? route('partner.orders.show', $row->sub_order_number)
                     : '#',
                 'status' => $row->status->value,
-                'vendor_payout' => number_format($row->vendor_payout / 100, 2),
+                'vendor_payout' => number_format($row->vendor_payout, 2),
                 'location' => $maskedLocation,
                 'item_count' => $row->item_count,
                 'sla_countdown' => $slaHtml,

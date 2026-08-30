@@ -105,7 +105,7 @@ class DhlCarrier implements ShippingCarrierInterface
                     trackingNumber: $body['shipmentTrackingNumber'] ?? '',
                     awbLabelUrl: $body['documents'][0]['content'] ?? '',
                     awbLabelBase64: $body['documents'][0]['content'] ?? null,
-                    shippingCostCents: 0,
+                    shippingCost: 0,
                     currency: 'USD',
                     carrierReferenceId: $body['dispatchConfirmationNumber'] ?? null,
                     errorMessage: null,
@@ -156,7 +156,7 @@ class DhlCarrier implements ShippingCarrierInterface
         return false;
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
         try {
             $response = $this->http()->get($this->baseUrl . '/rates', [

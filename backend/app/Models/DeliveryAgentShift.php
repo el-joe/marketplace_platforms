@@ -52,7 +52,7 @@ class DeliveryAgentShift extends Model
 
     public function getTotalEarningsAttribute(): float
     {
-        return $this->total_earnings / 100;
+        return $this->total_earnings;
     }
 
     public function getDurationMinutesAttribute(): ?int

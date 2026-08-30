@@ -29,10 +29,10 @@ function toast(message, type = 'success') {
     }
 }
 
-function toCents(value) {
+function toAmount(value) {
     const parsed = parseFloat(value);
     if (isNaN(parsed) || parsed < 0) return 0;
-    return Math.round(parsed * 100);
+    return Math.round(parsed);
 }
 
 // ─── Method Detail Form ─────────────────────────────────────────────────────
@@ -126,13 +126,13 @@ function initRateModal() {
         $form.find('[name="min_weight_grams"]').val(row.min_weight_grams ?? '');
         $form.find('[name="volumetric_divisor"]').val(row.volumetric_divisor ?? '');
 
-        $('#rate-base-fee-display').val(row.base_fee ? (row.base_fee / 100).toFixed(2) : '');
+        $('#rate-base-fee-display').val(row.base_fee ?? '');
         $('#rate-base-fee').val(row.base_fee ?? 0);
-        $('#rate-per-kg-display').val(row.rate_per_kg ? (row.rate_per_kg / 100).toFixed(2) : '');
+        $('#rate-per-kg-display').val(row.rate_per_kg ?? '');
         $('#rate-per-kg').val(row.rate_per_kg ?? 0);
-        $('#rate-free-threshold-display').val(row.free_shipping_threshold ? (row.free_shipping_threshold / 100).toFixed(2) : '');
+        $('#rate-free-threshold-display').val(row.free_shipping_threshold ?? '');
         $('#rate-free-threshold').val(row.free_shipping_threshold ?? '');
-        $('#rate-cod-fee-display').val(row.cod_extra_fee ? (row.cod_extra_fee / 100).toFixed(2) : '');
+        $('#rate-cod-fee-display').val(row.cod_extra_fee ?? '');
         $('#rate-cod-fee').val(row.cod_extra_fee ?? 0);
 
         const $toggle = $form.find('[name="is_active"]');
@@ -149,7 +149,7 @@ function initRateModal() {
     ];
     rateMoneyFields.forEach(({ display, hidden }) => {
         $(display).on('input', function () {
-            $(hidden).val(toCents($(this).val()));
+            $(hidden).val(toAmount($(this).val()));
         });
     });
 

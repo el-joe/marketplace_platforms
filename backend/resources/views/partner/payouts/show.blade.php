@@ -79,20 +79,20 @@
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">{{ __('partner.payouts.gross_sales') }}</span>
                         <span class="font-medium text-gray-900">
-                            {{ number_format($payout->gross_sales / 100, 2) }} {{ $payout->currency }}
+                            {{ number_format($payout->gross_sales, 2) }} {{ $payout->currency }}
                         </span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">{{ __('partner.payouts.platform_commission') }}</span>
                         <span class="text-red-500">
-                            − {{ number_format($payout->commission / 100, 2) }} {{ $payout->currency }}
+                            − {{ number_format($payout->commission, 2) }} {{ $payout->currency }}
                         </span>
                     </div>
                     @if($payout->refunds_deducted)
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">{{ __('partner.payouts.refunds_deducted') }}</span>
                             <span class="text-red-500">
-                                − {{ number_format($payout->refunds_deducted / 100, 2) }} {{ $payout->currency }}
+                                − {{ number_format($payout->refunds_deducted, 2) }} {{ $payout->currency }}
                             </span>
                         </div>
                     @endif
@@ -100,7 +100,7 @@
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">{{ __('partner.payouts.chargebacks_deducted') }}</span>
                             <span class="text-red-500">
-                                − {{ number_format($payout->chargebacks_deducted / 100, 2) }} {{ $payout->currency }}
+                                − {{ number_format($payout->chargebacks_deducted, 2) }} {{ $payout->currency }}
                             </span>
                         </div>
                     @endif
@@ -108,7 +108,7 @@
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">{{ __('partner.payouts.storage_fees') }}</span>
                             <span class="text-red-500">
-                                − {{ number_format($payout->storage_fees / 100, 2) }} {{ $payout->currency }}
+                                − {{ number_format($payout->storage_fees, 2) }} {{ $payout->currency }}
                             </span>
                         </div>
                     @endif
@@ -116,7 +116,7 @@
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-600">{{ __('partner.payouts.ad_fees') }}</span>
                             <span class="text-red-500">
-                                − {{ number_format($payout->ad_fees / 100, 2) }} {{ $payout->currency }}
+                                − {{ number_format($payout->ad_fees, 2) }} {{ $payout->currency }}
                             </span>
                         </div>
                     @endif
@@ -125,14 +125,14 @@
                             <span class="text-gray-600">{{ __('partner.payouts.other_adjustments') }}</span>
                             <span class="{{ $payout->other_adjustments < 0 ? 'text-red-500' : 'text-green-600' }}">
                                 {{ $payout->other_adjustments < 0 ? '−' : '+' }}
-                                {{ number_format(abs($payout->other_adjustments) / 100, 2) }} {{ $payout->currency }}
+                                {{ number_format(abs($payout->other_adjustments), 2) }} {{ $payout->currency }}
                             </span>
                         </div>
                     @endif
                     <div class="border-t border-gray-200 pt-2.5 flex justify-between">
                         <span class="font-semibold text-gray-800">{{ __('partner.payouts.net_amount_transferred') }}</span>
                         <span class="font-bold text-xl text-gray-900">
-                            {{ number_format($payout->net_amount / 100, 2) }} {{ $payout->currency }}
+                            {{ number_format($payout->net_amount, 2) }} {{ $payout->currency }}
                         </span>
                     </div>
                 </div>
@@ -176,13 +176,13 @@
                                             </span>
                                         </td>
                                         <td class="py-3 px-4 text-center text-gray-700">
-                                            {{ number_format($item->gross / 100, 2) }}
+                                            {{ number_format($item->gross, 2) }}
                                         </td>
                                         <td class="py-3 px-4 text-center text-red-400 text-xs">
-                                            − {{ number_format($item->commission / 100, 2) }}
+                                            − {{ number_format($item->commission, 2) }}
                                         </td>
                                         <td class="py-3 px-4 text-center font-semibold text-gray-900">
-                                            {{ number_format($item->net / 100, 2) }}
+                                            {{ number_format($item->net, 2) }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -191,13 +191,13 @@
                                 <tr class="text-sm font-semibold text-gray-800">
                                     <td class="py-3 px-5">{{ __('partner.payouts.total') }}</td>
                                     <td class="py-3 px-4 text-center">
-                                        {{ number_format($subOrderItems->sum('gross') / 100, 2) }}
+                                        {{ number_format($subOrderItems->sum('gross'), 2) }}
                                     </td>
                                     <td class="py-3 px-4 text-center text-red-500">
-                                        − {{ number_format($subOrderItems->sum('commission') / 100, 2) }}
+                                        − {{ number_format($subOrderItems->sum('commission'), 2) }}
                                     </td>
                                     <td class="py-3 px-4 text-center text-gray-900 font-bold">
-                                        {{ number_format($subOrderItems->sum('net') / 100, 2) }}
+                                        {{ number_format($subOrderItems->sum('net'), 2) }}
                                     </td>
                                 </tr>
                             </tfoot>
@@ -233,7 +233,7 @@
                                             {{ $item->description }}
                                         </td>
                                         <td class="py-3 px-4 text-center text-red-500 font-medium">
-                                            − {{ number_format(abs($item->net) / 100, 2) }} {{ $payout->currency }}
+                                            − {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -242,7 +242,7 @@
                                 <tr class="text-sm font-semibold text-gray-800">
                                     <td class="py-3 px-5">{{ __('partner.payouts.total') }}</td>
                                     <td class="py-3 px-4 text-center text-red-500">
-                                        − {{ number_format($promotionFeeItems->sum(fn($i) => abs($i->net)) / 100, 2) }} {{ $payout->currency }}
+                                        − {{ number_format($promotionFeeItems->sum(fn($i) => abs($i->net)), 2) }} {{ $payout->currency }}
                                     </td>
                                 </tr>
                             </tfoot>

@@ -75,27 +75,27 @@ class ProductCostReference extends Model
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Factory price formatted (EGP). */
-    public function manufacturerCostFormatted(): string
+    /** Factory price formatted. */
+    public function manufacturerCostFormatted(string $currency = ''): string
     {
         return $this->manufacturer_cost !== null
-            ? number_format($this->manufacturer_cost / 100, 2) . ' EGP'
+            ? number_format($this->manufacturer_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 
     /** Shipping cost formatted. */
-    public function shippingCostFormatted(): string
+    public function shippingCostFormatted(string $currency = ''): string
     {
         return $this->shipping_cost !== null
-            ? number_format($this->shipping_cost / 100, 2) . ' EGP'
+            ? number_format($this->shipping_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 
     /** Landed cost formatted. */
-    public function landedCostFormatted(): string
+    public function landedCostFormatted(string $currency = ''): string
     {
         return $this->landed_cost !== null
-            ? number_format($this->landed_cost / 100, 2) . ' EGP'
+            ? number_format($this->landed_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 
@@ -103,7 +103,7 @@ class ProductCostReference extends Model
      * Compute landed cost from components (factory + shipping).
      * Does NOT save — use this for display / pre-fill.
      */
-    public function computedLandedCents(): ?int
+    public function computedLanded(): ?int
     {
         if ($this->manufacturer_cost === null && $this->shipping_cost === null) {
             return null;
@@ -112,16 +112,16 @@ class ProductCostReference extends Model
     }
 
     /**
-     * Calculate margin percentage given a selling price in cents.
+     * Calculate margin percentage given a selling price in base currency units.
      * Returns null if landed_cost is not set.
      */
-    public function calculateMargin(int $sellingPriceCents): ?float
+    public function calculateMargin(int $sellingPrice): ?float
     {
-        $landed = $this->landed_cost ?? $this->computedLandedCents();
-        if (!$landed || $sellingPriceCents <= 0) {
+        $landed = $this->landed_cost ?? $this->computedLanded();
+        if (!$landed || $sellingPrice <= 0) {
             return null;
         }
-        return round(($sellingPriceCents - $landed) / $sellingPriceCents * 100, 2);
+        return round(($sellingPrice - $landed) / $sellingPrice * 100, 2);
     }
 
     /**
@@ -129,7 +129,7 @@ class ProductCostReference extends Model
      */
     public function isBelowLandedCost(int $sellingPriceCents): bool
     {
-        $landed = $this->landed_cost ?? $this->computedLandedCents();
+        $landed = $this->landed_cost ?? $this->computedLanded();
         return $landed !== null && $sellingPriceCents <= $landed;
     }
 

@@ -62,7 +62,7 @@
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
             <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.total_sales') }}</p>
             <p class="text-2xl font-bold text-green-600">
-                {{ number_format($totalSales / 100, 2) }}
+                {{ number_format($totalSales, 2) }}
                 <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
             </p>
             <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.total_sales_desc') }}</p>
@@ -71,7 +71,7 @@
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
             <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.total_refunds') }}</p>
             <p class="text-2xl font-bold text-red-500">
-                {{ number_format($totalRefunds / 100, 2) }}
+                {{ number_format($totalRefunds, 2) }}
                 <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
             </p>
             <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.total_refunds_desc') }}</p>
@@ -80,7 +80,7 @@
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
             <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.total_paid_out') }}</p>
             <p class="text-2xl font-bold text-blue-600">
-                {{ number_format($totalPaidOut / 100, 2) }}
+                {{ number_format($totalPaidOut, 2) }}
                 <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
             </p>
             <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.total_paid_out_desc') }}</p>
@@ -196,7 +196,7 @@
 
                                 {{-- Amount --}}
                                 <td class="py-3 px-4 text-left font-bold {{ $amountCls }} whitespace-nowrap">
-                                    {{ $amountSign }} {{ number_format($amountAbs / 100, 2) }}
+                                    {{ $amountSign }} {{ number_format($amountAbs, 2) }}
                                     <span class="text-xs font-normal text-gray-400">{{ $currency }}</span>
                                 </td>
 
@@ -217,19 +217,19 @@
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">{{ __('partner.finance.total_sales') }}</span>
                                                     <span class="font-medium text-gray-900">
-                                                        {{ number_format(($txn['gross'] ?? 0) / 100, 2) }} {{ $currency }}
+                                                        {{ number_format(($txn['gross'] ?? 0), 2) }} {{ $currency }}
                                                     </span>
                                                 </div>
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-500">{{ __('partner.finance.platform_commission') }}</span>
                                                     <span class="text-red-500">
-                                                        − {{ number_format(($txn['commission'] ?? 0) / 100, 2) }} {{ $currency }}
+                                                        − {{ number_format(($txn['commission'] ?? 0), 2) }} {{ $currency }}
                                                     </span>
                                                 </div>
                                                 <div class="flex justify-between border-t border-gray-100 pt-2">
                                                     <span class="font-semibold text-gray-700">{{ __('partner.finance.net_profit') }}</span>
                                                     <span class="font-bold text-green-600">
-                                                        {{ number_format(($txn['net'] ?? 0) / 100, 2) }} {{ $currency }}
+                                                        {{ number_format(($txn['net'] ?? 0), 2) }} {{ $currency }}
                                                     </span>
                                                 </div>
                                                 <div class="border-t border-gray-100 pt-2">

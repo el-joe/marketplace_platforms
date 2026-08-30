@@ -29,7 +29,7 @@ class DashboardController extends Controller
                         ->whereIn('status', ['completed', 'delivered', 'shipped'])
                         ->whereMonth('created_at', now()->month)
                         ->whereYear('created_at', now()->year)
-                        ->sum('vendor_payout') / 100,
+                        ->sum('vendor_payout'),
 
                     // Orders today
                     'orders_today' => SubOrder::where('vendor_id', $vendorId)
@@ -58,7 +58,7 @@ class DashboardController extends Controller
                     // Pending payout
                     'pending_payout' => Payout::where('vendor_id', $vendorId)
                         ->where('status', 'pending')
-                        ->sum('net_amount') / 100,
+                        ->sum('net_amount'),
 
                     // Open disputes
                     'open_disputes' => Dispute::where('vendor_id', $vendorId)

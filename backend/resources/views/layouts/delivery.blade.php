@@ -333,7 +333,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                         </svg>
                         <span>
-                            {{ __('delivery.cod.settlement_due', ['amount' => number_format($pendingCodSettlement->net_to_remit / 100, 2) . ' ر.س']) }}
+                            {{ __('delivery.cod.settlement_due', ['amount' => number_format($pendingCodSettlement->net_to_remit, 2) . ' ر.س']) }}
                         </span>
                     </a>
                 </div>

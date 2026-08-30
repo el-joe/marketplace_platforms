@@ -10,6 +10,7 @@ use App\Models\Country;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\SearchService;
 use App\Services\Customer\SponsoredProductService;
+use App\Services\Shared\PageBuilderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,6 +20,7 @@ class SearchController extends Controller
         private readonly SearchService $search,
         private readonly SponsoredProductService $sponsored,
         private readonly ListingQueryService $listings,
+        private readonly PageBuilderService $pageBuilder,
     ) {
     }
 
@@ -45,6 +47,10 @@ class SearchController extends Controller
             return $this->searchTravel($data, $perPage, $country);
         }
 
+        // ── Device & audience detection ───────────────────────────────────────
+        $deviceTarget = $this->pageBuilder->detectDevice($request);
+        $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
+
         $result = $this->search->search(
             country: $country,
             query: $data['q'],
@@ -61,6 +67,10 @@ class SearchController extends Controller
 
         $facets = $this->search->facets($country, $data);
 
+        // ── Page builder (category > brand priority, product search only) ─────
+        $pageBuilder    = $this->resolvePageBuilder($country, $data, $deviceTarget, $audience);
+        $hasPageBuilder = $pageBuilder !== null;
+
         return ApiResponse::success([
             'items' => $items,
             'facets' => $facets,
@@ -70,7 +80,48 @@ class SearchController extends Controller
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
             ],
+            'page_builder'     => $pageBuilder,
+            'has_page_builder' => $hasPageBuilder,
         ]);
+    }
+
+    /**
+     * Resolve the page_builder for a search response.
+     *
+     * Priority: category (high) > brand (low). Returns null when no relevant
+     * filter is present or no published page with renderable content exists.
+     */
+    private function resolvePageBuilder(
+        Country $country,
+        array $filters,
+        string $deviceTarget,
+        string $audience,
+    ): ?array {
+        if (!empty($filters['category'])) {
+            $result = $this->pageBuilder->resolve(
+                country:      $country,
+                pageType:     'category',
+                referenceId:  $filters['category'],
+                deviceTarget: $deviceTarget,
+                audience:     $audience,
+            );
+        } elseif (!empty($filters['brand'])) {
+            $result = $this->pageBuilder->resolve(
+                country:      $country,
+                pageType:     'brand',
+                referenceId:  $filters['brand'],
+                deviceTarget: $deviceTarget,
+                audience:     $audience,
+            );
+        } else {
+            return null;
+        }
+
+        if ($result === null || (empty($result['sections']) && empty($result['blocks']))) {
+            return null;
+        }
+
+        return $result;
     }
 
     private function searchClassified(array $data, int $perPage, Country $country): JsonResponse

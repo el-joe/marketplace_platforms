@@ -8,7 +8,7 @@
     @php
         $data = collect(range(6, 0))->mapWithKeys(fn($i) => [now()->subDays($i)->format('Y-m-d') => 0])
             ->merge($stats['revenue_chart']->pluck('total', 'date'))
-            ->map(fn($v) => round($v / 100, 2));
+            ->map(fn($v) => round($v, 2));
 
     @endphp
     <script>
@@ -179,7 +179,7 @@
                                     <x-status-badge :status="$subOrder->status->value" />
                                 </td>
                                 <td class="py-3 font-medium text-gray-800">
-                                    {{ number_format($subOrder->vendor_payout / 100, 2) }}
+                                    {{ number_format($subOrder->vendor_payout, 2) }}
                                     <span class="text-xs text-gray-400">{{ $currency }}</span>
                                 </td>
                                 <td class="py-3">

@@ -79,7 +79,7 @@ class BostaCarrier implements ShippingCarrierInterface
                     trackingNumber: $body['trackingNumber'] ?? '',
                     awbLabelUrl: $body['labelUrl'] ?? '',
                     awbLabelBase64: null,
-                    shippingCostCents: (int) (($body['cod'] ?? 0) * 100),
+                    shippingCost: (int) (($body['cod'] ?? 0) * 100),
                     currency: 'EGP',
                     carrierReferenceId: $body['_id'] ?? null,
                     errorMessage: null,
@@ -133,12 +133,13 @@ class BostaCarrier implements ShippingCarrierInterface
         }
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
-        // Bosta does not expose a public rate-calculator endpoint
+        // Bosta does not expose a public rate-calculator endpoint.
+        // Bosta operates only in Egypt, so EGP is factually correct here.
         return [
             'rate' => 0,
-            'currency' => 'EGP',
+            'currency' => $currency ?: 'EGP',
             'estimated_days' => 2,
             'service_name' => 'Bosta Standard',
         ];

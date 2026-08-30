@@ -14,7 +14,14 @@ class WalletController extends Controller
     public function index()
     {
         $vendor = Auth::guard('vendor')->user();
-        $wallet = $this->walletService->getOrCreateWallet('vendor', $vendor->id, $vendor->currency ?? 'EGP');
+        $vendor->loadMissing('country');
+        $currency = $vendor->country?->currency_code;
+
+        if (! $currency) {
+            return redirect()->back()->with('error', 'Vendor country not configured. Cannot determine wallet currency.');
+        }
+
+        $wallet = $this->walletService->getOrCreateWallet('vendor', $vendor->id, $currency);
         $transactions = $wallet->transactions()->paginate(20);
         $withdrawalRequests = $wallet->withdrawalRequests()->latest()->take(10)->get();
 
@@ -24,7 +31,14 @@ class WalletController extends Controller
     public function requestWithdrawal(Request $request)
     {
         $vendor = Auth::guard('vendor')->user();
-        $wallet = $this->walletService->getOrCreateWallet('vendor', $vendor->id, $vendor->currency ?? 'EGP');
+        $vendor->loadMissing('country');
+        $currency = $vendor->country?->currency_code;
+
+        if (! $currency) {
+            return redirect()->back()->with('error', 'Vendor country not configured. Cannot determine wallet currency.');
+        }
+
+        $wallet = $this->walletService->getOrCreateWallet('vendor', $vendor->id, $currency);
 
         $data = $request->validate([
             'amount'    => ['required', 'numeric', 'min:1'],
@@ -32,9 +46,9 @@ class WalletController extends Controller
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $amountCents = (int) round($data['amount'] * 100);
+        $amount = (int) $data['amount'];
 
-        $this->walletService->requestWithdrawal($wallet, $amountCents, [
+        $this->walletService->requestWithdrawal($wallet, $amount, [
             'bank_name' => $data['bank_name'],
             'bank_iban' => $data['bank_iban'],
         ]);

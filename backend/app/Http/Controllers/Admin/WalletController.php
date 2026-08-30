@@ -156,7 +156,7 @@ class WalletController extends Controller
 
         /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
-        $amountCents = (int) round($data['amount'] * 100);
+        $amountCents = (int) round($data['amount']);
 
         if ($data['type'] === WalletTransactionType::Credit->value) {
             $this->walletService->credit($wallet, $amountCents, 'admin_adjustment', null, $data['description'], $admin->id);

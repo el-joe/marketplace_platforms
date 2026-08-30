@@ -257,7 +257,7 @@ class ListingDetailController extends Controller
                 'vendor_sku' => $listing->platform_sku,
                 'sku' => $listing->productVariant->sku,
                 'price' => $listing->price,
-                'price_formatted' => number_format($listing->price / 100, 2),
+                'price_formatted' => number_format($listing->price, 2),
                 'currency' => $country->currency_code,
                 'condition' => $listing->condition,
                 'condition_notes' => $listing->condition_notes,
@@ -281,7 +281,7 @@ class ListingDetailController extends Controller
             'vendor_sku' => $listing->vendor_sku,
             'sku' => $listing->productVariant->sku,
             'price' => $listing->price,
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
             'currency' => $country->currency_code,
             'condition' => $listing->condition,
             'condition_notes' => $listing->condition_notes,
@@ -490,7 +490,7 @@ class ListingDetailController extends Controller
             'seller_name' => $listing->vendor->store_name,
             'seller_rating' => $listing->vendor->store_rating_avg,
             'price' => $listing->price,
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
             'currency' => $country->currency_code,
             'condition' => $listing->condition,
             'is_admin_listing' => $listing->global_system_type === GlobalSystemType::ExpressFbn,
@@ -514,7 +514,7 @@ class ListingDetailController extends Controller
             'sku' => $listing->productVariant->sku,
             'variant_name' => $listing->productVariant->variant_name,
             'price' => $listing->price,
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
             'currency' => $listing->currency,
             'is_admin_listing' => $listing->global_system_type === GlobalSystemType::ExpressFbn,
             'attributes' => $listing->productVariant->variantAttributes->map(fn($va) => [
@@ -565,7 +565,7 @@ class ListingDetailController extends Controller
         return [
             'items' => $items->values()->all(),
             'total_price' => $items->sum('price'),
-            'total_price_formatted' => number_format($items->sum('price') / 100, 2),
+            'total_price_formatted' => number_format($items->sum('price'), 2),
             'currency' => $country->currency_code,
         ];
     }
@@ -622,7 +622,7 @@ class ListingDetailController extends Controller
             'name' => Bilingual::pair($product, 'name'),
             'image_url' => $primaryImage?->url,
             'price' => $listing->price,
-            'price_formatted' => number_format($listing->price / 100, 2),
+            'price_formatted' => number_format($listing->price, 2),
             'currency' => $country->currency_code,
         ];
     }

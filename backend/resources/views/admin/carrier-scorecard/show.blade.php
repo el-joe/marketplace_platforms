@@ -32,7 +32,7 @@
             iconBg="bg-green-100 text-green-600" />
         <x-stat-card title="{{ __('admin.carriers_section.claims_stat') }}" :value="$scorecard['total_claims']"
             iconBg="bg-orange-100 text-orange-600" />
-        <x-stat-card title="{{ __('admin.carriers_section.total_compensated_stat') }}" :value="number_format($scorecard['total_compensated'] / 100, 2)"
+        <x-stat-card title="{{ __('admin.carriers_section.total_compensated_stat') }}" :value="number_format($scorecard['total_compensated'], 2)"
             iconBg="bg-red-100 text-red-600" />
     </div>
 

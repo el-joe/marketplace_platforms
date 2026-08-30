@@ -218,9 +218,9 @@ class CodSettlementController extends Controller
             return $s;
         });
 
-        $message = __('admin.cod_settlements_section.generated_message', ['amount' => number_format($netToRemit / 100, 2)]);
+        $message = __('admin.cod_settlements_section.generated_message', ['amount' => number_format($netToRemit, 2)]);
         if ($hasDiscrepancy) {
-            $message .= __('admin.cod_settlements_section.discrepancy_flagged', ['amount' => number_format($discrepancyAmountCents / 100, 2)]);
+            $message .= __('admin.cod_settlements_section.discrepancy_flagged', ['amount' => number_format($discrepancyAmountCents, 2)]);
         }
 
         return response()->json([

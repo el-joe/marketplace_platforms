@@ -78,7 +78,7 @@ class PayoutController extends Controller
             'currency'   => fn ($q, $v) => $q->where('payouts.currency', $v),
             'date_from'  => fn ($q, $v) => $q->whereDate('payouts.created_at', '>=', $v),
             'date_to'    => fn ($q, $v) => $q->whereDate('payouts.created_at', '<=', $v),
-            'min_amount' => fn ($q, $v) => $q->where('payouts.net_amount', '>=', (int) round((float) $v * 100)),
+            'min_amount' => fn ($q, $v) => $q->where('payouts.net_amount', '>=', (int) round((float) $v)),
         ]);
     }
 
@@ -95,7 +95,7 @@ class PayoutController extends Controller
         $rows = $payouts->map(fn ($row) => [
             $row->payout_number,
             $row->vendor_name,
-            number_format($row->net_amount / 100, 2),
+            number_format($row->net_amount, 2),
             strtoupper($row->currency),
             $row->status?->value,
             optional($row->created_at)->format('d M Y H:i'),
@@ -120,8 +120,8 @@ class PayoutController extends Controller
                 'id'              => $row->id,
                 'payout_number'   => $row->payout_number,
                 'vendor_name'     => e($row->vendor_name ?? '—'),
-                'net_formatted'   => strtoupper($row->currency) . ' ' . number_format($row->net_amount / 100, 2),
-                'gross_formatted' => strtoupper($row->currency) . ' ' . number_format($row->gross_sales / 100, 2),
+                'net_formatted'   => strtoupper($row->currency) . ' ' . number_format($row->net_amount, 2),
+                'gross_formatted' => strtoupper($row->currency) . ' ' . number_format($row->gross_sales, 2),
                 'payout_method'   => $row->payout_method,
                 'status'          => $row->status?->value,
                 'period'          => $row->period_start . ' → ' . $row->period_end,
@@ -296,7 +296,7 @@ class PayoutController extends Controller
                 'success'      => true,
                 'message'      => 'Payout recalculated.',
                 'net_amount'   => $calc['net_amount'],
-                'net_formatted' => strtoupper($payout->currency) . ' ' . number_format($calc['net_amount'] / 100, 2),
+                'net_formatted' => strtoupper($payout->currency) . ' ' . number_format($calc['net_amount'], 2),
             ]);
         } catch (\Throwable $e) {
             Log::error('Payout recalculation failed', ['payout' => $payout->id, 'error' => $e->getMessage()]);

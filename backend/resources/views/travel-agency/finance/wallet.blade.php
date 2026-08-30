@@ -16,9 +16,9 @@
     {{-- Balance Card --}}
     <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-lg">
         <p class="text-sm font-medium text-blue-200 mb-1">{{ __('travel.finance.wallet_title') }}</p>
-        <p class="text-4xl font-extrabold tracking-tight">{{ number_format($wallet->balance / 100, 2) }} <span class="text-xl font-semibold text-blue-300">{{ $wallet->currency }}</span></p>
+        <p class="text-4xl font-extrabold tracking-tight">{{ number_format($wallet->balance, 2) }} <span class="text-xl font-semibold text-blue-300">{{ $wallet->currency }}</span></p>
         @if($wallet->pending_balance > 0)
-            <p class="text-sm text-blue-300 mt-2">+ {{ number_format($wallet->pending_balance / 100, 2) }} {{ $wallet->currency }}</p>
+            <p class="text-sm text-blue-300 mt-2">+ {{ number_format($wallet->pending_balance, 2) }} {{ $wallet->currency }}</p>
         @endif
         @if($wallet->is_frozen)
             <div class="mt-3 inline-flex items-center gap-1.5 bg-red-500/30 text-red-100 text-xs font-medium px-3 py-1 rounded-full">
@@ -38,7 +38,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.wallet.amount') }} ({{ $wallet->currency }})</label>
                     <input type="number" name="amount" min="1" step="0.01" required
-                           max="{{ $wallet->balance / 100 }}"
+                           max="{{ $wallet->balance }}"
                            class="w-full form-input rounded-lg border-gray-300 text-sm" placeholder="0.00">
                 </div>
                 <div>
@@ -69,7 +69,7 @@
             @foreach($withdrawalRequests as $wr)
                 <div class="px-5 py-3 flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-900">{{ number_format($wr->amount / 100, 2) }} {{ $wr->currency }}</p>
+                        <p class="text-sm font-medium text-gray-900">{{ number_format($wr->amount, 2) }} {{ $wr->currency }}</p>
                         <p class="text-xs text-gray-500">{{ $wr->bank_name }} · {{ $wr->created_at->format('d M Y') }}</p>
                     </div>
                     @php
@@ -94,7 +94,7 @@
                     <p class="text-xs text-gray-400">{{ str_replace('_',' ', $tx->source_type) }} · {{ $tx->created_at->format('d M Y H:i') }}</p>
                 </div>
                 <p class="text-sm font-bold {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? 'text-green-600' : 'text-red-500' }}">
-                    {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? '+' : '−' }}{{ number_format($tx->amount / 100, 2) }}
+                    {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? '+' : '−' }}{{ number_format($tx->amount, 2) }}
                 </p>
             </div>
         @empty

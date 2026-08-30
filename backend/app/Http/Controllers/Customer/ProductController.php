@@ -9,17 +9,20 @@ use App\Http\Resources\Customer\ProductDetailResource;
 use App\Http\Responses\ApiResponse;
 use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
+use App\Models\Category;
 use App\Models\Country;
 use App\Models\Product;
 use App\Models\VendorListing;
 use App\Models\Wishlist;
 use App\Models\WishlistItem;
 use App\Services\Customer\BuyBoxService;
+use App\Services\Customer\CategoryService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\SponsoredProductService;
+use App\Services\Shared\PageBuilderService;
 use App\Support\Concerns\BuildsProductAttributeSelector;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +39,7 @@ class ProductController extends Controller
         private readonly SponsoredProductService $sponsored,
         private readonly ReviewService $reviewService,
         private readonly \App\Services\Customer\ListingIdentifierService $identifiers,
+        private readonly PageBuilderService $pageBuilder,
     ) {
     }
 
@@ -45,6 +49,10 @@ class ProductController extends Controller
         $filters = $request->validated();
         $perPage = (int) ($filters['per_page'] ?? 20);
         $page    = (int) ($filters['page'] ?? 1);
+
+        // ── Device & audience (same logic as HomeController) ─────────────────
+        $deviceTarget = $this->pageBuilder->detectDevice($request);
+        $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
 
         // ── Admin listings (always first) ────────────────────────────────────────
         $adminBuilder = AdminListing::where('country_id', $country->id)
@@ -58,17 +66,21 @@ class ProductController extends Controller
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
-        // Apply category filter to admin listings if requested
+        // Apply category filter to admin listings if requested (includes all descendants)
         if (!empty($filters['category'])) {
+            $cat = Category::find($filters['category']);
+            $categoryIds = $cat
+                ? app(CategoryService::class)->getDescendantIds($cat)
+                : [$filters['category']];
             $adminBuilder->whereHas('productVariant.product',
-                fn ($q) => $q->where('category_id', $filters['category'])
+                fn ($q) => $q->whereIn('category_id', $categoryIds)
             );
         }
         if (!empty($filters['price_min'])) {
-            $adminBuilder->where('price', '>=', (int) ($filters['price_min'] * 100));
+            $adminBuilder->where('price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $adminBuilder->where('price', '<=', (int) ($filters['price_max'] * 100));
+            $adminBuilder->where('price', '<=', (int) $filters['price_max']);
         }
 
         $adminListings = $adminBuilder->orderBy('search_boost', 'desc')->orderBy('price')->get();
@@ -128,6 +140,10 @@ class ProductController extends Controller
 
         $facets = $this->products->facets($country, $filters);
 
+        // ── Page builder (category > brand priority) ──────────────────────────
+        $pageBuilder    = $this->resolvePageBuilder($country, $filters, $deviceTarget, $audience);
+        $hasPageBuilder = $pageBuilder !== null;
+
         return ApiResponse::success([
             'items'  => ProductCardResource::collection(collect($items)),
             'facets' => $facets,
@@ -137,7 +153,48 @@ class ProductController extends Controller
                 'per_page'     => $paginator->perPage(),
                 'total'        => $paginator->total() + count($adminItems),
             ],
+            'page_builder'     => $pageBuilder,
+            'has_page_builder' => $hasPageBuilder,
         ]);
+    }
+
+    /**
+     * Resolve the page_builder for a product listing/search response.
+     *
+     * Priority: category (high) > brand (low). Returns null when no filter
+     * is present or no published page exists for the given reference.
+     */
+    private function resolvePageBuilder(
+        Country $country,
+        array $filters,
+        string $deviceTarget,
+        string $audience,
+    ): ?array {
+        if (!empty($filters['category'])) {
+            $result = $this->pageBuilder->resolve(
+                country:      $country,
+                pageType:     'category',
+                referenceId:  $filters['category'],
+                deviceTarget: $deviceTarget,
+                audience:     $audience,
+            );
+        } elseif (!empty($filters['brand'])) {
+            $result = $this->pageBuilder->resolve(
+                country:      $country,
+                pageType:     'brand',
+                referenceId:  $filters['brand'],
+                deviceTarget: $deviceTarget,
+                audience:     $audience,
+            );
+        } else {
+            return null;
+        }
+
+        if ($result === null || (empty($result['sections']) && empty($result['blocks']))) {
+            return null;
+        }
+
+        return $result;
     }
 
     public function show(Request $request, $country, string $slug): JsonResponse

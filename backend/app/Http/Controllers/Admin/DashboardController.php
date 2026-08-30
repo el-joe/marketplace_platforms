@@ -241,7 +241,7 @@ class DashboardController extends Controller
                 'id' => $order->id,
                 'order_number' => $order->order_number ?? '#—',
                 'customer_name' => $order->customer?->name ?? __('admin.dashboard.guest'),
-                'total' => number_format($order->total / 100, 2) . ' ' . ($order->currency ?? ''),
+                'total' => number_format($order->total, 2) . ' ' . ($order->currency ?? ''),
                 'status' => $order->status->value,
                 'status_label' => __("common.order_status.{$order->status->value}"),
                 'created_at' => Carbon::parse($order->placed_at)->diffForHumans(),
@@ -413,7 +413,7 @@ class DashboardController extends Controller
     /** Format a cents integer. Prepends currency code when known. */
     private function formatMoney(int|float|null $cents, ?string $currency = null): string
     {
-        $amount = number_format((int) $cents / 100, 2);
+        $amount = number_format((int) $cents, 2);
         return $currency ? "{$amount} {$currency}" : $amount;
     }
 }

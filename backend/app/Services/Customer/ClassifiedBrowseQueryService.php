@@ -34,10 +34,10 @@ class ClassifiedBrowseQueryService
             ->where('status', ClassifiedListingStatus::Active->value);
 
         if (!empty($filters['price_min'])) {
-            $query->where('price', '>=', (int) ($filters['price_min'] * 100));
+            $query->where('price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $query->where('price', '<=', (int) ($filters['price_max'] * 100));
+            $query->where('price', '<=', (int) $filters['price_max']);
         }
         if (!empty($filters['listing_purpose'])) {
             $query->where('listing_purpose', $filters['listing_purpose']);
@@ -74,8 +74,8 @@ class ClassifiedBrowseQueryService
 
         return [
             'price_range' => [
-                'min' => $range ? round($range->low / 100, 2) : 0,
-                'max' => $range ? round($range->high / 100, 2) : 0,
+                'min' => $range ? (int) $range->low : 0,
+                'max' => $range ? (int) $range->high : 0,
             ],
         ];
     }

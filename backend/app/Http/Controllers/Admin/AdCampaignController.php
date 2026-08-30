@@ -93,7 +93,7 @@ class AdCampaignController extends Controller
             $row->name,
             $row->vendor?->store_name,
             $row->status?->value,
-            number_format($row->budget_total / 100, 2),
+            number_format($row->budget_total, 2),
             $row->country?->currency_code,
             optional($row->starts_at)->format('d M Y H:i'),
             $row->ends_at ? Carbon::parse($row->ends_at)->format('d M Y H:i') : null,
@@ -141,8 +141,8 @@ class AdCampaignController extends Controller
         $canEdit = $admin->hasPermissionTo('ad_campaigns.edit');
 
         return $this->dataTableResponse($request, $query, $columns, function (AdCampaign $row) use ($statusColors, $typeColors, $canEdit) {
-            $budgetTotal = $row->budget_total / 100;
-            $budgetSpent = $row->budget_spent_total / 100;
+            $budgetTotal = $row->budget_total;
+            $budgetSpent = $row->budget_spent_total;
             $utilization = $row->budget_total > 0
                 ? min(100, round($row->budget_spent_total / $row->budget_total * 100, 1))
                 : 0;
@@ -255,6 +255,8 @@ class AdCampaignController extends Controller
         // All daily stats for table
         $dailyStats = $campaign->dailyStats()->orderBy('date', 'desc')->take(30)->get();
 
+        $currency = $campaign->country?->currency_code ?? '';
+
         return view('admin.ad-campaigns.show', compact(
             'campaign',
             'perfSummary',
@@ -262,7 +264,8 @@ class AdCampaignController extends Controller
             'chartLabels',
             'chartImpressions',
             'chartClicks',
-            'dailyStats'
+            'dailyStats',
+            'currency'
         ));
     }
 
@@ -301,7 +304,7 @@ class AdCampaignController extends Controller
                 'type' => $typeBadge,
                 'product' => e($listing?->productVariant?->product?->name_en ?? '—'),
                 'variant' => e($listing?->productVariant?->variant_name ?? ($p->product_variant_id ?? '—')),
-                'price' => $listing ? '$' . number_format($listing->price / 100, 2) : '—',
+                'price' => $listing ? '$' . number_format($listing->price, 2) : '—',
                 'active' => $p->is_active
                     ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">' . __('admin.ad_campaigns.active') . '</span>'
                     : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' . __('admin.ad_campaigns.inactive') . '</span>',

@@ -37,7 +37,7 @@
         <div class="flex flex-wrap gap-6">
             @foreach($revenueByCurrency as $currency => $amount)
             <div>
-                <p class="text-2xl font-black text-purple-600">{{ number_format($amount / 100, 0) }} <span class="text-sm font-semibold text-gray-500">{{ $currency }}</span></p>
+                <p class="text-2xl font-black text-purple-600">{{ number_format($amount, 0) }} <span class="text-sm font-semibold text-gray-500">{{ $currency }}</span></p>
             </div>
             @endforeach
         </div>

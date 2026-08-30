@@ -86,11 +86,11 @@ class LedgerController extends Controller
             $badgeClass = $typeBadgeColors[$entry->account_type] ?? 'bg-gray-100 text-gray-700';
 
             $debitHtml = $entry->debit > 0
-                ? '<span class="text-green-600 font-semibold tabular-nums">' . number_format($entry->debit / 100, 2) . '</span>'
+                ? '<span class="text-green-600 font-semibold tabular-nums">' . number_format($entry->debit, 2) . '</span>'
                 : '<span class="text-gray-300">—</span>';
 
             $creditHtml = $entry->credit > 0
-                ? '<span class="text-blue-600 font-semibold tabular-nums">' . number_format($entry->credit / 100, 2) . '</span>'
+                ? '<span class="text-blue-600 font-semibold tabular-nums">' . number_format($entry->credit, 2) . '</span>'
                 : '<span class="text-gray-300">—</span>';
 
             $holderHtml = '<span class="text-gray-400 text-xs">—</span>';
@@ -155,10 +155,10 @@ class LedgerController extends Controller
             'balanced' => $balanced,
             'total_debit' => $totalDebit,
             'total_credit' => $totalCredit,
-            'total_debit_f' => number_format($totalDebit / 100, 2),
-            'total_credit_f' => number_format($totalCredit / 100, 2),
+            'total_debit_f' => number_format($totalDebit, 2),
+            'total_credit_f' => number_format($totalCredit, 2),
             'difference' => abs($totalDebit - $totalCredit),
-            'difference_f' => number_format(abs($totalDebit - $totalCredit) / 100, 2),
+            'difference_f' => number_format(abs($totalDebit - $totalCredit), 2),
             'entries' => $entries->map(fn($e) => [
                 'id' => $e->id,
                 'account_type' => $e->account_type,
@@ -166,8 +166,8 @@ class LedgerController extends Controller
                 'account_holder_id' => $e->account_holder_id,
                 'debit' => $e->debit,
                 'credit' => $e->credit,
-                'debit_f' => number_format($e->debit / 100, 2),
-                'credit_f' => number_format($e->credit / 100, 2),
+                'debit_f' => number_format($e->debit, 2),
+                'credit_f' => number_format($e->credit, 2),
                 'currency' => $e->currency,
                 'reference_type' => $e->reference_type,
                 'reference_id' => $e->reference_id,

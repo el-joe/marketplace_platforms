@@ -95,8 +95,8 @@ class OrderController extends Controller
             'country_id' => fn($q, $v) => $q->where('c.country_id', $v),
             'date_from' => fn($q, $v) => $q->whereDate('orders.placed_at', '>=', $v),
             'date_to' => fn($q, $v) => $q->whereDate('orders.placed_at', '<=', $v),
-            'min_total' => fn($q, $v) => $q->where('orders.total', '>=', (int) round((float) $v * 100)),
-            'max_total' => fn($q, $v) => $q->where('orders.total', '<=', (int) round((float) $v * 100)),
+            'min_total' => fn($q, $v) => $q->where('orders.total', '>=', (int) round((float) $v)),
+            'max_total' => fn($q, $v) => $q->where('orders.total', '<=', (int) round((float) $v)),
             'risk_score_min' => fn($q, $v) => $q->where('orders.risk_score', '>=', (float) $v),
             'listing_type' => fn($q, $v) => match ($v) {
                 'admin' => $q->whereExists(fn($sub) => $sub->selectRaw(1)
@@ -124,7 +124,7 @@ class OrderController extends Controller
             $row->status?->value,
             $row->payment_method,
             (int) $row->items_count,
-            number_format($row->total / 100, 2),
+            number_format($row->total, 2),
             strtoupper($row->currency),
             optional($row->placed_at)->format('d M Y H:i'),
         ]);
@@ -159,7 +159,7 @@ class OrderController extends Controller
                 'order_number' => $row->order_number,
                 'customer' => e($customer),
                 'items_count' => (int) $row->items_count,
-                'total_formatted' => strtoupper($row->currency) . ' ' . number_format($row->total / 100, 2),
+                'total_formatted' => strtoupper($row->currency) . ' ' . number_format($row->total, 2),
                 'payment_method' => $row->payment_method,
                 'payment_status' => $row->payment_status?->value,
                 'status' => $row->status?->value,
@@ -377,7 +377,7 @@ class OrderController extends Controller
             $this->interventionService->processRefund(
                 $order,
                 $request->refund_type,
-                $request->filled('amount') ? (float) $request->amount : null,
+                $request->filled('amount') ? (int) $request->amount : null,
                 $request->reason,
                 $request->reason_notes,
                 $request->sub_order_id,

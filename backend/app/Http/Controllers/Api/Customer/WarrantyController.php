@@ -24,6 +24,11 @@ use Illuminate\Support\Str;
 
 class WarrantyController extends Controller
 {
+    public function __construct(
+        private readonly \App\Services\WarrantyPlanService $warrantyPlanService,
+    ) {
+    }
+
     public function plans(string $orderItemId): JsonResponse
     {
         /** @var Customer $customer */
@@ -40,21 +45,19 @@ class WarrantyController extends Controller
             return ApiResponse::success([], __('customer_api.warranty.already_has_warranty'));
         }
 
-        $categoryId = $orderItem->productVariant?->product?->category_id;
+        $product = $orderItem->productVariant?->product;
 
-        if (! $categoryId) {
+        if (! $product) {
             return ApiResponse::success([], __('customer_api.warranty.no_plans_available'));
         }
 
-        $plans = WarrantyPlan::where('category_id', $categoryId)
-            ->where('is_active', true)
-            ->where('currency', $orderItem->order->currency)
-            ->where(fn ($q) => $q->whereNull('country_ids')
-                ->orWhereJsonContains('country_ids', $customer->country_id))
-            ->orderBy('sort_order')
-            ->get();
+        $plans = $this->warrantyPlanService->getPlansForProduct(
+            $product,
+            $customer->country_id,
+            $orderItem->order->currency,
+        );
 
-        return ApiResponse::success(WarrantyPlanResource::collection($plans), __('customer_api.warranty.plans_retrieved'));
+        return ApiResponse::success($plans, __('customer_api.warranty.plans_retrieved'));
     }
 
     public function purchases(): JsonResponse
@@ -89,7 +92,7 @@ class WarrantyController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $orderItem = OrderItem::with(['order', 'productVariant', 'warrantyPurchase'])
+        $orderItem = OrderItem::with(['order', 'subOrder', 'productVariant', 'warrantyPurchase'])
             ->findOrFail($request->validated('order_item_id'));
 
         $productId = $orderItem->productVariant?->product_id
@@ -108,9 +111,11 @@ class WarrantyController extends Controller
             'listing_type' => $listingType,
             'issue_type' => $request->validated('issue_type'),
             'issue_description' => $request->validated('issue_description'),
-            'purchase_date' => $orderItem->order->placed_at?->toDateString(),
+            'purchase_date' => ($orderItem->subOrder?->delivered_at
+                ?? $orderItem->order->completed_at
+                ?? $orderItem->order->placed_at)?->toDateString(),
             'warranty_expires_at' => $orderItem->warrantyPurchase->coverage_ends_at,
-            'covered_by_platform_warranty' => true,
+            'covered_by_platform_warranty' => $orderItem->warrantyPurchase !== null,
             'status' => WarrantyClaim::STATUS_SUBMITTED,
         ]);
 

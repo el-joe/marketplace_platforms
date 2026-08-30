@@ -727,7 +727,7 @@ class CheckoutController extends Controller
                                     'price' => $plan->price,
                                     'currency' => $plan->currency,
                                 ],
-                                'price_paid_cents' => $warrantySelections[$cartItem->id]['price'],
+                                'price_paid' => $warrantySelections[$cartItem->id]['price'],
                                 'currency' => $order->currency,
                                 'status' => 'pending',
                                 'coverage_starts_at' => null,

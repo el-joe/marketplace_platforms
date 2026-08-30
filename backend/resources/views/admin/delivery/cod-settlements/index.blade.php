@@ -17,12 +17,12 @@
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-xl border border-gray-200 p-4">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.cod.cash_in_agents_custody') }}</p>
-        <p class="mt-1 text-2xl font-bold text-red-600">{{ number_format($pendingCashCents / 100, 2) }}</p>
+        <p class="mt-1 text-2xl font-bold text-red-600">{{ number_format($pendingCashCents, 2) }}</p>
         <p class="text-xs text-gray-400 mt-0.5">{{ __('admin.cod.platform_money_not_remitted') }}</p>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.cod.settled_this_month') }}</p>
-        <p class="mt-1 text-2xl font-bold text-green-600">{{ number_format($settledThisMonthCents / 100, 2) }}</p>
+        <p class="mt-1 text-2xl font-bold text-green-600">{{ number_format($settledThisMonthCents, 2) }}</p>
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4">
         <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ __('admin.cod.disputed') }}</p>
@@ -56,7 +56,7 @@
                         </td>
                         <td class="px-4 py-3 text-end">
                             @if($pendingCod > 0)
-                                <span class="font-semibold text-red-600">{{ number_format($pendingCod / 100, 2) }}</span>
+                                <span class="font-semibold text-red-600">{{ number_format($pendingCod, 2) }}</span>
                             @else
                                 <span class="text-gray-400">—</span>
                             @endif

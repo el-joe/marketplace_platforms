@@ -51,7 +51,7 @@
         window.LISTING_DETAIL = {
             listingId: '{{ $listing->id }}',
             currentStatus: '{{ $listing->status?->value }}',
-            currentPrice: '{{ $listing->price / 100 }}',
+            currentPrice: '{{ $listing->price }}',
             updatePriceUrl: '{{ route('partner.listings.update-price', $listing->id) }}',
             updateShippingUrl: '{{ route('partner.listings.update-shipping', $listing->id) }}',
             currentShippingMethodId: '{{ $listing->primary_shipping_method_id }}',
@@ -179,7 +179,7 @@
                     <div>
                         <span class="text-xs text-gray-400 block mb-0.5">{{ __('partner.listings.show.price') }}</span>
                         <span id="display-price" class="font-bold text-gray-900 text-lg">
-                            {{ number_format($listing->price / 100, 2) }}
+                            {{ number_format($listing->price, 2) }}
                         </span>
                         <span class="text-xs text-gray-500 mr-1">{{ $listing->currency }}</span>
                     </div>
@@ -651,8 +651,8 @@
             <form id="price-update-form" class="p-5 space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.show.new_price') }}</label>
-                    <input type="number" id="new-price-input" name="price" step="0.01" min="0.01"
-                        value="{{ $listing->price / 100 }}"
+                    <input type="number" id="new-price-input" name="price" step="1" min="1"
+                        value="{{ $listing->price }}"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                 </div>
                 <div id="price-update-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-3"></div>

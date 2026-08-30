@@ -46,7 +46,7 @@ class TravelBookingController extends Controller
             ->get()
             ->map(fn($row) => [
                 'currency' => $row->currency,
-                'formatted' => $row->currency . ' ' . number_format($row->total / 100, 2),
+                'formatted' => $row->currency . ' ' . number_format($row->total, 2),
             ]);
 
         return view('admin.travel-bookings.index', compact('stats', 'revenueByCurrency'));
@@ -84,7 +84,7 @@ class TravelBookingController extends Controller
             $statusBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{$statusColor}-100 text-{$statusColor}-700\">{$statusLabel}</span>";
 
             $currency   = $row->package?->currency ?? '';
-            $amount     = $currency . ' ' . number_format($row->total_price / 100, 2);
+            $amount     = $currency . ' ' . number_format($row->total_price, 2);
 
             $departure  = $row->package?->departure_date ? Carbon::parse($row->package->departure_date)->format('d M Y') : '—';
             $returnDate = $row->package?->return_date ? Carbon::parse($row->package->return_date)->format('d M Y') : '—';
@@ -135,7 +135,7 @@ class TravelBookingController extends Controller
             $booking->package?->title_en,
             $booking->package?->agency?->name,
             $booking->status?->value,
-            number_format($booking->total_price / 100, 2),
+            number_format($booking->total_price, 2),
             $booking->package?->currency,
             optional($booking->created_at)->format('d M Y H:i'),
         ]);

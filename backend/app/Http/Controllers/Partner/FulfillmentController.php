@@ -307,8 +307,8 @@ class FulfillmentController extends Controller
                 $product?->name_en ?? '—',
                 $f->monthLabel(),
                 $f->units_stored,
-                number_format($f->rate_per_unit / 100, 2),
-                number_format($f->total_fee / 100, 2),
+                number_format($f->rate_per_unit, 2),
+                number_format($f->total_fee, 2),
                 $f->currency,
                 $f->status->value,
             ];

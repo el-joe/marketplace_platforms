@@ -105,14 +105,14 @@
                                     {{ $payout->period_start?->format('M d') }} — {{ $payout->period_end?->format('M d, Y') }}
                                 </td>
                                 <td class="py-3 px-4 text-center text-gray-700">
-                                    {{ number_format($payout->gross_sales / 100, 2) }}
+                                    {{ number_format($payout->gross_sales, 2) }}
                                     <span class="text-xs text-gray-400">{{ $payout->currency }}</span>
                                 </td>
                                 <td class="py-3 px-4 text-center text-red-500 text-xs">
-                                    − {{ number_format($payout->commission / 100, 2) }}
+                                    − {{ number_format($payout->commission, 2) }}
                                 </td>
                                 <td class="py-3 px-4 text-center font-bold text-gray-900">
-                                    {{ number_format($payout->net_amount / 100, 2) }}
+                                    {{ number_format($payout->net_amount, 2) }}
                                     <span class="text-xs text-gray-400 font-normal">{{ $payout->currency }}</span>
                                 </td>
                                 <td class="py-3 px-4 text-center">

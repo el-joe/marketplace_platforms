@@ -66,7 +66,7 @@ class AdSlotController extends Controller
                 ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">' . __('admin.ad_campaigns.available_badge') . '</span>'
                 : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' . __('admin.ad_campaigns.unavailable_badge') . '</span>';
 
-            $rate = '$' . number_format($row->base_rate / 100, 2);
+            $rate = '$' . number_format($row->base_rate, 2);
             $pricingModelLabel = ucwords(str_replace('_', '/', $row->pricing_model->value));
 
             $editUrl = route('admin.ad-slots.edit', $row->id);
@@ -137,7 +137,7 @@ class AdSlotController extends Controller
             'placement_definition_id' => $validated['banner_placement_definition_id'],
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
-            'base_rate' => (int) round($validated['base_rate_display'] * 100),
+            'base_rate' => (int) round($validated['base_rate_display']),
             'currency' => $validated['currency'],
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
@@ -194,7 +194,7 @@ class AdSlotController extends Controller
             'placement_definition_id' => $validated['banner_placement_definition_id'],
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
-            'base_rate' => (int) round($validated['base_rate_display'] * 100),
+            'base_rate' => (int) round($validated['base_rate_display']),
             'currency' => $validated['currency'],
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
