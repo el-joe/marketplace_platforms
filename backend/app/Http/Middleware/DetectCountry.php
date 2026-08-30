@@ -14,11 +14,13 @@ class DetectCountry
     {
         $siteCode = $request->route('country');
 
-        $country = Cache::remember(
+        $countryId = Cache::remember(
             "country:code:{$siteCode}",
             300,
-            fn () => Country::where('site_code', $siteCode)->where('is_active', true)->first(),
+            fn () => Country::where('site_code', $siteCode)->where('is_active', true)->value('id'),
         );
+
+        $country = $countryId ? Country::find($countryId) : null;
 
         if (!$country) {
             return response()->json([
