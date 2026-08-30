@@ -31,6 +31,12 @@ class SearchController extends Controller
         $data = $request->validated();
         $perPage = (int) ($data['per_page'] ?? 20);
         $page = (int) ($data['page'] ?? 1);
+
+        if (!empty($data['category'])) {
+            $data['category'] = \App\Models\Category::where('id', $data['category'])
+                ->orWhere('slug', $data['category'])
+                ->value('id') ?? $data['category'];
+        }
         // Absent source_type must preserve pre-existing product-only search behavior;
         // 'all' only runs when explicitly requested.
         $sourceType = $data['source_type'] ?? 'product';

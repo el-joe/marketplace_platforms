@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
-import { Product } from "@/src/features/noon/home/types";
+import { Product } from "@/types/globals";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Spinner } from "../ui/spinner";
 import useLocale from "@/src/hooks/use-locale";

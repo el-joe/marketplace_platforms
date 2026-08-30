@@ -43,12 +43,26 @@ class ProductController extends Controller
     ) {
     }
 
+    /**
+     * Resolve a category filter value (id or slug) to its actual id.
+     */
+    private function resolveCategoryId(string $idOrSlug): ?string
+    {
+        return Category::where('id', $idOrSlug)
+            ->orWhere('slug', $idOrSlug)
+            ->value('id');
+    }
+
     public function index(ProductListRequest $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
         $filters = $request->validated();
         $perPage = (int) ($filters['per_page'] ?? 20);
         $page    = (int) ($filters['page'] ?? 1);
+
+        if (!empty($filters['category'])) {
+            $filters['category'] = $this->resolveCategoryId($filters['category']) ?? $filters['category'];
+        }
 
         // ── Device & audience (same logic as HomeController) ─────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);

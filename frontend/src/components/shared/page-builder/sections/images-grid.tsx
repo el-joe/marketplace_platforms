@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Block } from "./types";
+import { Block } from "../types";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import useLocale from "@/src/hooks/use-locale";

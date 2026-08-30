@@ -1,7 +1,7 @@
 import Price from "@/src/components/shared/Price";
 
 import Image from "next/image";
-import { Product } from "./types";
+import { Product } from "@/types/globals";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import AddToCartButton from "@/src/components/shared/add-to-cart-button";

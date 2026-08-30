@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Block } from "./types";
+import { Block } from "../types";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import useLocale from "@/src/hooks/use-locale";

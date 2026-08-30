@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import Price from "./Price";
 import useLocale from "@/src/hooks/use-locale";
-import type { Product } from "@/src/features/noon/home/types";
+import type { Product } from "@/types/globals";
 
 type Props = {
   productData: Product;

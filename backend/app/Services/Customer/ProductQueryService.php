@@ -65,7 +65,7 @@ class ProductQueryService
             ->first();
 
         if (empty($categoryIds) && !empty($filters['category'])) {
-            $cat = \App\Models\Category::find($filters['category']);
+            $cat = $this->resolveCategory($filters['category']);
             $categoryIds = $cat
                 ? app(CategoryService::class)->getDescendantIds($cat)
                 : [$filters['category']];
@@ -334,10 +334,20 @@ class ProductQueryService
             ->groupBy('products.id', 'pcs.name_override_en', 'pcs.name_override_ar', 'cat.name_en', 'cat.name_ar');
     }
 
+    /**
+     * Resolve a category filter value by id or slug.
+     */
+    private function resolveCategory(string $idOrSlug): ?\App\Models\Category
+    {
+        return \App\Models\Category::where('id', $idOrSlug)
+            ->orWhere('slug', $idOrSlug)
+            ->first();
+    }
+
     public function applyFilters($builder, array $filters)
     {
         if (!empty($filters['category'])) {
-            $category = \App\Models\Category::find($filters['category']);
+            $category = $this->resolveCategory($filters['category']);
             $categoryIds = $category
                 ? app(CategoryService::class)->getDescendantIds($category)
                 : [$filters['category']];

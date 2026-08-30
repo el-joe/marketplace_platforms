@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Price from "../../Price";
-import { Product } from "@/src/features/noon/home/types";
+import { Product } from "@/types/globals";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import AddToCartButton from "@/src/components/shared/add-to-cart-button";

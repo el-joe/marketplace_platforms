@@ -10,6 +10,7 @@ import {
 import { ApiRequestError } from "../lib/utils";
 import { useWishlist } from "../hooks/use-wishlist";
 import {
+  IAddWishlistItemResponseBody,
   IWishlistCheckResponse,
   IWishlistGroupResponseBody,
   IWishlistGroupsResponseBody,
@@ -60,7 +61,7 @@ interface IWishlistContext {
   >;
   removeGroupError: Error | null;
   addItem: UseMutateAsyncFunction<
-    IWishlistGroupResponseBody | undefined,
+    IAddWishlistItemResponseBody | undefined,
     Error,
     {
       listingId: string;
@@ -118,7 +119,7 @@ const initialState: IWishlistContext = {
     throw new Error("Not implemented");
   },
   removeGroupError: null,
-  addItem: async (): Promise<IWishlistGroupResponseBody> => {
+  addItem: async (): Promise<IAddWishlistItemResponseBody> => {
     throw new Error("Not implemented");
   },
   removeItem: async (): Promise<IWishlistGroupResponseBody> => {
