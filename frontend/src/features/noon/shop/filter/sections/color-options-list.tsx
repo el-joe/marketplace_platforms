@@ -35,7 +35,7 @@ const ColorOptionsList = ({
               "size-[25px]! rounded border border-gray-300 cursor-pointer",
               isSelected && "ring-2 ring-offset-1 ring-primary",
             )}
-            style={{ backgroundColor: facetValue.color_hex ?? undefined }}
+            style={{ backgroundColor: facetValue.value.en ?? undefined }}
           />
         );
       })}
