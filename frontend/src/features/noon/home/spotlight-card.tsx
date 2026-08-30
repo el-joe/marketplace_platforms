@@ -1,18 +1,13 @@
 import Price from "@/src/components/shared/Price";
-import { Button } from "@/src/components/ui/button";
-import { PlusIcon } from "lucide-react";
+
 import Image from "next/image";
-import React from "react";
 import { Product } from "./types";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
-import { useCartContext } from "@/src/providers/cart-provider";
-import { Spinner } from "@/src/components/ui/spinner";
 import AddToCartButton from "@/src/components/shared/add-to-cart-button";
 
 const SpotlightCard = ({ data }: { data: Product }) => {
   const locale = useLocale();
-  const { addItem, isMutating, targetItemMutating } = useCartContext();
   return (
     <Link
       href={`/products/${data?.url_param}`}

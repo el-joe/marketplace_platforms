@@ -100,9 +100,15 @@ const CategoriesNav = () => {
         <SwiperButtons />
       </Swiper>
       {/* right banner */}
-      {/* <div>
-        <span className="w-60 h-7 bg-red rounded-2xl block" />
-      </div> */}
+      <div>
+        {/* <span className="w-60 h-7 bg-red rounded-2xl block" /> */}
+        <Image
+          src={"/images/header-badge.png"}
+          alt=""
+          width={230}
+          height={30}
+        />
+      </div>
       {/* category details box */}
       <div
         className={`fixed top-26 inset-x-0 left-0 z-30 bg-[#0000005b] h-screen  ${hoveredCategory && hoveredCategory.children.length ? "" : "hidden"}`}

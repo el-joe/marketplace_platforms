@@ -9,7 +9,7 @@ export default function HomeSkeleton() {
         <Skeleton key={i} className="w-[calc((100%-(16px*11))/12)] h-48" />
       ))}
       {Array.from({ length: 3 }).map((e, i) => (
-        <Skeleton key={i} className="w-[calc((100%-(16px*2))/3)] h-154" />
+        <Skeleton key={i} className="w-[calc((100%-(16px*2))/3)] h-15" />
       ))}
       {Array.from({ length: 6 }).map((e, i) => (
         <Skeleton key={i} className="w-[calc((100%-(16px*5))/6)] h-112" />
