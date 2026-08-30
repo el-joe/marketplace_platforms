@@ -308,6 +308,7 @@ const HeaderButton = ({
         variant={"ghost"}
         className={"font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5"}
         title={title}
+        onClick={onClick}
       >
         <span className="relative">
           <Icon className="me-1 size-6" />
