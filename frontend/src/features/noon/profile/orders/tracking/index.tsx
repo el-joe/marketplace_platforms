@@ -13,6 +13,9 @@ type Props = {
 export default async function OrderTracking({ order }: Props) {
   const t = await getTranslations("profile");
 
+
+console.log(order);
+
   return (
     <div>
       <h1 className="text-[28px] font-bold">{t("trackingDetails")}</h1>

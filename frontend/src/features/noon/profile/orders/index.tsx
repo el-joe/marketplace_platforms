@@ -3,11 +3,18 @@ import OrdersEmptyState from "./history/orders-empty-state";
 import OrdersList from "./history/orders-list";
 import OrdersFilter from "./history/orders-filter";
 import { getOrders } from "./api/orders.actions";
+import type { OrderStatus } from "./helpers/types";
 
-export default async function Orders() {
+type Props = {
+  status?: string;
+};
+
+export default async function Orders({ status }: Props) {
   const t = await getTranslations("profile");
 
-  const { items: orders } = await getOrders();
+  const { items: orders } = await getOrders({
+    status: status as OrderStatus | undefined,
+  });
 
   return (
     <>

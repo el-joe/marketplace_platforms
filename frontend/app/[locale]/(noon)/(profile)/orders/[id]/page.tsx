@@ -8,6 +8,7 @@ type Props = {
 
 export default async function OrderTrackingPage({ params }: Props) {
   const { id } = await params;
+  
   const order = await getOrderByNumber(id);
 
   if (!order) notFound();

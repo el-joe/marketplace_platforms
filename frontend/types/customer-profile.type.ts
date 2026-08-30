@@ -12,4 +12,6 @@ export interface ICustomerProfile {
   email_verified: boolean;
   phone_verified: boolean;
   member_since: Date;
+  gender: "male" | "female";
+  nationality: string;
 }
