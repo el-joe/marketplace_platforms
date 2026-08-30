@@ -1,4 +1,4 @@
-export interface CategoryNavTree {
+export interface ICategoryNavTree {
   id: string;
   type: Type;
   name: {
@@ -10,7 +10,7 @@ export interface CategoryNavTree {
   image_url?: null | string;
   product_count?: number;
   brands?: Brand[];
-  children: CategoryNavTree[];
+  children: ICategoryNavTree[];
   icon?: string;
 }
 

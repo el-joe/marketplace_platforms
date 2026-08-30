@@ -11,7 +11,16 @@ export interface IWishlistGroupsResponseBody extends IWishlistResponseBody {
 export interface IWishlistGroupResponseBody extends IWishlistResponseBody {
   data: IWishlist;
 }
-
+export interface IAddWishlistItemResponseBody extends IWishlistResponseBody {
+  data: {
+    item: {
+      id: string;
+      added_at: string;
+      listing_type: string;
+    };
+    group: IWishlistGroup;
+  };
+}
 export const getWishlistGroupsService = () =>
   fetchInstance<IWishlistGroupsResponseBody>("/wishlist/groups", {
     method: "GET",
@@ -55,7 +64,7 @@ export const addWishlistItemService = (body: {
   product_variant_id: string;
   group_id?: string;
 }) =>
-  fetchInstance<IWishlistGroupResponseBody>("/wishlist/items", {
+  fetchInstance<IAddWishlistItemResponseBody>("/wishlist/items", {
     method: "POST",
     body: JSON.stringify(body),
   });

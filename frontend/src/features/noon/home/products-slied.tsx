@@ -4,8 +4,7 @@ import { Navigation, Grid } from "swiper/modules";
 import "swiper/css/grid";
 
 import ProductCard from "@/src/components/shared/product-card";
-import SpecialProductCard from "@/src/components/shared/SpecialProductCard";
-import { Block, Product } from "./types";
+import { Block } from "./types";
 import SectionTitle from "./section-title";
 import useLocale from "@/src/hooks/use-locale";
 import SpotlightCard from "./spotlight-card";

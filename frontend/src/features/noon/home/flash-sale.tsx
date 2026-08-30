@@ -8,12 +8,11 @@ import { Block, Product } from "./types";
 import { cn } from "@/src/lib/utils";
 import SectionTitle from "./section-title";
 import { chunks } from "./helpers/chunks-arr";
-import { Button } from "@/src/components/ui/button";
-import { PlusIcon } from "lucide-react";
+
 import useLocale from "@/src/hooks/use-locale";
 import Price from "@/src/components/shared/Price";
-import { useCartContext } from "@/src/providers/cart-provider";
-import { Spinner } from "@/src/components/ui/spinner";
+
+import AddToCartButton from "@/src/components/shared/add-to-cart-button";
 
 export const FlashSale = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.products || [], 2);
@@ -62,7 +61,6 @@ export const FlashSale = ({ data }: { data: Block }) => {
 
 const FlashSaleCard = ({ p }: { p: Product }) => {
   const locale = useLocale();
-  const { addItem, isMutating, targetItemMutating } = useCartContext();
   return (
     <div className="rounded-lg overflow-hidden">
       <div className="flex gap-2 items-center p-3 bg-white">
@@ -78,23 +76,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             className="h-27.5 object-contain"
           />
           {/* cart button */}
-          <Button
-            variant={"outline"}
-            className={
-              "absolute bottom-1 lg:bottom-2 right-2 z-10 p-2!  min-w-0! min-h-0! aspect-square"
-            }
-            disabled={isMutating && targetItemMutating === p.listing_id}
-            onClick={(e) => {
-              e.preventDefault();
-              addItem({ quantity: 1, vendorListingId: p.listing_id });
-            }}
-          >
-            {isMutating && targetItemMutating === p.listing_id ? (
-              <Spinner />
-            ) : (
-              <PlusIcon className={`size-4`} />
-            )}
-          </Button>
+          <AddToCartButton listingId={p?.listing_id} size="sm" />
         </div>
         <div className="flex-1 flex flex-col justify-evenly h-32">
           <h4 className="line-clamp-2">

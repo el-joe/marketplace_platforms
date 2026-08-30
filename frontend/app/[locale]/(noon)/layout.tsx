@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Header from "@/src/layout/Header";
+// import Header from "@/src/layout/Header";
 import MobileNav from "@/src/layout/noon/MobileNav";
+import Header from "@/src/layout/noon/header/Header";
 
 export const metadata: Metadata = {
   title: "noon",
