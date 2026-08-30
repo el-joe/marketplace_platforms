@@ -293,7 +293,7 @@ const HeaderButton = ({
           <span className="relative">
             <Icon className="me-1 size-6" />
             {!!label && (
-              <span className="absolute -top-2.5 -right-2 rounded-full w-5 h-5 bg-red text-white block">
+              <span className="absolute -top-2.5 -right-2 text-sm rounded-full w-4.5 h-4.5 bg-red text-white leading-[125%]">
                 {label}
               </span>
             )}
@@ -306,13 +306,17 @@ const HeaderButton = ({
     return (
       <Button
         variant={"ghost"}
-        className={
-          "font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5 " + className
-        }
+        className={"font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5"}
         title={title}
-        onClick={onClick}
       >
-        <Icon className="me-1 size-6" />
+        <span className="relative">
+          <Icon className="me-1 size-6" />
+          {!!label && (
+            <span className="absolute -top-2.5 -right-2 text-sm rounded-full w-4.5 h-4.5 bg-red text-white leading-[125%]">
+              {label}
+            </span>
+          )}
+        </span>
         <span className="hidden lg:block">{text}</span>
       </Button>
     );

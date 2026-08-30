@@ -119,9 +119,9 @@ const CategoriesNav = () => {
             setHoveredCategory(null);
           }}
         >
-          <div className="grid grid-cols-4 gap-5 h-full">
+          <div className="grid grid-cols-5 gap-5 h-full">
             {/* subcategories lists */}
-            <div className="col-span-3">
+            <div className="col-span-4">
               {/* one level of subcategories */}
               <ul
                 className={`${!!hoveredCategory?.children.find((ch) => ch.children.length) ? "flex gap-8" : ""}`}
@@ -156,7 +156,7 @@ const CategoriesNav = () => {
             {hoveredCategory?.image_url && (
               <Link
                 href={categoryHref(hoveredCategory)}
-                className="col-start-4 col-end-4 row-span-2 relative h-[40vh] min-h-105 rounded-xl overflow-hidden"
+                className="col-start-5 col-end-5 row-span-2 relative h-[50vh] min-h-105 rounded-xl overflow-hidden"
               >
                 <Image
                   src={hoveredCategory?.image_url ?? ""}

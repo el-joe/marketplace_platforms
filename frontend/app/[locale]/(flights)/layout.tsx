@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Header from "@/src/layout/Header";
 import MobileNav from "@/src/layout/noon/MobileNav";
 import LowerFooter from "@/src/layout/shared/lower-footer";
 import Footer from "@/src/layout/noon/Footer";
+import Header from "@/src/layout/noon/header/Header";
 
 export const metadata: Metadata = {
   title: "Flights",
