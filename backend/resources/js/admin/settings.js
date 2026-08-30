@@ -19,10 +19,10 @@ function withLoading($btn, jqXhr) {
     return jqXhr;
 }
 
-// ─── Cents display helper ─────────────────────────────────────────────────────
+// ─── Value display helper ─────────────────────────────────────────────────────
 function updateCentsDisplay($input) {
     const val = parseFloat($input.val()) || 0;
-    const formatted = (val / 100).toFixed(2);
+    const formatted = val.toFixed(2);
     $input.closest('.flex').find('.js-cents-display').text(formatted);
 }
 

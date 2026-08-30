@@ -55,6 +55,16 @@ export const useCheckout = () => {
         } catch (e) {
           console.error("Failed to save order to sessionStorage:", e);
         }
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key?.startsWith("warranty-selection:")) keysToRemove.push(key);
+          }
+          keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+        } catch (e) {
+          console.error("Failed to clear warranty selections:", e);
+        }
       }
       if (order?.requires_redirect && order?.payment_redirect_url) {
         window.location.href = order.payment_redirect_url;
@@ -82,6 +92,27 @@ export const useCheckout = () => {
 
   const createOrder = () => {
     if (!selectedAddress || !selectedGatewayId) return;
+
+    const warrantySelections: { listing_id: string; warranty_plan_id: string }[] =
+      [];
+    try {
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key?.startsWith("warranty-selection:")) {
+          const listingId = key.replace("warranty-selection:", "");
+          const planId = sessionStorage.getItem(key);
+          if (planId) {
+            warrantySelections.push({
+              listing_id: listingId,
+              warranty_plan_id: planId,
+            });
+          }
+        }
+      }
+    } catch {
+      // sessionStorage unavailable — proceed without warranty selections
+    }
+
     placeOrder.mutate({
       address_id: Number(selectedAddress.id),
       country_payment_gateway_id: selectedGatewayId,
@@ -93,6 +124,8 @@ export const useCheckout = () => {
           ? checkoutData.wallet_balance
           : null
         : null,
+      warranty_selections:
+        warrantySelections.length > 0 ? warrantySelections : null,
     });
   };
 

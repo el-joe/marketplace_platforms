@@ -26,7 +26,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-xs font-bold text-red-400 uppercase tracking-wider mb-0.5">{{ __('delivery.cod.cash_in_custody') }}</p>
-                    <p class="text-2xl font-extrabold text-red-300">{{ number_format($cashInHandCents / 100, 2) }}</p>
+                    <p class="text-2xl font-extrabold text-red-300">{{ number_format($cashInHandCents, 2) }}</p>
                     <p class="text-xs text-slate-400 mt-1">{{ __('delivery.cod.must_remit') }} — {{ __('delivery.cod.must_remit_hint') }}</p>
                 </div>
             </div>
@@ -37,12 +37,12 @@
     <div class="grid grid-cols-2 gap-3 mb-5">
         <div class="d-card text-center py-5 border border-yellow-500/30">
             <p class="text-xs font-bold text-yellow-400 uppercase tracking-wider mb-1">{{ __('delivery.earnings.pending') }}</p>
-            <p class="text-2xl font-extrabold text-yellow-300">{{ number_format($pendingCents / 100, 2) }}</p>
+            <p class="text-2xl font-extrabold text-yellow-300">{{ number_format($pendingCents, 2) }}</p>
             <p class="text-xs text-slate-400 mt-0.5">{{ __('delivery.earnings.awaiting_approval') }}</p>
         </div>
         <div class="d-card text-center py-5 border border-green-500/30">
             <p class="text-xs font-bold text-green-400 uppercase tracking-wider mb-1">{{ __('delivery.earnings.paid') }}</p>
-            <p class="text-2xl font-extrabold text-green-300">{{ number_format($paidCents / 100, 2) }}</p>
+            <p class="text-2xl font-extrabold text-green-300">{{ number_format($paidCents, 2) }}</p>
             <p class="text-xs text-slate-400 mt-0.5">{{ __('delivery.earnings.total_received') }}</p>
         </div>
     </div>

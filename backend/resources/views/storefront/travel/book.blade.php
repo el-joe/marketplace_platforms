@@ -108,7 +108,7 @@
 
 @push('scripts')
 <script>
-const priceCents = {{ $package->price }};
+const price = {{ $package->price }};
 const currency   = '{{ $package->currency }}';
 let count = 1;
 
@@ -127,7 +127,7 @@ document.getElementById('travelers-count').addEventListener('input', e => {
 function updateCount() {
     document.getElementById('travelers-count').value = count;
     document.getElementById('submit-count').textContent = count;
-    const total = (priceCents * count / 100).toFixed(2);
+    const total = (price * count).toFixed(2);
     document.getElementById('total-price').textContent = currency + ' ' + Number(total).toLocaleString('ar-SA');
 }
 

@@ -81,7 +81,7 @@ class CustomerController extends Controller
             $walletBalance = $customer->wallets()
                 ->get()
                 ->groupBy('currency')
-                ->map(fn($wallets, $currency) => number_format($wallets->sum('balance') / 100, 2) . ' ' . $currency)
+                ->map(fn($wallets, $currency) => number_format($wallets->sum('balance'), 2) . ' ' . $currency)
                 ->implode(', ') ?: '—';
 
             return [

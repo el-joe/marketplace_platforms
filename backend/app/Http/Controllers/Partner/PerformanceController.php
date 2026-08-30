@@ -96,8 +96,8 @@ class PerformanceController extends Controller
             ->whereIn('status', ['delivered', 'completed'])
             ->sum('vendor_payout');
 
-        $gmv = round($gmvCents / 100, 2);
-        $avgOrderValue = $totalOrders > 0 ? round($gmvCents / $totalOrders / 100, 2) : 0.0;
+        $gmv = round($gmvCents, 2);
+        $avgOrderValue = $totalOrders > 0 ? round($gmvCents / $totalOrders, 2) : 0.0;
 
         // ── SLA compliance ────────────────────────────────────────────────────
 
@@ -152,7 +152,7 @@ class PerformanceController extends Controller
             $revenueChart[] = [
                 'date' => $dateStr,
                 'revenue' => isset($dailyRevenue[$dateStr])
-                    ? round($dailyRevenue[$dateStr]->total / 100, 2)
+                    ? round($dailyRevenue[$dateStr]->total, 2)
                     : 0,
             ];
             $cursor->addDay();
@@ -173,7 +173,7 @@ class PerformanceController extends Controller
             'product_name' => $item->productVariant?->product?->name_ar
                 ?? $item->productVariant?->product?->name_en
                 ?? '—',
-            'revenue' => round($item->revenue / 100, 2),
+            'revenue' => round($item->revenue, 2),
             'units_sold' => (int) $item->units_sold,
             'orders_count' => (int) $item->orders_count,
         ])->all();
@@ -227,7 +227,7 @@ class PerformanceController extends Controller
             'rating_count' => $ratingCount,
             'active_strikes' => $activeStrikes,
             'flash_units_sold' => (int) ($flashStats->units ?? 0),
-            'flash_revenue' => round(($flashStats->revenue ?? 0) / 100, 2),
+            'flash_revenue' => round(($flashStats->revenue ?? 0), 2),
             'revenue_chart' => $revenueChart,
             'top_products' => $topProducts,
             'reviews_breakdown' => $reviewsBreakdown,

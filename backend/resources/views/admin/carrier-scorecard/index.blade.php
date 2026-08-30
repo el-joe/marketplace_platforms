@@ -31,7 +31,7 @@
             :value="number_format($stats['total_claims'])"
             icon="exclamation-triangle" iconBg="bg-orange-100 text-orange-600" />
         <x-stat-card title="{{ __('admin.carriers_section.total_compensated_stat') }}"
-            :value="number_format($stats['total_compensated'] / 100, 2)"
+            :value="number_format($stats['total_compensated'], 2)"
             icon="banknotes" iconBg="bg-red-100 text-red-600" />
     </div>
 
@@ -106,7 +106,7 @@
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="td text-gray-700">{{ number_format($sc['total_compensated'] / 100, 2) }}</td>
+                            <td class="td text-gray-700">{{ number_format($sc['total_compensated'], 2) }}</td>
                             <td class="td text-end">
                                 <a href="{{ route('admin.carrier-scorecard.show', $company) }}"
                                    class="text-primary-600 hover:underline text-xs font-medium">{{ __('admin.carriers_section.details_link') }}</a>

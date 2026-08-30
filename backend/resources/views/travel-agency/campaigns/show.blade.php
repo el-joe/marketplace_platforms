@@ -159,13 +159,13 @@
                     @if ($offer->budget_per_marketer)
                         <div>
                             <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">{{ __('travel.campaigns.budget_per_marketer_label') }}</p>
-                            <p class="font-medium text-gray-900">{{ number_format($offer->budget_per_marketer / 100, 2) }} {{ __('common.sar') }}</p>
+                            <p class="font-medium text-gray-900">{{ number_format($offer->budget_per_marketer, 2) }} {{ $offer->currency ?? '' }}</p>
                         </div>
                     @endif
                     @if ($offer->total_budget)
                         <div>
                             <p class="text-gray-500 text-xs uppercase tracking-wide mb-1">{{ __('travel.campaigns.total_budget_label') }}</p>
-                            <p class="font-medium text-gray-900">{{ number_format($offer->total_budget / 100, 2) }} {{ __('common.sar') }}</p>
+                            <p class="font-medium text-gray-900">{{ number_format($offer->total_budget, 2) }} {{ $offer->currency ?? '' }}</p>
                         </div>
                     @endif
                     <div>

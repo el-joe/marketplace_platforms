@@ -293,7 +293,7 @@ function validateStep(n) {
         const te = document.querySelector('[name=title_en]').value.trim();
         const pd = document.querySelector('[name=price_display]').value;
         if (!ta || !te || !pd) { alert('يرجى ملء الحقول المطلوبة'); return false; }
-        document.getElementById('price_input').value = Math.round(parseFloat(pd) * 100);
+        document.getElementById('price_input').value = Math.round(parseFloat(pd));
     }
     return true;
 }

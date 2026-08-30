@@ -18,7 +18,7 @@ $warehouse — Warehouse model (edit mode only)
     // Storage rate is stored in cents; display as decimal
     $storageRateDisplay = old('storage_rate_per_m3_price') !== null
         ? old('storage_rate_per_m3_price')
-        : ($isEdit && $warehouse->storage_rate_per_m3_price ? number_format($warehouse->storage_rate_per_m3_price / 100, 2, '.', '') : '');
+        : ($isEdit && $warehouse->storage_rate_per_m3_price ? number_format($warehouse->storage_rate_per_m3_price , 2, '.', '') : '');
 
     $typeOptions = [
         'platform_fbn' => __('admin.warehouses_section.platform_fbn_full'),

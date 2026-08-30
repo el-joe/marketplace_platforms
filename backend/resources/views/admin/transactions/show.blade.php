@@ -107,21 +107,21 @@
                     <div>
                         <dt class="text-xs font-medium text-gray-400 uppercase mb-0.5">{{ __('common.amount') }}</dt>
                         <dd class="text-lg font-bold tabular-nums text-gray-900" dir="ltr">
-                            {{ number_format($transaction->amount / 100, 2) }} {{ $transaction->currency }}
+                            {{ number_format($transaction->amount, 2) }} {{ $transaction->currency }}
                         </dd>
                     </div>
 
                     <div>
                         <dt class="text-xs font-medium text-gray-400 uppercase mb-0.5">{{ __('admin.transactions.gateway_fee') }}</dt>
                         <dd class="tabular-nums text-sm text-red-600" dir="ltr">
-                            − {{ number_format($transaction->gateway_fee / 100, 2) }} {{ $transaction->currency }}
+                            − {{ number_format($transaction->gateway_fee, 2) }} {{ $transaction->currency }}
                         </dd>
                     </div>
 
                     <div>
                         <dt class="text-xs font-medium text-gray-400 uppercase mb-0.5">{{ __('admin.transactions.net_amount') }}</dt>
                         <dd class="tabular-nums text-sm font-semibold text-green-700" dir="ltr">
-                            {{ number_format(($transaction->amount - $transaction->gateway_fee) / 100, 2) }} {{ $transaction->currency }}
+                            {{ number_format(($transaction->amount - $transaction->gateway_fee), 2) }} {{ $transaction->currency }}
                         </dd>
                     </div>
 
@@ -207,7 +207,7 @@
                         <tbody class="divide-y divide-gray-50">
                             @foreach($transaction->refunds as $refund)
                                 <tr>
-                                    <td class="py-2 pr-4 font-semibold tabular-nums" dir="ltr">{{ number_format($refund->amount / 100, 2) }} {{ $refund->currency }}</td>
+                                    <td class="py-2 pr-4 font-semibold tabular-nums" dir="ltr">{{ number_format($refund->amount, 2) }} {{ $refund->currency }}</td>
                                     <td class="py-2 pr-4">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">{{ __('admin.transactions.refund_type_' . $refund->refund_type->value) }}</span>
                                     </td>
@@ -258,7 +258,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.transactions.order_total') }}</p>
-                            <p class="font-semibold tabular-nums" dir="ltr">{{ number_format($transaction->order->total / 100, 2) }} {{ $transaction->currency }}</p>
+                            <p class="font-semibold tabular-nums" dir="ltr">{{ number_format($transaction->order->total, 2) }} {{ $transaction->currency }}</p>
                         </div>
                     </div>
                 @else

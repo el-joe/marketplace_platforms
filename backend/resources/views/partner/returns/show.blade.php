@@ -224,7 +224,7 @@
                     @if($return->refund_amount)
                         <div>
                             <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.returns.refund_amount') }}</dt>
-                            <dd class="font-bold text-green-700">{{ number_format($return->refund_amount / 100, 2) }}</dd>
+                            <dd class="font-bold text-green-700">{{ number_format($return->refund_amount, 2) }}</dd>
                         </div>
                     @endif
                 </dl>

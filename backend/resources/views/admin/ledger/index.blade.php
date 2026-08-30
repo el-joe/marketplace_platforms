@@ -40,10 +40,10 @@
 
     {{-- ─── Stats Row ───────────────────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-        <x-stat-card title="{{ __('admin.ledger_section.cards.total_debit') }}" :value="'$' . number_format($stats['total_debit'] / 100, 2)"
+        <x-stat-card title="{{ __('admin.ledger_section.cards.total_debit') }}" :value="number_format($stats['total_debit'], 2)"
             iconBg="bg-green-100 text-green-600" />
 
-        <x-stat-card title="{{ __('admin.ledger_section.cards.total_credit') }}" :value="'$' . number_format($stats['total_credit'] / 100, 2)"
+        <x-stat-card title="{{ __('admin.ledger_section.cards.total_credit') }}" :value="number_format($stats['total_credit'], 2)"
             iconBg="bg-blue-100 text-blue-600" />
 
         <div
@@ -55,7 +55,7 @@
                 <p class="text-xs text-green-600 mt-0.5">{{ __('admin.ledger_section.cards.balance_formula') }}</p>
             @else
                 <p class="text-xl font-bold text-red-700">⚠ {{ __('admin.ledger_section.cards.imbalance') }}</p>
-                <p class="text-xs text-red-600 mt-0.5" dir="ltr">{{ __('admin.ledger_section.cards.difference') }}: ${{ number_format($stats['difference'] / 100, 2) }}</p>
+                <p class="text-xs text-red-600 mt-0.5" dir="ltr">{{ __('admin.ledger_section.cards.difference') }}: {{ number_format($stats['difference'], 2) }}</p>
             @endif
         </div>
     </div>

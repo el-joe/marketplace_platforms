@@ -49,7 +49,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
                     <p class="text-xs text-gray-500">{{ __('admin.coupons_section.total_discount_granted') }}</p>
-                    <p class="text-xl font-semibold text-gray-900 mt-1">{{ number_format($totalDiscountGranted / 100, 2) }}</p>
+                    <p class="text-xl font-semibold text-gray-900 mt-1">{{ number_format($totalDiscountGranted, 2) }}</p>
                 </div>
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
                     <p class="text-xs text-gray-500">{{ __('admin.coupons_section.used') }}</p>
@@ -92,7 +92,7 @@
                             <tr>
                                 <td class="px-5 py-2">{{ $usage['customer'] ?? '—' }}</td>
                                 <td class="px-5 py-2">{{ $usage['order_number'] ?? '—' }}</td>
-                                <td class="px-5 py-2 text-end">{{ number_format($usage['discount_amount'] / 100, 2) }}</td>
+                                <td class="px-5 py-2 text-end">{{ number_format($usage['discount_amount'], 2) }}</td>
                                 <td class="px-5 py-2 text-end text-gray-500">{{ \Illuminate\Support\Carbon::parse($usage['used_at'])->format('Y-m-d H:i') }}</td>
                             </tr>
                         @empty

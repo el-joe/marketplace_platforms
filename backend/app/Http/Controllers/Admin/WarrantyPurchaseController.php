@@ -96,7 +96,7 @@ class WarrantyPurchaseController extends Controller
                 'product' => '<span class="text-sm text-gray-700">' . e($productName ?? '—') . '</span>',
                 'plan' => '<span class="text-sm text-gray-700">' . e($planName ?? '—') . '</span>',
                 'duration' => '<span class="text-sm text-gray-500">' . e($duration ?? '—') . '</span>',
-                'price' => '<span class="text-sm text-gray-700 whitespace-nowrap">' . number_format($w->price_paid / 100, 2) . ' ' . e($w->currency) . '</span>',
+                'price' => '<span class="text-sm text-gray-700 whitespace-nowrap">' . number_format($w->price_paid, 2) . ' ' . e($w->currency) . '</span>',
                 'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e(ucfirst($w->status)) . '</span>',
                 'coverage_starts_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . ($w->coverage_starts_at ? $w->coverage_starts_at->format('M d, Y') : '—') . '</span>',
                 'coverage_ends_at' => '<span class="text-xs text-gray-500 whitespace-nowrap">' . ($w->coverage_ends_at ? $w->coverage_ends_at->format('M d, Y') : '—') . '</span>',

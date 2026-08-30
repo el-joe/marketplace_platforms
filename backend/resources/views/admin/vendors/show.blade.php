@@ -412,7 +412,7 @@
                                         <td class="py-3 pr-4 text-primary-600">
                                             <a href="{{ route('admin.orders.show', $so->id) }}" class="hover:underline">{{ $so->order_number }}</a>
                                         </td>
-                                        <td class="py-3 pr-4 tabular-nums">${{ number_format($so->vendor_payout / 100, 2) }}</td>
+                                        <td class="py-3 pr-4 tabular-nums">{{ number_format($so->vendor_payout, 2) }} {{ $so->order->currency ?? '' }}</td>
                                         <td class="py-3 pr-4">
                                             <x-badge color="gray">{{ ucwords(str_replace('_', ' ', $so->status->value)) }}</x-badge>
                                         </td>
@@ -458,8 +458,8 @@
                                         <td class="py-3 pr-4 text-xs text-gray-600 whitespace-nowrap">
                                             {{ \Carbon\Carbon::parse($payout->period_start)->format('d M') }} – {{ \Carbon\Carbon::parse($payout->period_end)->format('d M Y') }}
                                         </td>
-                                        <td class="py-3 pr-4 tabular-nums">${{ number_format($payout->gross_sales / 100, 2) }}</td>
-                                        <td class="py-3 pr-4 tabular-nums font-medium">${{ number_format($payout->net_amount / 100, 2) }}</td>
+                                        <td class="py-3 pr-4 tabular-nums">{{ number_format($payout->gross_sales, 2) }} {{ $payout->currency }}</td>
+                                        <td class="py-3 pr-4 tabular-nums font-medium">{{ number_format($payout->net_amount, 2) }} {{ $payout->currency }}</td>
                                         <td class="py-3 pr-4"><x-badge :color="$pc">{{ __('admin.payouts.' . $payout->status->value) }}</x-badge></td>
                                         <td class="py-3 text-xs text-gray-500">{{ $payout->processed_at ? \Carbon\Carbon::parse($payout->processed_at)->format('d M Y') : '—' }}</td>
                                     </tr>

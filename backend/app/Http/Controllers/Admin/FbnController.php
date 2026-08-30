@@ -267,7 +267,7 @@ class FbnController extends Controller
                 'vendor' => e($row->vendor_name),
                 'month' => $row->monthLabel(),
                 'units_stored' => number_format($row->units_stored),
-                'rate' => number_format($row->rate_per_unit / 100, 2) . ' ' . $row->currency,
+                'rate' => number_format($row->rate_per_unit, 2) . ' ' . $row->currency,
                 'total_fee' => '<span class="font-semibold">' . $row->totalFormatted() . '</span>',
                 'status' => '<span class="badge badge-' . $row->statusColor() . '">' . $row->status->label() . '</span>',
                 'actions' => $actions,

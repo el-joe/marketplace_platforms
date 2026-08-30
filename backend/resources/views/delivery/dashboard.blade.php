@@ -62,7 +62,7 @@
     @foreach([
         ['label' => __('delivery.dashboard.total'),     'value' => $todayAssignments->total     ?? 0, 'color' => 'text-slate-300'],
         ['label' => __('delivery.dashboard.completed'), 'value' => $todayAssignments->completed ?? 0, 'color' => 'text-green-400'],
-        ['label' => __('delivery.earnings.title'),  'value' => number_format(($earningsToday ?? 0) / 100, 2), 'color' => 'text-yellow-400'],
+        ['label' => __('delivery.earnings.title'),  'value' => number_format(($earningsToday ?? 0), 2), 'color' => 'text-yellow-400'],
     ] as $s)
         <div class="d-card text-center">
             <p class="text-xl font-bold {{ $s['color'] }}">{{ $s['value'] }}</p>

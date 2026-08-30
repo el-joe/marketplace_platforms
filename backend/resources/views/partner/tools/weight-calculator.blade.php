@@ -133,7 +133,7 @@
                                         &ndash;
                                         {{ $slab->max_weight_grams !== null ? rtrim(rtrim(number_format($slab->max_weight_grams / 1000, 2), '0'), '.') . ' kg' : '+' }}
                                     </td>
-                                    <td class="py-2 pr-4 text-gray-700">{{ $currency }} {{ number_format($slab->extra_fee / 100, 2) }}</td>
+                                    <td class="py-2 pr-4 text-gray-700">{{ $currency }} {{ number_format($slab->extra_fee, 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -178,7 +178,7 @@ function weightCalculator() {
 
         formatAmount(amount) {
             if (amount === undefined || amount === null) return '0.00';
-            return (amount / 100).toFixed(2);
+            return Number(amount).toFixed(2);
         },
 
         calculate() {

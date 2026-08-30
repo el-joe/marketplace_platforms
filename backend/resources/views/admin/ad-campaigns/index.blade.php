@@ -99,7 +99,7 @@
             iconBg="bg-gray-100 text-gray-600" />
         <x-stat-card
             title="{{ __('admin.ad_campaigns.spend_today') }}"
-            :value="'$' . number_format($stats['spend_today'] / 100, 2)"
+            :value="number_format($stats['spend_today'], 2)"
             icon="trending-up"
             iconBg="bg-primary-100 text-primary-600" />
     </div>

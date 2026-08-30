@@ -24,7 +24,7 @@
 @endphp
 
 <div class="space-y-6" x-data="{
-        priceAmount: {{ (float) ((int) $val('price', 0)) / 100 }},
+        priceAmount: {{ (float) ((int) $val('price', 0)) }},
         currency: '{{ $val('currency', 'AED') }}',
         featuresEn: {{ json_encode(array_values($featuresEn) ?: ['']) }},
         featuresAr: {{ json_encode(array_values($featuresAr) ?: ['']) }},
@@ -193,7 +193,7 @@
                                 {{ __('admin.warranty_plans.price') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="price" name="price" x-model.number="priceAmount"
-                                min="0.01" step="0.01" class="input w-full @error('price') border-red-400 @enderror" required>
+                                min="1" step="1" class="input w-full @error('price') border-red-400 @enderror" required>
                             <p class="text-xs text-gray-500 mt-1">
                                 ≈ <span x-text="(priceAmount).toFixed(2)"></span> <span x-text="currency"></span>
                             </p>

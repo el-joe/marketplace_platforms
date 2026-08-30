@@ -209,10 +209,10 @@
                                 {{ $product?->name_ar ?? $product?->name_en ?? '—' }}
                             </td>
                             <td class="px-4 py-3 text-primary-700 font-semibold">
-                                {{ number_format($sub->flash_price / 100, 2) }} {{ $currency }}
+                                {{ number_format($sub->flash_price, 2) }} {{ $currency }}
                             </td>
                             <td class="px-4 py-3 text-gray-500 line-through">
-                                {{ number_format($sub->original_price / 100, 2) }} {{ $currency }}
+                                {{ number_format($sub->original_price, 2) }} {{ $currency }}
                             </td>
                             <td class="px-4 py-3 text-green-700 font-medium">
                                 {{ number_format($sub->calculated_discount_pct, 1) }}%
@@ -282,7 +282,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-primary-700 font-medium">
                                     <span class="stat-revenue">
-                                        {{ number_format(($sub->flash_price * $sub->quantity_sold) / 100, 2) }}
+                                        {{ number_format(($sub->flash_price * $sub->quantity_sold), 2) }}
                                     </span>
                                     {{ $sub->flash_price_currency }}
                                 </td>

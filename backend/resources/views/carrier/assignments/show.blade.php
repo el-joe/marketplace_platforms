@@ -145,8 +145,8 @@
                         <p class="text-xs text-gray-400 mt-0.5 font-mono">{{ $item->sku }}</p>
                     </div>
                     <div class="text-right shrink-0 text-sm">
-                        <p class="text-gray-500">{{ $item->quantity }} × {{ number_format($item->unit_price / 100, 2) }}</p>
-                        <p class="font-semibold text-gray-900 mt-0.5">{{ number_format($item->line_total / 100, 2) }}</p>
+                        <p class="text-gray-500">{{ $item->quantity }} × {{ number_format($item->unit_price, 2) }}</p>
+                        <p class="font-semibold text-gray-900 mt-0.5">{{ number_format($item->line_total, 2) }}</p>
                     </div>
                 </div>
                 @endforeach

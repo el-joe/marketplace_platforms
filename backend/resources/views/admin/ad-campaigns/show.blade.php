@@ -191,25 +191,25 @@
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.total_budget') }}</dt>
-                                <dd class="font-semibold">${{ number_format($campaign->budget_total / 100, 2) }}</dd>
+                                <dd class="font-semibold">${{ number_format($campaign->budget_total, 2) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.daily_budget') }}</dt>
                                 <dd class="font-semibold">
-                                    {{ $campaign->budget_daily ? '$' . number_format($campaign->budget_daily / 100, 2) : '—' }}
+                                    {{ $campaign->budget_daily ? '$' . number_format($campaign->budget_daily, 2) : '—' }}
                                 </dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.bid') }}</dt>
-                                <dd class="font-semibold">${{ number_format($campaign->bid / 100, 4) }}</dd>
+                                <dd class="font-semibold">${{ number_format($campaign->bid, 4) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.spent_total') }}</dt>
-                                <dd class="font-semibold text-orange-600">${{ number_format($campaign->budget_spent_total / 100, 2) }}</dd>
+                                <dd class="font-semibold text-orange-600">${{ number_format($campaign->budget_spent_total, 2) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.spent_today') }}</dt>
-                                <dd class="font-semibold">${{ number_format($campaign->budget_spent_today / 100, 2) }}</dd>
+                                <dd class="font-semibold">${{ number_format($campaign->budget_spent_today, 2) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.ad_campaigns.utilization') }}</dt>
@@ -381,7 +381,7 @@
                                             </span>
                                         </td>
                                         <td class="py-2 pr-4">
-                                            {{ $kw->bid_override ? '$' . number_format($kw->bid_override / 100, 4) : '—' }}
+                                            {{ $kw->bid_override ? '$' . number_format($kw->bid_override, 4) : '—' }}
                                         </td>
                                         <td class="py-2 pr-4">
                                             @if($kw->is_negative)
@@ -428,7 +428,7 @@
                                             {{ $ct->category?->name_en ?? $ct->category_id }}
                                         </td>
                                         <td class="py-2 pr-4">
-                                            {{ $ct->bid_override ? '$' . number_format($ct->bid_override / 100, 4) : '—' }}
+                                            {{ $ct->bid_override ? '$' . number_format($ct->bid_override, 4) : '—' }}
                                         </td>
                                         <td class="py-2">
                                             @if($ct->is_active)

@@ -157,12 +157,12 @@ class ShippingSettingController extends Controller
                 'zone_name' => optional($rate->destinationZone)->name ?? '—',
                 'method_name' => optional($rate->shippingMethod)->name ?? '—',
                 'carrier_name' => optional($rate->carrier)->name ?? 'Any',
-                'base_fee_formatted' => number_format($rate->base_fee / 100, 2),
-                'rate_per_kg_formatted' => number_format($rate->rate_per_kg / 100, 2),
+                'base_fee_formatted' => number_format($rate->base_fee, 2),
+                'rate_per_kg_formatted' => number_format($rate->rate_per_kg, 2),
                 'free_threshold_formatted' => $rate->free_shipping_threshold
-                    ? number_format($rate->free_shipping_threshold / 100, 2)
+                    ? number_format($rate->free_shipping_threshold, 2)
                     : '—',
-                'cod_fee_formatted' => number_format($rate->cod_extra_fee / 100, 2),
+                'cod_fee_formatted' => number_format($rate->cod_extra_fee, 2),
                 'is_active' => $rate->is_active,
                 'active_badge' => $rate->is_active
                     ? '<span class="badge badge-success">Active</span>'

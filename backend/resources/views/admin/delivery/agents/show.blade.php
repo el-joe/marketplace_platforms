@@ -438,13 +438,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function loadEarnings () {
         if (earningsChartInstance) return;
         $.getJSON(EARNINGS_URL, data => {
-            const fmt = cents => (cents / 100).toFixed(2);
+            const fmt = amount => Number(amount).toFixed(2);
             $('#earnings-this-month').text(fmt(data.summary.this_month));
             $('#earnings-last-month').text(fmt(data.summary.last_month));
             $('#earnings-ytd').text(fmt(data.summary.ytd));
 
             const labels = data.monthly.map(r => `${r.year}-${String(r.month).padStart(2,'0')}`);
-            const values = data.monthly.map(r => r.total / 100);
+            const values = data.monthly.map(r => r.total);
 
             earningsChartInstance = new Chart(document.getElementById('earnings-chart'), {
                 type: 'bar',

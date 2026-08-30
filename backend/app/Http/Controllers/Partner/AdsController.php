@@ -55,8 +55,8 @@ class AdsController extends Controller
             'name'    => '<a href="' . route('partner.ads.show', $c->id) . '" class="font-medium text-primary-600 hover:underline">' . e($c->name) . '</a>',
             'type'    => strtoupper($c->type->value),
             'status'  => $this->statusBadge($c->status->value),
-            'budget'  => number_format($c->budget_total / 100, 2) . ' / ' . number_format(($c->budget_daily ?? 0) / 100, 2) . ' ' . ($c->country?->currency_code ?? ''),
-            'bid'     => number_format($c->bid / 100, 2) . ' ' . ($c->country?->currency_code ?? ''),
+            'budget'  => number_format($c->budget_total, 2) . ' / ' . number_format(($c->budget_daily ?? 0), 2) . ' ' . ($c->country?->currency_code ?? ''),
+            'bid'     => number_format($c->bid, 2) . ' ' . ($c->country?->currency_code ?? ''),
             'date'    => $c->created_at->format('d M Y'),
             'actions' => '<a href="' . route('partner.ads.show', $c->id) . '" class="inline-flex items-center px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">View</a>',
         ]);
@@ -195,8 +195,8 @@ class AdsController extends Controller
                 'impressions' => $stats->sum('impressions'),
                 'clicks'      => $stats->sum('clicks'),
                 'conversions' => $stats->sum('conversions'),
-                'spend'       => number_format($stats->sum('spend') / 100, 2),
-                'revenue'     => number_format($stats->sum('revenue_attributed') / 100, 2),
+                'spend'       => number_format($stats->sum('spend'), 2),
+                'revenue'     => number_format($stats->sum('revenue_attributed'), 2),
             ],
         ]);
     }

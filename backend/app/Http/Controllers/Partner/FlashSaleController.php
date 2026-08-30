@@ -297,7 +297,7 @@ class FlashSaleController extends Controller
                 'quantity_remaining' => (int) $sub->quantity_remaining,
                 'max_quantity_total' => (int) $sub->max_quantity_total,
                 'revenue' => (int) $sub->flash_price * (int) $sub->quantity_sold,
-                'revenue_display' => round(((int) $sub->flash_price * (int) $sub->quantity_sold) / 100, 2),
+                'revenue_display' => round(((int) $sub->flash_price * (int) $sub->quantity_sold), 2),
                 'currency' => $sub->flash_price_currency,
             ];
         });

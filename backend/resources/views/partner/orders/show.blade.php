@@ -111,12 +111,12 @@
                             </div>
                             <div class="text-right shrink-0">
                                 <p class="text-sm text-gray-500">{{ $item->quantity }} ×
-                                    {{ number_format($item->unit_price / 100, 2) }} {{ $currency }}</p>
-                                <p class="font-semibold text-gray-900 mt-0.5">{{ number_format($item->line_total / 100, 2) }}
+                                    {{ number_format($item->unit_price, 2) }} {{ $currency }}</p>
+                                <p class="font-semibold text-gray-900 mt-0.5">{{ number_format($item->line_total, 2) }}
                                     {{ $currency }}</p>
                                 @if(($item->commission_amount ?? 0) > 0)
                                     <p class="text-xs text-red-500 mt-0.5">
-                                        {{ __('partner.orders.commission') }}: −{{ number_format($item->commission_amount / 100, 2) }} {{ $currency }}
+                                        {{ __('partner.orders.commission') }}: −{{ number_format($item->commission_amount, 2) }} {{ $currency }}
                                     </p>
                                 @endif
                             </div>
@@ -249,11 +249,11 @@
                     </div>
                     <div class="flex justify-between text-gray-600">
                         <span>{{ __('common.subtotal') }}</span>
-                        <span class="font-medium">{{ number_format($subOrder->subtotal / 100, 2) }} {{ $currency }}</span>
+                        <span class="font-medium">{{ number_format($subOrder->subtotal, 2) }} {{ $currency }}</span>
                     </div>
                     <div class="flex justify-between text-gray-600">
                         <span>{{ __('partner.orders.platform_commission') }}</span>
-                        <span class="text-red-500">- {{ number_format($subOrder->platform_commission / 100, 2) }}
+                        <span class="text-red-500">- {{ number_format($subOrder->platform_commission, 2) }}
                             {{ $currency }}</span>
                     </div>
                     @if($subOrder->gateway_fee > 0)
@@ -264,13 +264,13 @@
                                     <x-heroicon name="information-circle" class="w-3.5 h-3.5" />
                                 </span>
                             </span>
-                            <span class="text-red-500">- {{ number_format($subOrder->gateway_fee / 100, 2) }}
+                            <span class="text-red-500">- {{ number_format($subOrder->gateway_fee, 2) }}
                                 {{ $currency }}</span>
                         </div>
                     @endif
                     <div class="border-t border-gray-100 pt-2 flex justify-between font-semibold text-gray-900">
                         <span>{{ __('partner.orders.net_payout') }}</span>
-                        <span class="text-green-600">{{ number_format($subOrder->vendor_payout / 100, 2) }}
+                        <span class="text-green-600">{{ number_format($subOrder->vendor_payout, 2) }}
                             {{ $currency }}</span>
                     </div>
                 </div>
@@ -281,19 +281,19 @@
                         <div class="space-y-1 text-orange-700">
                             <div class="flex justify-between">
                                 <span>{{ __('partner.orders.customer_paid_for_shipping') }}</span>
-                                <span>{{ number_format($subOrder->shipping / 100, 2) }} {{ $currency }}</span>
+                                <span>{{ number_format($subOrder->shipping, 2) }} {{ $currency }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>{{ __('partner.orders.carrier_actual_charge') }}</span>
-                                <span>{{ number_format($subOrder->carrier_shipping_cost / 100, 2) }} {{ $currency }}</span>
+                                <span>{{ number_format($subOrder->carrier_shipping_cost, 2) }} {{ $currency }}</span>
                             </div>
                             <div class="flex justify-between font-medium border-t border-orange-300 pt-1">
                                 <span>{{ __('partner.orders.gap') }}</span>
-                                <span>{{ number_format($subOrder->shipping_gap / 100, 2) }} {{ $currency }}</span>
+                                <span>{{ number_format($subOrder->shipping_gap, 2) }} {{ $currency }}</span>
                             </div>
                             <div class="flex justify-between text-red-700">
                                 <span>{{ __('partner.orders.your_share_of_gap') }}</span>
-                                <span>- {{ number_format($subOrder->vendor_contribution_amount / 100, 2) }} {{ $currency }}</span>
+                                <span>- {{ number_format($subOrder->vendor_contribution_amount, 2) }} {{ $currency }}</span>
                             </div>
                         </div>
                     </div>
@@ -302,7 +302,7 @@
 
             @if(!$subOrder->cod_remittance_confirmed && $order->payment_method === 'cod')
                 <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-                    <strong>{{ __('partner.orders.alert') }}:</strong> {{ __('partner.orders.cod_pending_notice', ['amount' => number_format($subOrder->vendor_payout / 100, 2) . ' ' . $currency]) }}
+                    <strong>{{ __('partner.orders.alert') }}:</strong> {{ __('partner.orders.cod_pending_notice', ['amount' => number_format($subOrder->vendor_payout, 2) . ' ' . $currency]) }}
                 </div>
             @endif
 

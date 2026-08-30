@@ -268,8 +268,8 @@
                                             —
                                         @endif
                                     </td>
-                                    <td class="text-end">{{ number_format($sub->flash_price / 100, 2) }} {{ $sub->flash_price_currency }}</td>
-                                    <td class="text-end">{{ number_format($sub->original_price / 100, 2) }} {{ $sub->flash_price_currency }}</td>
+                                    <td class="text-end">{{ number_format($sub->flash_price, 2) }} {{ $sub->flash_price_currency }}</td>
+                                    <td class="text-end">{{ number_format($sub->original_price, 2) }} {{ $sub->flash_price_currency }}</td>
                                     <td class="text-end">{{ $sub->calculated_discount_pct !== null ? $sub->calculated_discount_pct . '%' : '—' }}</td>
                                     <td>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">

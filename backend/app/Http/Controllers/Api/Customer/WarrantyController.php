@@ -24,6 +24,11 @@ use Illuminate\Support\Str;
 
 class WarrantyController extends Controller
 {
+    public function __construct(
+        private readonly \App\Services\WarrantyPlanService $warrantyPlanService,
+    ) {
+    }
+
     public function plans(string $orderItemId): JsonResponse
     {
         /** @var Customer $customer */
@@ -40,21 +45,19 @@ class WarrantyController extends Controller
             return ApiResponse::success([], __('customer_api.warranty.already_has_warranty'));
         }
 
-        $categoryId = $orderItem->productVariant?->product?->category_id;
+        $product = $orderItem->productVariant?->product;
 
-        if (! $categoryId) {
+        if (! $product) {
             return ApiResponse::success([], __('customer_api.warranty.no_plans_available'));
         }
 
-        $plans = WarrantyPlan::where('category_id', $categoryId)
-            ->where('is_active', true)
-            ->where('currency', $orderItem->order->currency)
-            ->where(fn ($q) => $q->whereNull('country_ids')
-                ->orWhereJsonContains('country_ids', $customer->country_id))
-            ->orderBy('sort_order')
-            ->get();
+        $plans = $this->warrantyPlanService->getPlansForProduct(
+            $product,
+            $customer->country_id,
+            $orderItem->order->currency,
+        );
 
-        return ApiResponse::success(WarrantyPlanResource::collection($plans), __('customer_api.warranty.plans_retrieved'));
+        return ApiResponse::success($plans, __('customer_api.warranty.plans_retrieved'));
     }
 
     public function purchases(): JsonResponse

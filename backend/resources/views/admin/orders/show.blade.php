@@ -905,7 +905,7 @@
                 {{-- Partial amount (shown/hidden by JS) --}}
                 <div id="partial-amount-field" class="hidden">
                     <label class="form-label">{{ __('common.amount') }} ({{ $currency }})</label>
-                    <input type="number" name="amount" min="0.01" step="0.01" max="{{ $order->total / 100 }}"
+                    <input type="number" name="amount" min="1" step="1" max="{{ $order->total }}"
                         class="form-input w-full" placeholder="0.00">
                 </div>
 

@@ -92,7 +92,7 @@ class PayoutController extends Controller
 
         $rows = $payouts->map(fn($row) => [
             $row->payout_number,
-            number_format($row->net_amount / 100, 2),
+            number_format($row->net_amount, 2),
             $row->currency,
             $row->status instanceof \BackedEnum ? $row->status->value : $row->status,
             optional($row->period_end)->format('Y-m-d'),
@@ -156,11 +156,11 @@ class PayoutController extends Controller
             ->first(['net_amount', 'processed_at', 'payout_number']);
 
         return response()->json([
-            'this_month' => round($thisMonth / 100, 2),
-            'pending' => round($pending / 100, 2),
-            'ytd' => round($ytd / 100, 2),
+            'this_month' => round($thisMonth, 2),
+            'pending' => round($pending, 2),
+            'ytd' => round($ytd, 2),
             'last_payout' => $lastPayout ? [
-                'amount' => round($lastPayout->net_amount / 100, 2),
+                'amount' => round($lastPayout->net_amount, 2),
                 'date' => $lastPayout->processed_at?->format('Y-m-d'),
                 'number' => $lastPayout->payout_number,
             ] : null,

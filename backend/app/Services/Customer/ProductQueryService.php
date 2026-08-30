@@ -64,12 +64,19 @@ class ProductQueryService
             ->selectRaw('MIN(vl.price) as low, MAX(vl.price) as high')
             ->first();
 
+        if (empty($categoryIds) && !empty($filters['category'])) {
+            $cat = \App\Models\Category::find($filters['category']);
+            $categoryIds = $cat
+                ? app(CategoryService::class)->getDescendantIds($cat)
+                : [$filters['category']];
+        }
+
         return [
             'price_range' => [
                 'min' => $priceRange ? (int) $priceRange->low : 0,
                 'max' => $priceRange ? (int) $priceRange->high : 0,
             ],
-            'attributes' => $this->attributeFacets($base, $categoryIds ?? (!empty($filters['category']) ? [$filters['category']] : [])),
+            'attributes' => $this->attributeFacets($base, $categoryIds ?? []),
         ];
     }
 
@@ -330,7 +337,11 @@ class ProductQueryService
     public function applyFilters($builder, array $filters)
     {
         if (!empty($filters['category'])) {
-            $builder->where('products.category_id', $filters['category']);
+            $category = \App\Models\Category::find($filters['category']);
+            $categoryIds = $category
+                ? app(CategoryService::class)->getDescendantIds($category)
+                : [$filters['category']];
+            $builder->whereIn('products.category_id', $categoryIds);
         }
         if (!empty($filters['brand'])) {
             $builder->where('products.brand_id', $filters['brand']);
