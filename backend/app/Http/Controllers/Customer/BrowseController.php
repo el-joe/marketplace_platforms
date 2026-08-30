@@ -161,7 +161,9 @@ class BrowseController extends Controller
         $travelCategory = null;
 
         if ($id !== 'all' && $id !== '') {
-            $travelCategory = TravelCategory::where('id', $id)->where('is_active', 1)->first();
+            $travelCategory = TravelCategory::where('is_active', 1)
+                ->where(fn ($query) => $query->where('id', $id)->orWhere('slug', $id))
+                ->first();
 
             if (!$travelCategory) {
                 return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import TravelPackageCard from "./components/package-card";
 import CategoryTabs from "./components/category-tabs";
@@ -20,10 +21,16 @@ export default async function TravelPackagesListing({ searchParams }: Props) {
   const page = Math.max(1, Number(searchParams.page) || 1);
   const categoryId = searchParams.category;
 
+  const result = await getTravelPackages({ categoryId, page, perPage: PACKAGES_PER_PAGE });
+
+  if (!result) {
+    notFound();
+  }
+
   const {
     available_categories,
     listings: { items, meta },
-  } = await getTravelPackages({ categoryId, page, perPage: PACKAGES_PER_PAGE });
+  } = result;
 
   return (
     <section className="container py-6 max-w-[1200px]">

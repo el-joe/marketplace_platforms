@@ -6,20 +6,27 @@ import type {
   TravelPackagesListResponse,
 } from "../helpers/types";
 
-/** Feature-only: GET /browse/travel/:id — category-scoped ("all" by default) paginated travel package listing. */
+/** Feature-only: GET /browse/travel/:id — category-scoped ("all" by default) paginated travel package listing. Returns undefined on 404 (unknown category). */
 export async function getTravelPackages(
   filters: ListTravelPackagesFilters = {},
-): Promise<TravelPackagesListResponse> {
+): Promise<TravelPackagesListResponse | undefined> {
   const categoryId = filters.categoryId ?? "all";
   const params = new URLSearchParams();
   if (filters.page) params.set("page", String(filters.page));
   if (filters.perPage) params.set("per_page", String(filters.perPage));
 
   const query = params.toString();
-  const envelope = await fetchInstance<ApiEnvelope<TravelPackagesListResponse>>(
-    `/browse/travel/${categoryId}${query ? `?${query}` : ""}`,
-  );
-  return envelope.data;
+  try {
+    const envelope = await fetchInstance<ApiEnvelope<TravelPackagesListResponse>>(
+      `/browse/travel/${categoryId}${query ? `?${query}` : ""}`,
+    );
+    return envelope.data;
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) {
+      return undefined;
+    }
+    throw error;
+  }
 }
 
 /** Feature-only: GET /listings/travel/:slug — travel package detail. Returns undefined on 404. */
