@@ -16,7 +16,7 @@ export default async function TrackingStepper({ order }: Props) {
 
   const stepDates: Record<string, string | undefined> = {
     placed: format(new Date(order.placed_at), "do MMM"),
-    dispatched: subOrder?.tracking.shipped_at
+    shipped: subOrder?.tracking.shipped_at
       ? format(new Date(subOrder.tracking.shipped_at), "do MMM")
       : undefined,
     delivered: subOrder?.tracking.delivered_at
@@ -31,12 +31,17 @@ export default async function TrackingStepper({ order }: Props) {
         const Icon = step.icon;
 
         return (
-          <div key={step.stage} className="flex flex-1 items-center last:flex-none">
+          <div
+            key={step.stage}
+            className="flex flex-1 items-center last:flex-none"
+          >
             <div className="flex flex-col items-center text-center">
               <span
                 className={cn(
                   "flex size-9 items-center justify-center rounded-full",
-                  isReached ? "bg-light-green text-green" : "bg-gray-2 text-light",
+                  isReached
+                    ? "bg-light-green text-green"
+                    : "bg-gray-2 text-light",
                 )}
               >
                 <Icon className="size-4.5" />
@@ -44,7 +49,9 @@ export default async function TrackingStepper({ order }: Props) {
               <p
                 className={cn(
                   "mt-2 text-sm",
-                  index === currentIndex ? "font-bold text-primary" : "text-gray",
+                  index === currentIndex
+                    ? "font-bold text-primary"
+                    : "text-gray",
                 )}
               >
                 {t(step.labelKey)}

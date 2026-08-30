@@ -13,15 +13,15 @@ type Props = {
 export default async function OrderTracking({ order }: Props) {
   const t = await getTranslations("profile");
 
-
-console.log(order);
-
   return (
     <div>
       <h1 className="text-[28px] font-bold">{t("trackingDetails")}</h1>
 
       <div className="mt-4">
-        <OrderIdDateCard orderId={order.order_number} orderDate={order.placed_at} />
+        <OrderIdDateCard
+          orderId={order.order_number}
+          orderDate={order.placed_at}
+        />
       </div>
 
       <div className="mt-4">
