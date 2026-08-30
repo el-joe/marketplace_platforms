@@ -4,11 +4,11 @@ import Image from "next/image";
 import React from "react";
 import { Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Block } from "./types";
 import { cn } from "@/src/lib/utils";
-import SectionTitle from "./section-title";
 import { AdBadge } from "@/src/components/shared/ad-badge";
-import { chunks } from "./helpers/chunks-arr";
+import { chunks } from "../helpers/chunks-arr";
+import { Block } from "../types";
+import SectionTitle from "./section-title";
 
 const heights = {
   small: "min-h-[80px] max-h-[140px]",

@@ -1,5 +1,5 @@
+import { DynamicLayout } from "@/src/components/shared/page-builder";
 import { getHomeService } from "./api/get";
-import { DynamicLayout } from "./dynamic-layout";
 
 export default async function Home() {
   const homeData = await getHomeService();

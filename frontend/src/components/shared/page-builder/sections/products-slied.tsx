@@ -4,11 +4,11 @@ import { Navigation, Grid } from "swiper/modules";
 import "swiper/css/grid";
 
 import ProductCard from "@/src/components/shared/product-card";
-import { Block } from "./types";
-import SectionTitle from "./section-title";
 import useLocale from "@/src/hooks/use-locale";
-import SpotlightCard from "./spotlight-card";
-import { chunks } from "./helpers/chunks-arr";
+import { Block } from "../types";
+import { chunks } from "../helpers/chunks-arr";
+import SectionTitle from "./section-title";
+import SpotlightCard from "@/src/features/noon/home/spotlight-card";
 
 export const ProductsSlider = ({ data }: { data: Block }) => {
   const locale = useLocale();

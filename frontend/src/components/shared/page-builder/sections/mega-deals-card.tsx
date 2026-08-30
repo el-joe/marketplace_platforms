@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import Price from "../../../components/shared/Price";
+import Price from "../../Price";
 import { Product } from "@/src/features/noon/home/types";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
