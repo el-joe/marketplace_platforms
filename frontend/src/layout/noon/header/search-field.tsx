@@ -1,31 +1,22 @@
 "use client";
-import {
-  ClockIcon,
-  Loader2Icon,
-  SearchIcon,
-  StoreIcon,
-  TagIcon,
-  Trash2Icon,
-  XIcon,
-} from "lucide-react";
+import { Loader2Icon, SearchIcon, TrendingUpIcon, XIcon } from "lucide-react";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "../ui/input-group";
+} from "../../../components/ui/input-group";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  getSearchSuggestionsService,
-  ISearchSuggestionsData,
-} from "@/src/services/search";
-import { useSearchHistory } from "@/src/hooks/use-search-history";
-import useLocale from "@/src/hooks/use-locale";
+import { useSearchHistory } from "@/src/layout/noon/header/helpers/use-search-history";
+import Image from "next/image";
+import { ISearchSuggestionsData } from "./types/search.type";
+import { getSearchSuggestionsService } from "./api/get";
+import { cn } from "@/src/lib/utils";
 
 const SearchField = () => {
-  const locale = useLocale();
+  // const locale = useLocale();
   const t = useTranslations("header");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,7 +32,7 @@ const SearchField = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { history, addSearch, removeSearch, clearHistory } = useSearchHistory();
+  const { history, addSearch, removeSearch } = useSearchHistory();
 
   // Handle outside click to close suggestions dropdown
   useEffect(() => {
@@ -102,6 +93,23 @@ const SearchField = () => {
     };
   }, [query]);
 
+  // Debounced trending search fetching
+  useEffect(() => {
+    if (!isOpen || !!query.length) return;
+    (async () => {
+      try {
+        const res = await getSearchSuggestionsService("");
+        if (res?.data) {
+          setSuggestions(res.data);
+        }
+      } catch (err: unknown) {
+        if ((err as Error)?.name !== "AbortError") {
+          setSuggestions(null);
+        }
+      }
+    })();
+  }, [isOpen, query.length]);
+
   const handleSearch = (searchTerm: string) => {
     const term = searchTerm.trim();
     if (!term) return;
@@ -131,7 +139,12 @@ const SearchField = () => {
 
   return (
     <div ref={containerRef} className="flex-1 relative min-w-45">
-      <InputGroup className="h-10 md:h-11 text-base bg-white! shadow-xs focus-within:ring-2 focus-within:ring-primary/20 transition-all rounded-lg border-border">
+      <InputGroup
+        className={cn(
+          "h-10 md:h-11 text-base bg-white! shadow-xs focus-within:ring-2 focus-within:ring-primary/20 transition-all rounded-lg border-border",
+          isOpen && "rounded-b-none border-b-0 outline-0",
+        )}
+      >
         <InputGroupAddon align="inline-start">
           <button
             type="button"
@@ -182,53 +195,71 @@ const SearchField = () => {
 
       {/* Dropdown for history and suggestions */}
       {isOpen && (
-        <div className="max-w-[320px] lg:max-w-full absolute top-full lg:inset-s-0 inset-e-0 mt-1.5 bg-white dark:bg-card rounded-xl border border-border shadow-xl z-50 overflow-hidden max-h-120 overflow-y-auto divide-y divide-border/60 animate-in fade-in-50 zoom-in-95 duration-150">
+        <div className="max-w-[320px] lg:max-w-full absolute top-full lg:inset-s-0 inset-e-0 mt-1.5s bg-white dark:bg-card rounded-b-xl border border-border shadow-xl z-50 overflow-hidden max-h-120 overflow-y-auto divide-y divide-border/60 animate-in fade-in-50 zoom-in-95 duration-150">
           {/* Query is empty: Show search history */}
           {!query.trim() && (
-            <div>
+            <div className="p-4">
               {history.length > 0 ? (
                 <div>
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-muted/40 text-xs font-semibold text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <ClockIcon className="size-3.5" />
-                      {t("recentSearches")}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearHistory();
-                      }}
-                      className="text-xs text-destructive hover:underline cursor-pointer flex items-center gap-1"
-                    >
-                      <Trash2Icon className="size-3" />
-                      {t("clearAll")}
-                    </button>
-                  </div>
-                  <ul className="py-1">
+                  <p className="text-lg font-semibold mb-2">
+                    {t("recentlySearched")}
+                  </p>
+                  <ul className="py-1 flex gap-3">
                     {history.map((item) => (
                       <li
                         key={item}
-                        className="flex items-center justify-between px-4 py-2 hover:bg-muted/60 transition-colors group cursor-pointer"
+                        className="flex items-center justify-between pe-2 text-sm hover:bg-muted/60 transition-colors group cursor-pointer border border-border rounded-lg"
                         onClick={() => {
                           setQuery(item);
                           handleSearch(item);
                         }}
                       >
-                        <span className="flex items-center gap-2.5 text-sm text-foreground">
-                          <ClockIcon className="size-4 text-muted-foreground" />
-                          <span>{item}</span>
+                        <span className="bg-muted/60">
+                          <Image src={""} alt="Oops" width={50} height={40} />
                         </span>
+                        <p>{item}</p>
+                        {/* </span> */}
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeSearch(item);
                           }}
-                          className="p-1 text-muted-foreground hover:text-destructive rounded-full hover:bg-muted opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          className="p-1 text-muted-foreground cursor-pointer"
                           aria-label="Remove item"
                         >
-                          <XIcon className="size-3.5" />
+                          <XIcon className="size-5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* trending searches */}
+                  <p className="text-lg font-semibold mb-2 mt-4">
+                    {t("trendingSearches")}
+                  </p>
+                  <ul className="py-1 flex gap-3">
+                    {suggestions?.trending.map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-center justify-between px-2 py-1 gap-2 text-sm hover:bg-muted/60 transition-colors group cursor-pointer border border-border rounded-lg"
+                        onClick={() => {
+                          setQuery(item);
+                          handleSearch(item);
+                        }}
+                      >
+                        <TrendingUpIcon className="size-4 text-gray" />
+                        <p>{item}</p>
+                        {/* </span> */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeSearch(item);
+                          }}
+                          className="p-1 text-muted-foreground cursor-pointer"
+                          aria-label="Remove item"
+                        >
+                          <XIcon className="size-5" />
                         </button>
                       </li>
                     ))}
@@ -246,7 +277,7 @@ const SearchField = () => {
           {query.trim().length > 0 && (
             <div>
               {/* Direct search option */}
-              <button
+              {/* <button
                 type="button"
                 onClick={() => handleSearch(query)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/5 text-primary text-start font-medium text-sm transition-colors border-b border-border/40 cursor-pointer"
@@ -256,11 +287,11 @@ const SearchField = () => {
                   {t("searchFor")}: &ldquo;
                   <span className="font-semibold">{query}</span>&rdquo;
                 </span>
-              </button>
+              </button> */}
 
               {/* Suggestions */}
               {hasSuggestions ? (
-                <div className="divide-y divide-border/40">
+                <div className="">
                   {/* Suggested Query terms */}
                   {suggestions?.queries && suggestions?.queries.length > 0 && (
                     <div className="py-1">
@@ -274,15 +305,23 @@ const SearchField = () => {
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
                         >
-                          <SearchIcon className="size-4 text-muted-foreground shrink-0" />
-                          <span className="truncate">{suggestedQuery}</span>
+                          <Image
+                            src={""}
+                            alt="Oops"
+                            width={50}
+                            height={60}
+                            className="border border-border rounded-lg"
+                          />
+                          <p className="line-clamp-1 font-medium">
+                            {suggestedQuery}
+                          </p>
                         </button>
                       ))}
                     </div>
                   )}
 
                   {/* Suggested Categories */}
-                  {suggestions?.categories &&
+                  {/* {suggestions?.categories &&
                     suggestions?.categories.length > 0 && (
                       <div className="py-2">
                         <div className="px-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -305,10 +344,10 @@ const SearchField = () => {
                           </button>
                         ))}
                       </div>
-                    )}
+                    )} */}
 
                   {/* Suggested Products */}
-                  {suggestions?.products &&
+                  {/* {suggestions?.products &&
                     suggestions?.products.length > 0 && (
                       <div className="py-2">
                         <div className="px-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -338,10 +377,10 @@ const SearchField = () => {
                           </button>
                         ))}
                       </div>
-                    )}
+                    )} */}
 
                   {/* Suggested Vendors / Stores */}
-                  {suggestions?.vendors && suggestions?.vendors.length > 0 && (
+                  {/* {suggestions?.vendors && suggestions?.vendors.length > 0 && (
                     <div className="py-2">
                       <div className="px-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {t("stores")}
@@ -370,7 +409,7 @@ const SearchField = () => {
                         </button>
                       ))}
                     </div>
-                  )}
+                  )} */}
                 </div>
               ) : (
                 !isLoading && (

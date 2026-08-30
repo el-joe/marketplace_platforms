@@ -5,14 +5,19 @@ import { Button } from "@/src/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link } from "../../../i18n/navigation";
+import { Link } from "../../../../i18n/navigation";
 import { useQuery } from "@tanstack/react-query";
 import useLocale from "@/src/hooks/use-locale";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { getCategoriesTree } from "@/src/services/get";
-import { CategoryNavTree, Type } from "@/types/category-nav-tree.type";
+import { ICategoryNavTree } from "./types";
+import { Type } from "./types/category-nav-tree.type";
+import { getCategoriesTreeService } from "./api/get";
+// import {
+//   CategoryNavTree,
+//   Type,
+// } from "@/src/layout/noon/header/types/category-nav-tree.type";
 
-function categoryHref(category: CategoryNavTree): string {
+function categoryHref(category: ICategoryNavTree): string {
   switch (category.type) {
     case Type.ClassiFied:
       return `/classified/${category.id}`;
@@ -25,8 +30,8 @@ function categoryHref(category: CategoryNavTree): string {
 }
 
 function subCategoryHref(
-  child: CategoryNavTree,
-  parent?: CategoryNavTree,
+  child: ICategoryNavTree,
+  parent?: ICategoryNavTree,
 ): string {
   switch (child.type ?? parent?.type) {
     case Type.ClassiFied:
@@ -40,13 +45,14 @@ function subCategoryHref(
 }
 
 const CategoriesNav = () => {
-  const [hoveredCategory, setHoveredCategory] = useState<null | string>(null);
+  const [hoveredCategory, setHoveredCategory] =
+    useState<null | ICategoryNavTree>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const locale = useLocale();
   const t = useTranslations("header.categoriesNav");
   const { data, isLoading } = useQuery({
     queryKey: ["categoriesTree"],
-    queryFn: getCategoriesTree,
+    queryFn: getCategoriesTreeService,
   });
   return (
     <div
@@ -76,14 +82,14 @@ const CategoriesNav = () => {
           <SwiperSlide key={i} className="w-fit! h-fit!">
             <Link
               href={categoryHref(category)}
-              className={`py-1 block border-b border-transparent hover:border-black ${hoveredCategory === category.id ? "border-b-black" : ""} ${category.type === Type.ClassiFied ? "text-orange-600" : ""}`}
+              className={`py-1 block border-b border-transparent hover:border-black font-semibold ${hoveredCategory?.id === category.id ? "border-b-black" : ""} ${category.type === Type.ClassiFied ? "text-orange-600" : ""}`}
               onMouseEnter={() => {
                 if (!hoveredCategory) {
                   timeoutRef.current = setTimeout(() => {
-                    setHoveredCategory(category.id);
+                    setHoveredCategory(category);
                   }, 300);
                 } else {
-                  setHoveredCategory(category.id);
+                  setHoveredCategory(category);
                 }
               }}
             >
@@ -99,7 +105,7 @@ const CategoriesNav = () => {
       </div> */}
       {/* category details box */}
       <div
-        className={`fixed top-26 w-screen left-0 z-30 bg-[#0000005b] h-screen  ${hoveredCategory ? "" : "hidden"}`}
+        className={`fixed top-26 inset-x-0 left-0 z-30 bg-[#0000005b] h-screen  ${hoveredCategory && hoveredCategory.children.length ? "" : "hidden"}`}
       >
         <div
           className="h-[calc(100vh-200px)]s max-h-121s overflow-auto bg-white p-5 z-30"
@@ -111,72 +117,72 @@ const CategoriesNav = () => {
             {/* subcategories lists */}
             <div className="col-span-3">
               {/* one level of subcategories */}
-              <ul className="flex gap-8">
-                {data
-                  ?.find((category) => category.id === hoveredCategory)
-                  ?.children.map((subCategory) => (
-                    <li key={subCategory.id}>
-                      <Link
-                        href={subCategoryHref(
-                          subCategory,
-                          data?.find((c) => c.id === hoveredCategory),
-                        )}
+              <ul
+                className={`${!!hoveredCategory?.children.find((ch) => ch.children.length) ? "flex gap-8" : ""}`}
+              >
+                {hoveredCategory?.children.map((subCategory) => (
+                  <li key={subCategory.id}>
+                    <Link href={subCategoryHref(subCategory, hoveredCategory)}>
+                      <h4
+                        className={`${subCategory.children.length ? "font-semibold" : "hover:text-blue"} mb-3`}
                       >
-                        <h4 className="font-semibold mb-3">
-                          {subCategory.name[locale]}
-                        </h4>
-                      </Link>
-                      {/* tow level of subcategories */}
-                      <ul className="text-sm flex flex-col gap-2">
-                        {subCategory.children.map((e) => (
-                          <li key={e.id}>
-                            <Link href={subCategoryHref(e, subCategory)}>
-                              {e.name[locale]}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
+                        {subCategory.name[locale]}
+                      </h4>
+                    </Link>
+                    {/* tow level of subcategories */}
+                    <ul className="text-sm flex flex-col gap-2">
+                      {subCategory.children.map((e) => (
+                        <li key={e.id} className="hover:text-blue">
+                          <Link
+                            href={subCategoryHref(e, subCategory)}
+                            className="line-clamp-1"
+                          >
+                            {e.name[locale]}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
               </ul>
             </div>
             {/* image banner */}
-            {data?.find((c) => c.id === hoveredCategory)?.image_url && (
-              <div className="col-start-4 col-end-4 row-span-2 relative h-[30vh]">
+            {hoveredCategory?.image_url && (
+              <Link
+                href={categoryHref(hoveredCategory)}
+                className="col-start-4 col-end-4 row-span-2 relative h-[40vh] min-h-105 rounded-xl overflow-hidden"
+              >
                 <Image
-                  src={
-                    data?.find((category) => category.id === hoveredCategory)
-                      ?.image_url ?? ""
-                  }
+                  src={hoveredCategory?.image_url ?? ""}
                   alt=""
                   fill
                   sizes="100%"
                 />
-              </div>
+              </Link>
             )}
             {/* top brands list */}
-            {!!data?.find((category) => category.id === hoveredCategory)?.brands
-              ?.length && (
+            {!!hoveredCategory?.brands?.length && (
               <div className="col-span-3 h-fit mt-auto">
                 <h4 className="font-semibold mb-3">{t("topBrands")}</h4>
                 <ul className="flex gap-4">
-                  {data
-                    ?.find((category) => category.id === hoveredCategory)
-                    ?.brands?.map((brand) => (
-                      <li key={brand.id} className="flex flex-col items-center">
-                        <div className="w-22 h-16 relative border border-border-color">
-                          <Image
-                            src={brand.logo_url ?? ""}
-                            alt="brand logo"
-                            fill
-                            sizes="100%"
-                          />
-                        </div>
-                        <p className="text-light font-semibold text-sm">
-                          {brand.name[locale]}
-                        </p>
-                      </li>
-                    ))}
+                  {hoveredCategory?.brands?.map((brand) => (
+                    <li key={brand.id} className="flex flex-col items-center">
+                      <Link
+                        href={`/brand/${brand.slug}`}
+                        className="w-24 h-16 relative border border-border-color"
+                      >
+                        <Image
+                          src={brand.logo_url ?? ""}
+                          alt="brand logo"
+                          fill
+                          sizes="100%"
+                        />
+                      </Link>
+                      <p className="text-light font-semibold text-sm">
+                        {brand.name[locale]}
+                      </p>
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -195,13 +201,13 @@ const SwiperButtons = () => {
   return (
     <div className="swiper-nav-btns">
       <Button
-        className="absolute -left-1 top-0 bg-white z-10 h-full items-center p-0!"
+        className={`${swiper.isBeginning ? "hidden" : ""} absolute -left-1 top-0 bg-white z-10 h-full items-center p-0!`}
         onClick={() => swiper.slidePrev()}
       >
         <ChevronLeftIcon />
       </Button>
       <Button
-        className="absolute -right-1 top-0 bg-white z-10 h-full items-center p-0!"
+        className={`${swiper.isEnd ? "hidden" : ""} absolute -right-1 top-0 bg-white z-10 h-full items-center p-0!`}
         onClick={() => swiper.slideNext()}
       >
         <ChevronRightIcon />

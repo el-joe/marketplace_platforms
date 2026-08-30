@@ -1,12 +1,5 @@
-import { fetchGlobalInstance, fetchInstance } from "@/src/lib/utils";
-import { CategoryNavTree, Country } from "@/types";
-
-export const getCategoriesTree = async () => {
-  const { data: res } = await fetchInstance<{ data: CategoryNavTree[] }>(
-    "/categories",
-  );
-  return res;
-};
+import { fetchGlobalInstance } from "@/src/lib/utils";
+import { Country } from "@/types";
 
 /** Country-agnostic — GET /countries. */
 export const getCountries = async () => {

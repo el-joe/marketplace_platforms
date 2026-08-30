@@ -11,7 +11,7 @@ import {
   NewspaperIcon,
   UserCircleIcon,
 } from "lucide-react";
-import SearchField from "@/src/components/shared/SearchField";
+import SearchField from "@/src/layout/noon/header/search-field";
 import { Link } from "@/i18n/navigation";
 import useToggleLang from "@/src/hooks/useToggleLang";
 import { useTranslations } from "next-intl";

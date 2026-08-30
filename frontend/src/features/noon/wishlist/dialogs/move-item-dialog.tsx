@@ -19,11 +19,12 @@ import { useQueryState } from "nuqs";
 
 type Props = {
   trigger: ReactElement<unknown, string>;
-  item: Item;
+  item?: Item;
+  itemId?: string;
   mode: "copy" | "cut";
 };
 
-export default function MoveItemDialog({ trigger, item, mode }: Props) {
+export default function MoveItemDialog({ trigger, item, mode, itemId }: Props) {
   const t = useTranslations("wishlist");
   const [open, setOpen] = useState(false);
   const [targetGroup, setTargetGroup] = useState<string | null>(null);
@@ -103,14 +104,14 @@ export default function MoveItemDialog({ trigger, item, mode }: Props) {
             switch (mode) {
               case "copy":
                 addItem({
-                  listingId: item.listing.listing_id,
-                  productVariantId: item.listing.variant_id,
+                  listingId: item?.listing?.listing_id || "",
+                  productVariantId: item?.listing?.variant_id || "",
                   groupId: targetGroup as string,
                 });
                 break;
               case "cut":
                 moveItem({
-                  itemIds: [item.id],
+                  itemIds: [item?.id || itemId || ""],
                   targetGroupId: targetGroup as string,
                 }).then(() => {
                   setOpen(false);

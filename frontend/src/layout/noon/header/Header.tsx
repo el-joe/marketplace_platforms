@@ -14,23 +14,40 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import useToggleLang from "../hooks/useToggleLang";
-import SideCategoriesList from "./noon/SideCategoriesList";
-import Logo from "../components/shared/Logo";
-import LocationDialog from "../components/shared/dialogs/LocationDialog";
-import { Button } from "../components/ui/button";
-import SearchField from "../components/shared/SearchField";
-import CategoriesNav from "./noon/CategoriesNav";
-import { useAuthContext } from "../providers/auth-provider";
+// import useToggleLang from "../hooks/useToggleLang";
+// import SideCategoriesList from "./noon/SideCategoriesList";
+// import Logo from "../components/shared/Logo";
+// import LocationDialog from "../components/shared/dialogs/LocationDialog";
+// import { Button } from "../components/ui/button";
+// import SearchField from "../components/shared/SearchField";
+// import CategoriesNav from "./noon/CategoriesNav";
+// import { useAuthContext } from "../providers/auth-provider";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuSeparator,
+//   DropdownMenuTrigger,
+// } from "../components/ui/dropdown-menu";
+// import useLocale from "../hooks/use-locale";
+import Image from "next/image";
+import { useCartContext } from "@/src/providers/cart-provider";
+import useLocale from "@/src/hooks/use-locale";
+import useToggleLang from "@/src/hooks/useToggleLang";
+import { useAuthContext } from "@/src/providers/auth-provider";
+import SideCategoriesList from "./SideCategoriesList";
+import Logo from "@/src/components/shared/Logo";
+import LocationDialog from "@/src/components/shared/dialogs/LocationDialog";
+import { Button } from "@/src/components/ui/button";
+import SearchField from "./search-field";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
-import useLocale from "../hooks/use-locale";
-import Image from "next/image";
+} from "@/src/components/ui/dropdown-menu";
+import CategoriesNav from "./categories-nav";
 
 const profileDropdownLinks: {
   href: string;
@@ -69,7 +86,6 @@ const profileDropdownLinks: {
     labelKey: "needHelp",
   },
 ];
-import { useCartContext } from "../providers/cart-provider";
 
 const Header = () => {
   const t = useTranslations("header");
