@@ -8,6 +8,7 @@ import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { Spinner } from "@/src/components/ui/spinner";
+import AddToCartButton from "@/src/components/shared/add-to-cart-button";
 
 const SpotlightCard = ({ data }: { data: Product }) => {
   const locale = useLocale();
@@ -26,23 +27,7 @@ const SpotlightCard = ({ data }: { data: Product }) => {
           </div>
         )}
         {/* cart button */}
-        <Button
-          variant={"outline"}
-          className={
-            "absolute bottom-1 lg:bottom-2 right-2 z-10 rounded-md! p-1! xl:p-3! min-w-0! min-h-0! aspect-square"
-          }
-          disabled={isMutating && targetItemMutating === data.listing_id}
-          onClick={(e) => {
-            e.preventDefault();
-            addItem({ quantity: 1, vendorListingId: data.listing_id });
-          }}
-        >
-          {isMutating && targetItemMutating === data.listing_id ? (
-            <Spinner />
-          ) : (
-            <PlusIcon className={`size-4`} />
-          )}
-        </Button>
+        <AddToCartButton listingId={data?.listing_id} size="sm" />
         {/* image */}
         <Image
           src={data?.primary_image}

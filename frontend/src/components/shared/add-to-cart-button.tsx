@@ -9,9 +9,16 @@ import { Counter } from "./Counter";
 
 type Props = {
   listingId: string;
+  size?: "sm" | "base" | "lg";
 };
 
-export default function AddToCartButton({ listingId }: Props) {
+const sizes: Record<NonNullable<Props["size"]>, string> = {
+  sm: "p-1  w-9 h-9",
+  base: "p-2  w-12 h-12",
+  lg: "",
+};
+
+export default function AddToCartButton({ listingId, size = "base" }: Props) {
   const {
     cart,
     addItem,
@@ -35,9 +42,10 @@ export default function AddToCartButton({ listingId }: Props) {
     <Button
       variant={"outline"}
       className={cn(
-        "absolute bottom-1 p-2 lg:bottom-2 right-2 z-10 min-w-0! min-h-0! bg-gray-2 hover:bg-gray-2 group/cart w-12 h-12 hover:px-1",
+        "absolute bottom-1  lg:bottom-2 right-2 z-10 min-w-0! min-h-0! bg-gray-2 hover:bg-gray-2 group/cart hover:px-1",
         cartItem &&
           "bg-blue-2 text-white hover:bg-blue-2 hover:text-white border-0 pt-2! hover:w-28",
+        sizes[size],
       )}
       disabled={isThisItemMutating}
       onClick={(e) => {
@@ -68,7 +76,7 @@ export default function AddToCartButton({ listingId }: Props) {
             loading={isThisItemMutating}
             onDelete={() => removeItem(cartItem.cart_item_id)}
             max={cartItem.max_order_quantity}
-            className="bg-blue-2 border-0 hidden group-hover/cart:flex! overflow-hidden h-6.5"
+            className="bg-blue-2 border-0 hidden group-hover/cart:flex! overflow-hidden max-h-6.5"
           />
         </>
       ) : (

@@ -1,17 +1,13 @@
 "use client";
 import Image from "next/image";
-import React from "react";
 import Price from "../../../components/shared/Price";
-import { Button } from "../../../components/ui/button";
-import { PlusIcon } from "lucide-react";
 import { Product } from "@/src/features/noon/home/types";
 import useLocale from "@/src/hooks/use-locale";
-import { useCartContext } from "@/src/providers/cart-provider";
 import { Link } from "@/i18n/navigation";
+import AddToCartButton from "@/src/components/shared/add-to-cart-button";
 
 const MegaDealsCard = ({ data }: { data: Product }) => {
   const locale = useLocale();
-  const { addItem } = useCartContext();
   return (
     <div className="rounded-lg overflow-hidden w-[calc(100%/2-0.5rem)] bg-gray-2">
       <div className="bg-background relative">
@@ -28,16 +24,7 @@ const MegaDealsCard = ({ data }: { data: Product }) => {
           className="h-46 lg:h-18 xl:h-22 2xl:h-40 object-contain"
         />
         {/* add to cat button */}
-        <Button
-          className={
-            "absolute bottom-3 right-3 border border-gray-2 p-1! xl:p-2! min-h-0!"
-          }
-          onClick={() =>
-            addItem({ quantity: 1, vendorListingId: data?.listing_id })
-          }
-        >
-          <PlusIcon />
-        </Button>
+        <AddToCartButton listingId={data?.listing_id} size="sm" />
       </div>
       {/* body */}
       <Link
