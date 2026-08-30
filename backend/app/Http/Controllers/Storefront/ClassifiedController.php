@@ -84,7 +84,7 @@ class ClassifiedController extends Controller
                 'id'      => $l->id,
                 'number'  => $l->listing_number,
                 'title'   => app()->getLocale() === 'ar' ? $l->title_ar : $l->title_en,
-                'price'   => number_format($l->price / 100, 0) . ' ' . $l->currency,
+                'price'   => number_format($l->price, 0) . ' ' . $l->currency,
                 'purpose' => $l->listing_purpose,
                 'lat'     => (float) $l->latitude,
                 'lng'     => (float) $l->longitude,

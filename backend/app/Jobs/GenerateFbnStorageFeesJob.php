@@ -64,6 +64,12 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                 continue;
             }
 
+            if (! $inv->currency) {
+                Log::warning("[GenerateFbnStorageFeesJob] Warehouse has no storage_currency, skipping inventory {$inv->inventory_id}");
+                $skipped++;
+                continue;
+            }
+
             $totalCents = $inv->quantity_on_hand * $rateCents;
 
             try {
@@ -77,7 +83,7 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                         'units_stored' => $inv->quantity_on_hand,
                         'rate_per_unit' => $rateCents,
                         'total_fee' => $totalCents,
-                        'currency' => $inv->currency ?? 'EGP',
+                        'currency' => $inv->currency,
                         'status' => 'pending',
                     ]
                 );

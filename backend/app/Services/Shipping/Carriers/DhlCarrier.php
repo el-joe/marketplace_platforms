@@ -156,7 +156,7 @@ class DhlCarrier implements ShippingCarrierInterface
         return false;
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
         try {
             $response = $this->http()->get($this->baseUrl . '/rates', [

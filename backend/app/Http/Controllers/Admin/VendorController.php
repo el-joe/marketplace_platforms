@@ -541,7 +541,7 @@ class VendorController extends Controller
         for ($i = $days - 1; $i >= 0; $i--) {
             $d = now()->subDays($i)->toDateString();
             $labels[] = now()->subDays($i)->format('d M');
-            $gmvArr[] = (float) ($gmvRaw[$d] ?? 0) / 100;
+            $gmvArr[] = (float) ($gmvRaw[$d] ?? 0);
         }
 
         // Orders by status

@@ -75,27 +75,27 @@ class ProductCostReference extends Model
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Factory price formatted (EGP). */
-    public function manufacturerCostFormatted(): string
+    /** Factory price formatted. */
+    public function manufacturerCostFormatted(string $currency = ''): string
     {
         return $this->manufacturer_cost !== null
-            ? number_format($this->manufacturer_cost, 2) . ' EGP'
+            ? number_format($this->manufacturer_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 
     /** Shipping cost formatted. */
-    public function shippingCostFormatted(): string
+    public function shippingCostFormatted(string $currency = ''): string
     {
         return $this->shipping_cost !== null
-            ? number_format($this->shipping_cost, 2) . ' EGP'
+            ? number_format($this->shipping_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 
     /** Landed cost formatted. */
-    public function landedCostFormatted(): string
+    public function landedCostFormatted(string $currency = ''): string
     {
         return $this->landed_cost !== null
-            ? number_format($this->landed_cost, 2) . ' EGP'
+            ? number_format($this->landed_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 

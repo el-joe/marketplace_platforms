@@ -76,7 +76,12 @@ class ExceptionalZoneAlertController extends Controller
 
         // Load the country's currency code
         $currency = \App\Models\Country::where('id', $warehouse->country_id)
-            ->value('currency_code') ?? 'SAR';
+            ->value('currency_code');
+
+        if (! $currency) {
+            \Illuminate\Support\Facades\Log::warning('ExceptionalZoneAlert: could not resolve currency, skipping');
+            return response()->json(['error' => 'Currency not resolvable.'], 422);
+        }
 
         return response()->json([
             'currency' => $currency,

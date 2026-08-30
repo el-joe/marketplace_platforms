@@ -155,7 +155,7 @@ class AramexCarrier implements ShippingCarrierInterface
         }
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
         try {
             $response = Http::timeout(15)

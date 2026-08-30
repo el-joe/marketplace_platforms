@@ -293,7 +293,7 @@ class OrderInterventionService
             $refund = $this->processRefund(
                 $order,
                 'partial',
-                $refundAmountCents / 100,
+                $refundAmountCents,
                 'customer_request',
                 $reason,
                 $items->first()?->sub_order_id,
@@ -339,13 +339,13 @@ class OrderInterventionService
      * Record an admin-initiated refund against an order.
      *
      * @param  string  $refundType  full|partial|shipping_only
-     * @param  float|null  $amount  Required when $refundType === 'partial'
+     * @param  int|null  $amount  Required when $refundType === 'partial'
      * @throws ValidationException
      */
     public function processRefund(
         Order $order,
         string $refundType,
-        ?float $amount,
+        ?int $amount,
         string $reason,
         ?string $reasonNotes,
         ?string $subOrderId,
@@ -369,7 +369,7 @@ class OrderInterventionService
         $amountCents = match ($refundType) {
             'full'          => $order->total,
             'shipping_only' => $order->shipping,
-            default         => (int) round(($amount ?? 0) * 100),
+            default         => (int) ($amount ?? 0),
         };
 
         if ($amountCents <= 0) {

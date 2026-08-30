@@ -182,6 +182,7 @@
     "payments": "Payments",
     "noonCredits": "Noon Credits",
     "warrantyClaims": "Warranty Claims",
+    "myWarranties": "My Warranties",
     "giftCards": "Gift Cards",
     "digitalCards": "Digital Cards",
     "others": "Others",
@@ -406,6 +407,19 @@
       "approved": "Approved",
       "rejected": "Rejected",
       "resolved": "Resolved"
+    },
+    "noWarrantyPurchases": "No Warranties Yet",
+    "noWarrantyPurchasesMessage": "Warranty plans you add at checkout will appear here",
+    "unknownProduct": "Unknown Product",
+    "unknownPlan": "Warranty Plan",
+    "coverageFrom": "From",
+    "coverageUntil": "Until",
+    "warrantyPendingNote": "Coverage activates once your order is delivered",
+    "warrantyStatus": {
+      "active": "Active",
+      "pending": "Pending",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
     },
     "issueTypes": {
       "defective": "Defective",

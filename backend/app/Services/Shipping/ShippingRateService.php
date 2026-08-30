@@ -13,10 +13,9 @@ class ShippingRateService
         private readonly ActivityLoggerService $logger
     ) {}
 
-    /** Convert decimal form inputs to cents and create rate. */
     public function createRate(array $data, Admin $admin): ShippingRate
     {
-        $data = $this->convertToCents($data);
+        $data = $this->normalizeRateData($data);
 
         $rate = ShippingRate::create($data);
 
@@ -33,7 +32,7 @@ class ShippingRateService
 
     public function updateRate(ShippingRate $rate, array $data, Admin $admin): ShippingRate
     {
-        $data = $this->convertToCents($data);
+        $data = $this->normalizeRateData($data);
         $rate->update($data);
 
         $this->logger->log(
@@ -116,7 +115,7 @@ class ShippingRateService
             'available'               => true,
             'is_free'                 => $isFree,
             'cost'              => $costCents,
-            'cost_formatted'          => number_format($costCents / 100, 2),
+            'cost_formatted'          => number_format($costCents, 2),
             'method_name'             => $rate->shippingMethod->name,
             'carrier_name'            => $rate->carrier?->name ?? 'Any',
             'delivery_days'           => $rate->shippingMethod->min_delivery_days
@@ -127,31 +126,31 @@ class ShippingRateService
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private function convertToCents(array $data): array
+    private function normalizeRateData(array $data): array
     {
         if (isset($data['base_fee'])) {
-            $data['base_fee'] = (int) round((float) $data['base_fee'] * 100);
+            $data['base_fee'] = (int) $data['base_fee'];
         }
         if (isset($data['rate_per_kg'])) {
-            $data['rate_per_kg'] = (int) round((float) $data['rate_per_kg'] * 100);
+            $data['rate_per_kg'] = (int) $data['rate_per_kg'];
         }
         if (isset($data['carrier_rate']) && $data['carrier_rate'] !== null && $data['carrier_rate'] !== '') {
-            $data['carrier_rate'] = (int) round((float) $data['carrier_rate'] * 100);
+            $data['carrier_rate'] = (int) $data['carrier_rate'];
         } else {
             // carrier_rate is NOT NULL default 0 at the DB level; this column
             // drives the shipping gap calculation, so it must never be null.
             $data['carrier_rate'] = 0;
         }
         if (isset($data['carrier_rate_per_kg']) && $data['carrier_rate_per_kg'] !== null && $data['carrier_rate_per_kg'] !== '') {
-            $data['carrier_rate_per_kg'] = (int) round((float) $data['carrier_rate_per_kg'] * 100);
+            $data['carrier_rate_per_kg'] = (int) $data['carrier_rate_per_kg'];
         } else {
             $data['carrier_rate_per_kg'] = 0;
         }
         if (isset($data['cod_extra_fee'])) {
-            $data['cod_extra_fee'] = (int) round((float) $data['cod_extra_fee'] * 100);
+            $data['cod_extra_fee'] = (int) $data['cod_extra_fee'];
         }
         if (isset($data['free_shipping_threshold']) && $data['free_shipping_threshold'] !== null && $data['free_shipping_threshold'] !== '') {
-            $data['free_shipping_threshold'] = (int) round((float) $data['free_shipping_threshold'] * 100);
+            $data['free_shipping_threshold'] = (int) $data['free_shipping_threshold'];
         } else {
             $data['free_shipping_threshold'] = null;
         }

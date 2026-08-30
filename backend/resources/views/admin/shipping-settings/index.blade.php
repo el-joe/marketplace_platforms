@@ -335,28 +335,28 @@
                     </x-form-select>
                 </div>
 
-                {{-- Money fields (stored as cents) --}}
+                {{-- Money fields --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.base_fee_required') }} <span class="text-danger-500">*</span></label>
-                    <input type="number" id="rate-base-fee-display" step="0.01" min="0" placeholder="0.00"
+                    <input type="number" id="rate-base-fee-display" step="1" min="0" placeholder="0"
                            class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <input type="hidden" name="base_fee" id="rate-base-fee" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.rate_per_kg_required') }} <span class="text-danger-500">*</span></label>
-                    <input type="number" id="rate-per-kg-display" step="0.01" min="0" placeholder="0.00"
+                    <input type="number" id="rate-per-kg-display" step="1" min="0" placeholder="0"
                            class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <input type="hidden" name="rate_per_kg" id="rate-per-kg" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.free_shipping_threshold_label') }}</label>
-                    <input type="number" id="rate-free-threshold-display" step="0.01" min="0" placeholder="0.00"
+                    <input type="number" id="rate-free-threshold-display" step="1" min="0" placeholder="0"
                            class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <input type="hidden" name="free_shipping_threshold" id="rate-free-threshold" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.cod_extra_fee') }}</label>
-                    <input type="number" id="rate-cod-fee-display" step="0.01" min="0" placeholder="0.00"
+                    <input type="number" id="rate-cod-fee-display" step="1" min="0" placeholder="0"
                            class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <input type="hidden" name="cod_extra_fee" id="rate-cod-fee" />
                 </div>

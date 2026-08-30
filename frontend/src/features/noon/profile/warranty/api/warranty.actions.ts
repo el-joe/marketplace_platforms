@@ -34,6 +34,7 @@ export type WarrantyPurchase = {
     sku: string | null;
   };
   order_id: string;
+  order_item_id: string;
   is_claimable: boolean;
   created_at: string;
 };

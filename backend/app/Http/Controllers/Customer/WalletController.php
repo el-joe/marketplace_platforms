@@ -23,7 +23,12 @@ class WalletController extends Controller
     public function show(string $country): JsonResponse
     {
         $customer = auth('customer')->user();
-        $currency = $customer->country?->currency_code ?? 'EGP';
+        $customer->loadMissing('country');
+        $currency = $customer->country?->currency_code;
+
+        if (! $currency) {
+            return ApiResponse::error('Unable to determine account currency. Please update your address.', [], 422);
+        }
 
         $wallet = $this->walletService->getOrCreateWallet(
             WalletOwnerType::Customer->value,
@@ -37,7 +42,12 @@ class WalletController extends Controller
     public function transactions(string $country): JsonResponse
     {
         $customer = auth('customer')->user();
-        $currency = $customer->country?->currency_code ?? 'EGP';
+        $customer->loadMissing('country');
+        $currency = $customer->country?->currency_code;
+
+        if (! $currency) {
+            return ApiResponse::error('Unable to determine account currency. Please update your address.', [], 422);
+        }
 
         $wallet = $this->walletService->getOrCreateWallet(
             WalletOwnerType::Customer->value,
@@ -59,7 +69,12 @@ class WalletController extends Controller
         ]);
 
         $customer = auth('customer')->user();
-        $currency = $customer->country?->currency_code ?? 'EGP';
+        $customer->loadMissing('country');
+        $currency = $customer->country?->currency_code;
+
+        if (! $currency) {
+            return ApiResponse::error('Unable to determine account currency. Please update your address.', [], 422);
+        }
 
         $wallet = $this->walletService->getOrCreateWallet(
             WalletOwnerType::Customer->value,

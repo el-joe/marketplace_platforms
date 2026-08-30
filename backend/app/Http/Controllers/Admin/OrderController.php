@@ -377,7 +377,7 @@ class OrderController extends Controller
             $this->interventionService->processRefund(
                 $order,
                 $request->refund_type,
-                $request->filled('amount') ? (float) $request->amount : null,
+                $request->filled('amount') ? (int) $request->amount : null,
                 $request->reason,
                 $request->reason_notes,
                 $request->sub_order_id,

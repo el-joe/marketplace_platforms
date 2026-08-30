@@ -607,7 +607,8 @@ class CustomerController extends Controller
                     $wallet = CustomerWallet::create([
                         'customer_id' => $customer->id,
                         'balance' => 0,
-                        'currency_code' => 'EGP',
+                        'currency_code' => $customer->country?->currency_code
+                            ?? throw new \RuntimeException("Customer {$customer->id} has no country configured."),
                     ]);
                 }
 

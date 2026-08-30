@@ -166,7 +166,7 @@ class FedexCarrier implements ShippingCarrierInterface
         return false; // FedEx does not support programmatic cancel via REST
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
         try {
             $token = $this->getAccessToken();

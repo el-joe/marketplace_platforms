@@ -518,10 +518,10 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    {{ __('admin.shipping_section.base_fee_required') }} <span class="text-gray-400 font-normal">(e.g. 15.00)</span>
+                                    {{ __('admin.shipping_section.base_fee_required') }} <span class="text-gray-400 font-normal">(e.g. 15)</span>
                                 </label>
                                 <div class="flex">
-                                    <input type="number" name="base_fee" id="rate-base-fee" step="0.01" min="0" required
+                                    <input type="number" name="base_fee" id="rate-base-fee" step="1" min="0" required
                                         class="form-input rounded-r-none flex-1" />
                                     <span
                                         class="inline-flex items-center px-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-sm text-gray-500">
@@ -532,7 +532,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.rate_per_kg_required') }}</label>
                                 <div class="flex">
-                                    <input type="number" name="rate_per_kg" id="rate-per-kg" step="0.01" min="0" value="0"
+                                    <input type="number" name="rate_per_kg" id="rate-per-kg" step="1" min="0" value="0"
                                         class="form-input rounded-r-none flex-1" />
                                     <span
                                         class="inline-flex items-center px-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-sm text-gray-500">/kg</span>
@@ -541,12 +541,12 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.free_shipping_threshold_label') }}
                                     <span class="font-normal text-gray-400">({{ __('admin.shipping_section.description_optional') }})</span></label>
-                                <input type="number" name="free_shipping_threshold" step="0.01" min="0"
-                                    class="form-input w-full" placeholder="e.g. 200.00" />
+                                <input type="number" name="free_shipping_threshold" step="1" min="0"
+                                    class="form-input w-full" placeholder="e.g. 200" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.cod_extra_fee') }}</label>
-                                <input type="number" name="cod_extra_fee" step="0.01" min="0" value="0"
+                                <input type="number" name="cod_extra_fee" step="1" min="0" value="0"
                                     class="form-input w-full" />
                             </div>
                         </div>
@@ -568,7 +568,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.carrier_rate_label') }}</label>
                                 <div class="flex">
-                                    <input type="number" name="carrier_rate" id="rate-carrier-rate" step="0.01" min="0"
+                                    <input type="number" name="carrier_rate" id="rate-carrier-rate" step="1" min="0"
                                         class="form-input rounded-r-none flex-1" />
                                     <span
                                         class="inline-flex items-center px-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-sm text-gray-500">
@@ -579,7 +579,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.carrier_rate_per_kg_label') }}</label>
                                 <div class="flex">
-                                    <input type="number" name="carrier_rate_per_kg" id="rate-carrier-rate-per-kg" step="0.01" min="0"
+                                    <input type="number" name="carrier_rate_per_kg" id="rate-carrier-rate-per-kg" step="1" min="0"
                                         class="form-input rounded-r-none flex-1" />
                                     <span
                                         class="inline-flex items-center px-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-sm text-gray-500">/kg</span>

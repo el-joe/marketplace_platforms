@@ -164,7 +164,7 @@ class AdCampaignService
                 'keyword'           => $kw['keyword'],
                 'keyword_normalized'=> mb_strtolower(trim($kw['keyword'])),
                 'match_type'        => $kw['match_type'],
-                'bid_override'      => isset($kw['bid_override']) ? (int) ($kw['bid_override'] * 100) : null,
+                'bid_override'      => isset($kw['bid_override']) ? (int) $kw['bid_override'] : null,
                 'is_negative'       => false,
                 'is_active'         => true,
             ]);
@@ -179,7 +179,7 @@ class AdCampaignService
             AdCampaignCategoryTarget::create([
                 'ad_campaign_id' => $campaign->id,
                 'category_id'    => $ct['category_id'],
-                'bid_override'   => isset($ct['bid_override']) ? (int) ($ct['bid_override'] * 100) : null,
+                'bid_override'   => isset($ct['bid_override']) ? (int) $ct['bid_override'] : null,
                 'is_active'      => true,
             ]);
         }

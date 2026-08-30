@@ -52,8 +52,11 @@ class MarketplaceShippingRule extends Model
 
     public function commissionLabel(): string
     {
+        $currency = $this->vendorListing?->currency ?? '';
+        $suffix = $currency ? ' ' . $currency : '';
+
         return match ($this->commission_type) {
-            MarketplaceShippingRuleCommissionType::Fixed => number_format($this->commission_value, 2) . ' EGP',
+            MarketplaceShippingRuleCommissionType::Fixed => number_format($this->commission_value, 2) . $suffix,
             MarketplaceShippingRuleCommissionType::Percentage => $this->commission_value . '%',
             MarketplaceShippingRuleCommissionType::Mixed => $this->commission_value . '% + fees',
             default => (string) $this->commission_value,
@@ -62,7 +65,9 @@ class MarketplaceShippingRule extends Model
 
     public function extraFeeFormatted(): string
     {
-        return number_format($this->extra_delivery_fee, 2) . ' EGP';
+        $currency = $this->vendorListing?->currency ?? '';
+        $suffix = $currency ? ' ' . $currency : '';
+        return number_format($this->extra_delivery_fee, 2) . $suffix;
     }
 
     public function hasSpecialRequirements(): bool

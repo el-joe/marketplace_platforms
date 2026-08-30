@@ -97,7 +97,7 @@ class TravelPackageController extends Controller
                 $destination .= '<br><span class="text-xs text-gray-400">' . e($row->destination_city) . '</span>';
             }
 
-            $price = e($row->currency) . ' ' . number_format($row->price / 100, 2);
+            $price = e($row->currency) . ' ' . number_format($row->price, 2);
 
             $departure = Carbon::parse($row->departure_date)->format('d M Y');
 
@@ -164,7 +164,7 @@ class TravelPackageController extends Controller
             $pkg->title_en,
             $pkg->agency?->name,
             $pkg->destinationCountry?->name_en ?? $pkg->destination_country,
-            number_format($pkg->price / 100, 2),
+            number_format($pkg->price, 2),
             $pkg->currency,
             $pkg->status?->value,
             optional($pkg->departure_date)->format('d M Y'),

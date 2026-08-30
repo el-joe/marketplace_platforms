@@ -78,11 +78,11 @@ class ManualCarrier implements ShippingCarrierInterface
         return true; // No API to call — just mark cancelled in the system
     }
 
-    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = []): array
+    public function calculateRate(array $from, array $to, int $weightGrams, array $dimensions = [], string $currency = ''): array
     {
         return [
             'rate' => 0,
-            'currency' => 'EGP',
+            'currency' => $currency,
             'estimated_days' => 5,
             'service_name' => 'Manual Fulfillment',
         ];

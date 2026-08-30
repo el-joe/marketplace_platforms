@@ -150,9 +150,9 @@ class FlashSaleController extends Controller
                     'sku' => $listing->vendor_sku,
                     'currency' => $listing->currency,
                     'current_price' => $listing->price,
-                    'current_price_display' => round($listing->price / 100, 2),
+                    'current_price_display' => round($listing->price, 2),
                     'avg_price_30d' => $avg30d ? (int) round($avg30d) : null,
-                    'avg_price_30d_display' => $avg30d ? round($avg30d / 100, 2) : null,
+                    'avg_price_30d_display' => $avg30d ? round($avg30d, 2) : null,
                 ];
             })
             ->values();

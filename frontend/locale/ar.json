@@ -175,6 +175,7 @@
     "payments": "المدفوعات",
     "noonCredits": "أرصدة نون",
     "warrantyClaims": "مطالبات الضمان",
+    "myWarranties": "ضماناتي",
     "giftCards": "بطاقات الهدايا",
     "digitalCards": "البطاقات الرقمية",
     "others": "أخرى",
@@ -399,6 +400,19 @@
       "approved": "معتمد",
       "rejected": "مرفوض",
       "resolved": "تم الحل"
+    },
+    "noWarrantyPurchases": "لا يوجد ضمانات حتى الآن",
+    "noWarrantyPurchasesMessage": "خطط الضمان التي تضيفها عند الدفع ستظهر هنا",
+    "unknownProduct": "منتج غير معروف",
+    "unknownPlan": "خطة ضمان",
+    "coverageFrom": "من",
+    "coverageUntil": "حتى",
+    "warrantyPendingNote": "تبدأ التغطية بعد استلام طلبك",
+    "warrantyStatus": {
+      "active": "نشط",
+      "pending": "في الانتظار",
+      "expired": "منتهي",
+      "cancelled": "ملغى"
     },
     "issueTypes": {
       "defective": "معيب",

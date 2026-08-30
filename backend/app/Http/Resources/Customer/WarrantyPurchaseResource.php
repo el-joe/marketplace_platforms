@@ -43,6 +43,7 @@ class WarrantyPurchaseResource extends JsonResource
                 'sku' => $this->orderItem?->sku,
             ],
             'order_id' => $this->order_id,
+            'order_item_id' => $this->order_item_id,
             'created_at' => $this->created_at?->toIso8601String(),
             'is_claimable' => $this->status === 'active'
                 && $this->coverage_ends_at !== null

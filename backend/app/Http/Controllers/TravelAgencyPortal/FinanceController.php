@@ -123,7 +123,15 @@ class FinanceController extends Controller
     public function wallet(): View
     {
         $agencyId = $this->agencyId();
-        $currency = TravelPackage::where('travel_agency_id', $agencyId)->value('currency') ?? 'EGP';
+        $currency = TravelPackage::where('travel_agency_id', $agencyId)->value('currency');
+
+        if (! $currency) {
+            return view('travel-agency.finance.wallet', [
+                'wallet' => null,
+                'transactions' => collect(),
+                'withdrawalRequests' => collect(),
+            ]);
+        }
 
         $wallet = $this->walletService->getOrCreateWallet('travel_agency', $agencyId, $currency);
         $transactions = $wallet->transactions()->paginate(20);
@@ -135,7 +143,12 @@ class FinanceController extends Controller
     public function requestWithdrawal(Request $request): RedirectResponse
     {
         $agencyId = $this->agencyId();
-        $currency = TravelPackage::where('travel_agency_id', $agencyId)->value('currency') ?? 'EGP';
+        $currency = TravelPackage::where('travel_agency_id', $agencyId)->value('currency');
+
+        if (! $currency) {
+            return back()->with('error', 'No packages found to determine wallet currency.');
+        }
+
         $wallet = $this->walletService->getOrCreateWallet('travel_agency', $agencyId, $currency);
 
         $data = $request->validate([
@@ -144,9 +157,9 @@ class FinanceController extends Controller
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $amountCents = (int) round($data['amount'] * 100);
+        $amount = (int) $data['amount'];
 
-        $this->walletService->requestWithdrawal($wallet, $amountCents, [
+        $this->walletService->requestWithdrawal($wallet, $amount, [
             'bank_name' => $data['bank_name'],
             'bank_iban' => $data['bank_iban'],
         ]);

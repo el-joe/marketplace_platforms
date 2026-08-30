@@ -69,7 +69,7 @@ class ClaimController extends Controller
             'shipping_company_id'  => $shipment->subOrder->shippingCompanyId ?? null,
             'claim_type'           => $data['claim_type'],
             'description'          => $data['description'],
-            'claimed_amount' => (int) round($data['claimed_amount'] * 100),
+            'claimed_amount' => (int) $data['claimed_amount'],
             'evidence_files'       => $data['evidence_files'] ?? null,
         ], $vendor);
 

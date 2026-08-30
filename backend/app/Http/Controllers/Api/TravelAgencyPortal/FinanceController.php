@@ -125,7 +125,14 @@ class FinanceController extends Controller
     public function wallet(Request $request): JsonResponse
     {
         $agencyId = $this->agencyId();
-        $currency = TravelPackage::where('travel_agency_id', $agencyId)->value('currency') ?? 'EGP';
+        $currency = TravelPackage::where('travel_agency_id', $agencyId)->value('currency');
+
+        if (! $currency) {
+            return response()->json([
+                'wallet' => null,
+                'message' => 'No packages found to determine wallet currency.',
+            ]);
+        }
 
         $wallet       = $this->walletService->getOrCreateWallet('travel_agency', $agencyId, $currency);
         $transactions = $wallet->transactions()->orderByDesc('created_at')->paginate(20);

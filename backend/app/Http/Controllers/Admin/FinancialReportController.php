@@ -91,12 +91,12 @@ class FinancialReportController extends Controller
         $rates = Currency::pluck('exchange_rate_to_base', 'code');
         $rowsWithUsd = $rows->map(function ($row) use ($rates) {
             $rate = $rates[$row['currency_code']] ?? null;
-            $row['revenue_usd']    = ($rate && $rate > 0) ? round(($row['revenue'] / 100) / $rate, 2) : null;
-            $row['commission_usd'] = ($rate && $rate > 0) ? round(($row['commission'] / 100) / $rate, 2) : null;
-            $row['gateway_fee_usd'] = ($rate && $rate > 0) ? round(($row['gateway_fee'] / 100) / $rate, 2) : null;
-            $row['vat_usd']        = ($rate && $rate > 0) ? round(($row['vat'] / 100) / $rate, 2) : null;
-            $row['marketer_usd']   = ($rate && $rate > 0) ? round(($row['marketer'] / 100) / $rate, 2) : null;
-            $row['ad_revenue_usd'] = ($rate && $rate > 0) ? round(($row['ad_revenue'] / 100) / $rate, 2) : null;
+            $row['revenue_usd']    = ($rate && $rate > 0) ? round($row['revenue'] / $rate, 2) : null;
+            $row['commission_usd'] = ($rate && $rate > 0) ? round($row['commission'] / $rate, 2) : null;
+            $row['gateway_fee_usd'] = ($rate && $rate > 0) ? round($row['gateway_fee'] / $rate, 2) : null;
+            $row['vat_usd']        = ($rate && $rate > 0) ? round($row['vat'] / $rate, 2) : null;
+            $row['marketer_usd']   = ($rate && $rate > 0) ? round($row['marketer'] / $rate, 2) : null;
+            $row['ad_revenue_usd'] = ($rate && $rate > 0) ? round($row['ad_revenue'] / $rate, 2) : null;
             return $row;
         });
 
@@ -170,14 +170,14 @@ class FinancialReportController extends Controller
             $ccy  = $rev->currency_code ?? $country->currency_code;
             $rate = $rates[$ccy] ?? null;
 
-            $toUsd = function ($cents) use ($rate) {
+            $toUsd = function ($amount) use ($rate) {
                 if ($rate && $rate > 0) {
-                    return round(($cents / 100) / $rate, 2);
+                    return round($amount / $rate, 2);
                 }
                 return '';
             };
 
-            $fmt = fn($cents) => number_format($cents / 100, 2, '.', '');
+            $fmt = fn($amount) => number_format($amount, 2, '.', '');
 
             $revCents = $rev ? (int) $rev->total : 0;
             $comCents = $com ? (int) $com->commission : 0;
