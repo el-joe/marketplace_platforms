@@ -22,12 +22,10 @@ class HomeController extends Controller
     {
         $country = $request->attributes->get('country');
 
-        $customer = $request->user('customer');
-
         $deviceTarget = $pageBuilder->detectDevice($request);
         $audience = auth('customer')->check() ? 'authenticated' : 'guest';
 
-        $data = $this->home->getHomeData($country, $customer, $deviceTarget, $audience);
+        $data = $this->home->getHomeData($country, $deviceTarget, $audience);
 
         return ApiResponse::success(new HomeResource($data));
     }
