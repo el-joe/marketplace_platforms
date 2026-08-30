@@ -1,18 +1,18 @@
 "use client";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
-import React from "react";
 import { Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Block, Product } from "./types";
 import { cn } from "@/src/lib/utils";
-import SectionTitle from "./section-title";
-import { chunks } from "./helpers/chunks-arr";
 
 import useLocale from "@/src/hooks/use-locale";
 import Price from "@/src/components/shared/Price";
 
 import AddToCartButton from "@/src/components/shared/add-to-cart-button";
+import { Block } from "../types";
+import { Product } from "@/types/globals";
+import SectionTitle from "./section-title";
+import { chunks } from "../helpers/chunks-arr";
 
 export const FlashSale = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.products || [], 2);

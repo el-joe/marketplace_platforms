@@ -1,12 +1,11 @@
 import CountDown from "@/src/components/shared/CountDown";
-import MegaDealsCard from "@/src/features/noon/home/mega-deals-card";
 import { Button } from "@/src/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
-import React from "react";
-import { Block } from "./types";
 import getLocale from "@/src/helpers/getLocale";
 import { cn } from "@/src/lib/utils";
+import { Block } from "../types";
+import MegaDealsCard from "./mega-deals-card";
 
 const MegaDeals = async ({ data }: { data: Block }) => {
   const t = await getTranslations("home");

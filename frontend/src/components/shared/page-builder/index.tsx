@@ -1,7 +1,7 @@
 import { cn } from "@/src/lib/utils";
-import { blocks } from "./helpers/blocks-catalog";
-import { PageBuilderSection } from "./types";
 import Image from "next/image";
+import { PageBuilderSection } from "./types";
+import { blocks } from "./helpers/blocks-catalog";
 
 const widthClasses: Record<string, string> = {
   "1/3": "w-1/3 flex-1",

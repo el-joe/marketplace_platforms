@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import ClassifiedCard from "@/src/features/open-sooq/browse/components/classified-card";
-import SectionTitle from "@/src/features/noon/home/section-title";
+import SectionTitle from "@/src/components/shared/page-builder/sections/section-title";
 import type { ClassifiedListing } from "@/src/features/open-sooq/browse/helpers/types";
 
 type Props = {

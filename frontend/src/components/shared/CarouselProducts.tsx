@@ -1,5 +1,5 @@
 "use client";
-import SectionTitle from "../../features/noon/home/section-title";
+import SectionTitle from "./page-builder/sections/section-title";
 import { Swiper, SwiperSlide } from "swiper/react";
 // import { products } from "@/public/dummyData";
 import ProductCard from "@/src/components/shared/product-card";
