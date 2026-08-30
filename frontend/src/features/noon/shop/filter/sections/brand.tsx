@@ -33,7 +33,7 @@ const BrandFilter = () => {
           startIcon={<SearchIcon className="w-5! h-5!" />}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex max-h-[250px] flex-col gap-3 overflow-y-auto scrollbar-hide">
+        <div className="flex  flex-col gap-3 ">
           {visibleBrands.map((brand) => (
             <Label key={brand} className="font-normal cursor-pointer">
               <Checkbox />

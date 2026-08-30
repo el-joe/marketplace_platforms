@@ -22,7 +22,7 @@ const OptionsList = ({ options }: OptionsListProps) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex max-h-[250px] flex-col gap-3 overflow-y-auto scrollbar-hide">
+      <div className="flex flex-col gap-3">
         {visibleOptions.map((option) => (
           <Label key={option} className="font-normal cursor-pointer">
             <Checkbox />

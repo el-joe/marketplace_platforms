@@ -11,9 +11,7 @@ import { Checkbox } from "@/src/components/ui/base-inputs/checkbox";
 
 const CategoryFilter = () => (
   <FilterAccordionSection value="category" title="Category">
-    <div className="max-h-[250px] overflow-y-auto scrollbar-hide">
-      <CategoryNodeList nodes={categoryTree} />
-    </div>
+    <CategoryNodeList nodes={categoryTree} />
   </FilterAccordionSection>
 );
 
