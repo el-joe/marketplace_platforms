@@ -235,11 +235,8 @@
             @else
             <video src="{{ $m->url() }}" class="rounded-lg h-24 w-full object-cover border border-gray-200"></video>
             @endif
-            <form method="POST" action="{{ route('travel-agency.packages.media.destroy', [$pkg, $m]) }}"
-                  class="absolute top-1 left-1 hidden group-hover:block">
-                @csrf @method('DELETE')
-                <button type="submit" class="bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center leading-none">×</button>
-            </form>
+            <button type="button" data-media-delete-url="{{ route('travel-agency.packages.media.destroy', [$pkg, $m]) }}"
+                    class="media-delete-btn absolute top-1 left-1 hidden group-hover:block bg-red-500 text-white rounded-full w-5 h-5 text-xs text-center leading-5">×</button>
         </div>
         @endforeach
     </div>
@@ -250,6 +247,18 @@
         <input type="file" name="media[]" multiple accept="image/*,video/mp4,video/quicktime"
                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
         <p class="mt-1 text-xs text-gray-400">{{ __('travel.packages.file_max_upload_subtitle') }}</p>
+    </div>
+</div>
+
+{{-- Media delete confirm modal --}}
+<div id="media-delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <h3 class="font-bold text-gray-800">{{ __('travel.packages.confirm_delete_media_title') }}</h3>
+        <p class="text-sm text-gray-500">{{ __('travel.packages.confirm_delete_media_text') }}</p>
+        <div class="flex justify-end gap-2">
+            <button type="button" id="media-delete-cancel-btn" class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50">{{ __('travel.packages.cancel') }}</button>
+            <button type="button" id="media-delete-confirm-btn" class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600">{{ __('travel.packages.delete') }}</button>
+        </div>
     </div>
 </div>
 
@@ -295,6 +304,64 @@
     if (initialCountry) {
         loadCities(initialCountry, preselectedCity);
     }
+})();
+
+(function () {
+    const modal       = document.getElementById('media-delete-modal');
+    const cancelBtn   = document.getElementById('media-delete-cancel-btn');
+    const confirmBtn  = document.getElementById('media-delete-confirm-btn');
+    const csrfToken   = document.querySelector('meta[name="csrf-token"]').content;
+    let pendingCard   = null;
+    let pendingUrl    = null;
+
+    function openModal(card, url) {
+        pendingCard = card;
+        pendingUrl  = url;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeModal() {
+        pendingCard = null;
+        pendingUrl  = null;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.querySelectorAll('.media-delete-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openModal(btn.closest('.relative.group'), btn.dataset.mediaDeleteUrl);
+        });
+    });
+
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (!pendingUrl) return;
+        confirmBtn.disabled = true;
+
+        fetch(pendingUrl, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+        })
+            .then(function (r) {
+                if (!r.ok) throw new Error('request_failed');
+                if (pendingCard) pendingCard.remove();
+                closeModal();
+            })
+            .catch(function () {
+                alert(@json(__('travel.packages.media_delete_failed')));
+            })
+            .finally(function () {
+                confirmBtn.disabled = false;
+            });
+    });
 })();
 
 (function () {

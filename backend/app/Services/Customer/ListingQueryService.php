@@ -651,6 +651,7 @@ class ListingQueryService
     public function paginateTravelPackages(?string $travelCategoryId, int $perPage = 20): LengthAwarePaginator
     {
         return TravelPackage::where('status', TravelPackageStatus::Active->value)
+            ->where('departure_date', '>=', \Illuminate\Support\Carbon::today())
             ->when($travelCategoryId, fn($q) => $q->whereHas(
                 'categories',
                 fn($q2) => $q2->where('travel_categories.id', $travelCategoryId),
@@ -674,7 +675,7 @@ class ListingQueryService
             'source_type' => 'travel',
             'title_en' => $package->title_en,
             'title_ar' => $package->title_ar,
-            'slug' => $package->id,
+            'slug' => $package->slug,
             'thumbnail' => $package->media->first()?->url(),
             'images' => $package->media->map(fn ($m) => [
                 'id'       => $m->id,

@@ -65,7 +65,10 @@ class ClassifiedListingController extends Controller
         try {
             $this->service->approve($listing, auth('admin')->user());
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors());
+            $firstError = collect($e->errors())->flatten()->first();
+            return back()->with('error', $firstError ?? __('admin.classified_listings.approve_failed'));
+        } catch (\Throwable $e) {
+            return back()->with('error', __('admin.classified_listings.approve_failed'));
         }
 
         return back()->with('success', __('admin.classified_listings.approved_active'));
