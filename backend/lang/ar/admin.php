@@ -2641,6 +2641,16 @@ return [
         'attachment_status_verified' => 'موثّق',
         'attachment_status_rejected' => 'مرفوض',
         'attachment_status_pending'  => 'قيد الانتظار',
+
+        // Confirm modals
+        'approve_confirm_title'        => 'الموافقة على الإعلان؟',
+        'approve_confirm_body'         => 'سيتم تفعيل الإعلان وإشعار البائع فور الموافقة.',
+        'reject_confirm_body'          => 'يرجى تقديم سبب الرفض. سيتم إشعار البائع.',
+        'confirm_reject'               => 'تأكيد الرفض',
+        'approving'                    => 'جارٍ الموافقة…',
+        'rejecting'                    => 'جارٍ الرفض…',
+        'reject_reason_placeholder'    => 'اشرح سبب رفض هذا الإعلان…',
+        'reject_reason_required_error' => 'سبب الرفض مطلوب.',
     ],
 
     // ─── Blog ────────────────────────────────────────────────────────────────
@@ -10291,7 +10301,8 @@ return [
     // ─── Classified Listings ───────────────────────────────────────────────────
     'classified_listings' => [
         'approved_active' => 'تمت الموافقة على الإعلان وتفعيله.',
-        'rejected' => 'تم رفض الإعلان.',
+        'rejected'        => 'تم رفض الإعلان.',
+        'approve_failed'  => 'فشلت الموافقة. يرجى التحقق من جميع المرفقات المطلوبة أولاً.',
     ],
 
     // ─── Carrier Claims ─────────────────────────────────────────────────────────

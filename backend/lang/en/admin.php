@@ -2684,6 +2684,16 @@ return [
         'attachment_status_verified' => 'Verified',
         'attachment_status_rejected' => 'Rejected',
         'attachment_status_pending'  => 'Pending',
+
+        // Confirm modals
+        'approve_confirm_title'        => 'Approve Listing?',
+        'approve_confirm_body'         => 'The listing will be set to Active and the seller will be notified.',
+        'reject_confirm_body'          => 'Please provide a reason. The seller will be notified.',
+        'confirm_reject'               => 'Confirm Rejection',
+        'approving'                    => 'Approving…',
+        'rejecting'                    => 'Rejecting…',
+        'reject_reason_placeholder'    => 'Explain why this listing is being rejected…',
+        'reject_reason_required_error' => 'A rejection reason is required.',
     ],
 
     // ─── Blog ────────────────────────────────────────────────────────────────
@@ -10333,7 +10343,8 @@ return [
     // ─── Classified Listings ───────────────────────────────────────────────────
     'classified_listings' => [
         'approved_active' => 'Listing approved and set to active.',
-        'rejected' => 'Listing rejected.',
+        'rejected'        => 'Listing rejected.',
+        'approve_failed'  => 'Approval failed. Please verify all required attachments first.',
     ],
 
     // ─── Carrier Claims ─────────────────────────────────────────────────────────

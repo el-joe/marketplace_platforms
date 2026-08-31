@@ -34,15 +34,14 @@
 
         @if($listing->status === \App\Enums\ClassifiedListingStatus::PendingReview)
         <div class="flex gap-2">
-            <form method="POST" action="{{ route('admin.classifieds.listings.approve', $listing) }}">
-                @csrf
-                <button type="submit"
-                        class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium">
-                    {{ __('admin.classifieds.approve') }}
-                </button>
-            </form>
-            <button onclick="document.getElementById('reject-modal').classList.remove('hidden')"
-                    class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium">
+            <button type="button"
+                    onclick="document.getElementById('approve-modal').classList.remove('hidden')"
+                    class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
+                {{ __('admin.classifieds.approve') }}
+            </button>
+            <button type="button"
+                    onclick="document.getElementById('reject-modal').classList.remove('hidden')"
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
                 {{ __('admin.classifieds.reject') }}
             </button>
         </div>
@@ -221,22 +220,85 @@
     </div>
 </div>
 
+{{-- Approve Confirmation Modal --}}
+<div id="approve-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+     onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-900 text-base">{{ __('admin.classifieds.approve_confirm_title') }}</h3>
+                <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.classifieds.approve_confirm_body') }}</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-1">
+            <button type="button"
+                    onclick="document.getElementById('approve-modal').classList.add('hidden')"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                {{ __('common.cancel') }}
+            </button>
+            <form id="approve-form" method="POST" action="{{ route('admin.classifieds.listings.approve', $listing) }}">
+                @csrf
+                <button type="submit" id="approve-submit-btn"
+                        class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2">
+                    <span id="approve-btn-label">{{ __('admin.classifieds.approve') }}</span>
+                    <svg id="approve-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- Reject Modal --}}
-<div id="reject-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
-        <h3 class="font-bold text-gray-900">{{ __('admin.classifieds.reject_listing_title') }}</h3>
-        <form method="POST" action="{{ route('admin.classifieds.listings.reject', $listing) }}">
+<div id="reject-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+     onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-gray-900 text-base">{{ __('admin.classifieds.reject_listing_title') }}</h3>
+                <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.classifieds.reject_confirm_body') }}</p>
+            </div>
+        </div>
+
+        <form id="reject-form" method="POST" action="{{ route('admin.classifieds.listings.reject', $listing) }}">
             @csrf
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.classifieds.reject_reason_required') }}</label>
-                <textarea name="reason" rows="4" required
-                          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ __('admin.classifieds.reject_reason_required') }}
+                    <span class="text-red-500">*</span>
+                </label>
+                <textarea name="reason" id="reject-reason" rows="4" required
+                          placeholder="{{ __('admin.classifieds.reject_reason_placeholder') }}"
+                          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none resize-none"></textarea>
+                <p id="reject-reason-error" class="hidden text-xs text-red-500 mt-1">{{ __('admin.classifieds.reject_reason_required_error') }}</p>
             </div>
             <div class="flex justify-end gap-2 mt-4">
-                <button type="button" onclick="document.getElementById('reject-modal').classList.add('hidden')"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm">{{ __('common.cancel') }}</button>
-                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium">
-                    {{ __('admin.classifieds.reject') }}
+                <button type="button"
+                        onclick="document.getElementById('reject-modal').classList.add('hidden')"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    {{ __('common.cancel') }}
+                </button>
+                <button type="button" id="reject-submit-btn"
+                        onclick="submitReject()"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                    <span id="reject-btn-label">{{ __('admin.classifieds.confirm_reject') }}</span>
+                    <svg id="reject-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
                 </button>
             </div>
         </form>
@@ -246,6 +308,44 @@
 
 @push('scripts')
 <script>
+// ── Approve: show spinner + disable button on submit ───────────────────────
+document.getElementById('approve-form').addEventListener('submit', function () {
+    const btn   = document.getElementById('approve-submit-btn');
+    const label = document.getElementById('approve-btn-label');
+    const spin  = document.getElementById('approve-spinner');
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-not-allowed');
+    label.textContent = '{{ __("admin.classifieds.approving") }}';
+    spin.classList.remove('hidden');
+});
+
+// ── Reject: validate then show spinner + submit ────────────────────────────
+function submitReject() {
+    const textarea = document.getElementById('reject-reason');
+    const errEl    = document.getElementById('reject-reason-error');
+    const btn      = document.getElementById('reject-submit-btn');
+    const label    = document.getElementById('reject-btn-label');
+    const spin     = document.getElementById('reject-spinner');
+
+    if (!textarea.value.trim()) {
+        textarea.classList.add('border-red-400');
+        errEl.classList.remove('hidden');
+        textarea.focus();
+        return;
+    }
+
+    textarea.classList.remove('border-red-400');
+    errEl.classList.add('hidden');
+
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-not-allowed');
+    label.textContent = '{{ __("admin.classifieds.rejecting") }}';
+    spin.classList.remove('hidden');
+
+    document.getElementById('reject-form').submit();
+}
+
+// ── Verify / reject attachment ─────────────────────────────────────────────
 async function verifyAttachment(id, action) {
     const resp = await fetch('{{ route("admin.classifieds.attachments.verify", "__ID__") }}'.replace('__ID__', id), {
         method: 'POST',
@@ -258,5 +358,13 @@ async function verifyAttachment(id, action) {
     });
     if (resp.ok) window.location.reload();
 }
+
+// ── Close modals on Escape key ─────────────────────────────────────────────
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        document.getElementById('approve-modal').classList.add('hidden');
+        document.getElementById('reject-modal').classList.add('hidden');
+    }
+});
 </script>
 @endpush

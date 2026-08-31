@@ -62,11 +62,14 @@ class ClassifiedListingController extends Controller
 
     public function approve(Request $request, ClassifiedListing $listing): RedirectResponse
     {
-        // try {
+        try {
             $this->service->approve($listing, auth('admin')->user());
-        // } catch (\Illuminate\Validation\ValidationException $e) {
-        //     return back()->withErrors($e->errors());
-        // }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first();
+            return back()->with('error', $firstError ?? __('admin.classified_listings.approve_failed'));
+        } catch (\Throwable $e) {
+            return back()->with('error', __('admin.classified_listings.approve_failed'));
+        }
 
         return back()->with('success', __('admin.classified_listings.approved_active'));
     }
