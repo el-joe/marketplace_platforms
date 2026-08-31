@@ -1214,7 +1214,7 @@ async function openContractModal() {
 
     try {
         const data    = await apiFetch(cfg().contractUrl);
-        const content = data.data?.content_ar || data.data?.content_en || data.data?.content || 'محتوى العقد غير متاح.';
+        const content = data.data?.text || data.data?.content_ar || data.data?.content_en || data.data?.content || 'محتوى العقد غير متاح.';
         if (textEl) textEl.textContent = content;
         if (loadingEl) loadingEl.style.display = 'none';
         if (bodyEl)    bodyEl.classList.remove('hidden');

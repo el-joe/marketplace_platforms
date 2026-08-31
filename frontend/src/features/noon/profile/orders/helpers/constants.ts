@@ -14,10 +14,9 @@ export const returnReasons = [
 
 export const trackingSteps = [
   { stage: "placed", labelKey: "stepPlaced", icon: CheckIcon },
-  { stage: "processing", labelKey: "stepProcessing", icon: Truck },
-  { stage: "confirmed", labelKey: "stepConfirmed", icon: CheckIcon },
-  { stage: "dispatched", labelKey: "stepDispatched", icon: ClipboardCheck },
-  { stage: "delivered", labelKey: "deliveryByTomorrow", icon: PackageIcon },
+  { stage: "confirmed", labelKey: "stepConfirmed", icon: ClipboardCheck },
+  { stage: "shipped", labelKey: "stepShipped", icon: Truck },
+  { stage: "delivered", labelKey: "stepDelivered", icon: PackageIcon },
 ] as const;
 
 /** Order statuses shown under the list page's "In progress" group. */

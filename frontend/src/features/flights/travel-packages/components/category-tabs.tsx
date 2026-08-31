@@ -8,10 +8,10 @@ import type { TravelAvailableCategory } from "../../helpers/types";
 
 type Props = {
   categories: TravelAvailableCategory[];
-  activeCategoryId: string | null;
+  activeCategorySlug: string | null;
 };
 
-export default function CategoryTabs({ categories, activeCategoryId }: Props) {
+export default function CategoryTabs({ categories, activeCategorySlug }: Props) {
   const t = useTranslations("flights");
   const locale = useLocale();
   const router = useRouter();
@@ -19,10 +19,10 @@ export default function CategoryTabs({ categories, activeCategoryId }: Props) {
   const searchParams = useSearchParams();
 
   const setCategory = useCallback(
-    (id: string | null) => {
+    (slug: string | null) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (id) {
-        params.set("category", id);
+      if (slug) {
+        params.set("category", slug);
       } else {
         params.delete("category");
       }
@@ -32,12 +32,13 @@ export default function CategoryTabs({ categories, activeCategoryId }: Props) {
     [router, pathname, searchParams],
   );
 
+
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1">
       <button
         onClick={() => setCategory(null)}
         className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
-          !activeCategoryId
+          !activeCategorySlug
             ? "bg-blue-3 text-white border-blue-3"
             : "bg-white text-gray border-border hover:border-blue-3"
         }`}
@@ -48,19 +49,21 @@ export default function CategoryTabs({ categories, activeCategoryId }: Props) {
       {categories.map((cat) => (
         <button
           key={cat.id}
-          onClick={() => setCategory(cat.id)}
-          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
-            activeCategoryId === cat.id
+          onClick={() => setCategory(cat.slug)}
+          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors border cursor-pointer capitalize ${
+            activeCategorySlug === cat.slug
               ? "bg-blue-3 text-white border-blue-3"
               : "bg-white text-gray border-border hover:border-blue-3"
           }`}
         >
           {cat.icon && <span>{cat.icon}</span>}
+
           {locale === "ar" ? cat.name_ar : cat.name_en}
+
           {cat.package_count > 0 && (
             <span
               className={`text-xs px-1.5 py-0.5 rounded-full ${
-                activeCategoryId === cat.id ? "bg-white/20" : "bg-gray-2"
+                activeCategorySlug === cat.id ? "bg-white/20" : "bg-gray-2"
               }`}
             >
               {cat.package_count}

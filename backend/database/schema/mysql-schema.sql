@@ -4281,6 +4281,8 @@ CREATE TABLE `return_request_items` (
   `quantity` int NOT NULL,
   `condition_received` enum('new','opened','used','damaged') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `restock_decision` enum('restock','dispose','return_to_seller','liquidate') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `return_request_items_return_request_id_index` (`return_request_id`),
   KEY `return_request_items_order_item_id_index` (`order_item_id`)
@@ -6848,3 +6850,4 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (427,'2026_08_27_16
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (428,'2026_08_28_000001_create_search_suggestions_table',31);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (429,'2026_08_30_000001_rename_cents_suffix_columns',32);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (430,'2026_08_30_000002_rename_all_remaining_cents_db_columns',32);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (431,'2026_08_31_000001_add_timestamps_to_return_request_items_table',33);

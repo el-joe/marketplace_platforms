@@ -11,9 +11,11 @@ const DEFAULT_VISIBLE_COUNT = 5;
 
 type OptionsListProps = {
   options: string[];
+  selectedValues?: string[];
+  onToggle?: (value: string, checked: boolean) => void;
 };
 
-const OptionsList = ({ options }: OptionsListProps) => {
+const OptionsList = ({ options, selectedValues, onToggle }: OptionsListProps) => {
   const [expanded, setExpanded] = useState(false);
   const hasMore = options.length > DEFAULT_VISIBLE_COUNT;
   const visibleOptions = expanded
@@ -22,10 +24,13 @@ const OptionsList = ({ options }: OptionsListProps) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex max-h-[250px] flex-col gap-3 overflow-y-auto scrollbar-hide">
+      <div className="flex flex-col gap-3">
         {visibleOptions.map((option) => (
           <Label key={option} className="font-normal cursor-pointer">
-            <Checkbox />
+            <Checkbox
+              checked={selectedValues?.includes(option)}
+              onCheckedChange={(checked) => onToggle?.(option, checked)}
+            />
             {option}
           </Label>
         ))}
