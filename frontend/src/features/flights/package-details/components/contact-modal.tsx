@@ -48,6 +48,7 @@ export default function ContactModal({
 
   const [name, setName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userPhone, setUserPhone] = useState("");
   const [message, setMessage] = useState("");
 
   function handleOpenChange(isOpen: boolean) {
@@ -58,6 +59,7 @@ export default function ContactModal({
       setLoading(false);
       setName("");
       setUserEmail("");
+      setUserPhone("");
       setMessage("");
     }
   }
@@ -71,6 +73,7 @@ export default function ContactModal({
       await submitTravelInquiry(packageSlug, {
         name,
         email: userEmail,
+        phone: userPhone,
         message,
       });
       setSent(true);
@@ -159,6 +162,15 @@ export default function ContactModal({
               onChange={(e) => setUserEmail(e.target.value)}
               disabled={loading}
             />
+            <Input
+              required
+              type="tel"
+              placeholder={t("inquiryPhonePlaceholder")}
+              value={userPhone}
+              onChange={(e) => setUserPhone(e.target.value)}
+              disabled={loading}
+            />
+
             <Textarea
               required
               rows={3}

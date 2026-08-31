@@ -812,6 +812,7 @@
       "contactModalDescription": "Have questions about this package? Reach out and our team will get back to you shortly.",
       "inquiryNamePlaceholder": "Your name",
       "inquiryEmailPlaceholder": "Your email",
+      "inquiryPhonePlaceholder": "Your phone number",
       "inquiryMessagePlaceholder": "How can we help?",
       "sendInquiry": "Send Inquiry",
       "sendingInquiry": "Sending…",

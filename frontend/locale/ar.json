@@ -804,6 +804,7 @@
       "contactModalDescription": "هل لديك أسئلة حول هذه الباقة؟ تواصل معنا وسيرد عليك فريقنا قريبًا.",
       "inquiryNamePlaceholder": "اسمك",
       "inquiryEmailPlaceholder": "بريدك الإلكتروني",
+      "inquiryPhonePlaceholder": "رقم هاتفك",
       "inquiryMessagePlaceholder": "كيف يمكننا مساعدتك؟",
       "sendInquiry": "إرسال الاستفسار",
       "sendingInquiry": "جارٍ الإرسال…",
