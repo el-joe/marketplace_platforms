@@ -3986,6 +3986,14 @@ next@16.2.6:
     "@next/swc-win32-x64-msvc" "16.2.6"
     sharp "^0.34.5"
 
+nextjs-toploader@^3.9.17:
+  version "3.9.17"
+  resolved "https://registry.yarnpkg.com/nextjs-toploader/-/nextjs-toploader-3.9.17.tgz#3bb54918738c31ac1efbaf6a01518dbee27ebf99"
+  integrity sha512-9OF0KSSLtoSAuNg2LZ3aTl4hR9mBDj5L9s9DZiFCbMlXehyICGjkIz5dVGzuATU2bheJZoBdFgq9w07AKSuQQw==
+  dependencies:
+    nprogress "^0.2.0"
+    prop-types "^15.8.1"
+
 node-addon-api@^7.0.0:
   version "7.1.1"
   resolved "https://registry.npmjs.org/node-addon-api/-/node-addon-api-7.1.1.tgz"
@@ -4034,6 +4042,11 @@ npm-run-path@^6.0.0:
   dependencies:
     path-key "^4.0.0"
     unicorn-magic "^0.3.0"
+
+nprogress@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/nprogress/-/nprogress-0.2.0.tgz#cb8f34c53213d895723fcbab907e9422adbcafb1"
+  integrity sha512-I19aIingLgR1fmhftnbWWO3dXc0hSxqHQHQb3H8m+K3TnEn/iSeTZZOyvKXWqQESMwuUVnatlCnZdLBZZt2VSA==
 
 nuqs@^2.9.0:
   version "2.9.0"

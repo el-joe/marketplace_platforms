@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 // import { getLocale } from "next-intl/server";
 import { Toaster } from "react-hot-toast";
+import NextTopLoader from "nextjs-toploader";
 import RootProviders from "@/src/providers";
 
 import "swiper/css";
@@ -42,6 +43,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body suppressHydrationWarning className="pb-15 md:pb-0">
+        <NextTopLoader color="#111111" showSpinner={false} />
         <RootProviders>
           <Toaster position="bottom-right" />
           {children}
