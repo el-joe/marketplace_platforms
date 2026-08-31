@@ -1,18 +1,22 @@
+"use client";
+
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
-import { Link } from "@/i18n/navigation";
+import usePagination from "./helpers/use-pagination";
 
 type Props = {
   totalPages: number;
 };
 
 const Pagination = ({ totalPages }: Props) => {
-  const currentPage = 1;
+  const { currentPage, goToPage } = usePagination();
 
   return (
     <nav className="flex items-center justify-center gap-2 py-6">
-      <Link
-        href={""}
+      <button
+        type="button"
+        onClick={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
         aria-disabled={currentPage === 1}
         className={`flex size-8 items-center justify-center rounded-lg border border-border-color ${
           currentPage === 1
@@ -21,11 +25,12 @@ const Pagination = ({ totalPages }: Props) => {
         }`}
       >
         <ChevronLeftIcon className="size-4" />
-      </Link>
+      </button>
       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-        <Link
+        <button
           key={page}
-          href={""}
+          type="button"
+          onClick={() => goToPage(page)}
           className={`bg-transparent border border-border-color flex items-center justify-center text-sm duration-300 rounded-[2px] px-2 py-[10px] ${
             page === currentPage
               ? "border-blue! text-blue! font-bold"
@@ -33,10 +38,12 @@ const Pagination = ({ totalPages }: Props) => {
           }`}
         >
           {page}
-        </Link>
+        </button>
       ))}
-      <Link
-        href={""}
+      <button
+        type="button"
+        onClick={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
         aria-disabled={currentPage === totalPages}
         className={`flex size-8 items-center justify-center rounded-lg border border-border-color ${
           currentPage === totalPages
@@ -45,7 +52,7 @@ const Pagination = ({ totalPages }: Props) => {
         }`}
       >
         <ChevronRightIcon className="size-4" />
-      </Link>
+      </button>
     </nav>
   );
 };
