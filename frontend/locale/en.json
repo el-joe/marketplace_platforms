@@ -868,7 +868,12 @@
       "cancelBookingConfirmButton": "Cancel booking",
       "cancelling": "Cancelling...",
       "cancelSuccess": "Booking cancelled. Refund eligibility is subject to agency review.",
-      "cancelFailed": "Failed to cancel booking. Please try again."
+      "cancelFailed": "Failed to cancel booking. Please try again.",
+      "uploadPassport": "Upload Passport",
+      "uploading": "Uploading…",
+      "passportHint": "Accepted formats: PDF, JPG, PNG. Max 10MB.",
+      "passportUploadedSuccess": "Passport uploaded! The agency can now confirm your booking.",
+      "uploadError": "Upload failed. Please try again."
     }
   },
   "vewAll": "Vew All",

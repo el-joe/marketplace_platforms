@@ -8,6 +8,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import Price from "@/src/components/shared/Price";
 import CancelBookingDialog from "./components/cancel-booking-dialog";
+import PassportUpload from "./components/passport-upload";
 import {
   bookingStatusVariant,
   isCancellableStatus,
@@ -86,6 +87,8 @@ export default async function BookingDetails({ booking }: Props) {
                 <span className="flex items-center gap-1.5 text-green">
                   <CheckIcon className="size-4" /> {t("myBookings.yes")}
                 </span>
+              ) : booking.status === "pending_documents" ? (
+                <PassportUpload bookingId={booking.id} />
               ) : (
                 <span className="flex items-center gap-1.5 text-gray">
                   <XIcon className="size-4" /> {t("myBookings.no")}

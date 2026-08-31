@@ -66,7 +66,7 @@
                 @if($travelBooking->passport_file_path)
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.travel.passport') }}</dt>
-                    <dd><a href="/storage/{{ $travelBooking->passport_file_path }}" target="_blank" class="text-primary-600 text-xs hover:underline">{{ __('admin.travel.view_file') }}</a></dd>
+                    <dd><a href="{{ route('admin.travel.bookings.passport.download', $travelBooking) }}" class="text-primary-600 text-xs hover:underline">{{ __('admin.travel.view_file') }}</a></dd>
                 </div>
                 @endif
             </dl>

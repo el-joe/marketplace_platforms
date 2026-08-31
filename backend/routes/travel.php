@@ -87,6 +87,8 @@ Route::name('travel-agency.')
                 Route::get('/customer-search', [BookingController::class, 'customerSearch'])->name('customer-search')->middleware('travel_agency.can:bookings.create');
                 Route::get('/{booking}', [BookingController::class, 'show'])->name('show')->middleware('travel_agency.can:bookings.view');
                 Route::patch('/{booking}/status', [BookingController::class, 'updateStatus'])->name('status')->middleware('travel_agency.can:bookings.manage');
+                Route::post('/{booking}/passport', [BookingController::class, 'uploadPassport'])->name('passport.upload')->middleware('travel_agency.can:bookings.manage');
+                Route::get('/{booking}/passport/download', [BookingController::class, 'downloadPassport'])->name('passport.download')->middleware('travel_agency.can:bookings.view');
             });
 
             // Campaign Offers

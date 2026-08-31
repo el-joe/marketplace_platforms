@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -311,6 +312,44 @@ class BookingController extends Controller
             : __('travel.bookings.cancel_success');
 
         return back()->with('success', $label);
+    }
+
+    // ── Passport upload / download ───────────────────────────────────────────
+
+    public function uploadPassport(Request $request, TravelBooking $booking): RedirectResponse
+    {
+        $this->authorise($booking);
+
+        if ($booking->status !== TravelBookingStatus::PendingDocuments) {
+            return back()->withErrors(['passport_file' => __('travel.bookings.passport_upload_not_allowed')]);
+        }
+
+        $request->validate([
+            'passport_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+        ]);
+
+        if ($booking->passport_file_path) {
+            Storage::disk('private')->delete($booking->passport_file_path);
+        }
+
+        $path = $request->file('passport_file')->store('travel-bookings/passports', 'private');
+        $booking->update(['passport_file_path' => $path]);
+
+        return back()->with('success', __('travel.bookings.passport_uploaded'));
+    }
+
+    public function downloadPassport(TravelBooking $booking): StreamedResponse
+    {
+        $this->authorise($booking);
+
+        if (! $booking->passport_file_path || ! Storage::disk('private')->exists($booking->passport_file_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('private')->download(
+            $booking->passport_file_path,
+            'passport-' . $booking->booking_number . '.' . pathinfo($booking->passport_file_path, PATHINFO_EXTENSION)
+        );
     }
 
     // ── Auth guards ───────────────────────────────────────────────────────────

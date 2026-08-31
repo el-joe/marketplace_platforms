@@ -102,13 +102,49 @@ $statusLabels = [
             <div>
                 <p class="text-gray-500 mb-1">{{ __('travel.bookings.passport') }}</p>
                 @if($booking->passport_file_path)
-                    <a href="{{ asset('storage/'.$booking->passport_file_path) }}" target="_blank"
-                       class="inline-flex items-center gap-1 text-blue-600 hover:underline font-medium">
+                    <a href="{{ route('travel-agency.bookings.passport.download', $booking) }}"
+                       class="inline-flex items-center gap-1 text-blue-600 hover:underline font-medium text-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         {{ __('travel.bookings.download_passport') }}
                     </a>
+                    @if($booking->status === \App\Enums\TravelBookingStatus::PendingDocuments)
+                        <div class="mt-2">
+                            <form method="POST" action="{{ route('travel-agency.bookings.passport.upload', $booking) }}"
+                                  enctype="multipart/form-data">
+                                @csrf
+                                <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-500 hover:text-gray-700">
+                                    <input type="file" name="passport_file" accept=".pdf,.jpg,.jpeg,.png"
+                                           class="hidden" onchange="this.form.submit()">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/>
+                                    </svg>
+                                    {{ __('travel.bookings.replace_passport') }}
+                                </label>
+                            </form>
+                        </div>
+                    @endif
                 @else
-                    <span class="text-gray-400">{{ __('travel.bookings.not_uploaded_yet') }}</span>
+                    @if($booking->status === \App\Enums\TravelBookingStatus::PendingDocuments)
+                        <form method="POST" action="{{ route('travel-agency.bookings.passport.upload', $booking) }}"
+                              enctype="multipart/form-data">
+                            @csrf
+                            <label class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-sm text-gray-600">
+                                <input type="file" name="passport_file" accept=".pdf,.jpg,.jpeg,.png"
+                                       class="hidden" onchange="this.form.submit()">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/>
+                                </svg>
+                                {{ __('travel.bookings.upload_passport') }}
+                            </label>
+                        </form>
+                        @error('passport_file')
+                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    @else
+                        <span class="text-gray-400 text-sm">{{ __('travel.bookings.not_uploaded_yet') }}</span>
+                    @endif
                 @endif
             </div>
             <div>

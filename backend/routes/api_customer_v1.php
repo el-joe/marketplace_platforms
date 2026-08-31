@@ -477,6 +477,7 @@ use Illuminate\Support\Facades\Route;
                 Route::get('/', [AccountController::class, 'travelBookingsIndex'])->name('index');
                 Route::get('{id}', [AccountController::class, 'travelBookingsShow'])->name('show');
                 Route::post('{id}/cancel', [AccountController::class, 'travelBookingsCancel'])->name('cancel');
+                Route::post('{id}/passport', [AccountController::class, 'travelBookingsUploadPassport'])->name('passport.upload');
             });
 
             // My classified inquiries (customer as buyer)

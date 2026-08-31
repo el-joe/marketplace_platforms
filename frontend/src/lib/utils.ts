@@ -37,7 +37,9 @@ async function fetchWithAuth<T>(
   ]);
 
   const headers = new Headers(init?.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(init?.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   headers.set("Accept", "application/json");
   if (!!token) {
     headers.set("Authorization", `Bearer ${token}`);

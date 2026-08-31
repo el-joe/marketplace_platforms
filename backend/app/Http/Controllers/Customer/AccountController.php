@@ -169,6 +169,41 @@ class AccountController extends Controller
         );
     }
 
+    public function travelBookingsUploadPassport(Request $request, $country, string $id): JsonResponse
+    {
+        $country = $request->attributes->get("country");
+
+        /** @var Customer $customer */
+        $customer = auth('customer')->user();
+
+        $booking = $this->travelService->showForCustomer($customer, $id);
+
+        if ($booking->status !== \App\Enums\TravelBookingStatus::PendingDocuments) {
+            return ApiResponse::error(
+                __('common.exceptions.travel.passport_upload_not_allowed'),
+                [],
+                422
+            );
+        }
+
+        $request->validate([
+            'passport_file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+        ]);
+
+        if ($booking->passport_file_path) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($booking->passport_file_path);
+        }
+
+        $path = $request->file('passport_file')->store('travel-bookings/passports', 'private');
+
+        $booking->update(['passport_file_path' => $path]);
+
+        return ApiResponse::success(
+            ['passport_uploaded' => true],
+            __('common.exceptions.travel.passport_uploaded')
+        );
+    }
+
     // ── My Classified Inquiries (customer as buyer) ───────────────────────────
 
     public function inquiriesIndex(Request $request, $country): JsonResponse

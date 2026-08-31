@@ -860,7 +860,12 @@
       "cancelBookingConfirmButton": "إلغاء الحجز",
       "cancelling": "جارٍ الإلغاء...",
       "cancelSuccess": "تم إلغاء الحجز. أهلية الاسترداد تخضع لمراجعة الوكالة.",
-      "cancelFailed": "فشل إلغاء الحجز. يرجى المحاولة مرة أخرى."
+      "cancelFailed": "فشل إلغاء الحجز. يرجى المحاولة مرة أخرى.",
+      "uploadPassport": "رفع جواز السفر",
+      "uploading": "جارٍ الرفع…",
+      "passportHint": "الصيغ المقبولة: PDF أو JPG أو PNG. الحجم الأقصى 10MB.",
+      "passportUploadedSuccess": "تم رفع جواز السفر! يمكن للوكالة الآن تأكيد حجزك.",
+      "uploadError": "فشل الرفع. يرجى المحاولة مجدداً."
     }
   },
   "vewAll": "عرض الكل",

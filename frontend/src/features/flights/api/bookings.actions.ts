@@ -7,6 +7,8 @@ import type {
   TravelBookingDetail,
 } from "../helpers/types";
 
+type UploadPassportResult = { passport_uploaded: boolean };
+
 /** Feature-only: GET /account/travel-bookings — paginated list of the customer's bookings. */
 export async function getMyBookings(
   filters: ListBookingsFilters = {},
@@ -49,6 +51,24 @@ export async function cancelMyBooking(
     {
       method: "POST",
       body: JSON.stringify({ reason }),
+    },
+  );
+  return envelope.data;
+}
+
+/** Feature-only: POST /account/travel-bookings/:id/passport — uploads a passport file for a booking. */
+export async function uploadPassport(
+  id: string,
+  file: File,
+): Promise<UploadPassportResult> {
+  const formData = new FormData();
+  formData.append("passport_file", file);
+
+  const envelope = await fetchInstance<ApiEnvelope<UploadPassportResult>>(
+    `/account/travel-bookings/${id}/passport`,
+    {
+      method: "POST",
+      body: formData,
     },
   );
   return envelope.data;

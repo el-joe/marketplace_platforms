@@ -159,4 +159,21 @@ class TravelBookingController extends Controller
 
         return view('admin.travel-bookings.show', compact('travelBooking'));
     }
+
+    public function downloadPassport(TravelBooking $travelBooking): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('travel.view'), 403);
+
+        if (! $travelBooking->passport_file_path
+            || ! \Illuminate\Support\Facades\Storage::disk('private')->exists($travelBooking->passport_file_path)
+        ) {
+            abort(404);
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('private')->download(
+            $travelBooking->passport_file_path,
+            'passport-' . $travelBooking->booking_number . '.' . pathinfo($travelBooking->passport_file_path, PATHINFO_EXTENSION)
+        );
+    }
 }

@@ -1469,6 +1469,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TravelBookingController::class, 'index'])->name('index');
             Route::post('/datatable', [\App\Http\Controllers\Admin\TravelBookingController::class, 'datatable'])->name('datatable');
             Route::get('/{travelBooking}', [\App\Http\Controllers\Admin\TravelBookingController::class, 'show'])->name('show');
+            Route::get('/{travelBooking}/passport', [\App\Http\Controllers\Admin\TravelBookingController::class, 'downloadPassport'])->name('passport.download');
         });
 
         Route::prefix('countries')->name('countries.')->group(function () {

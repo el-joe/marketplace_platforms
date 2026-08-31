@@ -486,6 +486,8 @@ return [
             'sold_out'          => 'This package is sold out.',
             'booking_confirmed' => 'Booking confirmed! Reference: :reference',
             'booking_cancelled' => 'Booking cancelled. Refund eligibility is subject to agency review.',
+            'passport_upload_not_allowed' => 'Passport can only be uploaded while the booking is pending documents.',
+            'passport_uploaded'           => 'Passport uploaded successfully.',
         ],
     ],
 ];
