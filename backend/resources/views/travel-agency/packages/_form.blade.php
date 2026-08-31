@@ -187,6 +187,47 @@
     <button type="button" id="add-tier-row" class="text-sm text-blue-600 font-medium">+ {{ __('travel.packages.add_pricing_tier') }}</button>
 </div>
 
+{{-- Categories --}}
+<div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <h3 class="font-bold text-gray-800">{{ __('travel.packages.categories') }}</h3>
+    <p class="text-xs text-gray-500">{{ __('travel.packages.categories_description') }}</p>
+    @php
+        $selectedCategoryIds = old('category_ids', $pkg ? $pkg->categories->pluck('id')->all() : []);
+        $parentCats = $travelCategories->whereNull('parent_id');
+        $childCats  = $travelCategories->whereNotNull('parent_id')->groupBy('parent_id');
+    @endphp
+    @if($travelCategories->isEmpty())
+        <p class="text-sm text-gray-400">{{ __('travel.packages.no_categories_available') }}</p>
+    @else
+        <div class="space-y-3">
+            @foreach($parentCats as $parent)
+                <div>
+                    {{-- Parent category --}}
+                    <label class="flex items-center gap-2 cursor-pointer font-medium text-gray-800">
+                        <input type="checkbox" name="category_ids[]" value="{{ $parent->id }}"
+                               {{ in_array($parent->id, $selectedCategoryIds) ? 'checked' : '' }}
+                               class="w-4 h-4 rounded border-gray-300 text-primary-600">
+                        <span class="text-sm">{{ $parent->icon ? $parent->icon . ' ' : '' }}{{ app()->getLocale() === 'ar' ? $parent->name_ar : $parent->name_en }}</span>
+                    </label>
+                    {{-- Child categories --}}
+                    @if(isset($childCats[$parent->id]))
+                        <div class="ms-6 mt-1.5 grid grid-cols-2 gap-2">
+                            @foreach($childCats[$parent->id] as $child)
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="category_ids[]" value="{{ $child->id }}"
+                                       {{ in_array($child->id, $selectedCategoryIds) ? 'checked' : '' }}
+                                       class="w-4 h-4 rounded border-gray-300 text-primary-600">
+                                <span class="text-sm text-gray-700">{{ $child->icon ? $child->icon . ' ' : '' }}{{ app()->getLocale() === 'ar' ? $child->name_ar : $child->name_en }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+</div>
+
 {{-- Inclusions --}}
 <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
     <h3 class="font-bold text-gray-800">{{ __('travel.packages.inclusions') }}</h3>

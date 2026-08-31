@@ -405,6 +405,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.travel_categories'),
+                        'route' => 'admin.travel.categories.index',
+                        'icon' => 'tag',
+                        'permission' => 'travel.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.travel_inquiries'),
                         'route' => 'admin.travel.inquiries.index',
                         'icon' => 'chat-bubble-left-right',

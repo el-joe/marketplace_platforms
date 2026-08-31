@@ -1462,6 +1462,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/{travelPackage}/reject', [\App\Http\Controllers\Admin\TravelPackageController::class, 'reject'])->name('reject');
             Route::post('/{travelPackage}/expire', [\App\Http\Controllers\Admin\TravelPackageController::class, 'expire'])->name('expire');
             Route::get('/{travelPackage}/contract', [\App\Http\Controllers\Admin\TravelPackageController::class, 'downloadContract'])->name('contract.download');
+            Route::post('/{travelPackage}/categories', [\App\Http\Controllers\Admin\TravelPackageController::class, 'syncCategories'])->name('categories.sync');
         });
 
         Route::prefix('bookings')->name('bookings.')->group(function () {
@@ -1493,6 +1494,13 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'store'])->name('store');
             Route::put('/{travelInclusion}', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'update'])->name('update');
             Route::delete('/{travelInclusion}', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'store'])->name('store');
+            Route::put('/{travelCategory}', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'update'])->name('update');
+            Route::delete('/{travelCategory}', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'destroy'])->name('destroy');
         });
     });
 

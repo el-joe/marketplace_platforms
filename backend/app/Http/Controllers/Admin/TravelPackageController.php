@@ -305,4 +305,24 @@ class TravelPackageController extends Controller
             $travelPackage->contract_file_original_name ?? 'contract.pdf'
         );
     }
+
+    // ── Sync categories ───────────────────────────────────────────────────────
+
+    public function syncCategories(Request $request, TravelPackage $travelPackage): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('travel.view'), 403);
+
+        $data = $request->validate([
+            'category_ids'   => ['nullable', 'array'],
+            'category_ids.*' => ['uuid', 'exists:travel_categories,id'],
+        ]);
+
+        $travelPackage->categories()->sync($data['category_ids'] ?? []);
+
+        return response()->json([
+            'message'    => __('admin.travel.categories_updated'),
+            'categories' => $travelPackage->categories()->get(['id', 'name_en', 'name_ar', 'icon']),
+        ]);
+    }
 }

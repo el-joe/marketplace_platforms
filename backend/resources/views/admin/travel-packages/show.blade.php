@@ -168,18 +168,75 @@
     @endif
 
     {{-- ─── Categories ───────────────────────────────────────────────────────────── --}}
-    @if($travelPackage->categories->count())
     <x-card>
-        <h3 class="font-semibold text-gray-700 text-xs uppercase tracking-wide mb-3">{{ __('admin.travel.categories_label') }}</h3>
-        <div class="flex flex-wrap gap-2">
-            @foreach($travelPackage->categories as $cat)
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-700 text-xs uppercase tracking-wide">{{ __('admin.travel.categories_label') }}</h3>
+            <button onclick="document.getElementById('cat-edit-panel').classList.toggle('hidden')"
+                    class="text-xs text-primary-600 hover:underline">{{ __('admin.travel.edit_categories') }}</button>
+        </div>
+
+        {{-- Read-only badges --}}
+        <div id="cat-badges" class="flex flex-wrap gap-2 min-h-[24px]">
+            @forelse($travelPackage->categories as $cat)
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
                 {{ $cat->icon ? $cat->icon . ' ' : '' }}{{ $cat->name_en }}
             </span>
-            @endforeach
+            @empty
+            <span class="text-xs text-gray-400">{{ __('admin.travel.no_categories_assigned') }}</span>
+            @endforelse
+        </div>
+
+        {{-- Edit panel (hidden by default) --}}
+        <div id="cat-edit-panel" class="hidden mt-4 border-t border-gray-100 pt-4 space-y-3">
+            @php
+                $allCats      = \App\Models\TravelCategory::where('is_active', true)->orderBy('sort_order')->orderBy('name_en')->get();
+                $assignedIds  = $travelPackage->categories->pluck('id')->all();
+                $parentCats   = $allCats->whereNull('parent_id');
+                $childCats    = $allCats->whereNotNull('parent_id')->groupBy('parent_id');
+            @endphp
+
+            @if($allCats->isEmpty())
+                <p class="text-sm text-gray-400">{{ __('admin.travel.no_categories_to_assign') }}</p>
+            @else
+                <div class="space-y-2">
+                    @foreach($parentCats as $parent)
+                    <div>
+                        <label class="flex items-center gap-2 cursor-pointer font-medium text-gray-800">
+                            <input type="checkbox" class="cat-checkbox w-4 h-4 rounded border-gray-300 text-primary-600"
+                                   value="{{ $parent->id }}"
+                                   {{ in_array($parent->id, $assignedIds) ? 'checked' : '' }}>
+                            <span class="text-sm">{{ $parent->icon ? $parent->icon . ' ' : '' }}{{ $parent->name_en }}</span>
+                        </label>
+                        @if(isset($childCats[$parent->id]))
+                        <div class="ms-6 mt-1 grid grid-cols-2 gap-1.5">
+                            @foreach($childCats[$parent->id] as $child)
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" class="cat-checkbox w-4 h-4 rounded border-gray-300 text-primary-600"
+                                       value="{{ $child->id }}"
+                                       {{ in_array($child->id, $assignedIds) ? 'checked' : '' }}>
+                                <span class="text-sm text-gray-700">{{ $child->icon ? $child->icon . ' ' : '' }}{{ $child->name_en }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button onclick="saveCats()" id="save-cats-btn"
+                            class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 flex items-center gap-2">
+                        <span id="save-cats-label">{{ __('common.save') }}</span>
+                        <svg id="save-cats-spin" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                    </button>
+                    <span id="save-cats-msg" class="text-xs text-emerald-600 hidden">{{ __('admin.travel.categories_updated') }}</span>
+                </div>
+            @endif
         </div>
     </x-card>
-    @endif
 
     {{-- ─── Descriptions ─────────────────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,5 +369,50 @@ Object.assign(window.TRANSLATIONS, {
         });
     });
 })();
+
+async function saveCats() {
+    const btn   = document.getElementById('save-cats-btn');
+    const label = document.getElementById('save-cats-label');
+    const spin  = document.getElementById('save-cats-spin');
+    const msg   = document.getElementById('save-cats-msg');
+
+    const ids = [...document.querySelectorAll('.cat-checkbox:checked')].map(el => el.value);
+
+    btn.disabled = true;
+    label.textContent = '{{ __("admin.travel.saving") }}';
+    spin.classList.remove('hidden');
+    msg.classList.add('hidden');
+
+    const resp = await fetch('{{ route('admin.travel.packages.categories.sync', $travelPackage) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+        },
+        body: JSON.stringify({ category_ids: ids }),
+    });
+
+    const data = await resp.json();
+
+    btn.disabled = false;
+    label.textContent = '{{ __("common.save") }}';
+    spin.classList.add('hidden');
+
+    if (resp.ok) {
+        const badgesEl = document.getElementById('cat-badges');
+        if (data.categories.length === 0) {
+            badgesEl.innerHTML = '<span class="text-xs text-gray-400">{{ __("admin.travel.no_categories_assigned") }}</span>';
+        } else {
+            badgesEl.innerHTML = data.categories.map(c =>
+                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">${c.icon ? c.icon + ' ' : ''}${c.name_en}</span>`
+            ).join('');
+        }
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+    } else {
+        alert(data.message ?? '{{ __("admin.travel.save_failed") }}');
+    }
+}
 </script>
 @endpush

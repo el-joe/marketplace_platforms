@@ -115,8 +115,12 @@ class PackageController extends Controller
     private function formData(): array
     {
         return [
-            'travelCountries' => TravelCountry::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']),
-            'currencies'      => Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']),
+            'travelCountries'  => TravelCountry::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']),
+            'currencies'       => Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']),
+            'travelCategories' => \App\Models\TravelCategory::where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name_en')
+                ->get(['id', 'name_en', 'name_ar', 'icon', 'parent_id']),
         ];
     }
 
@@ -148,6 +152,8 @@ class PackageController extends Controller
             'available_seats'               => ['nullable', 'integer', 'min:1'],
             'inclusion_ids'                 => ['nullable', 'array'],
             'inclusion_ids.*'               => ['uuid', 'exists:travel_inclusions,id'],
+            'category_ids'                  => ['nullable', 'array'],
+            'category_ids.*'                => ['uuid', 'exists:travel_categories,id'],
             'media'                         => ['nullable', 'array', 'max:10'],
             'media.*'                       => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:51200'],
             'contract_file'                 => ['required', 'file', 'mimes:pdf', 'max:10240'],
@@ -159,6 +165,9 @@ class PackageController extends Controller
         $inclusionIds = $data['inclusion_ids'] ?? [];
         unset($data['inclusion_ids']);
 
+        $categoryIds = $data['category_ids'] ?? [];
+        unset($data['category_ids']);
+
         $package = TravelPackage::create([
             ...$data,
             'travel_agency_id' => $this->agencyId(),
@@ -167,6 +176,7 @@ class PackageController extends Controller
 
         $package->syncPricingTiers($priceTiers);
         $package->inclusions()->sync($inclusionIds);
+        $package->categories()->sync($categoryIds);
         $this->storeContractFile($request, $package);
         $this->handleMediaUploads($request, $package);
 
@@ -188,7 +198,7 @@ class PackageController extends Controller
     public function edit(TravelPackage $package): View
     {
         $this->authorise($package);
-        $package->load(['media', 'pricingTiers', 'inclusions']);
+        $package->load(['media', 'pricingTiers', 'inclusions', 'categories']);
 
         return view('travel-agency.packages.edit', ['package' => $package, ...$this->formData()]);
     }
@@ -222,6 +232,8 @@ class PackageController extends Controller
             'available_seats'               => ['nullable', 'integer', 'min:1'],
             'inclusion_ids'                 => ['nullable', 'array'],
             'inclusion_ids.*'               => ['uuid', 'exists:travel_inclusions,id'],
+            'category_ids'                  => ['nullable', 'array'],
+            'category_ids.*'                => ['uuid', 'exists:travel_categories,id'],
             'media'                         => ['nullable', 'array', 'max:10'],
             'media.*'                       => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:51200'],
             'contract_file'                 => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
@@ -233,9 +245,13 @@ class PackageController extends Controller
         $inclusionIds = $data['inclusion_ids'] ?? [];
         unset($data['inclusion_ids']);
 
+        $categoryIds = $data['category_ids'] ?? [];
+        unset($data['category_ids']);
+
         $package->update($data);
         $package->syncPricingTiers($priceTiers);
         $package->inclusions()->sync($inclusionIds);
+        $package->categories()->sync($categoryIds);
 
         if ($request->hasFile('contract_file')) {
             if ($package->contract_file_path) {
