@@ -45,3 +45,20 @@ export async function getTravelPackageBySlug(
     throw error;
   }
 }
+
+/** POST /listings/travel/:slug/inquiries — submit a contact inquiry for a travel package. Guest-accessible (no auth required). */
+export async function submitTravelInquiry(
+  slug: string,
+  payload: {
+    name: string;
+    email: string;
+    message: string;
+    phone?: string;
+    travelers_count?: number;
+  },
+): Promise<void> {
+  await fetchInstance<ApiEnvelope<null>>(`/listings/travel/${slug}/inquiries`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

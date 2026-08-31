@@ -61,6 +61,8 @@ class TravelPackageDetailResource extends JsonResource
                 'name'           => $agency->name,
                 'logo_url'       => $agency->logoUrl(),
                 'license_number' => $agency->license_number,
+                'contact_email'  => $agency->email,
+                'contact_phone'  => $agency->phone,
             ] : null,
             'status'              => $this->status?->value,
         ];

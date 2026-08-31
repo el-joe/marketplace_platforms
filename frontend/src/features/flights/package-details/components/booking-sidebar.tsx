@@ -4,7 +4,6 @@ import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
 import DateRangeDisplay from "./date-range-display";
 import ContactModal from "./contact-modal";
-import { CONTACT_INFO } from "../../helpers/constants";
 import type { TravelPackageDetail } from "../../helpers/types";
 
 type Props = {
@@ -55,9 +54,10 @@ export default async function BookingSidebar({ pkg }: Props) {
         </div>
 
         <ContactModal
+          packageSlug={pkg.slug}
           packageName={pkg.destination_city}
-          email={CONTACT_INFO.email}
-          phone={CONTACT_INFO.phone}
+          email={pkg.agency?.contact_email ?? null}
+          phone={pkg.agency?.contact_phone ?? null}
         />
 
         <div className="mt-6 flex justify-center gap-4 opacity-50">
@@ -79,9 +79,10 @@ export default async function BookingSidebar({ pkg }: Props) {
             {td("conciergeBody")}
           </p>
           <ContactModal
+            packageSlug={pkg.slug}
             packageName={pkg.destination_city}
-            email={CONTACT_INFO.email}
-            phone={CONTACT_INFO.phone}
+            email={pkg.agency?.contact_email ?? null}
+            phone={pkg.agency?.contact_phone ?? null}
             trigger={
               <button className="text-xs text-blue-3 font-bold flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer">
                 {td("conciergeCta")}

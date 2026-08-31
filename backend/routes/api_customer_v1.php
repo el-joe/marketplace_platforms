@@ -113,6 +113,12 @@ use Illuminate\Support\Facades\Route;
             [ListingController::class, 'createBooking']
         )->middleware('auth:customer')->name('customer.listings.travel.bookings.store');
 
+        // POST /listings/travel/{slug}/inquiries
+        Route::post(
+            'listings/travel/{slug}/inquiries',
+            [\App\Http\Controllers\Customer\Api\TravelPackageInquiryController::class, 'store']
+        )->name('customer.listings.travel.inquiries.store');
+
         // POST /listings/travel/{slug}/bookings/{booking_number}/contract
         Route::post(
             'listings/travel/{slug}/bookings/{booking_number}/contract',
