@@ -237,7 +237,8 @@
             @endif
             <form method="POST" action="{{ route('travel-agency.packages.media.destroy', [$pkg, $m]) }}"
                   class="absolute top-1 left-1 hidden group-hover:block">
-                @csrf @method('DELETE')
+                @csrf
+                @method('DELETE')
                 <button type="submit" class="bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center leading-none">×</button>
             </form>
         </div>
