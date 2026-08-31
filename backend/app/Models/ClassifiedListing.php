@@ -132,6 +132,13 @@ class ClassifiedListing extends Model
             return true;
         }
 
+        // If the seller uploaded no attachments at all, skip the check —
+        // attachments are optional at submission; the guard only blocks
+        // when attachments exist but some are still unverified.
+        if ($this->attachments->isEmpty()) {
+            return true;
+        }
+
         $verified = $this->attachments
             ->where('status', \App\Enums\ClassifiedListingAttachmentStatus::Verified)
             ->pluck('attachment_type')
