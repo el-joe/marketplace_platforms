@@ -1,26 +1,20 @@
-import ProductsGrid from "@/src/features/noon/shop/search-result/products-grid";
-import Pagination from "@/src/components/shared/pagination";
-import ShopToolbar from "@/src/features/noon/shop/search-header/search-toolbar";
 import { formatCategoryName } from "@/src/utils/formatCategoryName";
 import { fetchInstance } from "@/src/lib/utils";
-import type { IProduct } from "@/types";
+import Shop from "@/src/features/noon/shop";
+import { Product } from "@/types/globals";
+import { PageBuilder } from "@/src/components/shared/page-builder/types";
+import { ShopResponse } from "@/src/features/noon/shop/types";
+import FilterSidebar from "@/src/features/noon/shop/filter/desktop-view";
+import {
+  FILTER_PREFIX,
+  resolveApiFilters,
+} from "@/src/helpers/resolveApiFilters";
 
 const TOTAL_PAGES = 5;
 
 type Props = {
   params: Promise<{ categorySlug: string[] }>;
   searchParams: Promise<Record<string, string>>;
-};
-
-type ProductsResponse = {
-  data: {
-    items: IProduct[];
-    meta: {
-      current_page: number;
-      last_page: number;
-      total: number;
-    };
-  };
 };
 
 export default async function ShopPage({ params, searchParams }: Props) {
@@ -30,23 +24,40 @@ export default async function ShopPage({ params, searchParams }: Props) {
   const categoryName =
     isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
 
-  let products: IProduct[] = [];
+  let pageBuilderData: PageBuilder | null = null;
+  let facets = null;
+  let products: Product[] = [];
   let totalPages = TOTAL_PAGES;
   let totalCount = 0;
 
   try {
     const queryParams = new URLSearchParams();
-    if (sp.page) queryParams.set("page", sp.page);
-    if (sp.sort) queryParams.set("sort", sp.sort);
-    if (sp.min_price) queryParams.set("price_min", sp.min_price);
-    if (sp.max_price) queryParams.set("price_max", sp.max_price);
-    if (sp.q) queryParams.set("q", sp.q);
+    if (categorySlug) queryParams.set("category", categorySlug?.[0]);
+    Object.entries(sp).forEach(([key, value]) => {
+      if (value && !key.startsWith(`${FILTER_PREFIX}_`)) {
+        queryParams.set(key, value);
+      }
+    });
 
     const endpoint = isSearch ? "/search" : "/products";
+    const urlSegments = endpoint.split("/").filter(Boolean);
+    const apiFilters = await resolveApiFilters();
+    const endpointFilter = apiFilters.find((filter) =>
+      urlSegments.includes(filter.targetEndpoint),
+    );
+    if (endpointFilter) {
+      Object.entries(endpointFilter.filters).forEach(([key, value]) => {
+        queryParams.set(key, value);
+      });
+    }
+
     const query = queryParams.toString();
-    const res = await fetchInstance<ProductsResponse>(
+    const res = await fetchInstance<ShopResponse>(
       `${endpoint}${query ? `?${query}` : ""}`,
     );
+
+    pageBuilderData = res?.data?.page_builder;
+    facets = res.data?.facets;
     products = res.data?.items ?? [];
     totalPages = res.data?.meta?.last_page ?? TOTAL_PAGES;
     totalCount = res.data?.meta?.total ?? products.length;
@@ -57,21 +68,19 @@ export default async function ShopPage({ params, searchParams }: Props) {
   }
 
   return (
-    <>
-      <ShopToolbar categoryName={categoryName} resultsCount={totalCount} />
-      <div className="pt-4">
-        {products.length > 0 ? (
-          <ProductsGrid products={products} />
-        ) : (
-          <div className="flex flex-col items-center gap-3 py-24 text-center">
-            <p className="text-lg font-semibold text-primary">
-              No products found
-            </p>
-            <p className="text-sm text-gray">Try adjusting your filters</p>
-          </div>
-        )}
+    <main className="container flex flex-col gap-4 py-4 lg:flex-row lg:gap-6">
+      <aside className="w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide">
+        <FilterSidebar facets={facets as ShopResponse["data"]["facets"]} />
+      </aside>
+      <div className="min-w-0 flex-1">
+        <Shop
+          pageBuilderData={pageBuilderData}
+          categoryName={categoryName}
+          products={products}
+          totalPages={totalPages}
+          totalCount={totalCount}
+        />
       </div>
-      <Pagination totalPages={totalPages} />
-    </>
+    </main>
   );
 }

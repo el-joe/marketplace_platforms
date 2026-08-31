@@ -1,6 +1,6 @@
 import { paramsServer } from "./paramsServer";
 
-const FILTER_PREFIX = process.env.NEXT_PUBLIC_FILTER_PREFIX ?? "filter";
+export const FILTER_PREFIX = process.env.NEXT_PUBLIC_FILTER_PREFIX ?? "filter";
 
 export type ApiFilter = {
   targetEndpoint: string;

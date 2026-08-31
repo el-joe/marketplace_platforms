@@ -17,9 +17,9 @@ export async function getTravelPackages(
 
   const query = params.toString();
   try {
-    const envelope = await fetchInstance<ApiEnvelope<TravelPackagesListResponse>>(
-      `/browse/travel/${categoryId}${query ? `?${query}` : ""}`,
-    );
+    const envelope = await fetchInstance<
+      ApiEnvelope<TravelPackagesListResponse>
+    >(`/browse/travel/${categoryId}${query ? `?${query}` : ""}`);
     return envelope.data;
   } catch (error) {
     if (error instanceof ApiRequestError && error.status === 404) {
@@ -35,7 +35,7 @@ export async function getTravelPackageBySlug(
 ): Promise<TravelPackageDetail | undefined> {
   try {
     const envelope = await fetchInstance<ApiEnvelope<TravelPackageDetail>>(
-      `/listings/travel/${slug}`,
+      `/travel/${slug}`,
     );
     return envelope.data;
   } catch (error) {

@@ -36,22 +36,46 @@ export function isNegativeStatus(status: OrderStatus): boolean {
   return status === "cancelled" || status === "refunded" || status === "disputed";
 }
 
+const trackingBannerKeys: Partial<Record<OrderStatus, string>> = {
+  placed: "trackingBannerPlaced",
+  confirmed: "confirmedOnTimeBanner",
+  partially_shipped: "trackingBannerPartiallyShipped",
+  shipped: "trackingBannerShipped",
+  delivered: "trackingBannerDelivered",
+};
+
 /**
- * The API doesn't expose a single "current stage" — it's derived from the
- * order status plus the first sub-order's tracking timestamps (shipped_at /
- * delivered_at), since that's what the stepper visualizes.
+ * The tracking status card's banner subtext is status-specific; statuses
+ * outside the active placed -> delivered flow (cancelled, refunded, etc.)
+ * fall back to the confirmed-stage copy since this card isn't shown for them.
+ */
+export function getTrackingBannerKey(status: OrderStatus): string {
+  return trackingBannerKeys[status] ?? "confirmedOnTimeBanner";
+}
+
+/**
+ * trackingSteps' stages mirror the order status enum directly (placed ->
+ * confirmed -> shipped -> partially_delivered -> delivered), so this maps
+ * straight off order.status. "partially_shipped" isn't its own visual step —
+ * it folds onto "shipped" since shipping has already begun. "completed"
+ * collapses onto "delivered", and terminal negative statuses
+ * (cancelled/refunded/disputed) fall back to "placed".
  */
 export function getTrackingStage(order: OrderDetail): TrackingStage {
-  const subOrder = order.sub_orders[0];
-
-  if (order.status === "delivered" || order.status === "completed") {
-    return "delivered";
+  switch (order.status) {
+    case "placed":
+    case "confirmed":
+    case "shipped":
+    case "partially_delivered":
+    case "delivered":
+      return order.status;
+    case "partially_shipped":
+      return "shipped";
+    case "completed":
+      return "delivered";
+    default:
+      return "placed";
   }
-  if (subOrder?.tracking.delivered_at) return "delivered";
-  if (subOrder?.tracking.shipped_at) return "dispatched";
-  if (order.status === "confirmed") return "confirmed";
-  if (order.status === "placed") return "processing";
-  return "confirmed";
 }
 
 export function getLatestTrackingEvent(

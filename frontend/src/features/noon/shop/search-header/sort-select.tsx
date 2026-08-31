@@ -6,9 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import Dropdown from "@/src/components/shared/Dropdown";
 import { Button } from "@/src/components/ui/button";
-import useApiFilter from "@/src/hooks/useApiFilter";
-
-const TARGET_ENDPOINT = "products";
+import useShopFilterParams from "@/src/features/noon/shop/filter/helpers/use-shop-filter-params";
 
 const sortOptions = [
   { itemLabel: "Recommended", value: "recommended" },
@@ -21,10 +19,9 @@ const sortOptions = [
 const SortSelect = () => {
   const t = useTranslations("shop");
   const searchParams = useSearchParams();
-  const { applyFilter } = useApiFilter();
+  const { setFilter } = useShopFilterParams();
 
-  const currentSort =
-    searchParams.get(`filter_${TARGET_ENDPOINT}_sort`) ?? sortOptions[0].value;
+  const currentSort = searchParams.get("sort") ?? sortOptions[0].value;
   const currentLabel =
     sortOptions.find((option) => option.value === currentSort)?.itemLabel ??
     sortOptions[0].itemLabel;
@@ -33,13 +30,7 @@ const SortSelect = () => {
     <Dropdown
       listTitle={t("sortBy")}
       items={sortOptions}
-      onSelect={(item) =>
-        applyFilter({
-          targetEndpoint: TARGET_ENDPOINT,
-          filterBy: "sort",
-          query: item.value,
-        })
-      }
+      onSelect={(item) => setFilter("sort", item.value)}
       triggerButton={
         <Button variant="outline" className="gap-1.5">
           <span className="text-gray">{t("sortBy")}:</span>

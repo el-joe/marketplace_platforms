@@ -19,9 +19,14 @@ export default async function TravelPackagesListing({ searchParams }: Props) {
   const t = await getTranslations("flights");
 
   const page = Math.max(1, Number(searchParams.page) || 1);
-  const categoryId = searchParams.category;
 
-  const result = await getTravelPackages({ categoryId, page, perPage: PACKAGES_PER_PAGE });
+  const activeCategorySlug = searchParams.category;
+
+  const result = await getTravelPackages({
+    categoryId: activeCategorySlug,
+    page,
+    perPage: PACKAGES_PER_PAGE,
+  });
 
   if (!result) {
     notFound();
@@ -43,7 +48,7 @@ export default async function TravelPackagesListing({ searchParams }: Props) {
           <Suspense>
             <CategoryTabs
               categories={available_categories}
-              activeCategoryId={categoryId ?? null}
+              activeCategorySlug={activeCategorySlug ?? null}
             />
           </Suspense>
         </div>

@@ -1,6 +1,6 @@
 import TravelPackagesListing from "@/src/features/flights/travel-packages";
 
-export default async function TravelPage({
+export default async function FlightsPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string; category?: string }>;

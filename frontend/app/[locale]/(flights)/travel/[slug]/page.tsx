@@ -8,6 +8,7 @@ type Props = {
 
 export default async function PackageDetailsPage({ params }: Props) {
   const { slug } = await params;
+
   const pkg = await getTravelPackageBySlug(slug);
 
   if (!pkg) notFound();

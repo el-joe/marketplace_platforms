@@ -81,7 +81,9 @@ export default async function PackageDetails({ pkg }: Props) {
                   <div>
                     <div className="flex items-center gap-2">
                       <BuildingIcon className="size-4 text-gray" />
-                      <p className="font-bold text-primary">{pkg.agency.name}</p>
+                      <p className="font-bold text-primary">
+                        {pkg.agency.name}
+                      </p>
                     </div>
                     {pkg.agency.license_number && (
                       <p className="text-xs text-light mt-1">
