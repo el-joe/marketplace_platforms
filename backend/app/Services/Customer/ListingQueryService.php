@@ -675,7 +675,7 @@ class ListingQueryService
             'source_type' => 'travel',
             'title_en' => $package->title_en,
             'title_ar' => $package->title_ar,
-            'slug' => $package->id,
+            'slug' => $package->slug,
             'thumbnail' => $package->media->first()?->url(),
             'images' => $package->media->map(fn ($m) => [
                 'id'       => $m->id,
