@@ -22,7 +22,7 @@ type Props = {
 export default function CouponsListModal({ trigger }: Props) {
   const t = useTranslations("cart");
   const locale = useLocale();
-  const { cart, applyCoupon, isMutating } = useCartContext();
+  const { cart, applyCoupon, isMutating, targetCoupon } = useCartContext();
   return (
     <Dialog>
       <DialogTrigger render={trigger} />
@@ -54,10 +54,22 @@ export default function CouponsListModal({ trigger }: Props) {
                       className={
                         "bg-blue-2 text-white text-base px-4 leading-1"
                       }
-                      disabled={isMutating || cart.cart.coupon?.code === c.code}
-                      onClick={() => applyCoupon(c.code)}
+                      disabled={
+                        (isMutating && targetCoupon === c.code) ||
+                        cart.cart.coupon?.code === c.code
+                      }
+                      onClick={() => {
+                        if (isMutating) return;
+                        applyCoupon(c.code);
+                      }}
                     >
-                      {isMutating ? <Spinner /> : t("apply")}
+                      {isMutating && targetCoupon === c.code ? (
+                        <Spinner />
+                      ) : cart.cart.coupon?.code === c.code ? (
+                        t("applied")
+                      ) : (
+                        t("apply")
+                      )}
                     </Button>
                   </div>
                 </div>

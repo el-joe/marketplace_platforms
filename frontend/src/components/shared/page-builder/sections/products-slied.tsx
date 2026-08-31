@@ -8,7 +8,7 @@ import useLocale from "@/src/hooks/use-locale";
 import { Block } from "../types";
 import { chunks } from "../helpers/chunks-arr";
 import SectionTitle from "./section-title";
-import SpotlightCard from "@/src/features/noon/home/spotlight-card";
+import SpotlightCard from "./spotlight-card";
 
 export const ProductsSlider = ({ data }: { data: Block }) => {
   const locale = useLocale();

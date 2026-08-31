@@ -119,9 +119,9 @@ const CategoriesNav = () => {
             setHoveredCategory(null);
           }}
         >
-          <div className="grid grid-cols-5 gap-5 h-full">
+          <div className="flex items-stretch justify-between gap-5 h-full">
             {/* subcategories lists */}
-            <div className="col-span-4">
+            <div className=" flex flex-col justify-between h-auto">
               {/* one level of subcategories */}
               <ul
                 className={`${!!hoveredCategory?.children.find((ch) => ch.children.length) ? "flex gap-8" : ""}`}
@@ -151,46 +151,47 @@ const CategoriesNav = () => {
                   </li>
                 ))}
               </ul>
+              {/* top brands list */}
+              {!!hoveredCategory?.brands?.length && (
+                <div className="col-span-3 h-fit mt-auto">
+                  <h4 className="font-semibold mb-3">{t("topBrands")}</h4>
+                  <ul className="flex gap-4">
+                    {hoveredCategory?.brands?.map((brand) => (
+                      <li key={brand.id} className="flex flex-col items-center">
+                        <Link
+                          href={`/brand/${brand.slug}`}
+                          className="w-24 h-16 relative border border-border-color"
+                        >
+                          <Image
+                            src={brand.logo_url ?? ""}
+                            alt="brand logo"
+                            fill
+                            sizes="100%"
+                          />
+                        </Link>
+                        <p className="text-light font-semibold text-sm">
+                          {brand.name[locale]}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             {/* image banner */}
             {hoveredCategory?.image_url && (
               <Link
                 href={categoryHref(hoveredCategory)}
-                className="col-start-5 col-end-5 row-span-2 relative h-[50vh] min-h-105 rounded-xl overflow-hidden"
+                className="relative w-102 h-121.75 rounded-xl overflow-hidden"
               >
                 <Image
                   src={hoveredCategory?.image_url ?? ""}
                   alt=""
-                  fill
-                  sizes="100%"
+                  width={408}
+                  height={548}
+                  className="aspect-159/190 rounded-xl "
                 />
               </Link>
-            )}
-            {/* top brands list */}
-            {!!hoveredCategory?.brands?.length && (
-              <div className="col-span-3 h-fit mt-auto">
-                <h4 className="font-semibold mb-3">{t("topBrands")}</h4>
-                <ul className="flex gap-4">
-                  {hoveredCategory?.brands?.map((brand) => (
-                    <li key={brand.id} className="flex flex-col items-center">
-                      <Link
-                        href={`/brand/${brand.slug}`}
-                        className="w-24 h-16 relative border border-border-color"
-                      >
-                        <Image
-                          src={brand.logo_url ?? ""}
-                          alt="brand logo"
-                          fill
-                          sizes="100%"
-                        />
-                      </Link>
-                      <p className="text-light font-semibold text-sm">
-                        {brand.name[locale]}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             )}
           </div>
         </div>

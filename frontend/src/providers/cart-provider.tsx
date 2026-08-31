@@ -61,6 +61,7 @@ interface ICartContext {
   mergeCart: UseMutateAsyncFunction<ICartResponseBody, Error, void, unknown>;
   resetGuestCart: () => void;
   targetItemMutating: string | false | string[];
+  targetCoupon: string | false;
   isMutating: boolean;
 }
 
@@ -101,6 +102,7 @@ const initialState: ICartContext = {
   },
   resetGuestCart: () => {},
   targetItemMutating: false,
+  targetCoupon: false,
   isMutating: false,
 };
 
@@ -124,6 +126,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     mergeCart,
     resetGuestCart,
     targetItemMutating,
+    targetCoupon,
     isMutating,
   } = useCart();
   return (
@@ -145,6 +148,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         mergeCart,
         resetGuestCart,
         targetItemMutating,
+        targetCoupon,
         isMutating,
       }}
     >
