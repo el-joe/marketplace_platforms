@@ -159,7 +159,9 @@ const ProductCard = ({ productData }: Props) => {
             </p>
           </div>
           <Price
-            currentPrice={productData.price}
+            currentPrice={productData.price / 100}
+            // discountPercent={productData.discount}
+            // oldPrice={productData.oldPrice}
             currency={productData.currency}
             size="sm"
           />

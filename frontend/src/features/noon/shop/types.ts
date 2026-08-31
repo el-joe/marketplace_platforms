@@ -1,11 +1,11 @@
-import { IProduct } from "@/types";
+import { Product } from "@/types/globals";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
 
 export interface ShopResponse {
   data: {
     page_builder: PageBuilder;
     facets: Facets;
-    items: IProduct[];
+    items: Product[];
     meta: {
       current_page: number;
       last_page: number;

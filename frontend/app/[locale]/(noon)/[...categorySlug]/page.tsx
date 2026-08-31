@@ -1,7 +1,7 @@
 import { formatCategoryName } from "@/src/utils/formatCategoryName";
 import { fetchInstance } from "@/src/lib/utils";
 import Shop from "@/src/features/noon/shop";
-import { IProduct } from "@/types";
+import { Product } from "@/types/globals";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
 import { ShopResponse } from "@/src/features/noon/shop/types";
 import FilterSidebar from "@/src/features/noon/shop/filter/desktop-view";
@@ -26,7 +26,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
 
   let pageBuilderData: PageBuilder | null = null;
   let facets = null;
-  let products: IProduct[] = [];
+  let products: Product[] = [];
   let totalPages = TOTAL_PAGES;
   let totalCount = 0;
 
