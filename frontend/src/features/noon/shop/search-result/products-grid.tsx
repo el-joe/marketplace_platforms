@@ -1,8 +1,8 @@
-import { IProduct } from "@/types";
+import { Product } from "@/types/globals";
 import ProductCard from "@/src/components/shared/product-card";
 
 type Props = {
-  products: IProduct[];
+  products: Product[];
 };
 
 const ProductsGrid = ({ products }: Props) => {

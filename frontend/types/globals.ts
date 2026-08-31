@@ -24,7 +24,7 @@ export interface Product {
   name_en: string;
   name_ar: string;
   thumbnail: string;
-  images: [];
+  images: Images[];
   category_name?: { en: string | null; ar: string | null };
   price: number;
   price_formatted: string;
