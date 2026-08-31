@@ -54,7 +54,7 @@ class ClassifiedListingController extends Controller
         $listing->load([
             'seller', 'classifiedCategory', 'city', 'country',
             'contractTemplate', 'attachments.verifiedByAdmin',
-            'images', 'listingMarketers.marketer', 'inquiries.customer',
+            'images', 'inquiries.customer',
         ]);
 
         return view('admin.classified-listings.show', compact('listing'));
