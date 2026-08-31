@@ -12,7 +12,10 @@ export type BookingStatus =
 
 export type BookingPackageSummary = {
   id: string;
-  title: string;
+  title: {
+    ar: string;
+    en: string;
+  };
   price: number;
   currency: string;
   agency: { id: string; name: string };

@@ -4,7 +4,6 @@ import ShopToolbar from "@/src/features/noon/shop/search-header/search-toolbar";
 import { Product } from "@/types/globals";
 import { DynamicLayout } from "@/src/components/shared/page-builder";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
-import { Facets } from "./types";
 
 interface Props {
   pageBuilderData: PageBuilder | null;
@@ -15,21 +14,23 @@ interface Props {
 }
 
 export default async function Shop({
+  totalPages,
+  products,
   pageBuilderData,
   categoryName,
   totalCount,
 }: Props) {
   return (
     <>
-      <ShopToolbar categoryName={categoryName} resultsCount={totalCount} />
-
       {pageBuilderData?.sections.map((e) => (
         <DynamicLayout key={e.id} section={e} />
       ))}
 
-      {/* <div className="pt-4">
+      <ShopToolbar categoryName={categoryName} resultsCount={totalCount} />
+
+      <div>
         {products.length > 0 ? (
-          <ProductsGrid products={[]} />
+          <ProductsGrid products={products} />
         ) : (
           <div className="flex flex-col items-center gap-3 py-24 text-center">
             <p className="text-lg font-semibold text-primary">
@@ -38,8 +39,8 @@ export default async function Shop({
             <p className="text-sm text-gray">Try adjusting your filters</p>
           </div>
         )}
-      </div> */}
-      {/* <Pagination totalPages={totalPages} /> */}
+      </div>
+      {totalPages > 1 && <Pagination totalPages={totalPages} />}
     </>
   );
 }

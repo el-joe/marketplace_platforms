@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { format } from "date-fns";
 import { CalendarIcon, UsersIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -18,12 +18,16 @@ type Props = {
 export default function BookingCard({ booking }: Props) {
   const t = useTranslations("flights");
 
+  const locale = useLocale() as "ar" | "en";
+
+  console.log(booking);
+
   return (
     <Card className="overflow-hidden flex flex-col shadow-sm border border-border">
       <div className="relative h-52">
         <Image
           src={booking.package.cover_image}
-          alt={booking.package.title}
+          alt={booking.package.title?.[locale]}
           fill
           sizes="(max-width: 768px) 100vw, 400px"
           className="object-cover"
@@ -34,13 +38,16 @@ export default function BookingCard({ booking }: Props) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="font-bold text-base leading-tight text-primary truncate">
-              {booking.package.title}
+              {booking.package.title?.[locale]}
             </h3>
             <p className="text-xs text-gray mt-0.5">
               {t("myBookings.columns.bookingNumber")}: {booking.booking_number}
             </p>
           </div>
-          <Badge variant={bookingStatusVariant(booking.status)} className="shrink-0">
+          <Badge
+            variant={bookingStatusVariant(booking.status)}
+            className="shrink-0"
+          >
             {t(`myBookings.status.${booking.status}`)}
           </Badge>
         </div>

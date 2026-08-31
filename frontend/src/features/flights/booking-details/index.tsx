@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { format } from "date-fns";
 import { getTranslations } from "next-intl/server";
@@ -14,6 +16,7 @@ import {
   isCancellableStatus,
 } from "../helpers/to-booking-status";
 import type { TravelBookingDetail } from "../helpers/types";
+import { useLocale, useTranslations } from "next-intl";
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -27,9 +30,12 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 type Props = {
   booking: TravelBookingDetail;
 };
-
+{
+}
 export default async function BookingDetails({ booking }: Props) {
-  const t = await getTranslations("flights");
+  const t = useTranslations("flights");
+
+  const locale = useLocale() as "en" | "ar";
 
   return (
     <div>
@@ -42,7 +48,7 @@ export default async function BookingDetails({ booking }: Props) {
 
       <div className="mt-3 flex items-center justify-between">
         <h1 className="text-[28px] font-bold text-primary">
-          {booking.package.title}
+          {booking.package.title?.[locale]}
         </h1>
 
         {isCancellableStatus(booking.status) && (
@@ -61,7 +67,10 @@ export default async function BookingDetails({ booking }: Props) {
             </h2>
           </div>
 
-          <Badge variant={bookingStatusVariant(booking.status)} className="w-fit">
+          <Badge
+            variant={bookingStatusVariant(booking.status)}
+            className="w-fit"
+          >
             {t(`myBookings.status.${booking.status}`)}
           </Badge>
 
@@ -73,12 +82,7 @@ export default async function BookingDetails({ booking }: Props) {
           />
           <InfoRow
             label={t("myBookings.totalPrice")}
-            value={
-              <Price
-                currentPrice={booking.total_price}
-                size="sm"
-              />
-            }
+            value={<Price currentPrice={booking.total_price} size="sm" />}
           />
           <InfoRow
             label={t("myBookings.passportUploaded")}
@@ -101,7 +105,10 @@ export default async function BookingDetails({ booking }: Props) {
 
           <InfoRow
             label={t("myBookings.columns.created")}
-            value={format(new Date(booking.created_at), "MMM d, yyyy 'at' h:mm a")}
+            value={format(
+              new Date(booking.created_at),
+              "MMM d, yyyy 'at' h:mm a",
+            )}
           />
           {booking.contract_signed_at && (
             <InfoRow
@@ -118,7 +125,7 @@ export default async function BookingDetails({ booking }: Props) {
           <div className="relative h-56 w-full">
             <Image
               src={booking.package.cover_image}
-              alt={booking.package.title}
+              alt={booking.package.title?.[locale]}
               fill
               className="object-cover"
             />
@@ -126,7 +133,7 @@ export default async function BookingDetails({ booking }: Props) {
 
           <div className="p-6">
             <h2 className="text-lg font-bold text-primary">
-              {booking.package.title}
+              {booking.package.title?.[locale]}
             </h2>
             <p className="text-sm text-gray mt-1">
               {t("myBookings.operatedBy", {
@@ -138,10 +145,7 @@ export default async function BookingDetails({ booking }: Props) {
 
             <div className="flex items-center justify-between text-sm">
               <p className="text-gray">{t("myBookings.pricePerPerson")}</p>
-              <Price
-                currentPrice={booking.package.price}
-                size="xs"
-              />
+              <Price currentPrice={booking.package.price} size="xs" />
             </div>
           </div>
         </Card>

@@ -12,7 +12,7 @@ const ShopToolbar = async ({ categoryName, resultsCount }: Props) => {
   const t = await getTranslations("shop");
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-color pb-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-color pt-8 pb-2 mb-8">
       <h1 className="text-sm font-medium lg:text-base">
         {resultsCount.toLocaleString()}+ {t("resultsFor")} &quot;{categoryName}
         &quot;

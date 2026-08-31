@@ -92,6 +92,7 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
             const BlockComponent = blocks[b.block_type as keyof typeof blocks];
             return BlockComponent ? (
               <div
+                key={b.id}
                 className={cn(
                   "w-full",
                   section.position === 1 &&
