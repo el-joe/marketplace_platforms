@@ -2,11 +2,13 @@
 
 import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { useNavigationLoadingContext } from "@/src/providers/navigation-loading-provider";
 
 const useShopFilterParams = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { startNavigationLoading } = useNavigationLoadingContext();
 
   const setFilters = (entries: [key: string, value: string][]) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -22,6 +24,7 @@ const useShopFilterParams = () => {
     });
 
     const queryString = params.toString();
+    startNavigationLoading();
     router.push(queryString ? `${pathname}?${queryString}` : pathname);
   };
 

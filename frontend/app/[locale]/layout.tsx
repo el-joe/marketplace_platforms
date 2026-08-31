@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import NextTopLoader from "nextjs-toploader";
 import RootProviders from "@/src/providers";
+import { NavigationLoadingProvider } from "@/src/providers/navigation-loading-provider";
+import NavigationLoadingOverlay from "@/src/components/shared/navigation-loading-overlay";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -44,12 +46,15 @@ export default async function RootLayout({
     >
       <body suppressHydrationWarning className="pb-15 md:pb-0">
         <NextTopLoader color="#111111" showSpinner={false} />
-        <RootProviders>
-          <Toaster position="bottom-right" />
-          {children}
-          {/* dialogs */}
-          <AuthDialog />
-        </RootProviders>
+        <NavigationLoadingProvider>
+          <NavigationLoadingOverlay />
+          <RootProviders>
+            <Toaster position="bottom-right" />
+            {children}
+            {/* dialogs */}
+            <AuthDialog />
+          </RootProviders>
+        </NavigationLoadingProvider>
       </body>
     </html>
   );
