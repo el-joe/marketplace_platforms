@@ -38,7 +38,7 @@ const SpotlightCard = ({ data }: { data: Product }) => {
           {locale === "ar" ? data.name_ar : data?.name_en}
         </h3>
         <Price
-          currentPrice={data.price_formatted}
+          currentPrice={data.price / 100}
           currency={data?.currency}
           size="lg"
         />

@@ -200,6 +200,8 @@ export function useCart() {
         updateItemQuantity.variables.cartItemId) ||
       (removeItem.isPending && removeItem.variables),
 
+    targetCoupon: applyCoupon.isPending && applyCoupon.variables,
+
     isMutating:
       addItem.isPending ||
       addItemsBulk.isPending ||

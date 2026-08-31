@@ -32,7 +32,7 @@ export default function Cart() {
                 <CartItems />
                 <RecommendedSection />
               </div>
-              <div className="flex flex-col gap-8 flex-1">
+              <div className="flex flex-col gap-8">
                 <OrderSummary />
                 {/* checkout button */}
                 <CheckoutButton />

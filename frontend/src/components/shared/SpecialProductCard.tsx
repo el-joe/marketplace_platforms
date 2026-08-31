@@ -57,7 +57,9 @@ const SpecialProductCard = ({ productData }: Props) => {
         <Price
           className="mt-auto pt-1"
           currentPrice={productData.price}
-          oldPrice={hasCompareAtPrice ? productData.compare_at_price! : undefined}
+          oldPrice={
+            hasCompareAtPrice ? productData.compare_at_price! : undefined
+          }
           currency={productData.currency}
           size="sm"
         />
