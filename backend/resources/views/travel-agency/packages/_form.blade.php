@@ -236,7 +236,7 @@
             <video src="{{ $m->url() }}" class="rounded-lg h-24 w-full object-cover border border-gray-200"></video>
             @endif
             <button type="button" data-media-delete-url="{{ route('travel-agency.packages.media.destroy', [$pkg, $m]) }}"
-                    class="media-delete-btn absolute top-1 left-1 hidden group-hover:flex bg-red-500 text-white rounded-full w-5 h-5 text-xs items-center justify-center leading-none">×</button>
+                    class="media-delete-btn absolute top-1 left-1 hidden group-hover:block bg-red-500 text-white rounded-full w-5 h-5 text-xs text-center leading-5">×</button>
         </div>
         @endforeach
     </div>
