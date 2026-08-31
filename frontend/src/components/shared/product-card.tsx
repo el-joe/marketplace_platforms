@@ -1,5 +1,4 @@
 "use client";
-import { IProduct } from "@/types";
 import Image from "next/image";
 import React, { useRef, useState } from "react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
+import { IProduct } from "@/types";
 import { Product } from "@/types/globals";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Spinner } from "../ui/spinner";
@@ -22,7 +22,7 @@ import useLocale from "@/src/hooks/use-locale";
 import AddToCartButton from "./add-to-cart-button";
 
 type Props = {
-  productData: IProduct | Product;
+  productData: Product | IProduct;
 };
 
 const ProductCard = ({ productData }: Props) => {
@@ -159,9 +159,7 @@ const ProductCard = ({ productData }: Props) => {
             </p>
           </div>
           <Price
-            currentPrice={productData.price / 100}
-            // discountPercent={productData.discount}
-            // oldPrice={productData.oldPrice}
+            currentPrice={productData.price}
             currency={productData.currency}
             size="sm"
           />
