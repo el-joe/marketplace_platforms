@@ -299,7 +299,7 @@ class PackageController extends Controller
 
     // ── Delete media ──────────────────────────────────────────────────────────
 
-    public function destroyMedia(TravelPackage $package, TravelPackageMedia $media): RedirectResponse
+    public function destroyMedia(TravelPackage $package, TravelPackageMedia $media): \Illuminate\Http\JsonResponse
     {
         $this->authorise($package);
         abort_if($media->travel_package_id !== $package->id, 404);
@@ -307,7 +307,7 @@ class PackageController extends Controller
         Storage::disk('public')->delete($media->file_path);
         $media->delete();
 
-        return back()->with('success', __('travel.packages.media_removed'));
+        return response()->json(['message' => __('travel.packages.media_removed')]);
     }
 
     // ── Download contract ─────────────────────────────────────────────────────
