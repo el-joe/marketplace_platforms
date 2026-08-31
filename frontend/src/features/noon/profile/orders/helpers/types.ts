@@ -16,7 +16,12 @@ export type OrderStatus =
   | "refunded"
   | "disputed";
 
-export type PaymentMethod = "card" | "wallet" | "cod" | "bnpl" | "bank_transfer";
+export type PaymentMethod =
+  | "card"
+  | "wallet"
+  | "cod"
+  | "bnpl"
+  | "bank_transfer";
 
 // ---- List Orders (GET /orders) ----
 

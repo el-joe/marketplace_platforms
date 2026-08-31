@@ -28,6 +28,7 @@ export default async function PackageDetails({ pkg }: Props) {
     { label: title, href: "" },
   ];
 
+
   return (
     <div>
       <HeroGallery
@@ -57,6 +58,8 @@ export default async function PackageDetails({ pkg }: Props) {
               ))}
             </div>
           )}
+
+          <p>{pkg.description[localeKey]}</p>
 
           <GuidelinesAccordion included={pkg.inclusions} />
 

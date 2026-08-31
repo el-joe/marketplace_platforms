@@ -6,6 +6,7 @@ import { buttonVariants } from "@/src/components/ui/button";
 import Card from "@/src/components/shared/Card";
 import { cn } from "@/src/lib/utils";
 import type { TravelPackageSummary } from "../../helpers/types";
+import useLocale from "@/src/hooks/use-locale";
 
 type Props = {
   pkg: TravelPackageSummary;
@@ -13,6 +14,8 @@ type Props = {
 
 export default function TravelPackageCard({ pkg }: Props) {
   const t = useTranslations("flights.packageCard");
+
+  const locale = useLocale();
 
   const formattedDate = new Date(pkg.departure_date).toLocaleDateString(
     "en-US",
@@ -38,11 +41,7 @@ export default function TravelPackageCard({ pkg }: Props) {
       <div className="flex flex-col gap-3 p-4 flex-1">
         <div>
           <h3 className="font-bold text-base leading-tight text-primary">
-            {pkg.destination_city}
-            {", "}
-            <span className="text-gray text-xs mt-0.5">
-              {pkg.destination_country}
-            </span>
+            {pkg[`title_${locale}`]}
           </h3>
         </div>
 

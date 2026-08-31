@@ -35,7 +35,7 @@ export async function getTravelPackageBySlug(
 ): Promise<TravelPackageDetail | undefined> {
   try {
     const envelope = await fetchInstance<ApiEnvelope<TravelPackageDetail>>(
-      `/travel/${slug}`,
+      `/listings/travel/${slug}`,
     );
     return envelope.data;
   } catch (error) {

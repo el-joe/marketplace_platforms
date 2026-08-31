@@ -16,6 +16,7 @@ export const trackingSteps = [
   { stage: "placed", labelKey: "stepPlaced", icon: CheckIcon },
   { stage: "confirmed", labelKey: "stepConfirmed", icon: ClipboardCheck },
   { stage: "shipped", labelKey: "stepShipped", icon: Truck },
+  { stage: "partially_delivered", labelKey: "stepPartiallyDelivered", icon: PackageIcon },
   { stage: "delivered", labelKey: "stepDelivered", icon: PackageIcon },
 ] as const;
 
