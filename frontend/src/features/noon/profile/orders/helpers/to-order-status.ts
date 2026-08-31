@@ -33,7 +33,9 @@ export function getOrderStatusLabelKey(status: OrderStatus): string {
 }
 
 export function isNegativeStatus(status: OrderStatus): boolean {
-  return status === "cancelled" || status === "refunded" || status === "disputed";
+  return (
+    status === "cancelled" || status === "refunded" || status === "disputed"
+  );
 }
 
 const trackingBannerKeys: Partial<Record<OrderStatus, string>> = {
