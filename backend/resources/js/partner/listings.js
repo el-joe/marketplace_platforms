@@ -92,7 +92,7 @@ function initListingsDataTable() {
                     `<div class="flex items-center gap-2">
                         <span class="font-bold text-gray-900 text-sm" id="price-display-${row.id}">${data}</span>
                         <button class="btn-edit-price w-6 h-6 flex items-center justify-center rounded-lg text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 transition-colors"
-                                data-listing-id="${row.id}" data-price="${row.price_raw / 100}" title="تعديل السعر">
+                                data-listing-id="${row.id}" data-price="${row.price_raw}" title="تعديل السعر">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                         </button>
                     </div>`,
