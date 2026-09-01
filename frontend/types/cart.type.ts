@@ -162,6 +162,16 @@ export interface ShippingMethod {
   is_express_type: boolean;
 }
 
+export interface WarrantyPlanSummary {
+  id: string;
+  name: string;
+  duration_months: number;
+  duration_label: string;
+  price: number;
+  currency: string;
+  image_url: string | null;
+}
+
 export interface ShippingGroupItem {
   id: string;
   quantity: number;
@@ -177,6 +187,7 @@ export interface ShippingGroupItem {
   max_order_quantity: number | null;
   vendor: Vendor;
   selected_shipping_method: SelectedShippingMethod;
+  warranty_plan: WarrantyPlanSummary | null;
 }
 
 export interface SelectedShippingMethod {

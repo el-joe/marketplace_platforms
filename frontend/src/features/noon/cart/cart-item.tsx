@@ -5,7 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import useLocale from "@/src/hooks/use-locale";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { ShippingGroupItem, ShippingMethod } from "@/types/cart.type";
-import { StoreIcon, Trash2Icon, TruckIcon } from "lucide-react";
+import { StoreIcon, Trash2Icon, TruckIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
@@ -28,6 +28,7 @@ export default function CartItem({
     updateItemQuantity,
     isMutating,
     removeItem,
+    removeItemWarranty,
     targetItemMutating,
   } = useCartContext();
   const t = useTranslations("cart");
@@ -88,7 +89,7 @@ export default function CartItem({
             </Link>
             {/* price */}
             <Price
-              currentPrice={item.unit_price / 100}
+              currentPrice={item.unit_price}
               variant="cart"
               className="hidden! lg:inline-flex!"
             />
@@ -109,7 +110,7 @@ export default function CartItem({
           </p>
           {/* small screen price */}
           <Price
-            currentPrice={item.unit_price / 100}
+            currentPrice={item.unit_price}
             // discountPercent={item.discountPercentage}
             // oldPrice={item.oldPrice}
             className="lg:hidden"
@@ -163,7 +164,47 @@ export default function CartItem({
           </div>
         </div>
       </div>
-      {/* extra warranty */}
+      {/* warranty plan */}
+      {item.warranty_plan && (
+        <div className="mt-3 ms-0 lg:ms-36 xl:ms-40">
+          <p className="text-xs text-gray mb-1.5 font-medium">
+            {t("additionalServices")}
+          </p>
+          <div className="flex items-center gap-3 border border-border rounded-xl px-3 py-2 bg-gray-2/40">
+            {item.warranty_plan.image_url && (
+              <Image
+                src={item.warranty_plan.image_url}
+                alt={item.warranty_plan.name}
+                width={40}
+                height={40}
+                className="object-contain shrink-0"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-primary line-clamp-1">
+                {item.warranty_plan.name}
+              </p>
+              <p className="text-xs text-gray">
+                {t("warrantyExtended")} · {item.warranty_plan.duration_label}
+              </p>
+            </div>
+            <Price
+              currentPrice={item.warranty_plan.price}
+              currency={item.warranty_plan.currency as never}
+              size="sm"
+              className="shrink-0"
+            />
+            <button
+              onClick={() => removeItemWarranty(item.id)}
+              disabled={isMutating}
+              className="p-1 rounded-full hover:bg-gray-200 text-gray transition-colors shrink-0"
+              aria-label={t("removeWarranty")}
+            >
+              <XIcon size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

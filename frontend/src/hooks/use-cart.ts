@@ -20,6 +20,7 @@ import {
   removePromoCodeCartService,
   removeItemCartService,
   updateItemQuantityCartService,
+  updateItemWarrantyCartService,
 } from "../services/cart";
 import { ICart } from "@/types";
 import resolveCookie from "../helpers/resolveCookie";
@@ -121,6 +122,13 @@ export function useCart() {
     onError,
   });
 
+  const removeItemWarranty = useMutation({
+    mutationFn: (cartItemId: string) =>
+      updateItemWarrantyCartService(cartItemId, null),
+    onSuccess: invalidate,
+    onError,
+  });
+
   const clearCart = useMutation({
     mutationFn: () => clearCartService(),
     onSuccess: invalidate,
@@ -185,6 +193,7 @@ export function useCart() {
     addItemsBulk: addItemsBulk.mutateAsync,
     updateItemQuantity: updateItemQuantity.mutateAsync,
     removeItem: removeItem.mutateAsync,
+    removeItemWarranty: removeItemWarranty.mutateAsync,
     clearCart: clearCart.mutateAsync,
     applyCoupon: applyCoupon.mutateAsync,
     applyCouponErr: applyCoupon?.error,
@@ -210,6 +219,7 @@ export function useCart() {
       addItemsBulk.isPending ||
       updateItemQuantity.isPending ||
       removeItem.isPending ||
+      removeItemWarranty.isPending ||
       clearCart.isPending ||
       applyCoupon.isPending ||
       removeCoupon.isPending ||

@@ -576,6 +576,9 @@
   "cart": {
     "getItBy": "احصل عليه بحلول",
     "orderIn": "اطلب خلال",
+    "additionalServices": "الخدمات الإضافية",
+    "warrantyExtended": "ضمان ممتد",
+    "removeWarranty": "إزالة الضمان",
     "recommendedForYou": "موصى به لك",
     "orderSummary": "ملخص الطلب",
     "items": "المنتجات",

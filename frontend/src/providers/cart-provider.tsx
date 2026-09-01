@@ -50,6 +50,12 @@ interface ICartContext {
     unknown
   >;
   removeItem: UseMutateAsyncFunction<ICartResponseBody, Error, string, unknown>;
+  removeItemWarranty: UseMutateAsyncFunction<
+    ICartResponseBody,
+    Error,
+    string,
+    unknown
+  >;
   clearCart: UseMutateAsyncFunction<ICartResponseBody, Error, void, unknown>;
   applyCoupon: UseMutateAsyncFunction<
     ICartResponseBody,
@@ -88,6 +94,9 @@ const initialState: ICartContext = {
   removeItem: async (): Promise<ICartResponseBody> => {
     throw new Error("Not implemented");
   },
+  removeItemWarranty: async (): Promise<ICartResponseBody> => {
+    throw new Error("Not implemented");
+  },
   clearCart: async (): Promise<ICartResponseBody> => {
     throw new Error("Not implemented");
   },
@@ -120,6 +129,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     addItemsBulk,
     updateItemQuantity,
     removeItem,
+    removeItemWarranty,
     clearCart,
     applyCoupon,
     applyCouponErr,
@@ -142,6 +152,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         addItemsBulk,
         updateItemQuantity,
         removeItem,
+        removeItemWarranty,
         clearCart,
         applyCoupon,
         applyCouponErr,

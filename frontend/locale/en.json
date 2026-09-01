@@ -583,6 +583,9 @@
   "cart": {
     "getItBy": "Get it by",
     "orderIn": "Order in",
+    "additionalServices": "Additional Services",
+    "warrantyExtended": "Extended Warranty",
+    "removeWarranty": "Remove warranty",
     "recommendedForYou": "Recommended for you",
     "orderSummary": "Order summary",
     "items": "Items",

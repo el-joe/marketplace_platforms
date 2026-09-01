@@ -452,6 +452,7 @@ class CartService
                 'vendorListing.productVariant.images',
                 'adminListing.productVariant.product',
                 'adminListing.productVariant.images',
+                'warrantyPlan',
             ])
             ->get();
 
@@ -518,6 +519,15 @@ class CartService
                             'name' => $method?->name,
                             'code' => $method?->code,
                         ],
+                        'warranty_plan' => $item->warrantyPlan ? [
+                            'id' => $item->warrantyPlan->id,
+                            'name' => $item->warrantyPlan->localized_name,
+                            'duration_months' => $item->warrantyPlan->duration_months,
+                            'duration_label' => $item->warrantyPlan->duration_label,
+                            'price' => $item->warrantyPlan->resolvePrice((int) $item->unit_price),
+                            'currency' => $item->warrantyPlan->currency,
+                            'image_url' => $item->warrantyPlan->image_url,
+                        ] : null,
                     ];
                 })->values(),
             ];
