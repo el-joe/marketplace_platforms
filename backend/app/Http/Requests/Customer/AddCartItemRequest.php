@@ -19,6 +19,7 @@ class AddCartItemRequest extends FormRequest
             'admin_listing_id' => ['required_if:listing_type,admin', 'nullable', 'uuid', 'exists:admin_listings,id'],
             'quantity'            => ['required', 'integer', 'min:1', 'max:999'],
             'shipping_method_id'  => ['nullable', 'uuid', 'exists:shipping_methods,id'],
+            'warranty_plan_id'    => ['nullable', 'uuid', 'exists:warranty_plans,id'],
         ];
     }
 }

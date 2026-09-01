@@ -27,6 +27,7 @@ interface ICartContext {
       listingType?: string;
       adminProductListingId?: string;
       shippingMethodId?: string;
+      warrantyPlanId?: string | null;
     },
     unknown
   >;

@@ -7,6 +7,7 @@ import { useCartContext } from "@/src/providers/cart-provider";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
 import React from "react";
+import { useWarrantySelection } from "./warranty-selection-context";
 
 type Props = {
   listingId: string;
@@ -25,6 +26,7 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
     targetItemMutating,
   } = useCartContext();
   const [selectedDelivery] = useQueryState("selectedDelivery");
+  const { selectedPlanId, clearSelection } = useWarrantySelection();
   return (
     <>
       {isLoading ? (
@@ -64,6 +66,9 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
               vendorListingId: listingId,
               quantity,
               shippingMethodId: selectedDelivery as string,
+              warrantyPlanId: selectedPlanId,
+            }).then(() => {
+              clearSelection();
             })
           }
           disabled={isMutating}

@@ -75,12 +75,14 @@ export function useCart() {
       listingType = "vendor",
       adminProductListingId,
       shippingMethodId,
+      warrantyPlanId,
     }: {
       vendorListingId: string;
       quantity: number;
       listingType?: string;
       adminProductListingId?: string;
       shippingMethodId?: string;
+      warrantyPlanId?: string | null;
     }) =>
       addItemCartService({
         vendor_listing_id: vendorListingId,
@@ -88,6 +90,7 @@ export function useCart() {
         listing_type: listingType,
         shipping_method_id: shippingMethodId,
         admin_product_listing_id: adminProductListingId,
+        warranty_plan_id: warrantyPlanId ?? null,
       }),
     onSuccess: invalidate,
     onError,

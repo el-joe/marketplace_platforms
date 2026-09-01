@@ -4,38 +4,28 @@ import { Button } from "@/src/components/ui/button";
 import { ArrowBigRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import React, { useState } from "react";
+import React from "react";
 import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
+import { useWarrantySelection } from "./warranty-selection-context";
 
 const FALLBACK_WARRANTY_IMAGE =
   "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png";
 
 export default function ExtendedWarranty({
   warrantiesData,
-  listingId,
 }: {
   warrantiesData: IProductDetails["warranty_plans"];
   listingId: string;
 }) {
   const t = useTranslations("productView");
   const locale = useLocale();
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const { selectedPlanId, selectPlan: setSelectedPlan } =
+    useWarrantySelection();
 
   const selectPlan = (planId: string) => {
-    const next = selectedPlanId === planId ? null : planId;
-    setSelectedPlanId(next);
-    try {
-      const key = `warranty-selection:${listingId}`;
-      if (next) {
-        sessionStorage.setItem(key, next);
-      } else {
-        sessionStorage.removeItem(key);
-      }
-    } catch {
-      // sessionStorage unavailable (private browsing, SSR) — selection still works in-memory.
-    }
+    setSelectedPlan(selectedPlanId === planId ? null : planId);
   };
 
   return (

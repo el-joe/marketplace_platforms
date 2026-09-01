@@ -233,6 +233,14 @@ class CartController extends Controller
             return ApiResponse::error($e->getMessage(), [], 422);
         }
 
+        if ($request->filled('warranty_plan_id')) {
+            $plan = WarrantyPlan::active()->find($request->warranty_plan_id);
+
+            if ($plan) {
+                $item->update(['warranty_plan_id' => $plan->id]);
+            }
+        }
+
         $item->load([
             'vendorListing.vendor',
             'vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
@@ -240,6 +248,7 @@ class CartController extends Controller
             'vendorListing.warehouseInventories',
             'adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
             'selectedShippingMethod',
+            'warrantyPlan',
         ]);
 
         return $this->cartResponse($cart, [

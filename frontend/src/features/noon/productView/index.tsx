@@ -19,6 +19,7 @@ import getLocale from "@/src/helpers/getLocale";
 import Variants from "./variants";
 import SellerCard from "./seller-card";
 import RatingAndReviews from "./rating-and-reviews";
+import { WarrantySelectionProvider } from "./warranty-selection-context";
 
 export default async function ProductView({ slug }: { slug: string }) {
   const t = await getTranslations("productView");
@@ -26,94 +27,96 @@ export default async function ProductView({ slug }: { slug: string }) {
   const productData = await getProduct(slug);
   return (
     <div className="container">
-      {/* breadcrumb */}
-      <Breadcrumb
-        list={[
-          { label: t("home"), href: "/" },
-          ...productData.product.breadcrumbs.map((e) => ({
-            label: e.name[locale] as string,
-            href: `/${e.slug}`,
-          })),
-        ]}
-      />
-      {/* top three cols (images overview, core info & shipping options..., add to cart box) */}
-      <div className="grid grid-cols-1 lg:grid-cols-22 md:gap-3 lg:gap-6 items-start">
-        {/* product images preview - col one */}
-        <div className="lg:col-span-8 lg:sticky top-28">
-          <ProductImagesPreview product={productData} />
+      <WarrantySelectionProvider>
+        {/* breadcrumb */}
+        <Breadcrumb
+          list={[
+            { label: t("home"), href: "/" },
+            ...productData.product.breadcrumbs.map((e) => ({
+              label: e.name[locale] as string,
+              href: `/${e.slug}`,
+            })),
+          ]}
+        />
+        {/* top three cols (images overview, core info & shipping options..., add to cart box) */}
+        <div className="grid grid-cols-1 lg:grid-cols-22 md:gap-3 lg:gap-6 items-start">
+          {/* product images preview - col one */}
+          <div className="lg:col-span-8 lg:sticky top-28">
+            <ProductImagesPreview product={productData} />
+          </div>
+          {/* col two */}
+          <div className="lg:col-span-9">
+            <BaseInfo product={productData} />
+            {!!productData.delivery_options.length && (
+              <>
+                <Separator className={"my-6"} />
+                <DeliveryInformation
+                  deliveryOptions={productData.delivery_options}
+                />
+              </>
+            )}
+            {!!productData.coupons.length && (
+              <>
+                <Separator className={"my-6"} />
+                <CouponsSlide coupons={productData.coupons} />
+              </>
+            )}
+            {!!productData.payment_options.length && (
+              <>
+                <Separator className={"my-6"} />
+                <PaymentDiscount paymentsData={productData.payment_options} />
+              </>
+            )}
+            {!!productData.product_attributes.length && (
+              <>
+                <Separator className={"my-6"} />
+                <Variants variantsData={productData.product_attributes} />
+              </>
+            )}
+            {!!productData.warranty_plans.length && (
+              <>
+                <Separator className={"my-6"} />
+                <ExtendedWarranty
+                  warrantiesData={productData.warranty_plans}
+                  listingId={productData.listing.listing_id}
+                />
+              </>
+            )}
+            {productData.frequently_bought_together.items.length > 1 && (
+              <>
+                <Separator className={"my-6"} />
+                <BoughtTogether
+                  boughtTogetherData={productData.frequently_bought_together}
+                />
+              </>
+            )}
+          </div>
+          {/* col three */}
+          <div className="lg:col-span-5">
+            {/* seller data */}
+            <SellerCard productData={productData} />
+            <Image
+              src={
+                "https://a.nooncdn.com/mpcms/EN0001/assets/d7459e74-052b-4de2-8e11-b87834ad940f.png?width=2400"
+              }
+              alt="banner"
+              width={800}
+              height={260}
+            />
+          </div>
         </div>
-        {/* col two */}
-        <div className="lg:col-span-9">
-          <BaseInfo product={productData} />
-          {!!productData.delivery_options.length && (
-            <>
-              <Separator className={"my-6"} />
-              <DeliveryInformation
-                deliveryOptions={productData.delivery_options}
-              />
-            </>
-          )}
-          {!!productData.coupons.length && (
-            <>
-              <Separator className={"my-6"} />
-              <CouponsSlide coupons={productData.coupons} />
-            </>
-          )}
-          {!!productData.payment_options.length && (
-            <>
-              <Separator className={"my-6"} />
-              <PaymentDiscount paymentsData={productData.payment_options} />
-            </>
-          )}
-          {!!productData.product_attributes.length && (
-            <>
-              <Separator className={"my-6"} />
-              <Variants variantsData={productData.product_attributes} />
-            </>
-          )}
-          {!!productData.warranty_plans.length && (
-            <>
-              <Separator className={"my-6"} />
-              <ExtendedWarranty
-                warrantiesData={productData.warranty_plans}
-                listingId={productData.listing.listing_id}
-              />
-            </>
-          )}
-          {productData.frequently_bought_together.items.length > 1 && (
-            <>
-              <Separator className={"my-6"} />
-              <BoughtTogether
-                boughtTogetherData={productData.frequently_bought_together}
-              />
-            </>
-          )}
-        </div>
-        {/* col three */}
-        <div className="lg:col-span-5">
-          {/* seller data */}
-          <SellerCard productData={productData} />
-          <Image
-            src={
-              "https://a.nooncdn.com/mpcms/EN0001/assets/d7459e74-052b-4de2-8e11-b87834ad940f.png?width=2400"
-            }
-            alt="banner"
-            width={800}
-            height={260}
-          />
-        </div>
-      </div>
-      <ProductOverview
-        overviewData={{
-          highlights: productData.product.highlights,
-          overview: productData.product.description,
-          specification: productData.product.specifications,
-        }}
-      />
-      <RatingAndReviews reviews={productData.reviews} />
-      <CarouselProducts title={t("customersAlsoViewed")} />
-      {/* floating add to cart button for small screens */}
-      <FloatingCartButton listingId={productData.listing.listing_id} />
+        <ProductOverview
+          overviewData={{
+            highlights: productData.product.highlights,
+            overview: productData.product.description,
+            specification: productData.product.specifications,
+          }}
+        />
+        <RatingAndReviews reviews={productData.reviews} />
+        <CarouselProducts title={t("customersAlsoViewed")} />
+        {/* floating add to cart button for small screens */}
+        <FloatingCartButton listingId={productData.listing.listing_id} />
+      </WarrantySelectionProvider>
     </div>
   );
 }

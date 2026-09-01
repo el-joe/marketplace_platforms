@@ -18,6 +18,7 @@ export const addItemCartService = (body: {
   listing_type?: string;
   admin_product_listing_id?: string;
   shipping_method_id?: string;
+  warranty_plan_id?: string | null;
 }) =>
   fetchInstance<ICartResponseBody>("/cart/items", {
     method: "POST",
