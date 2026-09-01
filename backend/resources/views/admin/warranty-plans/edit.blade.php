@@ -7,7 +7,7 @@
 @endpush
 
 @section('content')
-    <form id="warranty-plan-form" method="POST" action="{{ route('admin.warranty-plans.update', $plan->id) }}" novalidate>
+    <form id="warranty-plan-form" method="POST" action="{{ route('admin.warranty-plans.update', $plan->id) }}" enctype="multipart/form-data" novalidate>
         @csrf
         @method('PATCH')
         @include('admin.warranty-plans._form', ['mode' => 'edit', 'plan' => $plan])

@@ -251,6 +251,7 @@ use Illuminate\Support\Facades\Route;
             Route::post('items', [CartController::class, 'addItem'])->name('items.add');
             Route::post('items/bulk', [CartController::class, 'addItems'])->name('items.add-bulk');
             Route::put('items/{id}', [CartController::class, 'updateItem'])->name('items.update');
+            Route::patch('items/{id}/warranty', [CartController::class, 'updateItemWarranty'])->name('items.warranty.update');
             Route::delete('items/{id}', [CartController::class, 'removeItem'])->name('items.remove');
             Route::delete('/', [CartController::class, 'clear'])->name('clear');
             Route::post('coupon', [CartController::class, 'applyCoupon'])->name('coupon.apply');

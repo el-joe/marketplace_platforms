@@ -282,6 +282,9 @@ return [
             'item_added'                 => 'Item added to cart',
             'items_added'                => 'Items added to cart',
             'item_updated'               => 'Cart item updated',
+            'warranty_plan_not_found'    => 'Warranty plan not found or is inactive.',
+            'warranty_plan_not_applicable' => 'This warranty plan is not applicable to this product.',
+            'warranty_updated'           => 'Cart item warranty updated',
         ],
 
         'browse' => [

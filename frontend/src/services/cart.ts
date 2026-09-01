@@ -48,6 +48,15 @@ export const updateItemQuantityCartService = (
     body: JSON.stringify({ quantity, shipping_method_id }),
   });
 
+export const updateItemWarrantyCartService = (
+  cart_item_id: string,
+  warranty_plan_id: string | null,
+) =>
+  fetchInstance<ICartResponseBody>(`/cart/items/${cart_item_id}/warranty`, {
+    method: "PATCH",
+    body: JSON.stringify({ warranty_plan_id }),
+  });
+
 export const removeItemCartService = (cart_item_id: string) =>
   fetchInstance<ICartResponseBody>(`/cart/items/${cart_item_id}`, {
     method: "DELETE",

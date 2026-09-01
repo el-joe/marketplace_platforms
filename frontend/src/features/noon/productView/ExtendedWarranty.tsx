@@ -9,60 +9,8 @@ import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
 
-const warranties = [
-  {
-    id: 1,
-    duration: "1 year",
-    image:
-      "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png",
-    title: "Extended Warranty Plan",
-    coreBenefits: [
-      "Active after brand warranty",
-      "Covers electrical & mechanical failures",
-      "Get unlimited claims",
-    ],
-    cost: 172,
-  },
-  {
-    id: 2,
-    duration: "6 months",
-    image:
-      "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png",
-    title: "Extended Warranty Plan",
-    coreBenefits: [
-      "Active after brand warranty",
-      "Covers electrical & mechanical failures",
-      "Get unlimited claims",
-    ],
-    cost: 172,
-  },
-  {
-    id: 3,
-    duration: "1 year",
-    image:
-      "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/accidental_warranty_v5.png",
-    title: "Extended Warranty Plan",
-    coreBenefits: [
-      "Active after brand warranty",
-      "Covers electrical & mechanical failures",
-      "Get unlimited claims",
-    ],
-    cost: 172,
-  },
-  {
-    id: 4,
-    duration: "1 year",
-    image:
-      "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/accidental_extended_warranty_v4.png",
-    title: "Extended Warranty Plan",
-    coreBenefits: [
-      "Active after brand warranty",
-      "Covers electrical & mechanical failures",
-      "Get unlimited claims",
-    ],
-    cost: 172,
-  },
-];
+const FALLBACK_WARRANTY_IMAGE =
+  "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png";
 
 export default function ExtendedWarranty({
   warrantiesData,
@@ -115,9 +63,7 @@ export default function ExtendedWarranty({
             >
               <div className="flex gap-2 items-center">
                 <Image
-                  src={
-                    "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png"
-                  }
+                  src={warranty.image_url || FALLBACK_WARRANTY_IMAGE}
                   alt="warranty icon"
                   width={47}
                   height={47}

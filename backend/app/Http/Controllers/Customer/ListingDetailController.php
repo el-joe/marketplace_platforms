@@ -154,7 +154,7 @@ class ListingDetailController extends Controller
         $bestSellerBadge = $this->enrichment->getBestSellerBadge($product, $country);
         $coupons = $this->enrichment->getApplicableCoupons($product, $country, $customer, $listing instanceof VendorListing ? $listing : null);
         $paymentOptions = $this->enrichment->getPaymentOptions($country, $listing->price, $customer);
-        $warrantyPlans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code);
+        $warrantyPlans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $listing->price);
 
         $reviews = $product->reviews()
             ->where('status', 'published')

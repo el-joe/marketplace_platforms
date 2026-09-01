@@ -388,7 +388,7 @@ class CheckoutCalculationService
             }
 
             $product = $cartItem->vendorListing->productVariant->product;
-            $applicablePlanIds = collect($warrantyPlanService->getPlansForProduct($product, $country->id, $currency))
+            $applicablePlanIds = collect($warrantyPlanService->getPlansForProduct($product, $country->id, $currency, (int) $cartItem->unit_price))
                 ->pluck('id')
                 ->all();
 
@@ -410,12 +410,14 @@ class CheckoutCalculationService
                 ]);
             }
 
+            $resolvedPrice = $plan->resolvePrice((int) $cartItem->unit_price);
+
             $selections[$cartItem->id] = [
                 'plan' => $plan,
-                'price' => $plan->price,
+                'price' => $resolvedPrice,
             ];
 
-            $total += $plan->price;
+            $total += $resolvedPrice;
         }
 
         return ['selections' => $selections, 'total' => $total];

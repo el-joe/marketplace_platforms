@@ -25,9 +25,18 @@
 
 <div class="space-y-6" x-data="{
         priceAmount: {{ (float) ((int) $val('price', 0)) }},
+        pricePct: {{ (float) $val('price_pct', 0) }},
+        priceType: '{{ $val('price_type', 'flat') }}',
         currency: '{{ $val('currency', 'AED') }}',
         featuresEn: {{ json_encode(array_values($featuresEn) ?: ['']) }},
         featuresAr: {{ json_encode(array_values($featuresAr) ?: ['']) }},
+        imagePreview: {{ $isEdit && $plan->image_url ? "'" . $plan->image_url . "'" : 'null' }},
+        onImageChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.imagePreview = URL.createObjectURL(file);
+            }
+        },
     }">
     <input type="hidden" id="form-mode" name="_form_mode" value="{{ $isEdit ? 'edit' : 'create' }}">
 
@@ -187,17 +196,44 @@
                         </div>
                     </div>
 
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">
+                            {{ __('admin.warranty_plans.price_type') }}
+                        </label>
+                        <div class="flex items-center gap-4">
+                            <label class="inline-flex items-center gap-1.5 text-sm">
+                                <input type="radio" name="price_type" value="flat" x-model="priceType">
+                                {{ __('admin.warranty_plans.price_type_flat') }}
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 text-sm">
+                                <input type="radio" name="price_type" value="percentage" x-model="priceType">
+                                {{ __('admin.warranty_plans.price_type_percentage') }}
+                            </label>
+                        </div>
+                        @error('price_type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        <div x-show="priceType === 'flat'">
                             <label for="price" class="block text-xs font-medium text-gray-700 mb-1">
                                 {{ __('admin.warranty_plans.price') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="price" name="price" x-model.number="priceAmount"
-                                min="1" step="1" class="input w-full @error('price') border-red-400 @enderror" required>
+                                min="1" step="1" class="input w-full @error('price') border-red-400 @enderror">
                             <p class="text-xs text-gray-500 mt-1">
                                 ≈ <span x-text="(priceAmount).toFixed(2)"></span> <span x-text="currency"></span>
                             </p>
                             @error('price') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div x-show="priceType === 'percentage'">
+                            <label for="price_pct" class="block text-xs font-medium text-gray-700 mb-1">
+                                {{ __('admin.warranty_plans.price_pct') }} <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" id="price_pct" name="price_pct" x-model.number="pricePct"
+                                min="0.01" max="100" step="0.01" class="input w-full @error('price_pct') border-red-400 @enderror">
+                            <p class="text-xs text-gray-400 mt-1">{{ __('admin.warranty_plans.price_pct_hint') }}</p>
+                            @error('price_pct') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
@@ -212,6 +248,27 @@
                             </select>
                             @error('currency') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
+                    </div>
+
+                    <div>
+                        <label for="image" class="block text-xs font-medium text-gray-700 mb-1">
+                            {{ __('admin.warranty_plans.image') }}
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <template x-if="imagePreview">
+                                <img :src="imagePreview" class="w-16 h-16 rounded-lg object-cover border border-gray-200">
+                            </template>
+                            <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/webp"
+                                @change="onImageChange"
+                                class="input w-full @error('image') border-red-400 @enderror">
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">
+                            {{ __('admin.warranty_plans.image_hint') }}
+                            @if ($isEdit && $plan->image_path)
+                                — {{ __('admin.warranty_plans.image_replace_hint') }}
+                            @endif
+                        </p>
+                        @error('image') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <div>

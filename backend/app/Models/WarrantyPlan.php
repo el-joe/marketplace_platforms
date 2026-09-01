@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use App\Services\WarrantyPlanService;
+use Illuminate\Support\Facades\Storage;
 
 class WarrantyPlan extends Model
 {
@@ -29,8 +30,23 @@ class WarrantyPlan extends Model
             'country_ids' => 'array',
             'is_active' => 'boolean',
             'price' => 'integer',
+            'price_pct' => 'decimal:2',
             'sort_order' => 'integer',
         ];
+    }
+
+    public function resolvePrice(int $listingPrice): int
+    {
+        if ($this->price_type === 'percentage' && $this->price_pct !== null) {
+            return (int) floor($listingPrice * (float) $this->price_pct / 100);
+        }
+
+        return $this->price;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? Storage::url($this->image_path) : null;
     }
 
     public function category(): BelongsTo

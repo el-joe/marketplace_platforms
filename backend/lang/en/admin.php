@@ -1871,6 +1871,14 @@ return [
         'arabic_label'                   => 'Arabic',
         'plan_details'                   => 'Plan Details',
         'save_label'                     => 'Save',
+        'price_type'                     => 'Price Type',
+        'price_type_flat'                => 'Flat Amount',
+        'price_type_percentage'          => 'Percentage of Product Price',
+        'price_pct'                      => 'Price (% of product price)',
+        'price_pct_hint'                 => 'e.g. 5 = 5% of the product price at time of purchase',
+        'image'                          => 'Plan Image',
+        'image_hint'                     => 'JPG, PNG or WEBP, max 2MB.',
+        'image_replace_hint'             => 'uploading a new image will replace the current one.',
     ],
 
     // ─── Categories ──────────────────────────────────────────────────────────

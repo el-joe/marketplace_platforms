@@ -55,6 +55,7 @@ class WarrantyController extends Controller
             $product,
             $customer->country_id,
             $orderItem->order->currency,
+            (int) $orderItem->unit_price,
         );
 
         return ApiResponse::success($plans, __('customer_api.warranty.plans_retrieved'));

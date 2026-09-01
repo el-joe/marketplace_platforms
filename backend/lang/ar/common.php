@@ -282,6 +282,9 @@ return [
             'item_added'                 => 'تمت إضافة العنصر إلى السلة',
             'items_added'                => 'تمت إضافة العناصر إلى السلة',
             'item_updated'               => 'تم تحديث عنصر السلة',
+            'warranty_plan_not_found'    => 'خطة الضمان غير موجودة أو غير مفعّلة.',
+            'warranty_plan_not_applicable' => 'خطة الضمان هذه غير قابلة للتطبيق على هذا المنتج.',
+            'warranty_updated'           => 'تم تحديث ضمان عنصر السلة',
         ],
 
         'browse' => [

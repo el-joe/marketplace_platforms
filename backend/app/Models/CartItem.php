@@ -18,11 +18,17 @@ class CartItem extends Model
         'quantity',
         'unit_price',
         'added_at',
+        'warranty_plan_id',
     ];
 
     public function cart(): BelongsTo
     {
         return $this->belongsTo(Cart::class);
+    }
+
+    public function warrantyPlan(): BelongsTo
+    {
+        return $this->belongsTo(WarrantyPlan::class);
     }
 
     public function vendorListing(): BelongsTo

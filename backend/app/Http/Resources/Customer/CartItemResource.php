@@ -68,6 +68,17 @@ class CartItemResource extends JsonResource
                 'badge_color_hex' => $this->selectedShippingMethod->badge_color_hex,
             ] : null,
             'applicable_coupons' => $applicableCoupons,
+            'warranty_plan_id' => $this->warranty_plan_id,
+            'warranty_plan' => $this->whenLoaded('warrantyPlan', fn () => $this->warrantyPlan ? [
+                'id' => $this->warrantyPlan->id,
+                'name' => $this->warrantyPlan->localized_name,
+                'duration_months' => $this->warrantyPlan->duration_months,
+                'price' => $this->warrantyPlan->resolvePrice((int) $this->unit_price),
+                'price_type' => $this->warrantyPlan->price_type,
+                'price_pct' => $this->warrantyPlan->price_pct,
+                'currency' => $this->warrantyPlan->currency,
+                'image_url' => $this->warrantyPlan->image_url,
+            ] : null),
         ];
     }
 

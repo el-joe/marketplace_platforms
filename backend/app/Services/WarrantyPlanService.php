@@ -12,7 +12,7 @@ class WarrantyPlanService
 {
     public const CACHE_VERSION_KEY = 'warranty_plans_cache_version';
 
-    public function getPlansForProduct(Product $product, string $countryId, string $currency): array
+    public function getPlansForProduct(Product $product, string $countryId, string $currency, int $listingPrice = 0): array
     {
         $categoryId = $product->category_id;
 
@@ -21,9 +21,9 @@ class WarrantyPlanService
         }
 
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
-        $cacheKey = "warranty_plans_v{$version}_{$categoryId}_{$countryId}";
+        $cacheKey = "warranty_plans_v{$version}_{$categoryId}_{$countryId}_{$listingPrice}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($categoryId, $countryId) {
+        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($categoryId, $countryId, $listingPrice) {
             $category = Category::find($categoryId);
 
             if (!$category) {
@@ -57,7 +57,7 @@ class WarrantyPlanService
                 ->get();
 
 
-            return $plans->map(fn (WarrantyPlan $plan) => $this->formatPlan($plan))->values()->all();
+            return $plans->map(fn (WarrantyPlan $plan) => $this->formatPlan($plan, $listingPrice))->values()->all();
         });
     }
 
@@ -67,7 +67,7 @@ class WarrantyPlanService
         Cache::put(self::CACHE_VERSION_KEY, $cacheInc + 1);
     }
 
-    private function formatPlan(WarrantyPlan $plan): array
+    private function formatPlan(WarrantyPlan $plan, int $listingPrice = 0): array
     {
         return [
             'id' => $plan->id,
@@ -75,8 +75,11 @@ class WarrantyPlanService
             'duration_months' => $plan->duration_months,
             'duration_label' => $this->formatDurationLabel($plan->duration_months),
             'features' => app()->getLocale() === 'ar' ? $plan->features_ar : $plan->features_en,
-            'price' => $plan->price,
+            'price' => $plan->resolvePrice($listingPrice),
+            'price_type' => $plan->price_type,
+            'price_pct' => $plan->price_pct,
             'currency' => $plan->currency,
+            'image_url' => $plan->image_url,
         ];
     }
 

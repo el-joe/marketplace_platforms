@@ -314,7 +314,7 @@ class ListingController extends Controller
             return [];
         }
 
-        $plans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code);
+        $plans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $listing->price);
 
         return array_values(array_filter($plans, fn (array $plan) => $plan['currency'] === $country->currency_code));
     }

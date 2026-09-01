@@ -712,6 +712,7 @@ class CheckoutController extends Controller
 
                         if (isset($warrantySelections[$cartItem->id])) {
                             $plan = $warrantySelections[$cartItem->id]['plan'];
+                            $resolvedWarrantyPrice = $warrantySelections[$cartItem->id]['price'];
 
                             $warrantyPurchase = WarrantyPurchase::create([
                                 'customer_id' => $customer->id,
@@ -725,9 +726,12 @@ class CheckoutController extends Controller
                                     'features_en' => $plan->features_en,
                                     'features_ar' => $plan->features_ar,
                                     'price' => $plan->price,
+                                    'price_type' => $plan->price_type,
+                                    'price_pct' => $plan->price_pct,
                                     'currency' => $plan->currency,
+                                    'resolved_price' => $resolvedWarrantyPrice,
                                 ],
-                                'price_paid' => $warrantySelections[$cartItem->id]['price'],
+                                'price_paid' => $resolvedWarrantyPrice,
                                 'currency' => $order->currency,
                                 'status' => 'pending',
                                 'coverage_starts_at' => null,

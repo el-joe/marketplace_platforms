@@ -13,10 +13,12 @@ use App\Http\Resources\Customer\CartResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Cart;
 use App\Models\CustomerWallet;
+use App\Models\WarrantyPlan;
 use App\Services\BannerService;
 use App\Services\Customer\CartService;
 use App\Services\Customer\ListingIdentifierService;
 use App\Services\SavingsBenefitsService;
+use App\Services\WarrantyPlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -28,6 +30,7 @@ class CartController extends Controller
         private readonly ListingIdentifierService $listingIdentifierService,
         private readonly BannerService $bannerService,
         private readonly SavingsBenefitsService $savingsBenefitsService,
+        private readonly WarrantyPlanService $warrantyPlanService,
     ) {
     }
 
@@ -83,6 +86,7 @@ class CartController extends Controller
             'items.adminListing.warehouseInventories',
             'items.adminListing.primaryShippingMethod',
             'items.selectedShippingMethod',
+            'items.warrantyPlan',
             'coupon',
         ]);
 
@@ -97,7 +101,37 @@ class CartController extends Controller
                 $cart->currency,
             ),
             'wallet' => $this->resolveWalletInfo($cart),
+            'item_warranty_plans' => $country ? $this->buildItemWarrantyPlans($cart, $country) : [],
         ]);
+    }
+
+    /**
+     * Builds a map of cart_item_id => available warranty plans for that item's product,
+     * priced against the item's unit_price.
+     *
+     * @return array<string, array>
+     */
+    private function buildItemWarrantyPlans(Cart $cart, $country): array
+    {
+        $map = [];
+
+        foreach ($cart->items as $item) {
+            $listing = $item->vendor_listing_id ? $item->vendorListing : $item->adminListing;
+            $product = $listing?->productVariant?->product;
+
+            if (!$product) {
+                continue;
+            }
+
+            $map[$item->id] = $this->warrantyPlanService->getPlansForProduct(
+                $product,
+                $country->id,
+                $country->currency_code,
+                (int) $item->unit_price,
+            );
+        }
+
+        return $map;
     }
 
     /**
@@ -263,6 +297,65 @@ class CartController extends Controller
                 ? $this->listingIdentifierService->buildListingRef($listing)
                 : null,
         ], __('common.exceptions.cart.item_updated'));
+    }
+
+    public function updateItemWarranty(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'warranty_plan_id' => ['nullable', 'uuid', 'exists:warranty_plans,id'],
+        ]);
+
+        $cart = $this->resolveCart($request);
+
+        $item = $cart->items()->find($id);
+
+        if (!$item) {
+            return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
+        }
+
+        $warrantyPlanId = $request->input('warranty_plan_id');
+
+        if ($warrantyPlanId === null) {
+            $item->update(['warranty_plan_id' => null]);
+        } else {
+            $plan = WarrantyPlan::active()->find($warrantyPlanId);
+
+            if (!$plan) {
+                return ApiResponse::error(__('common.exceptions.cart.warranty_plan_not_found'), [], 404);
+            }
+
+            $listing = $item->vendor_listing_id ? $item->vendorListing : $item->adminListing;
+            $product = $listing?->productVariant?->product;
+            $country = $request->attributes->get('country');
+
+            $applicablePlanIds = $product && $country
+                ? collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $item->unit_price))
+                    ->pluck('id')
+                    ->all()
+                : [];
+
+            if (!in_array($plan->id, $applicablePlanIds, true)) {
+                return ApiResponse::error(__('common.exceptions.cart.warranty_plan_not_applicable'), [], 422);
+            }
+
+            $item->update(['warranty_plan_id' => $plan->id]);
+        }
+
+        $item->load([
+            'vendorListing.vendor',
+            'vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'vendorListing.primaryShippingMethod',
+            'vendorListing.warehouseInventories',
+            'adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'adminListing.warehouseInventories',
+            'selectedShippingMethod',
+            'warrantyPlan',
+        ]);
+
+        return ApiResponse::success([
+            'cart' => new CartResource($cart),
+            'item' => new CartItemResource($item),
+        ], __('common.exceptions.cart.warranty_updated'));
     }
 
     public function removeItem(Request $request, $countryId, string $id): JsonResponse

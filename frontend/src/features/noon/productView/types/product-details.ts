@@ -252,5 +252,8 @@ export interface Warranty {
   duration_label: string;
   features: string[];
   price: number;
+  price_type: "flat" | "percentage";
+  price_pct: number | null;
   currency: CurrencyCode;
+  image_url: string | null;
 }

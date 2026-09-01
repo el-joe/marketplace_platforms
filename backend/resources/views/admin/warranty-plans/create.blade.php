@@ -7,7 +7,7 @@
 @endpush
 
 @section('content')
-    <form id="warranty-plan-form" method="POST" action="{{ route('admin.warranty-plans.store') }}" novalidate>
+    <form id="warranty-plan-form" method="POST" action="{{ route('admin.warranty-plans.store') }}" enctype="multipart/form-data" novalidate>
         @csrf
         @include('admin.warranty-plans._form', ['mode' => 'create'])
     </form>

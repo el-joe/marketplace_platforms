@@ -11,6 +11,7 @@ use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class WarrantyPlanController extends Controller
@@ -107,7 +108,7 @@ class WarrantyPlanController extends Controller
     {
         $validated = $request->validate($this->rules(true));
 
-        $plan = new WarrantyPlan($this->planData($validated));
+        $plan = new WarrantyPlan($this->planData($request, $validated));
         $plan->created_by_admin_id = auth('admin')->id();
         $plan->save();
 
@@ -145,7 +146,7 @@ class WarrantyPlanController extends Controller
 
         $validated = $request->validate($rules);
 
-        $plan->update($this->planData($validated));
+        $plan->update($this->planData($request, $validated, $plan));
 
         return redirect()->route('admin.warranty-plans.edit', $plan->id)
             ->with('success', __('admin.warranty_plans.updated_success'));
@@ -197,8 +198,11 @@ class WarrantyPlanController extends Controller
             'name_en' => 'required|string|max:150',
             'name_ar' => 'required|string|max:150',
             'duration_months' => 'required|integer|min:1|max:120',
-            'price' => 'required|numeric|min:0.01',
+            'price_type' => 'nullable|in:flat,percentage',
+            'price' => 'required_if:price_type,flat|nullable|numeric|min:0.01',
+            'price_pct' => 'required_if:price_type,percentage|nullable|numeric|min:0.01|max:100',
             'currency' => 'required|string|size:3|in:' . implode(',', self::CURRENCIES),
+            'image' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:2048',
             'features_en' => 'required|array|min:1|max:8',
             'features_en.*' => 'required|string|max:200',
             'features_ar' => 'required|array|min:1|max:8',
@@ -210,13 +214,15 @@ class WarrantyPlanController extends Controller
         ];
     }
 
-    private function planData(array $validated): array
+    private function planData(Request $request, array $validated, ?WarrantyPlan $existing = null): array
     {
+        $priceType = $validated['price_type'] ?? 'flat';
+
         $data = [
             'name_en' => $validated['name_en'],
             'name_ar' => $validated['name_ar'],
             'duration_months' => (int) $validated['duration_months'],
-            'price' => (int) round((float) $validated['price']),
+            'price_type' => $priceType,
             'currency' => strtoupper($validated['currency']),
             'features_en' => array_values($validated['features_en']),
             'features_ar' => array_values($validated['features_ar']),
@@ -225,8 +231,24 @@ class WarrantyPlanController extends Controller
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ];
 
+        if ($priceType === 'percentage') {
+            $data['price'] = 0;
+            $data['price_pct'] = (float) $validated['price_pct'];
+        } else {
+            $data['price'] = (int) round((float) $validated['price']);
+            $data['price_pct'] = null;
+        }
+
         if (array_key_exists('category_id', $validated) && $validated['category_id']) {
             $data['category_id'] = $validated['category_id'];
+        }
+
+        if ($request->hasFile('image')) {
+            if ($existing && $existing->image_path) {
+                Storage::disk('public')->delete($existing->image_path);
+            }
+
+            $data['image_path'] = $request->file('image')->store('warranty-plans', 'public');
         }
 
         return $data;
