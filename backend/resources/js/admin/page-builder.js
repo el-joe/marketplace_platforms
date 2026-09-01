@@ -626,7 +626,7 @@ function renderBlockAnalytics(res) {
     $('#analytics-stat-ctr').text(`${(Number(totals.ctr || 0) * 100).toFixed(2)}%`);
     $('#analytics-stat-add-to-cart').text(formatCompactNumber(totals.add_to_cart_count));
     $('#analytics-stat-orders').text(formatCompactNumber(totals.orders_attributed));
-    $('#analytics-stat-revenue').text(formatCents(totals.revenue_attributed));
+    $('#analytics-stat-revenue').text(formatMoney(totals.revenue_attributed));
 
     const targets = res.top_click_targets || [];
     const $list = $('#analytics-top-targets');
@@ -699,11 +699,11 @@ function formatCompactNumber(value) {
     return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 }
 
-function formatCents(cents) {
+function formatMoney(amount) {
     // Blocks can span multiple countries/currencies, so we show a plain compact
     // number (major units) rather than assuming a single currency symbol.
     return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 })
-        .format(Number(cents || 0) / 100);
+        .format(Number(amount || 0));
 }
 
 function closeConfigPanel() {

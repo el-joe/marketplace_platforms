@@ -410,7 +410,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             {{ __('admin.shipping_section.order_value', ['currency' => $countries->firstWhere('id', $activeCountryId)?->currency_code ?? 'EGP']) }}
                         </label>
-                        <input type="number" id="calc-order-value" step="0.01" value="0" min="0"
+                        <input type="number" id="calc-order-value" step="any" value="0" min="0"
                             class="form-input w-full" />
                     </div>
                 </div>

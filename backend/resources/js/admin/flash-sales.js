@@ -55,8 +55,8 @@ function confirm2(msg) {
     });
 }
 
-function fmtMoney(cents) {
-    return (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function fmtMoney(amount) {
+    return Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function fmtNum(n) { return Number(n).toLocaleString(); }
@@ -408,7 +408,7 @@ $(function () {
         ajax('GET', window.PRICE_HISTORY_URL + '?vendor_listing_id=' + encodeURIComponent(listingId))
             .done(res => {
                 const labels = res.map(p => p.date);
-                const prices = res.map(p => p.price / 100);
+                const prices = res.map(p => p.price_raw ?? p.price);
 
                 destroyPriceHistoryChart();
                 const ctx = document.getElementById('price-history-chart');
@@ -580,7 +580,7 @@ $(function () {
                         data: {
                             labels: byDay.map(d => d.date),
                             datasets: [
-                                { label: t('admin.flash_sales.gross_revenue_label'), data: byDay.map(d => (d.gross_revenue ?? 0) / 100), backgroundColor: 'rgba(99,102,241,0.7)', yAxisID: 'y' },
+                                { label: t('admin.flash_sales.gross_revenue_label'), data: byDay.map(d => d.gross_revenue ?? 0), backgroundColor: 'rgba(99,102,241,0.7)', yAxisID: 'y' },
                                 { label: t('admin.flash_sales.discount_label'), data: byDay.map(d => (d.discount_given ?? 0) / 100), backgroundColor: 'rgba(245,158,11,0.7)', yAxisID: 'y' },
                                 { label: t('admin.flash_sales.units_sold_label'), data: byDay.map(d => d.units_sold ?? 0), type: 'line', borderColor: '#10b981', backgroundColor: 'transparent', yAxisID: 'y2', tension: 0.3 },
                             ],

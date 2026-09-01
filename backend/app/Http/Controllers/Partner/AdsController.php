@@ -195,8 +195,8 @@ class AdsController extends Controller
                 'impressions' => $stats->sum('impressions'),
                 'clicks'      => $stats->sum('clicks'),
                 'conversions' => $stats->sum('conversions'),
-                'spend'       => number_format($stats->sum('spend'), 2),
-                'revenue'     => number_format($stats->sum('revenue_attributed'), 2),
+                'spend'       => (int) $stats->sum('spend'),
+                'revenue'     => (int) $stats->sum('revenue_attributed'),
             ],
         ]);
     }

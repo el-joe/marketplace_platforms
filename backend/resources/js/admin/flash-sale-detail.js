@@ -842,7 +842,7 @@ function setText(id, value) {
     }
 }
 
-function formatMoney(cents) {
-    if (cents == null) return '—';
-    return (cents / 100).toFixed(2);
+function formatMoney(amount) {
+    if (amount == null) return '—';
+    return Number(amount).toFixed(2);
 }

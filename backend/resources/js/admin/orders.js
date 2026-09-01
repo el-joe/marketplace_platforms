@@ -126,8 +126,8 @@ $(function () {
     let selectedCarrierId = null;
     let assignUrl = null;
 
-    function centsToAmount(cents) {
-        return (Number(cents || 0) / 100).toFixed(2);
+    function centsToAmount(amount) {
+        return Number(amount || 0).toFixed(2);
     }
 
     function renderCarriers(data) {

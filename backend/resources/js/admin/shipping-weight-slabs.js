@@ -34,7 +34,7 @@ function toast(message, type = 'success') {
 function toCents(value) {
     const parsed = parseFloat(value);
     if (isNaN(parsed) || parsed < 0) return 0;
-    return Math.round(parsed * 100);
+    return Math.round(parsed);
 }
 
 function toGrams(kg) {
@@ -114,8 +114,8 @@ function initInlineFeeEdit() {
         const cents = $span.data('extra-fee');
         $span.data('editing', true);
 
-        const $input = $(`<input type="number" step="0.01" min="0" class="w-24 text-sm rounded border border-primary-300 px-1.5 py-0.5" />`)
-            .val((cents / 100).toFixed(2));
+        const $input = $(`<input type="number" step="1" min="0" class="w-24 text-sm rounded border border-primary-300 px-1.5 py-0.5" />`)
+            .val(cents);
 
         $span.replaceWith($input);
         $input.trigger('focus').trigger('select');

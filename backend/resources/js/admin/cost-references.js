@@ -31,8 +31,8 @@ function updateUrl(template, id) {
     return template.replace('__ID__', id);
 }
 
-function money(cents) {
-    return cents === null || cents === undefined ? '—' : (cents / 100).toFixed(2);
+function money(amount) {
+    return amount === null || amount === undefined ? '—' : Number(amount).toFixed(2);
 }
 
 function initCostReferencesTable() {

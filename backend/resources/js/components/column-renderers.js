@@ -92,7 +92,7 @@ window.Renderers = {
 
     /**
      * currency(currencyCode)
-     * Expects data to be an integer in cents.
+     * Expects data to be a numeric amount.
      *
      * Example: Renderers.currency('EGP')
      */
@@ -102,7 +102,7 @@ window.Renderers = {
             const amount = new Intl.NumberFormat('en-EG', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
-            }).format(Number(data) / 100);
+            }).format(Number(data));
             return `<span class="tabular-nums">${amount} ${currency || 'EGP'}</span>`;
         };
     },

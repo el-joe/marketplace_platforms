@@ -723,8 +723,8 @@ async function loadPerformance() {
             set('total-impressions', formatNumber(totals.impressions));
             set('total-clicks',      formatNumber(totals.clicks));
             set('total-conversions', formatNumber(totals.conversions));
-            set('total-spend',       formatMoney((totals.spend ?? 0) / 100));
-            set('total-revenue',     formatMoney((totals.revenue_attributed ?? 0) / 100));
+            set('total-spend',       formatMoney(totals.spend ?? 0));
+            set('total-revenue',     formatMoney(totals.revenue_attributed ?? 0));
         }
     } catch {}
 }

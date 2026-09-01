@@ -144,13 +144,13 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.coupons.create.min_order_amount') }}</label>
-                    <input type="number" step="0.01" min="0" name="min_order_amount"
+                    <input type="number" step="any" min="0" name="min_order_amount"
                            value="{{ $isEdit ? $coupon['min_order_amount'] : '' }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.coupons.create.max_discount') }}</label>
-                    <input type="number" step="0.01" min="0" name="max_discount"
+                    <input type="number" step="any" min="0" name="max_discount"
                            value="{{ $isEdit ? $coupon['max_discount'] : '' }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                 </div>

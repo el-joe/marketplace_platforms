@@ -22,8 +22,8 @@ async function apiFetch(url, options = {}) {
     return json;
 }
 
-function formatMoney(cents, currency = 'SAR') {
-    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency }).format(cents / 100);
+function formatMoney(amount, currency = 'SAR') {
+    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency }).format(amount);
 }
 
 function formatDate(iso) {

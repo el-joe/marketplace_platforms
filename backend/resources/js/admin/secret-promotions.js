@@ -131,7 +131,7 @@ function recalculateSplit() {
     if (adminDisp) adminDisp.value = adminPct.toFixed(2) + ' %';
     if (adminHid) adminHid.value = adminPct;
 
-    const price = listingPriceCents / 100;
+    const price = listingPriceCents;
 
     // Per-sale previews
     const totalPerSale    = price > 0 ? fmtMoney(price * totalPct / 100) : '—';
@@ -241,7 +241,7 @@ function initListingTypeToggle() {
 
         $('#listing-preview').css('display', 'flex');
         $('#listing-preview-name').text(item.text || 'Unknown');
-        $('#listing-preview-price').text(fmtMoney(listingPriceCents / 100));
+        $('#listing-preview-price').text(fmtMoney(listingPriceCents));
         $('#listing-preview-img').attr('src', item.image || '').toggle(!!item.image);
 
         const currencyBadge = document.getElementById('product-value-currency');
@@ -273,7 +273,7 @@ function loadListingsForVendor(vendorId, preselect = null) {
             }
             let opts = `<option value="">${t('admin.secret_promotions.select_listing')}</option>`;
             listings.forEach(l => {
-                opts += `<option value="${l.id}" data-price="${l.price}" data-name="${l.name}" data-img="${l.image ?? ''}" data-currency="${l.currency ?? ''}">${l.name} — ${fmtMoney(l.price / 100)}</option>`;
+                opts += `<option value="${l.id}" data-price="${l.price}" data-name="${l.name}" data-img="${l.image ?? ''}" data-currency="${l.currency ?? ''}">${l.name} — ${fmtMoney(l.price)}</option>`;
             });
             $select.html(opts).prop('disabled', false);
 
@@ -296,7 +296,7 @@ function updateListingPreview(option) {
     if (name) {
         $('#listing-preview').css('display', 'flex');
         $('#listing-preview-name').text(name);
-        $('#listing-preview-price').text(fmtMoney(listingPriceCents / 100));
+        $('#listing-preview-price').text(fmtMoney(listingPriceCents));
         $('#listing-preview-img').attr('src', img || '').toggle(!!img);
     } else {
         resetListingPreview();

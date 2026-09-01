@@ -169,10 +169,10 @@ class AnalyticsService
             if ($currencies->count() === 1) {
                 // Single-currency path: return native amounts.
                 $c = $currencies->first();
-                $curGmvNative  = ($curByCur[$c]->gmv ?? 0) / 100;
-                $prevGmvNative = ($prevByCur[$c]->gmv ?? 0) / 100;
-                $curCommNative  = ($curByCur[$c]->commission ?? 0) / 100;
-                $prevCommNative = ($prevByCur[$c]->commission ?? 0) / 100;
+                $curGmvNative  = ($curByCur[$c]->gmv ?? 0);
+                $prevGmvNative = ($prevByCur[$c]->gmv ?? 0);
+                $curCommNative  = ($curByCur[$c]->commission ?? 0);
+                $prevCommNative = ($prevByCur[$c]->commission ?? 0);
                 $curOrdersSingle  = (int) ($curByCur[$c]->orders_count ?? 0);
                 $prevOrdersSingle = (int) ($prevByCur[$c]->orders_count ?? 0);
                 $curAovNative  = $curOrdersSingle > 0 ? $curGmvNative / $curOrdersSingle : 0;
@@ -184,13 +184,13 @@ class AnalyticsService
             } else {
                 // Multi-currency: expose per-currency breakdown + USD equivalent via consolidatedUsd().
                 $gmvByCurrency = $this->changePctByCurrency(
-                    $curByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->gmv / 100])->values()->all(),
-                    $prevByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->gmv / 100])->values()->all(),
+                    $curByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->gmv])->values()->all(),
+                    $prevByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->gmv])->values()->all(),
                     'value'
                 );
                 $commByCurrency = $this->changePctByCurrency(
-                    $curByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->commission / 100])->values()->all(),
-                    $prevByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->commission / 100])->values()->all(),
+                    $curByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->commission])->values()->all(),
+                    $prevByCur->map(fn($r) => (object)['currency' => $r->currency, 'value' => $r->commission])->values()->all(),
                     'value'
                 );
 
@@ -339,10 +339,10 @@ class AnalyticsService
                 $labels = $gmv = $commission = $payouts = $refunds = [];
                 foreach ($byCurrency[$currency] as $row) {
                     $labels[]     = $row->date;
-                    $gmv[]        = (float) ($row->gmv / 100);
-                    $commission[] = (float) ($row->commission / 100);
-                    $payouts[]    = (float) ($row->vendor_payouts / 100);
-                    $refunds[]    = (float) ($row->refunds / 100);
+                    $gmv[]        = (float) ($row->gmv);
+                    $commission[] = (float) ($row->commission);
+                    $payouts[]    = (float) ($row->vendor_payouts);
+                    $refunds[]    = (float) ($row->refunds);
                 }
                 return compact('labels', 'gmv', 'commission', 'payouts', 'refunds', 'currency');
             }
@@ -355,10 +355,10 @@ class AnalyticsService
                 $gmv = $commission = $payouts = $refunds = [];
                 foreach ($allDates as $date) {
                     $row          = $byDate[$date] ?? null;
-                    $gmv[]        = $row ? (float) ($row->gmv / 100) : 0;
-                    $commission[] = $row ? (float) ($row->commission / 100) : 0;
-                    $payouts[]    = $row ? (float) ($row->vendor_payouts / 100) : 0;
-                    $refunds[]    = $row ? (float) ($row->refunds / 100) : 0;
+                    $gmv[]        = $row ? (float) ($row->gmv) : 0;
+                    $commission[] = $row ? (float) ($row->commission) : 0;
+                    $payouts[]    = $row ? (float) ($row->vendor_payouts) : 0;
+                    $refunds[]    = $row ? (float) ($row->refunds) : 0;
                 }
                 $datasets[$currency] = compact('gmv', 'commission', 'payouts', 'refunds');
             }
@@ -460,7 +460,7 @@ class AnalyticsService
                 $byMethod[$m]['orders_count'] += (int) $row->orders_count;
                 $byMethod[$m]['amount_by_currency'][] = [
                     'currency' => $row->currency,
-                    'amount'   => (float) ($row->total_amount / 100),
+                    'amount'   => (float) ($row->total_amount),
                 ];
             }
 
@@ -470,7 +470,7 @@ class AnalyticsService
                 $counts[]  = $data['orders_count'];
                 // For the bar chart axis, sum via consolidatedUsd so lengths are comparable.
                 $coll = collect($data['amount_by_currency'])
-                    ->map(fn($c) => (object)['currency' => $c['currency'], 'total' => $c['amount'] * 100]);
+                    ->map(fn($c) => (object)['currency' => $c['currency'], 'total' => $c['amount']]);
                 $amounts[] = round($this->consolidatedUsd($coll), 2);
             }
 
@@ -544,7 +544,7 @@ class AnalyticsService
                 $products[$id]['units_sold'] += (int) $row->units_sold;
                 $products[$id]['revenue_by_currency'][] = [
                     'currency' => $row->currency,
-                    'revenue'  => round($row->revenue / 100, 2),
+                    'revenue'  => round($row->revenue, 2),
                 ];
             }
 
@@ -611,18 +611,18 @@ class AnalyticsService
                 $vendors[$id]['orders_count'] += (int) $row->orders_count;
                 $vendors[$id]['gmv_by_currency'][] = [
                     'currency' => $row->currency,
-                    'gmv'      => round($row->gmv / 100, 2),
+                    'gmv'      => round($row->gmv, 2),
                 ];
                 $vendors[$id]['commission_by_currency'][] = [
                     'currency'   => $row->currency,
-                    'commission' => round($row->commission / 100, 2),
+                    'commission' => round($row->commission, 2),
                 ];
             }
 
             // Rank by USD-equivalent GMV using consolidatedUsd() from the trait.
             foreach ($vendors as &$vendor) {
                 $coll = collect($vendor['gmv_by_currency'])
-                    ->map(fn($c) => (object)['currency' => $c['currency'], 'total' => $c['gmv'] * 100]);
+                    ->map(fn($c) => (object)['currency' => $c['currency'], 'total' => $c['gmv']]);
                 $vendor['gmv_usd_equivalent'] = $this->consolidatedUsd($coll);
             }
             unset($vendor);
@@ -692,7 +692,7 @@ class AnalyticsService
 
             foreach ($categories as &$cat) {
                 $coll = collect($cat['revenue_by_currency'])
-                    ->map(fn($c) => (object)['currency' => $c['currency'], 'total' => $c['revenue'] * 100]);
+                    ->map(fn($c) => (object)['currency' => $c['currency'], 'total' => $c['revenue']]);
                 $cat['revenue_usd_equivalent'] = $this->consolidatedUsd($coll);
             }
             unset($cat);
@@ -1079,8 +1079,8 @@ class AnalyticsService
                 'country_id'   => $r->country_id,
                 'country_name' => $r->country_name,
                 'currency'     => $r->currency,
-                'spend'        => round($r->spend / 100, 2),
-                'revenue'      => round($r->revenue / 100, 2),
+                'spend'        => round($r->spend, 2),
+                'revenue'      => round($r->revenue, 2),
             ], $totalRows);
 
             // Top campaigns: GROUP BY (campaign, country) so spend is per-currency.
@@ -1132,16 +1132,16 @@ class AnalyticsService
                     'currency'    => $currency,
                     'impressions' => array_map(fn($d) => (int) ($byDate[$d]->impressions ?? 0), $allPerfDates),
                     'clicks'      => array_map(fn($d) => (int) ($byDate[$d]->clicks ?? 0), $allPerfDates),
-                    'spend'       => array_map(fn($d) => round(($byDate[$d]->spend ?? 0) / 100, 2), $allPerfDates),
-                    'revenue'     => array_map(fn($d) => round(($byDate[$d]->revenue ?? 0) / 100, 2), $allPerfDates),
+                    'spend'       => array_map(fn($d) => round(($byDate[$d]->spend ?? 0), 2), $allPerfDates),
+                    'revenue'     => array_map(fn($d) => round(($byDate[$d]->revenue ?? 0), 2), $allPerfDates),
                 ];
             } else {
                 $datasets = [];
                 foreach ($perfCurrencies as $currency) {
                     $byDate = collect($perfByCurrency[$currency])->keyBy('date');
                     $datasets[$currency] = [
-                        'spend'   => array_map(fn($d) => round(($byDate[$d]->spend ?? 0) / 100, 2), $allPerfDates),
-                        'revenue' => array_map(fn($d) => round(($byDate[$d]->revenue ?? 0) / 100, 2), $allPerfDates),
+                        'spend'   => array_map(fn($d) => round(($byDate[$d]->spend ?? 0), 2), $allPerfDates),
+                        'revenue' => array_map(fn($d) => round(($byDate[$d]->revenue ?? 0), 2), $allPerfDates),
                     ];
                 }
                 $perfChart = [
@@ -1165,8 +1165,8 @@ class AnalyticsService
                     'currency'    => $row->currency,
                     'impressions' => (int) $row->impressions,
                     'clicks'      => (int) $row->clicks,
-                    'spend'       => round($row->spend / 100, 2),
-                    'revenue'     => round($row->revenue / 100, 2),
+                    'spend'       => round($row->spend, 2),
+                    'revenue'     => round($row->revenue, 2),
                     'ctr'         => (float) $row->ctr,
                     'acos'        => (float) $row->acos,
                 ], $topCampaigns),
@@ -1215,11 +1215,11 @@ class AnalyticsService
 
             $revenueByCurrency  = $revenueByMoneyCol->map(fn($r) => [
                 'currency' => $r->currency,
-                'revenue'  => round($r->total / 100, 2),
+                'revenue'  => round($r->total, 2),
             ])->values()->all();
             $discountByCurrency = $discountByMoneyCol->map(fn($r) => [
                 'currency' => $r->currency,
-                'discount' => round($r->total / 100, 2),
+                'discount' => round($r->total, 2),
             ])->values()->all();
 
             $countryJoin = $countryId ? 'JOIN vendors v ON v.id = fsa.vendor_id' : '';
@@ -1284,14 +1284,14 @@ class AnalyticsService
                     'title'      => $row->title,
                     'currency'   => $row->currency,
                     'units_sold' => (int) $row->units_sold,
-                    'revenue'    => round($row->revenue / 100, 2),
+                    'revenue'    => round($row->revenue, 2),
                     'avg_cvr'    => (float) $row->avg_cvr,
                 ], $topSales),
                 'top_performing_vendors' => array_map(fn($row) => [
                     'store_name' => $row->store_name,
                     'currency'   => $row->currency,
                     'units_sold' => (int) $row->units_sold,
-                    'revenue'    => round($row->revenue / 100, 2),
+                    'revenue'    => round($row->revenue, 2),
                 ], $topVendors),
             ];
         });

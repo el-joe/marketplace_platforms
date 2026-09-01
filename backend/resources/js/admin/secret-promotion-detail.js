@@ -92,7 +92,7 @@ function initChart() {
                             const label = context.dataset.label;
                             const val   = context.parsed.y;
                             return context.datasetIndex === 1
-                                ? `${label}: ${(val / 100).toFixed(2)}`
+                                ? `${label}: ${Number(val).toFixed(2)}`
                                 : `${label}: ${val}`;
                         },
                     },

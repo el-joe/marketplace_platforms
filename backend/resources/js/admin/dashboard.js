@@ -199,7 +199,7 @@ function loadRevenueChart(days, countryId = '') {
                             tooltip: {
                                 callbacks: {
                                     label: ctx =>
-                                        ` ${ctx.dataset.label}: EGP ${new Intl.NumberFormat().format(ctx.raw / 100)
+                                        ` ${ctx.dataset.label}: EGP ${new Intl.NumberFormat().format(ctx.raw)
                                         }`,
                                 },
                             },
@@ -211,8 +211,8 @@ function loadRevenueChart(days, countryId = '') {
                                 ticks: {
                                     callback: v => {
                                         if (v === 0) return '0';
-                                        const k = v / 100 / 1000;
-                                        return k >= 1 ? k.toFixed(0) + 'K' : (v / 100).toFixed(0);
+                                        const k = v / 1000;
+                                        return k >= 1 ? k.toFixed(0) + 'K' : v.toFixed(0);
                                     },
                                 },
                             },
