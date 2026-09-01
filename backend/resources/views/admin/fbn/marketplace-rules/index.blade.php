@@ -97,7 +97,7 @@
                 </div>
                 <div>
                     <label class="label-sm">{{ __('admin.fbn_section.commission_value') }} <span class="text-red-500">*</span></label>
-                    <input type="number" id="rm-commission-value" class="form-input w-full text-sm" min="0" step="0.01"
+                    <input type="number" id="rm-commission-value" class="form-input w-full text-sm" min="0" step="any"
                         placeholder="{{ __('admin.fbn_section.commission_value_placeholder') }}">
                 </div>
 

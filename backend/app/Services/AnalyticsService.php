@@ -686,7 +686,7 @@ class AnalyticsService
                 }
                 $categories[$id]['revenue_by_currency'][] = [
                     'currency' => $row->currency,
-                    'revenue'  => round($row->revenue / 100, 2),
+                    'revenue'  => $row->revenue,
                 ];
             }
 

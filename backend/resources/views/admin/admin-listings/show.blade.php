@@ -354,7 +354,7 @@
                             </div>
                             <div>
                                 <label class="label-sm block mb-1">{{ __('admin.admin_listings.commission_value_required') }}</label>
-                                <input type="number" step="0.01" min="0" x-model.number="shippingForm.commission_value" class="form-input w-full text-sm">
+                                <input type="number" step="any" min="0" x-model.number="shippingForm.commission_value" class="form-input w-full text-sm">
                             </div>
                             <div>
                                 <label class="label-sm block mb-1">{{ __('admin.admin_listings.extra_delivery_fee_cents') }}</label>

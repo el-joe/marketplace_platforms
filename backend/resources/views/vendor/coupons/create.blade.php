@@ -82,7 +82,7 @@
                         {{ __('partner.coupons.create.value') }}
                         <span x-show="type === 'fixed_amount'" class="text-gray-400 font-normal text-xs ml-1">({{ $vendor_currency }})</span>
                     </label>
-                    <input type="number" step="0.01" min="0" name="value" required
+                    <input type="number" step="any" min="0" name="value" required
                            x-bind:placeholder="type === 'bogo' ? '0' : ''"
                            value="{{ $isEdit ? $coupon['value'] : '' }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">

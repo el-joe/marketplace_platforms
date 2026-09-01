@@ -96,7 +96,7 @@
                 <div class="flex gap-3">
                     <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
-                        <input type="number" name="price_display" min="0" step="0.01" required
+                        <input type="number" name="price_display" min="0" step="any" required
                                placeholder="0.00"
                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                         <input type="hidden" name="price" id="price_input">

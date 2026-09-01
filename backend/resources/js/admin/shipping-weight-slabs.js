@@ -246,7 +246,7 @@ function initSlabModal() {
             $('#slab-max-weight').val('');
         }
 
-        $('#slab-fee-display').val((row.extra_fee / 100).toFixed(2));
+        $('#slab-fee-display').val(row.extra_fee);
         $('#slab-fee-input').val(row.extra_fee);
         $('#slab-currency-label').text(currencyForCountry(row.country_id));
 

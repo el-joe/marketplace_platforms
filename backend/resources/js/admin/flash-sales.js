@@ -422,8 +422,8 @@ $(function () {
                             labels,
                             datasets: [
                                 { label: t('admin.flash_sales.historical_price_label'), data: prices, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.3, pointRadius: 2 },
-                                { label: t('admin.flash_sales.flash_price_label'), data: Array(labels.length).fill(flashPrice / 100), borderColor: '#f59e0b', borderDash: [4, 4], pointRadius: 0 },
-                                { label: t('admin.flash_sales.original_price_label'), data: Array(labels.length).fill(originalPrice / 100), borderColor: '#6b7280', borderDash: [2, 4], pointRadius: 0 },
+                                { label: t('admin.flash_sales.flash_price_label'), data: Array(labels.length).fill(flashPrice), borderColor: '#f59e0b', borderDash: [4, 4], pointRadius: 0 },
+                                { label: t('admin.flash_sales.original_price_label'), data: Array(labels.length).fill(originalPrice), borderColor: '#6b7280', borderDash: [2, 4], pointRadius: 0 },
                             ],
                         },
                         options: {
@@ -581,7 +581,7 @@ $(function () {
                             labels: byDay.map(d => d.date),
                             datasets: [
                                 { label: t('admin.flash_sales.gross_revenue_label'), data: byDay.map(d => d.gross_revenue ?? 0), backgroundColor: 'rgba(99,102,241,0.7)', yAxisID: 'y' },
-                                { label: t('admin.flash_sales.discount_label'), data: byDay.map(d => (d.discount_given ?? 0) / 100), backgroundColor: 'rgba(245,158,11,0.7)', yAxisID: 'y' },
+                                { label: t('admin.flash_sales.discount_label'), data: byDay.map(d => d.discount_given ?? 0), backgroundColor: 'rgba(245,158,11,0.7)', yAxisID: 'y' },
                                 { label: t('admin.flash_sales.units_sold_label'), data: byDay.map(d => d.units_sold ?? 0), type: 'line', borderColor: '#10b981', backgroundColor: 'transparent', yAxisID: 'y2', tension: 0.3 },
                             ],
                         },

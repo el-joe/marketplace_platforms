@@ -99,7 +99,7 @@ class UpdateVendorMetricsJob implements ShouldQueue
         $activeStrikes = $vendor->activeStrikes()->count();
 
         $vendor->updateQuietly([
-            'total_sales' => round($orderMetrics->gmv / 100, 2), // stored in cents
+            'total_sales' => $orderMetrics->gmv,
             'total_orders' => $totalOrders,
             'return_rate_pct' => $returnRatePct,
             'cancellation_rate_pct' => $cancellationRatePct,
