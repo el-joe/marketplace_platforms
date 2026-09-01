@@ -20,6 +20,7 @@ export default async function Shop({
   categoryName,
   totalCount,
 }: Props) {
+  
   return (
     <>
       {pageBuilderData?.sections.map((e) => (
