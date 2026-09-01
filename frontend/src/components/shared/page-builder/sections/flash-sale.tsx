@@ -82,7 +82,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
           <h4 className="line-clamp-2">
             {locale === "ar" ? p.name_ar : p.name_en}
           </h4>
-          <Price currency={p.currency} currentPrice={p.price / 100} />
+          <Price currency={p.currency} currentPrice={p.price} />
         </div>
       </div>
       <div className="text-center bg-black text-white">

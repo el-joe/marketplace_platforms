@@ -83,7 +83,7 @@ export default function BoughtTogether({
                   className="text-center"
                 >
                   <Price
-                    currentPrice={product.price / 100}
+                    currentPrice={product.price}
                     currency={product.currency}
                   />
                   <p className="text-sm text-gray text-center line-clamp-2">
@@ -120,7 +120,7 @@ export default function BoughtTogether({
         {isMutating && Array.isArray(targetItemMutating) && <Spinner />}
         {t("buy")} {selectedItems.length} {t("togetherFor")}{" "}
         <Price
-          currentPrice={selectedItems.reduce((p, c) => (p += c.price), 0) / 100}
+          currentPrice={selectedItems.reduce((p, c) => (p += c.price), 0)}
           currency={boughtTogetherData?.currency}
         />
       </Button>

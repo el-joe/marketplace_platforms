@@ -1,6 +1,5 @@
 "use client";
 import Price from "@/src/components/shared/Price";
-import { currencySymbols } from "@/src/helpers/get-currency-symbol";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { useTranslations } from "next-intl";
 
@@ -19,7 +18,7 @@ export default function OrderSummary() {
       <div className="flex justify-between mb-3">
         <p className=" text-gray">{t("subtotal")}</p>
         <Price
-          currentPrice={(cart?.cart.summary?.subtotal ?? 0) / 100}
+          currentPrice={cart?.cart.summary?.subtotal ?? 0}
           size="xs"
           currency={cart?.cart?.currency}
         />
@@ -28,7 +27,7 @@ export default function OrderSummary() {
       <div className="flex justify-between mb-3">
         <p className=" text-gray">{t("shippingFee")}</p>
         <Price
-          currentPrice={(cart?.cart.summary.estimated_shipping ?? 0) / 100}
+          currentPrice={cart?.cart.summary.estimated_shipping ?? 0}
           size="xs"
           currency={cart?.cart?.currency}
           className="font-normal text-gray"
@@ -39,7 +38,7 @@ export default function OrderSummary() {
         <div className="flex justify-between mb-3 text-green">
           <p className=" text-green">{t("discount")}</p>
           <Price
-            currentPrice={(cart?.cart?.summary?.discount ?? 0) / 100}
+            currentPrice={cart?.cart?.summary?.discount ?? 0}
             currency={cart?.cart?.currency}
             size="xs"
             className="text-green"
@@ -50,7 +49,7 @@ export default function OrderSummary() {
       <div className="flex justify-between pb-4 border-b border-border border-dashed mb-4">
         <p className=" text-gray">{t("tax")}</p>
         <Price
-          currentPrice={(cart?.cart.summary.estimated_tax ?? 0) / 100}
+          currentPrice={cart?.cart.summary.estimated_tax ?? 0}
           size="xs"
           currency={cart?.cart?.currency}
           className="font-normal text-gray"
@@ -60,7 +59,7 @@ export default function OrderSummary() {
       <div className="flex justify-between">
         <p className=" text-lg font-bold">{t("total")}</p>
         <Price
-          currentPrice={(cart?.cart.summary.estimated_total ?? 0) / 100}
+          currentPrice={cart?.cart.summary.estimated_total ?? 0}
           currency={cart?.cart?.currency}
         />
       </div>

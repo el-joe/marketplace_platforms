@@ -34,7 +34,7 @@ const MegaDealsCard = ({ data }: { data: Product }) => {
         <h4 className="text-xs xl:text-sm line-clamp-2 mb-1">
           {locale === "ar" ? data?.name_ar : data?.name_en}
         </h4>
-        <Price currentPrice={data?.price / 100} currency={data?.currency} />
+        <Price currentPrice={data?.price} currency={data?.currency} />
       </Link>
     </div>
   );
