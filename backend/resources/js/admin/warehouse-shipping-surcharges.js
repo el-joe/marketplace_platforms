@@ -30,7 +30,7 @@ function toast(message, type = 'success') {
 function toCents(value) {
     const parsed = parseFloat(value);
     if (isNaN(parsed) || parsed < 0) return 0;
-    return Math.round(parsed * 100);
+    return Math.round(parsed);
 }
 
 function updateUrl(template, id) {
@@ -102,7 +102,7 @@ function initSurchargeModal() {
         $form[0].reset();
         $('#surcharge-id').val(data.id);
         $form.find('[name="warehouse_id"]').val(data.warehouse_id).trigger('change');
-        $('#surcharge-amount-display').val((data.extra_amount_cents / 100).toFixed(2));
+        $('#surcharge-amount-display').val(data.extra_amount_cents);
 
         $modal.modal('open');
     });

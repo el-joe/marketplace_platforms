@@ -44,7 +44,7 @@ class UpdateWarehouseRequest extends FormRequest
     {
         if ($this->filled('storage_rate_per_m3_price')) {
             $this->merge([
-                'storage_rate_per_m3_price' => (int) round((float) $this->storage_rate_per_m3_price * 100),
+                'storage_rate_per_m3_price' => (int) round((float) $this->storage_rate_per_m3_price),
             ]);
         }
 

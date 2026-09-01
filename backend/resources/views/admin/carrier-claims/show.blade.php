@@ -148,8 +148,8 @@
 
                         <div class="mb-3">
                             <label class="label">{{ __('admin.carriers_section.compensation_amount') }}</label>
-                            <input type="number" name="compensated_amount" step="0.01" min="0"
-                                   placeholder="0.00" class="input w-full"
+                            <input type="number" name="compensated_amount" step="1" min="0"
+                                   placeholder="0" class="input w-full"
                                    value="{{ old('compensated_amount') }}">
                             <p class="text-xs text-gray-500 mt-1">{{ __('admin.carriers_section.compensation_hint') }}</p>
                         </div>

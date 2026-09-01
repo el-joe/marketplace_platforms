@@ -477,9 +477,9 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
                     this.form.competitor_links.splice(idx, 1);
                 },
 
-                centsToCurrency(cents, currencyCode) {
-                    if (cents === null || cents === undefined || cents === '' || isNaN(cents)) return '';
-                    return (parseInt(cents) / 100).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (currencyCode || '');
+                centsToCurrency(amount, currencyCode) {
+                    if (amount === null || amount === undefined || amount === '' || isNaN(amount)) return '';
+                    return parseInt(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (currencyCode || '');
                 },
 
                 formatAmount(amount, currencyCode) {

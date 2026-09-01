@@ -41,7 +41,7 @@ class WarehouseShippingSurchargeController extends Controller
                 'id' => $surcharge->id,
                 'warehouse' => $surcharge->warehouse?->name,
                 'warehouse_code' => $surcharge->warehouse?->code,
-                'extra_amount' => number_format($surcharge->extra_amount_cents / 100, 2),
+                'extra_amount' => number_format($surcharge->extra_amount_cents, 2),
                 'is_active' => $surcharge->is_active,
                 'actions' => [
                     'id' => $surcharge->id,

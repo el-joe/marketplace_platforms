@@ -64,7 +64,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.wallets.amount') }} ({{ $wallet->currency }})</label>
-                <input type="number" name="amount" min="0.01" step="0.01" required class="form-input text-sm rounded-lg border-gray-300 w-36" placeholder="0.00">
+                <input type="number" name="amount" min="1" step="1" required class="form-input text-sm rounded-lg border-gray-300 w-36" placeholder="0">
             </div>
             <div class="flex-1 min-w-48">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.wallets.description') }}</label>

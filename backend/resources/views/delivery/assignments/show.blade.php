@@ -328,12 +328,12 @@
                 _toastTimer: null,
                 isCod: @json($isCod),
                 expectedCodCents: @json($expectedCodCents),
-                codAmountCollected: @json($isCod ? number_format($expectedCodCents, 2) : 'null'),
+                codAmountCollected: @json($isCod ? $expectedCodCents : null),
                 discrepancyNote: '',
                 get showDiscrepancyNote() {
                     if (!this.isCod || !this.codAmountCollected) return false;
-                    const collectedCents = Math.round(parseFloat(this.codAmountCollected) * 100);
-                    const diff = Math.abs(collectedCents - this.expectedCodCents);
+                    const collected = Math.round(parseFloat(this.codAmountCollected));
+                    const diff = Math.abs(collected - this.expectedCodCents);
                     const pct = this.expectedCodCents > 0 ? diff / this.expectedCodCents : 0;
                     return diff > 5 && pct > 0.05;
                 },
@@ -419,9 +419,8 @@
                     if (loc.longitude) form.append('longitude', loc.longitude);
                     if (this.proofFile) form.append('proof_image', this.proofFile);
                     if (this.isCod && this.codAmountCollected) {
-                        // Convert display value (e.g. 125.50) to cents integer
-                        const cents = Math.round(parseFloat(this.codAmountCollected) * 100);
-                        form.append('cod_amount_collected', cents);
+                        const amount = Math.round(parseFloat(this.codAmountCollected));
+                        form.append('cod_amount_collected', amount);
                     }
                     if (this.discrepancyNote.trim()) {
                         form.append('discrepancy_note', this.discrepancyNote.trim());

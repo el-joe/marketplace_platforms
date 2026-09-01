@@ -174,7 +174,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1"><span id="wiz-bid-label">{{ __('partner.ads.click_bid') }} ({{ $vendorCurrency }})</span> <span class="text-red-500">*</span></label>
-                        <input type="number" id="wiz-bid" min="0.01" step="0.01" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="{{ __('partner.ads.example_050') }}">
+                        <input type="number" id="wiz-bid" min="1" step="1" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500" placeholder="{{ __('partner.ads.example_050') }}">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>

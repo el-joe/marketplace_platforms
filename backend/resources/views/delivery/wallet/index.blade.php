@@ -29,8 +29,8 @@
             @csrf
             <div>
                 <label class="block text-xs text-slate-400 mb-1">{{ __('delivery.wallet.amount') }} ({{ $wallet->currency }})</label>
-                <input type="number" name="amount" min="1" step="0.01" required max="{{ $wallet->balance }}"
-                       class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500" placeholder="0.00">
+                <input type="number" name="amount" min="1" step="1" required max="{{ $wallet->balance }}"
+                       class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500" placeholder="0">
             </div>
             <div>
                 <label class="block text-xs text-slate-400 mb-1">{{ __('delivery.wallet.bank_name') }}</label>

@@ -55,9 +55,9 @@
                         <label class="label" for="claimed_amount">{{ __('partner.claims.claimed_amount_label') }}</label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{{ auth()->guard('vendor')->user()->vendor?->country?->currency_code ?? '' }}</span>
-                            <input type="number" name="claimed_amount" id="claimed_amount" step="0.01" min="0.01" required
+                            <input type="number" name="claimed_amount" id="claimed_amount" step="1" min="1" required
                                    class="input w-full pl-12 @error('claimed_amount') input-error @enderror"
-                                   value="{{ old('claimed_amount') }}" placeholder="0.00">
+                                   value="{{ old('claimed_amount') }}" placeholder="0">
                         </div>
                         @error('claimed_amount')<p class="form-error">{{ $message }}</p>@enderror
                     </div>

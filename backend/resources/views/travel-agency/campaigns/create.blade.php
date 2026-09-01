@@ -244,9 +244,9 @@
                                 <div class="relative">
                                     <input type="number" id="budget_per_marketer_display" name="budget_per_marketer_display"
                                            value="{{ old('budget_per_marketer_display') }}"
-                                           min="0" step="0.01"
+                                           min="0" step="1"
                                            class="w-full rounded-lg border border-gray-300 ps-3 pe-14 py-2.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                           placeholder="0.00">
+                                           placeholder="0">
                                     <span class="absolute inset-y-0 end-3 flex items-center text-gray-400 text-sm">{{ __('common.sar') }}</span>
                                 </div>
                             </div>
@@ -257,9 +257,9 @@
                                 <div class="relative">
                                     <input type="number" id="total_budget_display" name="total_budget_display"
                                            value="{{ old('total_budget_display') }}"
-                                           min="0" step="0.01"
+                                           min="0" step="1"
                                            class="w-full rounded-lg border border-gray-300 ps-3 pe-14 py-2.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                           placeholder="0.00">
+                                           placeholder="0">
                                     <span class="absolute inset-y-0 end-3 flex items-center text-gray-400 text-sm">{{ __('common.sar') }}</span>
                                 </div>
                             </div>

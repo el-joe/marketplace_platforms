@@ -491,7 +491,7 @@
                                     <tr class="hover:bg-gray-50/50">
                                         <td class="py-3 pr-4">{{ $surcharge->city?->name_en }}</td>
                                         <td class="py-3 pr-4 text-gray-600">{{ $surcharge->city?->country?->name_en }}</td>
-                                        <td class="py-3 pr-4 tabular-nums">{{ number_format($surcharge->extra_amount_cents / 100, 2) }}</td>
+                                        <td class="py-3 pr-4 tabular-nums">{{ number_format($surcharge->extra_amount_cents, 2) }}</td>
                                         <td class="py-3">
                                             <x-badge :color="$surcharge->is_active ? 'success' : 'gray'">
                                                 {{ $surcharge->is_active ? __('admin.vendors.active') : __('admin.vendors.inactive') }}

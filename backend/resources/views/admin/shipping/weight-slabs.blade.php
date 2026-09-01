@@ -140,7 +140,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.weight_slabs.extra_fee') }} <span class="text-danger-500">*</span></label>
                     <div class="flex gap-2">
-                        <input type="number" id="slab-fee-display" step="0.01" min="0" placeholder="0.00"
+                        <input type="number" id="slab-fee-display" step="1" min="0" placeholder="0"
                                class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                         <span id="slab-currency-label" class="inline-flex items-center px-3 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-500">—</span>
                     </div>

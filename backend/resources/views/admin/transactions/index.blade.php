@@ -125,12 +125,12 @@ Object.assign(window.TRANSLATIONS, {
             </div>
             <div class="w-36">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.transactions.amount_min') }}</label>
-                <input type="number" step="0.01" min="0" id="filter-amount-min" class="form-input w-full text-sm"
+                <input type="number" step="1" min="0" id="filter-amount-min" class="form-input w-full text-sm"
                     placeholder="0.00" dir="ltr">
             </div>
             <div class="w-36">
                 <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.transactions.amount_max') }}</label>
-                <input type="number" step="0.01" min="0" id="filter-amount-max" class="form-input w-full text-sm"
+                <input type="number" step="1" min="0" id="filter-amount-max" class="form-input w-full text-sm"
                     placeholder="9999.00" dir="ltr">
             </div>
             <div class="w-36">

@@ -80,10 +80,10 @@
                 type="number"
                 name="base_rate_display"
                 value="{{ old('base_rate_display', $baseRateDisplay) }}"
-                step="0.01"
+                step="1"
                 min="0"
                 class="form-input w-full @error('base_rate_display') border-red-400 @enderror"
-                placeholder="0.00"
+                placeholder="0"
                 required>
             @error('base_rate_display')
                 <p class="text-xs text-red-500 mt-1">{{ $message }}</p>

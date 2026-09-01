@@ -15,10 +15,9 @@ $warehouse — Warehouse model (edit mode only)
 
     $val = fn($field, $default = '') => old($field, $isEdit ? ($warehouse->{$field} ?? $default) : $default);
 
-    // Storage rate is stored in cents; display as decimal
     $storageRateDisplay = old('storage_rate_per_m3_price') !== null
         ? old('storage_rate_per_m3_price')
-        : ($isEdit && $warehouse->storage_rate_per_m3_price ? number_format($warehouse->storage_rate_per_m3_price , 2, '.', '') : '');
+        : ($isEdit && $warehouse->storage_rate_per_m3_price ? (int) $warehouse->storage_rate_per_m3_price : '');
 
     $typeOptions = [
         'platform_fbn' => __('admin.warehouses_section.platform_fbn_full'),
@@ -133,7 +132,7 @@ $warehouse — Warehouse model (edit mode only)
 
                     <div class="grid grid-cols-2 gap-4">
                         <x-form-input name="storage_rate_per_m3_price" label="{{ __('admin.warehouses_section.storage_rate_per_m3') }}" type="number"
-                            :value="$storageRateDisplay" placeholder="0.00" step="0.01" min="0"
+                            :value="$storageRateDisplay" placeholder="0" step="1" min="0"
                             hint="{{ __('admin.warehouses_section.storage_rate_hint') }}" />
                         <x-form-input name="storage_currency" label="{{ __('admin.warehouses_section.currency_iso') }}" type="text"
                             :value="$val('storage_currency', 'EGP')" placeholder="EGP" maxlength="3"
