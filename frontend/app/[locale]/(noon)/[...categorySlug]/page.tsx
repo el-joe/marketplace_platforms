@@ -32,7 +32,8 @@ export default async function ShopPage({ params, searchParams }: Props) {
 
   try {
     const queryParams = new URLSearchParams();
-    if (categorySlug) queryParams.set("category", categorySlug?.[0]);
+    if (categorySlug && !isSearch)
+      queryParams.set("category", categorySlug?.[0]);
     Object.entries(sp).forEach(([key, value]) => {
       if (value && !key.startsWith(`${FILTER_PREFIX}_`)) {
         queryParams.set(key, value);
@@ -52,13 +53,14 @@ export default async function ShopPage({ params, searchParams }: Props) {
     }
 
     const query = queryParams.toString();
+
     const res = await fetchInstance<ShopResponse>(
       `${endpoint}${query ? `?${query}` : ""}`,
     );
 
+    products = res.data?.items ?? [];
     pageBuilderData = res?.data?.page_builder;
     facets = res.data?.facets;
-    products = res.data?.items ?? [];
     totalPages = res.data?.meta?.last_page ?? TOTAL_PAGES;
     totalCount = res.data?.meta?.total ?? products.length;
   } catch {
