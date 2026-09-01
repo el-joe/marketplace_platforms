@@ -1,4 +1,5 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
+import { Warranty } from "@/src/features/noon/productView/types/product-details";
 
 export interface ICart {
   cart: Cart;
@@ -44,6 +45,8 @@ export interface CartItem {
   price_changed: boolean;
   selected_shipping_method: null;
   applicable_coupons: ApplicableCoupon[];
+  warranty_plan_id: string | null;
+  available_warranty_plans: Warranty[];
 }
 
 export interface ApplicableCoupon {

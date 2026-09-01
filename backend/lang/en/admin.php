@@ -1851,6 +1851,7 @@ return [
         'delete_confirm'                 => 'Are you sure you want to delete this warranty plan?',
         'delete_title'                   => 'Delete Warranty Plan',
         'toggle_failed'                  => 'Failed to update plan status.',
+        'image'                          => 'Plan Image',
         'category'                       => 'Category',
         'duration_months'                => 'Duration (months)',
         'duration_hint'                  => 'e.g. 6 = six months, 12 = one year',
