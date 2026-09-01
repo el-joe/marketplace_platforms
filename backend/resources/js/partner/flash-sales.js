@@ -171,8 +171,8 @@ function initSubmitForm() {
         const maxPerCustomer = parseInt(document.getElementById('input-max-per-customer')?.value || '0', 10);
         const payload = {
             vendor_listing_id: listingSel.value,
-            flash_price: Math.round(flash * 100),   // convert to cents
-            original_price: Math.round(orig * 100),    // convert to cents
+            flash_price: Math.round(flash),
+            original_price: Math.round(orig),
             max_quantity_total: qty,
             max_quantity_per_customer: maxPerCustomer > 0 ? maxPerCustomer : null,
             vendor_notes: document.getElementById('input-vendor-notes')?.value || null,
