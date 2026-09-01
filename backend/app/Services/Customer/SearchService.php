@@ -115,18 +115,17 @@ class SearchService
             ->whereNull('p.deleted_at')
             ->select('admin_listings.*');
 
-        if (mb_strlen($query) < 3) {
-            $builder->where(function ($q2) use ($query) {
-                $q2->where('p.name_en', 'like', "%{$query}%")
-                    ->orWhere('p.name_ar', 'like', "%{$query}%");
+        // Per-word AND search: each token must appear in at least one of the name columns.
+        // Avoids FULLTEXT min-token-size issues with short numbers like "15", "S23", etc.
+        $tokens = preg_split('/\s+/', mb_strtolower(trim($query)), -1, PREG_SPLIT_NO_EMPTY);
+        foreach ($tokens as $token) {
+            $pattern = '%' . addcslashes($token, '%_\\') . '%';
+            $builder->where(function ($q2) use ($pattern) {
+                $q2->where('p.name_en', 'like', $pattern)
+                    ->orWhere('p.name_ar', 'like', $pattern)
+                    ->orWhere('p.short_desc_en', 'like', $pattern)
+                    ->orWhere('p.model_number', 'like', $pattern);
             });
-        } else {
-            $terms = preg_split('/\s+/', trim($query), -1, PREG_SPLIT_NO_EMPTY);
-            $boolean = implode(' ', array_map(fn ($term) => '+' . $term . '*', $terms));
-            $builder->whereRaw(
-                'MATCH(p.name_en, p.name_ar, p.short_desc_en, p.model_number) AGAINST (? IN BOOLEAN MODE)',
-                [$boolean],
-            );
         }
 
         return $builder
@@ -194,9 +193,12 @@ class SearchService
             ->where('p.status', 'active')
             ->whereNull('p.deleted_at')
             ->where('v.global_status', 'active')
-            ->where(function ($q) use ($prefix) {
+            ->where(function ($q) use ($prefix, $query) {
+                $contains = '%' . Str::lower(trim($query)) . '%';
                 $q->whereRaw('LOWER(p.name_en) like ?', [$prefix])
-                    ->orWhereRaw('LOWER(p.name_ar) like ?', [$prefix]);
+                    ->orWhereRaw('LOWER(p.name_ar) like ?', [$prefix])
+                    ->orWhereRaw('LOWER(p.name_en) like ?', [$contains])
+                    ->orWhereRaw('LOWER(p.name_ar) like ?', [$contains]);
             })
             ->select([
                 'vl.id as listing_id',

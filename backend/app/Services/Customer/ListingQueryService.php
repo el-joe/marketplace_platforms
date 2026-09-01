@@ -66,32 +66,30 @@ class ListingQueryService
             ->where('v.global_status', VendorGlobalStatus::Active->value)
             ->select('vendor_listings.*');
 
-        if (mb_strlen($query) < 3) {
-            return $builder->where(function ($q2) use ($query) {
-                $q2->where('p.name_en', 'like', "%{$query}%")
-                    ->orWhere('p.name_ar', 'like', "%{$query}%")
-                    ->orWhere('p.short_desc_en', 'like', "%{$query}%")
-                    ->orWhere('p.model_number', 'like', "%{$query}%");
-            });
-        }
-
-        $boolean = $this->toBooleanModeQuery($query);
-
-        return $builder->whereRaw(
-            'MATCH(p.name_en, p.name_ar, p.short_desc_en, p.model_number) AGAINST (? IN BOOLEAN MODE)',
-            [$boolean],
-        );
+        return $builder->where(function ($q) use ($query) {
+            $this->applyTextSearch($q, $query);
+        });
     }
 
     /**
-     * Turn a free-text query into a MySQL BOOLEAN MODE fulltext expression:
-     * every term becomes a required (+) prefix (*) match.
+     * Apply a multi-word text search against product name/description fields.
+     * Each token must appear (AND across tokens) in at least one of the
+     * searched columns (OR across columns). Avoids the FULLTEXT
+     * innodb_ft_min_token_size pitfall for short tokens like "15".
      */
-    private function toBooleanModeQuery(string $query): string
+    private function applyTextSearch($builder, string $query): void
     {
-        $terms = preg_split('/\s+/', trim($query), -1, PREG_SPLIT_NO_EMPTY);
+        $tokens = preg_split('/\s+/', mb_strtolower(trim($query)), -1, PREG_SPLIT_NO_EMPTY);
 
-        return implode(' ', array_map(fn ($term) => '+' . $term . '*', $terms));
+        foreach ($tokens as $token) {
+            $pattern = '%' . addcslashes($token, '%_\\') . '%';
+            $builder->where(function ($q) use ($pattern) {
+                $q->where('p.name_en', 'like', $pattern)
+                    ->orWhere('p.name_ar', 'like', $pattern)
+                    ->orWhere('p.short_desc_en', 'like', $pattern)
+                    ->orWhere('p.model_number', 'like', $pattern);
+            });
+        }
     }
 
     /**
