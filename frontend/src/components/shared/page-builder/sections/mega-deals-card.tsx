@@ -17,7 +17,7 @@ const MegaDealsCard = ({ data }: { data: Product }) => {
         </div>
         {/* image */}
         <Image
-          src={data?.thumbnail}
+          src={data?.thumbnail || "/images/no-image-available-icon.jpg"}
           alt={data?.name_en}
           width={900}
           height={600}

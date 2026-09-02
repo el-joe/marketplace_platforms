@@ -58,7 +58,7 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
                 )}
               >
                 <Image
-                  src={i.image_url}
+                  src={i.image_url || "/images/no-image-available-icon.jpg"}
                   alt="category"
                   width={2400}
                   height={400}

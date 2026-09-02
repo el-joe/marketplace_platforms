@@ -25,7 +25,11 @@ const SpotlightCard = ({ data }: { data: Product }) => {
         <AddToCartButton listingId={data?.listing_id} size="sm" />
         {/* image */}
         <Image
-          src={data?.primary_image}
+          src={
+            data?.primary_image ||
+            data?.thumbnail ||
+            "/images/no-image-available-icon.jpg"
+          }
           alt={locale === "ar" ? data.name_ar : data?.name_en}
           width={400}
           height={700}
@@ -37,11 +41,7 @@ const SpotlightCard = ({ data }: { data: Product }) => {
         <h3 className="text-sm lg:text-base line-clamp-2">
           {locale === "ar" ? data.name_ar : data?.name_en}
         </h3>
-        <Price
-          currentPrice={data.price}
-          currency={data?.currency}
-          size="lg"
-        />
+        <Price currentPrice={data.price} currency={data?.currency} size="lg" />
       </div>
     </Link>
   );

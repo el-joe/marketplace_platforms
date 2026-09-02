@@ -92,7 +92,7 @@ export default function ProductImagesPreview({ product }: Props) {
               className="select-none md:h-[calc(100vh-260px)]! max-h-200"
             >
               <Image
-                src={image.url}
+                src={image.url || "/images/no-image-available-icon.jpg"}
                 alt=""
                 width={400}
                 height={450}
@@ -120,7 +120,7 @@ export default function ProductImagesPreview({ product }: Props) {
               className="w-fit! h-24! cursor-pointer opacity-45 border-2 rounded-lg overflow-hidden"
             >
               <Image
-                src={image.url}
+                src={image.url || "/images/no-image-available-icon.jpg"}
                 alt=""
                 width={92}
                 height={120}

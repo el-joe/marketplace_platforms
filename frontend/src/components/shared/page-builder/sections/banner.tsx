@@ -21,7 +21,11 @@ export const Banner = ({ data }: { data: Block }) => {
           srcSet={data.banner?.mobile_image_url || ""}
         />
         <Image
-          src={data.banner?.image_url || data.banner?.mobile_image_url || ""}
+          src={
+            data.banner?.image_url ||
+            data.banner?.mobile_image_url ||
+            "/images/no-image-available-icon.jpg"
+          }
           alt={data?.banner?.alt_text.en || ""}
           className={"object-cover responsive-ratio h-full max-h-100"}
           // style={

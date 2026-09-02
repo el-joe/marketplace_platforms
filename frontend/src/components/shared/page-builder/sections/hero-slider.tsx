@@ -25,7 +25,7 @@ export default function HeroSlider({ data }: Props) {
     const inner = (
       <div className="relative w-full h-12 md:h-14">
         <Image
-          src={imageUrl}
+          src={imageUrl || "/images/no-image-available-icon.jpg"}
           alt="Announcement"
           fill
           className="object-cover object-center"
@@ -71,7 +71,7 @@ export default function HeroSlider({ data }: Props) {
       breakpoints={{ 768: { spaceBetween: 0, slidesPerView: 1 } }}
     >
       {data?.slides?.map((banner) => (
-        <SwiperSlide key={banner.title[locale]} className="h-auto! max-h-100">
+        <SwiperSlide key={banner.id} className="h-auto! max-h-100">
           <Link
             href={banner?.cta_url || "#"}
             className="block relative h-full"
@@ -80,15 +80,21 @@ export default function HeroSlider({ data }: Props) {
             <picture>
               <source
                 media="(min-width: 768px)"
-                srcSet={banner?.desktop_url || ""}
+                srcSet={
+                  banner?.desktop_url || "/images/no-image-available-icon.jpg"
+                }
               />
               <source
                 media="(max-width: 767px)"
-                srcSet={banner?.mobile_url || ""}
+                srcSet={
+                  banner?.mobile_url || "/images/no-image-available-icon.jpg"
+                }
               />
               <Image
                 src={
-                  data.banner?.image_url || data.banner?.mobile_image_url || ""
+                  data.banner?.image_url ||
+                  data.banner?.mobile_image_url ||
+                  "/images/no-image-available-icon.jpg"
                 }
                 alt={banner?.title[locale] || ""}
                 className={"object-cover responsive-ratio h-full max-h-100"}

@@ -26,7 +26,9 @@ export default function BookingCard({ booking }: Props) {
     <Card className="overflow-hidden flex flex-col shadow-sm border border-border">
       <div className="relative h-52">
         <Image
-          src={booking.package.cover_image}
+          src={
+            booking.package.cover_image || "/images/no-image-available-icon.jpg"
+          }
           alt={booking.package.title?.[locale]}
           fill
           sizes="(max-width: 768px) 100vw, 400px"

@@ -35,7 +35,7 @@ export default function ImagesGrid({ data }: { data: Block }) {
                 key={i}
               >
                 <Image
-                  src={item?.image_url}
+                  src={item?.image_url || "/images/no-image-available-icon.jpg"}
                   alt=""
                   width={1200}
                   height={800}
@@ -57,7 +57,7 @@ export default function ImagesGrid({ data }: { data: Block }) {
                 key={i}
               >
                 <Image
-                  src={item?.url}
+                  src={item?.url || "/images/no-image-available-icon.jpg"}
                   alt=""
                   width={1200}
                   height={800}

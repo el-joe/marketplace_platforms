@@ -46,7 +46,7 @@ export default function HeroGallery({
             <SwiperSlide key={image.id}>
               <div className="relative w-full h-full">
                 <Image
-                  src={image.url}
+                  src={image.url || "/images/no-image-available-icon.jpg"}
                   alt={`${destination} ${i + 1}`}
                   fill
                   priority={i === 0}

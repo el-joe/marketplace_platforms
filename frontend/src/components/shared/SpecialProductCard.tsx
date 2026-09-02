@@ -38,7 +38,7 @@ const SpecialProductCard = ({ productData }: Props) => {
 
         {imageUrl ? (
           <Image
-            src={imageUrl}
+            src={imageUrl || "/images/no-image-available-icon.jpg"}
             alt={locale === "ar" ? productData.name_ar : productData.name_en}
             fill
             className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"

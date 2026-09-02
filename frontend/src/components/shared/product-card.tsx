@@ -130,7 +130,7 @@ const ProductCard = ({ productData }: Props) => {
               className="flex! justify-center! items-center!"
             >
               <Image
-                src={image.url}
+                src={image?.url || "/images/no-image-available-icon.jpg"}
                 alt={image?.alt[locale] as string}
                 width={500}
                 height={600}
