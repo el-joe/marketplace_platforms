@@ -292,6 +292,11 @@ return [
             'featured_badge'           => 'مميز',
             'add_badge'                => 'إضافة',
             'saving_ellipsis'          => 'جارٍ الحفظ…',
+            'made_visible'             => 'الفئة أصبحت مرئية الآن.',
+            'made_hidden'              => 'الفئة أصبحت مخفية الآن.',
+            'toggle_visible_failed'    => 'فشل تحديث حالة الظهور.',
+            'visible_label'            => 'مرئي',
+            'hidden_label'             => 'مخفي',
         ],
 
         'cities' => [

@@ -263,12 +263,26 @@ function initVisibleToggle() {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': csrfToken() },
         }).done(function (res) {
-            window.Toast?.success(res.is_visible
-                ? (t('admin.categories.made_visible') || 'Category is now visible')
-                : (t('admin.categories.made_hidden') || 'Category is now hidden'));
-            setTimeout(function () { window.location.reload(); }, 700);
+            const isVisible = res.is_visible;
+            btn.dataset.visible = isVisible ? '1' : '0';
+
+            btn.querySelector('.visible-icon-on')?.classList.toggle('hidden', !isVisible);
+            btn.querySelector('.visible-icon-off')?.classList.toggle('hidden', isVisible);
+
+            const span = btn.querySelector('span');
+            if (span) span.textContent = isVisible ? t('admin.categories.visible_label') : t('admin.categories.hidden_label');
+
+            if (isVisible) {
+                btn.classList.remove('bg-amber-100', 'text-amber-700', 'hover:bg-green-50', 'hover:text-green-600');
+                btn.classList.add('bg-green-100', 'text-green-700', 'hover:bg-red-50', 'hover:text-red-600');
+            } else {
+                btn.classList.remove('bg-green-100', 'text-green-700', 'hover:bg-red-50', 'hover:text-red-600');
+                btn.classList.add('bg-amber-100', 'text-amber-700', 'hover:bg-green-50', 'hover:text-green-600');
+            }
+
+            window.Toast?.success(isVisible ? t('admin.categories.made_visible') : t('admin.categories.made_hidden'));
         }).fail(function (xhr) {
-            window.Toast?.error(xhr.responseJSON?.message || 'Failed to update visibility');
+            window.Toast?.error(xhr.responseJSON?.message || t('admin.categories.toggle_visible_failed'));
         });
     });
 }

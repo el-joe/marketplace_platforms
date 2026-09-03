@@ -80,7 +80,8 @@
                 data-id="{{ $category->id }}"
                 data-visible="{{ $category->is_visible ? '1' : '0' }}"
                 data-url="{{ route('admin.categories.toggle-visible', $category->id) }}">
-                <x-heroicon name="{{ $category->is_visible ? 'eye' : 'eye-slash' }}" class="w-3.5 h-3.5" />
+                <x-heroicon name="eye" class="visible-icon-on w-3.5 h-3.5 {{ $category->is_visible ? '' : 'hidden' }}" />
+                <x-heroicon name="eye-slash" class="visible-icon-off w-3.5 h-3.5 {{ $category->is_visible ? 'hidden' : '' }}" />
                 <span>{{ $category->is_visible ? __('common.visible') : __('admin.categories.hidden') }}</span>
             </button>
         @else
