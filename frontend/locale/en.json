@@ -44,7 +44,9 @@
       "getPickupPointMessage": "Get it delivered free at your preferred time and location. No minimum order size."
     },
     "categoriesNav": {
-      "topBrands": "Top Brands"
+      "topBrands": "Top Brands",
+      "openSouq": "Open Souq",
+      "travel": "Travel"
     }
   },
   "authDialog": {
@@ -746,7 +748,9 @@
         "privacyPolicy": "Privacy Policy"
       },
       "categoriesNav": {
-        "topBrands": "Top Brands"
+        "topBrands": "Top Brands",
+        "openSouq": "Open Souq",
+        "travel": "Travel"
       }
     },
     "mobileNav": {

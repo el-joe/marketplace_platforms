@@ -37,7 +37,9 @@
       "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب."
     },
     "categoriesNav": {
-      "topBrands": "أفضل العلامات التجارية"
+      "topBrands": "أفضل العلامات التجارية",
+      "openSouq": "المتجر المفتوح",
+      "travel": "السفر"
     }
   },
   "authDialog": {
@@ -737,7 +739,9 @@
         "privacyPolicy": "سياسة الخصوصية"
       },
       "categoriesNav": {
-        "topBrands": "أفضل العلامات التجارية"
+        "topBrands": "أفضل العلامات التجارية",
+        "openSouq": "المتجر المفتوح",
+        "travel": "السفر"
       }
     },
     "mobileNav": {

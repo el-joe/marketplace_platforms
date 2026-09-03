@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
 import { Button } from "@/src/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
@@ -12,17 +12,23 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { ICategoryNavTree } from "./types";
 import { Type } from "./types/category-nav-tree.type";
 import { getCategoriesTreeService } from "./api/get";
-// import {
-//   CategoryNavTree,
-//   Type,
-// } from "@/src/layout/noon/header/types/category-nav-tree.type";
+
+// ─── href helpers (unchanged) ─────────────────────────────────────────────────
 
 function categoryHref(category: ICategoryNavTree): string {
   switch (category.type) {
     case Type.ClassiFied:
-      return `/classified/${category.id}`;
+      // Virtual parent node → Open Souq hub; real node → category browse
+      return category.id === "virtual-open-souq"
+        ? "/open-sooq"
+        : `/classified/${category.id}`;
     case Type.Travel:
-      return category.slug ? `/travel?category=${category.slug}` : "/travel";
+      // Virtual parent node → Travel hub; real node → travel with category filter
+      return category.id === "virtual-travel"
+        ? "/travel"
+        : category.slug
+          ? `/travel?category=${category.slug}`
+          : "/travel";
     case Type.Product:
     default:
       return `/${category.slug}`;
@@ -44,6 +50,54 @@ function subCategoryHref(
   }
 }
 
+// ─── Tree builder ─────────────────────────────────────────────────────────────
+
+/**
+ * Takes the flat API array (product + classified + travel nodes at root level)
+ * and returns a new array where:
+ *  - Product nodes pass through unchanged
+ *  - All ClassiFied nodes are nested under a single synthetic "Open Souq" parent
+ *  - All Travel nodes are nested under a single synthetic "Travel" parent
+ *
+ * The two virtual parents are appended at the end so product categories come first.
+ */
+function buildNavTree(
+  nodes: ICategoryNavTree[],
+  labels: { openSouq: string; travel: string },
+): ICategoryNavTree[] {
+  const productNodes = nodes.filter((n) => n.type === Type.Product);
+  const classifiedNodes = nodes.filter((n) => n.type === Type.ClassiFied);
+  const travelNodes = nodes.filter((n) => n.type === Type.Travel);
+
+  const result: ICategoryNavTree[] = [...productNodes];
+
+  if (classifiedNodes.length > 0) {
+    result.push({
+      id: "virtual-open-souq",
+      type: Type.ClassiFied,
+      name: { ar: "المتجر المفتوح", en: labels.openSouq },
+      slug: "open-sooq",
+      parent_id: null,
+      children: classifiedNodes,
+    });
+  }
+
+  if (travelNodes.length > 0) {
+    result.push({
+      id: "virtual-travel",
+      type: Type.Travel,
+      name: { ar: "السفر", en: labels.travel },
+      slug: "travel",
+      parent_id: null,
+      children: travelNodes,
+    });
+  }
+
+  return result;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 const CategoriesNav = () => {
   const [hoveredCategory, setHoveredCategory] =
     useState<null | ICategoryNavTree>(null);
@@ -54,6 +108,18 @@ const CategoriesNav = () => {
     queryKey: ["categoriesTree"],
     queryFn: getCategoriesTreeService,
   });
+
+  const navTree = useMemo(
+    () =>
+      data
+        ? buildNavTree(data, {
+            openSouq: t("openSouq"),
+            travel: t("travel"),
+          })
+        : [],
+    [data, t],
+  );
+
   return (
     <div
       className="w-full container hidden md:flex items-center gap-3 h-11 relative"
@@ -78,11 +144,15 @@ const CategoriesNav = () => {
               <Skeleton className="w-40 h-8" />
             </SwiperSlide>
           ))}
-        {data?.map((category, i) => (
-          <SwiperSlide key={i} className="w-fit! h-fit!">
+        {navTree.map((category, i) => (
+          <SwiperSlide key={category.id ?? i} className="w-fit! h-fit!">
             <Link
               href={categoryHref(category)}
-              className={`py-1 block border-b border-transparent hover:border-black font-semibold ${hoveredCategory?.id === category.id ? "border-b-black" : ""} ${category.type === Type.ClassiFied ? "text-orange-600" : ""}`}
+              className={`py-1 block border-b border-transparent hover:border-black font-semibold ${
+                hoveredCategory?.id === category.id ? "border-b-black" : ""
+              } ${category.type === Type.ClassiFied ? "text-orange-600" : ""} ${
+                category.type === Type.Travel ? "text-teal-600" : ""
+              }`}
               onMouseEnter={() => {
                 if (!hoveredCategory) {
                   timeoutRef.current = setTimeout(() => {
@@ -99,9 +169,9 @@ const CategoriesNav = () => {
         ))}
         <SwiperButtons />
       </Swiper>
+
       {/* right banner */}
       <div>
-        {/* <span className="w-60 h-7 bg-red rounded-2xl block" /> */}
         <Image
           src={"/images/header-badge.png"}
           alt=""
@@ -109,9 +179,12 @@ const CategoriesNav = () => {
           height={30}
         />
       </div>
-      {/* category details box */}
+
+      {/* category details dropdown */}
       <div
-        className={`fixed top-26 inset-x-0 left-0 z-30 bg-[#0000005b] h-screen  ${hoveredCategory && hoveredCategory.children.length ? "" : "hidden"}`}
+        className={`fixed top-26 inset-x-0 left-0 z-30 bg-[#0000005b] h-screen ${
+          hoveredCategory && hoveredCategory.children.length ? "" : "hidden"
+        }`}
       >
         <div
           className="h-[calc(100vh-200px)]s max-h-121s overflow-auto bg-white p-5 z-30"
@@ -121,21 +194,29 @@ const CategoriesNav = () => {
         >
           <div className="flex items-stretch justify-between gap-5 h-full">
             {/* subcategories lists */}
-            <div className=" flex flex-col justify-between h-auto">
-              {/* one level of subcategories */}
+            <div className="flex flex-col justify-between h-auto">
+              {/* first level of subcategories */}
               <ul
-                className={`${!!hoveredCategory?.children.find((ch) => ch.children.length) ? "flex gap-8" : ""}`}
+                className={`${
+                  !!hoveredCategory?.children.find((ch) => ch.children.length)
+                    ? "flex gap-8"
+                    : ""
+                }`}
               >
                 {hoveredCategory?.children.map((subCategory) => (
                   <li key={subCategory.id}>
                     <Link href={subCategoryHref(subCategory, hoveredCategory)}>
                       <h4
-                        className={`${subCategory.children.length ? "font-semibold" : "hover:text-blue"} mb-3`}
+                        className={`${
+                          subCategory.children.length
+                            ? "font-semibold"
+                            : "hover:text-blue"
+                        } mb-3`}
                       >
                         {subCategory.name[locale]}
                       </h4>
                     </Link>
-                    {/* tow level of subcategories */}
+                    {/* second level of subcategories */}
                     <ul className="text-sm flex flex-col gap-2">
                       {subCategory.children.map((e) => (
                         <li key={e.id} className="hover:text-blue">
@@ -151,7 +232,8 @@ const CategoriesNav = () => {
                   </li>
                 ))}
               </ul>
-              {/* top brands list */}
+
+              {/* top brands — only for product categories */}
               {!!hoveredCategory?.brands?.length && (
                 <div className="col-span-3 h-fit mt-auto">
                   <h4 className="font-semibold mb-3">{t("topBrands")}</h4>
@@ -178,7 +260,8 @@ const CategoriesNav = () => {
                 </div>
               )}
             </div>
-            {/* image banner */}
+
+            {/* image banner — only for product categories with an image */}
             {hoveredCategory?.image_url && (
               <Link
                 href={categoryHref(hoveredCategory)}
@@ -189,7 +272,7 @@ const CategoriesNav = () => {
                   alt=""
                   width={408}
                   height={548}
-                  className="aspect-159/190 rounded-xl "
+                  className="aspect-159/190 rounded-xl"
                 />
               </Link>
             )}
