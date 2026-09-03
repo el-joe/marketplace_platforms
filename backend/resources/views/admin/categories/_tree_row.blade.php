@@ -71,10 +71,18 @@
     </td>
 
     <td class="px-4 py-2">
-        @if($category->is_active && $category->is_visible)
-            <x-badge color="success">{{ __('common.active') }}</x-badge>
-        @elseif($category->is_active && !$category->is_visible)
-            <x-badge color="warning">{{ __('admin.categories.hidden') }}</x-badge>
+        @if($category->is_active)
+            <button type="button"
+                class="visible-btn flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full transition-colors
+                    {{ $category->is_visible
+                        ? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600'
+                        : 'bg-amber-100 text-amber-700 hover:bg-green-50 hover:text-green-600' }}"
+                data-id="{{ $category->id }}"
+                data-visible="{{ $category->is_visible ? '1' : '0' }}"
+                data-url="{{ route('admin.categories.toggle-visible', $category->id) }}">
+                <x-heroicon name="{{ $category->is_visible ? 'eye' : 'eye-slash' }}" class="w-3.5 h-3.5" />
+                <span>{{ $category->is_visible ? __('common.visible') : __('admin.categories.hidden') }}</span>
+            </button>
         @else
             <x-badge color="gray">{{ __('common.inactive') }}</x-badge>
         @endif

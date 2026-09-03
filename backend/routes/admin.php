@@ -253,6 +253,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::put('/{category}', [CategoryController::class, 'update'])->name('update');
         Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
         Route::post('/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('toggle-featured');
+        Route::post('/{category}/toggle-visible',  [CategoryController::class, 'toggleVisible'])->name('toggle-visible');
         Route::post('/{category}/sync-attributes', [CategoryController::class, 'syncAttributes'])->name('sync-attributes');
         Route::post('/{category}/marketer-commission', [CategoryController::class, 'updateMarketerCommission'])->name('marketer-commission.update');
         Route::post('/{category}/upload-image', [CategoryController::class, 'uploadImage'])->name('upload-image');

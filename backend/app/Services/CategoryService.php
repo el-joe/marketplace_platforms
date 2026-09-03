@@ -52,6 +52,14 @@ class CategoryService
         $this->logActivity($featured ? 'featured' : 'unfeatured', $category, $adminId);
     }
 
+    // ─── Visible Toggle ───────────────────────────────────────────────────────
+
+    public function setVisible(Category $category, bool $visible, ?string $adminId = null): void
+    {
+        $category->update(['is_visible' => $visible]);
+        $this->logActivity($visible ? 'made_visible' : 'hidden', $category, $adminId);
+    }
+
     // ─── Delete Validation ────────────────────────────────────────────────────
 
     public function canDelete(Category $category): array

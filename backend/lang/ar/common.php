@@ -36,6 +36,7 @@ return [
     'all'             => 'الكل',
     'active'          => 'نشط',
     'inactive'        => 'غير نشط',
+    'visible'         => 'مرئي',
     'status'          => 'الحالة',
     'actions'         => 'الإجراءات',
     'filters'         => 'تصفية',

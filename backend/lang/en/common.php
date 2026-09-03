@@ -41,6 +41,7 @@ return [
     'all'             => 'All',
     'active'          => 'Active',
     'inactive'        => 'Inactive',
+    'visible'         => 'Visible',
     'status'          => 'Status',
     'actions'         => 'Actions',
     'filters'         => 'Filters',

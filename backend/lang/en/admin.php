@@ -2004,6 +2004,8 @@ return [
         'hidden_status'         => 'Hidden',
         'inactive_status'       => 'Inactive',
         'hidden'                => 'Hidden',
+        'made_visible'          => 'Category is now visible',
+        'made_hidden'           => 'Category is now hidden',
         'commission_formula_note' => 'Commission per item = (unit_price × %) + fixed_fee. Snapshotted at order time — changing these does not affect existing orders. Subcategories inherit the nearest ancestor\'s rates when their own rates are zero.',
         'commission_rates'         => 'Commission Rates',
         'create_category'          => 'Create category',

@@ -420,6 +420,22 @@ class CategoryController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Toggle Visible
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function toggleVisible(string $category): JsonResponse
+    {
+        $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
+
+        $this->service->setVisible($categoryModel, !$categoryModel->is_visible, auth('admin')->id());
+
+        return response()->json([
+            'success'    => true,
+            'is_visible' => (bool) $categoryModel->fresh()->is_visible,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Bulk Commission Update
     // ─────────────────────────────────────────────────────────────────────────
 

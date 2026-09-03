@@ -107,6 +107,7 @@
         window.ROUTES_CAT = {
             bulkCommission: '{{ route('admin.categories.bulk-commission') }}',
             toggleFeatured: '{{ url('categories') }}/:id/toggle-featured',
+            toggleVisible:  '{{ url('categories') }}/:id/toggle-visible',
             destroy: '{{ url('categories') }}/:id',
         };
     </script>

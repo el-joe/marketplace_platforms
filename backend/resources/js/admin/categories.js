@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         initTree();
         initBulkCommission();
         initFeaturedToggle();
+        initVisibleToggle();
         initDeleteCategory();
         initSearch();
     }
@@ -244,6 +245,30 @@ function initFeaturedToggle() {
             window.Toast?.success(isFeatured ? (t('admin.categories.marked_featured')) : (t('admin.categories.removed_featured')));
         }).fail(function (xhr) {
             window.Toast?.error(xhr.responseJSON?.message || t('admin.categories.toggle_featured_failed'));
+        });
+    });
+}
+
+// ─── Visible toggle ───────────────────────────────────────────────────────────
+
+function initVisibleToggle() {
+    document.getElementById('categories-table')?.addEventListener('click', function (e) {
+        const btn = e.target.closest('.visible-btn[data-id]');
+        if (!btn) return;
+
+        const url = btn.dataset.url;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        }).done(function (res) {
+            window.Toast?.success(res.is_visible
+                ? (t('admin.categories.made_visible') || 'Category is now visible')
+                : (t('admin.categories.made_hidden') || 'Category is now hidden'));
+            setTimeout(function () { window.location.reload(); }, 700);
+        }).fail(function (xhr) {
+            window.Toast?.error(xhr.responseJSON?.message || 'Failed to update visibility');
         });
     });
 }
