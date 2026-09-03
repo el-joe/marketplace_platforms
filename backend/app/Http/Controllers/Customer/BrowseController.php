@@ -70,6 +70,13 @@ class BrowseController extends Controller
 
         $category = Category::where('id', $id)->where('is_active', true)->firstOrFail();
 
+        $catVersion  = \Illuminate\Support\Facades\Cache::get("category_v:{$category->id}", 0);
+        $categoryResource = \Illuminate\Support\Facades\Cache::remember(
+            "browse_category_resource:{$category->id}:{$catVersion}",
+            now()->addMinutes(30),
+            fn () => (new ProductBrowseCategoryResource($category))->resolve()
+        );
+
         $filters     = $request->only([
             'price_min', 'price_max', 'brand', 'rating_min', 'condition',
             'fulfillment_model', 'include_oos', 'attributes', 'sort',
@@ -95,7 +102,7 @@ class BrowseController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'category'      => new ProductBrowseCategoryResource($category),
+                'category'      => $categoryResource,
                 'category_node' => $categoryNode,
                 'page_builder'  => $pageBuilder,
                 'listings'      => array_merge($payload, ['facets' => $facets]),
