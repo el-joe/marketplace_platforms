@@ -66,22 +66,6 @@ class ProductController extends Controller
 
         $category = !empty($filters['category']) ? Category::find($filters['category']) : null;
 
-        $categoryData = null;
-        if ($category) {
-            $catVersion   = \Illuminate\Support\Facades\Cache::get("category_v:{$category->id}", 0);
-            $categoryData = \Illuminate\Support\Facades\Cache::remember(
-                "product_ctrl_category:{$category->id}:{$catVersion}",
-                now()->addMinutes(30),
-                fn () => [
-                    'id'          => $category->id,
-                    'name'        => ['en' => $category->name_en, 'ar' => $category->name_ar],
-                    'slug'        => $category->slug,
-                    'image_url'   => $category->image_url,
-                    'has_filters' => (bool) $category->has_filters,
-                ]
-            );
-        }
-
         // ── Device & audience (same logic as HomeController) ─────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);
         $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
@@ -197,7 +181,7 @@ class ProductController extends Controller
             ],
             'page_builder'     => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
-            'category'         => $categoryData,
+            'category'         => $category,
         ]);
     }
 

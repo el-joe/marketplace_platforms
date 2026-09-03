@@ -35,11 +35,9 @@ class Category extends Model
     {
         static::saved(function (self $category) {
             static::flushNavCaches();
-            static::bustCategoryCache($category->id);
         });
         static::deleted(function (self $category) {
             static::flushNavCaches();
-            static::bustCategoryCache($category->id);
         });
     }
 
@@ -49,17 +47,6 @@ class Category extends Model
         \App\Services\Customer\UnifiedCategoryService::flushCache();
     }
 
-    /**
-     * Bump the per-category cache version when this category is saved.
-     */
-    public static function bustCategoryCache(string $categoryId): void
-    {
-        \Illuminate\Support\Facades\Cache::put(
-            "category_v:{$categoryId}",
-            microtime(true),
-            now()->addHours(24)
-        );
-    }
 
     protected $keyType = 'string';
     public $incrementing = false;
