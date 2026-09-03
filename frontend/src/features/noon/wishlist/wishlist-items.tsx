@@ -15,19 +15,14 @@ import { IWishlist } from "@/types";
 export default function WishlistItems() {
   const t = useTranslations("wishlist");
   const [selectedGroupId] = useQueryState("wishlistCode");
-  const {
-    wishlistGroups,
-    getWishlistGroup,
-    wishlistGroup,
-    isLoadingGroup,
-    isLoadingGroups,
-  } = useWishlistContext();
+  const { getWishlistGroup, wishlistGroup, isLoadingGroup, isLoadingGroups } =
+    useWishlistContext();
   const isLoading = isLoadingGroup || isLoadingGroups;
   useEffect(() => {
-    if (!!selectedGroupId) {
+    if (!!selectedGroupId && wishlistGroup?.group.id !== selectedGroupId) {
       getWishlistGroup(selectedGroupId as string);
     }
-  }, [getWishlistGroup, selectedGroupId, wishlistGroups]);
+  }, [selectedGroupId]);
   return (
     <div className="flex-1">
       <div className="flex gap-3 py-4 ps-4 md:border-b items-center border-border">

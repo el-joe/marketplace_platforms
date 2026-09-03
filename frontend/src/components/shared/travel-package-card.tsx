@@ -27,7 +27,7 @@ export default function TravelPackageCard({ pkg }: Props) {
     <Card className="overflow-hidden flex flex-col shadow-sm border border-border">
       <div className="relative h-52">
         <Image
-          src={pkg.thumbnail}
+          src={pkg.thumbnail || "/images/no-image-available-icon.jpg"}
           alt={pkg.title_en}
           fill
           sizes="(max-width: 768px) 100vw, 400px"

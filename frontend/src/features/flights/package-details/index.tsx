@@ -28,7 +28,6 @@ export default async function PackageDetails({ pkg }: Props) {
     { label: title, href: "" },
   ];
 
-
   return (
     <div>
       <HeroGallery
@@ -73,7 +72,10 @@ export default async function PackageDetails({ pkg }: Props) {
                   {pkg.agency.logo_url && (
                     <div className="relative size-16 rounded-xl overflow-hidden border border-border shrink-0">
                       <Image
-                        src={pkg.agency.logo_url}
+                        src={
+                          pkg.agency.logo_url ||
+                          "/images/no-image-available-icon.jpg"
+                        }
                         alt={pkg.agency.name}
                         fill
                         className="object-contain p-1"

@@ -69,7 +69,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             {p?.category_name?.[locale]}
           </div>
           <Image
-            src={p?.thumbnail}
+            src={p?.thumbnail || "/images/no-image-available-icon.jpg"}
             alt={p.name_en}
             width={140}
             height={110}

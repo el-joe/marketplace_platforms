@@ -59,7 +59,7 @@ export default function CartItem({
         <div className="relative w-21 md:w-24 lg:w-28 xl:w-32 h-fit">
           <div className="rounded-[16px] w-full h-fit max-h-48 overflow-hidden">
             <Image
-              src={item.primary_image as string}
+              src={item?.primary_image || "/images/no-image-available-icon.jpg"}
               alt={
                 locale === "ar" ? item.product_name_ar : item.product_name_en
               }

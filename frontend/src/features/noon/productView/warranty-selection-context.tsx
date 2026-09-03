@@ -7,8 +7,8 @@ interface IWarrantySelectionContext {
   clearSelection: () => void;
 }
 
-const warrantySelectionContext = createContext<IWarrantySelectionContext | null>(
-  null,
+const warrantySelectionContext = createContext<IWarrantySelectionContext>(
+  {} as IWarrantySelectionContext,
 );
 
 export const WarrantySelectionProvider = ({
@@ -31,12 +31,4 @@ export const WarrantySelectionProvider = ({
   );
 };
 
-export const useWarrantySelection = () => {
-  const ctx = useContext(warrantySelectionContext);
-  if (!ctx) {
-    throw new Error(
-      "useWarrantySelection must be used within a WarrantySelectionProvider",
-    );
-  }
-  return ctx;
-};
+export const useWarrantySelection = () => useContext(warrantySelectionContext);

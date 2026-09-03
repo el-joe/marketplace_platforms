@@ -204,20 +204,25 @@ const SearchField = () => {
                   <p className="text-lg font-semibold mb-2">
                     {t("recentlySearched")}
                   </p>
-                  <ul className="py-1 flex gap-3">
+                  <ul className="py-1 flex gap-3 flex-wrap">
                     {history.map((item) => (
                       <li
                         key={item}
-                        className="flex items-center justify-between pe-2 text-sm hover:bg-muted/60 transition-colors group cursor-pointer border border-border rounded-lg"
+                        className="flex items-center justify-between pe-2 text-sm hover:bg-muted/60 transition-colors group cursor-pointer border border-border rounded-lg overflow-hidden"
                         onClick={() => {
                           setQuery(item);
                           handleSearch(item);
                         }}
                       >
-                        <span className="bg-muted/60">
-                          <Image src={""} alt="Oops" width={50} height={40} />
+                        <span className="bg-muted/60 w-8">
+                          <Image
+                            src={"/images/no-image-available-icon.jpg"}
+                            alt="Oops"
+                            width={50}
+                            height={40}
+                          />
                         </span>
-                        <p>{item}</p>
+                        <p className="text-sm flex-1">{item}</p>
                         {/* </span> */}
                         <button
                           type="button"
@@ -237,7 +242,7 @@ const SearchField = () => {
                   <p className="text-lg font-semibold mb-2 mt-4">
                     {t("trendingSearches")}
                   </p>
-                  <ul className="py-1 flex gap-3">
+                  <ul className="py-1 flex gap-3 flex-wrap">
                     {suggestions?.trending.map((item) => (
                       <li
                         key={item}
@@ -306,7 +311,7 @@ const SearchField = () => {
                           className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
                         >
                           <Image
-                            src={""}
+                            src={"/images/no-image-available-icon.jpg"}
                             alt="Oops"
                             width={50}
                             height={60}

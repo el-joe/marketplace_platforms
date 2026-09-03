@@ -21,7 +21,7 @@ export default function SavingsAdnBenefitsCard() {
           >
             <div className="flex justify-between items-center">
               <Image
-                src={e?.logo_url as string}
+                src={e?.logo_url || "/images/no-image-available-icon.jpg"}
                 alt={e?.label_en}
                 width={54}
                 height={44}
@@ -45,7 +45,7 @@ export default function SavingsAdnBenefitsCard() {
           className="bg-gray-2 rounded-lg p-2 mb-2 mt-3 flex items-center gap-2"
         >
           <Image
-            src={c?.card_image_url as string}
+            src={c?.card_image_url || "/images/no-image-available-icon.jpg"}
             alt={c?.card_name_en}
             width={50}
             height={40}
