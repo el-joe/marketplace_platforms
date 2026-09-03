@@ -44,14 +44,18 @@ const SellerCard = ({ productData }: Props) => {
                 <ChevronRight className="w-5 h-5" />
               )}
             </p>
-            <div className="flex gap-1 items-center text-green">
-              <StarIcon className="fill-green w-4" />
-              <p>{seller.rating_avg.toFixed(1)}</p>
-              <Separator orientation="vertical" className={"mx-1"} />
-              <p className="text-gray">
-                {seller?.vendor_details?.positive_rating_pct}% {t("positive")}
-              </p>
-            </div>
+            {!!seller?.rating_avg ? (
+              <div className="flex gap-1 items-center text-green">
+                <StarIcon className="fill-green w-4" />
+                <p>{seller.rating_avg.toFixed(1)}</p>
+                <Separator orientation="vertical" className={"mx-1"} />
+                <p className="text-gray">
+                  {seller?.vendor_details?.positive_rating_pct}% {t("positive")}
+                </p>
+              </div>
+            ) : (
+              <p className="text-gray">{t("noEnoughRatingsToShow")}</p>
+            )}
           </div>
         </Link>
         <div className="flex flex-col gap-2 items-stretch mt-4">
@@ -89,32 +93,38 @@ const SellerCard = ({ productData }: Props) => {
           />
         )}
       </div>
-      <Separator />
-      <div className="p-4 text-sm">
-        {seller?.vendor_details.warranty_months && (
-          <div className="flex times-center gap-2 mb-3">
-            <Redo2Icon className="w-5 h-5 text-gray" />
-            <p>
-              {t("monthWarranty", {
-                value: 12,
-                // value: seller.vendor_details.warranty_months,
-              })}
-            </p>
-          </div>
+      {seller?.vendor_details.warranty_months &&
+        seller.vendor_details.easy_returns_enabled &&
+        seller.vendor_details.secure_payments_enabled && (
+          <>
+            <Separator />
+            <div className="p-4 text-sm">
+              {seller?.vendor_details.warranty_months && (
+                <div className="flex times-center gap-2 mb-3">
+                  <Redo2Icon className="w-5 h-5 text-gray" />
+                  <p>
+                    {t("monthWarranty", {
+                      value: 12,
+                      // value: seller.vendor_details.warranty_months,
+                    })}
+                  </p>
+                </div>
+              )}
+              {seller.vendor_details.easy_returns_enabled && (
+                <div className="flex times-center gap-2 mb-3">
+                  <Redo2Icon className="w-5 h-5 text-gray" />
+                  <p>{t("easyAndHassleFreeReturns")}</p>
+                </div>
+              )}
+              {seller.vendor_details.secure_payments_enabled && (
+                <div className="flex times-center gap-2">
+                  <ShieldCheckIcon className="w-5 h-5 text-gray" />
+                  <p>{t("securePayments")}</p>
+                </div>
+              )}
+            </div>{" "}
+          </>
         )}
-        {seller.vendor_details.easy_returns_enabled && (
-          <div className="flex times-center gap-2 mb-3">
-            <Redo2Icon className="w-5 h-5 text-gray" />
-            <p>{t("easyAndHassleFreeReturns")}</p>
-          </div>
-        )}
-        {seller.vendor_details.secure_payments_enabled && (
-          <div className="flex times-center gap-2">
-            <ShieldCheckIcon className="w-5 h-5 text-gray" />
-            <p>{t("securePayments")}</p>
-          </div>
-        )}
-      </div>
       <Separator />
       {/* add to cart button */}
 

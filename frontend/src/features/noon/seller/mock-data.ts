@@ -1,0 +1,56 @@
+import { ISellerProfile } from "./types";
+
+export const MOCK_SELLER_DATA: ISellerProfile = {
+  id: "callmate",
+  store_name: "callmate",
+  logo_text: "CallMate",
+  address:
+    "Al khaleej Road, Al Murar Shop No2, Pizza Hut Building, Opposite Hyatt Regency - Deira - Dubai",
+  email: "callmate@hotmail.com",
+  seller_rating: 4.8,
+  positive_ratings_pct: 88,
+  customers_count: "13K+",
+  customers_period_text: "During the last 90 days",
+  product_as_described_pct: 90,
+  seller_since: "March, 2018",
+  total_ratings_count: 8862,
+  total_reviews_count: 4485,
+  rating_breakdown: [
+    { stars: 5, percentage: 74 },
+    { stars: 4, percentage: 14 },
+    { stars: 3, percentage: 3 },
+    { stars: 2, percentage: 1 },
+    { stars: 1, percentage: 8 },
+  ],
+  reviews: [
+    {
+      id: "rev-1",
+      reviewer_name: "Mr A.",
+      avatar_letter: "M",
+      is_verified_purchase: true,
+      rating: 5,
+      date: "Sep 2, 2026",
+      comment: "Good",
+    },
+    {
+      id: "rev-2",
+      reviewer_name: "Lalit Mohan S.",
+      avatar_letter: "L",
+      is_verified_purchase: true,
+      rating: 4,
+      date: "Sep 2, 2026",
+      comment: "Good",
+    },
+    {
+      id: "rev-3",
+      reviewer_name: "Anonymous",
+      avatar_letter: "?",
+      is_verified_purchase: true,
+      rating: 5,
+      date: "Sep 1, 2026",
+      comment: "شكرا ممتاز",
+      translated_comment: "Thank you, excellent",
+      original_language: "ar",
+    },
+  ],
+};
