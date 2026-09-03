@@ -306,7 +306,9 @@ const HeaderButton = ({
     return (
       <Button
         variant={"ghost"}
-        className={"font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5"}
+        className={
+          "font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5 " + className
+        }
         title={title}
         onClick={onClick}
       >

@@ -20,24 +20,27 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
   const hasSectionBg =
     section.background_image_type === "section" && section.background_image_url;
 
-  const sectionStyle: React.CSSProperties = {
-    backgroundColor: section.background_color ?? undefined,
-    backgroundImage: hasSectionBg
-      ? `url(${section.background_image_url})`
-      : undefined,
-    backgroundSize: "cover",
-    backgroundPositionX: "center",
-    backgroundRepeat: "no-repeat",
-    paddingTop: section.padding_top ? `${section.padding_top}px` : undefined,
-    paddingBottom: section.padding_bottom
-      ? `${section.padding_bottom}px`
-      : undefined,
-    maxWidth: section.max_width || undefined,
-  };
-
   return (
     <div className="container">
-      <section className="w-full" style={sectionStyle}>
+      <section
+        className={cn(
+          "w-full mb-6a",
+          section?.position > 0 && "mb-1",
+          section.position === 0 && "mb-1 lg:mb-0",
+        )}
+        style={{
+          backgroundColor: section.background_color ?? undefined,
+          backgroundImage: hasSectionBg
+            ? `url(${section.background_image_url})`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPositionX: "center",
+          backgroundRepeat: "no-repeat",
+          // maxWidth: section.max_width || "100%",
+          // paddingTop: `${section.padding_top}px`,
+          // paddingBottom: `${section.padding_bottom}px`,
+        }}
+      >
         {hasHeaderBg && (
           <div className="relative h-20 lg:h-28">
             <Image
@@ -48,12 +51,15 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
             />
           </div>
         )}
-
         {section.layout === "columns" && (
           <div
             className={cn(
               "flex w-full",
               section?.columns.length > 2 && "gap-2",
+              section.position === 1 &&
+                (hasHeaderBg ? "py-2 lg:pb-0" : "py-3 lg:py-0"),
+              section.position > 1 &&
+                (hasHeaderBg ? "pb-3 xl:pb-6 pt-1" : "py-6"),
               section.background_color && "px-4",
             )}
           >
@@ -81,7 +87,6 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
             })}
           </div>
         )}
-
         {section.layout === "stack" &&
           section.blocks.map((b) => {
             const BlockComponent = blocks[b.block_type as keyof typeof blocks];
@@ -90,6 +95,12 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
                 key={b.id}
                 className={cn(
                   "w-full",
+                  section.position === 1 &&
+                    (hasHeaderBg
+                      ? "pb-3 lg:pb-0 pt-3 lg:pt-0"
+                      : "py-6 lg:py-0"),
+                  section.position > 1 &&
+                    (hasHeaderBg ? "pb-3 xl:pb-6 pt-1" : "py-6"),
                   section.background_color && "px-4",
                   b.device_target === "desktop"
                     ? "hidden lg:block"

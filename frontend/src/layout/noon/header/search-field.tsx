@@ -138,7 +138,7 @@ const SearchField = () => {
       visibleSuggestions.vendors?.length > 0);
 
   return (
-    <div ref={containerRef} className="flex-1 relative min-w-45">
+    <div ref={containerRef} className="flex-1 relative min-w-35">
       <InputGroup
         className={cn(
           "h-10 md:h-11 text-base bg-white! shadow-xs focus-within:ring-2 focus-within:ring-primary/20 transition-all rounded-lg border-border",
@@ -150,9 +150,9 @@ const SearchField = () => {
             type="button"
             onClick={() => handleSearch(query)}
             aria-label={t("searchFor")}
-            className="text-primary hover:text-primary/80 transition-colors p-1 cursor-pointer flex items-center justify-center"
+            className="text-primary hover:text-primary/80 transition-colors lg:p-1 cursor-pointer flex items-center justify-center"
           >
-            <SearchIcon className="size-5" />
+            <SearchIcon className="size-4 lg:size-5" />
           </button>
         </InputGroupAddon>
 
@@ -166,7 +166,7 @@ const SearchField = () => {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={t("searchPlaceholder")}
-          className="text-sm md:text-base font-normal placeholder:text-muted-foreground/70"
+          className="text-xs md:text-base h-full font-normal placeholder:text-muted-foreground/70"
         />
 
         {isLoading && (
@@ -220,9 +220,10 @@ const SearchField = () => {
                             alt="Oops"
                             width={50}
                             height={40}
+                            className="min-w-8"
                           />
                         </span>
-                        <p className="text-sm flex-1">{item}</p>
+                        <p className="text-sm flex-1 line-clamp-2">{item}</p>
                         {/* </span> */}
                         <button
                           type="button"
@@ -253,7 +254,7 @@ const SearchField = () => {
                         }}
                       >
                         <TrendingUpIcon className="size-4 text-gray" />
-                        <p>{item}</p>
+                        <p className="line-clamp-2">{item}</p>
                         {/* </span> */}
                         <button
                           type="button"
