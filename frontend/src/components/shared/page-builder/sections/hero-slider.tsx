@@ -92,11 +92,11 @@ export default function HeroSlider({ data }: Props) {
               />
               <Image
                 src={
-                  data.banner?.image_url ||
-                  data.banner?.mobile_image_url ||
+                  banner?.desktop_url ||
+                  banner?.mobile_url ||
                   "/images/no-image-available-icon.jpg"
                 }
-                alt={banner?.title[locale] || ""}
+                alt={banner?.title?.[locale] || banner?.title?.en || ""}
                 className={"object-cover responsive-ratio h-full max-h-100"}
                 // style={
                 //   {

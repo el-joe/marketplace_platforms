@@ -1,11 +1,14 @@
+"use client";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import React from "react";
 import { Block } from "../types";
+import useLocale from "@/src/hooks/use-locale";
 
 export const Banner = ({ data }: { data: Block }) => {
   const t = useTranslations();
+  const locale = useLocale();
   // const aspectRatio = data.banner?.aspect_ratio.replace(":", "/") || "auto";
   // const mobileAspectRatio =
   //   data.banner?.mobile_aspect_ratio.replace(":", "/") || "auto";
@@ -26,7 +29,7 @@ export const Banner = ({ data }: { data: Block }) => {
             data.banner?.mobile_image_url ||
             "/images/no-image-available-icon.jpg"
           }
-          alt={data?.banner?.alt_text.en || ""}
+          alt={data?.banner?.alt_text?.[locale] || data?.banner?.alt_text?.en || ""}
           className={"object-cover responsive-ratio h-full max-h-100"}
           // style={
           //   {

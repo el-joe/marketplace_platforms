@@ -56,7 +56,9 @@ const MegaDeals = async ({ data }: { data: Block }) => {
       </div>
       <div className="flex items-center justify-between mb-4 pt-5 lg:pt-0">
         <h3 className="text-2xl font-semibold">
-          {locale === "ar" ? data?.config?.title_ar : data?.config?.title_en}
+          {locale === "ar"
+            ? data?.title?.ar || data?.config?.title_ar
+            : data?.title?.en || data?.config?.title_en}
         </h3>
         {data?.config?.show_view_all && (
           <Link href={"/"}>

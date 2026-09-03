@@ -1282,6 +1282,52 @@ $(document).on('click', '[data-clear-tile-image]', function (e) {
     setPromoTileImagePreview($(this).closest('.tile-row'), '');
 });
 
+function setPromoTileImageArPreview($row, url) {
+    $row.find('[data-tile-image-ar-url]').val(url || '');
+    if (url) {
+        $row.find('[data-tile-image-ar-img]').attr('src', url);
+        $row.find('[data-tile-image-ar-preview]').removeClass('hidden');
+    } else {
+        $row.find('[data-tile-image-ar-preview]').addClass('hidden');
+        $row.find('[data-tile-image-ar-img]').attr('src', '');
+    }
+}
+
+$(document).on('change', '[data-tile-image-ar-upload]', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const $row = $(this).closest('.tile-row');
+    const fd = new FormData();
+    fd.append('image', file);
+    fd.append('_token', csrfToken());
+
+    const $label = $(this).closest('label');
+    $label.addClass('opacity-50 pointer-events-none');
+
+    $.ajax({
+        url: ROUTES.promoTileUploadImage,
+        method: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+    }).done((res) => {
+        setPromoTileImageArPreview($row, res.url);
+        Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
+    }).fail((xhr) => {
+        Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
+    }).always(() => {
+        $label.removeClass('opacity-50 pointer-events-none');
+        this.value = '';
+    });
+});
+
+$(document).on('click', '[data-clear-tile-image-ar]', function (e) {
+    e.preventDefault();
+    setPromoTileImageArPreview($(this).closest('.tile-row'), '');
+});
+
 $('#slide-form').on('submit', function (e) {
     e.preventDefault();
     const $form = $(this);

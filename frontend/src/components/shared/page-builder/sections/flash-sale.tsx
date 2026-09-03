@@ -18,8 +18,10 @@ export const FlashSale = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.products || [], 2);
   return (
     <div className="px-4">
-      {data?.config?.title_en && (
-        <SectionTitle title={data?.config?.title_en} />
+      {(data?.config?.title_en || data?.config?.title_ar) && (
+        <SectionTitle
+          title={{ en: data?.config?.title_en ?? "", ar: data?.config?.title_ar ?? "" }}
+        />
       )}
       <Swiper
         modules={[Navigation]}

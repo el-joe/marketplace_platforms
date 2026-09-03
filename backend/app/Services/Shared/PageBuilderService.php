@@ -435,13 +435,15 @@ class PageBuilderService
         if ($b->block_type === 'promo_tiles') {
             $cfg = $b->config ?? [];
             $data['title']   = ['ar' => $cfg['title_ar'] ?? null, 'en' => $cfg['title_en'] ?? null];
-            $data['columns'] = (int) ($cfg['columns'] ?? 2);
+            $data['columns'] = (int) ($cfg['grid_cols'] ?? $cfg['columns'] ?? 2);
+            $data['rows']    = (int) ($cfg['grid_rows'] ?? 1);
             $data['tiles']   = collect($cfg['tiles'] ?? [])->map(fn ($tile) => [
-                'label'     => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
-                'badge'     => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
-                'image_url' => $tile['image_url'] ?? null,
-                'link_url'  => $tile['link_url'] ?? null,
-                'is_paid'   => (bool) ($tile['is_paid'] ?? false),
+                'label'        => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
+                'badge'        => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
+                'image_url'    => $tile['image_url'] ?? null,
+                'image_url_ar' => $tile['image_url_ar'] ?? null,
+                'link_url'     => $tile['link_url'] ?? null,
+                'is_paid'      => (bool) ($tile['is_paid'] ?? false),
             ])->all();
         }
 

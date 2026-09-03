@@ -103,6 +103,7 @@ export interface ConfigTile {
   label_en: null | string;
   link_url: string;
   image_url: string;
+  image_url_ar: null | string;
   badge_label_ar: null | string;
   badge_label_en: null | string;
 }
@@ -111,6 +112,7 @@ export interface ColumnTile {
   label: Name;
   badge: Name;
   image_url: string;
+  image_url_ar: string | null;
   link_url: string;
   is_paid?: boolean;
 }
