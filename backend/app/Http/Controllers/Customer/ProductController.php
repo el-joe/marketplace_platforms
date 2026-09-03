@@ -181,7 +181,13 @@ class ProductController extends Controller
             ],
             'page_builder'     => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
-            'category'         => $category,
+            'category'         => $category ? [
+                'id'          => $category->id,
+                'name'        => ['en' => $category->name_en, 'ar' => $category->name_ar],
+                'slug'        => $category->slug,
+                'image_url'   => $category->image_url,
+                'has_filters' => (bool) $category->has_filters,
+            ] : null,
         ]);
     }
 
