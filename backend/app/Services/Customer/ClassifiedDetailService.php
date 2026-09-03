@@ -10,7 +10,10 @@ class ClassifiedDetailService
 {
     public function findActive(string $slug, Country $country): ?ClassifiedListing
     {
-        return ClassifiedListing::where('slug', $slug)
+        return ClassifiedListing::where(function ($q) use ($slug) {
+                $q->where('slug', $slug)
+                  ->orWhere('listing_number', $slug);
+            })
             ->where('status', 'active')
             ->where('country_id', $country->id)
             ->with([
