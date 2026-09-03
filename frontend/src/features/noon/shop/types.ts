@@ -6,6 +6,13 @@ export interface ShopResponse {
     page_builder: PageBuilder;
     facets: Facets;
     items: Product[];
+    category: {
+      id: string;
+      name: { en: string; ar: string };
+      slug: string;
+      image_url: string | null;
+      has_filters: boolean;
+    } | null;
     meta: {
       current_page: number;
       last_page: number;

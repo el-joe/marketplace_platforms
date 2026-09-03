@@ -1970,6 +1970,8 @@ return [
         'failed_load_methods'      => 'فشل تحميل الطرق.',
         'featured_homepage'        => 'مميز (الصفحة الرئيسية)',
         'fixed_fee_per_unit'       => 'رسوم ثابتة (لكل وحدة)',
+        'has_filters'              => 'عرض شريط الفلاتر',
+        'has_filters_hint'         => 'عند التفعيل، سيظهر شريط الفلاتر (السعر، الماركة، الخصائص) في صفحة هذه الفئة.',
         'no_shipping_methods_configured' => 'لا توجد طرق شحن مُعدّة.',
         'percentage_rate'          => 'نسبة العمولة (%)',
         'percentage_rate_hint'     => 'مثال: 8.00 = 8% من سعر بيع العنصر',

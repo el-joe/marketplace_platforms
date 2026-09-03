@@ -20,6 +20,7 @@ class ProductBrowseCategoryResource extends JsonResource
             'slug'           => $this->slug,
             'image_url'      => $this->image_url,
             'description'    => Bilingual::pair($this->resource, 'description'),
+            'has_filters'    => (bool) $this->has_filters,
             'parent'         => $this->parent ? [
                 'id'      => $this->parent->id,
                 'name'    => Bilingual::pair($this->parent, 'name'),

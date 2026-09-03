@@ -2013,6 +2013,8 @@ return [
         'failed_load_methods'      => 'Failed to load methods.',
         'featured_homepage'        => 'Featured (homepage)',
         'fixed_fee_per_unit'       => 'Fixed Fee (per unit)',
+        'has_filters'              => 'Show Filters Sidebar',
+        'has_filters_hint'         => 'When enabled, the filter sidebar (price, brand, attributes) will be shown on this category\'s page.',
         'no_shipping_methods_configured' => 'No shipping methods configured.',
         'percentage_rate'          => 'Percentage Rate (%)',
         'percentage_rate_hint'     => 'e.g. 8.00 = 8% of item sale price',

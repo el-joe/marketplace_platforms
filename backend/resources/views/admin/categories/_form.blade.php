@@ -516,6 +516,12 @@
                 <x-form.toggle name="is_active"  label="{{ __('common.active') }}"  :value="$bool('is_active', true)" />
                 <x-form.toggle name="is_visible" label="{{ __('admin.is_visible') }}" :value="$bool('is_visible', true)" />
                 <x-form.toggle name="is_featured" label="{{ __('admin.categories.featured_homepage') }}" :value="$bool('is_featured')" />
+                <x-form.toggle
+                    name="has_filters"
+                    label="{{ __('admin.categories.has_filters') }}"
+                    helpText="{{ __('admin.categories.has_filters_hint') }}"
+                    :value="$bool('has_filters')"
+                />
             </div>
 
             {{-- Save actions --}}

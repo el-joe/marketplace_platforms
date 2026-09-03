@@ -64,6 +64,8 @@ class ProductController extends Controller
             $filters['category'] = $this->resolveCategoryId($filters['category']) ?? $filters['category'];
         }
 
+        $category = !empty($filters['category']) ? Category::find($filters['category']) : null;
+
         // ── Device & audience (same logic as HomeController) ─────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);
         $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
@@ -88,9 +90,8 @@ class ProductController extends Controller
 
         // Apply category filter to admin listings if requested (includes all descendants)
         if (!empty($filters['category'])) {
-            $cat = Category::find($filters['category']);
-            $categoryIds = $cat
-                ? app(CategoryService::class)->getDescendantIds($cat)
+            $categoryIds = $category
+                ? app(CategoryService::class)->getDescendantIds($category)
                 : [$filters['category']];
             $adminBuilder->whereIn('p.category_id', $categoryIds);
         }
@@ -180,6 +181,13 @@ class ProductController extends Controller
             ],
             'page_builder'     => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
+            'category'         => $category ? [
+                'id'          => $category->id,
+                'name'        => ['en' => $category->name_en, 'ar' => $category->name_ar],
+                'slug'        => $category->slug,
+                'image_url'   => $category->image_url,
+                'has_filters' => (bool) $category->has_filters,
+            ] : null,
         ]);
     }
 

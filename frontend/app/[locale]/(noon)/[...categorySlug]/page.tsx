@@ -29,6 +29,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
   let products: Product[] = [];
   let totalPages = TOTAL_PAGES;
   let totalCount = 0;
+  let hasFilters = false;
 
   try {
     const queryParams = new URLSearchParams();
@@ -63,6 +64,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
     facets = res.data?.facets;
     totalPages = res.data?.meta?.last_page ?? TOTAL_PAGES;
     totalCount = res.data?.meta?.total ?? products.length;
+    hasFilters = isSearch ? true : (res.data?.category?.has_filters ?? false);
   } catch {
     products = [];
     totalCount = 0;
@@ -71,10 +73,12 @@ export default async function ShopPage({ params, searchParams }: Props) {
 
   return (
     <main className="container flex flex-col gap-4 py-4 lg:flex-row lg:gap-6">
-      <aside className="w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide">
-        <FilterSidebar facets={facets as ShopResponse["data"]["facets"]} />
-      </aside>
-      <div className="min-w-0 flex-1">
+      {hasFilters && (
+        <aside className="w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide shrink-0">
+          <FilterSidebar facets={facets as ShopResponse["data"]["facets"]} />
+        </aside>
+      )}
+      <div className={hasFilters ? "min-w-0 flex-1" : "w-full"}>
         <Shop
           pageBuilderData={pageBuilderData}
           categoryName={categoryName}

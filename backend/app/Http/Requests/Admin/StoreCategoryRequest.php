@@ -30,6 +30,7 @@ class StoreCategoryRequest extends FormRequest
             'is_active' => ['boolean'],
             'is_visible' => ['boolean'],
             'is_featured' => ['boolean'],
+            'has_filters' => ['boolean'],
             'seo_title_en' => ['nullable', 'string', 'max:70'],
             'seo_title_ar' => ['nullable', 'string', 'max:70'],
             'seo_description_en' => ['nullable', 'string', 'max:160'],
