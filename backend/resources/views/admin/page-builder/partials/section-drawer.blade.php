@@ -93,17 +93,6 @@
                 </select>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Padding top</label>
-                    <input type="number" min="0" id="sd-padding-top" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Padding bottom</label>
-                    <input type="number" min="0" id="sd-padding-bottom" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                </div>
-            </div>
-
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Max width</label>
                 <input type="text" id="sd-max-width" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. 1200px">

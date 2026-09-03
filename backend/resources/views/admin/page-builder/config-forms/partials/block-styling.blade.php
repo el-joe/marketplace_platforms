@@ -5,9 +5,7 @@
 --}}
 @php
     /** @var array $config */
-    $bg        = $config['background_color'] ?? '';
-    $padTop    = $config['padding_top']      ?? '';
-    $padBottom = $config['padding_bottom']   ?? '';
+    $bg = $config['background_color'] ?? '';
 @endphp
 
 <section class="pt-4 mt-4 border-t border-gray-200 space-y-3">
@@ -41,18 +39,6 @@
                 <input type="hidden" name="background_color" id="block-bg-color-hidden" value="{{ $bg }}" />
             </div>
             <p class="text-xs text-gray-400 mt-1">Use a hex color, <code>transparent</code>, or leave blank to inherit the section background.</p>
-        </div>
-    </div>
-
-    {{-- Padding --}}
-    <div class="grid grid-cols-2 gap-3">
-        <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Padding Top (px)</label>
-            <input type="number" name="padding_top" class="input w-full" min="0" max="200" value="{{ $padTop }}" placeholder="0" />
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Padding Bottom (px)</label>
-            <input type="number" name="padding_bottom" class="input w-full" min="0" max="200" value="{{ $padBottom }}" placeholder="0" />
         </div>
     </div>
 </section>

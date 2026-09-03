@@ -1527,8 +1527,6 @@ function resetSectionForm() {
     $('#sd-background-color').val('');
     $('#sd-background-image-type').val('section');
     setSectionBackgroundImagePreview('');
-    $('#sd-padding-top').val('');
-    $('#sd-padding-bottom').val('');
     $('#sd-max-width').val('');
     $('#sd-delete').addClass('hidden');
 }
@@ -1569,8 +1567,6 @@ function openSectionDrawer(section) {
         $('#sd-background-color').val(section.background_color || '');
         $('#sd-background-image-type').val(section.background_image_type || 'section');
         setSectionBackgroundImagePreview(section.background_image_url || '');
-        $('#sd-padding-top').val(section.padding_top ?? '');
-        $('#sd-padding-bottom').val(section.padding_bottom ?? '');
         $('#sd-max-width').val(section.max_width || '');
         $('#sd-delete').removeClass('hidden');
     } else {
@@ -1643,8 +1639,6 @@ $('#sd-save').on('click', function () {
         background_color: $('#sd-background-color').val() || null,
         background_image_url: $('#sd-background-image-url').val() || null,
         background_image_type: $('#sd-background-image-type').val() || 'section',
-        padding_top: $('#sd-padding-top').val() || null,
-        padding_bottom: $('#sd-padding-bottom').val() || null,
         max_width: $('#sd-max-width').val() || null,
         layout: $('#sd-layout').val(),
         columns_config: $('#sd-layout').val() === 'columns' ? $('#sd-columns-config').val() : null,
