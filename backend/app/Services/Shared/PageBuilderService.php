@@ -128,8 +128,8 @@ class PageBuilderService
                     'background_image_url' => $section->background_image_url,
                     'background_image_type' => $section->background_image_type ?? 'section',
                     'max_width'            => $section->max_width,
-                    'padding_top'          => $section->padding_top,
-                    'padding_bottom'       => $section->padding_bottom,
+                    'padding_top'          => (int) ($section->padding_top ?? 0),
+                    'padding_bottom'       => (int) ($section->padding_bottom ?? 0),
                     'columns'              => $columns,   // array of column arrays
                     'blocks'               => [],         // empty for column-layout sections
                 ];
@@ -148,8 +148,8 @@ class PageBuilderService
                 'background_image_url' => $section->background_image_url,
                 'background_image_type' => $section->background_image_type ?? 'section',
                 'max_width'        => $section->max_width,
-                'padding_top'      => $section->padding_top,
-                'padding_bottom'   => $section->padding_bottom,
+                'padding_top'      => (int) ($section->padding_top ?? 0),
+                'padding_bottom'   => (int) ($section->padding_bottom ?? 0),
                 'columns'          => [],
                 'blocks'           => $sectionBlocks
                     ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $bookings->get($b->id), $country))
