@@ -577,19 +577,21 @@ class ListingQueryService
      * Paginate ClassifiedListing for a resolved category, including its direct children.
      */
     public function paginateForClassifiedCategory(
-        string $categoryId,
+        ?string $categoryId,
         int $perPage = 20,
         array $filters = [],
     ): LengthAwarePaginator {
-        $childIds = ClassifiedCategory::where('parent_id', $categoryId)->pluck('id');
-
         $query = ClassifiedListing::where('status', ClassifiedListingStatus::Active->value)
-            ->where(function ($q) use ($categoryId, $childIds) {
-                $q->where('classified_category_id', $categoryId)
-                    ->orWhereIn('classified_category_id', $childIds);
-            })
             ->with(['images', 'seller', 'city'])
             ->orderByDesc('created_at');
+
+        if ($categoryId !== null) {
+            $childIds = ClassifiedCategory::where('parent_id', $categoryId)->pluck('id');
+            $query->where(function ($q) use ($categoryId, $childIds) {
+                $q->where('classified_category_id', $categoryId)
+                    ->orWhereIn('classified_category_id', $childIds);
+            });
+        }
 
         if (!empty($filters['listing_purpose'])) {
             $query->where('listing_purpose', $filters['listing_purpose']);

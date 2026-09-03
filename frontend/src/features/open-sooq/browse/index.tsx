@@ -8,12 +8,12 @@ import ClassifiedGrid from "./components/classified-grid";
 import type { ClassifiedBrowseFilters } from "./helpers/types";
 
 type Props = {
-  categoryId: string;
+  categoryId?: string;
   searchParams: Record<string, string>;
 };
 
 export default async function ClassifiedBrowse({
-  categoryId,
+  categoryId = "all",
   searchParams,
 }: Props) {
   const locale = await getLocale();

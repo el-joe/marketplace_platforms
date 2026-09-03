@@ -40,7 +40,7 @@ export type ClassifiedMeta = {
 };
 
 export type ClassifiedBrowseResponse = {
-  category: ClassifiedCategory;
+  category: ClassifiedCategory | null;
   page_builder: unknown;
   listings: {
     items: ClassifiedListing[];

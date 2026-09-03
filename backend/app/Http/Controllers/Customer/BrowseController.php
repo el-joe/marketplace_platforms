@@ -62,6 +62,16 @@ class BrowseController extends Controller
         return $this->browseTravel($request, $country, 'all');
     }
 
+    /**
+     * GET /api/customer/v1/{country}/classified
+     * Same as browse/classified/all — every active classified listing, unfiltered by category.
+     */
+    public function classifiedIndex(Request $request, $country): JsonResponse
+    {
+        $country = $request->attributes->get('country');
+        return $this->browseClassified($request, $country, 'all');
+    }
+
     // ── Products ──────────────────────────────────────────────────────────────
 
     private function browseProduct(Request $request, $country, string $id): JsonResponse
@@ -116,26 +126,32 @@ class BrowseController extends Controller
     {
         $country = $request->attributes->get('country');
 
-        $categoryNode = $this->unifiedCategories->findById($id, 'classified');
+        $category = null;
 
-        if (!$categoryNode) {
-            return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);
+        if ($id !== 'all' && $id !== '') {
+            $categoryNode = $this->unifiedCategories->findById($id, 'classified');
+
+            if (!$categoryNode) {
+                return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);
+            }
+
+            $category = ClassifiedCategory::where('id', $categoryNode['id'])->firstOrFail();
         }
 
-        $category = ClassifiedCategory::where('id', $categoryNode['id'])->firstOrFail();
-
-        $pageBuilder = $this->pageBuilder->resolve(
-            $country,
-            'category',
-            $category->id,
-            $this->pageBuilder->detectDevice($request),
-            auth('customer')->check() ? 'authenticated' : 'guest',
-        );
+        $pageBuilder = $category
+            ? $this->pageBuilder->resolve(
+                $country,
+                'category',
+                $category->id,
+                $this->pageBuilder->detectDevice($request),
+                auth('customer')->check() ? 'authenticated' : 'guest',
+            )
+            : null;
 
         $perPage = $request->integer('per_page', 20);
         $filters = $request->only(['listing_purpose', 'seller_type', 'min_price', 'max_price']);
 
-        $paginator = $this->listings->paginateForClassifiedCategory($category->id, $perPage, $filters);
+        $paginator = $this->listings->paginateForClassifiedCategory($category?->id, $perPage, $filters);
 
         $items = $paginator->getCollection()
             ->map(fn ($listing) => $this->listings->toClassifiedCardShape($listing))
@@ -144,7 +160,7 @@ class BrowseController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'category' => new ClassifiedBrowseCategoryResource($category),
+                'category' => $category ? new ClassifiedBrowseCategoryResource($category) : null,
                 'page_builder' => $pageBuilder,
                 'listings'     => [
                     'items' => $items,

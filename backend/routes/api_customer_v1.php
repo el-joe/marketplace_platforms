@@ -80,6 +80,9 @@ use Illuminate\Support\Facades\Route;
         // GET /travel — all active travel packages, unfiltered (same as browse/travel/all)
         Route::get('travel', [BrowseController::class, 'travelIndex'])->name('customer.travel.index');
 
+        // GET /classified — all active classified listings, unfiltered (same as browse/classified/all)
+        Route::get('classified', [BrowseController::class, 'classifiedIndex'])->name('customer.classified.index');
+
         // ── Payment gateways (public) ──────────────────────────────────────────
         // GET /payment-gateways — all active gateways for this country, for info screens
         Route::get('payment-gateways', [ApiCheckoutController::class, 'availableGateways'])

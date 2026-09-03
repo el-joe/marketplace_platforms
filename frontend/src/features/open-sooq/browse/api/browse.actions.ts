@@ -7,7 +7,7 @@ import type {
 } from "../helpers/types";
 
 export async function getClassifiedBrowse(
-  categoryId: string,
+  categoryId: string = "all",
   filters: ClassifiedBrowseFilters = {},
 ): Promise<ClassifiedBrowseResponse> {
   const params = new URLSearchParams();

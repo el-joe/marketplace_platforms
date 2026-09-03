@@ -18,9 +18,9 @@ import { getCategoriesTreeService } from "./api/get";
 function categoryHref(category: ICategoryNavTree): string {
   switch (category.type) {
     case Type.ClassiFied:
-      // Virtual parent node → Open Souq hub; real node → category browse
+      // Virtual parent node → all classifieds; real node → category browse
       return category.id === "virtual-open-souq"
-        ? "/open-sooq"
+        ? "/classified"
         : `/classified/${category.id}`;
     case Type.Travel:
       // Virtual parent node → Travel hub; real node → travel with category filter
