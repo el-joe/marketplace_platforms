@@ -12,21 +12,13 @@ const widthClasses: Record<string, string> = {
   full: "w-full flex-1",
 };
 
-export function DynamicLayout({
-  section,
-  hasFilters = true,
-}: {
-  section: PageBuilderSection;
-  hasFilters?: boolean;
-}) {
+export function DynamicLayout({ section }: { section: PageBuilderSection }) {
   const widths = section.columns_config?.widths?.split(" ") ?? [];
 
   const hasHeaderBg =
     section.background_image_type === "header" && section.background_image_url;
   const hasSectionBg =
     section.background_image_type === "section" && section.background_image_url;
-
-  const wrapperClass = hasFilters ? "container" : "w-full";
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: section.background_color ?? undefined,
@@ -44,7 +36,7 @@ export function DynamicLayout({
   };
 
   return (
-    <div className={wrapperClass}>
+    <div className="container">
       <section className="w-full" style={sectionStyle}>
         {hasHeaderBg && (
           <div className="relative h-20 lg:h-28">

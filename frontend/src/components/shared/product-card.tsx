@@ -23,7 +23,6 @@ import AddToCartButton from "./add-to-cart-button";
 
 type Props = {
   productData: Product | IProduct;
-  compact?: boolean;
 };
 
 const ProductCard = ({ productData }: Props) => {
@@ -52,7 +51,7 @@ const ProductCard = ({ productData }: Props) => {
   };
   return (
     <div
-      className="border border-border-color w-full rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
+      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
       onMouseEnter={() => handleAutoplay("start")}
       onMouseLeave={() => handleAutoplay("stop")}
     >

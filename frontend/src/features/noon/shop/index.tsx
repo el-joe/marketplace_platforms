@@ -11,7 +11,6 @@ interface Props {
   products: Product[];
   totalPages: number;
   totalCount: number;
-  hasFilters: boolean;
 }
 
 export default async function Shop({
@@ -20,19 +19,18 @@ export default async function Shop({
   pageBuilderData,
   categoryName,
   totalCount,
-  hasFilters,
 }: Props) {
   return (
     <>
       {pageBuilderData?.sections.map((e) => (
-        <DynamicLayout key={e.id} section={e} hasFilters={hasFilters} />
+        <DynamicLayout key={e.id} section={e} />
       ))}
 
       <ShopToolbar categoryName={categoryName} resultsCount={totalCount} />
 
       <div>
         {products.length > 0 ? (
-          <ProductsGrid products={products} hasFilters={hasFilters} />
+          <ProductsGrid products={products} />
         ) : (
           <div className="flex flex-col items-center gap-3 py-24 text-center">
             <p className="text-lg font-semibold text-primary">

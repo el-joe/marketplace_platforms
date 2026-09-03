@@ -85,7 +85,6 @@ export default async function ShopPage({ params, searchParams }: Props) {
           products={products}
           totalPages={totalPages}
           totalCount={totalCount}
-          hasFilters={hasFilters}
         />
       </div>
     </main>
