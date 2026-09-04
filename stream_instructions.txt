@@ -1,0 +1,444 @@
+═══════════════════════════════════════════════════════════════════
+  LIVE STREAM SYSTEM — VPS INTEGRATION GUIDE
+  Ubuntu + Apache2 + Laravel Reverb (WebSocket) + WebRTC
+═══════════════════════════════════════════════════════════════════
+
+This file covers every step required to make the live stream system
+work on your VPS after applying PROMPT-04.
+
+───────────────────────────────────────────────────────────────────
+SECTION 1 — ARCHITECTURE OVERVIEW
+───────────────────────────────────────────────────────────────────
+
+  Browser (Admin)                          Browser (Viewers)
+       │                                         │
+       │  WebRTC Offer (via API)                 │
+       ▼                                         │
+  Laravel API ──► Broadcast event ──► Reverb WS ◄─── Viewers subscribe
+       │                                         │
+       │  Reverb routes answer back              │
+       ▼                                         ▼
+  RTCPeerConnection ◄──────────────────► RTCPeerConnection
+       │                   (P2P media)           │
+       └──────────── Video/Audio stream ─────────┘
+
+- Signalling (SDP offer/answer + ICE candidates) goes through Laravel
+  Reverb WebSocket server (port 8080 internally, proxied by Apache2).
+- Media (video/audio) travels peer-to-peer (WebRTC) using Google STUN.
+- For viewers behind strict NAT (corporate, mobile), add a TURN server
+  (see Section 5).
+- Laravel Reverb replaces Pusher — fully self-hosted, zero cost.
+
+───────────────────────────────────────────────────────────────────
+SECTION 2 — INSTALL LARAVEL REVERB
+───────────────────────────────────────────────────────────────────
+
+Step 1 — Install the package (in your backend directory):
+
+  composer require laravel/reverb
+
+Step 2 — Publish Reverb config and generate keys:
+
+  php artisan reverb:install
+
+  This will:
+  - Publish config/reverb.php
+  - Generate REVERB_APP_ID, REVERB_APP_KEY, REVERB_APP_SECRET
+  - Write them into your .env file
+
+Step 3 — Update .env:
+
+  BROADCAST_CONNECTION=reverb
+
+  REVERB_APP_ID=<generated>
+  REVERB_APP_KEY=<generated>
+  REVERB_APP_SECRET=<generated>
+  REVERB_HOST=ws.yourdomain.com        ← subdomain for WebSocket
+  REVERB_PORT=443                      ← public HTTPS port
+  REVERB_SCHEME=https
+
+Step 4 — Clear config cache:
+
+  php artisan optimize:clear
+
+───────────────────────────────────────────────────────────────────
+SECTION 3 — APACHE2 REVERSE PROXY FOR REVERB
+───────────────────────────────────────────────────────────────────
+
+Reverb runs on port 8080 by default. You proxy it through Apache2
+on port 443 (HTTPS + WSS required for WebRTC getUserMedia).
+
+Step 1 — Enable Apache modules:
+
+  sudo a2enmod proxy proxy_http proxy_wstunnel rewrite ssl headers
+  sudo systemctl restart apache2
+
+Step 2 — Create a new VirtualHost for the WebSocket subdomain.
+  Create file: /etc/apache2/sites-available/ws.yourdomain.com.conf
+
+─── BEGIN FILE ──────────────────────────────────────────────────
+
+<VirtualHost *:80>
+    ServerName ws.yourdomain.com
+    Redirect permanent / https://ws.yourdomain.com/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName ws.yourdomain.com
+
+    SSLEngine on
+    SSLCertificateFile    /etc/letsencrypt/live/ws.yourdomain.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/ws.yourdomain.com/privkey.pem
+
+    # Proxy WebSocket upgrade requests
+    RewriteEngine On
+    RewriteCond %{HTTP:Upgrade} =websocket [NC]
+    RewriteRule /(.*)           ws://127.0.0.1:8080/$1 [P,L]
+
+    # Proxy regular HTTP requests (Reverb health check etc.)
+    ProxyPass        / http://127.0.0.1:8080/
+    ProxyPassReverse / http://127.0.0.1:8080/
+
+    ProxyPreserveHost On
+
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With"
+
+    ErrorLog  ${APACHE_LOG_DIR}/reverb-error.log
+    CustomLog ${APACHE_LOG_DIR}/reverb-access.log combined
+</VirtualHost>
+
+─── END FILE ────────────────────────────────────────────────────
+
+Step 3 — Enable the site and obtain SSL cert:
+
+  sudo certbot --apache -d ws.yourdomain.com
+  sudo a2ensite ws.yourdomain.com.conf
+  sudo systemctl reload apache2
+
+Step 4 — Verify proxy works:
+  curl -I https://ws.yourdomain.com/
+  Should return 200 or 426 Upgrade Required.
+
+───────────────────────────────────────────────────────────────────
+SECTION 4 — RUN REVERB AS A SYSTEMD SERVICE
+───────────────────────────────────────────────────────────────────
+
+Create: /etc/systemd/system/reverb.service
+
+─── BEGIN FILE ──────────────────────────────────────────────────
+
+[Unit]
+Description=Laravel Reverb WebSocket Server
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/html/backend
+ExecStart=/usr/bin/php artisan reverb:start --host=127.0.0.1 --port=8080 --no-interaction
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/var/log/reverb.log
+StandardError=append:/var/log/reverb.log
+
+[Install]
+WantedBy=multi-user.target
+
+─── END FILE ────────────────────────────────────────────────────
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable reverb
+  sudo systemctl start reverb
+  sudo systemctl status reverb
+
+Check logs:
+  sudo tail -f /var/log/reverb.log
+
+───────────────────────────────────────────────────────────────────
+SECTION 5 — TURN SERVER (for NAT traversal — STRONGLY RECOMMENDED)
+───────────────────────────────────────────────────────────────────
+
+Without a TURN server, viewers behind corporate NAT or mobile
+carrier-grade NAT cannot connect via WebRTC. STUN alone is not
+enough for ~20% of connections.
+
+Install coturn (free, open source TURN server):
+
+  sudo apt-get install -y coturn
+
+Edit /etc/turnserver.conf:
+
+  listening-port=3478
+  tls-listening-port=5349
+  listening-ip=<YOUR_VPS_PUBLIC_IP>
+  external-ip=<YOUR_VPS_PUBLIC_IP>
+  realm=yourdomain.com
+  server-name=yourdomain.com
+  lt-cred-mech
+  user=streamuser:YourStrongPassword123
+  log-file=/var/log/turnserver.log
+  no-multicast-peers
+  fingerprint
+  min-port=50000
+  max-port=60000
+
+  # TLS cert (reuse your main domain cert or ws subdomain cert)
+  cert=/etc/letsencrypt/live/yourdomain.com/fullchain.pem
+  pkey=/etc/letsencrypt/live/yourdomain.com/privkey.pem
+
+Enable and start:
+
+  sudo systemctl enable coturn
+  sudo systemctl start coturn
+
+Open firewall ports:
+
+  sudo ufw allow 3478/tcp
+  sudo ufw allow 3478/udp
+  sudo ufw allow 5349/tcp
+  sudo ufw allow 5349/udp
+  sudo ufw allow 50000:60000/udp
+
+Add TURN server to ICE_SERVERS in BOTH:
+  - backend/public/js/admin/live-stream-studio.js
+  - frontend/src/features/noon/live-streams/StreamDetailFeature.tsx
+
+Replace:
+  const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ];
+
+With:
+  const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    {
+      urls: [
+        'turn:yourdomain.com:3478',
+        'turns:yourdomain.com:5349',
+      ],
+      username: 'streamuser',
+      credential: 'YourStrongPassword123',
+    },
+  ];
+
+───────────────────────────────────────────────────────────────────
+SECTION 6 — FRONTEND: INSTALL LARAVEL ECHO + REVERB CLIENT
+───────────────────────────────────────────────────────────────────
+
+In your frontend directory:
+
+  npm install laravel-echo pusher-js
+
+Create/update: frontend/src/lib/echo.ts
+
+─── BEGIN FILE ──────────────────────────────────────────────────
+
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+declare global {
+  interface Window {
+    Pusher: typeof Pusher;
+    Echo: Echo;
+  }
+}
+
+export function initEcho() {
+  if (typeof window === 'undefined' || window.Echo) return;
+
+  window.Pusher = Pusher;
+
+  window.Echo = new Echo({
+    broadcaster: 'reverb',
+    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY!,
+    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST!,
+    wsPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT ?? '443', 10),
+    wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT ?? '443', 10),
+    forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME ?? 'https') === 'https',
+    enabledTransports: ['ws', 'wss'],
+  });
+}
+
+─── END FILE ────────────────────────────────────────────────────
+
+Add to frontend/.env.local (and your VPS .env.production):
+
+  NEXT_PUBLIC_REVERB_APP_KEY=<same as REVERB_APP_KEY in backend .env>
+  NEXT_PUBLIC_REVERB_HOST=ws.yourdomain.com
+  NEXT_PUBLIC_REVERB_PORT=443
+  NEXT_PUBLIC_REVERB_SCHEME=https
+  NEXT_PUBLIC_API_PUBLIC_URL=https://yourdomain.com/api/public/v1
+
+Call initEcho() early in your Next.js app — add to the (noon) layout
+or a client-side provider component:
+
+  // frontend/app/[locale]/(noon)/layout.tsx
+  // Add at top of the client component or in a useEffect in a child provider:
+  import { initEcho } from '@/src/lib/echo';
+
+  // Inside a useEffect in a 'use client' child:
+  useEffect(() => { initEcho(); }, []);
+
+Alternatively, wrap in a small provider:
+
+  // frontend/src/providers/echo-provider.tsx
+  'use client';
+  import { useEffect } from 'react';
+  import { initEcho } from '@/src/lib/echo';
+  export default function EchoProvider({ children }: { children: React.ReactNode }) {
+    useEffect(() => { initEcho(); }, []);
+    return <>{children}</>;
+  }
+
+  // Then wrap <EchoProvider> around children in (noon)/layout.tsx
+
+───────────────────────────────────────────────────────────────────
+SECTION 7 — ADMIN PANEL: LOAD ECHO IN STUDIO PAGE
+───────────────────────────────────────────────────────────────────
+
+The admin studio blade view pushes `live-stream-studio.js`. Echo must
+be loaded before it. Add to your admin layout (layouts/admin.blade.php)
+in the <head> or before closing </body>:
+
+  <!-- Laravel Echo + Reverb (only load on pages that need it) -->
+  @stack('scripts')
+
+In the studio view (show.blade.php) it already has:
+  @push('scripts')
+  <script src="{{ asset('js/admin/live-stream-studio.js') }}"></script>
+  @endpush
+
+You need to also push Echo before the studio script. Add a Reverb
+bootstrap file to your admin JS build or load from CDN. The easiest
+approach on the admin side is a standalone bundle:
+
+  # In backend directory:
+  npm install laravel-echo pusher-js
+
+  # Create backend/resources/js/reverb-bootstrap.js:
+  import Echo from 'laravel-echo';
+  import Pusher from 'pusher-js';
+  window.Pusher = Pusher;
+  window.Echo = new Echo({
+    broadcaster: 'reverb',
+    key: '{{ REVERB_APP_KEY }}',       // blade will inline this
+    wsHost: '{{ REVERB_HOST }}',
+    wsPort: 443,
+    wssPort: 443,
+    forceTLS: true,
+    enabledTransports: ['ws', 'wss'],
+  });
+
+  # Or inline in show.blade.php @push('head'):
+  <script>
+    window.__REVERB_KEY  = '{{ config("broadcasting.connections.reverb.key") }}';
+    window.__REVERB_HOST = '{{ config("broadcasting.connections.reverb.options.host") }}';
+  </script>
+
+The simpler admin approach — add these two scripts to show.blade.php
+before live-stream-studio.js (update @push('scripts')):
+
+  @push('scripts')
+  <script src="https://unpkg.com/pusher-js@8.4.0/dist/web/pusher.js"></script>
+  <script src="https://unpkg.com/laravel-echo@1.16.1/dist/echo.js"></script>
+  <script>
+    window.Pusher = Pusher;
+    window.Echo = new LaravelEcho({
+      broadcaster: 'reverb',
+      key: '{{ config("broadcasting.connections.reverb.key") }}',
+      wsHost: '{{ env("REVERB_HOST", "ws.yourdomain.com") }}',
+      wsPort: 443,
+      wssPort: 443,
+      forceTLS: true,
+      enabledTransports: ['ws', 'wss'],
+    });
+  </script>
+  <script src="{{ asset('js/admin/live-stream-studio.js') }}"></script>
+  @endpush
+
+───────────────────────────────────────────────────────────────────
+SECTION 8 — HTTPS REQUIREMENT FOR WEBRTC
+───────────────────────────────────────────────────────────────────
+
+WebRTC getUserMedia() and getDisplayMedia() REQUIRE HTTPS.
+
+Your backend API must be on HTTPS (yourdomain.com with a valid cert).
+Your WebSocket must be WSS (ws.yourdomain.com with a valid cert).
+
+If you haven't yet set up SSL on the main domain:
+  sudo certbot --apache -d yourdomain.com -d www.yourdomain.com
+
+───────────────────────────────────────────────────────────────────
+SECTION 9 — SCALE NOTE (multi-viewer streams)
+───────────────────────────────────────────────────────────────────
+
+The current architecture is MESH WebRTC:
+- Each viewer connects directly to the admin broadcaster.
+- Works well for 1–10 simultaneous viewers.
+- At 10+ viewers the admin browser CPU/upload bandwidth becomes a bottleneck.
+
+For large-scale production (100+ viewers) you would need an SFU
+(Selective Forwarding Unit) such as:
+  - mediasoup (open source, self-hosted Node.js)
+  - LiveKit (open source, self-hosted Go)
+  - Janus Gateway
+
+These are significantly more complex to set up. For the current
+marketplace use case (admin broadcasting product showcases to shoppers),
+the current mesh approach handles typical load.
+
+───────────────────────────────────────────────────────────────────
+SECTION 10 — DEPLOYMENT CHECKLIST
+───────────────────────────────────────────────────────────────────
+
+Backend:
+  [ ] composer require laravel/reverb
+  [ ] php artisan reverb:install
+  [ ] Update .env: BROADCAST_CONNECTION=reverb + REVERB_* keys
+  [ ] php artisan migrate (creates live_streams, live_stream_comments, live_stream_likes)
+  [ ] php artisan optimize:clear
+  [ ] systemctl start reverb (check logs)
+
+Apache2:
+  [ ] a2enmod proxy proxy_http proxy_wstunnel rewrite ssl headers
+  [ ] Create ws.yourdomain.com VirtualHost config
+  [ ] certbot for ws.yourdomain.com
+  [ ] a2ensite ws.yourdomain.com.conf
+  [ ] systemctl reload apache2
+  [ ] Test: curl -I https://ws.yourdomain.com/
+
+coturn (optional but recommended):
+  [ ] apt-get install coturn
+  [ ] Configure /etc/turnserver.conf
+  [ ] Open firewall ports (3478, 5349, 50000-60000)
+  [ ] systemctl start coturn
+  [ ] Add TURN to ICE_SERVERS in both JS files
+
+Frontend:
+  [ ] npm install laravel-echo pusher-js
+  [ ] Create frontend/src/lib/echo.ts
+  [ ] Add NEXT_PUBLIC_REVERB_* to .env.local / VPS environment
+  [ ] Add EchoProvider (or useEffect) to noon layout
+  [ ] npm run build && restart Next.js process
+
+Admin panel:
+  [ ] Add Echo CDN scripts to show.blade.php @push('scripts')
+  [ ] Verify live-stream-studio.js loads after Echo
+
+Test flow:
+  [ ] Admin: create a scheduled stream
+  [ ] Admin: open stream detail → click "Go Live Now"
+  [ ] Admin: click "Start Camera" (allow camera/mic in browser)
+  [ ] Customer: open /live-streams → see stream with LIVE badge
+  [ ] Customer: click stream → see video playing
+  [ ] Customer: send a comment → appears in admin studio panel
+  [ ] Customer: press ❤️ → like count updates in real-time
+  [ ] Admin: click "End Stream" → status changes to Ended
+
+───────────────────────────────────────────────────────────────────
+END OF INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════

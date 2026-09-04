@@ -190,6 +190,13 @@ class NavigationService
                         'badge' => $this->cachedBadge('active_cart_card_offers', fn() => $this->countActiveCartCardOffers()),
                     ],
                     [
+                        'label'      => __('admin.nav.live_streams'),
+                        'route'      => 'admin.live-streams.index',
+                        'icon'       => 'video-camera',
+                        'permission' => 'pages.view',
+                        'badge'      => null,
+                    ],
+                    [
                         'label' => __('admin.nav.ad_campaigns'),
                         'route' => 'admin.ad-campaigns.index',
                         'icon' => 'megaphone',

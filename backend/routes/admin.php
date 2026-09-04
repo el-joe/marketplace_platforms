@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LiveStreamController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\ProductHighlightController;
@@ -1577,6 +1578,22 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     });
 
     // ── Radio ─────────────────────────────────────────────────────────────────
+    // ── Live Streams ──────────────────────────────────────────────────────────
+    Route::prefix('live-streams')->name('live-streams.')->middleware('admin.permission:pages.view')->group(function () {
+        Route::get('/',                                   [LiveStreamController::class, 'index'])->name('index');
+        Route::get('/create',                             [LiveStreamController::class, 'create'])->name('create');
+        Route::post('/',                                  [LiveStreamController::class, 'store'])->name('store');
+        Route::get('/{liveStream}',                       [LiveStreamController::class, 'show'])->name('show');
+        Route::get('/{liveStream}/edit',                  [LiveStreamController::class, 'edit'])->name('edit');
+        Route::put('/{liveStream}',                       [LiveStreamController::class, 'update'])->name('update');
+        Route::delete('/{liveStream}',                    [LiveStreamController::class, 'destroy'])->name('destroy');
+        Route::post('/{liveStream}/go-live',              [LiveStreamController::class, 'goLive'])->name('go-live');
+        Route::post('/{liveStream}/end',                  [LiveStreamController::class, 'endStream'])->name('end');
+        Route::post('/{liveStream}/signal',               [LiveStreamController::class, 'signal'])->name('signal');
+        Route::get('/{liveStream}/comments',              [LiveStreamController::class, 'comments'])->name('comments');
+        Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy');
+    });
+
     Route::prefix('radio')->name('radio.')->group(function () {
         Route::resource('channels', \App\Http\Controllers\Admin\RadioChannelController::class)
             ->names('channels')
