@@ -57,26 +57,6 @@ class ClassifiedCategory extends Model
         return $this->hasMany(ClassifiedListing::class, 'classified_category_id');
     }
 
-    /** All attribute mappings for this category, including definition. */
-    public function attributeMap(): HasMany
-    {
-        return $this->hasMany(ClassifiedCategoryAttributeMap::class, 'classified_category_id')
-                    ->with('definition')
-                    ->orderBy('sort_order');
-    }
-
-    /**
-     * Attribute mappings where is_shown_on_card = true.
-     * Used by toClassifiedCardShape() to build listing card pills.
-     */
-    public function cardAttributes(): HasMany
-    {
-        return $this->hasMany(ClassifiedCategoryAttributeMap::class, 'classified_category_id')
-                    ->with('definition')
-                    ->where('is_shown_on_card', true)
-                    ->orderBy('sort_order');
-    }
-
     public function getNameAttribute(): string
     {
         return app()->getLocale() === 'ar' ? $this->name_ar : $this->name_en;

@@ -149,11 +149,7 @@ class BrowseController extends Controller
             : null;
 
         $perPage = $request->integer('per_page', 20);
-        $filters = $request->only([
-            'listing_purpose', 'seller_type',
-            'min_price', 'max_price',
-            'search', 'sort',
-        ]);
+        $filters = $request->only(['listing_purpose', 'seller_type', 'min_price', 'max_price']);
 
         $paginator = $this->listings->paginateForClassifiedCategory($category?->id, $perPage, $filters);
 

@@ -582,169 +582,66 @@ class ListingQueryService
         array $filters = [],
     ): LengthAwarePaginator {
         $query = ClassifiedListing::where('status', ClassifiedListingStatus::Active->value)
-            ->with([
-                'images',
-                'seller',
-                'city',
-                'classifiedCategory.cardAttributes', // eager-load card pills via pivot
-            ]);
+            ->with(['images', 'seller', 'city'])
+            ->orderByDesc('created_at');
 
-        // ── Category scope ────────────────────────────────────────────────────
         if ($categoryId !== null) {
             $childIds = ClassifiedCategory::where('parent_id', $categoryId)->pluck('id');
             $query->where(function ($q) use ($categoryId, $childIds) {
                 $q->where('classified_category_id', $categoryId)
-                  ->orWhereIn('classified_category_id', $childIds);
+                    ->orWhereIn('classified_category_id', $childIds);
             });
         }
 
-        // ── Standard filters ──────────────────────────────────────────────────
         if (!empty($filters['listing_purpose'])) {
             $query->where('listing_purpose', $filters['listing_purpose']);
         }
+
         if (!empty($filters['seller_type'])) {
-            $query->where(
-                'seller_type',
-                $filters['seller_type'] === 'vendor'
-                    ? \App\Models\Vendor::class
-                    : \App\Models\Customer::class
-            );
+            $query->where('seller_type', $filters['seller_type'] === 'vendor' ? Vendor::class : \App\Models\Customer::class);
         }
+
         if (!empty($filters['min_price'])) {
             $query->where('price', '>=', (int) $filters['min_price']);
         }
+
         if (!empty($filters['max_price'])) {
             $query->where('price', '<=', (int) $filters['max_price']);
         }
-
-        // ── Keyword search ────────────────────────────────────────────────────
-        if (!empty($filters['search'])) {
-            $term = '%' . $filters['search'] . '%';
-            $query->where(fn ($q) => $q->where('title_en', 'like', $term)
-                                        ->orWhere('title_ar', 'like', $term));
-        }
-
-        // ── Sort ──────────────────────────────────────────────────────────────
-        match ($filters['sort'] ?? 'newest') {
-            'price_asc'   => $query->orderBy('price'),
-            'price_desc'  => $query->orderByDesc('price'),
-            'most_viewed' => $query->orderByDesc('views_count'),
-            default       => $query->orderByDesc('created_at'),
-        };
 
         return $query->paginate($perPage);
     }
 
     /**
      * Canonical card shape for classified listings on browse/search grids.
-     * Attribute pills are driven by ClassifiedCategoryAttributeMap (is_shown_on_card = true).
      */
     public function toClassifiedCardShape(ClassifiedListing $listing): array
     {
-        $isVendor = $listing->seller_type === Vendor::class;
-        $seller   = $listing->seller;
-
-        // ── Seller block ──────────────────────────────────────────────────────
-        if ($isVendor) {
-            $displayName = $seller?->store_name ?? 'Vendor';
-            $isVerified  = $seller?->phone_verified_at !== null;
-            $rawPhone    = $seller?->contact_phone ?? $seller?->phone;
-        } else {
-            $parts       = preg_split('/\s+/', trim($seller?->name ?? ''), -1, PREG_SPLIT_NO_EMPTY);
-            $displayName = ($parts[0] ?? 'Individual')
-                         . (isset($parts[1]) ? ' ' . mb_substr($parts[1], 0, 1) . '.' : '');
-            $isVerified  = $seller?->phone_verified_at !== null;
-            $rawPhone    = $seller?->phone;
-        }
-
-        // Mask last 2 digits of phone → XX
-        $phoneMasked = null;
-        if ($rawPhone) {
-            $digits      = preg_replace('/\D/', '', $rawPhone);
-            $phoneMasked = strlen($digits) > 2 ? substr($digits, 0, -2) . 'XX' : 'XX';
-        }
-
-        // ── Primary image ─────────────────────────────────────────────────────
-        $primary   = $listing->images->firstWhere('is_primary', true) ?? $listing->images->first();
-        $thumbnail = $primary?->file_path
-            ? \Illuminate\Support\Facades\Storage::url($primary->file_path)
-            : null;
-
-        // ── Attribute pills ───────────────────────────────────────────────────
-        // Only attributes with is_shown_on_card = true on this category's map are included.
-        $rawAttributes     = $listing->attributes ?? [];
-        $cardAttributeMaps = $listing->classifiedCategory?->cardAttributes ?? collect();
-        $pills             = [];
-
-        foreach ($cardAttributeMaps as $map) {
-            $def   = $map->definition;
-            $code  = $def?->code;
-            $value = $rawAttributes[$code] ?? null;
-
-            if ($code === null || $value === null || $value === '') {
-                continue;
-            }
-
-            // Resolve select options to bilingual label
-            $displayValue = $value;
-            if ($def->input_type === 'select' && !empty($def->options)) {
-                foreach ($def->options as $opt) {
-                    if (($opt['value'] ?? null) === (string) $value) {
-                        $displayValue = ['en' => $opt['label_en'] ?? $value, 'ar' => $opt['label_ar'] ?? $value];
-                        break;
-                    }
-                }
-            }
-
-            $pills[] = [
-                'code'  => $code,
-                'label' => ['en' => $def->label_en, 'ar' => $def->label_ar],
-                'value' => $displayValue,
-                'unit'  => $def->unit_en ? ['en' => $def->unit_en, 'ar' => $def->unit_ar] : null,
-            ];
-        }
-
         return [
-            'listing_id'      => $listing->id,
-            'listing_number'  => $listing->listing_number,
-            'source_type'     => 'classified',
-            'slug'            => $listing->listing_number,
-
-            'title' => ['en' => $listing->title_en, 'ar' => $listing->title_ar],
-
-            'category' => $listing->classifiedCategory ? [
-                'id'   => $listing->classifiedCategory->id,
-                'name' => ['en' => $listing->classifiedCategory->name_en, 'ar' => $listing->classifiedCategory->name_ar],
-                'slug' => $listing->classifiedCategory->slug,
-            ] : null,
-
-            'price'            => $listing->price,
-            'currency'         => $listing->currency,
+            'listing_id' => $listing->id,
+            'listing_number' => $listing->listing_number,
+            'source_type' => 'classified',
+            'title_en' => $listing->title_en,
+            'title_ar' => $listing->title_ar,
+            'slug' => $listing->listing_number,
+            'thumbnail' => $listing->images->first()?->file_path
+                ? \Illuminate\Support\Facades\Storage::url($listing->images->first()->file_path)
+                : null,
+            'images' => $listing->images->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => \Illuminate\Support\Facades\Storage::url($img->file_path),
+                'is_primary' => (bool) ($img->is_primary ?? false),
+                'position'   => (int) ($img->position ?? 0),
+            ])->values()->all(),
+            'price' => $listing->price,
+            'price_formatted' => number_format($listing->price, 2),
+            'currency' => $listing->currency,
             'price_negotiable' => (bool) $listing->price_negotiable,
-            'listing_purpose'  => $listing->listing_purpose,
-
-            'thumbnail'    => $thumbnail,
+            'listing_purpose' => $listing->listing_purpose,
+            'location' => $listing->city?->name_en,
+            'seller_type' => $listing->seller_type === Vendor::class ? 'vendor' : 'customer',
             'images_count' => $listing->images->count(),
-
-            'location' => [
-                'city' => $listing->city
-                    ? ['en' => $listing->city->name_en, 'ar' => $listing->city->name_ar]
-                    : null,
-            ],
-
-            'attributes' => $pills,
-
-            'seller' => [
-                'type'         => $isVendor ? 'vendor' : 'individual',
-                'display_name' => $displayName,
-                'is_verified'  => $isVerified,
-                'phone_masked' => $phoneMasked,
-            ],
-
-            'views_count' => $listing->views_count,
-            'created_at'  => $listing->created_at?->toIso8601String(),
-            'time_ago'    => $listing->created_at?->diffForHumans(),
-            'expires_at'  => $listing->expires_at?->toDateString(),
+            'created_at' => $listing->created_at?->toIso8601String(),
         ];
     }
 
