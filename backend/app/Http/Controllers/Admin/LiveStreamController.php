@@ -124,6 +124,10 @@ class LiveStreamController extends Controller
 
     public function signal(Request $request, LiveStream $liveStream): JsonResponse
     {
+        if (!$liveStream->isLive() || !$liveStream->stream_key) {
+            return response()->json(['success' => false, 'message' => 'Stream is not live.'], 422);
+        }
+
         $data = $request->validate([
             'type'    => ['required', Rule::in(['offer', 'answer', 'ice-candidate'])],
             'payload' => 'required|array',

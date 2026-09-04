@@ -6,19 +6,28 @@ import Image from 'next/image';
 import { getStream, postComment, postLike, postSignal } from './api';
 import type { LiveStreamDetail, StreamComment } from './types';
 
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  // Add TURN server here — see stream_instructions.txt
-  {
-      urls: [
-        'turn:noon.codefanz.com:3478',
-        'turns:noon.codefanz.com:5349',
-      ],
-      username: 'streamuser',
-      credential: 'YourStrongPassword123',
-    },
-];
+const buildIceServers = (): RTCIceServer[] => {
+  const servers: RTCIceServer[] = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+  ];
+
+  const turnUrl  = process.env.NEXT_PUBLIC_TURN_URL;
+  const turnUser = process.env.NEXT_PUBLIC_TURN_USERNAME;
+  const turnPass = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+
+  if (turnUrl && turnUser && turnPass) {
+    servers.push({
+      urls:       [turnUrl, turnUrl.replace('turn:', 'turns:').replace(':3478', ':5349')],
+      username:   turnUser,
+      credential: turnPass,
+    });
+  }
+
+  return servers;
+};
+
+const ICE_SERVERS = buildIceServers();
 
 function getGuestPeerId(): string {
   let id = sessionStorage.getItem('guest_peer_id');

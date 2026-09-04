@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LiveStream;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -25,9 +26,13 @@ class LiveStreamController extends Controller
 
     // ── GET /streams/{stream} ─────────────────────────────────────────────────
 
-    public function show(LiveStream $stream): JsonResponse
+    public function show(Request $request, LiveStream $stream): JsonResponse
     {
-        $stream->increment('total_viewers');
+        // Deduplicate viewer count per IP per stream per hour (stateless — no sessions available).
+        $viewKey = 'stream_view:' . $stream->id . ':' . md5($request->ip() ?? 'unknown');
+        if (Cache::add($viewKey, 1, now()->addHour())) {
+            $stream->increment('total_viewers');
+        }
 
         return response()->json([
             'success' => true,
@@ -75,13 +80,15 @@ class LiveStreamController extends Controller
             'customer_id' => auth('customer')->id(),
         ]);
 
-        broadcast(new \App\Events\StreamComment(
-            $stream->stream_key,
-            $comment->id,
-            $comment->guest_name ?? 'Guest',
-            $comment->body,
-            $comment->created_at->toIso8601String(),
-        ))->toOthers();
+        if ($stream->stream_key) {
+            broadcast(new \App\Events\StreamComment(
+                $stream->stream_key,
+                $comment->id,
+                $comment->guest_name ?? 'Guest',
+                $comment->body,
+                $comment->created_at->toIso8601String(),
+            ))->toOthers();
+        }
 
         return response()->json(['success' => true, 'data' => [
             'id'         => $comment->id,
@@ -99,10 +106,12 @@ class LiveStreamController extends Controller
 
         $stream->increment('likes_count');
 
-        broadcast(new \App\Events\StreamLike(
-            $stream->stream_key,
-            $stream->likes_count,
-        ))->toOthers();
+        if ($stream->stream_key) {
+            broadcast(new \App\Events\StreamLike(
+                $stream->stream_key,
+                $stream->likes_count,
+            ))->toOthers();
+        }
 
         return response()->json([
             'success'     => true,

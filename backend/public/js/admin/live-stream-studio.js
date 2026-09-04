@@ -169,19 +169,26 @@
 
   // ─── WebRTC ───────────────────────────────────────────────────────────────
 
-  const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    // Add TURN server here — see stream_instructions.txt
-    {
-      urls: [
-        'turn:noon.codefanz.com:3478',
-        'turns:noon.codefanz.com:5349',
-      ],
-      username: 'streamuser',
-      credential: 'YourStrongPassword123',
-    },
-  ];
+  // TURN config is injected into the page via a <meta> tag from show.blade.php
+  // See: <meta name="turn-url"> <meta name="turn-user"> <meta name="turn-cred">
+  const buildIceServers = () => {
+    const servers = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+    ];
+    const turnUrl  = META('turn-url');
+    const turnUser = META('turn-user');
+    const turnCred = META('turn-cred');
+    if (turnUrl && turnUser && turnCred) {
+      servers.push({
+        urls:       [turnUrl, turnUrl.replace('turn:', 'turns:').replace(':3478', ':5349')],
+        username:   turnUser,
+        credential: turnCred,
+      });
+    }
+    return servers;
+  };
+  const ICE_SERVERS = buildIceServers();
 
   function createPeerConnection(peerId) {
     if (peerConnections[peerId]) return peerConnections[peerId];

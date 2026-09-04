@@ -5,6 +5,9 @@
 <meta name="stream-key"    content="{{ $liveStream->stream_key }}">
 <meta name="stream-status" content="{{ $liveStream->status->value }}">
 <meta name="stream-id"     content="{{ $liveStream->id }}">
+<meta name="turn-url"      content="{{ config('services.turn.url', '') }}">
+<meta name="turn-user"     content="{{ config('services.turn.username', '') }}">
+<meta name="turn-cred"     content="{{ config('services.turn.credential', '') }}">
 @endpush
 
 @section('content')
