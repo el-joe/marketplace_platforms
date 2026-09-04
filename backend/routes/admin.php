@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\ClassifiedAttributeController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LiveStreamController;
 use App\Http\Controllers\Admin\ProductController;
@@ -1341,6 +1342,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::delete('/{category}', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'destroy'])->name('destroy');
             Route::post('/{category}/toggle', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'toggleActive'])->name('toggle');
             Route::post('/reorder', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'reorder'])->name('reorder');
+        });
+
+        // Attribute Definitions
+        Route::prefix('attributes')->name('attributes.')->group(function () {
+            Route::get('/',                [ClassifiedAttributeController::class, 'index'])->name('index');
+            Route::post('/',               [ClassifiedAttributeController::class, 'store'])->name('store');
+            Route::put('/{definition}',    [ClassifiedAttributeController::class, 'update'])->name('update');
+            Route::delete('/{definition}', [ClassifiedAttributeController::class, 'destroy'])->name('destroy');
+            // Per-category mapping
+            Route::get('/category/{category}',              [ClassifiedAttributeController::class, 'categoryAttributes'])->name('category.index');
+            Route::post('/category/{category}',              [ClassifiedAttributeController::class, 'attachToCategory'])->name('category.attach');
+            Route::put('/category/{category}/map/{map}',     [ClassifiedAttributeController::class, 'updateCategoryAttribute'])->name('category.update');
+            Route::delete('/category/{category}/map/{map}',  [ClassifiedAttributeController::class, 'detachFromCategory'])->name('category.detach');
+            Route::post('/category/{category}/reorder',      [ClassifiedAttributeController::class, 'reorderCategoryAttributes'])->name('category.reorder');
         });
 
         // Contract Templates
