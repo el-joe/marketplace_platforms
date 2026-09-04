@@ -206,6 +206,18 @@
                     @endforeach
                 </select>
 
+                {{-- Edit / Delete selected page (hidden until a page is selected) --}}
+                <button type="button" id="edit-page-btn"
+                    title="{{ __('admin.page_builder.edit_page_modal.edit_page') }}"
+                    class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <x-heroicon name="pencil-square" class="w-4 h-4" />
+                </button>
+                <button type="button" id="delete-page-btn"
+                    title="{{ __('admin.page_builder.edit_page_modal.delete_page') }}"
+                    class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors">
+                    <x-heroicon name="trash" class="w-4 h-4" />
+                </button>
+
                 {{-- Divider --}}
                 <span class="text-gray-200 text-lg">|</span>
 
@@ -323,6 +335,7 @@
 </div>
 
 @include('admin.page-builder.partials.create-page-modal')
+@include('admin.page-builder.partials.edit-page-modal')
 @include('admin.page-builder.partials.slide-modal')
 @include('admin.page-builder.partials.ad-image-modal')
 @include('admin.page-builder.partials.version-drawer')
@@ -371,6 +384,12 @@
             couldNotSaveSlide: @json(__('admin.page_builder_section.could_not_save_slide')),
             pageCreated: @json(__('admin.page_builder_section.page_created')),
             couldNotCreatePage: @json(__('admin.page_builder_section.could_not_create_page')),
+            pageUpdated: @json(__('admin.page_builder_section.page_updated')),
+            couldNotUpdatePage: @json(__('admin.page_builder_section.could_not_update_page')),
+            deletePageTitle: @json(__('admin.page_builder_section.delete_page_title')),
+            deletePageMessage: @json(__('admin.page_builder_section.delete_page_message')),
+            pageDeleted: @json(__('admin.page_builder_section.page_deleted')),
+            couldNotDeletePage: @json(__('admin.page_builder_section.could_not_delete_page')),
             publishPageTitle: @json(__('admin.page_builder_section.publish_page_title')),
             publishPageMessage: @json(__('admin.page_builder_section.publish_page_message')),
             publish: @json(__('admin.page_builder_section.publish')),

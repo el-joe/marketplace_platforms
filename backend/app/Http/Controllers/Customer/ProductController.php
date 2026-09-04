@@ -43,16 +43,6 @@ class ProductController extends Controller
     ) {
     }
 
-    /**
-     * Resolve a category filter value (id or slug) to its actual id.
-     */
-    private function resolveCategoryId(string $idOrSlug): ?string
-    {
-        return Category::where('id', $idOrSlug)
-            ->orWhere('slug', $idOrSlug)
-            ->value('id');
-    }
-
     public function index(ProductListRequest $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
@@ -60,11 +50,17 @@ class ProductController extends Controller
         $perPage = (int) ($filters['per_page'] ?? 20);
         $page    = (int) ($filters['page'] ?? 1);
 
-        if (!empty($filters['category'])) {
-            $filters['category'] = $this->resolveCategoryId($filters['category']) ?? $filters['category'];
-        }
+        $categoryService = app(CategoryService::class);
 
-        $category = !empty($filters['category']) ? Category::find($filters['category']) : null;
+        // ── Resolve the 'category' filter, which may be a category slug/id or a
+        // custom page slug (an aggregate landing page spanning several categories).
+        $resolvedSlug = !empty($filters['category']) ? $categoryService->resolveSlug($filters['category']) : null;
+        $category     = $resolvedSlug && $resolvedSlug['type'] === 'category' ? $resolvedSlug['model'] : null;
+        $customPage   = $resolvedSlug && $resolvedSlug['type'] === 'custom_page' ? $resolvedSlug['model'] : null;
+
+        $categoryIds = !empty($filters['category'])
+            ? $categoryService->getCategoryIdsForFilter($filters['category'])
+            : null;
 
         // ── Device & audience (same logic as HomeController) ─────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);
@@ -88,11 +84,9 @@ class ProductController extends Controller
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
-        // Apply category filter to admin listings if requested (includes all descendants)
-        if (!empty($filters['category'])) {
-            $categoryIds = $category
-                ? app(CategoryService::class)->getDescendantIds($category)
-                : [$filters['category']];
+        // Apply category filter to admin listings if requested (includes all descendants,
+        // or the union of descendants across every category linked to a custom page)
+        if ($categoryIds !== null) {
             $adminBuilder->whereIn('p.category_id', $categoryIds);
         }
         if (!empty($filters['price_min'])) {
@@ -125,7 +119,7 @@ class ProductController extends Controller
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
             ]);
 
-        $vendorBuilder = $this->listings->applyFilters($vendorBuilder, $filters);
+        $vendorBuilder = $this->listings->applyFilters($vendorBuilder, $filters, $categoryIds);
         $vendorBuilder = $this->listings->applySort($vendorBuilder, $filters['sort'] ?? 'relevance');
         $paginator     = $vendorBuilder->paginate($perPage);
 
@@ -164,11 +158,14 @@ class ProductController extends Controller
         $items = array_merge($adminItems, $vendorItems);
         $items = $this->sponsored->inject($items, $country, $page, 'category_top');
 
-        $facets = $this->products->facets($country, $filters);
+        $facets = $this->products->facets($country, $filters, $categoryIds);
 
-        // ── Page builder (category > brand priority) ──────────────────────────
-        $pageBuilder    = $this->resolvePageBuilder($country, $filters, $deviceTarget, $audience);
+        // ── Page builder (category/custom-page > brand priority) ───────────────
+        $pageBuilder    = $this->resolvePageBuilder($country, $filters, $category, $customPage, $deviceTarget, $audience);
         $hasPageBuilder = $pageBuilder !== null;
+
+        $pageEntity = $category ?? $customPage;
+        $pageSlug   = $category?->slug ?? $customPage?->slugRecord?->slug_url;
 
         return ApiResponse::success([
             'items'  => ProductCardResource::collection(collect($items)),
@@ -181,12 +178,12 @@ class ProductController extends Controller
             ],
             'page_builder'     => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
-            'category'         => $category ? [
-                'id'          => $category->id,
-                'name'        => ['en' => $category->name_en, 'ar' => $category->name_ar],
-                'slug'        => $category->slug,
-                'image_url'   => $category->image_url,
-                'has_filters' => (bool) $category->has_filters,
+            'category'         => $pageEntity ? [
+                'id'          => $pageEntity->id,
+                'name'        => ['en' => $pageEntity->name_en, 'ar' => $pageEntity->name_ar],
+                'slug'        => $pageSlug,
+                'image_url'   => $pageEntity->image_url,
+                'has_filters' => (bool) $pageEntity->has_filters,
             ] : null,
         ]);
     }
@@ -194,20 +191,30 @@ class ProductController extends Controller
     /**
      * Resolve the page_builder for a product listing/search response.
      *
-     * Priority: category (high) > brand (low). Returns null when no filter
-     * is present or no published page exists for the given reference.
+     * Priority: category/custom-page (high) > brand (low). Returns null when
+     * no filter is present or no published page exists for the given reference.
      */
     private function resolvePageBuilder(
         Country $country,
         array $filters,
+        ?Category $category,
+        ?\App\Models\CustomPage $customPage,
         string $deviceTarget,
         string $audience,
     ): ?array {
-        if (!empty($filters['category'])) {
+        if ($customPage) {
+            $result = $this->pageBuilder->resolve(
+                country:      $country,
+                pageType:     'custom_page',
+                referenceId:  $customPage->id,
+                deviceTarget: $deviceTarget,
+                audience:     $audience,
+            );
+        } elseif ($category) {
             $result = $this->pageBuilder->resolve(
                 country:      $country,
                 pageType:     'category',
-                referenceId:  $filters['category'],
+                referenceId:  $category->id,
                 deviceTarget: $deviceTarget,
                 audience:     $audience,
             );

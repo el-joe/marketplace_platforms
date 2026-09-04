@@ -80,6 +80,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.custom_pages'),
+                        'route' => 'admin.custom-pages.index',
+                        'icon' => 'document-duplicate',
+                        'permission' => 'categories.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.brands'),
                         'route' => 'admin.brands.index',
                         'icon' => 'tag',

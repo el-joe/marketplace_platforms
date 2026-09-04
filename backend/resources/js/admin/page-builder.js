@@ -28,6 +28,8 @@ const state = {
 const ROUTES = {
     load: '/page-builder/load',
     pages: '/page-builder/pages',
+    updatePage: (id) => `/page-builder/pages/${id}`,
+    deletePage: (id) => `/page-builder/pages/${id}`,
     publish: (id) => `/page-builder/pages/${id}/publish`,
     clearPageCache: (pageId) => `/page-builder/pages/${pageId}/clear-cache`,
     pageRevisions: (id) => `/page-builder/pages/${id}/revisions`,
@@ -170,8 +172,10 @@ function loadPage(pageId) {
     closeConfigPanel();
 
     $('#toolbar-actions-row').toggleClass('hidden', !state.currentPageId);
+    $('#edit-page-btn, #delete-page-btn').toggleClass('hidden', !state.currentPageId);
 
     if (!pageId) {
+        state.currentPageMeta = null;
         $('#sections-container').empty();
         $('#block-canvas').empty().addClass('hidden');
         $('#ungrouped-title').addClass('hidden');
@@ -1668,14 +1672,16 @@ $('#sd-save').on('click', function () {
 /* ─── Page creation ─────────────────────────────────────────────────────── */
 $('#create-page-btn').on('click', () => $('#create-page-modal').modal('open'));
 
-function toggleReferenceField() {
-    const type = $('#page_type').val();
-    $('[data-reference-field]').addClass('hidden');
-    $(`[data-reference-field="${type}"]`).removeClass('hidden');
+function toggleReferenceField($modal, typeSelectId) {
+    const type = $(typeSelectId).val();
+    $modal.find('[data-reference-field]').addClass('hidden');
+    $modal.find(`[data-reference-field="${type}"]`).removeClass('hidden');
 }
 
-$('#page_type').on('change', toggleReferenceField);
-$('#create-page-modal').on('modal:opened', toggleReferenceField);
+$('#page_type').on('change', () => toggleReferenceField($('#create-page-modal'), '#page_type'));
+$('#create-page-modal').on('modal:opened', () => toggleReferenceField($('#create-page-modal'), '#page_type'));
+
+$('#edit_page_type').on('change', () => toggleReferenceField($('#edit-page-modal'), '#edit_page_type'));
 
 $('#create-page-form').on('submit', function (e) {
     e.preventDefault();
@@ -1686,6 +1692,7 @@ $('#create-page-form').on('submit', function (e) {
     delete data.reference_category_id;
     delete data.reference_brand_id;
     delete data.reference_vendor_id;
+    delete data.reference_custom_page_id;
 
     ajax({ url: ROUTES.pages, method: 'POST', data })
         .done((res) => {
@@ -1701,6 +1708,81 @@ $('#create-page-form').on('submit', function (e) {
             const first = Object.values(errs)[0]?.[0] || xhr.responseJSON?.message || window.TRANSLATIONS?.couldNotCreatePage || 'Could not create page.';
             Toast.error(first);
         });
+});
+
+/* ─── Edit / delete selected page ────────────────────────────────────────── */
+$('#edit-page-btn').on('click', function () {
+    if (!state.currentPageId || !state.currentPageMeta) return;
+    const p = state.currentPageMeta;
+
+    $('#edit_name').val(p.name || '');
+    $('#edit_page_type').val(p.page_type || '');
+    $('#edit_country_id').val(p.country_id || '');
+
+    // Clear all reference async-selects, then pre-select the one matching this page's type
+    $('#edit-page-modal [data-reference-field] select').each(function () {
+        $(this).empty();
+    });
+    if (p.reference_id && p.page_type && p.page_type !== 'home') {
+        const $refSelect = $(`#edit_reference_${p.page_type}_id`);
+        if ($refSelect.length) {
+            $refSelect.append(new Option(p.reference_name || p.reference_id, p.reference_id, true, true)).trigger('change');
+        }
+    }
+
+    toggleReferenceField($('#edit-page-modal'), '#edit_page_type');
+    $('#edit-page-modal').modal('open');
+});
+
+$('#edit-page-form').on('submit', function (e) {
+    e.preventDefault();
+    if (!state.currentPageId) return;
+    const raw = Object.fromEntries(new FormData(this).entries());
+
+    const type = raw.edit_page_type;
+    const data = {
+        name: raw.edit_name,
+        page_type: type,
+        country_id: raw.edit_country_id,
+        reference_id: type ? raw[`edit_reference_${type}_id`] || null : null,
+    };
+
+    const $btn = $('#edit-page-modal button[type="submit"][form="edit-page-form"]');
+    withLoading($btn, ajax({ url: ROUTES.updatePage(state.currentPageId), method: 'PUT', data })
+        .done(() => {
+            Toast.success(window.TRANSLATIONS?.pageUpdated || 'Page updated.');
+            $('#edit-page-modal').modal('close');
+
+            const $option = $('#page-select').find(`option[value="${state.currentPageId}"]`);
+            $option.text(`${data.name} (${data.page_type})`);
+
+            loadPage(state.currentPageId);
+        })
+        .fail((xhr) => {
+            const errs = xhr.responseJSON?.errors || {};
+            const first = Object.values(errs)[0]?.[0] || xhr.responseJSON?.message || window.TRANSLATIONS?.couldNotUpdatePage || 'Could not update page.';
+            Toast.error(first);
+        }));
+});
+
+$('#delete-page-btn').on('click', async function () {
+    if (!state.currentPageId) return;
+    const ok = await window.confirmDialog({
+        title: window.TRANSLATIONS?.deletePageTitle || 'Delete this page?',
+        message: window.TRANSLATIONS?.deletePageMessage || 'This will remove the page and all of its sections and blocks. This cannot be undone.',
+        confirmLabel: window.TRANSLATIONS?.delete || 'Delete',
+        danger: true,
+    });
+    if (!ok) return;
+
+    const pageId = state.currentPageId;
+    ajax({ url: ROUTES.deletePage(pageId), method: 'DELETE' })
+        .done(() => {
+            Toast.success(window.TRANSLATIONS?.pageDeleted || 'Page deleted.');
+            $('#page-select').find(`option[value="${pageId}"]`).remove();
+            $('#page-select').val('').trigger('change');
+        })
+        .fail((xhr) => Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.couldNotDeletePage || 'Could not delete page.'));
 });
 
 /* ─── Page selection / publish / preview / history ──────────────────────── */

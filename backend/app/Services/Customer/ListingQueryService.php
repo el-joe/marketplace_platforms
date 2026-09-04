@@ -97,14 +97,14 @@ class ListingQueryService
      * stock, attributes) to a VendorListing query built from baseCategoryQuery().
      *
      * @param  array<string,mixed>  $filters
+     * @param  list<string>|null  $categoryIds  Pre-resolved category IDs (category subtree, or
+     *                                           union of subtrees for a custom page). When omitted,
+     *                                           resolved from $filters['category'] (id or slug).
      */
-    public function applyFilters($builder, array $filters)
+    public function applyFilters($builder, array $filters, ?array $categoryIds = null)
     {
         if (!empty($filters['category'])) {
-            $category = Category::find($filters['category']);
-            $categoryIds = $category
-                ? app(CategoryService::class)->getDescendantIds($category)
-                : [$filters['category']];
+            $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
             $builder->whereIn('p.category_id', $categoryIds);
         }
         if (!empty($filters['brand'])) {

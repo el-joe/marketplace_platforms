@@ -24,6 +24,7 @@ export default defineConfig({
                 'resources/js/admin/products.js',
                 'resources/js/admin/orders.js',
                 'resources/js/admin/categories.js',
+                'resources/js/admin/custom-pages.js',
                 'resources/js/admin/attributes.js',
                 'resources/js/admin/countries.js',
                 'resources/js/admin/cities.js',
