@@ -5,7 +5,6 @@
 <meta name="stream-key"    content="{{ $liveStream->stream_key }}">
 <meta name="stream-status" content="{{ $liveStream->status->value }}">
 <meta name="stream-id"     content="{{ $liveStream->id }}">
-<meta name="csrf-token"    content="{{ csrf_token() }}">
 @endpush
 
 @section('content')
@@ -170,7 +169,7 @@
   window.Echo = new LaravelEcho({
     broadcaster:      'reverb',
     key:              '{{ config("broadcasting.connections.reverb.key") }}',
-    wsHost:           '{{ env("REVERB_HOST", "ws.yourdomain.com") }}',
+    wsHost:           '{{ config("broadcasting.connections.reverb.options.host", "ws.yourdomain.com") }}',
     wsPort:           443,
     wssPort:          443,
     forceTLS:         true,
