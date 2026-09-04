@@ -61,23 +61,29 @@ function initEditor(el) {
         disableResizeEditor: true,
         placeholder: $el.attr('placeholder') || '',
         styleTags: ['p', 'h2', 'h3', 'h4', 'blockquote', 'pre'],
+        callbacks: {
+            // Keep the underlying textarea's value in sync on every edit (Summernote
+            // only writes back to it on form submit otherwise) and fire a native
+            // 'change' event so listeners like the page-builder auto-save pick it up.
+            onChange(contents) {
+                $el.val(contents).trigger('change');
+            },
+        },
     };
 
     if (profile === 'full' && uploadUrl) {
-        options.callbacks = {
-            onImageUpload(files) {
-                const fd = new FormData();
-                fd.append('file', files[0]);
-                $.ajax({
-                    url: uploadUrl, method: 'POST', data: fd,
-                    processData: false, contentType: false,
-                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                }).done(function (res) {
-                    if (res.data?.url) {
-                        $el.summernote('insertImage', res.data.url);
-                    }
-                });
-            },
+        options.callbacks.onImageUpload = function (files) {
+            const fd = new FormData();
+            fd.append('file', files[0]);
+            $.ajax({
+                url: uploadUrl, method: 'POST', data: fd,
+                processData: false, contentType: false,
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            }).done(function (res) {
+                if (res.data?.url) {
+                    $el.summernote('insertImage', res.data.url);
+                }
+            });
         };
     }
 

@@ -2,8 +2,10 @@
 
 <form data-config-form data-block-id="{{ $block?->id }}">
     @csrf
-    <x-form.textarea name="content_html_en" label="{{ __('admin.page_builder.config_forms.text_block.content_en') }}"  rows="6" :value="$config['content_html_en'] ?? ''" dir="ltr" />
-    <x-form.textarea name="content_html_ar" label="{{ __('admin.page_builder.config_forms.text_block.content_ar') }}"  rows="6" :value="$config['content_html_ar'] ?? ''" dir="rtl" />
+    <x-form.rich-editor name="content_html_en" label="{{ __('admin.page_builder.config_forms.text_block.content_en') }}"
+        profile="default" :min-height="180" :value="$config['content_html_en'] ?? ''" />
+    <x-form.rich-editor name="content_html_ar" label="{{ __('admin.page_builder.config_forms.text_block.content_ar') }}"
+        profile="default" :min-height="180" :value="$config['content_html_ar'] ?? ''" />
 
     <div class="grid grid-cols-2 gap-3 mt-3">
         <x-form.select name="text_align" label="{{ __('admin.page_builder.config_forms.text_block.text_align') }}" :value="$config['text_align'] ?? 'left'">

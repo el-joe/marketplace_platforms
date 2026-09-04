@@ -67,6 +67,10 @@ export interface BlockConfig {
   is_announcement?: boolean;
   rows_count?: string;
   card_style?: "normal" | "special";
+  content_html_en?: null | string;
+  content_html_ar?: null | string;
+  text_align?: "left" | "center" | "right" | "justify";
+  max_width?: null | string;
 }
 
 export interface Slide {

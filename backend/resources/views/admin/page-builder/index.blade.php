@@ -453,6 +453,7 @@
         'resources/js/components/flatpickr.js',
         'resources/js/components/file-upload.js',
         'resources/js/components/select2.js',
+        'resources/js/components/rich-editor.js',
         'resources/js/admin/page-builder.js',
     ])
 @endpush

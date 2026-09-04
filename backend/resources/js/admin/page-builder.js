@@ -755,6 +755,12 @@ function openConfigPanel(blockId) {
         // Apply saved config values after both Alpine and Select2 have initialized
         Promise.resolve().then(() => {
             applyConfigToForm(cfg);
+
+            // Rich-text (Summernote) fields must be initialized AFTER the saved value
+            // is applied to the underlying textarea — Summernote reads its initial
+            // content from the textarea at init time, not on later .val() calls.
+            if (window.initRichEditors) window.initRichEditors($('#config-form-body'));
+
             if (getBlockTypeOf(blockId) === 'hero_slider') loadSlidesList(blockId);
             if ($('#config-form-body [data-block-products-list]').length) loadPickerList('products', blockId);
             if ($('#config-form-body [data-block-categories-list]').length) loadPickerList('categories', blockId);
