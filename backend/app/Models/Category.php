@@ -171,6 +171,15 @@ class Category extends Model
     }
 
     /**
+     * The canonical slugs-table record for this category (source of truth for
+     * cross-type slug uniqueness against custom pages).
+     */
+    public function slugRecord(): MorphOne
+    {
+        return $this->morphOne(Slug::class, 'sluggable');
+    }
+
+    /**
      * Brands with active products in this category (indirect, via products.brand_id).
      */
     public function brands(): BelongsToMany

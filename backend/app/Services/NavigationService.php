@@ -80,6 +80,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.custom_pages'),
+                        'route' => 'admin.custom-pages.index',
+                        'icon' => 'document-duplicate',
+                        'permission' => 'categories.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.brands'),
                         'route' => 'admin.brands.index',
                         'icon' => 'tag',
@@ -188,6 +195,13 @@ class NavigationService
                         'icon' => 'credit-card',
                         'permission' => 'cart_card_offers.view',
                         'badge' => $this->cachedBadge('active_cart_card_offers', fn() => $this->countActiveCartCardOffers()),
+                    ],
+                    [
+                        'label'      => __('admin.nav.live_streams'),
+                        'route'      => 'admin.live-streams.index',
+                        'icon'       => 'video-camera',
+                        'permission' => 'pages.view',
+                        'badge'      => null,
                     ],
                     [
                         'label' => __('admin.nav.ad_campaigns'),

@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\LiveStreamController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\ProductHighlightController;
 use App\Http\Controllers\Admin\BestsellerController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\CategoryShippingMethodController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\BrandController;
@@ -294,6 +296,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
     });
 
+    // ─── Custom Pages (CRUD) ──────────────────────────────────────────────────────
+    Route::prefix('custom-pages')->name('custom-pages.')->middleware('admin.permission:categories.view')->group(function () {
+        Route::get('/create', [CustomPageController::class, 'create'])->name('create');
+        Route::post('/reorder', [CustomPageController::class, 'reorder'])->name('reorder');
+        Route::get('/', [CustomPageController::class, 'index'])->name('index');
+        Route::post('/', [CustomPageController::class, 'store'])->name('store');
+        Route::get('/{customPage}/edit', [CustomPageController::class, 'edit'])->name('edit');
+        Route::put('/{customPage}', [CustomPageController::class, 'update'])->name('update');
+        Route::delete('/{customPage}', [CustomPageController::class, 'destroy'])->name('destroy');
+        Route::post('/{customPage}/toggle-active', [CustomPageController::class, 'toggleActive'])->name('toggle-active');
+        Route::post('/{customPage}/categories', [CustomPageController::class, 'syncCategories'])->name('categories.sync');
+        Route::post('/{customPage}/upload-image', [CustomPageController::class, 'uploadImage'])->name('upload-image');
+    });
+
     // ─── Attributes (CRUD) ────────────────────────────────────────────────────────
     Route::prefix('attributes')->name('attributes.')->middleware('admin.permission:attributes.view')->group(function () {
         Route::get('/create', [AttributeController::class, 'create'])->name('create');
@@ -482,6 +498,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/search/categories', [PageBuilderController::class, 'searchCategories'])->name('search.categories');
         Route::get('/search/brands', [PageBuilderController::class, 'searchBrands'])->name('search.brands');
         Route::get('/search/vendors', [PageBuilderController::class, 'searchVendors'])->name('search.vendors');
+        Route::get('/search/custom-pages', [PageBuilderController::class, 'searchCustomPages'])->name('search.custom-pages');
         Route::get('/search/flash-sales', [PageBuilderController::class, 'searchFlashSales'])->name('search.flash-sales');
         Route::get('/search/vendor-listings', [PageBuilderController::class, 'searchVendorListings'])->name('search.vendor-listings');
         Route::get('/search/admin-listings', [PageBuilderController::class, 'searchAdminListings'])->name('search.admin-listings');
@@ -1577,6 +1594,22 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     });
 
     // ── Radio ─────────────────────────────────────────────────────────────────
+    // ── Live Streams ──────────────────────────────────────────────────────────
+    Route::prefix('live-streams')->name('live-streams.')->middleware('admin.permission:pages.view')->group(function () {
+        Route::get('/',                                   [LiveStreamController::class, 'index'])->name('index');
+        Route::get('/create',                             [LiveStreamController::class, 'create'])->name('create');
+        Route::post('/',                                  [LiveStreamController::class, 'store'])->name('store');
+        Route::get('/{liveStream}',                       [LiveStreamController::class, 'show'])->name('show');
+        Route::get('/{liveStream}/edit',                  [LiveStreamController::class, 'edit'])->name('edit');
+        Route::put('/{liveStream}',                       [LiveStreamController::class, 'update'])->name('update');
+        Route::delete('/{liveStream}',                    [LiveStreamController::class, 'destroy'])->name('destroy');
+        Route::post('/{liveStream}/go-live',              [LiveStreamController::class, 'goLive'])->name('go-live');
+        Route::post('/{liveStream}/end',                  [LiveStreamController::class, 'endStream'])->name('end');
+        Route::post('/{liveStream}/signal',               [LiveStreamController::class, 'signal'])->name('signal');
+        Route::get('/{liveStream}/comments',              [LiveStreamController::class, 'comments'])->name('comments');
+        Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy');
+    });
+
     Route::prefix('radio')->name('radio.')->group(function () {
         Route::resource('channels', \App\Http\Controllers\Admin\RadioChannelController::class)
             ->names('channels')

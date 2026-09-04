@@ -80,10 +80,10 @@ class CategoryController extends Controller
         $id = (string) Str::uuid();
         $slug = $request->slug ?: Str::slug($request->name_en) . '-' . Str::lower(Str::random(5));
 
-        // Ensure slug uniqueness
+        // Ensure slug uniqueness against categories AND custom pages (shared `slugs` table)
         $i = 1;
         $baseSlug = $slug;
-        while (Category::query()->where('slug', $slug)->exists()) {
+        while (\App\Models\Slug::isTaken($slug)) {
             $slug = $baseSlug . '-' . $i++;
         }
 
@@ -143,6 +143,8 @@ class CategoryController extends Controller
             Category::fixTree();
             $category->refresh();
         }
+
+        \App\Models\Slug::upsertFor($category, $category->slug);
 
         // Sync attribute assignments if provided
         if ($request->filled('attributes')) {
@@ -231,7 +233,11 @@ class CategoryController extends Controller
             'updated_at' => now(),
         ];
 
-        if ($request->filled('slug')) {
+        if ($request->filled('slug') && $request->slug !== $categoryModel->slug) {
+            if (\App\Models\Slug::isTaken($request->slug, Category::class, $categoryModel->id)) {
+                DB::rollBack();
+                return response()->json(['message' => 'This slug is already in use.'], 422);
+            }
             $data['slug'] = $request->slug;
         }
 
@@ -248,6 +254,8 @@ class CategoryController extends Controller
         }
 
         $categoryModel->update($data);
+
+        \App\Models\Slug::upsertFor($categoryModel, $categoryModel->slug);
 
         $categoryModel->update($request->only([
             'influencer_sample_qty',

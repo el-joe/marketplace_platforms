@@ -5,6 +5,7 @@ import { Product } from "@/types/globals";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
 import { ShopResponse } from "@/src/features/noon/shop/types";
 import FilterSidebar from "@/src/features/noon/shop/filter/desktop-view";
+import getLocale from "@/src/helpers/getLocale";
 import {
   FILTER_PREFIX,
   resolveApiFilters,
@@ -20,9 +21,13 @@ type Props = {
 export default async function ShopPage({ params, searchParams }: Props) {
   const { categorySlug } = await params;
   const sp = await searchParams;
+  const locale = await getLocale();
   const isSearch = categorySlug?.[0] === "search" || !!sp.q;
-  const categoryName =
-    isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
+  // The catch-all route's first segment is a bare slug (no scheme/host/query) —
+  // the backend resolves it against the polymorphic `slugs` table, so the exact
+  // same value works whether it points at a real category or a custom page
+  // (an aggregate landing page spanning several categories, e.g. noon-deals-ae).
+  const slug = categorySlug?.[0];
 
   let pageBuilderData: PageBuilder | null = null;
   let facets = null;
@@ -30,11 +35,12 @@ export default async function ShopPage({ params, searchParams }: Props) {
   let totalPages = TOTAL_PAGES;
   let totalCount = 0;
   let hasFilters = false;
+  let categoryName =
+    isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
 
   try {
     const queryParams = new URLSearchParams();
-    if (categorySlug && !isSearch)
-      queryParams.set("category", categorySlug?.[0]);
+    if (slug && !isSearch) queryParams.set("category", slug);
     Object.entries(sp).forEach(([key, value]) => {
       if (value && !key.startsWith(`${FILTER_PREFIX}_`)) {
         queryParams.set(key, value);
@@ -65,6 +71,13 @@ export default async function ShopPage({ params, searchParams }: Props) {
     totalPages = res.data?.meta?.last_page ?? TOTAL_PAGES;
     totalCount = res.data?.meta?.total ?? products.length;
     hasFilters = isSearch ? true : (res.data?.category?.has_filters ?? false);
+
+    // Prefer the resolved entity's own localized name (works identically for a
+    // category or a custom page — the API returns the same shape either way)
+    // over the slug-guessed fallback set above.
+    if (!isSearch && res.data?.category?.name) {
+      categoryName = res.data.category.name[locale] || categoryName;
+    }
   } catch {
     products = [];
     totalCount = 0;

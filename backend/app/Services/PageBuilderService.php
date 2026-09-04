@@ -9,6 +9,7 @@ use App\Models\BlockType;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Country;
+use App\Models\CustomPage;
 use App\Models\Page;
 use App\Models\PageBlock;
 use App\Models\PageBlockCategory;
@@ -71,6 +72,10 @@ class PageBuilderService
                 'country_id' => $page->country_id,
                 'country_code' => optional($page->country)->site_code,
                 'country_name' => optional($page->country)->name_en,
+                'reference_id' => $page->reference_id,
+                'reference_name' => $this->resolveReferenceName($page->page_type, $page->reference_id),
+                'seo_title' => $page->seo_title,
+                'seo_description' => $page->seo_description,
                 'status' => $page->status?->value,
                 'version' => $page->version,
                 'published_at' => optional($page->published_at)->toIso8601String(),
@@ -85,6 +90,25 @@ class PageBuilderService
             'blocks' => $blocks,
             'sections' => $sections,
         ];
+    }
+
+    /**
+     * Display name for a page's reference entity (category/brand/vendor/custom page),
+     * used to pre-fill the async-select in the admin edit-page modal.
+     */
+    private function resolveReferenceName(string $pageType, ?string $referenceId): ?string
+    {
+        if (!$referenceId) {
+            return null;
+        }
+
+        return match ($pageType) {
+            'category' => Category::whereKey($referenceId)->value('name_en'),
+            'brand' => Brand::whereKey($referenceId)->value('name_en'),
+            'vendor' => Vendor::whereKey($referenceId)->value('store_name'),
+            'custom_page' => CustomPage::whereKey($referenceId)->value('name_en'),
+            default => null,
+        };
     }
 
     public function createPage(array $data, Admin $admin): Page
@@ -110,6 +134,7 @@ class PageBuilderService
             'category' => Category::whereKey($referenceId)->value('slug') ?? 'category',
             'brand' => Brand::whereKey($referenceId)->value('slug') ?? 'brand',
             'vendor' => Vendor::whereKey($referenceId)->value('store_slug') ?? 'vendor',
+            'custom_page' => \App\Models\CustomPage::whereKey($referenceId)->first()?->slugRecord?->slug_url ?? 'custom-page',
             default => Str::slug($pageType),
         };
 

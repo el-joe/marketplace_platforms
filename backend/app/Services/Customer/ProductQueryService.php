@@ -32,13 +32,17 @@ class ProductQueryService
         int $perPage = 20,
         ?array $categoryIds = null,
     ): LengthAwarePaginator {
+        if ($categoryIds === null && !empty($filters['category'])) {
+            $categoryIds = app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
+        }
+
         $builder = $this->baseQuery($country);
 
         if ($categoryIds !== null) {
             $builder->whereIn('products.category_id', $categoryIds);
         }
 
-        $builder = $this->applyFilters($builder, $filters);
+        $builder = $this->applyFilters($builder, $filters, $categoryIds);
         $builder = $this->applySort($builder, $filters['sort'] ?? 'relevance');
 
         return $builder->paginate($perPage);
@@ -52,24 +56,21 @@ class ProductQueryService
      */
     public function facets(Country $country, array $filters, ?array $categoryIds = null): array
     {
+        if ($categoryIds === null && !empty($filters['category'])) {
+            $categoryIds = app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
+        }
+
         $base = $this->baseQuery($country);
 
         if ($categoryIds !== null) {
             $base->whereIn('products.category_id', $categoryIds);
         }
 
-        $base = $this->applyFilters($base, $filters);
+        $base = $this->applyFilters($base, $filters, $categoryIds);
 
         $priceRange = (clone $base)
             ->selectRaw('MIN(vl.price) as low, MAX(vl.price) as high')
             ->first();
-
-        if (empty($categoryIds) && !empty($filters['category'])) {
-            $cat = $this->resolveCategory($filters['category']);
-            $categoryIds = $cat
-                ? app(CategoryService::class)->getDescendantIds($cat)
-                : [$filters['category']];
-        }
 
         return [
             'price_range' => [
@@ -335,22 +336,14 @@ class ProductQueryService
     }
 
     /**
-     * Resolve a category filter value by id or slug.
+     * @param  list<string>|null  $categoryIds  Pre-resolved category IDs (category subtree, or
+     *                                           union of subtrees for a custom page). When omitted,
+     *                                           resolved from $filters['category'] (id or slug).
      */
-    private function resolveCategory(string $idOrSlug): ?\App\Models\Category
-    {
-        return \App\Models\Category::where('id', $idOrSlug)
-            ->orWhere('slug', $idOrSlug)
-            ->first();
-    }
-
-    public function applyFilters($builder, array $filters)
+    public function applyFilters($builder, array $filters, ?array $categoryIds = null)
     {
         if (!empty($filters['category'])) {
-            $category = $this->resolveCategory($filters['category']);
-            $categoryIds = $category
-                ? app(CategoryService::class)->getDescendantIds($category)
-                : [$filters['category']];
+            $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
             $builder->whereIn('products.category_id', $categoryIds);
         }
         if (!empty($filters['brand'])) {

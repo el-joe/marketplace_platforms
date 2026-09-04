@@ -10,6 +10,7 @@
             'category' => __('admin.page_builder.create_page_modal.types.category'),
             'brand' => __('admin.page_builder.create_page_modal.types.brand'),
             'vendor' => __('admin.page_builder.create_page_modal.types.vendor'),
+            'custom_page' => __('admin.page_builder.create_page_modal.types.custom_page'),
         ]" />
 
         <x-form.select name="country_id" label="{{ __('common.country') }}" required placeholder="{{ __('admin.page_builder.create_page_modal.select_placeholder') }}"
@@ -28,6 +29,11 @@
         <div data-reference-field="vendor" class="hidden">
             <x-form.async-select name="reference_vendor_id" label="{{ __('admin.page_builder.create_page_modal.types.vendor') }}"
                 search-url="{{ route('admin.page-builder.search.vendors') }}" :min-length="0" />
+        </div>
+
+        <div data-reference-field="custom_page" class="hidden">
+            <x-form.async-select name="reference_custom_page_id" label="{{ __('admin.page_builder.create_page_modal.types.custom_page') }}"
+                search-url="{{ route('admin.page-builder.search.custom-pages') }}" :min-length="0" />
         </div>
     </form>
 

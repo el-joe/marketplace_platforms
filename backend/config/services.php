@@ -108,4 +108,10 @@ return [
     */
     'ai_provider' => env('AI_PROVIDER', 'mock'),
 
+    'turn' => [
+        'url'        => env('TURN_URL', ''),
+        'username'   => env('TURN_USERNAME', ''),
+        'credential' => env('TURN_CREDENTIAL', ''),
+    ],
+
 ];

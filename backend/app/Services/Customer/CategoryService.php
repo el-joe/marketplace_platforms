@@ -8,7 +8,9 @@ use App\Http\Resources\Customer\TravelCategoryTreeResource;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
+use App\Models\CustomPage;
 use App\Models\Page;
+use App\Models\Slug;
 use App\Models\TravelCategory;
 use App\Services\PageBuilderService;
 use App\Support\SafeCache;
@@ -79,6 +81,62 @@ class CategoryService
             ->pluck('id')
             ->prepend($category->id)
             ->toArray();
+    }
+
+    /**
+     * Resolve a storefront slug (or raw category id, for back-compat with
+     * existing id-based callers) to the entity it points at — a Category
+     * page or a CustomPage (an aggregate landing page spanning several
+     * categories, e.g. a noon-deals-style page). Looks up the polymorphic
+     * `slugs` table first, then falls back to a direct category id lookup.
+     *
+     * @return array{type: 'category'|'custom_page', model: Category|CustomPage}|null
+     */
+    public function resolveSlug(string $idOrSlug): ?array
+    {
+        $slug = Slug::where('slug_url', $idOrSlug)->first();
+
+        if ($slug) {
+            $model = $slug->sluggable;
+
+            return match (true) {
+                $model instanceof Category   => ['type' => 'category', 'model' => $model],
+                $model instanceof CustomPage => ['type' => 'custom_page', 'model' => $model],
+                default => null,
+            };
+        }
+
+        $category = Category::where('id', $idOrSlug)->first();
+
+        return $category ? ['type' => 'category', 'model' => $category] : null;
+    }
+
+    /**
+     * The effective set of category IDs a product-listing filter value
+     * (category slug, custom-page slug, or raw category id) should scope
+     * results to — a category's own subtree, or the union of subtrees for
+     * every category linked to a custom page.
+     *
+     * @return list<string>
+     */
+    public function getCategoryIdsForFilter(string $idOrSlug): array
+    {
+        $resolved = $this->resolveSlug($idOrSlug);
+
+        if (!$resolved) {
+            return [$idOrSlug];
+        }
+
+        if ($resolved['type'] === 'category') {
+            return $this->getDescendantIds($resolved['model']);
+        }
+
+        $ids = [];
+        foreach ($resolved['model']->categories as $category) {
+            $ids = array_merge($ids, $this->getDescendantIds($category));
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

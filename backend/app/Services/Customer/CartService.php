@@ -495,7 +495,14 @@ class CartService
                     $listing = $isVendor ? $item->vendorListing : $item->adminListing;
                     $variant = $listing?->productVariant;
                     $product = $variant?->product;
-                    $primaryImage = $variant?->images?->firstWhere('is_primary', true) ?? $variant?->images?->first();
+                    // Try variant-specific image first; fall back to product-level (variant-agnostic) image.
+                    $variantImage  = $variant?->images?->firstWhere('is_primary', true)
+                        ?? $variant?->images?->first();
+                    $productImage  = $product?->images
+                        ?->whereNull('product_variant_id')
+                        ->sortBy('position')
+                        ->first();
+                    $primaryImage  = $variantImage ?? $productImage;
 
                     return [
                         'id' => $item->id,

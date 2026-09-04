@@ -22,6 +22,7 @@ use App\Models\PageRevision;
 use App\Models\PageSection;
 use App\Models\ProductVariant;
 use App\Models\SliderSlide;
+use Illuminate\Validation\Rule;
 use App\Models\Vendor;
 use App\Models\File;
 use App\Services\PageBuilderService;
@@ -84,12 +85,13 @@ class PageBuilderController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:150',
-            'page_type' => 'required|string|in:home,category,brand,vendor',
+            'page_type' => 'required|string|in:home,category,brand,vendor,custom_page',
             'country_id' => 'required|uuid|exists:countries,id',
             'reference_id' => match ($request->input('page_type')) {
                 'category' => ['required', 'uuid', 'exists:categories,id'],
                 'brand' => ['required', 'uuid', 'exists:brands,id'],
                 'vendor' => ['required', 'uuid', 'exists:vendors,id'],
+                'custom_page' => ['required', 'uuid', 'exists:custom_pages,id'],
                 default => ['prohibited'],
             },
         ]);
@@ -103,8 +105,25 @@ class PageBuilderController extends Controller
     {
         $this->authorizeManage();
 
+        $effectiveType = $request->input('page_type', $page->page_type);
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:150',
+            'page_type' => 'sometimes|string|in:home,category,brand,vendor,custom_page',
+            'country_id' => 'sometimes|uuid|exists:countries,id',
+            'reference_id' => match ($effectiveType) {
+                'category' => ['nullable', 'uuid', 'exists:categories,id'],
+                'brand' => ['nullable', 'uuid', 'exists:brands,id'],
+                'vendor' => ['nullable', 'uuid', 'exists:vendors,id'],
+                'custom_page' => ['nullable', 'uuid', 'exists:custom_pages,id'],
+                default => ['nullable'],
+            },
+            'slug' => [
+                'sometimes', 'nullable', 'string', 'max:180',
+                Rule::unique('pages', 'slug')
+                    ->where('country_id', $request->input('country_id', $page->country_id))
+                    ->ignore($page->id),
+            ],
             'app_context_key' => 'nullable|string|max:50|exists:app_contexts,key',
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string',
@@ -112,6 +131,14 @@ class PageBuilderController extends Controller
             'publish_at' => 'nullable|date',
             'unpublish_at' => 'nullable|date|after_or_equal:publish_at',
         ]);
+
+        if ($effectiveType === 'home') {
+            $data['reference_id'] = null;
+        }
+
+        if (empty($data['slug'])) {
+            unset($data['slug']);
+        }
 
         $page->update($data + ['last_edited_by_admin_id' => $this->admin()->id]);
 
@@ -798,6 +825,21 @@ class PageBuilderController extends Controller
 
         return response()->json([
             'results' => $rows->map(fn($c) => ['id' => $c->id, 'text' => $c->name_en])->values(),
+        ]);
+    }
+
+    public function searchCustomPages(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        $rows = \App\Models\CustomPage::query()
+            ->where('is_active', true)
+            ->when($q !== '', fn ($query) => $query->where('name_en', 'like', "%{$q}%"))
+            ->limit(20)
+            ->get(['id', 'name_en']);
+
+        return response()->json([
+            'results' => $rows->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en])->values(),
         ]);
     }
 
