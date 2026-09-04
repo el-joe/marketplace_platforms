@@ -32,6 +32,7 @@ class LiveStreamController extends Controller
         $viewKey = 'stream_view:' . $stream->id . ':' . md5($request->ip() ?? 'unknown');
         if (Cache::add($viewKey, 1, now()->addHour())) {
             $stream->increment('total_viewers');
+            $stream->total_viewers += 1; // keep in-memory model in sync
         }
 
         return response()->json([
@@ -132,6 +133,10 @@ class LiveStreamController extends Controller
             'payload' => 'required|array',
             'peer_id' => 'required|string|max:64',
         ]);
+
+        if (!$stream->stream_key) {
+            return response()->json(['success' => false, 'message' => 'Stream has no channel key.'], 422);
+        }
 
         broadcast(new \App\Events\StreamSignal(
             $stream->stream_key,
