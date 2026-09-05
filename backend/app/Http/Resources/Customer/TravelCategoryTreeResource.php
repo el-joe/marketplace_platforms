@@ -21,7 +21,11 @@ class TravelCategoryTreeResource extends JsonResource
             'slug'      => $this->slug,
             'parent_id' => $this->parent_id,
             'icon'      => $this->icon,
-            'children'  => TravelCategoryTreeResource::collection($this->whenLoaded('children'))->resolve(),
+            'children'  => $this->when(
+                $this->relationLoaded('children'),
+                fn () => TravelCategoryTreeResource::collection($this->children)->resolve(),
+                [],
+            ),
         ];
     }
 }

@@ -13,6 +13,7 @@ use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
@@ -297,7 +298,7 @@ class ListingQueryService
             ->get()
             ->groupBy('product_variant_id');
 
-        // ── Vendor listings (fallback) ─────────────────────────────────────────
+        // ── Vendor listings (second priority) ──────────────────────────────────
         $vendorListings = VendorListing::query()
             ->whereIn('product_variant_id', $variantIds)
             ->where('country_id', $country->id)
@@ -317,14 +318,31 @@ class ListingQueryService
             ->get()
             ->groupBy('product_variant_id');
 
-        // ── Build result: admin wins per product, fall back to vendor ──────────
+        // ── Marketer listings (lowest priority — only when no admin/vendor) ────
+        $marketerListings = MarketerListing::query()
+            ->whereIn('product_variant_id', $variantIds)
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->whereHas('marketer', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
+            ->with([
+                'marketer:id,name,marketer_type',
+                'marketer.marketerProfile:id,marketer_id,profile_slug,qr_code_path',
+                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant.images',
+                'productVariant.product.brand',
+            ])
+            ->orderByRaw('score IS NULL, score DESC')
+            ->orderBy('price')
+            ->get()
+            ->groupBy('product_variant_id');
+
+        // ── Build result: admin first → vendor → marketer ──────────────────────
         $result = [];
 
         foreach ($products as $product) {
             $bestListing = null;
 
             foreach ($product->variants as $variant) {
-                // Admin first
                 if ($adminListings->has($variant->id)) {
                     $bestListing = $adminListings->get($variant->id)->first();
                     break;
@@ -340,10 +358,49 @@ class ListingQueryService
                 }
             }
 
+            if ($bestListing === null) {
+                foreach ($product->variants as $variant) {
+                    if ($marketerListings->has($variant->id)) {
+                        $bestListing = $marketerListings->get($variant->id)->first();
+                        break;
+                    }
+                }
+            }
+
             $result[$product->id] = $bestListing;
         }
 
         return $result;
+    }
+
+    /**
+     * Given a mixed collection of listings, keep only the best listing per product_variant_id.
+     * Priority: AdminListing (1) > VendorListing (2) > MarketerListing (3).
+     * Within the same type, lower price wins.
+     *
+     * @param  array<VendorListing|AdminListing|MarketerListing>  $listings
+     * @return array<VendorListing|AdminListing|MarketerListing>
+     */
+    public function dedupByVariant(array $listings): array
+    {
+        $priority = [AdminListing::class => 1, VendorListing::class => 2, MarketerListing::class => 3];
+        $best = [];
+
+        foreach ($listings as $listing) {
+            $vid = $listing->product_variant_id;
+            $p   = $priority[get_class($listing)] ?? 99;
+
+            if (!isset($best[$vid])) {
+                $best[$vid] = [$p, $listing];
+            } else {
+                [$existingP, $existingL] = $best[$vid];
+                if ($p < $existingP || ($p === $existingP && $listing->price < $existingL->price)) {
+                    $best[$vid] = [$p, $listing];
+                }
+            }
+        }
+
+        return array_values(array_map(fn ($pair) => $pair[1], $best));
     }
 
     /**
@@ -536,12 +593,90 @@ class ListingQueryService
     }
 
     /**
-     * Dispatch to toCardShape() or toAdminCardShape() based on listing type.
+     * Shape a MarketerListing into the standard card shape.
+     * listing_type = 'marketer'. Marketer info replaces vendor.
+     */
+    public function toMarketerCardShape(
+        MarketerListing $listing,
+        Product $product,
+        Country $country,
+        bool $isWishlisted = false,
+    ): array {
+        $variant      = $listing->productVariant;
+        $variantImage = $variant->images->first()?->url ?? $product->images->first()?->url ?? null;
+        $imagesSlider = $this->buildImagesSlider($variant, $product);
+        $marketer     = $listing->marketer;
+        $profile      = $marketer?->marketerProfile;
+
+        $url      = route('customer.listing.show', [$country->site_code, $variant->id . '--' . $listing->id]);
+        $urlParam = $variant->id . '--' . $listing->id;
+
+        return [
+            'listing_id'        => $listing->id,
+            'listing_type'      => 'marketer',
+            'listing_ref'       => $listing->referral_code ?? $listing->id,
+            'sku'               => $variant->sku,
+            'vendor_sku'        => null,
+            'product_id'        => $product->id,
+            'product_slug'      => $product->slug,
+            'slug'              => $product->slug,
+            'variant_id'        => $variant->id,
+            'variant_slug'      => $variant->slug,
+            'product_url'       => $url,
+            'url_param'         => $urlParam,
+            'variant_name'      => $variant->variant_name ?? $variant->sku,
+            'variant_image'     => $variantImage,
+            'primary_image'     => $variantImage,
+            'images'            => $imagesSlider,
+            'name_en'           => $product->name_en,
+            'name_ar'           => $product->name_ar,
+            'thumbnail'         => $product->images->first()?->url ?? null,
+            'category_name'     => [
+                'en' => $product->category?->name_en,
+                'ar' => $product->category?->name_ar,
+            ],
+            'brand'             => $product->brand ? [
+                'id'       => $product->brand->id,
+                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug'     => $product->brand->slug,
+                'logo_url' => $product->brand->logo_url,
+            ] : null,
+            'price'             => $listing->price,
+            'price_formatted'   => number_format($listing->price, 2),
+            'compare_at_price'  => $listing->compare_at_price ?? null,
+            'currency'          => $country->currency_code,
+            'condition'         => $listing->condition,
+            'is_admin_listing'  => false,
+            'is_express_fbn'    => false,
+            'fulfillment_model' => 'marketer',
+            'vendor'            => null,
+            'marketer'          => $marketer ? [
+                'id'            => $marketer->id,
+                'name'          => $marketer->name,
+                'marketer_type' => $marketer->marketer_type,
+                'profile_slug'  => $profile?->profile_slug,
+                'profile_url'   => $profile?->profile_slug
+                    ? rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug
+                    : null,
+            ] : null,
+            'referral_code'     => $listing->referral_code,
+            'referral_link'     => $listing->referral_link,
+            'shipping_badge'    => null, // Marketer listings use campaign vendor shipping
+            'rating_avg'        => $listing->rating_avg,
+            'rating_count'      => $listing->rating_count,
+            'total_sold'        => $listing->total_sold,
+            'is_wishlisted'     => $isWishlisted,
+            'is_sponsored'      => false,
+        ];
+    }
+
+    /**
+     * Dispatch to the correct card shape based on listing type.
      *
-     * @param VendorListing|AdminListing $listing
+     * @param VendorListing|AdminListing|MarketerListing $listing
      */
     public function toMixedCardShape(
-        VendorListing|AdminListing $listing,
+        VendorListing|AdminListing|MarketerListing $listing,
         Product $product,
         Country $country,
         bool $isWishlisted = false,
@@ -549,6 +684,10 @@ class ListingQueryService
     ): array {
         if ($listing instanceof AdminListing) {
             return $this->toAdminCardShape($listing, $product, $country, $isWishlisted);
+        }
+
+        if ($listing instanceof MarketerListing) {
+            return $this->toMarketerCardShape($listing, $product, $country, $isWishlisted);
         }
 
         return $this->toCardShape($listing, $product, $country, $isWishlisted, $isSponsored);

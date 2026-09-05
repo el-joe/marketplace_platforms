@@ -63,7 +63,7 @@ function subCategoryHref(
  */
 function buildNavTree(
   nodes: ICategoryNavTree[],
-  labels: { openSouq: string; travel: string },
+  labels: { openSouq: string; travel: string; marketers: string },
 ): ICategoryNavTree[] {
   const productNodes = nodes.filter((n) => n.type === Type.Product);
   const classifiedNodes = nodes.filter((n) => n.type === Type.ClassiFied);
@@ -93,6 +93,15 @@ function buildNavTree(
     });
   }
 
+  result.push({
+    id: "virtual-marketers",
+    type: Type.Product,
+    name: { ar: "الماركترز", en: labels.marketers },
+    slug: "marketers",
+    parent_id: null,
+    children: [],
+  });
+
   return result;
 }
 
@@ -115,6 +124,7 @@ const CategoriesNav = () => {
         ? buildNavTree(data, {
             openSouq: t("openSouq"),
             travel: t("travel"),
+            marketers: t("marketers"),
           })
         : [],
     [data, t],

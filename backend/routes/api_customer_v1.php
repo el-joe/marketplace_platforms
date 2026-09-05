@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\Customer\NewsletterController;
 use App\Http\Controllers\Api\Customer\PaymentCallbackController;
 use App\Http\Controllers\Api\Customer\PaymentHistoryController;
+use App\Http\Controllers\Api\Public\MarketerProfileController;
 
 // ── Home composite (public) ───────────────────────────────────────────
 
@@ -188,6 +189,10 @@ use Illuminate\Support\Facades\Route;
         // ── Brand page (public) ───────────────────────────────────────────────
         Route::get('brands/{id}', [BrandPageController::class, 'show'])
             ->name('customer.brands.show');
+
+        // ── Marketer public profile page (public) ─────────────────────────────
+        Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
+            ->name('customer.marketer.profile');
 
         // ── Coupon detail — public "Learn more" CTA (public) ──────────────────
         Route::get('coupons/{code}', [CouponController::class, 'show'])

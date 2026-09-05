@@ -5,9 +5,17 @@ export interface Name {
   en: null | string;
 }
 
+export interface MarketerSeller {
+  id: string;
+  name: string;
+  marketer_type: "influencer" | "affiliate";
+  profile_slug: string | null;
+  profile_url: string | null;
+}
+
 export interface Product {
   listing_id: string;
-  listing_type: string;
+  listing_type: "admin" | "vendor" | "marketer";
   listing_ref: string;
   sku: string;
   vendor_sku: null | string;
@@ -35,6 +43,9 @@ export interface Product {
   is_express_fbn: boolean;
   fulfillment_model: string;
   vendor: Vendor;
+  marketer?: MarketerSeller | null;
+  referral_code?: string | null;
+  referral_link?: string | null;
   shipping_badge: ShippingBadge | null;
   rating_avg: null | number;
   rating_count: number;

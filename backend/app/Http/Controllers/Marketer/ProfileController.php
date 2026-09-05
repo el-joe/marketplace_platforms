@@ -84,12 +84,16 @@ class ProfileController extends Controller
             $this->generateQrCode($profile);
         }
 
+        // Public profile cache is busted automatically by MarketerProfile's
+        // model events (see MarketerProfile::booted()) on the $profile->save() above.
+
         return back()->with('success', 'تم حفظ البروفايل.');
     }
 
     private function generateQrCode(MarketerProfile $profile): void
     {
-        $url = url('/m/' . $profile->profile_slug);
+        // Points to the customer-facing marketer profile page (handled by Next.js frontend)
+        $url = rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug;
 
         $qr     = QrCode::create($url)->setSize(300)->setMargin(10)->setEncoding(new Encoding('UTF-8'));
         $result = (new PngWriter())->write($qr);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,5 +40,20 @@ class MarketerProfile extends Model
     public function bannerFile(): BelongsTo
     {
         return $this->belongsTo(File::class, 'banner_file_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $profile) {
+            MarketerProfileCache::bump($profile->profile_slug);
+
+            if ($profile->wasChanged('profile_slug') && $profile->getOriginal('profile_slug')) {
+                MarketerProfileCache::bump($profile->getOriginal('profile_slug'));
+            }
+        });
+
+        static::deleted(function (self $profile) {
+            MarketerProfileCache::bump($profile->profile_slug);
+        });
     }
 }

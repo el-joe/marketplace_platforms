@@ -23,11 +23,37 @@
 
         {{-- QR Code & Referral Slug --}}
         @if($profile->qr_code_path)
-        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-5">
-            <img src="{{ Storage::url($profile->qr_code_path) }}" alt="QR Code" class="w-24 h-24 rounded-lg">
-            <div>
-                <div class="text-xs text-gray-500 mb-1">رابط البروفايل العام:</div>
-                <code class="text-sm font-mono text-gray-700">/m/{{ $profile->profile_slug }}</code>
+        @php $profileUrl = rtrim(config('app.frontend_url', url('')), '/') . '/marketer/' . $profile->profile_slug; @endphp
+        <div class="p-4 bg-gray-50 rounded-lg mb-5 space-y-3">
+            <div class="flex items-start gap-4">
+                <img src="{{ Storage::url($profile->qr_code_path) }}" alt="QR Code"
+                     class="w-28 h-28 rounded-lg border border-gray-200 shrink-0">
+                <div class="flex-1 space-y-2">
+                    <div class="text-xs font-semibold text-gray-600">رابط بروفايلك العام</div>
+                    <div class="flex items-center gap-2">
+                        <code class="text-xs bg-white px-2 py-1 rounded border text-gray-700 flex-1 overflow-auto">{{ $profileUrl }}</code>
+                        <button onclick="navigator.clipboard.writeText('{{ $profileUrl }}')"
+                                class="shrink-0 text-xs px-3 py-1 bg-yellow-400 text-gray-900 font-bold rounded hover:bg-yellow-500">
+                            نسخ
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="{{ Storage::url($profile->qr_code_path) }}" download="marketer-qr-{{ $profile->profile_slug }}.png"
+                           class="text-xs px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-900">
+                            ⬇ تنزيل QR
+                        </a>
+                        {{-- WhatsApp share --}}
+                        <a href="https://wa.me/?text={{ urlencode('تسوّق من صفحتي على نون: ' . $profileUrl) }}" target="_blank"
+                           class="text-xs px-3 py-1.5 bg-green-500 text-white rounded hover:bg-green-600">
+                            واتساب
+                        </a>
+                        {{-- Twitter/X share --}}
+                        <a href="https://x.com/intent/tweet?url={{ urlencode($profileUrl) }}&text={{ urlencode('تسوّق من صفحتي على نون') }}" target="_blank"
+                           class="text-xs px-3 py-1.5 bg-black text-white rounded hover:bg-gray-800">
+                            X
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         @endif

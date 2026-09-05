@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Public\MarketerProfileController;
 use App\Http\Controllers\Api\PublicSettingsController;
 use App\Http\Controllers\Customer\LiveStreamController as PublicLiveStreamController;
 use Illuminate\Support\Facades\Route;
@@ -34,5 +35,14 @@ Route::prefix('v1')->group(function (): void {
     // ── Public settings (consumed by Flutter apps) ──────────────────────────────
     Route::get('settings', [PublicSettingsController::class, 'index'])
         ->name('public.settings')
+        ->middleware('throttle:60,1');
+
+    // ── Marketer public profile ───────────────────────────────────────────────
+    Route::get('marketers', [MarketerProfileController::class, 'index'])
+        ->name('public.marketers.index')
+        ->middleware('throttle:60,1');
+
+    Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
+        ->name('public.marketers.show')
         ->middleware('throttle:60,1');
 });

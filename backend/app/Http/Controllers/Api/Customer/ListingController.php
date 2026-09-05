@@ -6,17 +6,20 @@ use App\Enums\AdminListingStatus;
 use App\Enums\VendorListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Customer\AdminListingResource;
+use App\Http\Resources\Api\Customer\MarketerListingResource;
 use App\Http\Resources\Api\Customer\VendorListingResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Address;
 use App\Models\AdminListing;
 use App\Models\Country;
+use App\Models\MarketerListing;
 use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
 use App\Models\VendorListing;
 use App\Services\AppContextService;
 use App\Services\Customer\ListingIdentifierService;
+use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\SavingsBenefitsService;
 use App\Services\ShippingCalculationService;
@@ -34,6 +37,7 @@ class ListingController extends Controller
         private readonly SavingsBenefitsService $savingsBenefitsService,
         private readonly AppContextService $appContext,
         private readonly ProductDetailEnrichmentService $enrichment,
+        private readonly ListingQueryService $listings,
     ) {
     }
 
@@ -52,9 +56,41 @@ class ListingController extends Controller
             ? $this->buildAdminQuery($request, $country)->paginate($perPage)
             : $this->buildVendorQuery($request, $country)->paginate($perPage);
 
-        $items = $isNawyNow
-            ? $paginator->getCollection()->map(fn (AdminListing $listing) => $this->adminListingShape($listing, $country))->values()->all()
-            : $paginator->getCollection()->map(fn (VendorListing $listing) => $this->vendorListingShape($listing, $country))->values()->all();
+        if ($isNawyNow) {
+            $items = $paginator->getCollection()
+                ->map(fn (AdminListing $listing) => $this->adminListingShape($listing, $country))
+                ->values()
+                ->all();
+        } else {
+            // Dedup per product_variant_id: admin > vendor > marketer so the same
+            // product from multiple sellers appears only once in the grid.
+            $vendorCollection = $paginator->getCollection();
+            $variantIds = $vendorCollection->pluck('product_variant_id')->unique()->values()->all();
+
+            $marketerListings = MarketerListing::query()
+                ->whereIn('product_variant_id', $variantIds)
+                ->where('country_id', $country->id)
+                ->where('status', 'active')
+                ->with([
+                    'marketer:id,name,marketer_type',
+                    'productVariant.images',
+                    'productVariant.product.images',
+                    'productVariant.product.category',
+                    'productVariant.product.brand',
+                ])
+                ->get();
+
+            $deduped = $this->listings->dedupByVariant(
+                $vendorCollection->concat($marketerListings)->all()
+            );
+
+            $items = collect($deduped)
+                ->map(fn ($listing) => $listing instanceof MarketerListing
+                    ? $this->marketerListingShape($listing, $country)
+                    : $this->vendorListingShape($listing, $country))
+                ->values()
+                ->all();
+        }
 
         return ApiResponse::success([
             'items' => $items,
@@ -344,6 +380,11 @@ class ListingController extends Controller
     private function adminListingShape(AdminListing $listing, Country $country): array
     {
         return (new AdminListingResource($listing, $country))->toArray(request());
+    }
+
+    private function marketerListingShape(MarketerListing $listing, Country $country): array
+    {
+        return (new MarketerListingResource($listing, $country))->toArray(request());
     }
 
     // ── Shared helpers ───────────────────────────────────────────────────────

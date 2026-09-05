@@ -140,6 +140,15 @@ const ProductCard = ({ productData }: Props) => {
           ))}
         </Swiper>
       </div>
+      {/* marketer attribution — outside the card Link to avoid nested anchors */}
+      {"marketer" in productData && productData.marketer?.profile_url && (
+        <a
+          href={productData.marketer.profile_url}
+          className="px-1 lg:px-2.5 text-[9px] md:text-xs text-yellow-600 hover:underline font-medium"
+        >
+          {productData.marketer.name}
+        </a>
+      )}
       {/* card body (title, rate, price, bottom badge) */}
       {/* <Link href={`/products/${productData.id}`}> */}
       <Link href={`/products/${productData.url_param}`}>

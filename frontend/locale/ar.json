@@ -46,7 +46,8 @@
     "categoriesNav": {
       "topBrands": "أفضل العلامات التجارية",
       "openSouq": "المتجر المفتوح",
-      "travel": "السفر"
+      "travel": "السفر",
+      "marketers": "الماركترز"
     }
   },
   "authDialog": {
@@ -750,7 +751,8 @@
       "categoriesNav": {
         "topBrands": "أفضل العلامات التجارية",
         "openSouq": "المتجر المفتوح",
-        "travel": "السفر"
+        "travel": "السفر",
+      "marketers": "الماركترز"
       }
     },
     "mobileNav": {

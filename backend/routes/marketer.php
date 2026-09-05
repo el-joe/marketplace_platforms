@@ -4,6 +4,7 @@ use App\Http\Controllers\Marketer\AuthController;
 use App\Http\Controllers\Marketer\CampaignController;
 use App\Http\Controllers\Marketer\DashboardController;
 use App\Http\Controllers\Marketer\InvitationController;
+use App\Http\Controllers\Marketer\ListingController;
 use App\Http\Controllers\Marketer\ProfileController;
 use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
@@ -71,5 +72,16 @@ Route::middleware('web')->group(function () {
 
         // Reports
         Route::get('/reports',            [ReportController::class, 'index'])->name('reports.index');
+
+        // Listings management
+        Route::prefix('listings')->name('listings.')->group(function () {
+            Route::get('/',                             [ListingController::class, 'index'])->name('index');
+            Route::get('/create',                       [ListingController::class, 'create'])->name('create');
+            Route::post('/',                            [ListingController::class, 'store'])->name('store');
+            Route::get('/search-products',              [ListingController::class, 'searchProducts'])->name('search-products');
+            Route::post('/{listing}/toggle-status',     [ListingController::class, 'toggleStatus'])->name('toggle-status');
+            Route::patch('/{listing}/price',            [ListingController::class, 'updatePrice'])->name('update-price');
+            Route::delete('/{listing}',                 [ListingController::class, 'destroy'])->name('destroy');
+        });
     });
 });

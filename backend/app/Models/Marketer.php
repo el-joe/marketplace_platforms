@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\VendorGlobalStatus;
+use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,6 +78,11 @@ class Marketer extends Model
         return $this->hasMany(MarketerCampaignInvitation::class, 'marketer_id');
     }
 
+    public function listings(): HasMany
+    {
+        return $this->hasMany(MarketerListing::class, 'marketer_id');
+    }
+
     // ── Type helpers ───────────────────────────────────────────────────────
 
     public function isInfluencer(): bool
@@ -98,5 +104,14 @@ class Marketer extends Model
     public function isPending(): bool
     {
         return (string) $this->global_status === 'pending';
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $marketer) {
+            if ($marketer->wasChanged(['name', 'marketer_type', 'global_status', 'total_campaigns', 'total_conversions'])) {
+                MarketerProfileCache::bump($marketer->marketerProfile()->value('profile_slug'));
+            }
+        });
     }
 }

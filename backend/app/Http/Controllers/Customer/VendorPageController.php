@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\VendorPageVendorResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Country;
+use App\Models\MarketerListing;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\Customer\ListingQueryService;
@@ -55,16 +56,36 @@ class VendorPageController extends Controller
 
         $wishlistListingIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
-        $items = $paginator->getCollection()->map(function ($listing) use ($country, $wishlistListingIds) {
+        // Include this vendor's marketer-promoted variants so the buy-box dedup can
+        // pick the best listing per variant (vendor listings still win by priority).
+        $variantIds = $paginator->getCollection()->pluck('product_variant_id')->unique()->values()->all();
+
+        $marketerListings = MarketerListing::query()
+            ->whereIn('product_variant_id', $variantIds)
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->with([
+                'productVariant.product.images',
+                'productVariant.product.category:id,name_en,name_ar,slug',
+                'marketer:id,name,marketer_type',
+                'marketer.marketerProfile:id,marketer_id,profile_slug',
+            ])
+            ->get();
+
+        $deduped = $this->listings->dedupByVariant(
+            $paginator->getCollection()->concat($marketerListings)->all()
+        );
+
+        $items = collect($deduped)->map(function ($listing) use ($country, $wishlistListingIds) {
             $product = $listing->productVariant->product;
 
-            return $this->listings->toCardShape(
+            return $this->listings->toMixedCardShape(
                 $listing,
                 $product,
                 $country,
                 in_array($listing->id, $wishlistListingIds),
             );
-        })->toArray();
+        })->values()->toArray();
 
         return ApiResponse::success([
             'vendor' => (new VendorPageVendorResource($vendor))->toArray($request),

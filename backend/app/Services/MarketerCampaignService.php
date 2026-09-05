@@ -354,7 +354,53 @@ class MarketerCampaignService
             $campaign->vendor->vendorAdmins->each(
                 fn ($va) => $va->notify(new CampaignInvitationAcceptedNotification($invitation))
             );
+
+            $this->createMarketerListingFromInvitation($invitation);
         });
+    }
+
+    /**
+     * Auto-create a MarketerListing for the campaign product once an invitation is accepted.
+     */
+    private function createMarketerListingFromInvitation(MarketerCampaignInvitation $invitation): void
+    {
+        $campaign = $invitation->campaign;
+        $marketer = $invitation->marketer;
+
+        $sourcePrice     = null;
+        $sourceCurrency  = $campaign->currency;
+        $sourceCondition = 'new';
+        $variantId       = null;
+
+        if ($campaign->vendor_listing_id) {
+            $source          = VendorListing::find($campaign->vendor_listing_id);
+            $sourcePrice     = $source?->price;
+            $sourceCondition = $source?->condition ?? 'new';
+            $variantId       = $source?->product_variant_id;
+        } elseif ($campaign->admin_listing_id) {
+            $source      = \App\Models\AdminListing::find($campaign->admin_listing_id);
+            $sourcePrice = $source?->price;
+            $variantId   = $source?->product_variant_id;
+        }
+
+        if (!$variantId || !$sourcePrice) {
+            return; // Can't create listing without product/price
+        }
+
+        \App\Models\MarketerListing::firstOrCreate(
+            ['invitation_id' => $invitation->id],
+            [
+                'marketer_id'        => $marketer->id,
+                'product_variant_id' => $variantId,
+                'country_id'         => $campaign->country_id,
+                'price'              => $sourcePrice,
+                'currency'           => $sourceCurrency,
+                'condition'          => $sourceCondition,
+                'status'             => 'active',
+                'referral_code'      => $invitation->referral_code,
+                'referral_link'      => $invitation->referral_link,
+            ]
+        );
     }
 
     /**

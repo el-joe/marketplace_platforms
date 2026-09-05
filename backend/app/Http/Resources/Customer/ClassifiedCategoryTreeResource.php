@@ -21,7 +21,11 @@ class ClassifiedCategoryTreeResource extends JsonResource
             'slug'      => $this->slug,
             'parent_id' => $this->parent_id,
             'icon'      => $this->icon,
-            'children'  => ClassifiedCategoryTreeResource::collection($this->whenLoaded('children'))->resolve(),
+            'children'  => $this->when(
+                $this->relationLoaded('children'),
+                fn () => ClassifiedCategoryTreeResource::collection($this->children)->resolve(),
+                [],
+            ),
         ];
     }
 }

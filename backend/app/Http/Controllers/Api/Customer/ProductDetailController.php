@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\AdminListing;
 use App\Models\Attribute;
+use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
@@ -439,13 +440,22 @@ class ProductDetailController extends Controller
             ->orderByDesc('score')
             ->get();
 
+        $marketerListings = MarketerListing::with(['marketer:id,name,marketer_type'])
+            ->where('product_variant_id', $variantId)
+            ->where('country_id', $countryId)
+            ->where('status', 'active')
+            ->orderByRaw('score IS NULL, score DESC')
+            ->orderBy('price')
+            ->get();
+
         $listings = $adminListings->map(fn (AdminListing $listing) => $this->formatListing($listing, 'admin', $currentListing))
-            ->concat($vendorListings->map(fn (VendorListing $listing) => $this->formatListing($listing, 'vendor', $currentListing)));
+            ->concat($vendorListings->map(fn (VendorListing $listing) => $this->formatListing($listing, 'vendor', $currentListing)))
+            ->concat($marketerListings->map(fn (MarketerListing $listing) => $this->formatListing($listing, 'marketer', $currentListing)));
 
         return $listings->values()->all();
     }
 
-    private function formatListing(VendorListing|AdminListing $listing, string $source, VendorListing|AdminListing $currentListing): array
+    private function formatListing(VendorListing|AdminListing|MarketerListing $listing, string $source, VendorListing|AdminListing $currentListing): array
     {
         return [
             'id' => $listing->id,
@@ -453,30 +463,41 @@ class ProductDetailController extends Controller
             'compare_at_price' => $listing->compare_at_price,
             'currency' => $listing->currency,
             'condition' => $listing->condition,
-            'condition_notes' => $listing->condition_notes,
-            'fulfillment_model' => $source === 'admin' ? $listing->fulfillment_type : $listing->fulfillment_model,
+            'condition_notes' => $listing->condition_notes ?? null,
+            'fulfillment_model' => $source === 'admin' ? $listing->fulfillment_type : ($source === 'marketer' ? 'marketer' : $listing->fulfillment_model),
             'global_system_type' => $source === 'vendor' ? $listing->global_system_type?->value : null,
             'is_global_shipping' => $source === 'admin' ? (bool) $listing->is_global_shipping : false,
-            'vendor_covers_delivery' => (bool) $listing->vendor_covers_delivery,
-            'max_order_quantity' => $listing->max_order_quantity,
+            'vendor_covers_delivery' => $source !== 'marketer' ? (bool) $listing->vendor_covers_delivery : false,
+            'max_order_quantity' => $listing->max_order_quantity ?? null,
             'status' => $listing->status instanceof \BackedEnum ? $listing->status->value : $listing->status,
             'rating_avg' => $listing->rating_avg,
             'rating_count' => $listing->rating_count,
-            'stock' => $listing->warehouseInventories->sum('quantity_available'),
-            'buy_box_won' => $listing->buy_box_won_at !== null,
+            // Marketer listings hold no warehouse stock — fulfillment is via the campaign's vendor/admin.
+            'stock' => $source !== 'marketer' ? $listing->warehouseInventories->sum('quantity_available') : null,
+            'buy_box_won' => $source !== 'marketer' ? $listing->buy_box_won_at !== null : false,
             'is_current_listing' => (string) $listing->id === (string) $currentListing->id,
             // Seller identity
-            'seller' => $source === 'admin' ? [
-                'id' => null,
-                'name_en' => $listing->sold_by_label_en,
-                'name_ar' => $listing->sold_by_label_ar,
-                'is_platform' => true,
-            ] : [
-                'id' => $listing->vendor_id,
-                'name_en' => $listing->vendor?->store_name,
-                'name_ar' => $listing->vendor?->store_name_ar ?? $listing->vendor?->store_name,
-                'is_platform' => false,
-            ],
+            'seller' => match ($source) {
+                'admin' => [
+                    'id' => null,
+                    'name_en' => $listing->sold_by_label_en,
+                    'name_ar' => $listing->sold_by_label_ar,
+                    'is_platform' => true,
+                ],
+                'marketer' => [
+                    'id' => $listing->marketer_id,
+                    'name_en' => $listing->marketer?->name,
+                    'name_ar' => $listing->marketer?->name,
+                    'is_platform' => false,
+                    'is_marketer' => true,
+                ],
+                default => [
+                    'id' => $listing->vendor_id,
+                    'name_en' => $listing->vendor?->store_name,
+                    'name_ar' => $listing->vendor?->store_name_ar ?? $listing->vendor?->store_name,
+                    'is_platform' => false,
+                ],
+            },
             // Express badge — admin listings only
             'badge' => $source === 'admin' ? [
                 'type' => 'express',

@@ -46,7 +46,8 @@
     "categoriesNav": {
       "topBrands": "Top Brands",
       "openSouq": "Open Souq",
-      "travel": "Travel"
+      "travel": "Travel",
+      "marketers": "Marketers"
     }
   },
   "authDialog": {
@@ -750,7 +751,8 @@
       "categoriesNav": {
         "topBrands": "Top Brands",
         "openSouq": "Open Souq",
-        "travel": "Travel"
+        "travel": "Travel",
+      "marketers": "Marketers"
       }
     },
     "mobileNav": {
