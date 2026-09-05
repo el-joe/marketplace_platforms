@@ -578,6 +578,11 @@
                     data-upload-url="{{ route('admin.products.upload-image') }}"
                     data-revert-base="{{ Str::beforeLast(route('admin.products.delete-image', ['mediaId' => '__id__']), '/__id__') }}"
                 />
+                <script>
+                    {{-- FilePond.create() replaces the input above, so cache its upload/delete URLs before that happens --}}
+                    window.__productImagesUploadUrl = @json(route('admin.products.upload-image'));
+                    window.__productImagesDeleteUrlBase = @json(Str::beforeLast(route('admin.products.delete-image', ['mediaId' => '__id__']), '/__id__'));
+                </script>
                 {{-- Existing images (edit mode) rendered as FilePond mock files via JS --}}
                 @if($isEdit && isset($images) && count($images) > 0)
                 @php
@@ -988,23 +993,49 @@
             };
         }
 
+        function syncPendingVariantImageInputs(index) {
+            const images = (window.__pendingVariantImages && window.__pendingVariantImages[index]) || [];
+            const $container = $(`.variant-image-ids-container[data-index="${index}"]`);
+            $container.empty();
+            images.forEach((img) => {
+                $container.append($('<input>', { type: 'hidden', name: `variants[${index}][image_ids][]`, value: img.id }));
+            });
+            $(`.manage-variant-images[data-variant-index="${index}"] .variant-images-count`).text(images.length);
+        }
+
         function variantImagesPanel() {
             return {
                 open: false,
                 loading: false,
+                pending: false,
                 variantId: null,
+                variantIndex: null,
                 variantName: '',
                 imagesUrl: '',
                 reorderUrl: '',
                 uploadUrl: '',
+                deleteUrlBase: '',
                 images: [],
                 sortable: null,
 
                 open_panel(detail) {
                     this.open = true;
+                    this.pending = !!detail.pending;
+                    this.variantName = detail.variantName;
+
+                    if (this.pending) {
+                        this.loading = false;
+                        this.variantIndex = detail.variantIndex;
+                        this.uploadUrl = window.__productImagesUploadUrl;
+                        this.deleteUrlBase = window.__productImagesDeleteUrlBase;
+                        window.__pendingVariantImages = window.__pendingVariantImages || {};
+                        this.images = window.__pendingVariantImages[this.variantIndex] || [];
+                        this.$nextTick(() => this.initSortable());
+                        return;
+                    }
+
                     this.loading = true;
                     this.variantId = detail.variantId;
-                    this.variantName = detail.variantName;
                     this.imagesUrl = detail.imagesUrl;
                     this.reorderUrl = detail.reorderUrl;
                     this.uploadUrl = detail.uploadUrl;
@@ -1035,6 +1066,14 @@
                     const orderedIds = Array.from(document.querySelectorAll('#variant-images-list .variant-image-item'))
                         .map((el) => el.dataset.id);
 
+                    if (this.pending) {
+                        const byId = new Map((window.__pendingVariantImages[this.variantIndex] || []).map((img) => [img.id, img]));
+                        window.__pendingVariantImages[this.variantIndex] = orderedIds.map((id) => byId.get(id)).filter(Boolean);
+                        this.images = window.__pendingVariantImages[this.variantIndex];
+                        syncPendingVariantImageInputs(this.variantIndex);
+                        return;
+                    }
+
                     $.ajax({
                         url: this.reorderUrl,
                         method: 'POST',
@@ -1051,7 +1090,9 @@
 
                     const formData = new FormData();
                     Array.from(fileList).forEach((file) => formData.append('images[]', file));
-                    formData.append('variant_id', this.variantId);
+                    if (!this.pending) {
+                        formData.append('variant_id', this.variantId);
+                    }
 
                     $.ajax({
                         url: this.uploadUrl,
@@ -1060,21 +1101,44 @@
                         processData: false,
                         contentType: false,
                         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                    }).done(() => {
-                        this.refreshImages();
+                    }).done((res) => {
+                        if (this.pending) {
+                            const ids = res.ids || [];
+                            const urls = res.urls || [];
+                            window.__pendingVariantImages[this.variantIndex] = window.__pendingVariantImages[this.variantIndex] || [];
+                            ids.forEach((id, idx) => {
+                                window.__pendingVariantImages[this.variantIndex].push({ id, url: urls[idx], is_primary: false });
+                            });
+                            this.images = window.__pendingVariantImages[this.variantIndex];
+                            syncPendingVariantImageInputs(this.variantIndex);
+                            this.$nextTick(() => this.initSortable());
+                        } else {
+                            this.refreshImages();
+                        }
                     }).fail(() => {
                         window.Toast?.error(window.TRANSLATIONS?.variantImagesUploadFailed || 'Failed to upload image.');
                     });
                 },
 
                 removeImage(imageId) {
-                    const basePath = window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '');
+                    const deleteUrl = this.pending
+                        ? this.deleteUrlBase + '/' + imageId
+                        : window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '') + '/delete-image/' + imageId;
+
                     $.ajax({
-                        url: basePath + '/delete-image/' + imageId,
+                        url: deleteUrl,
                         method: 'DELETE',
                         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     }).done(() => {
-                        this.refreshImages();
+                        if (this.pending) {
+                            window.__pendingVariantImages[this.variantIndex] = (window.__pendingVariantImages[this.variantIndex] || [])
+                                .filter((img) => img.id !== imageId);
+                            this.images = window.__pendingVariantImages[this.variantIndex];
+                            syncPendingVariantImageInputs(this.variantIndex);
+                            this.$nextTick(() => this.initSortable());
+                        } else {
+                            this.refreshImages();
+                        }
                     }).fail(() => {
                         window.Toast?.error(window.TRANSLATIONS?.variantImagesDeleteFailed || 'Failed to delete image.');
                     });
@@ -1131,6 +1195,17 @@
             });
 
             $(document).on('click', '.manage-variant-images', function () {
+                if ($(this).data('pending')) {
+                    window.dispatchEvent(new CustomEvent('open-variant-images', {
+                        detail: {
+                            pending: true,
+                            variantIndex: $(this).data('variant-index'),
+                            variantName: $(this).data('variant-name'),
+                        },
+                    }));
+                    return;
+                }
+
                 window.dispatchEvent(new CustomEvent('open-variant-images', {
                     detail: {
                         variantId: $(this).data('variant-id'),

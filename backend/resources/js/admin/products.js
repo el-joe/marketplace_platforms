@@ -221,6 +221,7 @@ function initGenerateVariants() {
 function renderVariantRows(variants) {
     const $tbody = $('#variants-tbody');
     $tbody.empty();
+    window.__pendingVariantImages = {};
 
     if (variants.length === 0) {
         $('#no-variants-msg').removeClass('hidden');
@@ -232,7 +233,6 @@ function renderVariantRows(variants) {
     const T = window.TRANSLATIONS || {};
     const skuPlaceholder = esc(T.skuAutoGeneratePlaceholder || 'Auto-generate');
     const removeLabel = esc(T.removeLabel || 'Remove');
-    const saveFirstHint = esc(T.saveProductFirstForImages || 'Save the product first to add images');
 
     variants.forEach(function (v) {
         const i = v.index;
@@ -254,12 +254,14 @@ function renderVariantRows(variants) {
     <input type="checkbox" name="variants[${i}][is_active]" value="1" class="rounded text-primary-600 border-gray-300" ${v.is_active ? 'checked' : ''} />
   </td>
   <td class="px-4 py-3 text-center">
-    <button type="button" class="manage-variant-images inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 text-xs text-gray-400 cursor-not-allowed opacity-60" disabled title="${saveFirstHint}">
+    <button type="button" class="manage-variant-images inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
+      data-pending="1" data-variant-index="${i}" data-variant-name="${esc(v.name)}">
       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 12v-3a3 3 0 0 1 3-3h3m12 0v3m0-3h-3m-9 0h3m6 0v3m0-3h-3M3 15v3a3 3 0 0 0 3 3h3m12-6v3a3 3 0 0 1-3 3h-3"/>
       </svg>
-      <span>0</span>
+      <span class="variant-images-count">0</span>
     </button>
+    <div class="variant-image-ids-container hidden" data-index="${i}"></div>
   </td>
   <td class="px-4 py-3">
     <button type="button" class="remove-variant-row text-gray-400 hover:text-red-600 transition-colors" title="${removeLabel}">

@@ -1107,15 +1107,24 @@ class ProductController extends Controller
                     ->update(array_merge($payload, ['deleted_at' => null]));
 
                 if ($updated) {
+                    if (array_key_exists('image_ids', $v)) {
+                        $this->syncVariantImages($productId, $variantId, (array) $v['image_ids']);
+                    }
                     continue;
                 }
             }
 
+            $newVariantId = (string) Str::uuid();
+
             ProductVariant::query()->insert(array_merge($payload, [
-                'id' => (string) Str::uuid(),
+                'id' => $newVariantId,
                 'product_id' => $productId,
                 'created_at' => now(),
             ]));
+
+            if (array_key_exists('image_ids', $v)) {
+                $this->syncVariantImages($productId, $newVariantId, (array) $v['image_ids']);
+            }
         }
     }
 
@@ -1257,6 +1266,33 @@ class ProductController extends Controller
                 ->where('id', $imageId)
                 ->update([
                     'product_id' => $productId,
+                    'position' => $i,
+                    'is_primary' => $i === 0,
+                    'updated_at' => now(),
+                ]);
+        }
+    }
+
+    private function syncVariantImages(string $productId, string $variantId, array $imageIds): void
+    {
+        // Remove variant images the user deleted before/after upload
+        $removed = ProductImage::query()
+            ->where('product_variant_id', $variantId)
+            ->when(!empty($imageIds), fn($q) => $q->whereNotIn('id', $imageIds))
+            ->get(['id', 'path', 'disk']);
+
+        foreach ($removed as $img) {
+            Storage::disk($img->disk ?? 'public')->delete($img->path);
+            ProductImage::query()->where('id', $img->id)->delete();
+        }
+
+        // Re-parent submitted image IDs (uploaded pre-save as orphans, or already attached) to this variant
+        foreach ($imageIds as $i => $imageId) {
+            ProductImage::query()
+                ->where('id', $imageId)
+                ->update([
+                    'product_id' => $productId,
+                    'product_variant_id' => $variantId,
                     'position' => $i,
                     'is_primary' => $i === 0,
                     'updated_at' => now(),
