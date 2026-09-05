@@ -17,7 +17,7 @@
                 <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $marketer->marketer_type === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
                     {{ $marketer->marketer_type === 'influencer' ? '🎬 مؤثر' : '🔗 أفيليت' }}
                 </span>
-                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">{{ (string)$marketer->global_status }}</span>
+                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">{{ $marketer->global_status?->value }}</span>
             </div>
         </div>
 
@@ -39,7 +39,7 @@
 
         {{-- Actions --}}
         <div class="flex gap-3 pt-2 border-t border-gray-100">
-            @if((string)$marketer->global_status === 'pending')
+            @if($marketer->global_status?->value === 'pending')
                 <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}">
                     @csrf
                     <button class="px-5 py-2 bg-green-500 text-white font-semibold rounded-lg text-sm hover:bg-green-600">✓ موافقة وتفعيل</button>
@@ -51,7 +51,7 @@
                     <input type="hidden" name="reason">
                     <button class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg text-sm hover:bg-red-600">✕ رفض</button>
                 </form>
-            @elseif((string)$marketer->global_status === 'active')
+            @elseif($marketer->global_status?->value === 'active')
                 <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" x-data x-on:submit.prevent="
                     const r = prompt('سبب التعليق:');
                     $el.querySelector('[name=reason]').value = r || '';
@@ -60,7 +60,7 @@
                     <input type="hidden" name="reason">
                     <button class="px-5 py-2 bg-red-100 text-red-700 font-semibold rounded-lg text-sm hover:bg-red-200">تعليق الحساب</button>
                 </form>
-            @elseif((string)$marketer->global_status === 'suspended')
+            @elseif($marketer->global_status?->value === 'suspended')
                 <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}">
                     @csrf
                     <button class="px-5 py-2 bg-green-100 text-green-700 font-semibold rounded-lg text-sm hover:bg-green-200">إعادة تفعيل</button>

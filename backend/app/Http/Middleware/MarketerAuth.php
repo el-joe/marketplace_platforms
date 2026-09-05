@@ -29,14 +29,14 @@ class MarketerAuth
 
         $marketer = $marketerAdmin->marketer;
 
-        if (in_array((string) $marketer->global_status, ['suspended', 'blacklisted'], true)) {
+        if (in_array($marketer->global_status?->value, ['suspended', 'blacklisted'], true)) {
             auth()->guard('marketer')->logout();
 
             return redirect()->route('marketer.login')
                 ->withErrors(['email' => 'تم تعليق حسابك. تواصل مع الدعم.']);
         }
 
-        if ((string) $marketer->global_status === 'pending') {
+        if ($marketer->global_status?->value === 'pending') {
             // Allow access to a pending page only, or show a banner — do not hard-logout
             $request->attributes->set('marketer_pending', true);
         }

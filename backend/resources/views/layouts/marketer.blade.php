@@ -133,7 +133,7 @@
                 <h1 class="text-lg font-bold text-gray-800">@yield('page-title', 'لوحة الماركتر')</h1>
                 <div class="flex items-center gap-3">
                     {{-- Pending status badge --}}
-                    @if($marketer && (string)$marketer->global_status === 'pending')
+                    @if($marketer && $marketer->global_status?->value === 'pending')
                         <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
                             ⏳ حسابك قيد المراجعة
                         </span>

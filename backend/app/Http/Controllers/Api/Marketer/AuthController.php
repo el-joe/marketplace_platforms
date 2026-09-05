@@ -47,7 +47,7 @@ class AuthController extends Controller
                 'name'           => $marketer->name,
                 'email'          => $marketer->email,
                 'marketer_type'  => $marketer->marketer_type,
-                'global_status'  => (string) $marketer->global_status,
+                'global_status'  => $marketer->global_status?->value,
                 'country_id'     => $marketer->country_id,
             ],
         ]);
@@ -115,7 +115,7 @@ class AuthController extends Controller
                 'name'           => $marketer->name,
                 'email'          => $marketer->email,
                 'marketer_type'  => $marketer->marketer_type,
-                'global_status'  => (string) $marketer->global_status,
+                'global_status'  => $marketer->global_status?->value,
             ],
         ]);
     }

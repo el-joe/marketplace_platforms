@@ -46,7 +46,7 @@ class MarketerController extends Controller
     public function approve(Marketer $marketer)
     {
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
-        abort_unless((string) $marketer->global_status === 'pending', 422, 'الحساب ليس في حالة معلّقة.');
+        abort_unless($marketer->global_status?->value === 'pending', 422, 'الحساب ليس في حالة معلّقة.');
 
         $marketer->update([
             'global_status'        => 'active',

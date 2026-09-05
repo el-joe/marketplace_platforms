@@ -18,7 +18,7 @@ class MarketerApiActive
 
         $marketer = $marketerAdmin->marketer;
 
-        if (in_array((string) $marketer->global_status, ['suspended', 'blacklisted', 'rejected'], true)) {
+        if (in_array($marketer->global_status?->value, ['suspended', 'blacklisted', 'rejected'], true)) {
             return response()->json(['success' => false, 'message' => 'Account is suspended.'], 403);
         }
 

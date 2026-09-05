@@ -98,12 +98,12 @@ class Marketer extends Model
     public function isActive(): bool
     {
         return $this->global_status?->value === 'active'
-            || (string) $this->global_status === 'active';
+            || $this->global_status?->value === 'active';
     }
 
     public function isPending(): bool
     {
-        return (string) $this->global_status === 'pending';
+        return $this->global_status?->value === 'pending';
     }
 
     protected static function booted(): void

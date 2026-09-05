@@ -65,7 +65,7 @@
                         'suspended'  => 'bg-red-100 text-red-700',
                         'rejected'   => 'bg-gray-100 text-gray-500',
                         'blacklisted'=> 'bg-red-200 text-red-800',
-                    ][(string)$marketer->global_status] ?? 'bg-gray-100 text-gray-500';
+                    ][$marketer->global_status?->value] ?? 'bg-gray-100 text-gray-500';
                 @endphp
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3">
@@ -78,22 +78,22 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 text-center text-gray-500 text-xs">{{ $marketer->country?->name_ar ?? '-' }}</td>
-                    <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ (string)$marketer->global_status }}</span></td>
+                    <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ $marketer->global_status?->value }}</span></td>
                     <td class="px-4 py-3 text-center">{{ $marketer->invitations_count }}</td>
                     <td class="px-4 py-3 text-center text-xs text-gray-500">{{ $marketer->created_at->format('Y-m-d') }}</td>
                     <td class="px-4 py-3 text-center">
-                        @if((string)$marketer->global_status === 'pending')
+                        @if($marketer->global_status?->value === 'pending')
                             <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}" class="inline">
                                 @csrf
                                 <button class="text-xs px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600">موافقة</button>
                             </form>
-                        @elseif((string)$marketer->global_status === 'active')
+                        @elseif($marketer->global_status?->value === 'active')
                             <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" class="inline">
                                 @csrf
                                 <input type="hidden" name="reason" value="Admin action">
                                 <button class="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200">تعليق</button>
                             </form>
-                        @elseif((string)$marketer->global_status === 'suspended')
+                        @elseif($marketer->global_status?->value === 'suspended')
                             <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}" class="inline">
                                 @csrf
                                 <button class="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200">تفعيل</button>

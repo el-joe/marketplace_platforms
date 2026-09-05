@@ -10,7 +10,7 @@
 <div class="space-y-6">
 
     {{-- Welcome banner if pending --}}
-    @if((string)$marketer->global_status === 'pending')
+    @if($marketer->global_status?->value === 'pending')
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-5 flex items-start gap-4">
         <div class="text-2xl">⏳</div>
         <div>
