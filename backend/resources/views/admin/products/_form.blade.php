@@ -1017,6 +1017,11 @@
             urlCopied: @json(__('admin.products.url_copied') ?? 'Copied to clipboard'),
             urlCopyFailed: @json(__('admin.products.url_copy_failed') ?? 'Could not copy to clipboard'),
             pendingUrlHint: @json(__('admin.products.pending_url_hint') ?? 'Save the product to generate a URL'),
+            selectImagesFirst: @json(__('admin.products.select_images_first')),
+            noMatchingVariants: @json(__('admin.products.no_matching_variants')),
+            bulkUploadProgress: @json(__('admin.products.bulk_upload_progress')),
+            bulkUploadSuccess: @json(__('admin.products.bulk_upload_success')),
+            bulkUploadFailed: @json(__('admin.products.bulk_upload_failed')),
         });
 
         function variantDetailPanel() {
