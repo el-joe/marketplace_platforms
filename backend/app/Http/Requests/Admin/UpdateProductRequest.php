@@ -47,6 +47,8 @@ class UpdateProductRequest extends FormRequest
             'variants.*.weight_grams' => ['nullable', 'integer', 'min:0'],
             'variants.*.is_default' => ['nullable', 'boolean'],
             'variants.*.is_active' => ['nullable', 'boolean'],
+            'variants.*.image_ids' => ['nullable', 'array'],
+            'variants.*.image_ids.*' => ['string'],
 
             'countries' => ['nullable', 'array'],
             'countries.*.is_available' => ['nullable', 'boolean'],
