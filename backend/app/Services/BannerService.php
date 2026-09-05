@@ -13,55 +13,77 @@ class BannerService
     private const DISK = 'public';
 
     /**
-     * Store a banner image (desktop or mobile) and create a files record.
+     * Store a banner image and create a files record.
      *
      * @param  UploadedFile  $file
      * @param  Banner        $banner
-     * @param  string        $slot   'desktop' | 'mobile'
+     * @param  string        $slot   'desktop_en' | 'desktop_ar' | 'mobile_en' | 'mobile_ar'
+     *                                (bare 'desktop' / 'mobile' accepted as legacy aliases for 'en')
      * @return File
      */
-    public function storeImage(UploadedFile $file, Banner $banner, string $slot = 'desktop'): File
+    public function storeImage(UploadedFile $file, Banner $banner, string $slot = 'desktop_en'): File
     {
+        $slot = $this->normalizeSlot($slot);
+
         // Remove existing image for this slot
         $this->deleteImageBySlot($banner, $slot);
 
         $ext = $file->getClientOriginalExtension() ?: $file->guessExtension();
         $key = 'banners/' . $banner->id . '/' . $slot . '_' . Str::random(8) . '.' . $ext;
         $path = $file->storeAs('banners/' . $banner->id, $slot . '_' . Str::random(8) . '.' . $ext, self::DISK);
+        $isDesktop = str_starts_with($slot, 'desktop');
 
         return File::create([
             'key' => $key,
             'path' => $path,
             'storage_type' => self::DISK,
-            'file_type' => $slot === 'mobile' ? 'banner_mobile' : 'banner_desktop',
+            'file_type' => 'banner_' . $slot,
             'mime_type' => $file->getMimeType(),
             'extension' => $ext,
             'size' => $file->getSize(),
             'model_type' => Banner::class,
             'model_id' => $banner->id,
-            'is_primary' => $slot === 'desktop' ? 1 : 0,
-            'position' => $slot === 'desktop' ? 0 : 1,
+            'is_primary' => $isDesktop ? 1 : 0,
+            'position' => $isDesktop ? 0 : 1,
         ]);
     }
 
     /**
-     * Get the desktop image for a banner.
+     * Normalize a legacy bare 'desktop'/'mobile' slot to the 'en' language slot.
      */
-    public function getDesktopImage(Banner $banner): ?File
+    private function normalizeSlot(string $slot): string
+    {
+        return match ($slot) {
+            'desktop' => 'desktop_en',
+            'mobile' => 'mobile_en',
+            default => $slot,
+        };
+    }
+
+    /**
+     * Get an image for a banner by slot ('desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar').
+     */
+    public function getImage(Banner $banner, string $slot): ?File
     {
         return $banner->files()
-            ->where('file_type', 'banner_desktop')
+            ->where('file_type', 'banner_' . $this->normalizeSlot($slot))
             ->first();
     }
 
     /**
-     * Get the mobile image for a banner.
+     * Get the desktop (EN) image for a banner. Kept for backward compatibility.
+     */
+    public function getDesktopImage(Banner $banner): ?File
+    {
+        return $this->getImage($banner, 'desktop_en');
+    }
+
+    /**
+     * Get the mobile (EN) image for a banner. Kept for backward compatibility.
      */
     public function getMobileImage(Banner $banner): ?File
     {
-        return $banner->files()
-            ->where('file_type', 'banner_mobile')
-            ->first();
+        return $this->getImage($banner, 'mobile_en');
     }
 
     /**
@@ -88,7 +110,7 @@ class BannerService
      */
     public function deleteImageBySlot(Banner $banner, string $slot): void
     {
-        $fileType = $slot === 'mobile' ? 'banner_mobile' : 'banner_desktop';
+        $fileType = 'banner_' . $this->normalizeSlot($slot);
 
         $banner->files()
             ->where('file_type', $fileType)

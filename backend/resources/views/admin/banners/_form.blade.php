@@ -10,8 +10,10 @@
 @php
     $banner      = $banner ?? null;
     $isEdit      = $banner !== null;
-    $desktopImage = $desktopImage ?? null;
-    $mobileImage  = $mobileImage ?? null;
+    $desktopImageEn = $desktopImageEn ?? null;
+    $desktopImageAr = $desktopImageAr ?? null;
+    $mobileImageEn  = $mobileImageEn ?? null;
+    $mobileImageAr  = $mobileImageAr ?? null;
 
     $val = function (string $field, $default = '') use ($isEdit, $banner) {
         $current = $isEdit ? ($banner->{$field} ?? $default) : $default;
@@ -129,86 +131,76 @@
 
             {{-- Image Upload card ───────────────────────────────────────────── --}}
             <x-card title="{{ __('admin.banners.creative_images') }}">
+                @php
+                    $imageBlock = function (string $device, string $locale, ?\App\Models\File $image, string $label) use ($isEdit) {
+                        $slot = $device . '_' . $locale;
+                        return [
+                            'slot' => $slot, 'device' => $device, 'locale' => $locale,
+                            'image' => $image, 'label' => $label,
+                        ];
+                    };
+                @endphp
 
-                {{-- Desktop image --}}
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ __('admin.banners.desktop_image') }}
-                        <span class="text-xs text-gray-400 font-normal"
-                            x-text="currentPlacement ? '(' + currentPlacement.width_px + '×' + currentPlacement.height_px + 'px)' : ''">
-                        </span>
-                    </label>
-
-                    <div
-                        id="desktop-preview-wrap"
-                        class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 mb-3 flex items-center justify-center"
-                        style="min-height:120px"
-                        :style="currentPlacement ? `aspect-ratio: ${desktopAspect}; max-height:240px;` : ''">
-                        @if($isEdit && $desktopImage)
-                            <img
-                                id="desktop-preview-img"
-                                src="{{ $desktopImage->full_path }}"
-                                alt="{{ __('admin.banners.desktop_alt') }}"
-                                class="max-w-full max-h-full object-contain" />
-                            <button
-                                type="button"
-                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs js-remove-img-btn"
-                                data-slot="desktop"
-                                data-file-id="{{ $desktopImage->id }}"
-                                data-delete-url="{{ route('admin.banners.delete-image') }}"
-                                title="{{ __('admin.banners.remove') }}">✕</button>
-                        @else
-                            <img id="desktop-preview-img" src="" alt="" class="max-w-full max-h-full object-contain hidden" />
-                            <span id="desktop-upload-placeholder" class="text-sm text-gray-400">{{ __('admin.banners.no_image_yet') }}</span>
-                        @endif
-                    </div>
-
-                    <input
-                        type="file"
-                        name="desktop_image"
-                        id="desktop-image-input"
-                        accept="image/*"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer" />
-                </div>
-
-                {{-- Mobile image --}}
-                <div x-show="showMobileUpload" x-transition>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ __('admin.banners.mobile_image') }}
-                        <span class="text-xs text-gray-400 font-normal">{{ __('admin.banners.mobile_image_optional') }}</span>
-                    </label>
-
-                    <div
-                        id="mobile-preview-wrap"
-                        class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 mb-3 flex items-center justify-center"
-                        style="min-height:120px; max-width:200px">
-                        @if($isEdit && $mobileImage)
-                            <img
-                                id="mobile-preview-img"
-                                src="{{ $mobileImage->full_path }}"
-                                alt="{{ __('admin.banners.mobile_alt') }}"
-                                class="max-w-full max-h-full object-contain" />
-                            <button
-                                type="button"
-                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs js-remove-img-btn"
-                                data-slot="mobile"
-                                data-file-id="{{ $mobileImage->id }}"
-                                data-delete-url="{{ route('admin.banners.delete-image') }}"
-                                title="{{ __('admin.banners.remove') }}">✕</button>
-                        @else
-                            <img id="mobile-preview-img" src="" alt="" class="max-w-full max-h-full object-contain hidden" />
-                            <span id="mobile-upload-placeholder" class="text-sm text-gray-400">{{ __('admin.banners.no_image_yet') }}</span>
-                        @endif
-                    </div>
-
-                    <input
-                        type="file"
-                        name="mobile_image"
-                        id="mobile-image-input"
-                        accept="image/*"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer" />
-                </div>
-
+                <x-form.lang-tabs id="banner-image-lang-tabs">
+                    <x-slot:en>
+                        @foreach ([$imageBlock('desktop', 'en', $desktopImageEn, __('admin.banners.desktop_image')), $imageBlock('mobile', 'en', $mobileImageEn, __('admin.banners.mobile_image'))] as $img)
+                            <div class="mb-6" @if($img['device'] === 'mobile') x-show="showMobileUpload" x-transition @endif>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ $img['label'] }}
+                                    @if($img['device'] === 'desktop')
+                                        <span class="text-xs text-gray-400 font-normal"
+                                            x-text="currentPlacement ? '(' + currentPlacement.width_px + '×' + currentPlacement.height_px + 'px)' : ''"></span>
+                                    @endif
+                                </label>
+                                <div id="{{ $img['slot'] }}-preview-wrap"
+                                     class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 mb-3 flex items-center justify-center"
+                                     style="min-height:120px; @if($img['device'] === 'mobile') max-width:200px; @endif"
+                                     @if($img['device'] === 'desktop') :style="currentPlacement ? `aspect-ratio: ${desktopAspect}; max-height:240px;` : ''" @endif>
+                                    @if($isEdit && $img['image'])
+                                        <img id="{{ $img['slot'] }}-preview-img" src="{{ $img['image']->full_path }}" alt="{{ $img['label'] }}" class="max-w-full max-h-full object-contain" />
+                                        <button type="button" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs js-remove-img-btn"
+                                            data-slot="{{ $img['slot'] }}" data-file-id="{{ $img['image']->id }}" data-delete-url="{{ route('admin.banners.delete-image') }}"
+                                            title="{{ __('admin.banners.remove') }}">✕</button>
+                                    @else
+                                        <img id="{{ $img['slot'] }}-preview-img" src="" alt="" class="max-w-full max-h-full object-contain hidden" />
+                                        <span id="{{ $img['slot'] }}-upload-placeholder" class="text-sm text-gray-400">{{ __('admin.banners.no_image_yet') }}</span>
+                                    @endif
+                                </div>
+                                <input type="file" name="{{ $img['device'] }}_image_en" id="{{ $img['slot'] }}-input" accept="image/*"
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer" />
+                            </div>
+                        @endforeach
+                    </x-slot:en>
+                    <x-slot:ar>
+                        @foreach ([$imageBlock('desktop', 'ar', $desktopImageAr, __('admin.banners.desktop_image')), $imageBlock('mobile', 'ar', $mobileImageAr, __('admin.banners.mobile_image'))] as $img)
+                            <div class="mb-6" @if($img['device'] === 'mobile') x-show="showMobileUpload" x-transition @endif>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ $img['label'] }}
+                                    @if($img['device'] === 'desktop')
+                                        <span class="text-xs text-gray-400 font-normal"
+                                            x-text="currentPlacement ? '(' + currentPlacement.width_px + '×' + currentPlacement.height_px + 'px)' : ''"></span>
+                                    @endif
+                                </label>
+                                <div id="{{ $img['slot'] }}-preview-wrap"
+                                     class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 mb-3 flex items-center justify-center"
+                                     style="min-height:120px; @if($img['device'] === 'mobile') max-width:200px; @endif"
+                                     @if($img['device'] === 'desktop') :style="currentPlacement ? `aspect-ratio: ${desktopAspect}; max-height:240px;` : ''" @endif>
+                                    @if($isEdit && $img['image'])
+                                        <img id="{{ $img['slot'] }}-preview-img" src="{{ $img['image']->full_path }}" alt="{{ $img['label'] }}" class="max-w-full max-h-full object-contain" />
+                                        <button type="button" class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs js-remove-img-btn"
+                                            data-slot="{{ $img['slot'] }}" data-file-id="{{ $img['image']->id }}" data-delete-url="{{ route('admin.banners.delete-image') }}"
+                                            title="{{ __('admin.banners.remove') }}">✕</button>
+                                    @else
+                                        <img id="{{ $img['slot'] }}-preview-img" src="" alt="" class="max-w-full max-h-full object-contain hidden" />
+                                        <span id="{{ $img['slot'] }}-upload-placeholder" class="text-sm text-gray-400">{{ __('admin.banners.no_image_yet') }}</span>
+                                    @endif
+                                </div>
+                                <input type="file" name="{{ $img['device'] }}_image_ar" id="{{ $img['slot'] }}-input" accept="image/*"
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer" />
+                            </div>
+                        @endforeach
+                    </x-slot:ar>
+                </x-form.lang-tabs>
             </x-card>
 
             {{-- Text Content card ───────────────────────────────────────────── --}}

@@ -230,11 +230,13 @@ class PageBuilderController extends Controller
 
         $data = $request->validate([
             'page_id'         => ['required', 'uuid', 'exists:pages,id'],
-            'name'            => ['sometimes', 'nullable', 'string', 'max:150'],
+            'name_en'         => ['sometimes', 'nullable', 'string', 'max:150'],
+            'name_ar'         => ['sometimes', 'nullable', 'string', 'max:150'],
             'position'        => ['required', 'integer', 'min:0'],
             'layout'          => ['nullable', 'in:stack,columns'],
             'columns_config'  => ['nullable', 'string', 'max:100'],
-            'background_image_url' => ['nullable', 'string', 'max:500'],
+            'background_image_url_en' => ['nullable', 'string', 'max:500'],
+            'background_image_url_ar' => ['nullable', 'string', 'max:500'],
             'background_image_type' => ['nullable', 'in:section,header'],
             'background_color' => ['nullable', 'string', 'max:20'],
             'max_width'       => ['nullable', 'string', 'max:20'],
@@ -250,7 +252,10 @@ class PageBuilderController extends Controller
             }
         }
 
-        $data['name']           = $data['name']           ?? 'New Section';
+        $data['name_en']        = $data['name_en']        ?? 'New Section';
+        $data['name_ar']        = $data['name_ar']        ?? $data['name_en'];
+        $data['name']           = $data['name_en'];
+        $data['background_image_url'] = $data['background_image_url_en'] ?? null;
         $data['padding_top']    = $data['padding_top']    ?? 0;
         $data['padding_bottom'] = $data['padding_bottom'] ?? 0;
         $data['layout']         = $data['layout']         ?? 'stack';
@@ -266,10 +271,12 @@ class PageBuilderController extends Controller
         $this->authorizeManage();
 
         $data = $request->validate([
-            'name'              => ['sometimes', 'string', 'max:150'],
+            'name_en'           => ['sometimes', 'string', 'max:150'],
+            'name_ar'           => ['sometimes', 'nullable', 'string', 'max:150'],
             'is_visible'        => ['sometimes', 'boolean'],
             'background_color'  => ['nullable', 'string', 'max:20'],
-            'background_image_url' => ['nullable', 'string', 'max:500'],
+            'background_image_url_en' => ['nullable', 'string', 'max:500'],
+            'background_image_url_ar' => ['nullable', 'string', 'max:500'],
             'background_image_type' => ['nullable', 'in:section,header'],
             'padding_top'       => ['nullable', 'integer', 'min:0'],
             'padding_bottom'    => ['nullable', 'integer', 'min:0'],
@@ -283,6 +290,13 @@ class PageBuilderController extends Controller
             if (json_last_error() === JSON_ERROR_NONE) {
                 $data['columns_config'] = $decoded;
             }
+        }
+
+        if (array_key_exists('name_en', $data)) {
+            $data['name'] = $data['name_en'];
+        }
+        if (array_key_exists('background_image_url_en', $data)) {
+            $data['background_image_url'] = $data['background_image_url_en'];
         }
 
         $section->update($data);
@@ -670,13 +684,17 @@ class PageBuilderController extends Controller
     public function getSlides(PageBlock $block)
     {
         $slides = $block->slides()
-            ->with(['desktopFile', 'mobileFile'])
+            ->with(['desktopFile', 'mobileFile', 'desktopFileEn', 'desktopFileAr', 'mobileFileEn', 'mobileFileAr'])
             ->orderBy('position')
             ->get()
             ->map(function ($slide) {
                 $arr = $slide->toArray();
                 $arr['desktop_file_url'] = $slide->desktop_url;
                 $arr['mobile_file_url'] = $slide->mobile_url;
+                $arr['desktop_url_en'] = $slide->desktop_url_en;
+                $arr['desktop_url_ar'] = $slide->desktop_url_ar;
+                $arr['mobile_url_en'] = $slide->mobile_url_en;
+                $arr['mobile_url_ar'] = $slide->mobile_url_ar;
                 $arr['visible_from'] = $slide->visible_from?->format('Y-m-d H:i');
                 $arr['visible_until'] = $slide->visible_until?->format('Y-m-d H:i');
                 return $arr;
@@ -692,8 +710,10 @@ class PageBuilderController extends Controller
         $data = $request->validate([
             'id' => 'nullable|uuid',
             'position' => 'nullable|integer|min:0',
-            'desktop_file_id' => 'nullable|integer|exists:files,id',
-            'mobile_file_id' => 'nullable|integer|exists:files,id',
+            'desktop_file_id_en' => 'nullable|integer|exists:files,id',
+            'desktop_file_id_ar' => 'nullable|integer|exists:files,id',
+            'mobile_file_id_en' => 'nullable|integer|exists:files,id',
+            'mobile_file_id_ar' => 'nullable|integer|exists:files,id',
             'title_en' => 'nullable|string|max:255',
             'title_ar' => 'nullable|string|max:255',
             'subtitle_en' => 'nullable|string|max:500',
@@ -765,7 +785,8 @@ class PageBuilderController extends Controller
         $data = $request->validate([
             'id' => 'nullable|uuid',
             'position' => 'nullable|integer|min:0',
-            'file_id' => 'nullable|integer|exists:files,id',
+            'file_id_en' => 'nullable|integer|exists:files,id|required_without:file_id_ar',
+            'file_id_ar' => 'nullable|integer|exists:files,id|required_without:file_id_en',
             'title_en' => 'nullable|string|max:255',
             'title_ar' => 'nullable|string|max:255',
             'link_url' => 'nullable|string|max:500',
@@ -1229,6 +1250,7 @@ class PageBuilderController extends Controller
         $request->validate([
             'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
             'slot' => ['required', 'in:desktop,mobile'],
+            'locale' => ['nullable', 'in:en,ar'],
         ]);
 
         $uploaded = $request->file('image');
@@ -1262,6 +1284,7 @@ class PageBuilderController extends Controller
 
         $request->validate([
             'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
+            'locale' => ['nullable', 'in:en,ar'],
         ]);
 
         $uploaded = $request->file('image');
@@ -1326,6 +1349,7 @@ class PageBuilderController extends Controller
 
         $request->validate([
             'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
+            'locale' => ['nullable', 'in:en,ar'],
         ]);
 
         $uploaded = $request->file('image');

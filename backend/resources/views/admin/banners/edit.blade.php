@@ -14,8 +14,10 @@
         @include('admin.banners._form', [
             'mode' => 'edit',
             'banner' => $banner,
-            'desktopImage' => $desktopImage,
-            'mobileImage' => $mobileImage,
+            'desktopImageEn' => $desktopImageEn,
+            'desktopImageAr' => $desktopImageAr,
+            'mobileImageEn' => $mobileImageEn,
+            'mobileImageAr' => $mobileImageAr,
         ])
         </form>
 @endsection

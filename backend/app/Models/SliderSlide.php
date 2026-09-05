@@ -16,6 +16,10 @@ class SliderSlide extends Model
         'position',
         'desktop_file_id',
         'mobile_file_id',
+        'desktop_file_id_en',
+        'desktop_file_id_ar',
+        'mobile_file_id_en',
+        'mobile_file_id_ar',
         'title_en',
         'title_ar',
         'subtitle_en',
@@ -60,15 +64,58 @@ class SliderSlide extends Model
         return $this->belongsTo(File::class, 'mobile_file_id');
     }
 
+    public function desktopFileEn(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'desktop_file_id_en');
+    }
+
+    public function desktopFileAr(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'desktop_file_id_ar');
+    }
+
+    public function mobileFileEn(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'mobile_file_id_en');
+    }
+
+    public function mobileFileAr(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'mobile_file_id_ar');
+    }
+
+    protected function fileUrl(?File $file): ?string
+    {
+        return $file ? \Illuminate\Support\Facades\Storage::disk($file->storage_type)->url($file->path) : null;
+    }
+
     public function getDesktopUrlAttribute(): ?string
     {
-        $f = $this->desktopFile;
-        return $f ? \Illuminate\Support\Facades\Storage::disk($f->storage_type)->url($f->path) : null;
+        return $this->getDesktopUrlEnAttribute();
     }
 
     public function getMobileUrlAttribute(): ?string
     {
-        $f = $this->mobileFile;
-        return $f ? \Illuminate\Support\Facades\Storage::disk($f->storage_type)->url($f->path) : null;
+        return $this->getMobileUrlEnAttribute();
+    }
+
+    public function getDesktopUrlEnAttribute(): ?string
+    {
+        return $this->fileUrl($this->desktopFileEn);
+    }
+
+    public function getDesktopUrlArAttribute(): ?string
+    {
+        return $this->fileUrl($this->desktopFileAr);
+    }
+
+    public function getMobileUrlEnAttribute(): ?string
+    {
+        return $this->fileUrl($this->mobileFileEn);
+    }
+
+    public function getMobileUrlArAttribute(): ?string
+    {
+        return $this->fileUrl($this->mobileFileAr);
     }
 }

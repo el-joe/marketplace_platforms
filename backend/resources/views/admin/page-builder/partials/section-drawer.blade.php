@@ -34,10 +34,46 @@
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
             <input type="hidden" id="sd-section-id" value="">
 
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Name</label>
-                <input type="text" id="sd-name" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. Featured Deals">
-            </div>
+            <x-form.lang-tabs id="sd-lang-tabs">
+                <x-slot:en>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Name (English)</label>
+                        <input type="text" id="sd-name-en" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. Featured Deals">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Background image (English)</label>
+                        <input type="hidden" id="sd-background-image-url-en" name="background_image_url_en">
+                        <div id="sd-background-image-preview-en" class="hidden mb-2">
+                            <img id="sd-background-image-img-en" src="" alt="Background image" class="w-full h-28 object-cover rounded border border-gray-200">
+                            <button type="button" data-clear-section-bg-image data-locale="en" class="mt-1 text-xs text-rose-500 hover:text-rose-700">Remove</button>
+                        </div>
+                        <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                            <span>Upload background image</span>
+                            <input type="file" accept="image/*" class="sr-only" data-section-bg-upload data-locale="en">
+                        </label>
+                    </div>
+                </x-slot:en>
+                <x-slot:ar>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">الاسم (عربي)</label>
+                        <input type="text" id="sd-name-ar" dir="rtl" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="مثال: عروض مميزة">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">صورة الخلفية (عربي)</label>
+                        <input type="hidden" id="sd-background-image-url-ar" name="background_image_url_ar">
+                        <div id="sd-background-image-preview-ar" class="hidden mb-2">
+                            <img id="sd-background-image-img-ar" src="" alt="Background image" class="w-full h-28 object-cover rounded border border-gray-200">
+                            <button type="button" data-clear-section-bg-image data-locale="ar" class="mt-1 text-xs text-rose-500 hover:text-rose-700">إزالة</button>
+                        </div>
+                        <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                            <span>رفع صورة الخلفية</span>
+                            <input type="file" accept="image/*" class="sr-only" data-section-bg-upload data-locale="ar">
+                        </label>
+                    </div>
+                </x-slot:ar>
+            </x-form.lang-tabs>
 
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Section Layout</label>
@@ -66,20 +102,6 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Background color</label>
                 <input type="text" id="sd-background-color" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="#ffffff">
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Background image</label>
-                <input type="hidden" id="sd-background-image-url" name="background_image_url">
-                <div id="sd-background-image-preview" class="hidden mb-2">
-                    <img id="sd-background-image-img" src="" alt="Background image" class="w-full h-28 object-cover rounded border border-gray-200">
-                    <button type="button" data-clear-section-bg-image class="mt-1 text-xs text-rose-500 hover:text-rose-700">Remove</button>
-                </div>
-                <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                    <span>Upload background image</span>
-                    <input type="file" accept="image/*" class="sr-only" data-section-bg-upload>
-                </label>
             </div>
 
             <div id="sd-bg-image-type-row">

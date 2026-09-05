@@ -5,41 +5,48 @@
         <input type="hidden" name="id" id="ad-image-id">
         <input type="hidden" name="page_block_id" id="ad-image-block-id">
 
-        <div class="space-y-1">
-            <label class="block text-sm font-medium text-gray-700">{{ __('admin.page_builder.ad_image_modal.image') }}</label>
-            <input type="hidden" name="file_id" id="ad-image-file-id">
-            <div id="ad-image-preview" class="hidden mb-2">
-                <img id="ad-image-preview-img" src="" alt="" class="w-full h-40 object-cover rounded border border-gray-200">
-                <button type="button" data-clear-ad-image class="mt-1 text-xs text-rose-500 hover:text-rose-700">{{ __('admin.page_builder.ad_image_modal.remove') }}</button>
-            </div>
-            <label class="flex items-center justify-center gap-2 px-3 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                <span>{{ __('admin.page_builder.ad_image_modal.upload') }}</span>
-                <input type="file" accept="image/*" class="sr-only" data-ad-image-upload>
-            </label>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <x-form.input name="title_en" label="{{ __('admin.page_builder.ad_image_modal.title_en') }}" dir="ltr" />
-            <x-form.input name="title_ar" label="{{ __('admin.page_builder.ad_image_modal.title_ar') }}" dir="rtl" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <x-form.input name="subtitle_en" label="{{ __('admin.page_builder.ad_image_modal.subtitle_en') }}" dir="ltr" />
-            <x-form.input name="subtitle_ar" label="{{ __('admin.page_builder.ad_image_modal.subtitle_ar') }}" dir="rtl" />
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <x-form.input name="badge_label_en" label="{{ __('admin.page_builder.ad_image_modal.badge_label_en') }}" dir="ltr" />
-            <x-form.input name="badge_label_ar" label="{{ __('admin.page_builder.ad_image_modal.badge_label_ar') }}" dir="rtl" />
-        </div>
+        <x-form.lang-tabs id="ad-image-lang-tabs">
+            <x-slot:en>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-700">{{ __('admin.page_builder.ad_image_modal.image') }} (EN)</label>
+                    <input type="hidden" name="file_id_en" id="ad-image-file-id-en">
+                    <div id="ad-image-preview-en" class="hidden mb-2">
+                        <img id="ad-image-preview-img-en" src="" alt="" class="w-full h-40 object-cover rounded border border-gray-200">
+                        <button type="button" data-clear-ad-image data-locale="en" class="mt-1 text-xs text-rose-500 hover:text-rose-700">{{ __('admin.page_builder.ad_image_modal.remove') }}</button>
+                    </div>
+                    <label class="flex items-center justify-center gap-2 px-3 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                        <span>{{ __('admin.page_builder.ad_image_modal.upload') }}</span>
+                        <input type="file" accept="image/*" class="sr-only" data-ad-image-upload data-locale="en">
+                    </label>
+                </div>
+                <x-form.input name="title_en" label="{{ __('admin.page_builder.ad_image_modal.title_en') }}" dir="ltr" />
+                <x-form.input name="subtitle_en" label="{{ __('admin.page_builder.ad_image_modal.subtitle_en') }}" dir="ltr" />
+                <x-form.input name="badge_label_en" label="{{ __('admin.page_builder.ad_image_modal.badge_label_en') }}" dir="ltr" />
+                <x-form.input name="alt_text_en" label="{{ __('admin.page_builder.ad_image_modal.alt_text_en') }}" dir="ltr" />
+            </x-slot:en>
+            <x-slot:ar>
+                <div class="space-y-1">
+                    <label class="block text-sm font-medium text-gray-700">{{ __('admin.page_builder.ad_image_modal.image') }} (AR)</label>
+                    <input type="hidden" name="file_id_ar" id="ad-image-file-id-ar">
+                    <div id="ad-image-preview-ar" class="hidden mb-2">
+                        <img id="ad-image-preview-img-ar" src="" alt="" class="w-full h-40 object-cover rounded border border-gray-200">
+                        <button type="button" data-clear-ad-image data-locale="ar" class="mt-1 text-xs text-rose-500 hover:text-rose-700">{{ __('admin.page_builder.ad_image_modal.remove') }}</button>
+                    </div>
+                    <label class="flex items-center justify-center gap-2 px-3 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                        <span>{{ __('admin.page_builder.ad_image_modal.upload') }}</span>
+                        <input type="file" accept="image/*" class="sr-only" data-ad-image-upload data-locale="ar">
+                    </label>
+                </div>
+                <x-form.input name="title_ar" label="{{ __('admin.page_builder.ad_image_modal.title_ar') }}" dir="rtl" />
+                <x-form.input name="subtitle_ar" label="{{ __('admin.page_builder.ad_image_modal.subtitle_ar') }}" dir="rtl" />
+                <x-form.input name="badge_label_ar" label="{{ __('admin.page_builder.ad_image_modal.badge_label_ar') }}" dir="rtl" />
+                <x-form.input name="alt_text_ar" label="{{ __('admin.page_builder.ad_image_modal.alt_text_ar') }}" dir="rtl" />
+            </x-slot:ar>
+        </x-form.lang-tabs>
 
         <x-form.input name="link_url" label="{{ __('admin.page_builder.ad_image_modal.link_url') }}" placeholder="https://…" />
-
-        <div class="grid grid-cols-2 gap-4">
-            <x-form.input name="alt_text_en" label="{{ __('admin.page_builder.ad_image_modal.alt_text_en') }}" dir="ltr" />
-            <x-form.input name="alt_text_ar" label="{{ __('admin.page_builder.ad_image_modal.alt_text_ar') }}" dir="rtl" />
-        </div>
 
         <x-form.toggle name="link_open_new_tab" label="{{ __('admin.page_builder.ad_image_modal.open_new_tab') }}" />
         <x-form.toggle name="show_title_overlay" label="{{ __('admin.page_builder.ad_image_modal.show_title_overlay') }}" />

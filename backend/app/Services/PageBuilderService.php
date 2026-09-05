@@ -51,10 +51,14 @@ class PageBuilderService
             ->map(fn(PageSection $s) => [
                 'id' => $s->id,
                 'name' => $s->name,
+                'name_en' => $s->name_en,
+                'name_ar' => $s->name_ar,
                 'position' => (int) $s->position,
                 'is_visible' => (bool) $s->is_visible,
                 'background_color' => $s->background_color,
                 'background_image_url' => $s->background_image_url,
+                'background_image_url_en' => $s->background_image_url_en,
+                'background_image_url_ar' => $s->background_image_url_ar,
                 'padding_top' => $s->padding_top !== null ? (int) $s->padding_top : null,
                 'padding_bottom' => $s->padding_bottom !== null ? (int) $s->padding_bottom : null,
                 'max_width' => $s->max_width,
@@ -445,10 +449,14 @@ class PageBuilderService
         return [
             'id' => $section->id,
             'name' => $section->name,
+            'name_en' => $section->name_en,
+            'name_ar' => $section->name_ar,
             'position' => (int) $section->position,
             'is_visible' => (bool) $section->is_visible,
             'background_color' => $section->background_color,
             'background_image_url' => $section->background_image_url,
+            'background_image_url_en' => $section->background_image_url_en,
+            'background_image_url_ar' => $section->background_image_url_ar,
             'padding_top' => (int) $section->padding_top,
             'padding_bottom' => (int) $section->padding_bottom,
             'max_width' => $section->max_width,
@@ -477,8 +485,14 @@ class PageBuilderService
         $payload = [
             'page_block_id' => $block->id,
             'position' => (int) ($data['position'] ?? SliderSlide::where('page_block_id', $block->id)->max('position') + 1),
-            'desktop_file_id' => $data['desktop_file_id'] ?? null,
-            'mobile_file_id' => $data['mobile_file_id'] ?? null,
+            'desktop_file_id_en' => $data['desktop_file_id_en'] ?? null,
+            'desktop_file_id_ar' => $data['desktop_file_id_ar'] ?? null,
+            'mobile_file_id_en' => $data['mobile_file_id_en'] ?? null,
+            'mobile_file_id_ar' => $data['mobile_file_id_ar'] ?? null,
+            // Legacy device-only columns kept in sync with the EN slot for any code
+            // not yet migrated to read the language-split columns.
+            'desktop_file_id' => $data['desktop_file_id_en'] ?? null,
+            'mobile_file_id' => $data['mobile_file_id_en'] ?? null,
             'title_en' => $data['title_en'] ?? null,
             'title_ar' => $data['title_ar'] ?? null,
             'subtitle_en' => $data['subtitle_en'] ?? null,
@@ -525,7 +539,10 @@ class PageBuilderService
         $payload = [
             'page_block_id' => $block->id,
             'position' => (int) ($data['position'] ?? AdImageItem::where('page_block_id', $block->id)->max('position') + 1),
-            'file_id' => $data['file_id'] ?? null,
+            'file_id_en' => $data['file_id_en'] ?? null,
+            'file_id_ar' => $data['file_id_ar'] ?? null,
+            // Legacy single-image column kept in sync with the EN slot.
+            'file_id' => $data['file_id_en'] ?? $data['file_id_ar'] ?? null,
             'title_en' => $data['title_en'] ?? null,
             'title_ar' => $data['title_ar'] ?? null,
             'link_url' => $data['link_url'] ?? null,

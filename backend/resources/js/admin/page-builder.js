@@ -1125,10 +1125,10 @@ $(document).on('click', '[data-action="delete-slide"]', async function () {
         .fail(() => Toast.error(window.TRANSLATIONS?.couldNotDeleteSlide || 'Could not delete slide.'));
 });
 
-function setSlideImagePreview(slot, fileId, url) {
-    const $hidden = $(`#slide-${slot}-file-id`);
-    const $preview = $(`#slide-${slot}-preview`);
-    const $img = $(`#slide-${slot}-img`);
+function setSlideImagePreview(slot, locale, fileId, url) {
+    const $hidden = $(`#slide-${slot}-file-id-${locale}`);
+    const $preview = $(`#slide-${slot}-preview-${locale}`);
+    const $img = $(`#slide-${slot}-img-${locale}`);
     $hidden.val(fileId || '');
     if (url) {
         $img.attr('src', url);
@@ -1146,8 +1146,10 @@ function openSlideModal(blockId, slideId, slide) {
     $form[0].reset();
 
     // Reset image previews
-    setSlideImagePreview('desktop', '', '');
-    setSlideImagePreview('mobile', '', '');
+    ['en', 'ar'].forEach((locale) => {
+        setSlideImagePreview('desktop', locale, '', '');
+        setSlideImagePreview('mobile', locale, '', '');
+    });
 
     Object.entries(slide || {}).forEach(([k, v]) => {
         const $f = $form.find(`[name="${k}"]`);
@@ -1158,20 +1160,24 @@ function openSlideModal(blockId, slideId, slide) {
     });
 
     // Populate image previews when editing existing slide
-    if (slide.desktop_file_url) setSlideImagePreview('desktop', slide.desktop_file_id, slide.desktop_file_url);
-    if (slide.mobile_file_url) setSlideImagePreview('mobile', slide.mobile_file_id, slide.mobile_file_url);
+    if (slide.desktop_url_en) setSlideImagePreview('desktop', 'en', slide.desktop_file_id_en, slide.desktop_url_en);
+    if (slide.desktop_url_ar) setSlideImagePreview('desktop', 'ar', slide.desktop_file_id_ar, slide.desktop_url_ar);
+    if (slide.mobile_url_en) setSlideImagePreview('mobile', 'en', slide.mobile_file_id_en, slide.mobile_url_en);
+    if (slide.mobile_url_ar) setSlideImagePreview('mobile', 'ar', slide.mobile_file_id_ar, slide.mobile_url_ar);
 
     $('#slide-modal').modal('open');
 }
 
 $(document).on('change', '[data-slide-upload]', function () {
     const slot = $(this).data('slide-upload');
+    const locale = $(this).data('locale') || 'en';
     const file = this.files[0];
     if (!file) return;
 
     const fd = new FormData();
     fd.append('image', file);
     fd.append('slot', slot);
+    fd.append('locale', locale);
     fd.append('_token', csrfToken());
 
     const $label = $(this).closest('label');
@@ -1185,7 +1191,7 @@ $(document).on('change', '[data-slide-upload]', function () {
         contentType: false,
         headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
     }).done((res) => {
-        setSlideImagePreview(slot, res.file_id, res.url);
+        setSlideImagePreview(slot, locale, res.file_id, res.url);
         Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
     }).fail((xhr) => {
         Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
@@ -1198,17 +1204,18 @@ $(document).on('change', '[data-slide-upload]', function () {
 $(document).on('click', '[data-clear-image]', function (e) {
     e.preventDefault();
     const slot = $(this).data('clear-image');
-    setSlideImagePreview(slot, '', '');
+    const locale = $(this).data('locale') || 'en';
+    setSlideImagePreview(slot, locale, '', '');
 });
 
-function setSectionBackgroundImagePreview(url) {
-    $('#sd-background-image-url').val(url || '');
+function setSectionBackgroundImagePreview(locale, url) {
+    $('#sd-background-image-url-' + locale).val(url || '');
     if (url) {
-        $('#sd-background-image-img').attr('src', url);
-        $('#sd-background-image-preview').removeClass('hidden');
+        $('#sd-background-image-img-' + locale).attr('src', url);
+        $('#sd-background-image-preview-' + locale).removeClass('hidden');
     } else {
-        $('#sd-background-image-preview').addClass('hidden');
-        $('#sd-background-image-img').attr('src', '');
+        $('#sd-background-image-preview-' + locale).addClass('hidden');
+        $('#sd-background-image-img-' + locale).attr('src', '');
     }
 }
 
@@ -1216,8 +1223,10 @@ $(document).on('change', '[data-section-bg-upload]', function () {
     const file = this.files[0];
     if (!file) return;
 
+    const locale = $(this).data('locale') || 'en';
     const fd = new FormData();
     fd.append('image', file);
+    fd.append('locale', locale);
     fd.append('_token', csrfToken());
 
     const $label = $(this).closest('label');
@@ -1231,7 +1240,7 @@ $(document).on('change', '[data-section-bg-upload]', function () {
         contentType: false,
         headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
     }).done((res) => {
-        setSectionBackgroundImagePreview(res.url);
+        setSectionBackgroundImagePreview(locale, res.url);
         Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
     }).fail((xhr) => {
         Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
@@ -1243,7 +1252,23 @@ $(document).on('change', '[data-section-bg-upload]', function () {
 
 $(document).on('click', '[data-clear-section-bg-image]', function (e) {
     e.preventDefault();
-    setSectionBackgroundImagePreview('');
+    const locale = $(this).data('locale') || 'en';
+    setSectionBackgroundImagePreview(locale, '');
+});
+
+// Generic EN/AR tab switcher — delegated because tab groups (section drawer,
+// slide modal, config forms) are injected dynamically via AJAX.
+$(document).on('click', '[data-lang-tab]', function () {
+    const tabsId = $(this).data('tabs-id');
+    const lang = $(this).data('lang-tab');
+    const $group = $('[data-lang-tabs][data-tabs-id="' + tabsId + '"]');
+
+    $group.find('[data-lang-tab]').removeClass('active border-primary-500 text-primary-600')
+        .addClass('border-transparent text-gray-500');
+    $(this).addClass('active border-primary-500 text-primary-600').removeClass('border-transparent text-gray-500');
+
+    $group.find('[data-lang-panel]').addClass('hidden');
+    $group.find('[data-lang-panel="' + lang + '"][data-tabs-id="' + tabsId + '"]').removeClass('hidden');
 });
 
 function setPromoTileImagePreview($row, url) {
@@ -1435,14 +1460,14 @@ $(document).on('click', '[data-action="delete-ad-image"]', async function () {
         .fail(() => Toast.error('Could not delete image.'));
 });
 
-function setAdImagePreview(fileId, url) {
-    $('#ad-image-file-id').val(fileId || '');
+function setAdImagePreview(locale, fileId, url) {
+    $('#ad-image-file-id-' + locale).val(fileId || '');
     if (url) {
-        $('#ad-image-preview-img').attr('src', url);
-        $('#ad-image-preview').removeClass('hidden');
+        $('#ad-image-preview-img-' + locale).attr('src', url);
+        $('#ad-image-preview-' + locale).removeClass('hidden');
     } else {
-        $('#ad-image-preview').addClass('hidden');
-        $('#ad-image-preview-img').attr('src', '');
+        $('#ad-image-preview-' + locale).addClass('hidden');
+        $('#ad-image-preview-img-' + locale).attr('src', '');
     }
 }
 
@@ -1451,7 +1476,8 @@ function openAdImageModal(blockId, imageId, img) {
     $('#ad-image-id').val(imageId || '');
     const $form = $('#ad-image-form');
     $form[0].reset();
-    setAdImagePreview('', '');
+    setAdImagePreview('en', '', '');
+    setAdImagePreview('ar', '', '');
 
     Object.entries(img || {}).forEach(([k, v]) => {
         const $f = $form.find(`[name="${k}"]`);
@@ -1460,7 +1486,8 @@ function openAdImageModal(blockId, imageId, img) {
         else $f.val(v ?? '');
     });
 
-    if (img?.file_url) setAdImagePreview(img.file_id, img.file_url);
+    if (img?.file_url_en) setAdImagePreview('en', img.file_id_en, img.file_url_en);
+    if (img?.file_url_ar) setAdImagePreview('ar', img.file_id_ar, img.file_url_ar);
 
     $('#ad-image-modal').modal('open');
 }
@@ -1469,8 +1496,10 @@ $(document).on('change', '[data-ad-image-upload]', function () {
     const file = this.files[0];
     if (!file) return;
 
+    const locale = $(this).data('locale') || 'en';
     const fd = new FormData();
     fd.append('image', file);
+    fd.append('locale', locale);
     fd.append('_token', csrfToken());
 
     const $label = $(this).closest('label');
@@ -1484,7 +1513,7 @@ $(document).on('change', '[data-ad-image-upload]', function () {
         contentType: false,
         headers: { 'X-CSRF-TOKEN': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
     }).done((res) => {
-        setAdImagePreview(res.file_id, res.url);
+        setAdImagePreview(locale, res.file_id, res.url);
         Toast.success(window.TRANSLATIONS?.imageUploaded || 'Image uploaded.');
     }).fail((xhr) => {
         Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS?.uploadFailed || 'Upload failed.');
@@ -1496,7 +1525,8 @@ $(document).on('change', '[data-ad-image-upload]', function () {
 
 $(document).on('click', '[data-clear-ad-image]', function (e) {
     e.preventDefault();
-    setAdImagePreview('', '');
+    const locale = $(this).data('locale') || 'en';
+    setAdImagePreview(locale, '', '');
 });
 
 $('#ad-image-form').on('submit', function (e) {
@@ -1530,13 +1560,15 @@ $('#sd-layout').on('change', function () {
 
 function resetSectionForm() {
     $('#sd-section-id').val('');
-    $('#sd-name').val('');
+    $('#sd-name-en').val('');
+    $('#sd-name-ar').val('');
     $('#sd-layout').val('stack').trigger('change');
     $('#sd-columns-config').val('');
     $('#sd-is-visible').prop('checked', true);
     $('#sd-background-color').val('');
     $('#sd-background-image-type').val('section');
-    setSectionBackgroundImagePreview('');
+    setSectionBackgroundImagePreview('en', '');
+    setSectionBackgroundImagePreview('ar', '');
     $('#sd-max-width').val('');
     $('#sd-delete').addClass('hidden');
 }
@@ -1548,7 +1580,8 @@ function openSectionDrawer(section) {
     if (section) {
         $('#sd-title').text('Edit section');
         $('#sd-section-id').val(section.id);
-        $('#sd-name').val(section.name || '');
+        $('#sd-name-en').val(section.name_en || section.name || '');
+        $('#sd-name-ar').val(section.name_ar || '');
         $('#sd-layout').val(section.layout || 'stack').trigger('change');
         if (section.columns_config) {
             const cfg = typeof section.columns_config === 'string'
@@ -1576,12 +1609,13 @@ function openSectionDrawer(section) {
         $('#sd-is-visible').prop('checked', section.is_visible !== false);
         $('#sd-background-color').val(section.background_color || '');
         $('#sd-background-image-type').val(section.background_image_type || 'section');
-        setSectionBackgroundImagePreview(section.background_image_url || '');
+        setSectionBackgroundImagePreview('en', section.background_image_url_en || section.background_image_url || '');
+        setSectionBackgroundImagePreview('ar', section.background_image_url_ar || '');
         $('#sd-max-width').val(section.max_width || '');
         $('#sd-delete').removeClass('hidden');
     } else {
         $('#sd-title').text('Add section');
-        $('#sd-name').val('New Section');
+        $('#sd-name-en').val('New Section');
     }
 
     window.dispatchEvent(new CustomEvent('open-section-drawer'));
@@ -1644,10 +1678,12 @@ $('#sd-save').on('click', function () {
 
     const sectionId = $('#sd-section-id').val();
     const payload = {
-        name: $('#sd-name').val() || null,
+        name_en: $('#sd-name-en').val() || null,
+        name_ar: $('#sd-name-ar').val() || null,
         is_visible: $('#sd-is-visible').is(':checked') ? 1 : 0,
         background_color: $('#sd-background-color').val() || null,
-        background_image_url: $('#sd-background-image-url').val() || null,
+        background_image_url_en: $('#sd-background-image-url-en').val() || null,
+        background_image_url_ar: $('#sd-background-image-url-ar').val() || null,
         background_image_type: $('#sd-background-image-type').val() || 'section',
         max_width: $('#sd-max-width').val() || null,
         layout: $('#sd-layout').val(),

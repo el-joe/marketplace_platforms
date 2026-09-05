@@ -191,15 +191,13 @@ function initDuplicateModal() {
 
 // ─── Image preview ────────────────────────────────────────────────────────────
 
-function initImagePreviews() {
-    // Desktop preview
-    $('#desktop-image-input').on('change', function () {
-        previewFile(this, '#desktop-preview-img', '#desktop-upload-placeholder');
-    });
+const IMAGE_SLOTS = ['desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar'];
 
-    // Mobile preview
-    $('#mobile-image-input').on('change', function () {
-        previewFile(this, '#mobile-preview-img', '#mobile-upload-placeholder');
+function initImagePreviews() {
+    IMAGE_SLOTS.forEach((slot) => {
+        $(`#${slot}-input`).on('change', function () {
+            previewFile(this, `#${slot}-preview-img`, `#${slot}-upload-placeholder`);
+        });
     });
 }
 
@@ -233,13 +231,8 @@ function initImageRemoval() {
         })
             .done(() => {
                 window.Toast.success(t('admin.banners.image_removed'));
-                if (slot === 'desktop') {
-                    $('#desktop-preview-img').attr('src', '').addClass('hidden');
-                    $('#desktop-upload-placeholder').removeClass('hidden');
-                } else {
-                    $('#mobile-preview-img').attr('src', '').addClass('hidden');
-                    $('#mobile-upload-placeholder').removeClass('hidden');
-                }
+                $(`#${slot}-preview-img`).attr('src', '').addClass('hidden');
+                $(`#${slot}-upload-placeholder`).removeClass('hidden');
                 btn.remove();
             })
             .fail(() => window.Toast.error(t('admin.banners.image_remove_failed')));

@@ -147,7 +147,7 @@ class BannerController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function (Banner $row) use ($statusColors, $deviceColors, $audienceColors, $now, $canEdit, $canDelete) {
             // Desktop image thumbnail
-            $desktopImg = $row->files->firstWhere('file_type', 'banner_desktop');
+            $desktopImg = $row->files->firstWhere('file_type', 'banner_desktop_en');
             $thumbUrl = $desktopImg ? \Illuminate\Support\Facades\Storage::disk($desktopImg->storage_type ?: 'public')->url($desktopImg->path) : null;
 
             // Status badge with expiry countdown
@@ -257,16 +257,17 @@ class BannerController extends Controller
         $data['priority'] = $data['priority'] ?? 0;
 
         // Remove file keys from data array
-        unset($data['desktop_image'], $data['mobile_image']);
+        unset($data['desktop_image_en'], $data['desktop_image_ar'], $data['mobile_image_en'], $data['mobile_image_ar']);
 
         $banner = Banner::create($data);
 
         // Handle image uploads
-        if ($request->hasFile('desktop_image')) {
-            $this->bannerService->storeImage($request->file('desktop_image'), $banner, 'desktop');
-        }
-        if ($request->hasFile('mobile_image')) {
-            $this->bannerService->storeImage($request->file('mobile_image'), $banner, 'mobile');
+        foreach (['desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar'] as $slot) {
+            [$device, $locale] = explode('_', $slot, 2);
+            $fileField = "{$device}_image_{$locale}";
+            if ($request->hasFile($fileField)) {
+                $this->bannerService->storeImage($request->file($fileField), $banner, $slot);
+            }
         }
 
         return response()->json([
@@ -283,13 +284,15 @@ class BannerController extends Controller
         abort_unless($admin->hasPermissionTo('banners.edit'), 403);
 
         $banner->load('files');
-        $desktopImage = $this->bannerService->getDesktopImage($banner);
-        $mobileImage = $this->bannerService->getMobileImage($banner);
+        $desktopImageEn = $this->bannerService->getImage($banner, 'desktop_en');
+        $desktopImageAr = $this->bannerService->getImage($banner, 'desktop_ar');
+        $mobileImageEn = $this->bannerService->getImage($banner, 'mobile_en');
+        $mobileImageAr = $this->bannerService->getImage($banner, 'mobile_ar');
 
         $countries = Country::orderBy('name_en')->where('is_launched', true)->get(['id', 'name_en', 'flag_emoji']);
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('admin.banners.edit', compact('banner', 'countries', 'placements', 'desktopImage', 'mobileImage'));
+        return view('admin.banners.edit', compact('banner', 'countries', 'placements', 'desktopImageEn', 'desktopImageAr', 'mobileImageEn', 'mobileImageAr'));
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────
@@ -309,16 +312,17 @@ class BannerController extends Controller
         $data['updated_by_admin_id'] = $admin->id;
 
         // Remove file keys from data array
-        unset($data['desktop_image'], $data['mobile_image']);
+        unset($data['desktop_image_en'], $data['desktop_image_ar'], $data['mobile_image_en'], $data['mobile_image_ar']);
 
         $banner->update($data);
 
         // Handle image uploads
-        if ($request->hasFile('desktop_image')) {
-            $this->bannerService->storeImage($request->file('desktop_image'), $banner, 'desktop');
-        }
-        if ($request->hasFile('mobile_image')) {
-            $this->bannerService->storeImage($request->file('mobile_image'), $banner, 'mobile');
+        foreach (['desktop_en', 'desktop_ar', 'mobile_en', 'mobile_ar'] as $slot) {
+            [$device, $locale] = explode('_', $slot, 2);
+            $fileField = "{$device}_image_{$locale}";
+            if ($request->hasFile($fileField)) {
+                $this->bannerService->storeImage($request->file($fileField), $banner, $slot);
+            }
         }
 
         return response()->json([
@@ -366,7 +370,7 @@ class BannerController extends Controller
 
         $request->validate([
             'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:5120'],
-            'slot' => ['required', 'in:desktop,mobile'],
+            'slot' => ['required', 'in:desktop,mobile,desktop_en,desktop_ar,mobile_en,mobile_ar'],
         ]);
 
         $file = $this->bannerService->storeImage(

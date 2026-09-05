@@ -15,6 +15,8 @@ class AdImageItem extends Model
         'page_block_id',
         'position',
         'file_id',
+        'file_id_en',
+        'file_id_ar',
         'title_en',
         'title_ar',
         'subtitle_en',
@@ -39,7 +41,7 @@ class AdImageItem extends Model
         'position' => 'integer',
     ];
 
-    protected $appends = ['file_url'];
+    protected $appends = ['file_url', 'file_url_en', 'file_url_ar'];
 
     public function pageBlock(): BelongsTo
     {
@@ -51,9 +53,33 @@ class AdImageItem extends Model
         return $this->belongsTo(File::class, 'file_id');
     }
 
+    public function fileEn(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'file_id_en');
+    }
+
+    public function fileAr(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'file_id_ar');
+    }
+
+    protected function fileUrl(?File $file): ?string
+    {
+        return $file ? \Illuminate\Support\Facades\Storage::disk($file->storage_type)->url($file->path) : null;
+    }
+
     public function getFileUrlAttribute(): ?string
     {
-        $f = $this->file;
-        return $f ? \Illuminate\Support\Facades\Storage::disk($f->storage_type)->url($f->path) : null;
+        return $this->getFileUrlEnAttribute();
+    }
+
+    public function getFileUrlEnAttribute(): ?string
+    {
+        return $this->fileUrl($this->fileEn);
+    }
+
+    public function getFileUrlArAttribute(): ?string
+    {
+        return $this->fileUrl($this->fileAr);
     }
 }
