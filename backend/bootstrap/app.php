@@ -46,6 +46,11 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('api/partner')
                 ->group(base_path('routes/api_partner.php'));
+
+            // Marketer Flutter app API (marketer_api JWT guard)
+            Route::middleware('api')
+                ->prefix('api/marketer')
+                ->group(base_path('routes/api_marketer.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -86,6 +91,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'vendor.api.active' => \App\Http\Middleware\VendorApiActive::class,
             'detect.country' => \App\Http\Middleware\DetectCountry::class,
             'guest.cart.token' => \App\Http\Middleware\GuestCartToken::class,
+            'auth.marketer' => \App\Http\Middleware\MarketerAuth::class,
+            'marketer.api.auth' => \App\Http\Middleware\MarketerApiAuth::class,
+            'marketer.api.active' => \App\Http\Middleware\MarketerApiActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

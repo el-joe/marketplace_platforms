@@ -27,7 +27,6 @@ use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class VendorController extends Controller
 {
@@ -249,33 +248,6 @@ class VendorController extends Controller
     public function update(UpdateVendorRequest $request, Vendor $vendor): JsonResponse
     {
         $vendor->update($request->validated());
-
-        if ($request->has('marketer_type')) {
-            abort_unless(auth('admin')->user()->hasPermissionTo('vendor_marketer_type.edit'), 403);
-
-            $request->validate([
-                'marketer_type' => ['nullable', Rule::in(['influencer', 'affiliate'])],
-                'whatsapp_for_campaigns' => ['nullable', 'string', 'max:30'],
-            ]);
-
-            $newType = $request->input('marketer_type') ?: null;
-            $oldType = $vendor->marketer_type;
-
-            $vendor->update([
-                'marketer_type' => $newType,
-                'whatsapp_for_campaigns' => $request->input('whatsapp_for_campaigns'),
-            ]);
-
-            if ($newType && !$oldType) {
-                $vendor->marketerProfile()->firstOrCreate(['vendor_id' => $vendor->id]);
-            }
-
-            if (!$newType && $oldType) {
-                $vendor->campaignInvitations()
-                    ->where('status', 'pending')
-                    ->update(['status' => 'cancelled']);
-            }
-        }
 
         return response()->json(['message' => 'Vendor profile updated successfully.']);
     }

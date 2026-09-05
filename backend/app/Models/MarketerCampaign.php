@@ -16,7 +16,7 @@ class MarketerCampaign extends Model
         'vendor_id', 'vendor_listing_id', 'admin_listing_id',
         'country_id', 'currency', 'commission_type',
         'max_commission_budget', 'platform_commission_amount', 'marketer_commission_amount',
-        'requested_marketer_vendor_ids',
+        'requested_marketer_vendor_ids', // Now stores Marketer UUIDs (previously vendor UUIDs with marketer_type)
         'reviewed_by_admin_id', 'reviewed_at', 'rejection_reason', 'status',
         'auto_approve_at', 'auto_approved',
         'platform_sample_qty_snapshot', 'per_marketer_sample_qty_snapshot',
@@ -73,6 +73,18 @@ class MarketerCampaign extends Model
     public function samples(): HasMany
     {
         return $this->hasMany(MarketerCampaignSample::class, 'campaign_id');
+    }
+
+    public function invitedMarketers(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Marketer::class,
+            MarketerCampaignInvitation::class,
+            'campaign_id',    // FK on invitations
+            'id',             // PK on marketers
+            'id',             // PK on campaigns
+            'marketer_id'     // FK on invitations pointing to marketers
+        );
     }
 
     public function scopePendingAdmin($q)

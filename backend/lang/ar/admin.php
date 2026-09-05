@@ -384,6 +384,7 @@ return [
         'vendor_applications_queue' => 'طلبات انضمام التجار',
         'vendor_change_requests' => 'طلبات تغيير التجار',
         'travel_agency_change_requests' => 'طلبات تغيير شركات السفر',
+        'marketers'             => 'الماركترز',
         'marketer_campaigns'    => 'حملات المسوّقين',
         'marketer_campaigns_financials' => 'الإيرادات المالية',
         'marketer_settings'     => 'رسوم الإنفلوينسر',

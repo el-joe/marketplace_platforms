@@ -211,6 +211,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.marketers'),
+                        'route' => 'admin.marketers.index',
+                        'icon' => 'user-group',
+                        'permission' => 'marketers.view',
+                        'badge' => $this->cachedBadge('pending_marketers', fn() => $this->countPendingMarketers()),
+                    ],
+                    [
                         'label' => __('admin.nav.marketer_campaigns'),
                         'route' => 'admin.marketer-campaigns.index',
                         'icon' => 'user-group',
@@ -1094,6 +1101,15 @@ class NavigationService
     {
         try {
             return (int) \App\Models\MarketerCampaign::query()->where('status', 'pending_admin')->count();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    protected function countPendingMarketers(): int
+    {
+        try {
+            return (int) \App\Models\Marketer::query()->where('global_status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }

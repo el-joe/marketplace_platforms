@@ -31,6 +31,7 @@ $partnerDomain = env('APP_PARTNER_SUBDOMAIN', 'partner') . '.' . $appDomain;
 $deliveryDomain = env('APP_DELIVERY_SUBDOMAIN', 'delivery') . '.' . $appDomain;
 $travelDomain = env('APP_TRAVEL_SUBDOMAIN', 'travel-agency') . '.' . $appDomain;
 $carrierDomain = env('APP_CARRIER_SUBDOMAIN', 'carrier') . '.' . $appDomain;
+$marketerDomain = env('APP_MARKETER_SUBDOMAIN', 'marketer') . '.' . $appDomain;
 
 
 Route::domain($adminDomain)->name('admin.')->group(function () {
@@ -85,6 +86,16 @@ Route::domain($travelDomain)->group(
 */
 Route::domain($carrierDomain)->group(
     base_path('routes/carrier.php')
+);
+
+/*
+|--------------------------------------------------------------------------
+| Marketer portal
+| marketer.noon.loc / marketer.noon.codefanz.com
+|--------------------------------------------------------------------------
+*/
+Route::domain($marketerDomain)->name('marketer.')->group(
+    base_path('routes/marketer.php')
 );
 
 /*

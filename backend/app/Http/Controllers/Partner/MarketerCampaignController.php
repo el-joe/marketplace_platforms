@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaign;
-use App\Models\Vendor;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -78,24 +77,32 @@ class MarketerCampaignController extends Controller
 
     public function searchMarketers(Request $request): JsonResponse
     {
+        abort_unless(
+            auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.view'),
+            403
+        );
+
         $vendor    = Auth::guard('vendor')->user()->vendor;
         $countryId = $request->input('country_id', $vendor->country_id);
-        $type      = $request->input('type');
+        $search    = $request->input('q', '');
+        $type      = $request->input('type'); // 'influencer' | 'affiliate' | null = all
 
-        $results = Vendor::whereNotNull('marketer_type')
-            ->where('global_status', 'active')
+        $marketers = \App\Models\Marketer::where('global_status', 'active')
             ->where('country_id', $countryId)
-            ->when($type, fn($q) => $q->where('marketer_type', $type))
-            ->where('id', '!=', $vendor->id)
-            ->with('marketerProfile')
-            ->limit(50)
-            ->get()
-            ->map(fn($v) => [
-                'id'   => $v->id,
-                'text' => "{$v->store_name} ({$v->marketer_type})",
-                'type' => $v->marketer_type,
-            ]);
+            ->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->when($type, fn ($q) => $q->where('marketer_type', $type))
+            ->limit(20)
+            ->get(['id', 'name', 'email', 'marketer_type']);
 
-        return response()->json(['results' => $results]);
+        return response()->json($marketers->map(fn ($m) => [
+            'id'            => $m->id,
+            'name'          => $m->name,
+            'email'         => $m->email,
+            'marketer_type' => $m->marketer_type,
+            'type_label'    => $m->marketer_type === 'influencer' ? 'مؤثر' : 'أفيليت',
+        ]));
     }
 }

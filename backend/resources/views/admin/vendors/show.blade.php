@@ -156,28 +156,11 @@
                             </div>
                         </div>
 
-                        @if(auth('admin')->user()?->hasPermissionTo('vendor_marketer_type.edit'))
-                            <div class="mt-6 pt-6 border-t border-gray-100">
-                                <h4 class="text-sm font-semibold text-gray-900 mb-3">{{ __('admin.vendors.marketer_settings') }}</h4>
-                                <div class="grid grid-cols-2 gap-4 text-sm">
-                                    <x-form.select name="marketer_type" label="{{ __('admin.vendors.marketer_type') }}" :value="$vendor->marketer_type"
-                                        :options="['' => __('admin.vendors.marketer_type_none'), 'influencer' => __('admin.vendors.marketer_type_influencer'), 'affiliate' => __('admin.vendors.marketer_type_affiliate')]"/>
-                                    <x-form.input name="whatsapp_for_campaigns" label="{{ __('admin.vendors.whatsapp_for_campaigns') }}" :value="$vendor->whatsapp_for_campaigns" placeholder="+966501234567"/>
-                                </div>
-                            </div>
-                        @endif
-
                         <div class="mt-4 flex gap-2">
                             <button type="submit" class="btn btn-primary btn-sm">{{ __('admin.vendors.save_changes_btn') }}</button>
                             <button type="button" id="cancel-edit-btn" class="btn btn-ghost btn-sm">{{ __('admin.vendors.cancel') }}</button>
                         </div>
                     </form>
-
-                    @if($vendor->isMarketer())
-                        <div class="mt-4 p-3 bg-purple-50 border border-purple-100 rounded-lg text-sm text-purple-700">
-                            {{ __('admin.vendors.marketer_notice', ['type' => $vendor->marketer_type === 'influencer' ? __('admin.vendors.marketer_type_influencer') : __('admin.vendors.marketer_type_affiliate')]) }}
-                        </div>
-                    @endif
                 </x-card>
             </div>
 

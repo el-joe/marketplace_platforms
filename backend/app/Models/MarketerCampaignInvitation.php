@@ -12,7 +12,7 @@ class MarketerCampaignInvitation extends Model
     use HasUuids;
 
     protected $fillable = [
-        'campaign_id', 'marketer_vendor_id', 'status',
+        'campaign_id', 'marketer_id', 'status',
         'acceptance_window_hours', 'expires_at', 'responded_at',
         'marketer_note', 'decline_reason',
         'referral_code', 'referral_link', 'qr_code_path',
@@ -38,7 +38,7 @@ class MarketerCampaignInvitation extends Model
 
     public function marketer(): BelongsTo
     {
-        return $this->belongsTo(Vendor::class, 'marketer_vendor_id');
+        return $this->belongsTo(Marketer::class, 'marketer_id');
     }
 
     public function replacedInvitation(): BelongsTo
@@ -73,7 +73,7 @@ class MarketerCampaignInvitation extends Model
 
     public function isInfluencerType(): bool
     {
-        return $this->marketer?->marketer_type === 'influencer';
+        return $this->marketer?->isInfluencer();
     }
 
     public function hasPendingFee(): bool

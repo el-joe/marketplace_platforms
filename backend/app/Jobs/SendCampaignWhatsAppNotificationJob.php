@@ -31,11 +31,10 @@ class SendCampaignWhatsAppNotificationJob implements ShouldQueue
             return;
         }
 
-        // VERIFY: replace with real partner-panel invitation accept/reject routes once they exist
-        $acceptUrl = url("/partner/marketer/invitations/{$invitation->id}/accept");
-        $rejectUrl = url("/partner/marketer/invitations/{$invitation->id}/reject");
+        $acceptUrl = route('marketer.invitations.accept', $invitation->id);
+        $rejectUrl = route('marketer.invitations.reject', $invitation->id);
 
-        $message = "مرحباً {$invitation->marketer->store_name}،\n"
+        $message = "مرحباً {$invitation->marketer->name}،\n"
             . "لديك دعوة حملة ترويجية جديدة!\n"
             . "رابط القبول: {$acceptUrl}\n"
             . "رابط الرفض: {$rejectUrl}\n"

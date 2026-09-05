@@ -4,12 +4,6 @@
     $pendingZoneAlerts = $vendor
         ? \App\Models\VendorExceptionalZoneAlert::where('vendor_id', $vendor->id)->where('status', 'pending')->count()
         : 0;
-    $pendingMarketerInvitations = $vendor?->isMarketer()
-        ? \App\Models\MarketerCampaignInvitation::where('marketer_vendor_id', $vendor->id)->where('status', 'pending')->count()
-        : 0;
-    $acceptedMarketerCampaigns = $vendor?->isMarketer()
-        ? \App\Models\MarketerCampaignInvitation::where('marketer_vendor_id', $vendor->id)->where('status', 'accepted')->count()
-        : 0;
 @endphp
 
 {{-- Sidebar: 240px, dark --}}
@@ -62,16 +56,6 @@
         <x-partner-nav-group label="{{ __('partner.nav.vendor_campaigns') }}">
             <x-partner-nav-item route="partner.marketer-campaigns.index" icon="megaphone" label="{{ __('partner.nav.vendor_campaigns_created') }}" />
         </x-partner-nav-group>
-
-        {{-- GROUP 6: أنا ماركتر (only if vendor is a marketer) --}}
-        @if (isset($vendor) && $vendor->isMarketer())
-            <x-partner-nav-group label="{{ __('partner.nav.marketer') }}">
-                <x-partner-nav-item route="partner.marketer.profile" icon="user-circle" label="{{ __('partner.nav.marketer_profile') }}" />
-                <x-partner-nav-item route="partner.marketer.invitations.index" icon="envelope" label="{{ __('partner.nav.marketer_invitations') }}" :badge="$pendingMarketerInvitations ?: null" />
-                <x-partner-nav-item route="partner.marketer.my-campaigns" icon="star" label="{{ __('partner.nav.marketer_my_campaigns') }}" :badge="$acceptedMarketerCampaigns ?: null" />
-                <x-partner-nav-item route="partner.marketer.reports" icon="chart-bar" label="{{ __('partner.nav.marketer_reports') }}" />
-            </x-partner-nav-group>
-        @endif
 
         {{-- Marketing tools (flash sales, coupons, ads, open market) kept as-is --}}
         <x-partner-nav-group label="{{ __('partner.nav.marketing') }}">

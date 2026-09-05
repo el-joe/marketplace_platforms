@@ -2,9 +2,7 @@
     $isAr = session('locale', 'ar') === 'ar';
     $vendorAdmin = auth()->guard('vendor')->user();
     $vendor = $vendorAdmin?->vendor;
-    $vendorTypeLabel = $vendor?->isMarketer()
-        ? __('partner.marketer_types.' . $vendor->marketer_type)
-        : ($vendor?->business_type ? __('partner.profile.business_type_' . $vendor->business_type->value) : null);
+    $vendorTypeLabel = $vendor?->business_type ? __('partner.profile.business_type_' . $vendor->business_type->value) : null;
 @endphp
 
 <header class="h-16 bg-white border-b border-gray-200 flex items-center px-6 gap-4 shrink-0">

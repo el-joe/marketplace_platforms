@@ -58,6 +58,16 @@ return [
             'driver'   => 'jwt',
             'provider' => 'vendor_admins',
         ],
+        // Marketer portal (session)
+        'marketer' => [
+            'driver'   => 'session',
+            'provider' => 'marketer_admins',
+        ],
+        // Marketer Flutter app (JWT)
+        'marketer_api' => [
+            'driver'   => 'jwt',
+            'provider' => 'marketer_admins',
+        ],
         // Delivery agent app: pure token auth via Sanctum. The 'session'
         // driver is declared so first-party flows still work if needed.
         'delivery' => [
@@ -143,6 +153,10 @@ return [
             'driver' => 'eloquent',
             'model' => \App\Models\ShippingCompanySupervisor::class,
         ],
+        'marketer_admins' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\MarketerAdmin::class,
+        ],
 
         // 'users' => [
         //     'driver' => 'database',
@@ -199,6 +213,12 @@ return [
             'provider' => 'travel_agency_members',
             'table' => 'travel_agency_member_password_resets',
             'expire' => 60,
+            'throttle' => 60,
+        ],
+        'marketer_admins' => [
+            'provider' => 'marketer_admins',
+            'table'    => 'marketer_admin_password_resets',
+            'expire'   => 60,
             'throttle' => 60,
         ],
     ],

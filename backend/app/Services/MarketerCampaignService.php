@@ -10,17 +10,19 @@ use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCampaignTieredRule;
+use App\Models\Marketer;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Admin\NewCampaignPendingNotification;
+use App\Notifications\Marketer\CampaignInvitationAcceptedNotification;
+use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
+use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
+use App\Notifications\Marketer\MarketerReplacedNotification;
 use App\Notifications\Vendor\CampaignApprovedNotification;
 use App\Notifications\Vendor\CampaignAutoApprovedNotification;
 use App\Notifications\Vendor\CampaignDoneNotification;
-use App\Notifications\Vendor\CampaignInvitationAcceptedNotification;
-use App\Notifications\Vendor\CampaignInvitationRejectedNotification;
 use App\Notifications\Vendor\CampaignPendingAdminNotification;
 use App\Notifications\Vendor\CampaignRejectedNotification;
-use App\Notifications\Vendor\MarketerReplacedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -30,7 +32,7 @@ class MarketerCampaignService
      * Create a new campaign from vendor panel.
      * $data keys: vendor_listing_id|admin_listing_id, country_id, currency,
      *             commission_type, max_commission_budget, title, notes,
-     *             marketer_vendor_ids (array of UUIDs),
+     *             marketer_ids (array of Marketer UUIDs),
      *             tiered_rules (array of {from_sale_number, commission_amount} — only for tiered type)
      */
     /**
@@ -51,14 +53,18 @@ class MarketerCampaignService
                 ->with('invitation.marketer')
                 ->get();
 
-            $earningsByMarketer = $conversions->groupBy('invitation.marketer_vendor_id');
+            $earningsByMarketer = $conversions->groupBy('invitation.marketer_id');
 
             foreach ($earningsByMarketer as $marketerId => $marketerConversions) {
                 $totalEarned = $marketerConversions->sum('commission_amount');
-                $marketer    = $marketerConversions->first()->invitation->marketer;
+
+                $marketer = Marketer::find($marketerId);
+                if (! $marketer) {
+                    continue;
+                }
 
                 $profile = $marketer->marketerProfile()->firstOrCreate(
-                    ['vendor_id' => $marketerId],
+                    ['marketer_id' => $marketerId],
                     ['total_earnings' => 0, 'total_conversions' => 0]
                 );
 
@@ -88,16 +94,16 @@ class MarketerCampaignService
                 }
             }
 
-            $marketerVendors = Vendor::whereIn('id', $data['marketer_vendor_ids'] ?? [])
-                ->whereNotNull('marketer_type')
+            $marketerVendors = Marketer::whereIn('id', $data['marketer_ids'] ?? [])
+                ->where('global_status', 'active')
                 ->get();
 
             // Determine sample snapshot from category (higher of the two if mixed marketer types)
             $perMarketerSampleQty = 0;
             $platformSampleQty = 0;
             if ($category) {
-                $hasInfluencer = $marketerVendors->contains('marketer_type', 'influencer');
-                $hasAffiliate  = $marketerVendors->contains('marketer_type', 'affiliate');
+                $hasInfluencer = $marketerVendors->contains(fn ($m) => $m->isInfluencer());
+                $hasAffiliate  = $marketerVendors->contains(fn ($m) => $m->isAffiliate());
                 if ($hasInfluencer) {
                     $perMarketerSampleQty = max($perMarketerSampleQty, $category->influencer_sample_qty);
                 }
@@ -124,7 +130,7 @@ class MarketerCampaignService
                 'auto_approved'                    => false,
                 'platform_sample_qty_snapshot'     => $platformSampleQty,
                 'per_marketer_sample_qty_snapshot' => $perMarketerSampleQty,
-                'requested_marketer_vendor_ids'    => $marketerVendors->pluck('id')->values()->all(),
+                'requested_marketer_vendor_ids'    => $marketerVendors->pluck('id')->values()->all(), // now Marketer UUIDs
                 'title'                            => $data['title'] ?? null,
                 'notes'                            => $data['notes'] ?? null,
             ]);
@@ -157,8 +163,8 @@ class MarketerCampaignService
             }
 
             // Dispatch invitations immediately — do not wait for admin approval
-            foreach ($marketerVendors as $marketerVendor) {
-                $this->dispatchInvitation($campaign, $marketerVendor->id);
+            foreach ($marketerVendors as $marketer) {
+                $this->dispatchInvitation($campaign, $marketer->id);
             }
 
             Admin::query()->get()->each(fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign)));
@@ -236,14 +242,14 @@ class MarketerCampaignService
     /**
      * Dispatch a campaign invitation to a marketer vendor.
      */
-    public function dispatchInvitation(MarketerCampaign $campaign, string $marketerVendorId): MarketerCampaignInvitation
+    public function dispatchInvitation(MarketerCampaign $campaign, string $marketerId): MarketerCampaignInvitation
     {
         $timeoutHours = (int) setting('marketer_invitation_timeout_hours', 12);
         $referralCode = strtoupper(Str::random(10));
 
         $invitation = MarketerCampaignInvitation::create([
             'campaign_id'             => $campaign->id,
-            'marketer_vendor_id'      => $marketerVendorId,
+            'marketer_id'             => $marketerId,
             'status'                  => 'pending',
             'acceptance_window_hours' => $timeoutHours,
             'expires_at'              => now()->addHours($timeoutHours),
@@ -306,7 +312,7 @@ class MarketerCampaignService
             $feeAmount = 0;
             $feeStatus = 'not_applicable';
 
-            if ($marketer->marketer_type === 'influencer') {
+            if ($marketer->isInfluencer()) {
                 $feeSetting = \App\Models\MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
                     ->first();
 
@@ -329,7 +335,7 @@ class MarketerCampaignService
 
             $sampleQty = 0;
             if ($category && $marketer) {
-                $sampleQty = $marketer->marketer_type === 'influencer'
+                $sampleQty = $marketer->isInfluencer()
                     ? ($category->influencer_sample_qty ?? 0)
                     : ($category->affiliate_sample_qty ?? 0);
             }
@@ -390,10 +396,10 @@ class MarketerCampaignService
         $campaign    = $oldInvitation->campaign;
         $oldMarketer = $oldInvitation->marketer;
 
-        $alreadyInvited = $campaign->invitations()->pluck('marketer_vendor_id')->toArray();
+        $alreadyInvited = $campaign->invitations()->pluck('marketer_id')->toArray();
         $minAccepted    = (int) setting('marketer_replacement_min_accepted_campaigns', 0);
 
-        $replacement = Vendor::where('marketer_type', $oldMarketer->marketer_type)
+        $replacement = Marketer::where('marketer_type', $oldMarketer->marketer_type)
             ->whereNotIn('id', $alreadyInvited)
             ->where('global_status', 'active')
             ->withCount(['campaignInvitations as accepted_count' => fn ($q) => $q->where('status', 'accepted')])
@@ -402,7 +408,7 @@ class MarketerCampaignService
             ->first();
 
         $campaign->vendor->vendorAdmins->each(
-            fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation, (bool) $replacement))
+            fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation))
         );
 
         if (!$replacement) {
@@ -413,7 +419,7 @@ class MarketerCampaignService
         $newInvitation->update(['replaced_invitation_id' => $oldInvitation->id]);
 
         $campaign->vendor->vendorAdmins->each(
-            fn ($va) => $va->notify(new MarketerReplacedNotification($campaign, $oldMarketer, $replacement))
+            fn ($va) => $va->notify(new MarketerReplacedNotification($oldInvitation))
         );
     }
 
@@ -431,13 +437,29 @@ class MarketerCampaignService
             fn ($va) => $va->notify(new CampaignDoneNotification($campaign, $totalConversions, $totalCommissionEarned))
         );
 
-        $campaign->invitations()->where('status', 'accepted')->with('marketer.vendorAdmins')->get()
-            ->each(fn ($inv) => $inv->marketer->vendorAdmins->each(
+        $campaign->invitations()->where('status', 'accepted')->with('marketer.marketerAdmins')->get()
+            ->each(fn ($inv) => $inv->marketer->marketerAdmins->each(
                 fn ($va) => $va->notify(new CampaignDoneNotification(
                     $campaign,
                     (int) $inv->total_conversions,
                     (float) $inv->total_commission_earned
                 ))
             ));
+    }
+
+    /**
+     * Search active marketers by name/email (used by vendor panel to search available marketers).
+     */
+    public function searchMarketers(string $query, ?string $type = null): \Illuminate\Database\Eloquent\Collection
+    {
+        return Marketer::query()
+            ->where('global_status', 'active')
+            ->when($type, fn ($q) => $q->where('marketer_type', $type))
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'email', 'marketer_type']);
     }
 }

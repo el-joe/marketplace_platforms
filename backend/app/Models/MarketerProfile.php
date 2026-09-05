@@ -11,20 +11,29 @@ class MarketerProfile extends Model
     use HasUuids;
 
     protected $fillable = [
-        'vendor_id', 'banner_file_id', 'video_url',
-        'bio_ar', 'bio_en', 'social_links', 'contact_details',
-        'qr_code_path', 'profile_slug',
-        'total_campaigns', 'total_conversions', 'total_earnings', 'earnings_currency',
+        'marketer_id',
+        'banner_file_id',
+        'video_url',
+        'bio_ar',
+        'bio_en',
+        'social_links',
+        'contact_details',
+        'qr_code_path',
+        'profile_slug',
+        'total_campaigns',
+        'total_conversions',
+        'total_earnings',
+        'earnings_currency',
     ];
 
     protected $casts = [
-        'social_links' => 'array',
+        'social_links'    => 'array',
         'contact_details' => 'array',
     ];
 
-    public function vendor(): BelongsTo
+    public function marketer(): BelongsTo
     {
-        return $this->belongsTo(Vendor::class);
+        return $this->belongsTo(Marketer::class, 'marketer_id');
     }
 
     public function bannerFile(): BelongsTo

@@ -185,6 +185,9 @@ class PermissionSeeder extends Seeder
             'travel.geography.manage',
             // Classifieds
             'classifieds.view',
+            // Marketer accounts (admin)
+            'marketers.view',
+            'marketers.manage',
             // Marketer campaigns (admin)
             'marketer_campaigns.view',
             'marketer_campaigns.approve',

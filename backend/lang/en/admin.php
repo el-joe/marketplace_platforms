@@ -385,6 +385,7 @@ return [
         'vendor_change_requests' => 'Vendor Change Requests',
         'product_certifications' => 'Product Certifications',
         'travel_agency_change_requests' => 'Travel Agency Change Requests',
+        'marketers'             => 'Marketers',
         'marketer_campaigns'    => 'Marketer Campaigns',
         'marketer_campaigns_financials' => 'Marketer Campaigns Revenue',
         'marketer_settings'     => 'Marketer Settings',

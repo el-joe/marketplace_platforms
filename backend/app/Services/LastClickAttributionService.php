@@ -66,9 +66,9 @@ class LastClickAttributionService
                             ))
                             ->first();
 
-                        $marketerVendor   = $invitation->marketer;
+                        $marketer         = $invitation->marketer;
                         $commissionAmount = $setting
-                            ? ($marketerVendor->marketer_type === 'influencer'
+                            ? ($marketer->isInfluencer()
                                 ? $setting->influencer_commission_amount
                                 : $setting->affiliate_commission_amount)
                             : 0;

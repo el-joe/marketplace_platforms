@@ -35,7 +35,7 @@ class TravelAgencyCampaignInvitation extends Model
 
     public function marketer(): BelongsTo
     {
-        return $this->belongsTo(Vendor::class, 'id')->whereNotNull('marketer_type');
+        return $this->belongsTo(Marketer::class, 'marketer_id');
     }
 
     public function resultingCampaign(): BelongsTo

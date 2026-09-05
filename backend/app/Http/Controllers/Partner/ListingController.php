@@ -20,7 +20,6 @@ use App\Models\WarehouseInventory;
 use App\Models\PlatformShippingSubsidy;
 use App\Models\ShippingZone;
 use App\Notifications\Admin\ListingResubmittedNotification;
-use App\Models\Vendor;
 use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignService;
@@ -619,12 +618,10 @@ class ListingController extends Controller
             'refurbished' => 'مُجدَّد',
         ];
 
-        $marketerVendors = Vendor::whereNotNull('marketer_type')
-            ->where('global_status', 'active')
+        $marketerVendors = \App\Models\Marketer::where('global_status', 'active')
             ->where('country_id', $countryId)
-            ->where('id', '!=', $vendor->id)
-            ->orderBy('business_name')
-            ->get(['id', 'business_name','name', 'marketer_type']);
+            ->orderBy('name')
+            ->get(['id', 'name', 'marketer_type']);
 
         return view('partner.listings.create', compact(
             'warehouses',
@@ -671,8 +668,8 @@ class ListingController extends Controller
             'campaign_enabled' => ['nullable', 'boolean'],
             'commission_type' => ['nullable', 'required_if:campaign_enabled,1', 'in:fixed,tiered,last_click'],
             'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'marketer_vendor_ids' => ['nullable', 'array', 'required_if:campaign_enabled,1'],
-            'marketer_vendor_ids.*' => ['uuid', 'distinct', 'exists:vendors,id'],
+            'marketer_ids' => ['nullable', 'array', 'required_if:campaign_enabled,1'],
+            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
             'tiered_rules' => ['nullable', 'array'],
             'tiered_rules.*.from_sale_number' => ['nullable', 'integer', 'min:1'],
             'tiered_rules.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
@@ -838,7 +835,7 @@ class ListingController extends Controller
                     'vendor_listing_id'   => $listing->id,
                     'country_id'          => $listing->country_id,
                     'currency'            => $listing->currency,
-                    'marketer_vendor_ids' => $request->input('marketer_vendor_ids', []),
+                    'marketer_ids' => $request->input('marketer_ids', []),
                     'tiered_rules'        => $request->input('tiered_rules', []),
                 ]));
 
@@ -888,12 +885,10 @@ class ListingController extends Controller
         $availableShippingMethods = $this->shippingResolver->resolveForListing($listing);
 
         $vendor = $this->vendor();
-        $marketerVendors = Vendor::whereNotNull('marketer_type')
-            ->where('global_status', 'active')
+        $marketerVendors = \App\Models\Marketer::where('global_status', 'active')
             ->where('country_id', $listing->country_id)
-            ->where('id', '!=', $vendor->id)
-            ->orderBy('business_name')
-            ->get(['id', 'business_name', 'marketer_type']);
+            ->orderBy('name')
+            ->get(['id', 'name', 'marketer_type']);
 
         $productId = $listing->productVariant->product_id;
         $requiresLocalCert = \App\Models\ProductCountry::where('product_id', $productId)
@@ -949,8 +944,8 @@ class ListingController extends Controller
             'campaign_enabled' => ['nullable', 'boolean'],
             'commission_type' => ['nullable', 'required_if:campaign_enabled,1', 'in:fixed,tiered,last_click'],
             'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'marketer_vendor_ids' => ['nullable', 'array', 'required_if:campaign_enabled,1'],
-            'marketer_vendor_ids.*' => ['uuid', 'distinct', 'exists:vendors,id'],
+            'marketer_ids' => ['nullable', 'array', 'required_if:campaign_enabled,1'],
+            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
             'tiered_rules' => ['nullable', 'array'],
             'tiered_rules.*.from_sale_number' => ['nullable', 'integer', 'min:1'],
             'tiered_rules.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
@@ -1005,7 +1000,7 @@ class ListingController extends Controller
                     'vendor_listing_id'   => $listing->id,
                     'country_id'          => $listing->country_id,
                     'currency'            => $listing->currency,
-                    'marketer_vendor_ids' => $request->input('marketer_vendor_ids', []),
+                    'marketer_ids' => $request->input('marketer_ids', []),
                     'tiered_rules'        => $request->input('tiered_rules', []),
                 ]));
 
@@ -1369,17 +1364,16 @@ class ListingController extends Controller
         $vendor = $this->vendor();
         $q = $request->input('q', '');
 
-        $marketers = Vendor::whereNotNull('marketer_type')
-            ->where('global_status', 'active')
+        $marketers = \App\Models\Marketer::where('global_status', 'active')
             ->where('country_id', $vendor->country_id)
-            ->when($q, fn ($query, $q) => $query->where('business_name', 'like', "%{$q}%"))
+            ->when($q, fn ($query, $q) => $query->where('name', 'like', "%{$q}%"))
             ->limit(20)
-            ->get(['id', 'business_name', 'marketer_type']);
+            ->get(['id', 'name', 'marketer_type']);
 
         return response()->json(
             $marketers->map(fn ($m) => [
                 'id'   => $m->id,
-                'text' => $m->business_name . ' — ' . ($m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت'),
+                'text' => $m->name . ' — ' . ($m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت'),
             ])
         );
     }

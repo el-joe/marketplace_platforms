@@ -914,6 +914,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/{campaign}/products/{product}', [AdCampaignController::class, 'destroyProduct'])->name('products.destroy');
     });
 
+    // ── Marketer Management ────────────────────────────────────────────────
+    Route::prefix('marketers')->name('marketers.')->middleware('admin.permission:marketers.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\MarketerController::class, 'index'])->name('index');
+        Route::get('/{marketer}', [\App\Http\Controllers\Admin\MarketerController::class, 'show'])->name('show');
+        Route::post('/{marketer}/approve', [\App\Http\Controllers\Admin\MarketerController::class, 'approve'])
+            ->name('approve')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketer}/reject', [\App\Http\Controllers\Admin\MarketerController::class, 'reject'])
+            ->name('reject')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketer}/suspend', [\App\Http\Controllers\Admin\MarketerController::class, 'suspend'])
+            ->name('suspend')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketer}/activate', [\App\Http\Controllers\Admin\MarketerController::class, 'activate'])
+            ->name('activate')->middleware('admin.permission:marketers.manage');
+    });
+
     // ─── Marketer Campaigns ────────────────────────────────────────────────────────
     Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->middleware('admin.permission:marketer_campaigns.view')->group(function () {
         Route::get('/', [MarketerCampaignController::class, 'index'])->name('index');

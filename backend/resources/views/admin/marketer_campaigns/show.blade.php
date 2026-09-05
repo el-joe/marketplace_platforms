@@ -23,8 +23,8 @@
     $totalFeeExpected = $acceptedInvitations->sum('platform_fee_amount');
     $totalFeePaid     = $acceptedInvitations->where('platform_fee_status', 'paid')->sum('platform_fee_amount');
     $totalFeePending  = $acceptedInvitations->where('platform_fee_status', 'pending')->sum('platform_fee_amount');
-    $influencerAccepted = $acceptedInvitations->filter(fn ($i) => $i->marketer?->marketer_type === 'influencer')->count();
-    $affiliateAccepted  = $acceptedInvitations->filter(fn ($i) => $i->marketer?->marketer_type === 'affiliate')->count();
+    $influencerAccepted = $acceptedInvitations->filter(fn ($i) => $i->marketer?->isInfluencer())->count();
+    $affiliateAccepted  = $acceptedInvitations->filter(fn ($i) => $i->marketer?->isAffiliate())->count();
 @endphp
 
 {{-- ─── Page header ─────────────────────────────────────────────────────────── --}}
@@ -232,10 +232,10 @@
                        ($inv->status === 'rejected' ? 'bg-red-50 border-red-200' :
                        ($inv->status === 'timed_out' ? 'bg-gray-50 border-gray-200' : 'bg-yellow-50 border-yellow-200')) }}">
                     <div>
-                        <span class="font-medium text-gray-800">{{ $inv->marketer?->store_name ?? '—' }}</span>
+                        <span class="font-medium text-gray-800">{{ $inv->marketer?->name ?? '—' }}</span>
                         <span class="text-xs ml-2 px-2 py-0.5 rounded-full
-                            {{ $inv->marketer?->marketer_type === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                            {{ $inv->marketer?->marketer_type === 'influencer' ? 'إنفلوينسر' : 'أفيلييت' }}
+                            {{ $inv->marketer?->isInfluencer() ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                            {{ $inv->marketer?->isInfluencer() ? 'إنفلوينسر' : 'أفيلييت' }}
                         </span>
                     </div>
                     <div class="flex items-center gap-3 text-sm">
@@ -323,7 +323,7 @@
                         <tbody>
                             @foreach($marketerCampaign->invitations as $invitation)
                                 <tr class="border-b border-gray-50">
-                                    <td class="py-2 pr-4 font-medium text-gray-900">{{ $invitation->marketer?->store_name ?? '—' }}</td>
+                                    <td class="py-2 pr-4 font-medium text-gray-900">{{ $invitation->marketer?->name ?? '—' }}</td>
                                     <td class="py-2 pr-4"><x-badge color="gray">{{ $invitation->status }}</x-badge></td>
                                     <td class="py-2 pr-4 font-mono text-xs">{{ $invitation->referral_code ?? '—' }}</td>
                                     <td class="py-2 pr-4">
@@ -447,7 +447,7 @@
                                 <td class="py-2 pr-4">
                                     {{ $sample->sample_owner === 'platform' ? __('admin.marketer_campaigns.sample_owner_platform') : __('admin.marketer_campaigns.sample_owner_marketer') }}
                                 </td>
-                                <td class="py-2 pr-4">{{ $sample->invitation?->marketer->store_name ?? '—' }}</td>
+                                <td class="py-2 pr-4">{{ $sample->invitation?->marketer?->name ?? '—' }}</td>
                                 <td class="py-2 pr-4">{{ $sample->quantity }}</td>
                                 <td class="py-2 pr-4">
                                     <x-badge color="{{ $sample->status === 'pending' ? 'warning' : ($sample->status === 'dispatched' ? 'primary' : ($sample->status === 'delivered' ? 'success' : 'danger')) }}">

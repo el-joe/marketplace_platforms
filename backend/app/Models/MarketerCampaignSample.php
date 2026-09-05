@@ -30,4 +30,16 @@ class MarketerCampaignSample extends Model
     {
         return $this->belongsTo(MarketerCampaignInvitation::class);
     }
+
+    public function marketer(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Marketer::class,
+            MarketerCampaignInvitation::class,
+            'id',           // PK on invitations
+            'id',           // PK on marketers
+            'invitation_id', // FK on samples
+            'marketer_id'   // FK on invitations
+        );
+    }
 }

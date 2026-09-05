@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const enabledCheckbox = document.getElementById('campaign-enabled-checkbox');
     const notFbnWarning = document.getElementById('campaign-not-fbn-warning');
     const details = document.getElementById('campaign-details');
-    const marketerSelect = document.getElementById('marketer_vendor_ids');
+    const marketerSelect = document.getElementById('marketer_ids');
     const commissionTypeSelect = document.getElementById('commission-type-select');
     const tieredSection = document.getElementById('tiered-rules-section');
     const tieredList = document.getElementById('tiered-rules-list');

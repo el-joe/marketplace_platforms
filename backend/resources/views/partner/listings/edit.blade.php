@@ -277,7 +277,7 @@
                             </p>
                         @else
                         <x-form.select
-                            name="marketer_vendor_ids"
+                            name="marketer_ids"
                             label="اختر الماركترز"
                             :multiple="true"
                             :select2="true"
@@ -286,8 +286,8 @@
                         >
                             @foreach($marketerVendors as $m)
                                 <option value="{{ $m->id }}" data-type="{{ $m->marketer_type }}"
-                                        data-name="{{ $m->business_name }}">
-                                    {{ $m->business_name }} — {{ $m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت' }}
+                                        data-name="{{ $m->name }}">
+                                    {{ $m->name }} — {{ $m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت' }}
                                 </option>
                             @endforeach
                         </x-form.select>

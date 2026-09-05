@@ -86,8 +86,8 @@
                 @forelse($campaigns as $campaign)
                     @php
                         $accepted = $campaign->invitations->where('status', 'accepted');
-                        $influencerAccepted = $accepted->filter(fn ($i) => $i->marketer?->marketer_type === 'influencer')->count();
-                        $affiliateAccepted  = $accepted->filter(fn ($i) => $i->marketer?->marketer_type === 'affiliate')->count();
+                        $influencerAccepted = $accepted->filter(fn ($i) => $i->marketer?->isInfluencer())->count();
+                        $affiliateAccepted  = $accepted->filter(fn ($i) => $i->marketer?->isAffiliate())->count();
                         $feeExpected = $accepted->sum('platform_fee_amount');
                         $feePending  = $accepted->where('platform_fee_status', 'pending')->sum('platform_fee_amount');
                         $feePaid     = $accepted->where('platform_fee_status', 'paid')->sum('platform_fee_amount');
