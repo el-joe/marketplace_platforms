@@ -14,6 +14,7 @@ class MarketerCampaign extends Model
 
     protected $fillable = [
         'vendor_id', 'vendor_listing_id', 'admin_listing_id',
+        'travel_package_id', 'classified_listing_id', 'campaign_category',
         'country_id', 'currency', 'commission_type',
         'max_commission_budget', 'platform_commission_amount', 'marketer_commission_amount',
         'requested_marketer_vendor_ids', // Now stores Marketer UUIDs (previously vendor UUIDs with marketer_type)
@@ -28,6 +29,7 @@ class MarketerCampaign extends Model
         'auto_approve_at' => 'datetime',
         'auto_approved' => 'boolean',
         'requested_marketer_vendor_ids' => 'array',
+        'campaign_category' => 'string',
     ];
 
     public function vendor(): BelongsTo
@@ -43,6 +45,16 @@ class MarketerCampaign extends Model
     public function adminListing(): BelongsTo
     {
         return $this->belongsTo(AdminListing::class, 'admin_listing_id');
+    }
+
+    public function travelPackage(): BelongsTo
+    {
+        return $this->belongsTo(TravelPackage::class, 'travel_package_id');
+    }
+
+    public function classifiedListing(): BelongsTo
+    {
+        return $this->belongsTo(ClassifiedListing::class, 'classified_listing_id');
     }
 
     public function country(): BelongsTo
@@ -126,5 +138,25 @@ class MarketerCampaign extends Model
         return (int) $this->conversions()
             ->where('commissioned', false)
             ->sum('commission_amount');
+    }
+
+    public function getPromotedItem(): VendorListing|AdminListing|TravelPackage|ClassifiedListing|null
+    {
+        return match ($this->campaign_category) {
+            'travel'     => $this->travelPackage,
+            'classified' => $this->classifiedListing,
+            default      => $this->vendor_listing_id ? $this->vendorListing : $this->adminListing,
+        };
+    }
+
+    public function getPromotedTitle(): string
+    {
+        return match ($this->campaign_category) {
+            'travel'     => $this->travelPackage?->title_ar ?? $this->title ?? '—',
+            'classified' => $this->classifiedListing?->title_ar ?? $this->title ?? '—',
+            default      => $this->vendorListing?->productVariant?->product?->name_ar
+                         ?? $this->adminListing?->productVariant?->product?->name_ar
+                         ?? $this->title ?? '—',
+        };
     }
 }

@@ -83,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ShippingCarrierFactory::class);
         $this->app->singleton(PageBuilderService::class);
         $this->app->singleton(ListingQueryService::class);
+        $this->app->singleton(\App\Services\Customer\UnifiedListingQueryService::class);
         $this->app->singleton(ListingIdentifierService::class);
         $this->app->singleton(UnifiedCategoryService::class);
         $this->app->singleton(CheckoutCalculationService::class);

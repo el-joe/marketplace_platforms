@@ -14,6 +14,7 @@ use App\Models\PaidBannerBooking;
 use App\Models\Product;
 use App\Models\ProductCountrySetting;
 use App\Services\Customer\ListingQueryService;
+use App\Services\Customer\UnifiedListingQueryService;
 use App\Support\Bilingual;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -28,6 +29,7 @@ class PageBuilderService
 
     public function __construct(
         private readonly ListingQueryService $listingQuery,
+        private readonly UnifiedListingQueryService $unifiedQuery,
     ) {
     }
 
@@ -571,7 +573,7 @@ class PageBuilderService
 
     private function productsToCards(Collection $products, Country $country): array
     {
-        $buyBox = $this->listingQuery->getBuyBoxForProducts($products, $country);
+        $buyBox = $this->unifiedQuery->getBuyBoxForProducts($products, $country);
 
         return $products
             ->map(fn (Product $p) => [$p, $buyBox[$p->id] ?? null])

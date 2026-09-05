@@ -18,6 +18,11 @@
     ];
     $product = $marketerCampaign->vendorListing?->productVariant?->product
         ?? $marketerCampaign->adminListing?->productVariant?->product;
+    $promotedLabel = match ($marketerCampaign->campaign_category ?? 'product') {
+        'travel'     => $marketerCampaign->travelPackage?->title_ar,
+        'classified' => $marketerCampaign->classifiedListing?->title_ar,
+        default      => $product?->name,
+    };
     $isPending = $marketerCampaign->status === 'pending_admin';
     $acceptedInvitations = $marketerCampaign->invitations->where('status', 'accepted');
     $totalFeeExpected = $acceptedInvitations->sum('platform_fee_amount');
@@ -147,7 +152,7 @@
             <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 @foreach([
                     __('admin.marketer_campaigns.vendor')                     => $marketerCampaign->vendor?->store_name ?? '—',
-                    __('admin.marketer_campaigns.product')                    => $product?->name ?? '—',
+                    __('admin.marketer_campaigns.product')                    => $promotedLabel ?? '—',
                     __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',
                     __('admin.marketer_campaigns.commission_type')            => $marketerCampaign->commission_type ? __('admin.marketer_campaigns.commission_type_' . $marketerCampaign->commission_type) : '—',

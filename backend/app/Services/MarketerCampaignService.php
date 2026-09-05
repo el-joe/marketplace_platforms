@@ -367,6 +367,15 @@ class MarketerCampaignService
         $campaign = $invitation->campaign;
         $marketer = $invitation->marketer;
 
+        match ($campaign->campaign_category ?? 'product') {
+            'travel'     => $this->createTravelListing($campaign, $marketer, $invitation),
+            'classified' => $this->createClassifiedListing($campaign, $marketer, $invitation),
+            default      => $this->createProductListing($campaign, $marketer, $invitation),
+        };
+    }
+
+    private function createProductListing(MarketerCampaign $campaign, Marketer $marketer, MarketerCampaignInvitation $invitation): void
+    {
         $sourcePrice     = null;
         $sourceCurrency  = $campaign->currency;
         $sourceCondition = 'new';
@@ -393,12 +402,69 @@ class MarketerCampaignService
                 'marketer_id'        => $marketer->id,
                 'product_variant_id' => $variantId,
                 'country_id'         => $campaign->country_id,
+                'listing_category'   => 'product',
                 'price'              => $sourcePrice,
                 'currency'           => $sourceCurrency,
                 'condition'          => $sourceCondition,
                 'status'             => 'active',
                 'referral_code'      => $invitation->referral_code,
                 'referral_link'      => $invitation->referral_link,
+            ]
+        );
+    }
+
+    private function createTravelListing(MarketerCampaign $campaign, Marketer $marketer, MarketerCampaignInvitation $invitation): void
+    {
+        if (!$campaign->travel_package_id) {
+            return;
+        }
+
+        $package = \App\Models\TravelPackage::find($campaign->travel_package_id);
+        if (!$package) {
+            return;
+        }
+
+        \App\Models\MarketerListing::firstOrCreate(
+            ['invitation_id' => $invitation->id],
+            [
+                'marketer_id'       => $marketer->id,
+                'travel_package_id' => $campaign->travel_package_id,
+                'country_id'        => $campaign->country_id,
+                'listing_category'  => 'travel',
+                'price'             => $package->price,
+                'currency'          => $package->currency,
+                'condition'         => 'new',
+                'status'            => 'active',
+                'referral_code'     => $invitation->referral_code,
+                'referral_link'     => $invitation->referral_link,
+            ]
+        );
+    }
+
+    private function createClassifiedListing(MarketerCampaign $campaign, Marketer $marketer, MarketerCampaignInvitation $invitation): void
+    {
+        if (!$campaign->classified_listing_id) {
+            return;
+        }
+
+        $classified = \App\Models\ClassifiedListing::find($campaign->classified_listing_id);
+        if (!$classified) {
+            return;
+        }
+
+        \App\Models\MarketerListing::firstOrCreate(
+            ['invitation_id' => $invitation->id],
+            [
+                'marketer_id'           => $marketer->id,
+                'classified_listing_id' => $campaign->classified_listing_id,
+                'country_id'            => $campaign->country_id,
+                'listing_category'      => 'classified',
+                'price'                 => $classified->price,
+                'currency'              => $classified->currency,
+                'condition'             => 'new',
+                'status'                => 'active',
+                'referral_code'         => $invitation->referral_code,
+                'referral_link'         => $invitation->referral_link,
             ]
         );
     }

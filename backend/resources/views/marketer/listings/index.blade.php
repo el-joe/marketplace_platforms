@@ -41,6 +41,7 @@
                         <th class="px-4 py-3 text-center">الدولة</th>
                         <th class="px-4 py-3 text-center">السعر</th>
                         <th class="px-4 py-3 text-center">المبيعات</th>
+                        <th class="px-4 py-3 text-center">المخزون</th>
                         <th class="px-4 py-3 text-center">الحالة</th>
                         <th class="px-4 py-3 text-center">المصدر</th>
                         <th class="px-4 py-3 text-center">إجراءات</th>
@@ -71,6 +72,13 @@
                             <div class="text-xs text-gray-400">{{ $listing->currency }}</div>
                         </td>
                         <td class="px-4 py-3 text-center text-gray-700">{{ number_format($listing->total_sold) }}</td>
+                        <td class="px-4 py-3 text-center text-xs text-gray-400">
+                            @if($listing->invitation_id)
+                                <span class="text-blue-500">من الحملة</span>
+                            @else
+                                <span class="text-gray-300">—</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $listing->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                                 {{ $listing->status === 'active' ? 'نشط' : 'موقوف' }}

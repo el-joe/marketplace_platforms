@@ -199,6 +199,24 @@ class ProductQueryService
             ." WHERE pv_b.product_id = products.id AND al_b.country_id = ? AND al_b.status = 'active' AND al_b.deleted_at IS NULL"
             .' ORDER BY al_b.price ASC, pi.position ASC LIMIT 1)';
 
+        // ── Marketer listing correlated subquery helpers (lowest priority) ─────
+        // Marketer listings have no shipping method of their own — shipping comes
+        // from the campaign's source listing, so they're excluded from buy_box_shipping_*.
+        $ml = fn(string $col) =>
+            '(SELECT '.$col.' FROM marketer_listings ml_b'
+            .' JOIN product_variants pv_b ON pv_b.id = ml_b.product_variant_id'
+            .' JOIN marketers mk_b ON mk_b.id = ml_b.marketer_id AND mk_b.global_status = \'active\''
+            ." WHERE pv_b.product_id = products.id AND ml_b.country_id = ? AND ml_b.status = 'active' AND ml_b.deleted_at IS NULL AND ml_b.listing_category = 'product'"
+            .' ORDER BY ml_b.price ASC LIMIT 1)';
+
+        $mlImage = fn(string $col) =>
+            '(SELECT pi.'.$col.' FROM marketer_listings ml_b'
+            .' JOIN product_variants pv_b ON pv_b.id = ml_b.product_variant_id'
+            .' JOIN marketers mk_b ON mk_b.id = ml_b.marketer_id AND mk_b.global_status = \'active\''
+            .' JOIN product_images pi ON pi.product_variant_id = pv_b.id'
+            ." WHERE pv_b.product_id = products.id AND ml_b.country_id = ? AND ml_b.status = 'active' AND ml_b.deleted_at IS NULL AND ml_b.listing_category = 'product'"
+            .' ORDER BY ml_b.price ASC, pi.position ASC LIMIT 1)';
+
         return Product::query()
             ->select(
                 'products.*',
@@ -211,40 +229,42 @@ class ProductQueryService
                 DB::raw('COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0) as rating_avg'),
                 DB::raw('COALESCE(SUM(vl.rating_count), 0) as rating_count'),
             )
-            // ── buy_box_listing_id: admin wins, else vendor ────────────────────
+            // ── buy_box_listing_id: admin wins, else vendor, else marketer ─────
             ->selectRaw(
-                'COALESCE('.$al('al_b.id').', '.$vl('vl_b.id').') as buy_box_listing_id',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$al('al_b.id').', '.$vl('vl_b.id').', '.$ml('ml_b.id').') as buy_box_listing_id',
+                [$country->id, $country->id, 'active', $country->id],
             )
-            // ── buy_box_listing_type: 'admin' | 'vendor' ──────────────────────
+            // ── buy_box_listing_type: 'admin' | 'vendor' | 'marketer' ─────────
             ->selectRaw(
-                'IF('.$al('al_b.id').' IS NOT NULL, \'admin\', \'vendor\') as buy_box_listing_type',
-                [$country->id],
+                'CASE WHEN '.$al('al_b.id').' IS NOT NULL THEN \'admin\''
+                .' WHEN '.$vl('vl_b.id').' IS NOT NULL THEN \'vendor\''
+                .' ELSE \'marketer\' END as buy_box_listing_type',
+                [$country->id, $country->id, 'active'],
             )
             // ── buy_box_variant_slug ───────────────────────────────────────────
             ->selectRaw(
-                'COALESCE('.$al('pv_b.slug').', '.$vl('pv_b.slug').') as buy_box_variant_slug',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$al('pv_b.slug').', '.$vl('pv_b.slug').', '.$ml('pv_b.slug').') as buy_box_variant_slug',
+                [$country->id, $country->id, 'active', $country->id],
             )
             // ── buy_box_variant_name ───────────────────────────────────────────
             ->selectRaw(
-                'COALESCE('.$al('pv_b.variant_name').', '.$vl('pv_b.variant_name').') as buy_box_variant_name',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$al('pv_b.variant_name').', '.$vl('pv_b.variant_name').', '.$ml('pv_b.variant_name').') as buy_box_variant_name',
+                [$country->id, $country->id, 'active', $country->id],
             )
             // ── buy_box_variant_id ────────────────────────────────────────────
             ->selectRaw(
-                'COALESCE('.$al('pv_b.id').', '.$vl('pv_b.id').') as buy_box_variant_id',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$al('pv_b.id').', '.$vl('pv_b.id').', '.$ml('pv_b.id').') as buy_box_variant_id',
+                [$country->id, $country->id, 'active', $country->id],
             )
             // ── buy_box_variant_image_path ────────────────────────────────────
             ->selectRaw(
-                'COALESCE('.$alImage('path').', '.$vlImage('path').') as buy_box_variant_image_path',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$alImage('path').', '.$vlImage('path').', '.$mlImage('path').') as buy_box_variant_image_path',
+                [$country->id, $country->id, 'active', $country->id],
             )
             // ── buy_box_variant_image_disk ────────────────────────────────────
             ->selectRaw(
-                'COALESCE('.$alImage('disk').', '.$vlImage('disk').') as buy_box_variant_image_disk',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$alImage('disk').', '.$vlImage('disk').', '.$mlImage('disk').') as buy_box_variant_image_disk',
+                [$country->id, $country->id, 'active', $country->id],
             )
             // ── admin_listing_count (for UI badges) ───────────────────────────
             ->selectRaw(
@@ -256,8 +276,8 @@ class ProductQueryService
             )
             // ── buy_box_compare_at_price ───────────────────────────────────────
             ->selectRaw(
-                'COALESCE('.$al('al_b.compare_at_price').', '.$vl('vl_b.compare_at_price').') as buy_box_compare_at_price',
-                [$country->id, $country->id, 'active'],
+                'COALESCE('.$al('al_b.compare_at_price').', '.$vl('vl_b.compare_at_price').', '.$ml('ml_b.compare_at_price').') as buy_box_compare_at_price',
+                [$country->id, $country->id, 'active', $country->id],
             )
             // ── buy_box_shipping_label_en ──────────────────────────────────────────────
             ->selectRaw(
@@ -306,7 +326,7 @@ class ProductQueryService
                     ->where('pcs.country_id', $country->id)
                     ->where('pcs.is_available', true);
             })
-            // Include products that have an admin listing even without country settings
+            // Include products that have an admin or marketer listing even without country settings
             ->where(function ($q) use ($country) {
                 $q->whereNotNull('pcs.product_id')
                   ->orWhereExists(function ($sub) use ($country) {
@@ -317,6 +337,18 @@ class ProductQueryService
                           ->where('al_check.country_id', $country->id)
                           ->where('al_check.status', 'active')
                           ->whereNull('al_check.deleted_at');
+                  })
+                  ->orWhereExists(function ($sub) use ($country) {
+                      $sub->select(DB::raw(1))
+                          ->from('marketer_listings as ml_check')
+                          ->join('product_variants as pv_check2', 'pv_check2.id', '=', 'ml_check.product_variant_id')
+                          ->join('marketers as mk_check', 'mk_check.id', '=', 'ml_check.marketer_id')
+                          ->whereColumn('pv_check2.product_id', 'products.id')
+                          ->where('ml_check.country_id', $country->id)
+                          ->where('ml_check.status', 'active')
+                          ->where('ml_check.listing_category', 'product')
+                          ->where('mk_check.global_status', 'active')
+                          ->whereNull('ml_check.deleted_at');
                   });
             })
             ->leftJoin('product_variants as pv', function ($j) {

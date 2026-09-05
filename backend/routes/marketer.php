@@ -5,6 +5,7 @@ use App\Http\Controllers\Marketer\CampaignController;
 use App\Http\Controllers\Marketer\DashboardController;
 use App\Http\Controllers\Marketer\InvitationController;
 use App\Http\Controllers\Marketer\ListingController;
+use App\Http\Controllers\Marketer\OrderController;
 use App\Http\Controllers\Marketer\ProfileController;
 use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
@@ -69,6 +70,12 @@ Route::middleware('web')->group(function () {
         // Samples
         Route::get('/samples',            [SampleController::class, 'index'])->name('samples.index');
         Route::post('/samples/{sample}/address', [SampleController::class, 'submitAddress'])->name('samples.address');
+
+        // Orders (read-only — via referral conversions)
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('/',           [OrderController::class, 'index'])->name('index');
+            Route::get('/{orderId}',  [OrderController::class, 'show'])->name('show');
+        });
 
         // Reports
         Route::get('/reports',            [ReportController::class, 'index'])->name('reports.index');

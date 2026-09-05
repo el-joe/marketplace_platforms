@@ -140,6 +140,12 @@ const ProductCard = ({ productData }: Props) => {
           ))}
         </Swiper>
       </div>
+      {/* admin listing badge */}
+      {productData.listing_type === "admin" && (
+        <span className="px-1 lg:px-2.5 text-[9px] md:text-xs text-yellow-600 font-bold uppercase tracking-wide">
+          Noon Express
+        </span>
+      )}
       {/* marketer attribution — outside the card Link to avoid nested anchors */}
       {"marketer" in productData && productData.marketer?.profile_url && (
         <a

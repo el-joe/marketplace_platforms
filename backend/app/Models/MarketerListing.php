@@ -12,9 +12,29 @@ class MarketerListing extends Model
 {
     use HasUuids, SoftDeletes;
 
+    /**
+     * MarketerListing fulfillment rules:
+     *
+     * Marketer listings do NOT have their own warehouse inventory.
+     * Stock is served from the CAMPAIGN's source listing:
+     *   - vendor_listing_id (via invitation.campaign) → VendorListing (FBN/FBM)
+     *   - admin_listing_id  (via invitation.campaign) → AdminListing  (Express FBN)
+     *
+     * When a customer places an order via a marketer referral link:
+     * 1. The order_item references the SOURCE listing (not the marketer listing)
+     * 2. The MarketerCampaignConversion is created linking order → invitation
+     * 3. Inventory is deducted from the campaign source listing's warehouse_inventories
+     * 4. The marketer listing price is shown on the storefront but the CART
+     *    resolves to the actual source listing at that price
+     *
+     * This means marketer listings NEVER appear in warehouse_inventories.
+     */
     protected $fillable = [
         'marketer_id',
         'product_variant_id',
+        'travel_package_id',
+        'classified_listing_id',
+        'listing_category',
         'country_id',
         'invitation_id',
         'price',
@@ -41,6 +61,7 @@ class MarketerListing extends Model
             'rating_avg'          => 'float',
             'total_sold'          => 'integer',
             'rating_count'        => 'integer',
+            'listing_category'    => 'string',
         ];
     }
 
@@ -66,6 +87,16 @@ class MarketerListing extends Model
         return $this->belongsTo(MarketerCampaignInvitation::class, 'invitation_id');
     }
 
+    public function travelPackage(): BelongsTo
+    {
+        return $this->belongsTo(TravelPackage::class, 'travel_package_id');
+    }
+
+    public function classifiedListing(): BelongsTo
+    {
+        return $this->belongsTo(ClassifiedListing::class, 'classified_listing_id');
+    }
+
     // ── Scopes ─────────────────────────────────────────────────────────────
 
     public function scopeActive($q)
@@ -83,6 +114,15 @@ class MarketerListing extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function getDisplayTitle(): string
+    {
+        return match ($this->listing_category ?? 'product') {
+            'travel'     => $this->travelPackage?->title_ar ?? '—',
+            'classified' => $this->classifiedListing?->title_ar ?? '—',
+            default      => $this->productVariant?->product?->name_ar ?? '—',
+        };
     }
 
     protected static function booted(): void
