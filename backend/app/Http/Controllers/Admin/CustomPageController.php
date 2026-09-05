@@ -216,7 +216,7 @@ class CustomPageController extends Controller
         $customPageModel = CustomPage::withoutTrashed()->findOrFail($customPage);
 
         $request->validate([
-            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:4096'],
         ]);
 
         DB::beginTransaction();

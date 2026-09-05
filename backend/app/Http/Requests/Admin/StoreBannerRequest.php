@@ -39,8 +39,8 @@ class StoreBannerRequest extends FormRequest
             'device_target' => ['required', Rule::enum(BannerDeviceTarget::class)],
             'audience' => ['required', Rule::enum(BannerAudience::class)],
             'priority' => ['nullable', 'integer', 'min:0'],
-            'desktop_image' => ['nullable', 'image', 'max:5120'],
-            'mobile_image' => ['nullable', 'image', 'max:5120'],
+            'desktop_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:5120'],
+            'mobile_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:5120'],
         ];
     }
 

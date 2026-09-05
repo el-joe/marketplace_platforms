@@ -365,7 +365,7 @@ class BannerController extends Controller
         abort_unless($admin->hasPermissionTo('banners.edit'), 403);
 
         $request->validate([
-            'image' => ['required', 'image', 'max:5120'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:5120'],
             'slot' => ['required', 'in:desktop,mobile'],
         ]);
 

@@ -1227,7 +1227,7 @@ class PageBuilderController extends Controller
         $this->authorizeManage();
 
         $request->validate([
-            'image' => ['required', 'image', 'max:8192'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
             'slot' => ['required', 'in:desktop,mobile'],
         ]);
 
@@ -1261,7 +1261,7 @@ class PageBuilderController extends Controller
         $this->authorizeManage();
 
         $request->validate([
-            'image' => ['required', 'image', 'max:8192'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
         ]);
 
         $uploaded = $request->file('image');
@@ -1293,7 +1293,7 @@ class PageBuilderController extends Controller
         $this->authorizeManage();
 
         $request->validate([
-            'image' => ['required', 'image', 'max:8192'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
         ]);
 
         $uploaded = $request->file('image');
@@ -1325,7 +1325,7 @@ class PageBuilderController extends Controller
         $this->authorizeManage();
 
         $request->validate([
-            'image' => ['required', 'image', 'max:8192'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:8192'],
         ]);
 
         $uploaded = $request->file('image');
