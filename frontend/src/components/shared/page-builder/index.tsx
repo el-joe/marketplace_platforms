@@ -2,6 +2,8 @@ import { cn } from "@/src/lib/utils";
 import Image from "next/image";
 import { PageBuilderSection } from "./types";
 import { blocks } from "./helpers/blocks-catalog";
+import { getLocale } from "next-intl/server";
+import { getLanguage } from "@/src/helpers/handleRegionAndLocal";
 
 const widthClasses: Record<string, string> = {
   "1/3": "w-1/3 flex-1",
@@ -12,13 +14,15 @@ const widthClasses: Record<string, string> = {
   full: "w-full flex-1",
 };
 
-export function DynamicLayout({ section }: { section: PageBuilderSection }) {
+export async function DynamicLayout({ section }: { section: PageBuilderSection }) {
   const widths = section.columns_config?.widths?.split(" ") ?? [];
+  const locale = getLanguage(await getLocale()) as "en" | "ar";
+  const bgImageUrl = section.background_image_url?.[locale] || section.background_image_url?.en;
 
   const hasHeaderBg =
-    section.background_image_type === "header" && section.background_image_url;
+    section.background_image_type === "header" && bgImageUrl;
   const hasSectionBg =
-    section.background_image_type === "section" && section.background_image_url;
+    section.background_image_type === "section" && bgImageUrl;
 
   return (
     <div className="container">
@@ -30,9 +34,7 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
         )}
         style={{
           backgroundColor: section.background_color ?? undefined,
-          backgroundImage: hasSectionBg
-            ? `url(${section.background_image_url})`
-            : undefined,
+          backgroundImage: hasSectionBg ? `url(${bgImageUrl})` : undefined,
           backgroundSize: "cover",
           backgroundPositionX: "center",
           backgroundRepeat: "no-repeat",
@@ -44,7 +46,7 @@ export function DynamicLayout({ section }: { section: PageBuilderSection }) {
         {hasHeaderBg && (
           <div className="relative h-20 lg:h-28">
             <Image
-              src={section?.background_image_url || ""}
+              src={bgImageUrl || ""}
               alt={section?.name}
               fill
               className="object-cover"

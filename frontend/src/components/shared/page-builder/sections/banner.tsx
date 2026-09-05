@@ -9,26 +9,19 @@ import useLocale from "@/src/hooks/use-locale";
 export const Banner = ({ data }: { data: Block }) => {
   const t = useTranslations();
   const locale = useLocale();
+  const imageUrl = data.banner?.image_url?.[locale] || data.banner?.image_url?.en;
+  const mobileImageUrl =
+    data.banner?.mobile_image_url?.[locale] || data.banner?.mobile_image_url?.en;
   // const aspectRatio = data.banner?.aspect_ratio.replace(":", "/") || "auto";
   // const mobileAspectRatio =
   //   data.banner?.mobile_aspect_ratio.replace(":", "/") || "auto";
   return (
     <Link href={data.banner?.link_url || "#"}>
       <picture>
-        <source
-          media="(min-width: 768px)"
-          srcSet={data.banner?.image_url || ""}
-        />
-        <source
-          media="(max-width: 767px)"
-          srcSet={data.banner?.mobile_image_url || ""}
-        />
+        <source media="(min-width: 768px)" srcSet={imageUrl || ""} />
+        <source media="(max-width: 767px)" srcSet={mobileImageUrl || ""} />
         <Image
-          src={
-            data.banner?.image_url ||
-            data.banner?.mobile_image_url ||
-            "/images/no-image-available-icon.jpg"
-          }
+          src={imageUrl || mobileImageUrl || "/images/no-image-available-icon.jpg"}
           alt={data?.banner?.alt_text?.[locale] || data?.banner?.alt_text?.en || ""}
           className={"object-cover responsive-ratio h-full max-h-100"}
           // style={

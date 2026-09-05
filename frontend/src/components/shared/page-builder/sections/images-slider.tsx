@@ -9,6 +9,7 @@ import { AdBadge } from "@/src/components/shared/ad-badge";
 import { chunks } from "../helpers/chunks-arr";
 import { Block } from "../types";
 import SectionTitle from "./section-title";
+import useLocale from "@/src/hooks/use-locale";
 
 const heights = {
   small: "min-h-[80px] max-h-[140px]",
@@ -23,6 +24,7 @@ const rounded = {
 } as const;
 
 export const ImagesSlider = ({ data }: { data: Block }) => {
+  const locale = useLocale();
   const chunksRows = chunks(data?.items || [], Number(data?.config?.rows) || 1);
   return (
     <div>
@@ -60,7 +62,7 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
                 )}
               >
                 <Image
-                  src={i.image_url || "/images/no-image-available-icon.jpg"}
+                  src={i.image_url?.[locale] || i.image_url?.en || "/images/no-image-available-icon.jpg"}
                   alt="category"
                   width={2400}
                   height={400}

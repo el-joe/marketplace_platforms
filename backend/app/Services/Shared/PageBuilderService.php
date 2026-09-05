@@ -193,13 +193,21 @@ class PageBuilderService
             $banner = Banner::with('files')->find($b->config['banner_id']);
 
             if ($banner) {
-                $desktopImage = $banner->files->firstWhere('file_type', 'banner_desktop');
-                $mobileImage  = $banner->files->firstWhere('file_type', 'banner_mobile');
+                $desktopImageEn = $banner->files->firstWhere('file_type', 'banner_desktop_en');
+                $desktopImageAr = $banner->files->firstWhere('file_type', 'banner_desktop_ar');
+                $mobileImageEn  = $banner->files->firstWhere('file_type', 'banner_mobile_en');
+                $mobileImageAr  = $banner->files->firstWhere('file_type', 'banner_mobile_ar');
 
-                if ($desktopImage) {
+                if ($desktopImageEn || $desktopImageAr) {
                     $data['banner'] = [
-                        'image_url'           => $desktopImage->full_path,
-                        'mobile_image_url'    => $mobileImage?->full_path,
+                        'image_url'           => [
+                            'en' => $desktopImageEn?->full_path,
+                            'ar' => $desktopImageAr?->full_path ?? $desktopImageEn?->full_path,
+                        ],
+                        'mobile_image_url'    => [
+                            'en' => $mobileImageEn?->full_path,
+                            'ar' => $mobileImageAr?->full_path ?? $mobileImageEn?->full_path,
+                        ],
                         'link_url'            => $banner->cta_url,
                         'link_type'           => $banner->link_type?->value,
                         'link_reference_id'   => $banner->link_reference_id,
@@ -253,8 +261,8 @@ class PageBuilderService
             $data['slides'] = $b->slides->map(fn($s) => [
                 'id' => $s->id,
                 'position' => $s->position,
-                'desktop_url' => $s->desktop_url,
-                'mobile_url' => $s->mobile_url,
+                'desktop_url' => Bilingual::pair($s, 'desktop_url'),
+                'mobile_url' => Bilingual::pair($s, 'mobile_url'),
                 'title' => Bilingual::pair($s, 'title'),
                 'subtitle' => Bilingual::pair($s, 'subtitle'),
                 'cta_label' => Bilingual::pair($s, 'cta_label'),
@@ -273,7 +281,7 @@ class PageBuilderService
             $data['items'] = $b->adImageItems->map(fn($i) => [
                 'id' => $i->id,
                 'position' => $i->position,
-                'url' => $i->file_url,
+                'url' => Bilingual::pair($i, 'file_url'),
                 'title' => Bilingual::pair($i, 'title'),
                 'link_url' => $i->link_url,
                 'link_open_new_tab' => $i->link_open_new_tab,
@@ -409,7 +417,7 @@ class PageBuilderService
                 ->orderBy('position')
                 ->get()
                 ->map(fn ($img) => [
-                    'image_url' => $img->file_url,
+                    'image_url' => Bilingual::pair($img, 'file_url'),
                     'link_url'  => $img->link_url,
                     'title'     => ['ar' => $img->title_ar, 'en' => $img->title_en],
                     'subtitle'  => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],
@@ -436,8 +444,10 @@ class PageBuilderService
             $data['tiles']   = collect($cfg['tiles'] ?? [])->map(fn ($tile) => [
                 'label'        => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
                 'badge'        => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
-                'image_url'    => $tile['image_url'] ?? null,
-                'image_url_ar' => $tile['image_url_ar'] ?? null,
+                'image_url'    => [
+                    'en' => $tile['image_url_en'] ?? $tile['image_url'] ?? null,
+                    'ar' => $tile['image_url_ar'] ?? ($tile['image_url_en'] ?? $tile['image_url'] ?? null),
+                ],
                 'link_url'     => $tile['link_url'] ?? null,
                 'is_paid'      => (bool) ($tile['is_paid'] ?? false),
             ])->all();
@@ -449,7 +459,7 @@ class PageBuilderService
             $data['columns']      = 3;
             $data['aspect_ratio'] = $cfg['aspect_ratio'] ?? '4:3';
             $data['images']       = $b->adImageItems->take(3)->map(fn ($img) => [
-                'image_url' => $img->file_url,
+                'image_url' => Bilingual::pair($img, 'file_url'),
                 'link_url'  => $img->link_url,
                 'title'     => ['ar' => $img->title_ar, 'en' => $img->title_en],
                 'subtitle'  => ['ar' => $img->subtitle_ar, 'en' => $img->subtitle_en],

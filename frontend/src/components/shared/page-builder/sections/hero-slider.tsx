@@ -19,7 +19,11 @@ export default function HeroSlider({ data }: Props) {
     const slide = data?.slides?.[0];
     if (!slide) return null;
 
-    const imageUrl = slide.desktop_url || slide.mobile_url;
+    const imageUrl =
+      slide.desktop_url?.[locale] ||
+      slide.desktop_url?.en ||
+      slide.mobile_url?.[locale] ||
+      slide.mobile_url?.en;
     if (!imageUrl) return null;
 
     const inner = (
@@ -70,7 +74,10 @@ export default function HeroSlider({ data }: Props) {
       slidesPerView={1.2}
       breakpoints={{ 768: { spaceBetween: 0, slidesPerView: 1 } }}
     >
-      {data?.slides?.map((banner) => (
+      {data?.slides?.map((banner) => {
+        const desktopUrl = banner?.desktop_url?.[locale] || banner?.desktop_url?.en;
+        const mobileUrl = banner?.mobile_url?.[locale] || banner?.mobile_url?.en;
+        return (
         <SwiperSlide key={banner.id} className="h-auto! max-h-100">
           <Link
             href={banner?.cta_url || "#"}
@@ -80,22 +87,14 @@ export default function HeroSlider({ data }: Props) {
             <picture>
               <source
                 media="(min-width: 768px)"
-                srcSet={
-                  banner?.desktop_url || "/images/no-image-available-icon.jpg"
-                }
+                srcSet={desktopUrl || "/images/no-image-available-icon.jpg"}
               />
               <source
                 media="(max-width: 767px)"
-                srcSet={
-                  banner?.mobile_url || "/images/no-image-available-icon.jpg"
-                }
+                srcSet={mobileUrl || "/images/no-image-available-icon.jpg"}
               />
               <Image
-                src={
-                  banner?.desktop_url ||
-                  banner?.mobile_url ||
-                  "/images/no-image-available-icon.jpg"
-                }
+                src={desktopUrl || mobileUrl || "/images/no-image-available-icon.jpg"}
                 alt={banner?.title?.[locale] || banner?.title?.en || ""}
                 className={"object-cover responsive-ratio h-full max-h-100"}
                 // style={
@@ -111,7 +110,8 @@ export default function HeroSlider({ data }: Props) {
             {banner?.is_paid && <AdBadge />}
           </Link>
         </SwiperSlide>
-      ))}
+        );
+      })}
     </Swiper>
   );
 }

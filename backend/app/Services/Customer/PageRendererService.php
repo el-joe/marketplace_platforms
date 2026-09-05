@@ -149,7 +149,7 @@ class PageRendererService
                         ? json_decode($section->columns_config, true)
                         : $section->columns_config,
                     'background_color'     => $section->background_color,
-                    'background_image_url' => $section->background_image_url,
+                    'background_image_url' => Bilingual::pair($section, 'background_image_url'),
                     'padding_top'          => (int) $section->padding_top,
                     'padding_bottom'       => (int) $section->padding_bottom,
                     'max_width'            => $section->max_width,
@@ -170,7 +170,7 @@ class PageRendererService
                     'layout'               => 'stack',
                     'columns_config'       => null,
                     'background_color'     => null,
-                    'background_image_url' => null,
+                    'background_image_url' => ['ar' => null, 'en' => null],
                     'padding_top'          => 0,
                     'padding_bottom'       => 0,
                     'max_width'            => null,
@@ -350,10 +350,10 @@ class PageRendererService
                 'is_announcement' => (bool) ($cfg['is_announcement'] ?? false),
             ],
             // desktop_file_id/mobile_file_id are intentionally NEVER exposed —
-            // only their resolved URLs (see SliderSlide::getDesktopUrlAttribute()).
+            // only their resolved URLs (see SliderSlide::getDesktopUrlEnAttribute() etc.).
             'slides' => $slides->map(fn($s) => [
-                'desktop_image_url' => $s->desktop_url,
-                'mobile_image_url' => $s->mobile_url,
+                'desktop_image_url' => Bilingual::pair($s, 'desktop_url'),
+                'mobile_image_url' => Bilingual::pair($s, 'mobile_url'),
                 'title' => Bilingual::pair($s, 'title'),
                 'subtitle' => Bilingual::pair($s, 'subtitle'),
                 'cta_label' => Bilingual::pair($s, 'cta_label'),
@@ -396,7 +396,10 @@ class PageRendererService
 
         return [
             'video_url' => $cfg['video_url'] ?? null,
-            'poster_url' => $cfg['poster_url'] ?? null,
+            'poster_url' => [
+                'en' => $cfg['poster_url_en'] ?? $cfg['poster_url'] ?? null,
+                'ar' => $cfg['poster_url_ar'] ?? ($cfg['poster_url_en'] ?? $cfg['poster_url'] ?? null),
+            ],
             'autoplay' => (bool) ($cfg['autoplay'] ?? false),
             'muted' => (bool) ($cfg['muted'] ?? true),
         ];
@@ -757,7 +760,7 @@ class PageRendererService
             'title' => Bilingual::pairFromKeys($cfg, 'title_ar', 'title_en'),
             'aspect_ratio' => $cfg['aspect_ratio'] ?? null,
             'items' => $items->map(fn($i) => [
-                'image_url' => $i->file_url,
+                'image_url' => Bilingual::pair($i, 'file_url'),
                 'title' => Bilingual::pair($i, 'title'),
                 'link_url' => $i->link_url,
                 'link_open_new_tab' => (bool) $i->link_open_new_tab,
@@ -784,16 +787,24 @@ class PageRendererService
             return null;
         }
 
-        $desktopImage = $banner->files->firstWhere('file_type', 'banner_desktop');
-        $mobileImage = $banner->files->firstWhere('file_type', 'banner_mobile');
+        $desktopImageEn = $banner->files->firstWhere('file_type', 'banner_desktop_en');
+        $desktopImageAr = $banner->files->firstWhere('file_type', 'banner_desktop_ar');
+        $mobileImageEn = $banner->files->firstWhere('file_type', 'banner_mobile_en');
+        $mobileImageAr = $banner->files->firstWhere('file_type', 'banner_mobile_ar');
 
-        if (!$desktopImage) {
+        if (!$desktopImageEn && !$desktopImageAr) {
             return null;
         }
 
         return [
-            'image_url' => $desktopImage->full_path,
-            'mobile_image_url' => $mobileImage?->full_path,
+            'image_url' => [
+                'en' => $desktopImageEn?->full_path,
+                'ar' => $desktopImageAr?->full_path ?? $desktopImageEn?->full_path,
+            ],
+            'mobile_image_url' => [
+                'en' => $mobileImageEn?->full_path,
+                'ar' => $mobileImageAr?->full_path ?? $mobileImageEn?->full_path,
+            ],
             'link_url' => $banner->cta_url,
             'link_type' => $banner->link_type?->value,
             'link_reference_id' => $banner->link_reference_id,
@@ -1028,7 +1039,10 @@ class PageRendererService
         $tiles = collect($cfg['tiles'] ?? [])->map(fn ($tile) => [
             'label'          => ['ar' => $tile['label_ar'] ?? null,      'en' => $tile['label_en'] ?? null],
             'badge'          => ['ar' => $tile['badge_label_ar'] ?? null, 'en' => $tile['badge_label_en'] ?? null],
-            'image_url'      => $tile['image_url'] ?? null,
+            'image_url'      => [
+                'en' => $tile['image_url_en'] ?? $tile['image_url'] ?? null,
+                'ar' => $tile['image_url_ar'] ?? ($tile['image_url_en'] ?? $tile['image_url'] ?? null),
+            ],
             'link_url'       => $tile['link_url'] ?? null,
             'is_paid'        => (bool) ($tile['is_paid'] ?? false),
         ])->all();
@@ -1055,7 +1069,7 @@ class PageRendererService
             ->orderBy('position')
             ->get()
             ->map(fn ($img) => [
-                'image_url'      => $img->file_url,
+                'image_url'      => Bilingual::pair($img, 'file_url'),
                 'link_url'       => $img->link_url,
                 'link_new_tab'   => (bool) $img->link_open_new_tab,
                 'title'          => ['ar' => $img->title_ar,    'en' => $img->title_en],

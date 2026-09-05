@@ -76,8 +76,8 @@ export interface BlockConfig {
 export interface Slide {
   id: string;
   position: number;
-  desktop_url: string;
-  mobile_url: string;
+  desktop_url: Name;
+  mobile_url: Name;
   title: Name;
   subtitle: Name;
   cta_label: Name;
@@ -92,8 +92,8 @@ export interface Slide {
 }
 
 export interface Banner {
-  image_url: string;
-  mobile_image_url: string;
+  image_url: Name;
+  mobile_image_url: Name;
   link_url: string;
   link_type: string;
   link_reference_id: null | string;
@@ -106,7 +106,7 @@ export interface ConfigTile {
   label_ar: null | string;
   label_en: null | string;
   link_url: string;
-  image_url: string;
+  image_url_en: string;
   image_url_ar: null | string;
   badge_label_ar: null | string;
   badge_label_en: null | string;
@@ -115,21 +115,20 @@ export interface ConfigTile {
 export interface ColumnTile {
   label: Name;
   badge: Name;
-  image_url: string;
-  image_url_ar: string | null;
+  image_url: Name;
   link_url: string;
   is_paid?: boolean;
 }
 
 export interface BlockItem {
-  image_url: string;
+  image_url: Name;
   link_url: string;
   title: Name;
   subtitle: Name;
   badge: Name;
   id: string;
   position: number;
-  url: string;
+  url: Name;
   link_open_new_tab: boolean;
   alt_text: Name;
   show_title_overlay: boolean;
@@ -155,7 +154,7 @@ export interface PageBuilderSection {
   layout: "stack" | "columns";
   columns_config: ColumnsConfig | null;
   background_color: null | string;
-  background_image_url: null | string;
+  background_image_url: Name;
   background_image_type?: "section" | "header";
   max_width: null | string;
   padding_top: number;

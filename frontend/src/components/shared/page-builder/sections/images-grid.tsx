@@ -26,9 +26,9 @@ export default function ImagesGrid({ data }: { data: Block }) {
         {isPromoTiles
           ? data.tiles?.map((item, i) => {
               const imgSrc =
-                locale === "ar"
-                  ? item?.image_url_ar || item?.image_url || "/images/no-image-available-icon.jpg"
-                  : item?.image_url || "/images/no-image-available-icon.jpg";
+                item?.image_url?.[locale] ||
+                item?.image_url?.en ||
+                "/images/no-image-available-icon.jpg";
 
               return (
                 <Link
@@ -66,7 +66,7 @@ export default function ImagesGrid({ data }: { data: Block }) {
                 key={i}
               >
                 <Image
-                  src={item?.url || "/images/no-image-available-icon.jpg"}
+                  src={item?.url?.[locale] || item?.url?.en || "/images/no-image-available-icon.jpg"}
                   alt={locale === "ar" ? item?.alt_text?.ar || "" : item?.alt_text?.en || ""}
                   width={1200}
                   height={800}
