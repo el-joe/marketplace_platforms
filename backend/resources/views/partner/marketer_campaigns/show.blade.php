@@ -199,7 +199,7 @@
                                     $ist = $invStatusMap[$invitation->status] ?? ['label' => $invitation->status, 'cls' => 'bg-gray-100 text-gray-600'];
                                 @endphp
                                 <tr>
-                                    <td class="px-4 py-3 font-medium text-gray-900">{{ $invitation->marketer?->store_name ?? '—' }}</td>
+                                    <td class="px-4 py-3 font-medium text-gray-900">{{ $invitation->marketer?->name ?? '—' }}</td>
                                     <td class="px-4 py-3 text-gray-600">{{ $invitation->marketer?->marketer_type ? __('partner.marketer_types.' . $invitation->marketer->marketer_type) : '—' }}</td>
                                     <td class="px-4 py-3">
                                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $ist['cls'] }}">
@@ -311,7 +311,7 @@
                     <tbody class="divide-y divide-gray-100">
                         @foreach ($marketerSamples as $sample)
                             <tr>
-                                <td class="px-4 py-2 font-medium text-gray-900">{{ $sample->invitation?->marketer?->store_name ?? '—' }}</td>
+                                <td class="px-4 py-2 font-medium text-gray-900">{{ $sample->invitation?->marketer?->name ?? '—' }}</td>
                                 <td class="px-4 py-2">{{ $sample->quantity }}</td>
                                 <td class="px-4 py-2">{{ $sample->status }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>

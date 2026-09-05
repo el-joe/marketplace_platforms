@@ -64,7 +64,6 @@ class AuthController extends Controller
                     'logo_url'      => $vendor->logo_url,
                     'global_status' => $vendor->global_status,
                     'vendor_type'   => $vendor->vendor_type,
-                    'marketer_type' => $vendor->marketer_type,
                     'country'       => $vendor->country ? [
                         'name'          => $vendor->country->name_en,
                         'currency_code' => $vendor->country->currency_code,

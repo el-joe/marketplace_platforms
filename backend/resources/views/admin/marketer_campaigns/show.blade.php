@@ -436,6 +436,7 @@
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_marketer') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_quantity') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_status') }}</th>
+                            <th class="py-2 pr-4">عنوان التوصيل</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_dispatched_at') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_delivered_at') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_change_status') }}</th>
@@ -459,6 +460,25 @@
                                             default      => $sample->status,
                                         } }}
                                     </x-badge>
+                                </td>
+                                <td class="py-2 pr-4 text-xs text-gray-600 max-w-xs">
+                                    @if($sample->sample_owner === 'marketer' && $sample->delivery_address_snapshot)
+                                        <div class="space-y-0.5">
+                                            <div class="font-medium">{{ $sample->delivery_address_snapshot['address_line_1'] ?? '' }}</div>
+                                            @if(!empty($sample->delivery_address_snapshot['address_line_2']))
+                                                <div>{{ $sample->delivery_address_snapshot['address_line_2'] }}</div>
+                                            @endif
+                                            <div>{{ $sample->delivery_address_snapshot['city'] ?? '' }}, {{ $sample->delivery_address_snapshot['country'] ?? '' }}</div>
+                                            <div class="text-blue-600">{{ $sample->delivery_address_snapshot['phone'] ?? '' }}</div>
+                                            @if(!empty($sample->delivery_address_snapshot['notes']))
+                                                <div class="text-gray-400 italic">{{ $sample->delivery_address_snapshot['notes'] }}</div>
+                                            @endif
+                                        </div>
+                                    @elseif($sample->sample_owner === 'marketer' && !$sample->delivery_address_snapshot)
+                                        <span class="text-amber-600 font-semibold">⚠ لم يُسجَّل عنوان بعد</span>
+                                    @else
+                                        <span class="text-gray-300">—</span>
+                                    @endif
                                 </td>
                                 <td class="py-2 pr-4">{{ $sample->dispatched_at?->format('d M Y H:i') ?? '—' }}</td>
                                 <td class="py-2 pr-4">{{ $sample->delivered_at?->format('d M Y H:i') ?? '—' }}</td>

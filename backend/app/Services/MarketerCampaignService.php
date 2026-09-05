@@ -23,6 +23,7 @@ use App\Notifications\Vendor\CampaignAutoApprovedNotification;
 use App\Notifications\Vendor\CampaignDoneNotification;
 use App\Notifications\Vendor\CampaignPendingAdminNotification;
 use App\Notifications\Vendor\CampaignRejectedNotification;
+use App\Notifications\Vendor\MarketerReplacedNotification as VendorMarketerReplacedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -419,7 +420,7 @@ class MarketerCampaignService
         $newInvitation->update(['replaced_invitation_id' => $oldInvitation->id]);
 
         $campaign->vendor->vendorAdmins->each(
-            fn ($va) => $va->notify(new MarketerReplacedNotification($oldInvitation))
+            fn ($va) => $va->notify(new VendorMarketerReplacedNotification($campaign, $oldMarketer, $replacement))
         );
     }
 

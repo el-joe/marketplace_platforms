@@ -287,12 +287,12 @@ class CampaignController extends Controller
 
         $validated = $request->validate([
             'marketer_ids'   => 'required|array|min:1|max:50',
-            'marketer_ids.*' => 'uuid|exists:vendors,id',
+            'marketer_ids.*' => 'uuid|exists:marketers,id',
             'vendor_note'    => 'nullable|string|max:1000',
         ]);
 
-        $activeMarketers = \App\Models\Vendor::whereIn('id', $validated['marketer_ids'])
-            ->whereNotNull('marketer_type')
+        $activeMarketers = \App\Models\Marketer::whereIn('id', $validated['marketer_ids'])
+            ->where('global_status', 'active')
             ->pluck('id')
             ->all();
 
@@ -345,19 +345,19 @@ class CampaignController extends Controller
         $type = $request->input('type');
 
         return response()->json(
-            \App\Models\Vendor::whereNotNull('marketer_type')
-                ->where(fn($query) => $query
+            \App\Models\Marketer::where('global_status', 'active')
+                ->where(fn ($query) => $query
                     ->where('name', 'like', "%{$q}%")
-                    ->orWhere('store_name', 'like', "%{$q}%"))
-                ->when($type, fn($q, $t) => $q->where('marketer_type', $t))
-                ->select(['id', 'name', 'store_name', 'marketer_type', 'commission_rate'])
+                    ->orWhere('email', 'like', "%{$q}%"))
+                ->when($type, fn ($query, $t) => $query->where('marketer_type', $t))
+                ->select(['id', 'name', 'email', 'marketer_type'])
                 ->limit(20)
                 ->get()
-                ->map(fn($m) => [
+                ->map(fn ($m) => [
                     'id'             => $m->id,
-                    'name'           => $m->store_name ?: $m->name,
-                    'type'           => ucfirst($m->marketer_type ?? ''),
-                    'avatar_initial' => mb_substr($m->store_name ?: $m->name, 0, 1),
+                    'name'           => $m->name,
+                    'type'           => $m->isInfluencer() ? 'مؤثر' : 'أفيليت',
+                    'avatar_initial' => mb_substr($m->name, 0, 1),
                 ])
         );
     }

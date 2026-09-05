@@ -86,7 +86,7 @@ class CampaignController extends Controller
             ->where('travel_agency_id', $this->agencyId())
             ->with([
                 'packages.package:id,title_ar,title_en,destination_country,destination_city,currency,price',
-                'invitations.marketer:id,name,store_name,marketer_type',
+                'invitations.marketer:id,name,email,marketer_type',
                 'invitations.resultingCampaign:id,status',
             ])
             ->firstOrFail();
@@ -127,7 +127,7 @@ class CampaignController extends Controller
                 'invitations' => $offer->invitations->map(fn ($i) => [
                     'id'              => $i->id,
                     'status'          => $i->status,
-                    'marketer_name'   => $i->marketer?->store_name ?: $i->marketer?->name,
+                    'marketer_name'   => $i->marketer?->name,
                     'marketer_type'   => $i->marketer?->marketer_type,
                     'responded_at'    => $i->responded_at?->toIso8601String(),
                     'campaign_status' => $i->resultingCampaign?->status,

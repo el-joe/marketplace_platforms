@@ -16,7 +16,7 @@ class CampaignInvitationAcceptedNotification extends BaseDatabaseBroadcastNotifi
 
     public function notificationData(object $notifiable): array
     {
-        $marketerName = $this->invitation->marketer?->store_name;
+        $marketerName = $this->invitation->marketer?->name;
 
         return [
             'title'          => 'قبول دعوة الحملة',

@@ -13,12 +13,10 @@ class OrderDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         $conversion = MarketerCampaignConversion::where('order_id', $this->id)
-            ->with('invitation.marketer:id,store_slug,store_name')
+            ->with('invitation.marketer:id,name')
             ->first();
 
-        $marketerRef = $conversion?->invitation?->marketer
-            ? ($conversion->invitation->marketer->store_slug ?? $conversion->invitation->marketer->store_name)
-            : null;
+        $marketerRef = $conversion?->invitation?->marketer?->name;
 
         return [
             'order_number' => $this->order_number,

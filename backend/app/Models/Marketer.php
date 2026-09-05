@@ -72,6 +72,11 @@ class Marketer extends Model
         return $this->hasMany(MarketerCampaignInvitation::class, 'marketer_id');
     }
 
+    public function campaignInvitations(): HasMany
+    {
+        return $this->hasMany(MarketerCampaignInvitation::class, 'marketer_id');
+    }
+
     // ── Type helpers ───────────────────────────────────────────────────────
 
     public function isInfluencer(): bool

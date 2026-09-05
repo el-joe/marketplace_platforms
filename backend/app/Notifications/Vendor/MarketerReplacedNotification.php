@@ -2,17 +2,17 @@
 
 namespace App\Notifications\Vendor;
 
+use App\Models\Marketer;
 use App\Models\MarketerCampaign;
-use App\Models\Vendor;
-use App\Notifications\BaseDatabaseBroadcastNotification;
 use App\Models\VendorAdmin;
+use App\Notifications\BaseDatabaseBroadcastNotification;
 
 class MarketerReplacedNotification extends BaseDatabaseBroadcastNotification
 {
     public function __construct(
         private readonly MarketerCampaign $campaign,
-        private readonly Vendor $oldMarketer,
-        private readonly Vendor $newMarketer,
+        private readonly Marketer $oldMarketer,
+        private readonly Marketer $newMarketer,
     ) {}
 
     public function notificationType(): string
@@ -22,23 +22,16 @@ class MarketerReplacedNotification extends BaseDatabaseBroadcastNotification
 
     public function notificationData(object $notifiable): array
     {
-        $vendorId = $notifiable instanceof VendorAdmin ? $notifiable->vendor_id : null;
-
-        if ($vendorId === $this->oldMarketer->id) {
-            $message = "تم استبدالك في حملة \"{$this->campaign->title}\" بماركتر آخر.";
-        } elseif ($vendorId === $this->newMarketer->id) {
-            $message = "تمت دعوتك للانضمام لحملة \"{$this->campaign->title}\".";
-        } else {
-            $message = "تم العثور على ماركتر بديل لحملتك.";
-        }
+        // This notification goes to the VENDOR (campaign owner), not the marketer
+        $message = "تم العثور على ماركتر بديل لحملتك \"{$this->campaign->title}\".";
 
         return [
             'title'             => 'استبدال الماركتر',
             'message'           => $message,
             'url'               => route('partner.marketer-campaigns.show', $this->campaign->id),
             'campaign_id'       => $this->campaign->id,
-            'old_marketer_name' => $this->oldMarketer->store_name,
-            'new_marketer_name' => $this->newMarketer->store_name,
+            'old_marketer_name' => $this->oldMarketer->name,
+            'new_marketer_name' => $this->newMarketer->name,
         ];
     }
 
