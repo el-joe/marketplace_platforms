@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Models\Attribute;
+use App\Models\AttributeValue;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\CategoryAttribute;
@@ -327,6 +328,16 @@ class ProductController extends Controller
 
         $variants->each(function (ProductVariant $variant) use ($variantImageCounts) {
             $variant->images_count = (int) ($variantImageCounts[$variant->id] ?? 0);
+            $variant->attribute_values = $variant->variantAttributeValues()
+                ->with('attribute')
+                ->get()
+                ->map(fn (AttributeValue $value) => [
+                    'attr_id' => $value->attribute_id,
+                    'attr_name' => $value->attribute?->name_en,
+                    'value_id' => $value->id,
+                    'value_name' => $value->value_en,
+                ])
+                ->values();
         });
 
         $images = ProductImage::query()->from('product_images as pi')

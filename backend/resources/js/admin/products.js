@@ -71,11 +71,14 @@ function parseUploadServerId(response) {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function () {
+    window.__variantRowAttributes = Object.assign({}, window.__initialVariantAttributes || {});
+
     initCharCounters();
     initGtinCheck();
     initCategoryAttributes();
     initGenerateVariants();
     initVariantTableEvents();
+    initBulkUploadModal();
     initCountryToggles();
     initSeoPreview();
     initFilePond();
@@ -316,6 +319,9 @@ function renderVariantRows(variants) {
             if (!isNaN(idx) && window.__pendingVariantImages) {
                 delete window.__pendingVariantImages[idx];
             }
+            if (!isNaN(idx) && window.__variantRowAttributes) {
+                delete window.__variantRowAttributes[idx];
+            }
             $row.remove();
             return;
         }
@@ -330,6 +336,8 @@ function renderVariantRows(variants) {
         const i = nextIndex++;
         const key = variantComboKey(v);
         $tbody.append(buildVariantRowHtml(i, key, Object.assign({}, v, { is_default: isFirstAppended })));
+        window.__variantRowAttributes = window.__variantRowAttributes || {};
+        window.__variantRowAttributes[i] = v.attributes || [];
         isFirstAppended = false;
     });
 
@@ -345,7 +353,15 @@ function renderVariantRows(variants) {
 function initVariantTableEvents() {
     // Remove row
     $(document).on('click', '.remove-variant-row', function () {
-        $(this).closest('tr.variant-row').remove();
+        const $row = $(this).closest('tr.variant-row');
+        const idx = $row.attr('data-row-index');
+
+        if (idx !== undefined) {
+            if (window.__pendingVariantImages) delete window.__pendingVariantImages[idx];
+            if (window.__variantRowAttributes) delete window.__variantRowAttributes[idx];
+        }
+
+        $row.remove();
         reindexVariantRows();
         if ($('#variants-tbody tr.variant-row').length === 0) {
             $('#no-variants-msg').removeClass('hidden');
@@ -391,7 +407,8 @@ function initVariantTableEvents() {
 }
 
 function reindexVariantRows() {
-    const remapped = {};
+    const remappedImages = {};
+    const remappedAttrs = {};
 
     $('#variants-tbody tr.variant-row').each(function (i) {
         const $row = $(this);
@@ -407,13 +424,160 @@ function reindexVariantRows() {
         $row.find('.variant-image-ids-container').attr('data-index', i);
 
         if (oldIndex !== undefined && window.__pendingVariantImages && window.__pendingVariantImages[oldIndex]) {
-            remapped[i] = window.__pendingVariantImages[oldIndex];
+            remappedImages[i] = window.__pendingVariantImages[oldIndex];
+        }
+        if (oldIndex !== undefined && window.__variantRowAttributes && window.__variantRowAttributes[oldIndex]) {
+            remappedAttrs[i] = window.__variantRowAttributes[oldIndex];
         }
     });
 
     if (window.__pendingVariantImages) {
-        window.__pendingVariantImages = remapped;
+        window.__pendingVariantImages = remappedImages;
     }
+    if (window.__variantRowAttributes) {
+        window.__variantRowAttributes = remappedAttrs;
+    }
+}
+
+// ─── Bulk upload variant images ──────────────────────────────────────────────
+
+function initBulkUploadModal() {
+    $(document).on('click', '#bulk-upload-variant-images-btn', function () {
+        openBulkUploadModal();
+    });
+
+    $(document).on('click', '#bulk-upload-close, #bulk-upload-cancel, #bulk-upload-backdrop', function () {
+        closeBulkUploadModal();
+    });
+
+    $(document).on('click', '#bulk-upload-apply', function () {
+        applyBulkUpload($(this));
+    });
+}
+
+function openBulkUploadModal() {
+    const $target = $('#bulk-upload-target');
+    $target.find('option:not([value="all"])').remove();
+
+    const seen = new Set();
+    $('#variants-tbody tr.variant-row').each(function () {
+        const idx = $(this).attr('data-row-index');
+        const attrs = (window.__variantRowAttributes && window.__variantRowAttributes[idx]) || [];
+        attrs.forEach(function (a) {
+            if (seen.has(a.value_id)) return;
+            seen.add(a.value_id);
+            $target.append(
+                '<option value="' + esc(a.value_id) + '">' + esc(a.attr_name) + ': ' + esc(a.value_name) + '</option>'
+            );
+        });
+    });
+
+    $('#bulk-upload-files').val('');
+    $('#bulk-upload-status').addClass('hidden').text('');
+    $('#bulk-upload-apply').prop('disabled', false);
+    $('#bulk-upload-modal').removeClass('hidden').addClass('flex');
+}
+
+function closeBulkUploadModal() {
+    $('#bulk-upload-modal').addClass('hidden').removeClass('flex');
+}
+
+function applyBulkUpload($btn) {
+    const T = window.TRANSLATIONS || {};
+    const files = document.getElementById('bulk-upload-files').files;
+
+    if (!files || files.length === 0) {
+        window.Toast && window.Toast.warning(T.selectImagesFirst || 'Choose at least one image first.');
+        return;
+    }
+
+    const target = $('#bulk-upload-target').val();
+
+    const $rows = $('#variants-tbody tr.variant-row').filter(function () {
+        if (target === 'all') return true;
+        const idx = $(this).attr('data-row-index');
+        const attrs = (window.__variantRowAttributes && window.__variantRowAttributes[idx]) || [];
+        return attrs.some(function (a) { return String(a.value_id) === String(target); });
+    });
+
+    if ($rows.length === 0) {
+        window.Toast && window.Toast.warning(T.noMatchingVariants || 'No variants match that selection.');
+        return;
+    }
+
+    const $status = $('#bulk-upload-status').removeClass('hidden');
+    const total = $rows.length;
+    let completed = 0;
+
+    const progressText = function () {
+        return (T.bulkUploadProgress || 'Uploading images… ({done}/{total})')
+            .replace('{done}', completed)
+            .replace('{total}', total);
+    };
+
+    $btn.prop('disabled', true);
+    $status.text(progressText());
+
+    const uploadForRow = function ($row) {
+        const $imgBtn = $row.find('.manage-variant-images');
+        const isPending = !!$imgBtn.data('pending');
+        const formData = new FormData();
+        Array.from(files).forEach(function (file) { formData.append('images[]', file); });
+
+        if (!isPending) {
+            formData.append('variant_id', $imgBtn.data('variant-id'));
+        }
+
+        return $.ajax({
+            url: window.__productImagesUploadUrl,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        }).done(function (res) {
+            const ids = res.ids || [];
+            const urls = res.urls || [];
+
+            if (isPending) {
+                const idx = $imgBtn.data('variant-index');
+                window.__pendingVariantImages = window.__pendingVariantImages || {};
+                window.__pendingVariantImages[idx] = window.__pendingVariantImages[idx] || [];
+                ids.forEach(function (id, i) {
+                    window.__pendingVariantImages[idx].push({ id: id, url: urls[i], is_primary: false });
+                });
+                syncPendingVariantImageInputs(idx);
+            } else {
+                const $count = $imgBtn.find('.variant-images-count');
+                $count.text((parseInt($count.text(), 10) || 0) + ids.length);
+            }
+        }).always(function () {
+            completed++;
+            $status.text(progressText());
+        });
+    };
+
+    // Sequential (not parallel) so upload progress stays readable and the server
+    // isn't hit with N × files.length simultaneous multipart requests.
+    let chain = $.Deferred().resolve().promise();
+    $rows.each(function () {
+        const $row = $(this);
+        chain = chain.then(function () {
+            return uploadForRow($row);
+        });
+    });
+
+    chain
+        .done(function () {
+            window.Toast && window.Toast.success(T.bulkUploadSuccess || 'Images applied to the selected variants.');
+            closeBulkUploadModal();
+        })
+        .fail(function () {
+            window.Toast && window.Toast.error(T.bulkUploadFailed || 'Some images failed to upload.');
+        })
+        .always(function () {
+            $btn.prop('disabled', false);
+        });
 }
 
 // ─── Highlights repeater ──────────────────────────────────────────────────────

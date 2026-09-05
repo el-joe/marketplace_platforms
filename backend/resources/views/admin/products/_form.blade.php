@@ -317,12 +317,19 @@
                         @endif
                     </div>
 
-                    {{-- Generate button --}}
-                    <button type="button" id="generate-variants-btn"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100 transition-colors">
-                        <x-heroicon name="cube" class="w-4 h-4" />
-                        {{ __('admin.products.generate_combinations') }}
-                    </button>
+                    {{-- Generate / bulk-upload buttons --}}
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" id="generate-variants-btn"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary-300 bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100 transition-colors">
+                            <x-heroicon name="cube" class="w-4 h-4" />
+                            {{ __('admin.products.generate_combinations') }}
+                        </button>
+                        <button type="button" id="bulk-upload-variant-images-btn"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors">
+                            <x-heroicon name="photo" class="w-4 h-4" />
+                            {{ __('admin.products.bulk_upload_images') ?? 'Bulk upload images' }}
+                        </button>
+                    </div>
 
                     {{-- Variants table --}}
                     <div class="overflow-x-auto rounded-xl border border-gray-200">
@@ -344,7 +351,7 @@
                             <tbody id="variants-tbody" class="divide-y divide-gray-100">
                                 @if($isEdit)
                                 @foreach($variants ?? [] as $vi => $variant)
-                                <tr class="variant-row hover:bg-gray-50">
+                                <tr class="variant-row hover:bg-gray-50" data-row-index="{{ $vi }}">
                                     <td class="px-4 py-3 font-medium text-gray-800">
                                         <button type="button" class="view-variant-detail hover:underline hover:text-primary-700 text-start"
                                             data-variant-id="{{ $variant->id }}"
@@ -448,6 +455,11 @@
                         </div>
                     </div>
                     <p class="text-xs text-gray-400">{{ __('admin.products.slug_help') }}</p>
+                    <script>
+                        window.__initialVariantAttributes = @json(
+                            collect($variants ?? [])->mapWithKeys(fn ($variant, $vi) => [$vi => $variant->attribute_values ?? []])
+                        );
+                    </script>
                 </div>
             </div>
 
@@ -550,6 +562,42 @@
                                 </p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Bulk upload variant images modal --}}
+            <div id="bulk-upload-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+                <div id="bulk-upload-backdrop" class="absolute inset-0 bg-black/40"></div>
+                <div class="relative bg-white w-full max-w-md rounded-xl shadow-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-800">{{ __('admin.products.bulk_upload_images') ?? 'Bulk upload images' }}</h3>
+                        <button type="button" id="bulk-upload-close" class="text-gray-400 hover:text-gray-600">
+                            <x-heroicon name="x-mark" class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-gray-500">
+                        {{ __('admin.products.bulk_upload_hint') ?? 'Apply the same images to every variant, or only to variants matching a specific attribute value (e.g. all "Black" variants).' }}
+                    </p>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.products.apply_to') ?? 'Apply to' }}</label>
+                        <select id="bulk-upload-target" class="form-select text-sm w-full">
+                            <option value="all">{{ __('admin.products.all_variants') ?? 'All variants' }}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.products.images') ?? 'Images' }}</label>
+                        <input type="file" id="bulk-upload-files" multiple accept="image/jpeg,image/png,image/webp" class="block w-full text-sm" />
+                    </div>
+
+                    <p id="bulk-upload-status" class="text-xs text-gray-400 hidden"></p>
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" id="bulk-upload-cancel" class="btn btn-outline btn-sm">{{ __('admin.cancel') ?? 'Cancel' }}</button>
+                        <button type="button" id="bulk-upload-apply" class="btn btn-primary btn-sm">{{ __('admin.products.upload_and_apply') ?? 'Upload & apply' }}</button>
                     </div>
                 </div>
             </div>
