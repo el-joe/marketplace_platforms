@@ -14,6 +14,9 @@ return new class extends Migration
         });
 
         Schema::table('marketer_campaign_invitations', function (Blueprint $table) {
+            if(!Schema::hasColumn('marketer_campaign_invitations', 'marketer_id')) {
+                $table->unsignedBigInteger('marketer_id')->after('id');
+            }
             $table->foreign('marketer_id')->references('id')->on('marketers')->cascadeOnDelete();
         });
     }
