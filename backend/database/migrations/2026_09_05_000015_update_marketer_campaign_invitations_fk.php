@@ -9,8 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('marketer_campaign_invitations', function (Blueprint $table) {
-            $table->dropForeign(['marketer_vendor_id']);
-            $table->renameColumn('marketer_vendor_id', 'marketer_id');
+            if(Schema::hasColumn('marketer_campaign_invitations', 'marketer_vendor_id')) {
+                $table->dropForeign(['marketer_vendor_id']);
+                $table->renameColumn('marketer_vendor_id', 'marketer_id');
+            }
         });
 
         Schema::table('marketer_campaign_invitations', function (Blueprint $table) {
