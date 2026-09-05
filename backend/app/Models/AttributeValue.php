@@ -18,7 +18,7 @@ class AttributeValue extends Model
         'value_ar',
         'value_en',
         'slug',
-        'color_hex',
+        'code_hex',
         'sort_order',
         'swatch_image_path',
     ];

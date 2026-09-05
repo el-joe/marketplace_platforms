@@ -300,16 +300,14 @@
                         <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.products.variant_attributes') }}</h4>
                         <div id="variant-attributes-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             @foreach($categoryAttributes ?? [] as $attr)
-                            <label class="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
-                                <input
-                                    type="checkbox"
-                                    name="variant_attributes[]"
-                                    value="{{ $attr->id }}"
-                                    class="rounded border-gray-300 text-primary-600 variant-attr-cb"
-                                    {{ in_array($attr->id, $existingAttrValues ?? []) ? 'checked' : '' }}
-                                />
-                                {{ $attr->name_en }}
-                            </label>
+                            <div class="variant-attr-group" data-attr-id="{{ $attr->id }}">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ $attr->name_en }}</label>
+                                <select multiple data-select2-init class="variant-attr-values w-full" data-attr-id="{{ $attr->id }}">
+                                    @foreach($attr->values ?? [] as $val)
+                                    <option value="{{ $val->id }}" {{ in_array($val->id, $existingAttrValues ?? []) ? 'selected' : '' }}>{{ $val->value_en }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             @endforeach
                         </div>
                         @if(empty($categoryAttributes))

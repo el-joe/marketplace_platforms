@@ -169,7 +169,7 @@
                             </div>
                             <div class="col-span-1" x-show="attrType === 'color'">
                                 <label class="text-xs font-medium text-gray-600">{{ __('admin.attributes_section.hex_color') }}</label>
-                                <input type="color" name="values[0][color_hex]" class="w-full h-9 mt-1 rounded border border-gray-300 cursor-pointer" value="#000000" />
+                                <input type="color" name="values[0][code_hex]" class="w-full h-9 mt-1 rounded border border-gray-300 cursor-pointer" value="#000000" />
                             </div>
                             <div class="col-span-1 flex items-end pb-0.5">
                                 <button type="button" class="remove-value-row text-gray-300 hover:text-red-500 transition-colors" title="{{ __('admin.remove') }}">
@@ -206,9 +206,9 @@
                             <span class="flex-1 text-sm text-gray-800">{{ $val->value_en }}</span>
                             <span class="text-sm text-gray-400" dir="rtl">{{ $val->value_ar }}</span>
                             <span class="text-xs font-mono text-gray-400 value-slug" title="{{ __('admin.attributes_section.slug') }}">{{ $val->slug }}</span>
-                            @if($attribute->type === \App\Enums\AttributeType::Color && $val->color_hex)
+                            @if($attribute->type === \App\Enums\AttributeType::Color && $val->code_hex)
                             <span class="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0"
-                                style="background:{{ $val->color_hex }}"></span>
+                                style="background:{{ $val->code_hex }}"></span>
                             @endif
                             <button type="button"
                                 class="edit-value-btn text-xs text-primary-600 hover:underline"
@@ -216,7 +216,7 @@
                                 data-value-en="{{ $val->value_en }}"
                                 data-value-ar="{{ $val->value_ar }}"
                                 data-slug="{{ $val->slug }}"
-                                data-color-hex="{{ $val->color_hex }}"
+                                data-color-hex="{{ $val->code_hex }}"
                                 data-regenerate-url="{{ route('admin.attributes.values.regenerate-variant-slugs', [$attribute->id, $val->id]) }}">
                                 {{ __('common.edit') }}
                             </button>

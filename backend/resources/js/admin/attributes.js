@@ -87,7 +87,7 @@ function initCreateValueRows() {
                 </div>
                 <div class="col-span-3" ${isColor ? '' : 'style="display:none"'}>
                     <label class="text-xs font-medium text-gray-600">${esc(t('admin.attributes.hex_color_label'))}</label>
-                    <input type="color" name="values[${idx}][color_hex]" class="w-full h-9 mt-1 rounded border border-gray-300 cursor-pointer" value="#000000" />
+                    <input type="color" name="values[${idx}][code_hex]" class="w-full h-9 mt-1 rounded border border-gray-300 cursor-pointer" value="#000000" />
                 </div>
                 <input type="hidden" name="values[${idx}][sort_order]" value="${idx}" />
                 <div class="col-span-1 flex items-end pb-0.5">
@@ -129,7 +129,7 @@ function initEditValueActions() {
         $.ajax({
             url: window.ROUTES_ATTR_EDIT.storeValue,
             method: 'POST',
-            data: JSON.stringify({ value_en: valueEn, value_ar: valueAr || null, slug: slug || null, color_hex: colorHex || null }),
+            data: JSON.stringify({ value_en: valueEn, value_ar: valueAr || null, slug: slug || null, code_hex: colorHex || null }),
             contentType: 'application/json',
             headers: { 'X-CSRF-TOKEN': csrfToken() },
         }).done(function (res) {
@@ -209,7 +209,7 @@ function initEditValueActions() {
                 value_en: newEn.trim(),
                 value_ar: newAr?.trim() || null,
                 slug: newSlug.trim() || null,
-                color_hex: colorHex || null,
+                code_hex: colorHex || null,
             }),
             contentType: 'application/json',
             headers: { 'X-CSRF-TOKEN': csrfToken() },
@@ -348,14 +348,14 @@ function buildValueRow(v) {
             <span class="flex-1 text-sm text-gray-800">${esc(v.value_en)}</span>
             <span class="text-sm text-gray-400" dir="rtl">${esc(v.value_ar ?? '')}</span>
             <span class="text-xs font-mono text-gray-400 value-slug">${esc(v.slug ?? '')}</span>
-            ${v.color_hex ? `<span class="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style="background:${esc(v.color_hex)}"></span>` : ''}
+            ${v.code_hex ? `<span class="w-5 h-5 rounded-full border border-gray-200 flex-shrink-0" style="background:${esc(v.code_hex)}"></span>` : ''}
             <button type="button"
                 class="edit-value-btn text-xs text-primary-600 hover:underline"
                 data-id="${esc(v.id)}"
                 data-value-en="${esc(v.value_en)}"
                 data-value-ar="${esc(v.value_ar ?? '')}"
                 data-slug="${esc(v.slug ?? '')}"
-                data-color-hex="${esc(v.color_hex ?? '')}"
+                data-color-hex="${esc(v.code_hex ?? '')}"
                 data-regenerate-url="${esc(regenerateUrl)}">${esc(T().edit || 'Edit')}</button>
             <button type="button"
                 class="delete-value-btn text-xs text-red-500 hover:underline"

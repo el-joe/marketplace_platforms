@@ -349,6 +349,16 @@ class ProductController extends Controller
                 ->select('a.id', 'a.name_en')
                 ->orderBy('a.sort_order')
                 ->get();
+
+            $valuesByAttr = DB::table('attribute_values')
+                ->whereIn('attribute_id', $categoryAttributes->pluck('id'))
+                ->orderBy('sort_order')
+                ->get(['id', 'attribute_id', 'value_en'])
+                ->groupBy('attribute_id');
+
+            $categoryAttributes->each(function ($attr) use ($valuesByAttr) {
+                $attr->values = $valuesByAttr->get($attr->id) ?? collect();
+            });
         }
 
         $existingAttrValueIds = ProductVariantAttribute::query()
@@ -518,11 +528,11 @@ class ProductController extends Controller
 
     public function generateVariants(Request $request): JsonResponse
     {
-        $request->validate(['attribute_ids' => 'required|array|min:1']);
+        $request->validate(['value_ids' => 'required|array|min:1']);
 
         $grouped = Attribute::query()->from('attributes as a')
             ->join('attribute_values as av', 'av.attribute_id', '=', 'a.id')
-            ->whereIn('a.id', $request->input('attribute_ids'))
+            ->whereIn('av.id', $request->input('value_ids'))
             ->select('a.id as attr_id', 'a.name_en as attr_name', 'av.id as value_id', 'av.value_en as value_name')
             ->orderBy('a.sort_order')
             ->orderBy('av.sort_order')

@@ -273,7 +273,7 @@ class AttributeController extends Controller
                 'value_en' => $request->value_en,
                 'value_ar' => $request->value_ar,
                 'slug' => $slug,
-                'color_hex' => $request->color_hex,
+                'code_hex' => $request->code_hex,
                 'sort_order' => (int) ($request->sort_order ?? 0),
                 'upload_swatch_url' => route('admin.attributes.values.upload-swatch', [$attribute, $id]),
                 'delete_swatch_url' => route('admin.attributes.values.delete-swatch', [$attribute, $id]),
@@ -286,7 +286,7 @@ class AttributeController extends Controller
         $request->validate([
             'value_en' => 'required|string|max:255',
             'value_ar' => 'nullable|string|max:255',
-            'color_hex' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'code_hex' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'sort_order' => 'nullable|integer|min:0',
             'slug' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+$/', Rule::unique('attribute_values', 'slug')->ignore($value)],
         ]);
@@ -305,7 +305,7 @@ class AttributeController extends Controller
             'value_en' => $request->value_en,
             'value_ar' => $request->value_ar ?: null,
             'slug' => $slug,
-            'color_hex' => $request->color_hex ?: null,
+            'code_hex' => $request->code_hex ?: null,
             'sort_order' => (int) ($request->sort_order ?? 0),
         ]);
 

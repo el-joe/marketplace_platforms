@@ -291,7 +291,24 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
                 ->select('a.id', 'a.name_en')
                 ->orderBy('a.sort_order')
                 ->get();
-            return response()->json(['data' => $attrs]);
+
+            $valuesByAttr = DB::table('attribute_values')
+                ->whereIn('attribute_id', $attrs->pluck('id'))
+                ->orderBy('sort_order')
+                ->get(['id', 'attribute_id', 'value_en'])
+                ->groupBy('attribute_id');
+
+            $data = $attrs->map(function ($a) use ($valuesByAttr) {
+                return [
+                    'id' => $a->id,
+                    'name_en' => $a->name_en,
+                    'values' => ($valuesByAttr->get($a->id) ?? collect())
+                        ->map(fn ($v) => ['id' => $v->id, 'value_en' => $v->value_en])
+                        ->values(),
+                ];
+            });
+
+            return response()->json(['data' => $data]);
         })->name('attributes');
 
     });

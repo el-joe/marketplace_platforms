@@ -153,8 +153,13 @@ function initCategoryAttributes() {
     // Use Select2 change event bubbled to hidden input
     $(document).on('change', '[name="category_id"]', function () {
         const catId = $(this).val();
+        const $container = $('#variant-attributes-container');
+
         if (!catId) {
-            $('#variant-attributes-container').empty();
+            $container.find('[data-select2-init]').each(function () {
+                try { $(this).select2('destroy'); } catch (_) { /* not initialized */ }
+            });
+            $container.empty();
             return;
         }
 
@@ -162,7 +167,10 @@ function initCategoryAttributes() {
 
         $.get(url).done(function (res) {
             const attrs = res.data ?? [];
-            const $container = $('#variant-attributes-container');
+
+            $container.find('[data-select2-init]').each(function () {
+                try { $(this).select2('destroy'); } catch (_) { /* not initialized */ }
+            });
             $container.empty();
 
             if (attrs.length === 0) {
@@ -172,14 +180,23 @@ function initCategoryAttributes() {
             }
 
             attrs.forEach(function (attr) {
+                const options = (attr.values || []).map(function (v) {
+                    return '<option value="' + esc(v.id) + '">' + esc(v.value_en) + '</option>';
+                }).join('');
+
                 $container.append(
-                    '<label class="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">' +
-                    '<input type="checkbox" name="variant_attributes[]" value="' + esc(attr.id) + '" ' +
-                    'class="rounded border-gray-300 text-primary-600 variant-attr-cb" />' +
-                    esc(attr.name_en) +
-                    '</label>'
+                    '<div class="variant-attr-group" data-attr-id="' + esc(attr.id) + '">' +
+                    '<label class="block text-xs font-medium text-gray-500 mb-1">' + esc(attr.name_en) + '</label>' +
+                    '<select multiple data-select2-init class="variant-attr-values w-full" data-attr-id="' + esc(attr.id) + '">' +
+                    options +
+                    '</select>' +
+                    '</div>'
                 );
             });
+
+            if (window.initSelect2) {
+                window.initSelect2($container);
+            }
         });
     });
 }
@@ -189,13 +206,15 @@ function initCategoryAttributes() {
 function initGenerateVariants() {
     $(document).on('click', '#generate-variants-btn', function () {
         const T = window.TRANSLATIONS || {};
-        const attrIds = [];
-        document.querySelectorAll('.variant-attr-cb:checked').forEach(function (cb) {
-            attrIds.push(cb.value);
+        const valueIds = [];
+        document.querySelectorAll('.variant-attr-values').forEach(function (sel) {
+            ($(sel).val() || []).forEach(function (v) {
+                valueIds.push(v);
+            });
         });
 
-        if (attrIds.length === 0) {
-            window.Toast && window.Toast.warning(T.selectVariantAttributeFirst || 'Select at least one variant attribute first.');
+        if (valueIds.length === 0) {
+            window.Toast && window.Toast.warning(T.selectVariantAttributeFirst || 'Select at least one attribute value first.');
             return;
         }
 
@@ -204,7 +223,7 @@ function initGenerateVariants() {
         $.ajax({
             url: window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '') + '/generate-variants',
             method: 'POST',
-            data: { attribute_ids: attrIds },
+            data: { value_ids: valueIds },
         })
             .done(function (res) {
                 renderVariantRows(res.data ?? []);
@@ -218,26 +237,21 @@ function initGenerateVariants() {
     });
 }
 
-function renderVariantRows(variants) {
-    const $tbody = $('#variants-tbody');
-    $tbody.empty();
-    window.__pendingVariantImages = {};
+function variantComboKey(v) {
+    return (v.attributes || [])
+        .map(function (a) { return a.value_id; })
+        .slice()
+        .sort()
+        .join('|');
+}
 
-    if (variants.length === 0) {
-        $('#no-variants-msg').removeClass('hidden');
-        return;
-    }
-
-    $('#no-variants-msg').addClass('hidden');
-
+function buildVariantRowHtml(i, key, v) {
     const T = window.TRANSLATIONS || {};
     const skuPlaceholder = esc(T.skuAutoGeneratePlaceholder || 'Auto-generate');
     const removeLabel = esc(T.removeLabel || 'Remove');
 
-    variants.forEach(function (v) {
-        const i = v.index;
-        const row = `
-<tr class="variant-row hover:bg-gray-50">
+    return `
+<tr class="variant-row hover:bg-gray-50" data-row-index="${i}" data-combo-key="${esc(key)}">
   <td class="px-4 py-3 font-medium text-gray-800">${esc(v.name)}</td>
   <td class="px-4 py-3"><input type="text" name="variants[${i}][sku]" value="${esc(v.sku)}" placeholder="${skuPlaceholder}" class="form-input text-sm py-1.5 w-full" /></td>
   <td class="px-4 py-3"><input type="text" name="variants[${i}][slug]" value="${esc(v.slug || '')}" maxlength="255" class="form-input text-sm py-1.5 w-full variant-slug-input" /></td>
@@ -271,8 +285,59 @@ function renderVariantRows(variants) {
     </button>
   </td>
 </tr>`;
-        $tbody.append(row);
+}
+
+// Syncs the variants table against a freshly generated combination set: rows whose
+// combination is no longer selected are removed, rows whose combination is still
+// selected are left untouched (keeping any entered SKU/barcode/pending images), and
+// only genuinely new combinations get appended as new rows.
+function renderVariantRows(variants) {
+    const $tbody = $('#variants-tbody');
+
+    const incoming = new Map();
+    variants.forEach(function (v) {
+        incoming.set(variantComboKey(v), v);
     });
+
+    let nextIndex = 0;
+    $tbody.find('tr.variant-row[data-row-index]').each(function () {
+        const idx = parseInt($(this).attr('data-row-index'), 10);
+        if (!isNaN(idx) && idx >= nextIndex) nextIndex = idx + 1;
+    });
+
+    $tbody.find('tr.variant-row').each(function () {
+        const $row = $(this);
+        const key = $row.attr('data-combo-key');
+
+        // Rows with no tracked combination key (e.g. server-rendered saved variants
+        // on the edit page) are always replaced on regenerate — unchanged behavior.
+        if (key === undefined || !incoming.has(key)) {
+            const idx = parseInt($row.attr('data-row-index'), 10);
+            if (!isNaN(idx) && window.__pendingVariantImages) {
+                delete window.__pendingVariantImages[idx];
+            }
+            $row.remove();
+            return;
+        }
+
+        incoming.delete(key);
+    });
+
+    const hadNoRows = $tbody.find('tr.variant-row').length === 0;
+    let isFirstAppended = hadNoRows;
+
+    incoming.forEach(function (v) {
+        const i = nextIndex++;
+        const key = variantComboKey(v);
+        $tbody.append(buildVariantRowHtml(i, key, Object.assign({}, v, { is_default: isFirstAppended })));
+        isFirstAppended = false;
+    });
+
+    if ($tbody.find('tr.variant-row').length === 0) {
+        $('#no-variants-msg').removeClass('hidden');
+    } else {
+        $('#no-variants-msg').addClass('hidden');
+    }
 }
 
 // ─── Variant table: row remove + default radio sync ──────────────────────────
@@ -326,12 +391,29 @@ function initVariantTableEvents() {
 }
 
 function reindexVariantRows() {
+    const remapped = {};
+
     $('#variants-tbody tr.variant-row').each(function (i) {
-        $(this).find('input[name^="variants["]').each(function () {
+        const $row = $(this);
+        const oldIndex = $row.attr('data-row-index');
+
+        $row.find('input[name^="variants["]').each(function () {
             this.name = this.name.replace(/variants\[\d+\]/, 'variants[' + i + ']');
         });
-        $(this).find('[name="variants_default"]').val(i);
+        $row.find('[name="variants_default"]').val(i);
+
+        $row.attr('data-row-index', i);
+        $row.find('.manage-variant-images').attr('data-variant-index', i);
+        $row.find('.variant-image-ids-container').attr('data-index', i);
+
+        if (oldIndex !== undefined && window.__pendingVariantImages && window.__pendingVariantImages[oldIndex]) {
+            remapped[i] = window.__pendingVariantImages[oldIndex];
+        }
     });
+
+    if (window.__pendingVariantImages) {
+        window.__pendingVariantImages = remapped;
+    }
 }
 
 // ─── Highlights repeater ──────────────────────────────────────────────────────
