@@ -3,10 +3,14 @@
 <form data-config-form data-block-id="{{ $block?->id }}">
     @csrf
 
-    <div class="grid grid-cols-2 gap-3">
-        <x-form.input name="title_en" label="Title (EN)" :value="$config['title_en'] ?? ''" dir="ltr" />
-        <x-form.input name="title_ar" label="Title (AR)" :value="$config['title_ar'] ?? ''" dir="rtl" />
-    </div>
+    <x-form.lang-tabs id="image-slider-lang-tabs">
+        <x-slot:en>
+            <x-form.input name="title_en" label="Title (EN)" :value="$config['title_en'] ?? ''" dir="ltr" />
+        </x-slot:en>
+        <x-slot:ar>
+            <x-form.input name="title_ar" label="Title (AR)" :value="$config['title_ar'] ?? ''" dir="rtl" />
+        </x-slot:ar>
+    </x-form.lang-tabs>
 
     {{-- Row 1: Columns + Rows --}}
     <div class="grid grid-cols-2 gap-3 mt-3">

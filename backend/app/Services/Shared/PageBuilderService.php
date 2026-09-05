@@ -119,13 +119,14 @@ class PageBuilderService
                 return [
                     'id'                   => $section->id,
                     'name'                 => $section->name,
+                    'name_i18n'            => Bilingual::pair($section, 'name'),
                     'position'             => $section->position,
                     'layout'               => 'columns',
                     'columns_config'       => is_string($section->columns_config)
                         ? json_decode($section->columns_config, true)
                         : $section->columns_config,
                     'background_color'     => $section->background_color,
-                    'background_image_url' => $section->background_image_url,
+                    'background_image_url' => Bilingual::pair($section, 'background_image_url'),
                     'background_image_type' => $section->background_image_type ?? 'section',
                     'columns'              => $columns,   // array of column arrays
                     'blocks'               => [],         // empty for column-layout sections
@@ -136,13 +137,14 @@ class PageBuilderService
             return [
                 'id'               => $section->id,
                 'name'             => $section->name,
+                'name_i18n'        => Bilingual::pair($section, 'name'),
                 'position'         => $section->position,
                 'layout'           => 'stack',
                 'columns_config'   => is_string($section->columns_config)
                     ? json_decode($section->columns_config, true)
                     : $section->columns_config,
                 'background_color'     => $section->background_color,
-                'background_image_url' => $section->background_image_url,
+                'background_image_url' => Bilingual::pair($section, 'background_image_url'),
                 'background_image_type' => $section->background_image_type ?? 'section',
                 'columns'          => [],
                 'blocks'           => $sectionBlocks
