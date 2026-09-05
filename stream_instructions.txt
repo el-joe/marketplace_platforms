@@ -113,12 +113,12 @@ Step 2 — Create a new VirtualHost for the WebSocket subdomain.
 
 Step 3 — Enable the site and obtain SSL cert:
 
-  sudo certbot --apache -d ws.yourdomain.com
-  sudo a2ensite ws.yourdomain.com.conf
+  sudo certbot --apache -d ws.noon.codefanz.com
+  sudo a2ensite ws.noon.codefanz.com.conf
   sudo systemctl reload apache2
 
 Step 4 — Verify proxy works:
-  curl -I https://ws.yourdomain.com/
+  curl -I https://ws.noon.codefanz.com
   Should return 200 or 426 Upgrade Required.
 
 ───────────────────────────────────────────────────────────────────
@@ -172,21 +172,21 @@ Edit /etc/turnserver.conf:
 
   listening-port=3478
   tls-listening-port=5349
-  listening-ip=<YOUR_VPS_PUBLIC_IP>
-  external-ip=<YOUR_VPS_PUBLIC_IP>
-  realm=yourdomain.com
-  server-name=yourdomain.com
+  listening-ip=37.60.228.240
+  external-ip=37.60.228.240
+  realm=noon.codefanz.com
+  server-name=noon.codefanz.com
   lt-cred-mech
-  user=streamuser:YourStrongPassword123
+  user=streamuser:I3YF8zyAiqGCBddzBx1C3UqbRjEie7OH
   log-file=/var/log/turnserver.log
   no-multicast-peers
   fingerprint
   min-port=50000
   max-port=60000
 
-  # TLS cert (reuse your main domain cert or ws subdomain cert)
-  cert=/etc/letsencrypt/live/yourdomain.com/fullchain.pem
-  pkey=/etc/letsencrypt/live/yourdomain.com/privkey.pem
+  # Reusing the ws.noon.codefanz.com cert already issued via certbot
+  cert=/etc/letsencrypt/live/ws.noon.codefanz.com/fullchain.pem
+  pkey=/etc/letsencrypt/live/ws.noon.codefanz.com/privkey.pem
 
 Enable and start:
 
@@ -394,6 +394,7 @@ the current mesh approach handles typical load.
 ───────────────────────────────────────────────────────────────────
 SECTION 10 — DEPLOYMENT CHECKLIST
 ───────────────────────────────────────────────────────────────────
+grep NEXT_PUBLIC_API_PUBLIC_URL /var/www/codefanz.com/marketplace_platforms/frontend/.env.local /var/www/codefanz.com/marketplace_platforms/frontend/.env.production 2>/dev/null
 
 Backend:
   [ ] composer require laravel/reverb
