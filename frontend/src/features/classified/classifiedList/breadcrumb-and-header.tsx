@@ -8,22 +8,26 @@ import useLocale from "@/src/hooks/use-locale";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import { Select } from "@/src/components/ui/base-inputs/select";
 import { IClassifiedCategoriesList } from "./helpers/types";
+import getSelectedCategoryTree from "./helpers/get-selected-categories-tree";
 
 interface BreadcrumbAndHeaderProps {
   totalCount: number;
   onSortChange?: (sort: string) => void;
-  category: IClassifiedCategoriesList | null;
+  selectedCtg: string | null;
+  categories: IClassifiedCategoriesList[];
 }
 
 export default function BreadcrumbAndHeader({
   totalCount = 0,
   onSortChange,
-  category,
+  selectedCtg,
+  categories,
 }: BreadcrumbAndHeaderProps) {
   const t = useTranslations("classified");
   const locale = useLocale();
   const [selectedSort, setSelectedSort] = useState("relevant");
 
+  const categoryTree = getSelectedCategoryTree(selectedCtg, categories);
   const SORT_OPTIONS = [
     { value: "relevant", label: t("sortRelevant") },
     { value: "newest", label: t("sortNewest") },
@@ -35,29 +39,24 @@ export default function BreadcrumbAndHeader({
     <div className="w-full mb-4">
       {/* Breadcrumb */}
       <Breadcrumb
-        list={
-          !!category
-            ? [
-                { label: t("home"), href: "/" },
-                { label: t("classifieds"), href: "/classified" },
-                {
-                  label: category?.name[locale],
-                  href: `/classified/${category?.id}`,
-                },
-              ]
-            : [
-                { label: t("home"), href: "/" },
-                { label: t("classifieds"), href: "/classified" },
-              ]
-        }
+        list={[
+          { label: t("home"), href: "/" },
+          { label: t("classifieds"), href: "/classified" },
+          ...categoryTree.map((cat) => ({
+            label: cat?.name[locale] as string,
+            href: `/classified/${cat?.id as string}`,
+          })),
+        ]}
       />
 
       {/* Title & Sort Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
         <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug">
-          {!!category?.name[locale]
+          {!!categoryTree[categoryTree.length - 1]?.name[locale]
             ? t("pageTitle", {
-                category: category?.name[locale],
+                category: categoryTree[categoryTree.length - 1]?.name[
+                  locale
+                ] as string,
                 count: totalCount.toLocaleString(),
               })
             : t("globalPageTitle", {

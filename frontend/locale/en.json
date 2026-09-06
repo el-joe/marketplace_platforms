@@ -752,7 +752,7 @@
         "topBrands": "Top Brands",
         "openSouq": "Open Souq",
         "travel": "Travel",
-      "marketers": "Marketers"
+        "marketers": "Marketers"
       }
     },
     "mobileNav": {
@@ -1042,6 +1042,7 @@
     "used": "Used",
     "gasoline": "Gasoline",
     "dealership": "Dealership",
-    "gccSpecs": "GCC Specs"
+    "gccSpecs": "GCC Specs",
+    "recommendedForYou": "Recommended For You"
   }
 }

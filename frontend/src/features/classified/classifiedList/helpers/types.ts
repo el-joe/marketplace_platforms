@@ -1,17 +1,15 @@
 import { Currency } from "@/src/features/noon/cart/types/recommendations.type";
 
 export interface IClassifiedsList {
-  category: null;
-  page_builder: null;
   listings: Listings;
 }
 
 export interface Listings {
-  items: Item[];
+  items: ClassifiedItem[];
   meta: Meta;
 }
 
-export interface Item {
+export interface ClassifiedItem {
   listing_id: string;
   listing_number: string;
   source_type: string;

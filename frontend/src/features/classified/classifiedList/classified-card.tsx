@@ -17,7 +17,7 @@ import {
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
 import Price from "@/src/components/shared/Price";
-import { Item } from "./helpers/types";
+import { ClassifiedItem } from "./helpers/types";
 import { Separator } from "@/src/components/ui/separator";
 import { Link } from "@/i18n/navigation";
 const specs = [
@@ -33,7 +33,7 @@ const specs = [
 ];
 
 interface ClassifiedCardProps {
-  listing: Item;
+  listing: ClassifiedItem;
 }
 
 export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
