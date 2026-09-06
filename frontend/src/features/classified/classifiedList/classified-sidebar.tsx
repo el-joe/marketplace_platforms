@@ -16,6 +16,11 @@ export default function ClassifiedSidebar({ categories, selectedCtg }: props) {
   const t = useTranslations("classified");
   const locale = useLocale();
   const [showMoreCategories, setShowMoreCategories] = useState(false);
+  const selectedAndHasChild = categories?.find(
+    (cat) =>
+      (cat.id === selectedCtg && cat.children && cat.children.length) ||
+      cat.children.find((child) => child.id === selectedCtg),
+  );
 
   return (
     <aside className="w-full lg:w-[280px] xl:w-[300px] shrink-0 space-y-4 hidden lg:block">
@@ -32,11 +37,19 @@ export default function ClassifiedSidebar({ categories, selectedCtg }: props) {
           >
             {t("allCategories")}
           </Link>
+          {selectedAndHasChild?.children && (
+            <Link
+              href={`/classified/${selectedAndHasChild.id}`}
+              className={`block text-gray-500 hover:text-blue-600 transition-colors ${selectedAndHasChild.id === selectedCtg ? "font-bold text-gray-900" : ""}`}
+            >
+              {selectedAndHasChild.name[locale]}
+            </Link>
+          )}
 
           {/* <div className="font-bold text-gray-900 pt-1">{t("autos")}</div> */}
 
           <div className="space-y-2 ps-2 pt-1">
-            {categories
+            {(selectedAndHasChild?.children || categories)
               .slice(0, showMoreCategories ? categories.length : 5)
               .map((cat) => (
                 <Link

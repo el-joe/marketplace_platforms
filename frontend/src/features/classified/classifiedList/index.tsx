@@ -8,6 +8,8 @@ import {
   getClassifiedCategoriesService,
   getClassifiedsService,
 } from "./api/get";
+import getSelectedCategoryTree from "./helpers/get-selected-categories-tree";
+import Image from "next/image";
 
 type ClassifiedsListProps = {
   categoryId?: string;
@@ -24,20 +26,12 @@ export default async function ClassifiedsList({
   const classifiedCategories = categories?.filter(
     (cat) => cat.type === "classified",
   );
-  const selectedCategory = categories?.find((cat) => cat.id === categoryId);
-  // const [listings, setListings] = useState(MOCK_LISTINGS);
-
-  // const handleSortChange = (sort: string) => {
-  //   let sorted = [...listings];
-  //   if (sort === "price_asc") {
-  //     sorted.sort((a, b) => a.price - b.price);
-  //   } else if (sort === "price_desc") {
-  //     sorted.sort((a, b) => b.price - a.price);
-  //   } else {
-  //     sorted = [...MOCK_LISTINGS];
-  //   }
-  //   setListings(sorted);
-  // };
+  const SelectedCategoryTree = getSelectedCategoryTree(
+    categoryId || null,
+    classifiedCategories || [],
+  );
+  const selectedCategory =
+    SelectedCategoryTree?.[SelectedCategoryTree.length - 1];
 
   return (
     <div className="bg-[#f8f9fa] min-h-screen py-4 sm:py-6">
@@ -48,14 +42,14 @@ export default async function ClassifiedsList({
         {/* Breadcrumb, Page Title & Sort Selector */}
         <BreadcrumbAndHeader
           totalCount={data?.listings?.meta?.total}
-          // onSortChange={handleSortChange}
-          category={selectedCategory || null}
+          selectedCtg={categoryId || null}
+          categories={classifiedCategories || []}
         />
 
         {/* Category Pills Bar */}
         <CategoryTags
           categories={classifiedCategories}
-          selectedCtg={categoryId || null}
+          selectedCtg={SelectedCategoryTree[0]?.id || null}
         />
 
         {/* Main 2-Column Responsive Layout */}
@@ -70,6 +64,15 @@ export default async function ClassifiedsList({
           <main className="flex-1 w-full min-w-0">
             {/* Active Filters Tag Bar */}
             <ActiveFiltersBar selectedCtg={selectedCategory || null} />
+            {data?.listings?.meta?.total === 0 && (
+              <Image
+                src="/images/no_products.jpg"
+                alt="No products found"
+                width={400}
+                height={400}
+                className="mx-auto mt-10"
+              />
+            )}
             {data?.listings?.items.map((listing) => (
               <ClassifiedCard key={listing.listing_id} listing={listing} />
             ))}
