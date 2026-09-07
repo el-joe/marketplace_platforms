@@ -5,7 +5,7 @@
     "noonCredits": "أرصدة نون",
     "warrantyClaims": "مطالبات الضمان",
     "locationButtonLabel": "اختر الموقع",
-    "otherLang": "العربية",
+    "otherLang": "english",
     "switchLangLabel": "التبديل الي اللغة العربية",
     "login": "تسجيل الدخول",
     "loginButtonLabel": "تسجيل الدخول",
@@ -13,17 +13,17 @@
     "orderLinkLabel": "الطلبات",
     "wishlist": "المفضلة",
     "wishlistLinkLabel": "المفضلة",
-    "cart": "السلة",
-    "cartLinkLabel": "السلة",
+    "cart": "عربة التسوق",
+    "cartLinkLabel": "عربة التسوق",
     "searchPlaceholder": "ابحث عن شيء ما",
-    "recentlySearched": "عمليات البحث الأخيرة",
-    "trendingSearches": "الأكثر بحثًا",
+    "recentlySearched": "اخر شيء تم البحث عنه",
+    "trendingSearches": "عمليات البحث الشائعة",
     "clearAll": "مسح الكل",
     "searchFor": "ابحث عن",
     "suggestions": "اقتراحات",
     "stores": "المتاجر",
     "products": "المنتجات",
-    "hi": "مرحبًا، {name}",
+    "hi": "هلا, {name}",
     "yourProfile": "ملفك الشخصي",
     "addresses": "العناوين",
     "returns": "المرتجعات",
@@ -44,7 +44,7 @@
       "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب."
     },
     "categoriesNav": {
-      "topBrands": "أفضل العلامات التجارية",
+      "topBrands": "أفضل الماركات",
       "openSouq": "المتجر المفتوح",
       "travel": "السفر",
       "marketers": "الماركترز"
@@ -93,12 +93,13 @@
     "moreReasonsToShop": "المزيد من أسباب التسوق",
     "megaDeals": "عروض ضخمة",
     "inFocus": "في الواجهة",
-    "allDeals": "جميع العروض",
+    "allDeals": "عرض الكل",
     "offersForYou": "عروض لك",
     "recommendedForYou": "موصى به لك",
     "maximizeYourSavings": "عزّز مدخراتك",
     "bestsellersForYou": "الأكثر مبيعًا لك",
-    "travelStore": "متجر السفر"
+    "travelStore": "متجر السفر",
+    "viewAll": "عرض الكل"
   },
   "productView": {
     "home": "الرئيسية",
@@ -752,7 +753,7 @@
         "topBrands": "أفضل العلامات التجارية",
         "openSouq": "المتجر المفتوح",
         "travel": "السفر",
-      "marketers": "الماركترز"
+        "marketers": "الماركترز"
       }
     },
     "mobileNav": {

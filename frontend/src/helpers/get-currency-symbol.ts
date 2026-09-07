@@ -1,5 +1,5 @@
 export const currencySymbols = {
-  AED: "د.إ",
+  AED: "",
   AFN: "Af",
   ALL: "Lek",
   AMD: "",

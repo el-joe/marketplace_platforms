@@ -12,7 +12,7 @@ const MegaDealsCard = ({ data }: { data: Product }) => {
     <div className="rounded-lg overflow-hidden w-[calc(100%/2-0.5rem)] bg-gray-2">
       <div className="bg-background relative">
         {/* badge */}
-        <div className="absolute top-0 right-0 md:relative md:ms-auto md:mb-1 bg-green-2 px-2 xl:px-3.5 xl:py-0.5 rounded-bl-lg w-fit text-white text-xs xl:text-sm line-clamp-1">
+        <div className="absolute top-0 right-0 md:relative md:ms-auto md:mb-1 bg-green-2 px-2 xl:px-3.5 xl:py-0.5 rounded-es-lg w-fit text-white text-xs xl:text-sm line-clamp-1">
           {data?.category_name?.[locale]}
         </div>
         {/* image */}

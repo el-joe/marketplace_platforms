@@ -75,41 +75,55 @@ export default function HeroSlider({ data }: Props) {
       breakpoints={{ 768: { spaceBetween: 0, slidesPerView: 1 } }}
     >
       {data?.slides?.map((banner) => {
-        const desktopUrl = banner?.desktop_url?.[locale] || banner?.desktop_url?.en;
-        const mobileUrl = banner?.mobile_url?.[locale] || banner?.mobile_url?.en;
+        const desktopUrl =
+          banner?.desktop_url?.[locale] || banner?.desktop_url?.en;
+        const mobileUrl =
+          banner?.mobile_url?.[locale] || banner?.mobile_url?.en;
         return (
-        <SwiperSlide key={banner.id} className="h-auto! max-h-100">
-          <Link
-            href={banner?.cta_url || "#"}
-            className="block relative h-full"
-            target={banner.cta_open_new_tab ? "_blank" : "_self"}
-          >
-            <picture>
-              <source
-                media="(min-width: 768px)"
-                srcSet={desktopUrl || "/images/no-image-available-icon.jpg"}
-              />
-              <source
-                media="(max-width: 767px)"
-                srcSet={mobileUrl || "/images/no-image-available-icon.jpg"}
-              />
-              <Image
-                src={desktopUrl || mobileUrl || "/images/no-image-available-icon.jpg"}
-                alt={banner?.title?.[locale] || banner?.title?.en || ""}
-                className={"object-cover responsive-ratio h-full max-h-100"}
-                // style={
-                //   {
-                //     "--banner-ratio": aspectRatio,
-                //     "--banner-mobile-ratio": mobileAspectRatio,
-                //   } as React.CSSProperties
-                // }
-                width={2400}
-                height={400}
-              />
-            </picture>
-            {banner?.is_paid && <AdBadge />}
-          </Link>
-        </SwiperSlide>
+          <SwiperSlide key={banner.id} className="h-auto! max-h-100">
+            <Link
+              href={banner?.cta_url || "#"}
+              className="block relative h-full"
+              target={banner.cta_open_new_tab ? "_blank" : "_self"}
+            >
+              <picture>
+                <source
+                  media="(min-width: 768px)"
+                  srcSet={
+                    desktopUrl ||
+                    mobileUrl ||
+                    "/images/no-image-available-icon.jpg"
+                  }
+                />
+                <source
+                  media="(max-width: 767px)"
+                  srcSet={
+                    mobileUrl ||
+                    desktopUrl ||
+                    "/images/no-image-available-icon.jpg"
+                  }
+                />
+                <Image
+                  src={
+                    desktopUrl ||
+                    mobileUrl ||
+                    "/images/no-image-available-icon.jpg"
+                  }
+                  alt={banner?.title?.[locale] || banner?.title?.en || ""}
+                  className={"object-cover responsive-ratio h-full max-h-100"}
+                  // style={
+                  //   {
+                  //     "--banner-ratio": aspectRatio,
+                  //     "--banner-mobile-ratio": mobileAspectRatio,
+                  //   } as React.CSSProperties
+                  // }
+                  width={2400}
+                  height={400}
+                />
+              </picture>
+              {banner?.is_paid && <AdBadge />}
+            </Link>
+          </SwiperSlide>
         );
       })}
     </Swiper>

@@ -58,12 +58,16 @@ export enum FulfillmentModel {
 }
 
 export interface ShippingBadge {
-  label_en: string;
-  label_ar: string;
+  label: {
+    ar: string;
+    en: string;
+  };
   color_hex: string;
   text_color_hex: string;
+  badge_image_url: string | null;
   delivery_days_min: number;
   delivery_days_max: number;
+  is_express: boolean;
 }
 
 export interface Vendor {

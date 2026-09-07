@@ -3,6 +3,7 @@ import { Button } from "@/src/components/ui/button";
 import React from "react";
 import useLocale from "@/src/hooks/use-locale";
 import { Name } from "@/types/globals";
+import { useTranslations } from "next-intl";
 
 type Props = {
   title: string | Name;
@@ -11,18 +12,19 @@ type Props = {
 
 const SectionTitle = ({ title, showVewAllButton }: Props) => {
   const locale = useLocale();
+  const t = useTranslations("home");
 
   const resolvedTitle =
     typeof title === "string"
       ? title
-      : (title as Name)?.[locale] ?? (title as Name)?.en ?? "";
+      : ((title as Name)?.[locale] ?? (title as Name)?.en ?? "");
 
   return (
     <div className="flex items-center justify-between my-4">
       <h2 className="text-light flex-1 font-bold text-lg md:text-xl xl:text-2xl">
         {resolvedTitle}
       </h2>
-      {showVewAllButton && <Button variant={"outline"}>View All</Button>}
+      {showVewAllButton && <Button variant={"outline"}>{t("viewAll")}</Button>}
     </div>
   );
 };

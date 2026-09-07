@@ -98,7 +98,8 @@
     "recommendedForYou": "Recommended for you",
     "maximizeYourSavings": "Maximize Your Savings",
     "bestsellersForYou": "bestsellers for you",
-    "travelStore": "Travel store"
+    "travelStore": "Travel store",
+    "viewAll": "View all"
   },
   "productView": {
     "home": "Home",
@@ -169,7 +170,8 @@
     "customersAlsoViewed": "Customer Also Viewed",
     "viewAllReviews": "View all reviews",
     "Qty": "Qty",
-    "allReviewsImages": "All reviews images"
+    "allReviewsImages": "All reviews images",
+    "day": "Day"
   },
   "profile": {
     "disputes": "Disputes",

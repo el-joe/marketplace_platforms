@@ -13,8 +13,8 @@ type Props = {
 };
 
 const sizes: Record<NonNullable<Props["size"]>, string> = {
-  sm: "p-1  w-9 h-9",
-  base: "p-2  w-12 h-12",
+  sm: "p-1 w-7 lg:w-9 h-7 lg:h-9",
+  base: "p-2  w-7 md:w-8 lg:w-12 h-7 md:h-8 lg:h-12",
   lg: "",
 };
 
@@ -42,7 +42,7 @@ export default function AddToCartButton({ listingId, size = "base" }: Props) {
     <Button
       variant={"outline"}
       className={cn(
-        "absolute bottom-1  lg:bottom-2 right-2 z-10 min-w-0! min-h-0! bg-gray-2 hover:bg-gray-2 group/cart hover:px-1",
+        "absolute bottom-1 lg:bottom-2 right-2 z-10 min-w-0! min-h-0! bg-gray-2 hover:bg-gray-2 group/cart hover:px-1",
         cartItem &&
           "bg-blue-2 text-white hover:bg-blue-2 hover:text-white border-0 pt-2! hover:w-28",
         sizes[size],
