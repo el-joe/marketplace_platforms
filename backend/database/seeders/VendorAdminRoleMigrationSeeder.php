@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\VendorAdmin;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -33,6 +34,10 @@ class VendorAdminRoleMigrationSeeder extends Seeder
                     $roleValue = $vendorAdmin->getRawOriginal('role');
                     $roleName = $roleMap[$roleValue] ?? null;
 
+                    if (! $roleName && Role::where('guard_name', 'vendor')->where('name', $roleValue)->exists()) {
+                        $roleName = $roleValue;
+                    }
+
                     if (! $roleName) {
                         continue;
                     }
@@ -40,7 +45,7 @@ class VendorAdminRoleMigrationSeeder extends Seeder
                     $vendorAdmin->assignRole($roleName);
                     $vendorAdmin->update([
                         'role' => $roleName,
-                        'is_owner' => $roleValue === 'owner',
+                        'is_owner' => in_array($roleValue, ['owner', 'vendor_owner'], true),
                     ]);
                 }
             });
