@@ -299,29 +299,13 @@ class VendorApplicationController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        // 1. Check onboarding completed
-        if (!$vendor->onboarding_completed_at) {
-            return response()->json(['message' => 'Vendor has not completed onboarding.'], 422);
-        }
+        $blockers = $this->approvalService->getApprovalBlockers($vendor);
 
-        // 2. Check all required document types are verified
-        $missingOrUnverified = [];
-        foreach (self::REQUIRED_DOC_TYPES as $type) {
-            $doc = $vendor->documents()->whereHas('documentType', fn($q) => $q->where('code', $type))->first();
-            if (!$doc || $doc->status !== VendorDocumentStatus::Approved) {
-                $missingOrUnverified[] = $this->docTypeLabel($type);
-            }
-        }
-        if (!empty($missingOrUnverified)) {
+        if (!empty($blockers)) {
             return response()->json([
-                'message' => 'The following required documents must be verified before approval.',
-                'missing' => $missingOrUnverified,
+                'message' => 'Vendor cannot be approved yet.',
+                'blockers' => $blockers,
             ], 422);
-        }
-
-        // 3. Check at least one bank account
-        if (!$vendor->bankAccounts()->exists()) {
-            return response()->json(['message' => 'Vendor must have at least one bank account on file.'], 422);
         }
 
         DB::transaction(function () use ($vendor, $admin, $request) {

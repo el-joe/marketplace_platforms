@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\VendorDocumentStatus;
 use App\Jobs\VendorApprovedJob;
 use App\Models\Admin;
 use App\Models\Vendor;
@@ -19,6 +20,41 @@ use Illuminate\Support\Facades\Notification;
 
 class VendorApprovalService
 {
+    /** Required document types that must be verified before approval */
+    public const REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
+
+    // ── Approval eligibility ──────────────────────────────────────────────────
+
+    /**
+     * Returns a list of unmet approval requirements for the vendor.
+     * Empty array means the vendor is eligible for approval.
+     */
+    public function getApprovalBlockers(Vendor $vendor): array
+    {
+        $blockers = [];
+
+        if (empty($vendor->business_name) || empty($vendor->business_type)) {
+            $blockers[] = 'Business info is incomplete.';
+        }
+
+        if (!$vendor->onboarding_completed_at) {
+            $blockers[] = 'Vendor has not completed onboarding.';
+        }
+
+        foreach (self::REQUIRED_DOC_TYPES as $type) {
+            $doc = $vendor->documents()->whereHas('documentType', fn ($q) => $q->where('code', $type))->first();
+            if (!$doc || $doc->status !== VendorDocumentStatus::Approved) {
+                $blockers[] = "Required document not verified: {$type}.";
+            }
+        }
+
+        if (!$vendor->bankAccounts()->exists()) {
+            $blockers[] = 'Vendor must have at least one bank account on file.';
+        }
+
+        return $blockers;
+    }
+
     // ── Approval ───────────────────────────────────────────────────────────────
 
     public function approve(Vendor $vendor, Admin $admin): void

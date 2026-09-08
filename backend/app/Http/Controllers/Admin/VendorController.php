@@ -256,14 +256,12 @@ class VendorController extends Controller
 
     public function approve(ApproveVendorRequest $request, Vendor $vendor): JsonResponse
     {
-        // Verify all critical documents are verified before approval
-        $unverified = $vendor->documents()
-            ->where('status', '!=', VendorDocumentStatus::Approved->value)
-            ->count();
+        $blockers = $this->approvalService->getApprovalBlockers($vendor);
 
-        if ($unverified > 0) {
+        if (!empty($blockers)) {
             return response()->json([
-                'message' => 'All required documents must be verified before approval. ' . $unverified . ' document(s) pending.',
+                'message' => 'Vendor cannot be approved yet.',
+                'blockers' => $blockers,
             ], 422);
         }
 
