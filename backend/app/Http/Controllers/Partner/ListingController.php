@@ -645,7 +645,7 @@ class ListingController extends Controller
             'product_variant_id' => ['nullable', 'required_without:product_id', 'uuid', 'exists:product_variants,id'],
             'product_id' => ['nullable', 'required_without:product_variant_id', 'uuid', 'exists:products,id'],
             'country_id' => ['required', 'exists:countries,id'],
-            'price' => ['required', 'numeric', 'min:0.01', 'max:999999'],
+            'price' => ['required', 'integer', 'min:1', 'max:999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
@@ -923,7 +923,7 @@ class ListingController extends Controller
         }
 
         $validated = $request->validate([
-            'price' => ['required', 'numeric', 'min:0.01', 'max:999999'],
+            'price' => ['required', 'integer', 'min:1', 'max:999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
@@ -1048,7 +1048,7 @@ class ListingController extends Controller
         $this->authoriseListing($listing);
 
         $request->validate([
-            'price' => ['required', 'numeric', 'min:0.01', 'max:999999'],
+            'price' => ['required', 'integer', 'min:1', 'max:999999'],
         ]);
 
         $listing->update([

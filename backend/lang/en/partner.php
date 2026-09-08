@@ -244,6 +244,7 @@ return [
         'sold' => 'Sold',
         'step1_search_product' => '① Search for a product',
         'step2_listing_data' => '② Listing Data',
+        'price_whole_number_hint' => 'Price must be a whole number (no decimals/fils).',
         'search_product_desc' => 'Search for a product available in the catalog to add as a listing. Sellers cannot create new products - only admins do that',
         'start_typing_to_search' => 'Start typing to search',
         'select_product_variant' => 'Select a product variant from catalog',

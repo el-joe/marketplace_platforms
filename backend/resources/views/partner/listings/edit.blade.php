@@ -108,6 +108,7 @@
                             <input type="number" name="price" step="1" min="1" required
                                 value="{{ old('price', $listing->price) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
+                            <p class="text-xs text-gray-400 mt-1">{{ __('partner.listings.price_whole_number_hint') }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">الحالة <span class="text-red-500">*</span></label>

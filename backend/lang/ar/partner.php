@@ -209,6 +209,7 @@ return [
         'back_to_listings' => 'العودة إلى القوائم',
         'step1_search_product' => '① ابحث عن منتج',
         'step2_listing_data' => '② بيانات القائمة',
+        'price_whole_number_hint' => 'يجب أن يكون السعر رقمًا صحيحًا (بدون كسور عشرية).',
         'search_product_desc' => 'ابحث عن منتج موجود في الكتالوج لإضافته كقائمة. لا يمكن للبائعين إنشاء منتجات جديدة - تقوم الإدارة بذلك فقط',
         'start_typing_to_search' => 'ابدأ الكتابة للبحث',
         'select_product_variant' => 'اختر منتجا ونسخة من القائمة',
