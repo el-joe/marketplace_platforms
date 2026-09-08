@@ -30,7 +30,11 @@ class VendorPageController extends Controller
         $country = $request->attributes->get('country');
         $vendor = Vendor::where('id', $vendorId)
             ->where('global_status', 'active')
-            ->with('country:id,name_en,name_ar')
+            ->with([
+                'country:id,name_en,name_ar',
+                'businessAddress:id,area,street_address,city_id',
+                'businessAddress.city:id,name_en,name_ar',
+            ])
             ->firstOrFail();
 
         $pageBuilder = $this->pageBuilder->resolve(
