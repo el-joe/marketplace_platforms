@@ -291,6 +291,8 @@ return [
                 'status' => 'Status',
                 'referral_link' => 'Referral Link',
                 'no_campaign' => 'No marketer campaign exists for this product.',
+                'create_campaign_cta' => 'Create Campaign',
+                'no_campaign_fbn_hint' => 'Marketer campaigns require the FBN fulfillment model.',
                 'statuses' => [
                     'pending_admin' => 'Pending Admin Review',
                     'active' => 'Active',

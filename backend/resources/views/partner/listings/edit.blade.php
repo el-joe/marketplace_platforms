@@ -250,7 +250,7 @@
                 </div>
 
                 {{-- Marketer Campaign --}}
-                <div class="bg-white rounded-2xl border border-purple-200 p-6 space-y-4"
+                <div id="campaign-section" class="bg-white rounded-2xl border border-purple-200 p-6 space-y-4"
                     x-data="campaignSection()">
                     <label class="flex items-start gap-2 cursor-pointer">
                         <input type="checkbox" name="campaign_enabled" value="1" x-model="enabled"

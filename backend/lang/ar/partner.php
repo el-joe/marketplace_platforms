@@ -266,6 +266,8 @@ return [
                 'status' => 'الحالة',
                 'referral_link' => 'رابط الإحالة',
                 'no_campaign' => 'لا توجد حملة ماركتر لهذا المنتج.',
+                'create_campaign_cta' => 'إنشاء حملة',
+                'no_campaign_fbn_hint' => 'حملات الماركتر متاحة فقط لقوائم FBN.',
                 'statuses' => [
                     'pending_admin' => 'بانتظار مراجعة الإدارة',
                     'active' => 'نشطة',

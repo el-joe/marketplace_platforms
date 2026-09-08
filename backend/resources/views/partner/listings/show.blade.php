@@ -573,8 +573,21 @@
                 @endif
             </div>
         @else
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 text-center text-sm text-gray-400">
-                {{ __('partner.listings.show.marketer_campaign.no_campaign') }}
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+                <p class="text-sm text-gray-400 mb-4">
+                    {{ __('partner.listings.show.marketer_campaign.no_campaign') }}
+                </p>
+                @if($listing->fulfillment_model === 'fbn')
+                    <a href="{{ route('partner.listings.edit', $listing) }}#campaign-section"
+                        class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+                        <i class="fas fa-bullhorn"></i>
+                        {{ __('partner.listings.show.marketer_campaign.create_campaign_cta') }}
+                    </a>
+                @else
+                    <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3 inline-block">
+                        {{ __('partner.listings.show.marketer_campaign.no_campaign_fbn_hint') }}
+                    </p>
+                @endif
             </div>
         @endif
     </div>
