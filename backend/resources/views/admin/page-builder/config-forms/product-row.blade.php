@@ -53,6 +53,9 @@
         <x-form.toggle name="show_view_all"  label="{{ __('admin.page_builder.config_forms.product_row.view_all_link') }}" :value="$config['show_view_all'] ?? true" />
         <x-form.toggle name="scrollable_row" label="{{ __('admin.page_builder.config_forms.product_row.scrollable') }}"    :value="$config['scrollable_row'] ?? false" />
     </div>
+    <div class="mt-3">
+        <x-form.input name="view_all_url" label="View All URL" :value="$config['view_all_url'] ?? ''" placeholder="/deals" />
+    </div>
     <div class="grid grid-cols-2 gap-3 mt-3">
         <x-form.toggle name="show_ratings" label="{{ __('admin.page_builder.config_forms.product_row.ratings') }}" :value="$config['show_ratings'] ?? true" />
         <x-form.toggle name="show_discount_badge" label="{{ __('admin.page_builder.config_forms.product_row.discount_badge') }}" :value="$config['show_discount_badge'] ?? true" />

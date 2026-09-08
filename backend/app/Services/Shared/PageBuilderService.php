@@ -409,6 +409,7 @@ class PageBuilderService
             $data['ends_at']         = $endsAt?->toIso8601String();
             $data['columns']         = (int) ($cfg['columns'] ?? 2);
             $data['show_view_all']   = (bool) ($cfg['show_view_all'] ?? true);
+            $data['view_all_url']    = $cfg['view_all_url'] ?? null;
             $data['products']        = $products;
         }
 

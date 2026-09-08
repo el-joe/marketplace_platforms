@@ -27,6 +27,9 @@
             {{ ($config['show_view_all'] ?? true) ? 'checked' : '' }} class="rounded border-gray-300">
         Show "View All" button
     </label>
+    <div class="mt-2">
+        <x-form.input name="view_all_url" label="View All URL" :value="$config['view_all_url'] ?? ''" placeholder="/deals" />
+    </div>
 
     @include('admin.page-builder.config-forms.partials.manual-products-manager', ['block' => $block])
 

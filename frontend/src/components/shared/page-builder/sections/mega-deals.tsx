@@ -60,8 +60,8 @@ const MegaDeals = async ({ data }: { data: Block }) => {
             ? data?.title?.ar || data?.config?.title_ar
             : data?.title?.en || data?.config?.title_en}
         </h3>
-        {data?.config?.show_view_all && (
-          <Link href={"/"}>
+        {data?.config?.show_view_all && data?.config?.view_all_url && (
+          <Link href={data.config.view_all_url}>
             <Button className={"bg-gray text-white rounded-md capitalize"}>
               {t("allDeals")}
             </Button>

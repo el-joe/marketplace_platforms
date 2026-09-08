@@ -35,6 +35,7 @@ export const ProductsSlider = ({ data }: { data: Block }) => {
               : data.config?.title_en || ""
           }
           showVewAllButton={!!data.config?.show_view_all || false}
+          viewAllUrl={data.config?.view_all_url}
         />
       )}
       <Swiper

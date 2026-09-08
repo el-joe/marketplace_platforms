@@ -48,6 +48,7 @@ export interface BlockConfig {
   flash_sale_id?: null | string;
   items_per_row?: string;
   show_view_all?: number;
+  view_all_url?: string | null;
   scrollable_row?: number;
   show_discount_badge?: number;
   loop?: number;

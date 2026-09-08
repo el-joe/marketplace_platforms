@@ -3,13 +3,15 @@ import { Button } from "@/src/components/ui/button";
 import React from "react";
 import useLocale from "@/src/hooks/use-locale";
 import { Name } from "@/types/globals";
+import { Link } from "@/i18n/navigation";
 
 type Props = {
   title: string | Name;
   showVewAllButton?: boolean;
+  viewAllUrl?: string | null;
 };
 
-const SectionTitle = ({ title, showVewAllButton }: Props) => {
+const SectionTitle = ({ title, showVewAllButton, viewAllUrl }: Props) => {
   const locale = useLocale();
 
   const resolvedTitle =
@@ -22,7 +24,11 @@ const SectionTitle = ({ title, showVewAllButton }: Props) => {
       <h2 className="text-light flex-1 font-bold text-lg md:text-xl xl:text-2xl">
         {resolvedTitle}
       </h2>
-      {showVewAllButton && <Button variant={"outline"}>View All</Button>}
+      {showVewAllButton && viewAllUrl && (
+        <Link href={viewAllUrl}>
+          <Button variant={"outline"}>View All</Button>
+        </Link>
+      )}
     </div>
   );
 };
