@@ -356,7 +356,7 @@
                                         <button type="button" class="view-variant-detail hover:underline hover:text-primary-700 text-start"
                                             data-variant-id="{{ $variant->id }}"
                                             title="{{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}">
-                                            {{ $variant->name ?? __('admin.products.default_variant') }}
+                                            {{ $variant->variant_name ?: ($variant->attributeSummary() ?: __('admin.products.default_variant')) }}
                                         </button>
                                         <input type="hidden" name="variants[{{ $vi }}][id]" value="{{ $variant->id }}" />
                                     </td>
@@ -432,7 +432,7 @@
                                     <td class="px-4 py-3 text-center">
                                         <button type="button" class="manage-variant-images inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
                                             data-variant-id="{{ $variant->id }}"
-                                            data-variant-name="{{ $variant->name ?? __('admin.products.default_variant') }}"
+                                            data-variant-name="{{ $variant->variant_name ?: ($variant->attributeSummary() ?: __('admin.products.default_variant')) }}"
                                             data-images-url="{{ route('admin.products.variants.images', [$product->id, $variant->id]) }}"
                                             data-reorder-url="{{ route('admin.products.variants.reorder-images', [$product->id, $variant->id]) }}"
                                             data-upload-url="{{ route('admin.products.upload-image') }}">

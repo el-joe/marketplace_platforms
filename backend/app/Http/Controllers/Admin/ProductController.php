@@ -1128,7 +1128,7 @@ class ProductController extends Controller
                     ->update(array_merge($payload, ['deleted_at' => null]));
 
                 if ($updated) {
-                    if (array_key_exists('image_ids', $v)) {
+                    if (!empty($v['image_ids'])) {
                         $this->syncVariantImages($productId, $variantId, (array) $v['image_ids']);
                     }
                     continue;
@@ -1143,7 +1143,7 @@ class ProductController extends Controller
                 'created_at' => now(),
             ]));
 
-            if (array_key_exists('image_ids', $v)) {
+            if (!empty($v['image_ids'])) {
                 $this->syncVariantImages($productId, $newVariantId, (array) $v['image_ids']);
             }
         }
@@ -1296,10 +1296,14 @@ class ProductController extends Controller
 
     private function syncVariantImages(string $productId, string $variantId, array $imageIds): void
     {
+        if (empty($imageIds)) {
+            return;
+        }
+
         // Remove variant images the user deleted before/after upload
         $removed = ProductImage::query()
             ->where('product_variant_id', $variantId)
-            ->when(!empty($imageIds), fn($q) => $q->whereNotIn('id', $imageIds))
+            ->whereNotIn('id', $imageIds)
             ->get(['id', 'path', 'disk']);
 
         foreach ($removed as $img) {
