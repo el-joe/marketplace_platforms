@@ -763,7 +763,7 @@ class ProductController extends Controller
     {
         $request->validate([
             'images' => 'required|array|min:1',
-            'images.*' => 'image|max:5120', // 5 MB per image
+            'images.*' => 'file|mimes:jpg,jpeg,png,webp,avif|max:5120', // 5 MB per image
             'variant_id' => 'nullable|string',
         ]);
 

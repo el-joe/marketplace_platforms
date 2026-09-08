@@ -536,7 +536,7 @@
                         <div x-show="loading" class="text-sm text-gray-400">{{ __('admin.loading') ?? 'Loading…' }}</div>
 
                         <div x-show="!loading">
-                            <input type="file" x-ref="fileInput" multiple accept="image/jpeg,image/png,image/webp"
+                            <input type="file" x-ref="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/avif"
                                 class="hidden" @change="uploadFiles($event.target.files)" />
                             <button type="button" @click="$refs.fileInput.click()"
                                 class="btn btn-outline btn-sm w-full justify-center mb-4">
@@ -590,7 +590,7 @@
 
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.products.images') ?? 'Images' }}</label>
-                        <input type="file" id="bulk-upload-files" multiple accept="image/jpeg,image/png,image/webp" class="block w-full text-sm" />
+                        <input type="file" id="bulk-upload-files" multiple accept="image/jpeg,image/png,image/webp,image/avif" class="block w-full text-sm" />
                     </div>
 
                     <p id="bulk-upload-status" class="text-xs text-gray-400 hidden"></p>
@@ -619,7 +619,7 @@
                     id="product-images-filepond"
                     name="images[]"
                     multiple
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
                     data-process-field="file"
                     data-upload-url="{{ route('admin.products.upload-image') }}"
                     data-revert-base="{{ Str::beforeLast(route('admin.products.delete-image', ['mediaId' => '__id__']), '/__id__') }}"
