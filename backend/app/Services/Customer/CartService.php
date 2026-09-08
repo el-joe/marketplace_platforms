@@ -25,10 +25,12 @@ class CartService
     {
         return [
             'items.vendorListing.vendor',
-            'items.vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'items.vendorListing.productVariant.product.images',
+            'items.vendorListing.productVariant.images',
             'items.vendorListing.primaryShippingMethod',
             'items.vendorListing.warehouseInventories',
-            'items.adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'items.adminListing.productVariant.product.images',
+            'items.adminListing.productVariant.images',
             'items.selectedShippingMethod',
         ];
     }
@@ -137,7 +139,7 @@ class CartService
         $customerCart->load(['items.vendorListing', 'coupon']);
         $this->recalculateCart($customerCart);
 
-        return $customerCart->fresh(['items.vendorListing.productVariant.product.images', 'coupon']);
+        return $customerCart->fresh(array_merge(self::itemEagerLoads(), ['coupon']));
     }
 
     public function addItem(Cart $cart, string $vendorListingId, int $quantity, ?string $shippingMethodId, string $countryId): CartItem

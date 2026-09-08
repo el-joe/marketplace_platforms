@@ -78,11 +78,13 @@ class CartController extends Controller
         $cart->load([
             'items.vendorListing.vendor',
             'items.vendorListing.productVariant.product.category',
-            'items.vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'items.vendorListing.productVariant.product.images',
+            'items.vendorListing.productVariant.images',
             'items.vendorListing.warehouseInventories',
             'items.vendorListing.primaryShippingMethod',
             'items.adminListing.productVariant.product.category',
-            'items.adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'items.adminListing.productVariant.product.images',
+            'items.adminListing.productVariant.images',
             'items.adminListing.warehouseInventories',
             'items.adminListing.primaryShippingMethod',
             'items.selectedShippingMethod',
@@ -243,10 +245,12 @@ class CartController extends Controller
 
         $item->load([
             'vendorListing.vendor',
-            'vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'vendorListing.productVariant.product.images',
+            'vendorListing.productVariant.images',
             'vendorListing.primaryShippingMethod',
             'vendorListing.warehouseInventories',
-            'adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'adminListing.productVariant.product.images',
+            'adminListing.productVariant.images',
             'selectedShippingMethod',
             'warrantyPlan',
         ]);
@@ -287,10 +291,12 @@ class CartController extends Controller
 
         $item->load([
             'vendorListing.vendor',
-            'vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'vendorListing.productVariant.product.images',
+            'vendorListing.productVariant.images',
             'vendorListing.primaryShippingMethod',
             'vendorListing.warehouseInventories',
-            'adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'adminListing.productVariant.product.images',
+            'adminListing.productVariant.images',
             'adminListing.warehouseInventories',
             'selectedShippingMethod',
         ]);
@@ -352,10 +358,12 @@ class CartController extends Controller
 
         $item->load([
             'vendorListing.vendor',
-            'vendorListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'vendorListing.productVariant.product.images',
+            'vendorListing.productVariant.images',
             'vendorListing.primaryShippingMethod',
             'vendorListing.warehouseInventories',
-            'adminListing.productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
+            'adminListing.productVariant.product.images',
+            'adminListing.productVariant.images',
             'adminListing.warehouseInventories',
             'selectedShippingMethod',
             'warrantyPlan',

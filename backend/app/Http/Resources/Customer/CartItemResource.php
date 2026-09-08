@@ -89,17 +89,10 @@ class CartItemResource extends JsonResource
      */
     private function resolveThumbnail(?Product $product, ?ProductVariant $variant): ?string
     {
-        $images = $product?->images;
+        $variantImage = $variant?->images?->firstWhere('is_primary', true)
+            ?? $variant?->images?->first();
 
-        if (!$images) {
-            return null;
-        }
-
-        $variantImage = $variant
-            ? $images->where('product_variant_id', $variant->id)->sortBy('position')->first()
-            : null;
-
-        $genericImage = $images->whereNull('product_variant_id')->sortBy('position')->first();
+        $genericImage = $product?->images?->whereNull('product_variant_id')->sortBy('position')->first();
 
         return ($variantImage ?? $genericImage)?->url;
     }

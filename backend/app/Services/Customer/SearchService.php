@@ -214,7 +214,7 @@ class SearchService
         $productIds = $rows->pluck('product_id')->unique()->values()->all();
         $images = \Illuminate\Support\Facades\DB::table('product_images')
             ->whereIn('product_id', $productIds)
-            ->whereNull('product_variant_id')
+            ->orderByRaw('product_variant_id IS NOT NULL')
             ->orderBy('position')
             ->get(['product_id', 'path', 'disk'])
             ->unique('product_id')
