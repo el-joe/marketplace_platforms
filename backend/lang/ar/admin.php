@@ -9469,6 +9469,7 @@ return [
     'admin_listings' => [
         'title'             => 'قوائم منتجات الإدارة',
         'page_subtitle'     => 'إدارة المنتجات المباعة مباشرة من قبل الإدارة — تغذي خلاصة Now Nawy.',
+        'product_missing'   => 'المنتج غير متاح',
         'search_placeholder' => 'البحث باسم المنتج أو رقم الموديل…',
         'new_listing'       => 'قائمة جديدة',
         'product_col'       => 'المنتج',

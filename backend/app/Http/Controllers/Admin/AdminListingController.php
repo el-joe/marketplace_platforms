@@ -33,7 +33,13 @@ class AdminListingController extends Controller
     public function index(Request $request): View
     {
         $query = AdminListing::query()
-            ->with(['productVariant.product.images', 'country', 'warehouseInventory'])
+            ->with([
+                'productVariant' => fn($q) => $q->withTrashed(),
+                'productVariant.product' => fn($q) => $q->withTrashed(),
+                'productVariant.product.images',
+                'country',
+                'warehouseInventory',
+            ])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $term = $request->input('search');
                 $q->whereHas('productVariant.product', function ($pq) use ($term) {

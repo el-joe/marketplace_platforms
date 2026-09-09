@@ -9510,6 +9510,7 @@ return [
     'admin_listings' => [
         'title'             => 'Admin Product Listings',
         'page_subtitle'     => 'Manage products sold directly by admin — powers the Now Nawy feed.',
+        'product_missing'   => 'Product unavailable',
         'search_placeholder' => 'Search by product name or model number…',
         'new_listing'       => 'New Listing',
         'product_col'       => 'Product',

@@ -109,8 +109,8 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse($listings as $listing)
                             @php
-                                $product = $listing->productVariant->product;
-                                $thumbnail = $product->images->first();
+                                $product = $listing->productVariant?->product;
+                                $thumbnail = $product?->images->first();
                                 $inventory = $listing->warehouseInventory;
                                 $lowStock = $inventory && $inventory->quantity_available <= $listing->low_stock_threshold;
                             @endphp
@@ -125,9 +125,11 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <a href="{{ route('admin.admin-listings.edit', $listing) }}" class="block">
-                                        <p class="font-bold text-gray-900">{{ $product->name_en }}</p>
-                                        <p class="text-xs text-gray-500">{{ $product->name_ar }}</p>
-                                        @if($listing->productVariant->variant_name)
+                                        <p class="font-bold text-gray-900">{{ $product->name_en ?? __('admin.admin_listings.product_missing') }}</p>
+                                        @if($product)
+                                            <p class="text-xs text-gray-500">{{ $product->name_ar }}</p>
+                                        @endif
+                                        @if($listing->productVariant?->variant_name)
                                             <p class="text-xs text-blue-600">{{ $listing->productVariant->variant_name }}</p>
                                         @endif
                                     </a>
