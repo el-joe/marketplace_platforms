@@ -91,6 +91,7 @@ class WishlistOverviewController extends Controller
                 'adminListing.productVariant.product',
                 'productVariant.product',
                 'productVariant.images',
+                'classifiedListing',
             ])
             ->latest('added_at')
             ->paginate(20);

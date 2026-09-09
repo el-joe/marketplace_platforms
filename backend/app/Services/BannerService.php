@@ -90,7 +90,7 @@ class BannerService
      * Resolve the active banner for a customer-facing placement (e.g. 'cart_banner'),
      * respecting country, audience and the active date window. Ties broken by priority.
      */
-    public function getActivePlacement(string $placementCode, ?string $countryId, string $audience = 'guest'): ?Banner
+    public function getActivePlacement(string $placementCode, ?string $countryId, string $audience = 'guest', ?string $productId = null): ?Banner
     {
         $now = now();
 
@@ -101,6 +101,14 @@ class BannerService
             ->where('ends_at', '>=', $now)
             ->where(fn ($q) => $q->whereNull('country_id')->orWhere('country_id', $countryId))
             ->whereIn('audience', ['all', $audience])
+            ->where(function ($q) use ($productId) {
+                $q->whereNull('product_id');
+                if ($productId) {
+                    $q->orWhere('product_id', $productId);
+                }
+            })
+            // Prefer a banner scoped to this specific product over a generic one.
+            ->orderByRaw('product_id is null asc')
             ->orderByDesc('priority')
             ->first();
     }

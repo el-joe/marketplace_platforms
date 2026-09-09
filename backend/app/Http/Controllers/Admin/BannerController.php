@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\UpdateBannerRequest;
 use App\Models\Banner;
 use App\Models\BannerPlacementDefinition;
 use App\Models\Country;
+use App\Models\Product;
 use App\Services\BannerService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -235,8 +236,9 @@ class BannerController extends Controller
 
         $countries = Country::orderBy('name_en')->where('is_launched', true)->get(['id', 'name_en', 'flag_emoji']);
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
+        $products = Product::select('id', 'name_en')->orderBy('name_en')->limit(500)->get();
 
-        return view('admin.banners.create', compact('countries', 'placements'));
+        return view('admin.banners.create', compact('countries', 'placements', 'products'));
     }
 
     // ─── Store ────────────────────────────────────────────────────────────────
@@ -291,8 +293,9 @@ class BannerController extends Controller
 
         $countries = Country::orderBy('name_en')->where('is_launched', true)->get(['id', 'name_en', 'flag_emoji']);
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
+        $products = Product::select('id', 'name_en')->orderBy('name_en')->limit(500)->get();
 
-        return view('admin.banners.edit', compact('banner', 'countries', 'placements', 'desktopImageEn', 'desktopImageAr', 'mobileImageEn', 'mobileImageAr'));
+        return view('admin.banners.edit', compact('banner', 'countries', 'placements', 'products', 'desktopImageEn', 'desktopImageAr', 'mobileImageEn', 'mobileImageAr'));
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────

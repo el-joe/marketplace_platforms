@@ -22,6 +22,7 @@ class StoreBannerRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'placement_code' => ['required', 'string', 'max:100', 'exists:banner_placement_definitions,code'],
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
+            'product_id' => ['nullable', 'uuid', 'exists:products,id'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'title_ar' => ['nullable', 'string', 'max:255'],
             'subtitle_en' => ['nullable', 'string', 'max:500'],

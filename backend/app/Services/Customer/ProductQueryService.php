@@ -439,11 +439,16 @@ class ProductQueryService
             return [];
         }
 
-        return WishlistItem::where('wishlist_items.customer_id', $customerId)
+        $vendorProductIds = WishlistItem::where('wishlist_items.customer_id', $customerId)
             ->join('vendor_listings', 'vendor_listings.id', '=', 'wishlist_items.vendor_listing_id')
             ->join('product_variants', 'product_variants.id', '=', 'vendor_listings.product_variant_id')
-            ->pluck('product_variants.product_id')
-            ->unique()
-            ->toArray();
+            ->pluck('product_variants.product_id');
+
+        $adminProductIds = WishlistItem::where('wishlist_items.customer_id', $customerId)
+            ->join('admin_listings', 'admin_listings.id', '=', 'wishlist_items.admin_listing_id')
+            ->join('product_variants', 'product_variants.id', '=', 'admin_listings.product_variant_id')
+            ->pluck('product_variants.product_id');
+
+        return $vendorProductIds->merge($adminProductIds)->unique()->toArray();
     }
 }

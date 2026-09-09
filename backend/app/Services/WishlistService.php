@@ -33,6 +33,15 @@ class WishlistService
             ->firstOrFail();
     }
 
+    /**
+     * Item type discriminator column for a given wishlist item type.
+     */
+    private const TYPE_COLUMNS = [
+        'vendor_listing' => 'vendor_listing_id',
+        'admin_listing' => 'admin_listing_id',
+        'classified' => 'classified_listing_id',
+    ];
+
     public function addItem(
         Customer $customer,
         string $listingId,
@@ -40,18 +49,37 @@ class WishlistService
         string $productVariantId,
         ?string $groupId = null
     ): array {
+        return $this->addItemOfType(
+            customer: $customer,
+            itemType: $isAdminListing ? 'admin_listing' : 'vendor_listing',
+            listingId: $listingId,
+            groupId: $groupId,
+            productVariantId: $productVariantId,
+        );
+    }
+
+    /**
+     * @param  string  $itemType  One of 'vendor_listing', 'admin_listing', 'classified'
+     */
+    public function addItemOfType(
+        Customer $customer,
+        string $itemType,
+        string $listingId,
+        ?string $groupId = null,
+        ?string $productVariantId = null,
+    ): array {
+        $column = self::TYPE_COLUMNS[$itemType] ?? null;
+        if (!$column) {
+            throw new \InvalidArgumentException("Unknown wishlist item type [{$itemType}]");
+        }
+
         $group = $groupId
             ? $this->resolveGroup($groupId, $customer)
             : $this->resolveDefaultGroup($customer);
 
         $existingQuery = WishlistItem::where('wishlist_group_id', $group->id)
-            ->where('customer_id', $customer->id);
-
-        if ($isAdminListing) {
-            $existingQuery->where('admin_listing_id', $listingId);
-        } else {
-            $existingQuery->where('vendor_listing_id', $listingId);
-        }
+            ->where('customer_id', $customer->id)
+            ->where($column, $listingId);
 
         $existing = $existingQuery->first();
         if ($existing) {
@@ -62,8 +90,9 @@ class WishlistService
             $item = WishlistItem::create([
                 'wishlist_group_id' => $group->id,
                 'customer_id' => $customer->id,
-                'vendor_listing_id' => $isAdminListing ? null : $listingId,
-                'admin_listing_id' => $isAdminListing ? $listingId : null,
+                'vendor_listing_id' => $itemType === 'vendor_listing' ? $listingId : null,
+                'admin_listing_id' => $itemType === 'admin_listing' ? $listingId : null,
+                'classified_listing_id' => $itemType === 'classified' ? $listingId : null,
                 'product_variant_id' => $productVariantId,
                 'added_at' => now(),
             ]);
@@ -91,15 +120,23 @@ class WishlistService
 
     public function listingInGroups(Customer $customer, string $listingId, bool $isAdminListing): array
     {
-        $query = WishlistItem::where('customer_id', $customer->id);
+        return $this->itemInGroups($customer, $isAdminListing ? 'admin_listing' : 'vendor_listing', $listingId);
+    }
 
-        if ($isAdminListing) {
-            $query->where('admin_listing_id', $listingId);
-        } else {
-            $query->where('vendor_listing_id', $listingId);
+    /**
+     * @param  string  $itemType  One of 'vendor_listing', 'admin_listing', 'classified'
+     */
+    public function itemInGroups(Customer $customer, string $itemType, string $listingId): array
+    {
+        $column = self::TYPE_COLUMNS[$itemType] ?? null;
+        if (!$column) {
+            throw new \InvalidArgumentException("Unknown wishlist item type [{$itemType}]");
         }
 
-        return $query->pluck('wishlist_group_id')->toArray();
+        return WishlistItem::where('customer_id', $customer->id)
+            ->where($column, $listingId)
+            ->pluck('wishlist_group_id')
+            ->toArray();
     }
 
     public function deleteGroupWithMigration(WishlistGroup $group, Customer $customer): void
@@ -114,8 +151,10 @@ class WishlistService
                     ->where(function ($q) use ($item) {
                         if ($item->vendor_listing_id) {
                             $q->where('vendor_listing_id', $item->vendor_listing_id);
-                        } else {
+                        } elseif ($item->admin_listing_id) {
                             $q->where('admin_listing_id', $item->admin_listing_id);
+                        } else {
+                            $q->where('classified_listing_id', $item->classified_listing_id);
                         }
                     })->exists();
 

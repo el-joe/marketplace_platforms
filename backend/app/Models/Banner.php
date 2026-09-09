@@ -26,6 +26,7 @@ class Banner extends Model
         'country_id',
         'name',
         'placement_code',
+        'product_id',
         'media_id',
         'mobile_media_id',
         'title_en',
@@ -52,6 +53,11 @@ class Banner extends Model
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function createdByAdmin(): BelongsTo

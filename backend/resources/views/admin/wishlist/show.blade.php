@@ -45,9 +45,16 @@
                 <tbody>
                     @forelse($items as $item)
                         @php
-                            $listing = $item->vendorListing ?? $item->adminListing;
-                            $product = $item->productVariant?->product;
-                            $thumbnail = $item->productVariant?->images->first()?->url;
+                            $listing = $item->vendorListing ?? $item->adminListing ?? $item->classifiedListing;
+                            $product = $item->classifiedListing
+                                ? null
+                                : ($item->productVariant?->product);
+                            $thumbnail = $item->classifiedListing
+                                ? $item->classifiedListing->primary_image_url
+                                : $item->productVariant?->images->first()?->url;
+                            $title = $item->classifiedListing
+                                ? ($item->classifiedListing->title_en ?? '—')
+                                : ($product->name_en ?? '—');
                         @endphp
                         <tr class="border-b border-gray-50">
                             <td class="py-2 pr-4">
@@ -57,12 +64,14 @@
                                     <div class="w-12 h-12 rounded border border-gray-100 bg-gray-50"></div>
                                 @endif
                             </td>
-                            <td class="py-2 pr-4">{{ $product->name_en ?? '—' }}</td>
+                            <td class="py-2 pr-4">{{ $title }}</td>
                             <td class="py-2 pr-4">
                                 @if($item->vendorListing)
                                     <x-badge color="primary">{{ __('admin.wishlist_section.vendor_listing') }}</x-badge>
                                 @elseif($item->adminListing)
                                     <x-badge color="gray">{{ __('admin.wishlist_section.admin_listing') }}</x-badge>
+                                @elseif($item->classifiedListing)
+                                    <x-badge color="warning">{{ __('admin.wishlist_section.classified_listing') }}</x-badge>
                                 @else
                                     —
                                 @endif

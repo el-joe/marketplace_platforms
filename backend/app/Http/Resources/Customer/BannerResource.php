@@ -29,6 +29,13 @@ class BannerResource extends JsonResource
             'link_reference_id' => $this->link_reference_id,
             'desktop_image_url' => $desktopFile?->full_path,
             'mobile_image_url'  => $mobileFile?->full_path,
+            'product_id'        => $this->product_id,
+            'product'           => $this->whenLoaded('product', fn () => $this->product ? [
+                'id'       => $this->product->id,
+                'name_en'  => $this->product->name_en,
+                'name_ar'  => $this->product->name_ar,
+                'slug'     => $this->product->slug,
+            ] : null),
         ];
     }
 }

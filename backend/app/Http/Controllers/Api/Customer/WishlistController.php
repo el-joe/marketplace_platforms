@@ -133,6 +133,10 @@ class WishlistController extends Controller
                 'vendorListing.productVariant.product.images',
                 'adminListing.productVariant.product.category',
                 'adminListing.productVariant.product.images',
+                'classifiedListing.classifiedCategory',
+                'classifiedListing.images',
+                'classifiedListing.city',
+                'classifiedListing.seller',
             ])
             ->orderByDesc('added_at')
             ->paginate(15);
@@ -162,13 +166,19 @@ class WishlistController extends Controller
 
         $data = $request->validate([
             'listing_id' => ['required', 'uuid'],
-            'product_variant_id' => ['required', 'uuid'],
+            'item_type' => ['sometimes', 'in:classified'],
+            'product_variant_id' => ['required_unless:item_type,classified', 'uuid'],
             'group_id' => ['sometimes', 'nullable', 'uuid'],
         ]);
 
-        $isAdminListing = ListingModeResolver::isNawyNow($request);
+        $isClassified = ($data['item_type'] ?? null) === 'classified';
+        $isAdminListing = !$isClassified && ListingModeResolver::isNawyNow($request);
 
-        if ($isAdminListing) {
+        if ($isClassified) {
+            $listing = \App\Models\ClassifiedListing::where('id', $data['listing_id'])
+                ->where('status', \App\Enums\ClassifiedListingStatus::Active)
+                ->first();
+        } elseif ($isAdminListing) {
             $listing = AdminListing::where('id', $data['listing_id'])
                 ->where('status', AdminListingStatus::Active->value)
                 ->first();
@@ -190,12 +200,14 @@ class WishlistController extends Controller
             }
         }
 
-        $result = $this->wishlistService->addItem(
+        $itemType = $isClassified ? 'classified' : ($isAdminListing ? 'admin_listing' : 'vendor_listing');
+
+        $result = $this->wishlistService->addItemOfType(
             customer: $customer,
+            itemType: $itemType,
             listingId: $data['listing_id'],
-            isAdminListing: $isAdminListing,
-            productVariantId: $data['product_variant_id'],
             groupId: $data['group_id'] ?? null,
+            productVariantId: $data['product_variant_id'] ?? null,
         );
 
         $group = $result['group']->loadCount('items');
@@ -205,7 +217,8 @@ class WishlistController extends Controller
             'item' => [
                 'id' => $result['item']->id,
                 'added_at' => $result['item']->added_at,
-                'listing_type' => $isAdminListing ? 'admin_listing' : 'vendor_listing',
+                'type' => $isClassified ? 'classified' : 'product',
+                'listing_type' => $isClassified ? null : ($isAdminListing ? 'admin_listing' : 'vendor_listing'),
             ],
             'group' => $this->groupShape($group),
         ], $result['already_existed'] ? __('customer_api.wishlist.already_in_wishlist') : __('customer_api.wishlist.added_to_wishlist'), $status);
@@ -263,14 +276,16 @@ class WishlistController extends Controller
 
         $data = $request->validate([
             'listing_id' => ['required', 'uuid'],
+            'item_type' => ['sometimes', 'in:classified'],
         ]);
 
-        $isAdminListing = ListingModeResolver::isNawyNow($request);
+        $isClassified = ($data['item_type'] ?? null) === 'classified';
+        $itemType = $isClassified ? 'classified' : (ListingModeResolver::isNawyNow($request) ? 'admin_listing' : 'vendor_listing');
 
-        $groupIds = $this->wishlistService->listingInGroups(
+        $groupIds = $this->wishlistService->itemInGroups(
             customer: $customer,
+            itemType: $itemType,
             listingId: $data['listing_id'],
-            isAdminListing: $isAdminListing,
         );
 
         $groups = [];

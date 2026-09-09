@@ -249,6 +249,19 @@
                             placeholder="{{ __('admin.banners.reference_id_placeholder') }}" />
                     </div>
 
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.banners.linked_product') }}</label>
+                        <select name="product_id" class="form-input w-full">
+                            <option value="">{{ __('admin.banners.no_specific_product_option') }}</option>
+                            @foreach($products as $p)
+                                <option value="{{ $p->id }}" @selected($val('product_id') === $p->id)>
+                                    {{ $p->name_en }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">{{ __('admin.banners.linked_product_help') }}</p>
+                    </div>
+
                 </div>
             </x-card>
 

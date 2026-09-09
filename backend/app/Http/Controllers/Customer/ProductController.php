@@ -14,7 +14,6 @@ use App\Models\Country;
 use App\Models\Product;
 use App\Models\VendorListing;
 use App\Models\Wishlist;
-use App\Models\WishlistItem;
 use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\CategoryService;
 use App\Services\Customer\ListingQueryService;
@@ -22,6 +21,7 @@ use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\SponsoredProductService;
+use App\Services\BannerService;
 use App\Services\Shared\PageBuilderService;
 use App\Support\Concerns\BuildsProductAttributeSelector;
 use Illuminate\Http\JsonResponse;
@@ -40,6 +40,7 @@ class ProductController extends Controller
         private readonly ReviewService $reviewService,
         private readonly \App\Services\Customer\ListingIdentifierService $identifiers,
         private readonly PageBuilderService $pageBuilder,
+        private readonly BannerService $bannerService,
     ) {
     }
 
@@ -282,9 +283,7 @@ class ProductController extends Controller
 
         $isWishlisted = false;
         if (($customerId = auth('customer')->id()) && ($buyBoxListing = $listings->first())) {
-            $isWishlisted = WishlistItem::where('customer_id', $customerId)
-                ->where('vendor_listing_id', $buyBoxListing->id)
-                ->exists();
+            $isWishlisted = in_array($buyBoxListing->id, $this->listings->wishlistListingIds($customerId), true);
         }
 
         $this->viewService->logView(
@@ -308,8 +307,12 @@ class ProductController extends Controller
             ])
             ->all();
 
+        $audience = auth('customer')->check() ? 'logged_in' : 'guest';
+        $banner = $this->bannerService->getActivePlacement('product_page_bottom', $country->id, $audience, $product->id);
+
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;
+        $resource->banner = $banner;
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
         $resource->productAttributes = $selectedVariant
             ? $this->productAttributesShape($product->variants, $selectedVariant, $listingsByVariant)
