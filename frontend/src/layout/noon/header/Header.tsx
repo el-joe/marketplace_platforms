@@ -231,7 +231,7 @@ const Header = () => {
           <HeaderButton
             Icon={() => (
               <Image
-                src="/images/cart_header_icon.svg"
+                src="/images/Cart_Header_icon.svg"
                 alt="Cart"
                 width={24}
                 height={24}
