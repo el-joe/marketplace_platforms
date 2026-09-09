@@ -433,6 +433,8 @@ return [
             'all_eligible_invited'        => 'قد يكون جميع التجار المؤهلين مدعوين بالفعل، أو لا يوجد تجار نشطون يستوفون المعايير.',
             'vendors_invited'             => 'تمت دعوة التجار.',
             'failed_invite_vendors'       => 'فشلت دعوة التجار.',
+            'marketers_invited'           => 'تمت دعوة المسوّقين.',
+            'failed_invite_marketers'     => 'فشلت دعوة المسوّقين.',
             'add_product_label'           => 'إضافة منتج',
             'submission_added'            => 'تمت إضافة الطلب.',
             'failed_add_submission'       => 'فشلت إضافة الطلب.',

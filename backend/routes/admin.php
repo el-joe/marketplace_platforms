@@ -406,6 +406,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/search/admin-listings', [FlashSaleController::class, 'searchAdminListings'])->name('search.admin-listings');
         Route::get('/search/vendor-listings', [FlashSaleController::class, 'searchVendorListings'])->name('search.vendor-listings');
         Route::get('/search/vendors', [FlashSaleController::class, 'searchVendors'])->name('search.vendors');
+        Route::get('/search/marketers', [FlashSaleController::class, 'searchMarketers'])->name('search.marketers');
 
         // Submission review (before /{flashSale} wildcard)
         Route::post('/submissions/{submission}/review', [FlashSaleController::class, 'reviewSubmission'])
@@ -433,6 +434,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/invitations/datatable', [FlashSaleController::class, 'invitationsDatatable'])->name('invitations.datatable');
             Route::post('/invitations/{invitation}/resend', [FlashSaleController::class, 'resendInvitation'])->name('invitations.resend')
                 ->middleware('admin.permission:flash_sales.edit');
+
+            Route::post('/invite-marketers', [FlashSaleController::class, 'inviteMarketers'])->name('invite-marketers')
+                ->middleware('admin.permission:flash_sales.edit');
+            Route::get('/marketer-invitations', [FlashSaleController::class, 'marketerInvitations'])->name('marketer-invitations');
 
             Route::get('/submission-stats', [FlashSaleController::class, 'submissionStats'])->name('submission-stats');
             Route::post('/submissions/datatable', [FlashSaleController::class, 'submissionsDatatable'])->name('submissions.datatable');

@@ -20,6 +20,9 @@
         $pendingInvitations = $marketer
             ? \App\Models\MarketerCampaignInvitation::where('marketer_id', $marketer->id)->where('status', 'pending')->count()
             : 0;
+        $pendingFlashSaleInvites = $marketer
+            ? \App\Models\FlashSaleMarketerInvitation::where('marketer_id', $marketer->id)->where('status', 'pending')->count()
+            : 0;
     @endphp
 
     <div class="flex h-screen overflow-hidden">
@@ -119,6 +122,37 @@
                               d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                     </svg>
                     قوائم المنتجات
+                </a>
+
+                <a href="{{ route('marketer.flash-sales.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.flash-sales.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    التخفيضات السريعة
+                    @if($pendingFlashSaleInvites > 0)
+                        <span class="ms-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{{ $pendingFlashSaleInvites }}</span>
+                    @endif
+                </a>
+
+                <a href="{{ route('marketer.finance.commissions') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.finance.commissions') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .672-3 1.5S10.343 11 12 11s3 .672 3 1.5-1.343 1.5-3 1.5m0-6V6m0 1.5v9m0 0V18m0-1.5c-1.657 0-3-.672-3-1.5"/></svg>
+                    العمولات
+                </a>
+
+                <a href="{{ route('marketer.finance.wallet') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.finance.wallet') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h16a1 1 0 001-1V6a1 1 0 00-1-1H4a1 1 0 00-1 1v12a1 1 0 001 1z"/></svg>
+                    المحفظة
+                </a>
+
+                <a href="{{ route('marketer.support.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.support.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    الدعم الفني
                 </a>
             </nav>
 

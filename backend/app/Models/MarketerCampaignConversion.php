@@ -14,17 +14,24 @@ class MarketerCampaignConversion extends Model
         'campaign_id', 'invitation_id', 'order_id', 'order_item_id',
         'referral_clicked_at', 'commission_amount', 'currency',
         'commissioned', 'paid_at', 'sale_number_in_campaign', 'tiered_rule_id',
+        'flash_sale_id', 'flash_sale_bonus_amount',
     ];
 
     protected $casts = [
         'referral_clicked_at' => 'datetime',
         'paid_at' => 'datetime',
         'commissioned' => 'boolean',
+        'flash_sale_bonus_amount' => 'integer',
     ];
 
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(MarketerCampaign::class);
+    }
+
+    public function flashSale(): BelongsTo
+    {
+        return $this->belongsTo(FlashSale::class);
     }
 
     public function invitation(): BelongsTo

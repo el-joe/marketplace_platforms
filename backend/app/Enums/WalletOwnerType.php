@@ -12,4 +12,5 @@ enum WalletOwnerType: string
     case Vendor = 'vendor';
     case DeliveryAgent = 'delivery_agent';
     case TravelAgency = 'travel_agency';
+    case Marketer = 'marketer';
 }

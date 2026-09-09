@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\FlashSale;
+use App\Models\FlashSaleMarketerInvitation;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\Order;
@@ -85,6 +87,25 @@ class LastClickAttributionService
                     break;
             }
 
+            // Flash sale bonus: if this marketer has an accepted invitation to a
+            // flash sale currently live, the order also earns a bonus commission
+            // on top of the base campaign commission.
+            $flashSaleId = null;
+            $flashSaleBonusAmount = null;
+
+            $liveFlashSaleInvitation = FlashSaleMarketerInvitation::where('marketer_id', $invitation->marketer_id)
+                ->where('status', 'accepted')
+                ->whereHas('flashSale', fn ($q) => $q->where('status', 'live'))
+                ->with('flashSale')
+                ->first();
+
+            if ($liveFlashSaleInvitation && $liveFlashSaleInvitation->extra_commission_rate) {
+                $flashSaleId = $liveFlashSaleInvitation->flash_sale_id;
+                $flashSaleBonusAmount = (int) round(
+                    $order->total * ((float) $liveFlashSaleInvitation->extra_commission_rate / 100)
+                );
+            }
+
             MarketerCampaignConversion::create([
                 'campaign_id'             => $campaign->id,
                 'invitation_id'           => $invitation->id,
@@ -95,6 +116,8 @@ class LastClickAttributionService
                 'commissioned'            => false,
                 'sale_number_in_campaign' => $saleNumber,
                 'tiered_rule_id'          => $campaign->commission_type === 'tiered' ? $applicableTierId : null,
+                'flash_sale_id'           => $flashSaleId,
+                'flash_sale_bonus_amount' => $flashSaleBonusAmount,
             ]);
 
             $invitation->increment('total_conversions');

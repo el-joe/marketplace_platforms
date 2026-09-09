@@ -133,6 +133,11 @@ class FlashSale extends Model
         return $this->hasMany(FlashSaleSubmission::class);
     }
 
+    public function marketerInvitations(): HasMany
+    {
+        return $this->hasMany(FlashSaleMarketerInvitation::class);
+    }
+
     public function analytics(): HasMany
     {
         return $this->hasMany(FlashSaleAnalytic::class);

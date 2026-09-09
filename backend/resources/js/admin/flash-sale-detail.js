@@ -32,6 +32,7 @@ $(function () {
     initBulkReject();
     initAutoInvite();
     initManualInvite();
+    initManualInviteMarketers();
     initCancelModal();
     initAddProduct();
 
@@ -651,6 +652,36 @@ function initManualInvite() {
             },
             error(xhr) {
                 const msg = xhr.responseJSON?.message || t('admin.flash_sale_detail.failed_invite_vendors');
+                window.Toast.error(msg);
+            },
+        });
+    });
+}
+
+function initManualInviteMarketers() {
+    document.getElementById('btn-confirm-manual-invite-marketers')?.addEventListener('click', () => {
+        const raw = document.getElementById('manual-invite-marketer-ids').value.trim();
+        if (!raw) return;
+
+        const ids = raw.split('\n').map(s => s.trim()).filter(Boolean);
+        if (!ids.length) return;
+
+        const rate = document.getElementById('manual-invite-marketer-rate').value;
+
+        $.ajax({
+            url: window.URLS.inviteMarketers,
+            method: 'POST',
+            data: {
+                marketer_ids: ids,
+                extra_commission_rate: rate || null,
+                _token: $('meta[name="csrf-token"]').attr('content'),
+            },
+            success(res) {
+                $('#manual-invite-marketers-modal').modal('close');
+                window.Toast.success(res.message || t('admin.flash_sale_detail.marketers_invited'));
+            },
+            error(xhr) {
+                const msg = xhr.responseJSON?.message || t('admin.flash_sale_detail.failed_invite_marketers');
                 window.Toast.error(msg);
             },
         });

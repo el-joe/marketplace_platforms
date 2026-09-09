@@ -35,6 +35,7 @@ class Wallet extends Model
             WalletOwnerType::Customer      => Customer::find($this->owner_id),
             WalletOwnerType::Vendor        => Vendor::find($this->owner_id),
             WalletOwnerType::DeliveryAgent => DeliveryAgent::find($this->owner_id),
+            WalletOwnerType::Marketer      => Marketer::find($this->owner_id),
             default                        => null,
         };
     }

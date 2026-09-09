@@ -448,6 +448,8 @@ return [
             'all_eligible_invited'        => 'All eligible vendors may already be invited, or no active vendors meet the criteria.',
             'vendors_invited'             => 'Vendors invited.',
             'failed_invite_vendors'       => 'Failed to invite vendors.',
+            'marketers_invited'           => 'Marketers invited.',
+            'failed_invite_marketers'     => 'Failed to invite marketers.',
             'add_product_label'           => 'Add Product',
             'submission_added'            => 'Submission added.',
             'failed_add_submission'       => 'Failed to add submission.',

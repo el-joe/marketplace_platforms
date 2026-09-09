@@ -3,12 +3,15 @@
 use App\Http\Controllers\Marketer\AuthController;
 use App\Http\Controllers\Marketer\CampaignController;
 use App\Http\Controllers\Marketer\DashboardController;
+use App\Http\Controllers\Marketer\FinanceController;
+use App\Http\Controllers\Marketer\FlashSaleController;
 use App\Http\Controllers\Marketer\InvitationController;
 use App\Http\Controllers\Marketer\ListingController;
 use App\Http\Controllers\Marketer\OrderController;
 use App\Http\Controllers\Marketer\ProfileController;
 use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
+use App\Http\Controllers\Marketer\SupportController;
 use Illuminate\Support\Facades\Route;
 
 // ── Locale switcher ───────────────────────────────────────────────────────
@@ -89,6 +92,30 @@ Route::middleware('web')->group(function () {
             Route::post('/{listing}/toggle-status',     [ListingController::class, 'toggleStatus'])->name('toggle-status');
             Route::patch('/{listing}/price',            [ListingController::class, 'updatePrice'])->name('update-price');
             Route::delete('/{listing}',                 [ListingController::class, 'destroy'])->name('destroy');
+        });
+
+        // Finance: commissions, wallet, payout (withdrawal) requests
+        Route::prefix('finance')->name('finance.')->group(function () {
+            Route::get('/commissions',        [FinanceController::class, 'commissions'])->name('commissions');
+            Route::get('/wallet',             [FinanceController::class, 'wallet'])->name('wallet');
+            Route::post('/wallet/withdraw',   [FinanceController::class, 'requestWithdrawal'])->name('wallet.withdraw');
+        });
+
+        // Flash sale invitations
+        Route::prefix('flash-sales')->name('flash-sales.')->group(function () {
+            Route::get('/',                          [FlashSaleController::class, 'index'])->name('index');
+            Route::post('/{invitation}/accept',      [FlashSaleController::class, 'accept'])->name('accept');
+            Route::post('/{invitation}/decline',     [FlashSaleController::class, 'decline'])->name('decline');
+        });
+
+        // Support tickets
+        Route::prefix('support')->name('support.')->group(function () {
+            Route::get('/',                [SupportController::class, 'index'])->name('index');
+            Route::get('/create',          [SupportController::class, 'create'])->name('create');
+            Route::post('/',               [SupportController::class, 'store'])->name('store');
+            Route::get('/{ticketNumber}',  [SupportController::class, 'show'])->name('show');
+            Route::post('/{ticketNumber}/reply', [SupportController::class, 'reply'])->name('reply');
+            Route::post('/{ticketNumber}/close', [SupportController::class, 'close'])->name('close');
         });
     });
 });

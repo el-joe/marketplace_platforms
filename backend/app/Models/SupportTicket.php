@@ -62,6 +62,11 @@ class SupportTicket extends Model
         return $this->belongsTo(TravelAgency::class, 'requester_user_id');
     }
 
+    public function requesterMarketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class, 'requester_user_id');
+    }
+
     public function assignedToAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'assigned_to_admin_id');

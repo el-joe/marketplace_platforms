@@ -615,6 +615,85 @@ class FlashSaleController extends Controller
         ]);
     }
 
+    public function searchMarketers(Request $request): JsonResponse
+    {
+        $term = $request->input('q', '');
+
+        $marketers = \App\Models\Marketer::query()
+            ->where('name', 'like', "%{$term}%")
+            ->where('global_status', 'active')
+            ->orderBy('name')
+            ->limit(30)
+            ->get(['id', 'name', 'marketer_type']);
+
+        return response()->json([
+            'results' => $marketers->map(fn ($m) => ['id' => $m->id, 'text' => "{$m->name} ({$m->marketer_type})"]),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Marketer invitations
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function inviteMarketers(Request $request, FlashSale $flashSale): JsonResponse
+    {
+        $request->validate([
+            'marketer_ids' => 'required|array',
+            'marketer_ids.*' => 'string',
+            'extra_commission_rate' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $invited = 0;
+
+        foreach ($request->marketer_ids as $marketerId) {
+            $marketer = \App\Models\Marketer::find($marketerId);
+            if (! $marketer) {
+                continue;
+            }
+
+            $invitation = \App\Models\FlashSaleMarketerInvitation::firstOrCreate(
+                ['flash_sale_id' => $flashSale->id, 'marketer_id' => $marketerId],
+                [
+                    'status' => 'pending',
+                    'extra_commission_rate' => $request->extra_commission_rate,
+                    'invited_by_admin_id' => $admin?->id,
+                ]
+            );
+
+            $marketer->marketerAdmins->each(
+                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\FlashSaleInvitationNotification($invitation))
+            );
+
+            $invited++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'count' => $invited,
+            'message' => __('admin.flash_sales.marketers_invited_result', ['count' => $invited]),
+        ]);
+    }
+
+    public function marketerInvitations(FlashSale $flashSale): JsonResponse
+    {
+        $invitations = \App\Models\FlashSaleMarketerInvitation::where('flash_sale_id', $flashSale->id)
+            ->with('marketer:id,name,marketer_type')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'data' => $invitations->map(fn ($i) => [
+                'id' => $i->id,
+                'marketer_id' => $i->marketer_id,
+                'marketer_name' => $i->marketer?->name,
+                'status' => $i->status?->value,
+                'extra_commission_rate' => $i->extra_commission_rate,
+                'responded_at' => $i->responded_at?->toDateTimeString(),
+            ]),
+        ]);
+    }
+
     public function searchAdminListings(Request $request): JsonResponse
     {
         $term = $request->input('q', '');

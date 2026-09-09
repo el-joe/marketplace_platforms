@@ -43,6 +43,7 @@
             edit:              '{{ route('admin.flash-sales.edit', $flashSale->id) }}',
             transition:        '{{ route('admin.flash-sales.transition', $flashSale->id) }}',
             inviteVendors:     '{{ route('admin.flash-sales.invite-vendors', $flashSale->id) }}',
+            inviteMarketers:   '{{ route('admin.flash-sales.invite-marketers', $flashSale->id) }}',
             eligibleCount:     '{{ route('admin.flash-sales.eligible-vendor-count', $flashSale->id) }}',
             submissionStats:   '{{ route('admin.flash-sales.submission-stats', $flashSale->id) }}',
             submissionsDt:     '{{ route('admin.flash-sales.submissions.datatable', $flashSale->id) }}',
@@ -282,6 +283,10 @@
                                     <button type="button" data-modal-open="manual-invite-modal" class="btn btn-ghost btn-sm">
                                         <x-heroicon name="user-plus" class="w-4 h-4 mr-1.5" />
                                         {{ __('admin.flash_sales.invite_manually') }}
+                                    </button>
+                                    <button type="button" data-modal-open="manual-invite-marketers-modal" class="btn btn-ghost btn-sm">
+                                        <x-heroicon name="megaphone" class="w-4 h-4 mr-1.5" />
+                                        {{ __('admin.flash_sales.invite_marketers') }}
                                     </button>
                                 </div>
                             @endif
@@ -757,6 +762,25 @@
         <x-slot:footer>
             <button type="button" data-modal-close class="btn btn-ghost">{{ __('common.cancel') }}</button>
             <button type="button" id="btn-confirm-manual-invite" class="btn btn-primary">{{ __('admin.flash_sales.send_invitations') }}</button>
+        </x-slot:footer>
+    </x-modal>
+
+    {{-- Manual invite marketers modal --}}
+    <x-modal id="manual-invite-marketers-modal" title="{{ __('admin.flash_sales.invite_marketers') }}" size="sm">
+        <div class="space-y-3">
+            <p class="text-sm text-gray-500">{{ __('admin.flash_sales.enter_marketer_ids') }}</p>
+            <div>
+                <label class="form-label">{{ __('admin.flash_sales.marketer_ids') }}</label>
+                <textarea id="manual-invite-marketer-ids" rows="5" class="form-textarea w-full font-mono text-sm" placeholder="{{ __('admin.flash_sales.marketer_ids_placeholder') }}"></textarea>
+            </div>
+            <div>
+                <label class="form-label">{{ __('admin.flash_sales.extra_commission_rate') }}</label>
+                <input type="number" id="manual-invite-marketer-rate" class="form-input w-full" min="0" max="100" step="0.01" placeholder="0.00">
+            </div>
+        </div>
+        <x-slot:footer>
+            <button type="button" data-modal-close class="btn btn-ghost">{{ __('common.cancel') }}</button>
+            <button type="button" id="btn-confirm-manual-invite-marketers" class="btn btn-primary">{{ __('admin.flash_sales.send_invitations') }}</button>
         </x-slot:footer>
     </x-modal>
 
