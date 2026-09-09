@@ -7,6 +7,17 @@
 
 /* @custom-variant dark (&:where(.dark, .dark *)); */
 
+@font-face {
+  font-family: "currency-font";
+  src: url("/fonts/currency-symbol.otf");
+  font-weight: 300;
+  font-style: normal;
+  unicode-range:
+    U + E000,
+    U + E001;
+  font-display: swap;
+}
+
 html {
   scroll-behavior: smooth;
 }

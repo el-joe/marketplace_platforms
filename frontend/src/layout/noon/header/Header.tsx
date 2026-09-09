@@ -148,7 +148,9 @@ const Header = () => {
                 render={
                   <HeaderButton
                     Icon={UserCircleIcon}
-                    text={t("hi", { name: profile?.name ?? "customer" })}
+                    text={t("hi", {
+                      name: profile?.name.split(" ")[0] ?? "customer",
+                    })}
                     title={t("showProfileOptions")}
                     className="hidden md:inline-flex"
                   />
@@ -227,7 +229,14 @@ const Header = () => {
           />
           {/* cart link */}
           <HeaderButton
-            Icon={ShoppingCartIcon}
+            Icon={() => (
+              <Image
+                src="/images/cart_header_icon.svg"
+                alt="Cart"
+                width={24}
+                height={24}
+              />
+            )}
             text={t("cart")}
             title={t("cartLinkLabel")}
             href="/cart"
@@ -263,9 +272,10 @@ const Header = () => {
 export default Header;
 
 type buttonProps = {
-  Icon: React.ForwardRefExoticComponent<
-    Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
-  >;
+  Icon: React.JSXElementConstructor<LucideProps>;
+  // Icon: React.ForwardRefExoticComponent<
+  //   Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
+  // >;
   text: string;
   title: string;
   href?: string;
@@ -287,7 +297,7 @@ const HeaderButton = ({
       <Link href={href} className={className}>
         <Button
           variant={"ghost"}
-          className={"font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5"}
+          className={"font-bold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5"}
           title={title}
         >
           <span className="relative">
@@ -307,7 +317,7 @@ const HeaderButton = ({
       <Button
         variant={"ghost"}
         className={
-          "font-semibold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5 " + className
+          "font-bold gap-1 py-2.5 px-1 md:px-1.5 lg:px-2.5 " + className
         }
         title={title}
         onClick={onClick}

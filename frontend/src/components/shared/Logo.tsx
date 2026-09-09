@@ -1,21 +1,14 @@
+"use client";
 import { Link } from "@/i18n/navigation";
+import useLocale from "@/src/hooks/use-locale";
 import Image from "next/image";
-import React from "react";
 
-type LogoProps = {
-  platform?: "noon" | "openSooq";
-};
-
-const LOGO_SRC: Record<NonNullable<LogoProps["platform"]>, string> = {
-  noon: "https://f.nooncdn.com/s/app/com/noon/design-system/logos/revamp-logo-en-smaller.svg",
-  openSooq: "https://f.nooncdn.com/s/app/com/noon/design-system/logos/revamp-logo-en-smaller.svg",
-};
-
-const Logo = ({ platform = "noon" }: LogoProps) => {
+const Logo = () => {
+  const locale = useLocale();
   return (
     <Link href={"/"} className="w-14 lg:w-20 relative">
       <Image
-        src={LOGO_SRC[platform]}
+        src={`/images/noon-logo-${locale}.svg`}
         alt="Logo"
         fill
         sizes="100%"

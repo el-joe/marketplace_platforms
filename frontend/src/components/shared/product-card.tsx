@@ -20,6 +20,7 @@ import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Spinner } from "../ui/spinner";
 import useLocale from "@/src/hooks/use-locale";
 import AddToCartButton from "./add-to-cart-button";
+import { useTranslations } from "next-intl";
 
 type Props = {
   productData: Product | IProduct;
@@ -30,6 +31,7 @@ const ProductCard = ({ productData }: Props) => {
     productData.is_wishlisted,
   );
   const locale = useLocale();
+  const t = useTranslations("productView");
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const {
@@ -96,13 +98,21 @@ const ProductCard = ({ productData }: Props) => {
           ref={prevRef}
           className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer opacity-0 group-hover:opacity-35 transition duration-200 bg-black text-white px-0.5 py-2 rounded-e-sm"
         >
-          <ChevronLeft size={"28px"} />
+          {locale === "ar" ? (
+            <ChevronRight size={"28px"} />
+          ) : (
+            <ChevronLeft size={"28px"} />
+          )}
         </button>
         <button
           ref={nextRef}
           className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer opacity-0 group-hover:opacity-35 transition duration-200 bg-black text-white px-0.5 py-2 rounded-s-sm"
         >
-          <ChevronRight size={"28px"} />
+          {locale === "ar" ? (
+            <ChevronLeft size={"28px"} />
+          ) : (
+            <ChevronRight size={"28px"} />
+          )}
         </button>
         <Swiper
           modules={[Pagination, Autoplay, Navigation]}
@@ -164,26 +174,40 @@ const ProductCard = ({ productData }: Props) => {
             {productData.name_en}
           </h3>
           {/* rating */}
-          <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5">
-            <StarIcon className="size-2 md:size-3 text-green fill-green" />
-            <p className="font-semibold text-[8px] md:text-xs ">
-              {productData.rating_avg}
-            </p>
-            <p className="text-gray text-[8px] md:text-xs lg:text-sm">
-              ({productData.rating_count})
-            </p>
-          </div>
+          {productData.rating_avg && (
+            <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5">
+              <StarIcon className="size-2 md:size-3 text-green fill-green" />
+              <p className="font-semibold text-[8px] md:text-xs ">
+                {productData.rating_avg}
+              </p>
+              <p className="text-gray text-[8px] md:text-xs lg:text-sm">
+                ({productData.rating_count})
+              </p>
+            </div>
+          )}
           <Price
             currentPrice={productData.price}
             currency={productData.currency}
             size="sm"
           />
           {/* bottom badge */}
-          <div className="flex w-fit bg-blue font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1">
-            <span>⚡GET IN </span>
-            <span className="text-yellow-400"> 33 MINS</span>
-            <ChevronRightIcon className="size-3 lg:size-5" />
-          </div>
+          {!!productData.shipping_badge && (
+            <div
+              className="flex w-fit font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1"
+              style={{
+                background: productData?.shipping_badge?.color_hex,
+                color: productData?.shipping_badge?.text_color_hex,
+              }}
+            >
+              <span>⚡GET IN </span>
+              <span>
+                {productData?.shipping_badge?.delivery_days_min ||
+                  productData?.shipping_badge?.delivery_days_max}{" "}
+                {t("day")}
+              </span>
+              <ChevronRightIcon className="size-3 lg:size-5" />
+            </div>
+          )}
         </div>
       </Link>
     </div>

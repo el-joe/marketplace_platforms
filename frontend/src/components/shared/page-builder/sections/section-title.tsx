@@ -4,6 +4,7 @@ import React from "react";
 import useLocale from "@/src/hooks/use-locale";
 import { Name } from "@/types/globals";
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 type Props = {
   title: string | Name;
@@ -13,11 +14,12 @@ type Props = {
 
 const SectionTitle = ({ title, showVewAllButton, viewAllUrl }: Props) => {
   const locale = useLocale();
+  const t = useTranslations("home");
 
   const resolvedTitle =
     typeof title === "string"
       ? title
-      : (title as Name)?.[locale] ?? (title as Name)?.en ?? "";
+      : ((title as Name)?.[locale] ?? (title as Name)?.en ?? "");
 
   return (
     <div className="flex items-center justify-between my-4">
