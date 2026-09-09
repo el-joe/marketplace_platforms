@@ -1445,6 +1445,19 @@ return [
         'decline_offer' => 'Decline Offer',
     ],
 
+    'dashboard_classified' => [
+        'active_listings' => 'Active Listings',
+        'pending_listings' => 'Pending Listings',
+        'paused_listings' => 'Paused Listings',
+        'sold_listings' => 'Sold Listings',
+        'new_inquiries' => 'New Inquiries',
+        'recent_listings' => 'Recent Listings',
+        'no_listings' => 'No classified listings yet.',
+        'listing' => 'Listing',
+        'status' => 'Status',
+        'created' => 'Created',
+    ],
+
     'dashboard' => [
         'welcome' => 'Welcome back',
         'store_status' => 'Store Status',

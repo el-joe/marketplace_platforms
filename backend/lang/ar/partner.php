@@ -1445,6 +1445,19 @@ return [
         'decline_offer' => 'رفض العرض',
     ],
 
+    'dashboard_classified' => [
+        'active_listings' => 'الإعلانات النشطة',
+        'pending_listings' => 'الإعلانات قيد المراجعة',
+        'paused_listings' => 'الإعلانات الموقوفة',
+        'sold_listings' => 'الإعلانات المباعة',
+        'new_inquiries' => 'استفسارات جديدة',
+        'recent_listings' => 'أحدث الإعلانات',
+        'no_listings' => 'لا توجد إعلانات مبوبة بعد.',
+        'listing' => 'الإعلان',
+        'status' => 'الحالة',
+        'created' => 'تاريخ الإنشاء',
+    ],
+
     'dashboard' => [
         'welcome' => 'مرحباً بك',
         'store_status' => 'حالة المتجر',

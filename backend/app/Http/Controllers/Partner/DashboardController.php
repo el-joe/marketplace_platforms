@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassifiedInquiry;
 use App\Models\Dispute;
 use App\Models\Payout;
 use App\Models\SubOrder;
@@ -18,6 +19,10 @@ class DashboardController extends Controller
     {
         $vendorAdmin = Auth::guard('vendor')->user();
         $vendorId = $vendorAdmin->vendor_id;
+
+        if ($vendorAdmin->vendor?->isClassifiedVendor()) {
+            return $this->classifiedDashboard($vendorAdmin, $vendorId);
+        }
 
         $stats = Cache::remember(
             "vendor.dashboard.{$vendorId}",
@@ -94,5 +99,41 @@ class DashboardController extends Controller
             ->get();
 
         return view('partner.dashboard', compact('stats'));
+    }
+
+    private function classifiedDashboard($vendorAdmin, string $vendorId): View
+    {
+        $vendor = $vendorAdmin->vendor;
+
+        $stats = Cache::remember(
+            "vendor.classified-dashboard.{$vendorId}",
+            300,
+            function () use ($vendor) {
+                $listingsQuery = $vendor->classifiedListings();
+
+                return [
+                    'active_listings' => (clone $listingsQuery)->where('status', \App\Enums\ClassifiedListingStatus::Active->value)->count(),
+                    'pending_listings' => (clone $listingsQuery)->whereIn('status', [
+                        \App\Enums\ClassifiedListingStatus::PendingContract->value,
+                        \App\Enums\ClassifiedListingStatus::PendingReview->value,
+                    ])->count(),
+                    'paused_listings' => (clone $listingsQuery)->where('status', \App\Enums\ClassifiedListingStatus::Paused->value)->count(),
+                    'sold_listings' => (clone $listingsQuery)->where('status', \App\Enums\ClassifiedListingStatus::Sold->value)->count(),
+                    'total_listings' => (clone $listingsQuery)->count(),
+                    'new_inquiries' => ClassifiedInquiry::whereIn('classified_listing_id', (clone $listingsQuery)->pluck('id'))
+                        ->where('status', \App\Enums\ClassifiedInquiryStatus::New->value)
+                        ->count(),
+                    'rating_avg' => $vendor->store_rating_avg ?? 0,
+                    'rating_count' => $vendor->store_rating_count ?? 0,
+                ];
+            }
+        );
+
+        $stats['recent_listings'] = $vendor->classifiedListings()
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        return view('partner.dashboard-classified', compact('stats'));
     }
 }

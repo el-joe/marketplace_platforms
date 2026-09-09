@@ -5,8 +5,10 @@ namespace App\Http\Requests\Admin;
 use App\Enums\PayoutSchedule;
 use App\Enums\VendorBusinessType;
 use App\Enums\VendorGlobalStatus;
+use App\Enums\VendorType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateVendorRequest extends FormRequest
 {
@@ -32,10 +34,36 @@ class UpdateVendorRequest extends FormRequest
             'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'payout_schedule' => ['nullable', Rule::enum(PayoutSchedule::class)],
             'global_status' => ['nullable', Rule::enum(VendorGlobalStatus::class)],
+            'vendor_type' => ['nullable', Rule::enum(VendorType::class)],
             'account_manager_admin_id' => ['nullable', 'uuid', 'exists:admins,id'],
             'warranty_months' => ['nullable', 'integer', 'min:0', 'max:120'],
             'easy_returns_enabled' => ['nullable', 'boolean'],
             'secure_payments_enabled' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $vendor = $this->route('vendor');
+
+            if (!$vendor || !$this->filled('vendor_type')) {
+                return;
+            }
+
+            if ($this->input('vendor_type') === $vendor->vendor_type?->value) {
+                return;
+            }
+
+            $hasProductListings = $vendor->listings()->exists();
+            $hasClassifiedListings = $vendor->classifiedListings()->exists();
+
+            if ($hasProductListings || $hasClassifiedListings) {
+                $validator->errors()->add(
+                    'vendor_type',
+                    'Vendor type cannot be changed once the vendor has product listings or classified listings.'
+                );
+            }
+        });
     }
 }

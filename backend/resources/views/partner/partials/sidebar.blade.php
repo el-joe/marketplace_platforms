@@ -1,7 +1,9 @@
 @php
     $vendorAdmin = auth()->guard('vendor')->user();
     $vendor = $vendorAdmin?->vendor;
-    $pendingZoneAlerts = $vendor
+    $isClassifiedVendor = $vendor?->isClassifiedVendor() ?? false;
+    $isProductVendor = ! $isClassifiedVendor;
+    $pendingZoneAlerts = $vendor && $isProductVendor
         ? \App\Models\VendorExceptionalZoneAlert::where('vendor_id', $vendor->id)->where('status', 'pending')->count()
         : 0;
 @endphp
@@ -24,6 +26,7 @@
             <x-partner-nav-item route="partner.notifications.index" icon="bell" label="{{ __('partner.nav.notifications') }}" />
         </x-partner-nav-group>
 
+        @if($isProductVendor)
         {{-- GROUP 2: المبيعات --}}
         <x-partner-nav-group label="{{ __('partner.nav.sales') }}">
             <x-partner-nav-item route="partner.orders.index" icon="shopping-bag" label="{{ __('partner.nav.my_orders') }}" />
@@ -52,24 +55,29 @@
             <x-partner-nav-item route="partner.packaging-supplies.index" icon="archive-box" label="{{ __('partner.nav.packaging_supplies') }}" />
         </x-partner-nav-group>
 
-        {{-- GROUP 5: حملاتي كبائع (always visible — vendor creating campaigns FOR their own products) --}}
+        {{-- GROUP 5: حملاتي كبائع (vendor creating campaigns FOR their own products) --}}
         <x-partner-nav-group label="{{ __('partner.nav.vendor_campaigns') }}">
             <x-partner-nav-item route="partner.marketer-campaigns.index" icon="megaphone" label="{{ __('partner.nav.vendor_campaigns_created') }}" />
         </x-partner-nav-group>
 
-        {{-- Marketing tools (flash sales, coupons, ads, open market) kept as-is --}}
+        {{-- Marketing tools (flash sales, coupons, ads) --}}
         <x-partner-nav-group label="{{ __('partner.nav.marketing') }}">
             <x-partner-nav-item route="partner.flash-sales.index" icon="bolt" label="{{ __('partner.nav.flash_sales') }}" />
             <x-partner-nav-item route="partner.coupons.index" icon="ticket" label="{{ __('partner.nav.coupons') }}" />
             <x-partner-nav-item route="partner.ads.index" icon="megaphone" label="{{ __('partner.nav.ads') }}" />
         </x-partner-nav-group>
+        @endif
 
+        @if($isClassifiedVendor)
         <x-partner-nav-group label="{{ __('partner.nav.open_market') }}">
             <x-partner-nav-item route="partner.classifieds.index" icon="squares-plus" label="{{ __('partner.nav.my_classifieds') }}" />
         </x-partner-nav-group>
+        @endif
 
         <x-partner-nav-group label="{{ __('partner.nav.other') }}">
-            <x-partner-nav-item route="partner.performance.index" icon="chart-bar" label="{{ __('partner.nav.performance') }}" />
+            @if($isProductVendor)
+                <x-partner-nav-item route="partner.performance.index" icon="chart-bar" label="{{ __('partner.nav.performance') }}" />
+            @endif
             <x-partner-nav-item route="partner.support.tickets.index" icon="chat-bubble-left" label="{{ __('partner.nav.support') }}" />
         </x-partner-nav-group>
 

@@ -91,7 +91,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         });
 
     // ── Orders module ────────────────────────────────────────────────────────
-    Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
+    Route::prefix('orders')->name('orders.')->controller(OrderController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index')->middleware('vendor.can:orders.view');
         Route::get('/datatable', 'datatable')->name('datatable')->middleware('vendor.can:orders.view');
         Route::get('/{subOrderNumber}', 'show')->name('show')->middleware('vendor.can:orders.view');
@@ -104,7 +104,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Listings module ──────────────────────────────────────────────────────
-    Route::prefix('listings')->name('listings.')->controller(ListingController::class)->group(function () {
+    Route::prefix('listings')->name('listings.')->controller(ListingController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index')->middleware('vendor.can:listings.view');
         Route::get('/datatable', 'datatable')->name('datatable')->middleware('vendor.can:listings.view');
         Route::get('/create', 'create')->name('create')->middleware('vendor.can:listings.create');
@@ -135,7 +135,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Inventory module ─────────────────────────────────────────────────────
-    Route::prefix('inventory')->name('inventory.')->controller(InventoryController::class)->group(function () {
+    Route::prefix('inventory')->name('inventory.')->controller(InventoryController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/datatable', 'datatable')->name('datatable');
         Route::get('/low-stock', 'lowStock')->name('low-stock');
@@ -151,7 +151,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Coupons module ────────────────────────────────────────────────────────
-    Route::prefix('coupons')->name('coupons.')->controller(CouponController::class)->group(function () {
+    Route::prefix('coupons')->name('coupons.')->controller(CouponController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/',                    'index')->name('index');
         Route::get('/datatable',           'datatable')->name('datatable');
         Route::get('/create',              'create')->name('create');
@@ -166,7 +166,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Product Certifications ───────────────────────────────────────────────
-    Route::prefix('product-certifications')->name('product-certifications.')->controller(ProductCertificationController::class)->group(function () {
+    Route::prefix('product-certifications')->name('product-certifications.')->controller(ProductCertificationController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/',                'index')->name('index');
         Route::post('/',               'store')->name('store');
         Route::post('/{id}/replace',   'replace')->name('replace');
@@ -180,7 +180,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::delete('/{account}', 'destroy')->name('destroy');
     });
     // ── Flash Sales module ────────────────────────────────────────────────────
-    Route::prefix('flash-sales')->name('flash-sales.')->controller(FlashSaleController::class)->group(function () {
+    Route::prefix('flash-sales')->name('flash-sales.')->controller(FlashSaleController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index');
         // Static sub-routes BEFORE /{flashSaleId} wildcard
         Route::get('/{flashSaleId}/eligible-listings', 'eligibleListings')->name('eligible-listings');
@@ -198,6 +198,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     // ── City shipping surcharges ──────────────────────────────────────────────
     Route::prefix('city-surcharges')->name('city-surcharges.')
         ->controller(\App\Http\Controllers\Partner\CityShippingSurchargeController::class)
+        ->middleware('vendor.type:product_vendor')
         ->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
@@ -208,6 +209,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     // ── Exceptional shipping zone alerts ─────────────────────────────────────
     Route::prefix('exceptional-zone-alerts')->name('exceptional-zone-alerts.')
         ->controller(\App\Http\Controllers\Partner\ExceptionalZoneAlertController::class)
+        ->middleware('vendor.type:product_vendor')
         ->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/cities-for-warehouse', 'citiesForWarehouse')->name('cities-for-warehouse');
@@ -265,7 +267,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Disputes ─────────────────────────────────────────────────────────────
-    Route::prefix('disputes')->name('disputes.')->controller(DisputeController::class)->group(function () {
+    Route::prefix('disputes')->name('disputes.')->controller(DisputeController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index')->middleware('vendor.can:disputes.view');
         Route::get('/{disputeNumber}', 'show')->name('show')->middleware('vendor.can:disputes.view');
         Route::post('/{disputeNumber}/reply', 'reply')->name('reply')->middleware('vendor.can:disputes.respond');
@@ -273,7 +275,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Fulfillment (FBN / FBP / Marketplace) ───────────────────────────────
-    Route::prefix('fulfillment')->name('fulfillment.')->controller(FulfillmentController::class)->group(function () {
+    Route::prefix('fulfillment')->name('fulfillment.')->controller(FulfillmentController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/fbn-requests', 'fbnRequests')->name('fbn.requests');
         Route::post('/fbn/submit', 'submitInboundRequest')->name('fbn.submit');
@@ -303,7 +305,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── AI Tools ──────────────────────────────────────────────────────────
-    Route::prefix('ai')->name('ai.')->controller(\App\Http\Controllers\Partner\AiToolsController::class)->group(function () {
+    Route::prefix('ai')->name('ai.')->controller(\App\Http\Controllers\Partner\AiToolsController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/credits', 'credits')->name('credits');
         Route::get('/{listing}', 'index')->name('index');
 
@@ -318,7 +320,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ─── Carrier Claims ───────────────────────────────────────────────────────
-    Route::prefix('claims')->name('claims.')->group(function () {
+    Route::prefix('claims')->name('claims.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', [\App\Http\Controllers\Partner\ClaimController::class, 'index'])->name('index');
         Route::get('/create', [\App\Http\Controllers\Partner\ClaimController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Partner\ClaimController::class, 'store'])->name('store');
@@ -328,6 +330,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     // ─── Warranty Claims ──────────────────────────────────────────────────────
     Route::prefix('warranty-claims')->name('warranty-claims.')
         ->controller(\App\Http\Controllers\Partner\WarrantyClaimController::class)
+        ->middleware('vendor.type:product_vendor')
         ->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{claim}', 'show')->name('show');
@@ -335,7 +338,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         });
 
     // ─── Warehouses (My Warehouse module) ────────────────────────────────────────
-    Route::prefix('warehouses')->name('warehouses.')->group(function () {
+    Route::prefix('warehouses')->name('warehouses.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', [WarehouseController::class, 'index'])->name('index');
         Route::get('/create', [WarehouseController::class, 'create'])->name('create');
         Route::post('/', [WarehouseController::class, 'store'])->name('store');
@@ -369,10 +372,11 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
 
     // ─── Delivery Ratings ─────────────────────────────────────────────────────
     Route::post('/orders/{subOrder}/rate-delivery', [\App\Http\Controllers\Partner\DeliveryRatingController::class, 'store'])
-        ->name('orders.rate-delivery');
+        ->name('orders.rate-delivery')
+        ->middleware('vendor.type:product_vendor');
 
     // ─── Packaging Supplies ───────────────────────────────────────────────────
-    Route::prefix('packaging-supplies')->name('packaging-supplies.')->group(function () {
+    Route::prefix('packaging-supplies')->name('packaging-supplies.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', [\App\Http\Controllers\Partner\PackagingSupplyController::class, 'index'])->name('index');
         Route::get('/request', [\App\Http\Controllers\Partner\PackagingSupplyController::class, 'request'])->name('request');
         Route::post('/request', [\App\Http\Controllers\Partner\PackagingSupplyController::class, 'submitRequest'])->name('submit');
@@ -382,7 +386,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ─── Returns ─────────────────────────────────────────────────────────────
-    Route::prefix('returns')->name('returns.')->group(function () {
+    Route::prefix('returns')->name('returns.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', [\App\Http\Controllers\Partner\ReturnController::class, 'index'])->name('index')->middleware('vendor.can:returns.view');
         Route::get('{returnNumber}', [\App\Http\Controllers\Partner\ReturnController::class, 'show'])->name('show')->middleware('vendor.can:returns.view');
         Route::post('{returnNumber}/approve', [\App\Http\Controllers\Partner\ReturnController::class, 'approve'])->name('approve')->middleware('vendor.can:returns.process');
@@ -397,17 +401,17 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ─── Marketer Campaigns (My Campaigns — vendor's own influencer/affiliate campaigns) ──
-    Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->group(function () {
+    Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/',                [MarketerCampaignController::class, 'index'])->name('index')->middleware('vendor.can:marketer_campaigns.view');
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show')->middleware('vendor.can:marketer_campaigns.view');
         Route::post('/{marketerCampaign}/cancel', [MarketerCampaignController::class, 'cancel'])->name('cancel')->middleware('vendor.can:marketer_campaigns.cancel');
     });
     // Keep this route — vendor needs to search for marketers when creating campaigns
     Route::get('/campaigns/search-marketers', [MarketerCampaignController::class, 'searchMarketers'])
-        ->name('campaigns.search-marketers')->middleware('vendor.can:marketer_campaigns.view');
+        ->name('campaigns.search-marketers')->middleware(['vendor.can:marketer_campaigns.view', 'vendor.type:product_vendor']);
 
     // ─── Ads ─────────────────────────────────────────────────────────────────
-    Route::prefix('ads')->name('ads.')->group(function () {
+    Route::prefix('ads')->name('ads.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/',                   [AdsController::class, 'index'])->name('index');
         Route::post('/datatable',         [AdsController::class, 'datatable'])->name('datatable');
         Route::post('/',                  [AdsController::class, 'store'])->name('store');
@@ -420,7 +424,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ─── السوق المفتوح (Classifieds) ─────────────────────────────────────────
-    Route::prefix('classifieds')->name('classifieds.')->group(function () {
+    Route::prefix('classifieds')->name('classifieds.')->middleware('vendor.type:classified_vendor')->group(function () {
         Route::get('/',                [ClassifiedListingController::class, 'index'])->name('index');
         Route::post('/datatable',      [ClassifiedListingController::class, 'datatable'])->name('datatable');
         Route::get('/categories',      [ClassifiedListingController::class, 'categories'])->name('categories');

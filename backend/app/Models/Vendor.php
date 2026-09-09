@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PayoutSchedule;
 use App\Enums\VendorBusinessType;
 use App\Enums\VendorGlobalStatus;
+use App\Enums\VendorType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -55,6 +56,7 @@ class Vendor extends Model
         'approved_by_admin_id',
         'avatar',
         'global_status',
+        'vendor_type',
         'onboarding_completed_at',
         'rejection_reason',
         'account_manager_admin_id',
@@ -76,12 +78,23 @@ class Vendor extends Model
             'cancellation_rate_pct' => 'float',
             'strikes_count' => 'integer',
             'global_status' => VendorGlobalStatus::class,
+            'vendor_type' => VendorType::class,
             'business_type' => VendorBusinessType::class,
             'payout_schedule' => PayoutSchedule::class,
             'warranty_months' => 'integer',
             'easy_returns_enabled' => 'boolean',
             'secure_payments_enabled' => 'boolean',
         ];
+    }
+
+    public function isProductVendor(): bool
+    {
+        return $this->vendor_type === VendorType::ProductVendor;
+    }
+
+    public function isClassifiedVendor(): bool
+    {
+        return $this->vendor_type === VendorType::ClassifiedVendor;
     }
 
     public function getPositiveRatingPctAttribute(): ?int

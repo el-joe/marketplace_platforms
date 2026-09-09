@@ -778,6 +778,7 @@ CREATE TABLE `banners` (
   `country_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `placement_code` enum('homepage_hero','homepage_secondary_left','homepage_secondary_right','homepage_midpage','category_top_{slug}','category_sidebar','search_top','cart_banner','checkout_banner','product_page_bottom','app_splash','app_home_top','email_header') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `product_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'If set, this banner is shown only on this product page',
   `title_en` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `title_ar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `subtitle_en` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -802,7 +803,9 @@ CREATE TABLE `banners` (
   PRIMARY KEY (`id`),
   KEY `banners_country_id_index` (`country_id`),
   KEY `banners_created_by_admin_id_index` (`created_by_admin_id`),
-  KEY `banners_updated_by_admin_id_index` (`updated_by_admin_id`)
+  KEY `banners_updated_by_admin_id_index` (`updated_by_admin_id`),
+  KEY `banners_product_id_index` (`product_id`),
+  CONSTRAINT `banners_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `block_analytics`;
@@ -6240,6 +6243,7 @@ CREATE TABLE `vendors` (
   `strikes_count` decimal(5,2) NOT NULL DEFAULT '0.00',
   `country_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `global_status` enum('pending','active','inactive','suspended','rejected','blacklisted','under_review') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `vendor_type` enum('product_vendor','classified_vendor') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'product_vendor' COMMENT 'Mutually exclusive account type: sells products via vendor_listings, or classified ads via classified_listings.',
   `last_login_at` timestamp NULL DEFAULT NULL,
   `last_login_ip` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `approved_at` timestamp NULL DEFAULT NULL,
@@ -6711,18 +6715,22 @@ CREATE TABLE `wishlist_items` (
   `customer_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `vendor_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `admin_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `product_variant_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `classified_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `product_variant_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `added_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_wg_vendor_listing` (`wishlist_group_id`,`vendor_listing_id`),
   UNIQUE KEY `uq_wg_admin_listing` (`wishlist_group_id`,`admin_listing_id`),
+  UNIQUE KEY `uq_wg_classified_listing` (`wishlist_group_id`,`classified_listing_id`),
   KEY `wishlist_items_product_variant_id_foreign` (`product_variant_id`),
   KEY `wishlist_items_customer_id_wishlist_group_id_index` (`customer_id`,`wishlist_group_id`),
   KEY `wishlist_items_vendor_listing_id_index` (`vendor_listing_id`),
   KEY `wishlist_items_admin_product_listing_id_index` (`admin_listing_id`),
+  KEY `wishlist_items_classified_listing_id_index` (`classified_listing_id`),
   CONSTRAINT `wishlist_items_admin_listing_id_foreign` FOREIGN KEY (`admin_listing_id`) REFERENCES `admin_listings` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `wishlist_items_classified_listing_id_foreign` FOREIGN KEY (`classified_listing_id`) REFERENCES `classified_listings` (`id`) ON DELETE SET NULL,
   CONSTRAINT `wishlist_items_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `wishlist_items_product_variant_id_foreign` FOREIGN KEY (`product_variant_id`) REFERENCES `product_variants` (`id`) ON DELETE CASCADE,
   CONSTRAINT `wishlist_items_vendor_listing_id_foreign` FOREIGN KEY (`vendor_listing_id`) REFERENCES `vendor_listings` (`id`) ON DELETE SET NULL,
@@ -7208,3 +7216,6 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (455,'2026_09_06_00
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (456,'2026_09_06_000007_add_travel_classified_to_marketer_listings',47);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (457,'2026_09_06_000008_add_marketer_campaign_conversions_travel_classified',47);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (458,'2026_09_06_000009_add_listing_grid_performance_indexes',48);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (459,'2026_09_09_000001_add_product_id_to_banners_table',49);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (460,'2026_09_09_000002_add_classified_listing_id_to_wishlist_items_table',49);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (461,'2026_09_09_000003_add_vendor_type_to_vendors_table',50);

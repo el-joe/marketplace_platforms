@@ -826,6 +826,12 @@ function renderStore(data) {
         : `<div class="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold shrink-0">${data.store_name.charAt(0).toUpperCase()}</div>`;
 
     const badges = [];
+    if (data.vendor_type) {
+        const isClassified = data.vendor_type === 'classified_vendor';
+        const label = isClassified ? 'Classified' : 'Product';
+        const cls = isClassified ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700';
+        badges.push(`<span class="text-xs px-1.5 py-0.5 rounded ${cls}">${label}</span>`);
+    }
     if (data.payout_hold) badges.push('<span class="text-warning-700 text-xs">⚠ Hold</span>');
     if (data.strikes > 0) badges.push(`<span class="text-danger-600 text-xs">⚡ ${data.strikes}</span>`);
 

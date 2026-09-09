@@ -28,6 +28,7 @@
         \App\Enums\VendorStrikeSeverity::Critical->value => 'danger',
     ];
     $activeStrikesCount = $vendor->strikes->where('is_active', true)->count();
+    $vendorTypeLocked = $vendor->listings()->exists() || $vendor->classifiedListings()->exists();
 @endphp
 
 {{-- ─── Page header ─────────────────────────────────────────────────────────── --}}
@@ -45,6 +46,9 @@
             <div class="flex items-center gap-2 mt-1 flex-wrap">
                 <x-badge :color="$statusColors[$vendor->global_status->value] ?? 'gray'">
                     {{ __('admin.vendors.' . $vendor->global_status->value) }}
+                </x-badge>
+                <x-badge :color="$vendor->vendor_type?->value === 'classified_vendor' ? 'primary' : 'gray'">
+                    {{ $vendor->vendor_type?->label() ?? '—' }}
                 </x-badge>
                 @if($vendor->payout_hold_active)
                     <x-badge color="warning">{{ __('admin.vendors.payout_hold') }}</x-badge>
@@ -106,6 +110,7 @@
                             __('admin.vendors.store_name')      => $vendor->store_name,
                             __('admin.vendors.store_slug')      => $vendor->store_slug,
                             __('admin.vendors.business_name')   => $vendor->business_name ?: '—',
+                            __('admin.vendors.vendor_type')     => $vendor->vendor_type?->label() ?? '—',
                             __('admin.vendors.business_type')   => $vendor->business_type ? __('admin.vendor_applications.business_type_' . $vendor->business_type->value) : '—',
                             __('admin.vendors.reg_number')      => $vendor->business_registration_number ?: '—',
                             __('admin.vendors.tax_id')          => $vendor->tax_id ?: '—',
@@ -141,6 +146,14 @@
                             <x-form.input name="business_name" label="{{ __('admin.vendors.business_name') }}" :value="$vendor->business_name" />
                             <x-form.select name="business_type" label="{{ __('admin.vendors.business_type') }}" :value="$vendor->business_type?->value"
                                 :options="['individual' => __('admin.vendors.individual'), 'sole_prop' => __('admin.vendors.sole_prop'), 'llc' => __('admin.vendors.llc'), 'corp' => __('admin.vendors.corp')]"/>
+                            <div>
+                                <x-form.select name="vendor_type" label="{{ __('admin.vendors.vendor_type') }}" :value="$vendor->vendor_type?->value"
+                                    :disabled="$vendorTypeLocked"
+                                    :options="['product_vendor' => __('admin.vendors.vendor_type_product_vendor'), 'classified_vendor' => __('admin.vendors.vendor_type_classified_vendor')]"/>
+                                @if($vendorTypeLocked)
+                                    <p class="text-xs text-gray-400 mt-1">{{ __('admin.vendors.vendor_type_locked_hint') }}</p>
+                                @endif
+                            </div>
                             <x-form.input name="contact_email"   label="{{ __('admin.vendors.contact_email') }}" :value="$vendor->contact_email"   type="email"/>
                             <x-form.input name="contact_phone"   label="{{ __('admin.vendors.contact_phone') }}" :value="$vendor->contact_phone" />
                             <x-form.input name="commission_rate" label="{{ __('admin.vendors.commission_rate') }} (%)" :value="$vendor->commission_rate" type="number" step="0.01"/>

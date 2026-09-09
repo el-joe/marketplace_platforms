@@ -78,6 +78,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'vendor.onboarded' => \App\Http\Middleware\VendorOnboarded::class,
             'vendor.locale' => \App\Http\Middleware\SetVendorLocale::class,
             'vendor.can' => \App\Http\Middleware\VendorPermissionMiddleware::class,
+            'vendor.type' => \App\Http\Middleware\VendorTypeMiddleware::class,
             'auth.delivery' => \App\Http\Middleware\DeliveryAuth::class,
             'delivery.api.auth' => \App\Http\Middleware\DeliveryApiAuth::class,
             'delivery.api.active' => \App\Http\Middleware\DeliveryApiActive::class,

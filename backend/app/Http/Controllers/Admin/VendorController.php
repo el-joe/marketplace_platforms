@@ -159,6 +159,7 @@ class VendorController extends Controller
                     'store_name' => $vendor->store_name,
                     'avatar' => $vendor->avatar,
                     'strikes' => $vendor->strikes_count,
+                    'vendor_type' => $vendor->vendor_type?->value,
                 ],
                 'owner_name' => $vendor->name,
                 'email' => $vendor->email,
