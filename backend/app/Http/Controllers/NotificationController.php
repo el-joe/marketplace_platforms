@@ -33,6 +33,7 @@ class NotificationController extends Controller
         'shipping_supervisor' => 'layouts.carrier',
         'travel_agency'       => 'layouts.travel-agency',
         'delivery'            => 'layouts.delivery',
+        'marketer'            => 'layouts.marketer',
     ];
 
     private function notifiable(): ?object

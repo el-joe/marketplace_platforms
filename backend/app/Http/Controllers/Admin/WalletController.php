@@ -210,6 +210,14 @@ class WalletController extends Controller
     public function markWithdrawalProcessed(WalletWithdrawalRequest $withdrawal)
     {
         $withdrawal->update(['status' => WalletWithdrawalRequestStatus::Processed, 'processed_at' => now()]);
+
+        $owner = $withdrawal->wallet->owner;
+        if ($owner instanceof \App\Models\Marketer) {
+            $owner->marketerAdmins->each(
+                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\PayoutProcessedNotification($withdrawal, $ma->id))
+            );
+        }
+
         return back()->with('success', 'Marked as processed.');
     }
 

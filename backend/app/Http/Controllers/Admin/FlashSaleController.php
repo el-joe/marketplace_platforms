@@ -662,7 +662,7 @@ class FlashSaleController extends Controller
             );
 
             $marketer->marketerAdmins->each(
-                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\FlashSaleInvitationNotification($invitation))
+                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\FlashSaleInvitationNotification($invitation, $ma->id))
             );
 
             $invited++;

@@ -106,7 +106,7 @@ class LastClickAttributionService
                 );
             }
 
-            MarketerCampaignConversion::create([
+            $conversion = MarketerCampaignConversion::create([
                 'campaign_id'             => $campaign->id,
                 'invitation_id'           => $invitation->id,
                 'order_id'                => $order->id,
@@ -122,6 +122,10 @@ class LastClickAttributionService
 
             $invitation->increment('total_conversions');
             $invitation->increment('total_commission_earned', $commissionAmount);
+
+            $invitation->marketer->marketerAdmins->each(
+                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\NewConversionNotification($conversion, $ma->id))
+            );
 
             // For last_click only: clear attribution after conversion.
             // For fixed/tiered: keep the cookie so repeat purchases also convert.

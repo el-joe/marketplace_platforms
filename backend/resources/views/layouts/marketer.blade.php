@@ -7,7 +7,7 @@
     <title>@yield('title', 'لوحة الماركتر') | نون</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=cairo:400,500,600,700,800&display=swap" rel="stylesheet" />
-    @vite(['resources/css/app.css', 'resources/js/partner/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/marketer/app.js'])
     @stack('head')
     @stack('styles')
     <style>[x-cloak]{display:none!important}</style>
@@ -182,6 +182,7 @@
                             ⏳ حسابك قيد المراجعة
                         </span>
                     @endif
+                    <x-notification-bell guard="marketer" />
                     <span class="text-sm text-gray-500">{{ $marketerAdmin?->name }}</span>
                 </div>
             </header>

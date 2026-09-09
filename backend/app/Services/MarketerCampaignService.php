@@ -271,7 +271,7 @@ class MarketerCampaignService
         SendCampaignWhatsAppNotificationJob::dispatch($invitation->id);
 
         $invitation->marketer->marketerAdmins->each(
-            fn ($ma) => $ma->notify(new CampaignInvitationReceivedNotification($invitation))
+            fn ($ma) => $ma->notify(new CampaignInvitationReceivedNotification($invitation, $ma->id))
         );
 
         return $invitation;

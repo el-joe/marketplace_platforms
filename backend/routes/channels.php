@@ -32,3 +32,7 @@ Broadcast::channel('carrier-supervisor.{supervisorId}', function ($user, $superv
 Broadcast::channel('travel-agency.{agencyId}', function ($user, $agencyId) {
     return (int) $user->id === (int) $agencyId;
 });
+
+Broadcast::channel('marketer.{marketerAdminId}', function ($user, $marketerAdminId) {
+    return (string) $user->id === (string) $marketerAdminId;
+});

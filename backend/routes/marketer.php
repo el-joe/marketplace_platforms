@@ -12,7 +12,11 @@ use App\Http\Controllers\Marketer\ProfileController;
 use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
 use App\Http\Controllers\Marketer\SupportController;
+use App\Http\Controllers\NotificationController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+Broadcast::routes(['middleware' => ['web', 'auth.marketer']]);
 
 // ── Locale switcher ───────────────────────────────────────────────────────
 Route::middleware('web')
@@ -52,6 +56,18 @@ Route::middleware('web')->group(function () {
 
         // Dashboard / statistics
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Notifications
+        Route::prefix('notifications')->name('notifications.')
+            ->controller(NotificationController::class)
+            ->group(function () {
+                Route::get('/',               'index')->name('index');
+                Route::get('/recent',         'recent')->name('recent');
+                Route::get('/unread-count',   'unreadCount')->name('unread-count');
+                Route::get('/unread',         'unread')->name('unread');
+                Route::post('/mark-all-read', 'markAllRead')->name('mark-all-read');
+                Route::post('/{id}/read',     'markRead')->name('mark-read');
+            });
 
         // Profile
         Route::get('/profile',  [ProfileController::class, 'show'])->name('profile');
