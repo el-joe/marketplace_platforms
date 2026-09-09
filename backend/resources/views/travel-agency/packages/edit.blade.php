@@ -9,6 +9,12 @@
         <h1 class="text-2xl font-black text-gray-900">{{ __('travel.packages.edit_package_title') }}</h1>
     </div>
 
+    @if(!in_array($package->status, [\App\Enums\TravelPackageStatus::Draft, \App\Enums\TravelPackageStatus::PendingReview]))
+        <div class="px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+            {{ __('travel.packages.publish_edit_notice') }}
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('travel-agency.packages.update', $package) }}"
           enctype="multipart/form-data" class="space-y-6">
         @csrf

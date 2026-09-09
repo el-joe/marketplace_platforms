@@ -113,7 +113,7 @@ return [
             'sheet_title' => 'Packages',
         ],
         'draft_saved' => 'Package saved as draft.',
-        'active_edit_forbidden' => 'Active packages cannot be edited. Contact support.',
+        'publish_edit_notice' => 'Editing a published package will set it back to Pending Review until re-approved.',
         'updated' => 'Package updated.',
         'submit_review_only_draft' => 'Only draft packages can be submitted for review.',
         'submitted_for_review' => 'Package submitted for admin review.',

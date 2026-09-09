@@ -12,10 +12,8 @@
                 <p class="text-sm text-gray-400">{{ $package->title_en }}</p>
             </div>
             <div class="flex gap-2">
-                @if(in_array($package->status, [\App\Enums\TravelPackageStatus::Draft, \App\Enums\TravelPackageStatus::PendingReview]))
-                    <a href="{{ route('travel-agency.packages.edit', $package) }}"
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">{{ __('travel.packages.edit') }}</a>
-                @endif
+                <a href="{{ route('travel-agency.packages.edit', $package) }}"
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">{{ __('travel.packages.edit') }}</a>
                 @if($package->status === \App\Enums\TravelPackageStatus::Draft)
                     <form method="POST" action="{{ route('travel-agency.packages.submit', $package) }}" class="inline">
                         @csrf

@@ -117,6 +117,9 @@
                                             </button>
                                         </form>
                                         <span class="text-xs text-gray-400">{{ __('travel.packages.awaiting_approval') }}</span>
+                                    @else
+                                        <a href="{{ route('travel-agency.packages.edit', $pkg) }}"
+                                            class="text-amber-600 text-xs hover:underline">{{ __('travel.packages.edit') }}</a>
                                     @endif
                                 </div>
                                 @error('submission')

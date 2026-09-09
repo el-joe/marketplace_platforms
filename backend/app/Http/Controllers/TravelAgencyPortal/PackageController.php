@@ -207,9 +207,7 @@ class PackageController extends Controller
     {
         $this->authorise($package);
 
-        if (!in_array($package->status, [TravelPackageStatus::Draft, TravelPackageStatus::PendingReview])) {
-            return back()->withErrors(['status' => __('travel.packages.active_edit_forbidden')]);
-        }
+        $wasPublished = !in_array($package->status, [TravelPackageStatus::Draft, TravelPackageStatus::PendingReview]);
 
         $data = $request->validate([
             'title_en'                      => ['required', 'string', 'max:255'],
@@ -247,6 +245,12 @@ class PackageController extends Controller
 
         $categoryIds = $data['category_ids'] ?? [];
         unset($data['category_ids']);
+
+        if ($wasPublished) {
+            $data['status'] = TravelPackageStatus::PendingReview;
+            $data['approved_by_admin_id'] = null;
+            $data['approved_at'] = null;
+        }
 
         $package->update($data);
         $package->syncPricingTiers($priceTiers);
