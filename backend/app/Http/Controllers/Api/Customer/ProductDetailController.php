@@ -16,6 +16,8 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\VendorListing;
 use App\Services\AppContextService;
+use App\Services\BannerService;
+use App\Services\Customer\ListingQueryService;
 use App\Services\ShippingMethodResolverService;
 use App\Services\VariantResolutionService;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +29,8 @@ class ProductDetailController extends Controller
         private readonly VariantResolutionService $variantResolutionService,
         private readonly AppContextService $appContext,
         private readonly ShippingMethodResolverService $shippingMethodResolver,
+        private readonly ListingQueryService $listings,
+        private readonly BannerService $bannerService,
     ) {
     }
 
@@ -81,6 +85,14 @@ class ProductDetailController extends Controller
             ? []
             : array_values(array_filter($unifiedListings, fn (array $l) => !$l['is_current_listing']));
 
+        $customerId = auth('customer')->id();
+        $isWishlisted = $customerId
+            ? in_array($listing->id, $this->listings->wishlistListingIds($customerId), true)
+            : false;
+
+        $audience = $customerId ? 'logged_in' : 'guest';
+        $banner = $this->bannerService->getActivePlacement('product_page_bottom', $countryId, $audience, $product->id);
+
         return ApiResponse::success([
             'product' => $this->productShape($product),
             'variant' => $this->variantShape($variant),
@@ -93,7 +105,9 @@ class ProductDetailController extends Controller
             'shipping_methods' => $shippingMethodsData,
             'selected_shipping_method_id' => $selectedShippingMethodId,
             'current_url' => $url,
-            'url_param' => $url_param
+            'url_param' => $url_param,
+            'is_wishlisted' => $isWishlisted,
+            'banner' => $banner ? (new \App\Http\Resources\Customer\BannerResource($banner))->toArray($request) : null,
         ]);
     }
 
