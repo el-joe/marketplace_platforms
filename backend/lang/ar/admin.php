@@ -3596,6 +3596,11 @@ return [
         'hide'                       => 'إخفاء',
         'unhide'                     => 'إظهار',
         'hide_instead'                => 'إخفاء بدلاً من الحذف',
+        'deleted_column'              => 'محذوف',
+        'deleted_status'              => 'محذوف',
+        'not_deleted_placeholder'     => 'نشط (غير محذوف)',
+        'restore'                     => 'استعادة',
+        'product_restored'           => 'تم استعادة المنتج.',
         'delete_variant_title'        => 'حذف المتغير؟',
         'delete_variant_question'     => 'هل تريد حذف هذا المتغير؟',
 

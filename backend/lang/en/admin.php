@@ -3633,6 +3633,11 @@ return [
         'hide'                       => 'Hide',
         'unhide'                     => 'Unhide',
         'hide_instead'                => 'Hide instead',
+        'deleted_column'              => 'Deleted',
+        'deleted_status'              => 'Deleted',
+        'not_deleted_placeholder'     => 'Active (not deleted)',
+        'restore'                     => 'Restore',
+        'product_restored'           => 'Product restored.',
         'delete_variant_title'        => 'Delete variant?',
         'delete_variant_question'     => 'Delete this variant?',
 

@@ -145,6 +145,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::put('/{product}', [ProductController::class, 'update'])->name('update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
         Route::patch('/{product}/hide', [ProductController::class, 'hide'])->name('hide');
+        Route::patch('/{product}/restore', [ProductController::class, 'restore'])->name('restore');
         Route::delete('/{product}/variants/{variant}', [ProductController::class, 'destroyVariant'])->name('variants.destroy');
         Route::patch('/{product}/variants/{variant}/hide', [ProductController::class, 'hideVariant'])->name('variants.hide');
 

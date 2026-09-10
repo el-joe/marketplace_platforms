@@ -59,10 +59,11 @@
                 'searchable' => false,
                 'className' => 'text-end',
                 'render' => 'Renderers.actions([
-                                                                    { type: "link",   label: "' . __('common.edit') . '",   url: ":edit_url" },
-                                                                    { type: "button", label: "' . __('admin.products.unhide') . '", id: "unhide", class: "btn-ghost", condition: (row) => row.is_hidden },
-                                                                    { type: "button", label: "' . __('admin.products.hide') . '", id: "hide", class: "btn-ghost", condition: (row) => !row.is_hidden },
-                                                                    { type: "button", label: "' . __('common.delete') . '", id: "delete", class: "btn-danger" }
+                                                                    { type: "link",   label: "' . __('common.edit') . '",   url: ":edit_url", condition: (row) => !row.is_trashed },
+                                                                    { type: "button", label: "' . __('admin.products.unhide') . '", id: "unhide", class: "btn-ghost", condition: (row) => !row.is_trashed && row.is_hidden },
+                                                                    { type: "button", label: "' . __('admin.products.hide') . '", id: "hide", class: "btn-ghost", condition: (row) => !row.is_trashed && !row.is_hidden },
+                                                                    { type: "button", label: "' . __('common.delete') . '", id: "delete", class: "btn-danger", condition: (row) => !row.is_trashed },
+                                                                    { type: "button", label: "' . __('admin.products.restore') . '", id: "restore", class: "btn-success", condition: (row) => row.is_trashed }
                                                                 ])'
             ],
         ];
@@ -98,6 +99,13 @@
                 'options' => ['1' => __('admin.products.active_status'), '0' => __('admin.products.draft_status')]
             ],
             ['type' => 'date_range', 'name' => 'date', 'label' => __('admin.products.created_column')],
+            [
+                'type' => 'select',
+                'name' => 'trashed',
+                'label' => __('admin.products.deleted_column'),
+                'options' => ['1' => __('admin.products.deleted_status')],
+                'placeholder' => __('admin.products.not_deleted_placeholder'),
+            ],
         ];
 
         $bulkActions = [
@@ -174,6 +182,17 @@
         };
 
         window.tableActions.unhide = window.tableActions.hide;
+
+        window.tableActions.restore = function (id, row) {
+            $.ajax({ url: row.restore_url, method: 'PATCH' })
+                .done(function (res) {
+                    window.Toast && window.Toast.success(res.message);
+                    window.reloadDataTable('products-table');
+                })
+                .fail(function (xhr) {
+                    window.Toast && window.Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS.deleteFailed);
+                });
+        };
 
         ['publish', 'archive', 'feature'].forEach(function (action) {
             window.tableActions[action] = function (ids, tableId) {

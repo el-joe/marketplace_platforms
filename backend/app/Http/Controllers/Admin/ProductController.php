@@ -86,16 +86,20 @@ class ProductController extends Controller
      */
     private function buildProductsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        $query = Product::query()
+        $query = Product::withTrashed()
             ->leftJoin('categories as c', 'c.id', '=', 'products.category_id')
             ->leftJoin('brands as b', 'b.id', '=', 'products.brand_id')
-            ->whereNull('products.deleted_at')
+            ->when($request->input('trashed') === '1',
+                fn($q) => $q->whereNotNull('products.deleted_at'),
+                fn($q) => $q->whereNull('products.deleted_at')
+            )
             ->select([
                 'products.id',
                 'products.name_en',
                 'products.name_ar',
                 'products.status',
                 'products.is_hidden',
+                'products.deleted_at',
                 'products.is_featured',
                 'products.total_sold',
                 'products.created_at',
@@ -196,9 +200,11 @@ class ProductController extends Controller
                 'rating_avg' => $row->rating_avg ? number_format((float) $row->rating_avg, 1) : '—',
                 'total_sold' => (int) $row->total_sold,
                 'created_at' => $row->created_at,
+                'is_trashed' => $row->deleted_at !== null,
                 'edit_url' => route('admin.products.edit', $row->id),
                 'delete_url' => route('admin.products.destroy', $row->id),
                 'hide_url' => route('admin.products.hide', $row->id),
+                'restore_url' => route('admin.products.restore', $row->id),
             ];
         });
     }
@@ -499,6 +505,19 @@ class ProductController extends Controller
         });
 
         return response()->json(['success' => true, 'message' => 'Product deleted.']);
+    }
+
+    public function restore(string $product): JsonResponse
+    {
+        $productData = Product::withTrashed()->where('id', $product)->whereNotNull('deleted_at')->firstOrFail();
+
+        // Restore the variants that were soft-deleted alongside this product too.
+        ProductVariant::withTrashed()->where('product_id', $product)->whereNotNull('deleted_at')
+            ->update(['deleted_at' => null, 'updated_at' => now()]);
+
+        Product::withTrashed()->where('id', $product)->update(['deleted_at' => null, 'updated_at' => now()]);
+
+        return response()->json(['success' => true, 'message' => 'Product restored.']);
     }
 
     public function hide(string $product): JsonResponse
