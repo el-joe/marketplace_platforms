@@ -294,7 +294,11 @@
                     <span>{{ __('admin.products.has_variants_hint', ['field' => __('admin.products.has_variants_field')]) }}</span>
                 </div>
 
-                <div x-show="hasVariants" class="space-y-5">
+                <div
+                    x-show="hasVariants"
+                    x-effect="if (hasVariants) { $nextTick(() => window.initSelect2 && window.initSelect2($('#variant-attributes-container'))) }"
+                    class="space-y-5"
+                >
                     {{-- Attribute checkboxes --}}
                     <div>
                         <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.products.variant_attributes') }}</h4>
@@ -303,8 +307,8 @@
                             <div class="variant-attr-group" data-attr-id="{{ $attr->id }}">
                                 <label class="block text-xs font-medium text-gray-500 mb-1">{{ $attr->name_en }}</label>
                                 <select multiple data-select2-init class="variant-attr-values w-full" data-attr-id="{{ $attr->id }}">
-                                    @foreach($attr->values ?? [] as $val)
-                                    <option value="{{ $val->id }}" {{ in_array($val->id, $existingAttrValues ?? []) ? 'selected' : '' }}>{{ $val->value_en }}</option>
+                                    @foreach($attr->values ?? [] as $attrValue)
+                                    <option value="{{ $attrValue->id }}" {{ in_array($attrValue->id, $existingAttrValues ?? []) ? 'selected' : '' }}>{{ $attrValue->value_en }}</option>
                                     @endforeach
                                 </select>
                             </div>

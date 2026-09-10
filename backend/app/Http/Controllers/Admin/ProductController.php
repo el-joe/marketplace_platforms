@@ -210,7 +210,7 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request): JsonResponse|RedirectResponse
     {
         DB::beginTransaction();
-        // try {
+        try {
         $id = (string) Str::uuid();
         $slug = $request->slug ?: Str::slug($request->name_en) . '-' . Str::lower(Str::random(5));
 
@@ -277,17 +277,16 @@ class ProductController extends Controller
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Product created successfully.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Product creation failed', ['error' => $e->getMessage()]);
 
-        // } catch (\Throwable $e) {
-        //     DB::rollBack();
-        //     Log::error('Product creation failed', ['error' => $e->getMessage()]);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Failed to create product.'], 500);
+            }
 
-        //     if ($request->expectsJson()) {
-        //         return response()->json(['message' => 'Failed to create product.'], 500);
-        //     }
-
-        //     return back()->withInput()->withErrors(['error' => 'Failed to create product. Please try again.']);
-        // }
+            return back()->withInput()->withErrors(['error' => 'Failed to create product. Please try again.']);
+        }
     }
 
     public function validateStore(StoreProductRequest $request): JsonResponse
@@ -418,7 +417,7 @@ class ProductController extends Controller
         Product::query()->where('id', $product)->whereNull('deleted_at')->firstOrFail();
 
         DB::beginTransaction();
-        // try {
+        try {
         $data = [
             'name_en' => $request->name_en,
             'name_ar' => $request->name_ar,
@@ -464,12 +463,11 @@ class ProductController extends Controller
         DB::commit();
 
         return response()->json(['success' => true, 'message' => 'Product updated successfully.']);
-
-        // } catch (\Throwable $e) {
-        //     DB::rollBack();
-        //     Log::error('Product update failed', ['id' => $product, 'error' => $e->getMessage()]);
-        //     return response()->json(['message' => 'Failed to update product.'], 500);
-        // }
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Product update failed', ['id' => $product, 'error' => $e->getMessage()]);
+            return response()->json(['message' => 'Failed to update product.'], 500);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

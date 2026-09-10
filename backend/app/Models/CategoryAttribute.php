@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CategoryAttribute extends Model
 {
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'category_id',
         'attribute_id',
