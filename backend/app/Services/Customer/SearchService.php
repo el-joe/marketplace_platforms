@@ -283,6 +283,22 @@ class SearchService
             ->where('is_blocked', false)
             ->orderByDesc('is_pinned')
             ->orderByDesc('search_count')
+            ->orderByDesc('updated_at')
+            ->limit($limit)
+            ->pluck('keyword')
+            ->toArray();
+    }
+
+    /**
+     * Popular searches for the homepage: most-searched keywords, most recently
+     * searched first among ties, ignoring pin/block admin curation.
+     */
+    public function popularSearches(Country $country, int $limit = 20): array
+    {
+        return SearchSuggestion::where('country_id', $country->id)
+            ->where('is_blocked', false)
+            ->orderByDesc('search_count')
+            ->orderByDesc('updated_at')
             ->limit($limit)
             ->pluck('keyword')
             ->toArray();

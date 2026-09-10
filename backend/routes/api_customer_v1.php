@@ -202,6 +202,7 @@ use Illuminate\Support\Facades\Route;
         Route::prefix('search')->name('customer.search.')->group(function (): void {
             Route::get('/', [SearchController::class, 'search'])->name('search');
             Route::get('suggestions', [SearchController::class, 'suggestions'])->name('suggestions');
+            Route::get('popular', [SearchController::class, 'popular'])->name('popular');
         });
 
         // ── Newsletter (public — guest + authenticated) ───────────────────────

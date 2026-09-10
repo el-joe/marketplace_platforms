@@ -264,6 +264,19 @@ class SearchController extends Controller
         ]);
     }
 
+    /**
+     * Popular searches for the homepage — top keywords by search count,
+     * most recently searched first among ties.
+     */
+    public function popular(Request $request, $country): JsonResponse
+    {
+        $country = $request->attributes->get('country');
+
+        return ApiResponse::success([
+            'keywords' => $this->search->popularSearches($country, 20),
+        ]);
+    }
+
     public function suggestions(Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
