@@ -177,8 +177,9 @@ class OrderController extends Controller
     public function show(string $id): View
     {
         $order = Order::with([
-            'subOrders.items.productVariant',
-            'subOrders.items.adminListing.productVariant',
+            'subOrders.items.productVariant' => fn ($q) => $q->withTrashed(),
+            'subOrders.items.adminListing' => fn ($q) => $q->withTrashed(),
+            'subOrders.items.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
             'subOrders.items.vendor',
             'subOrders.vendor',
             'subOrders.carrier',

@@ -64,8 +64,11 @@ class OrderController extends Controller
             ->where('order_id', $orderId)
             ->with([
                 'order.items',
-                'invitation.campaign.vendorListing.productVariant.product',
-                'invitation.campaign.adminListing.productVariant.product',
+                'invitation.campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'invitation.campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'invitation.campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'invitation.campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'invitation.campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'invitation.campaign.travelPackage',
                 'invitation.campaign.classifiedListing',
                 'invitation.campaign.country',

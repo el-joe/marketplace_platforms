@@ -683,6 +683,8 @@ class AdminListingController extends Controller
             ->join('products as p', 'p.id', '=', 'product_variants.product_id')
             ->whereNull('product_variants.deleted_at')
             ->whereNull('p.deleted_at')
+            ->where('p.is_hidden', false)
+            ->where('product_variants.is_hidden', false)
             ->where(function ($q) use ($term) {
                 $q->where('p.name_en', 'like', "%{$term}%")
                     ->orWhere('product_variants.sku', 'like', "%{$term}%");

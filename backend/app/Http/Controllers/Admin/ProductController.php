@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
+use App\Models\AdminListing;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\CategoryAttribute;
 use App\Models\Country;
+use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductCountrySetting;
 use App\Models\ProductHighlight;
@@ -93,6 +95,7 @@ class ProductController extends Controller
                 'products.name_en',
                 'products.name_ar',
                 'products.status',
+                'products.is_hidden',
                 'products.is_featured',
                 'products.total_sold',
                 'products.created_at',
@@ -187,6 +190,7 @@ class ProductController extends Controller
                 'category' => e($row->category_name ?? '—'),
                 'brand' => e($row->brand_name ?? '—'),
                 'status' => $row->status?->value,
+                'is_hidden' => (bool) $row->is_hidden,
                 'is_featured' => (bool) $row->is_featured,
                 'seller_count' => (int) $row->seller_count,
                 'rating_avg' => $row->rating_avg ? number_format((float) $row->rating_avg, 1) : '—',
@@ -194,6 +198,7 @@ class ProductController extends Controller
                 'created_at' => $row->created_at,
                 'edit_url' => route('admin.products.edit', $row->id),
                 'delete_url' => route('admin.products.destroy', $row->id),
+                'hide_url' => route('admin.products.hide', $row->id),
             ];
         });
     }
@@ -477,23 +482,126 @@ class ProductController extends Controller
     public function destroy(string $product): JsonResponse
     {
         $productData = Product::where('id', $product)->whereNull('deleted_at')->firstOrFail();
-        $activeSellers = VendorListing::query()
-            ->whereIn('product_variant_id', $productData->variants->pluck('id'))
-            ->where('status', 'active')
-            ->whereNull('deleted_at')
-            ->count();
+        $variantIds = $productData->variants()->pluck('id');
+        $listingsCount = $this->countListings($variantIds);
 
-        if ($activeSellers > 0) {
+        if ($listingsCount > 0) {
             return response()->json([
-                'message' => "Cannot delete: {$activeSellers} active vendor listing(s) reference this product.",
-            ], 422);
+                'success' => false,
+                'has_listings' => true,
+                'is_hidden' => (bool) $productData->is_hidden,
+                'message' => "Cannot delete: {$listingsCount} listing(s) (vendor, marketer, and/or admin) reference this product. Hide it instead?",
+            ], 409);
         }
 
-        Product::query()
-            ->where('id', $product)
-            ->update(['deleted_at' => now(), 'updated_at' => now()]);
+        DB::transaction(function () use ($productData) {
+            $this->deleteProductCascade($productData);
+        });
 
         return response()->json(['success' => true, 'message' => 'Product deleted.']);
+    }
+
+    public function hide(string $product): JsonResponse
+    {
+        $productData = Product::where('id', $product)->whereNull('deleted_at')->firstOrFail();
+
+        $productData->update(['is_hidden' => ! $productData->is_hidden]);
+
+        return response()->json([
+            'success' => true,
+            'is_hidden' => (bool) $productData->is_hidden,
+            'message' => $productData->is_hidden ? 'Product hidden from storefront and listings.' : 'Product unhidden.',
+        ]);
+    }
+
+    public function destroyVariant(string $product, string $variant): JsonResponse
+    {
+        $variantData = ProductVariant::where('id', $variant)
+            ->where('product_id', $product)
+            ->whereNull('deleted_at')
+            ->firstOrFail();
+
+        $listingsCount = $this->countListings(collect([$variantData->id]));
+
+        if ($listingsCount > 0) {
+            return response()->json([
+                'success' => false,
+                'has_listings' => true,
+                'is_hidden' => (bool) $variantData->is_hidden,
+                'message' => "Cannot delete: {$listingsCount} listing(s) (vendor, marketer, and/or admin) reference this variant. Hide it instead?",
+            ], 409);
+        }
+
+        DB::transaction(function () use ($variantData) {
+            $this->deleteVariantCascade($variantData);
+        });
+
+        return response()->json(['success' => true, 'message' => 'Variant deleted.']);
+    }
+
+    public function hideVariant(string $product, string $variant): JsonResponse
+    {
+        $variantData = ProductVariant::where('id', $variant)
+            ->where('product_id', $product)
+            ->whereNull('deleted_at')
+            ->firstOrFail();
+
+        $variantData->update(['is_hidden' => ! $variantData->is_hidden]);
+
+        return response()->json([
+            'success' => true,
+            'is_hidden' => (bool) $variantData->is_hidden,
+            'message' => $variantData->is_hidden ? 'Variant hidden from storefront and listings.' : 'Variant unhidden.',
+        ]);
+    }
+
+    /**
+     * Count non-deleted vendor/admin/marketer listings referencing any of the given variant IDs.
+     */
+    private function countListings(\Illuminate\Support\Collection $variantIds): int
+    {
+        if ($variantIds->isEmpty()) {
+            return 0;
+        }
+
+        return VendorListing::whereIn('product_variant_id', $variantIds)->whereNull('deleted_at')->count()
+            + AdminListing::whereIn('product_variant_id', $variantIds)->whereNull('deleted_at')->count()
+            + MarketerListing::whereIn('product_variant_id', $variantIds)->whereNull('deleted_at')->count();
+    }
+
+    /**
+     * Only called once countListings() confirmed no listings reference the product's variants.
+     * Hard-deletes images (no soft-delete column) and their files, soft-deletes variants and
+     * the product. Soft-deleting (rather than force-deleting) keeps order history, vendor
+     * listings, and any other page that reads a product/variant by ID intact — they still
+     * resolve the row (via withTrashed() where needed) instead of hitting a dangling reference.
+     */
+    private function deleteProductCascade(Product $productData): void
+    {
+        foreach ($productData->images as $image) {
+            Storage::disk($image->disk ?? 'public')->delete($image->path);
+            $image->delete();
+        }
+
+        foreach ($productData->variants as $variant) {
+            $this->deleteVariantCascade($variant);
+        }
+
+        Product::where('id', $productData->id)->update(['deleted_at' => now(), 'updated_at' => now()]);
+    }
+
+    /**
+     * Hard-deletes a variant's images and their files, then soft-deletes the variant itself.
+     * Callers must have already confirmed no listings reference this variant.
+     */
+    private function deleteVariantCascade(ProductVariant $variantData): void
+    {
+        foreach ($variantData->images as $image) {
+            Storage::disk($image->disk ?? 'public')->delete($image->path);
+            $image->delete();
+        }
+
+        ProductVariant::where('id', $variantData->id)->update(['deleted_at' => now(), 'updated_at' => now()]);
     }
 
     public function bulkAction(Request $request): JsonResponse
@@ -509,8 +617,28 @@ class ProductController extends Controller
 
         switch ($action) {
             case 'delete':
-                Product::query()->whereIn('id', $ids)->update(['deleted_at' => now(), 'updated_at' => now()]);
-                $message = count($ids) . ' product(s) deleted.';
+                $products = Product::query()->whereIn('id', $ids)->whereNull('deleted_at')->get();
+                $deleted = 0;
+                $blocked = 0;
+
+                foreach ($products as $productData) {
+                    $variantIds = $productData->variants()->pluck('id');
+
+                    if ($this->countListings($variantIds) > 0) {
+                        $blocked++;
+                        continue;
+                    }
+
+                    DB::transaction(function () use ($productData) {
+                        $this->deleteProductCascade($productData);
+                    });
+                    $deleted++;
+                }
+
+                $message = "{$deleted} product(s) deleted.";
+                if ($blocked > 0) {
+                    $message .= " {$blocked} product(s) skipped because they still have listings — hide them instead.";
+                }
                 break;
             case 'publish':
                 Product::query()->whereIn('id', $ids)->update(['status' => 'active', 'updated_at' => now()]);
@@ -1097,12 +1225,22 @@ class ProductController extends Controller
             ->all();
 
         if ($update) {
-            // Soft-delete only variants removed from the submitted payload.
-            ProductVariant::query()
+            // Soft-delete only variants removed from the submitted payload, and only
+            // if no vendor/admin/marketer listing references them — those must be
+            // removed explicitly (and hidden instead) via destroyVariant().
+            $removableIds = ProductVariant::query()
                 ->where('product_id', $productId)
                 ->whereNull('deleted_at')
                 ->when(!empty($incomingIds), fn($q) => $q->whereNotIn('id', $incomingIds))
-                ->update(['deleted_at' => now(), 'updated_at' => now()]);
+                ->pluck('id')
+                ->reject(fn($id) => $this->countListings(collect([$id])) > 0)
+                ->values();
+
+            if ($removableIds->isNotEmpty()) {
+                ProductVariant::query()
+                    ->whereIn('id', $removableIds)
+                    ->update(['deleted_at' => now(), 'updated_at' => now()]);
+            }
         }
 
         foreach ($variants as $i => $v) {
@@ -1425,6 +1563,7 @@ class ProductController extends Controller
             ['title' => 'Category', 'data' => 'category', 'name' => 'category', 'orderable_column' => 'c.name_en', 'searchable' => false],
             ['title' => 'Brand', 'data' => 'brand', 'name' => 'brand', 'orderable_column' => 'b.name', 'searchable' => false],
             ['title' => 'Status', 'data' => 'status', 'name' => 'status', 'orderable_column' => 'products.status', 'searchable' => false],
+            ['title' => 'Hidden', 'data' => 'is_hidden', 'name' => 'is_hidden', 'orderable' => false, 'searchable' => false],
             ['title' => 'Sellers', 'data' => 'seller_count', 'name' => 'seller_count', 'orderable' => false, 'searchable' => false, 'className' => 'text-right'],
             ['title' => 'Rating', 'data' => 'rating_avg', 'name' => 'rating_avg', 'orderable_column' => 'rating_avg', 'searchable' => false, 'className' => 'text-right'],
             ['title' => 'Sold', 'data' => 'total_sold', 'name' => 'total_sold', 'orderable_column' => 'products.total_sold', 'searchable' => false, 'className' => 'text-right'],

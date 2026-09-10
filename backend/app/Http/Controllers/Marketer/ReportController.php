@@ -23,8 +23,11 @@ class ReportController extends Controller
         $conversions = MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
             ->with([
                 'campaign.vendor',
-                'campaign.vendorListing.productVariant.product',
-                'campaign.adminListing.productVariant.product',
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'order',
                 'invitation',
             ])
@@ -46,8 +49,11 @@ class ReportController extends Controller
         $campaignBreakdown = MarketerCampaignInvitation::where('marketer_id', $marketer->id)
             ->where('status', 'accepted')
             ->with([
-                'campaign.vendorListing.productVariant.product',
-                'campaign.adminListing.productVariant.product',
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
             ])
             ->withCount('conversions')

@@ -77,6 +77,11 @@ export default function ItemCard({ item }: Props) {
                 ? item.listing?.product.name_ar
                 : item.listing.product.name_en}
             </h3>
+            {!!item.listing.variant_name && (
+              <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-fit line-clamp-1 overflow-auto">
+                {item.listing.variant_name}
+              </p>
+            )}
             {/* rating */}
             <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px">
               <StarIcon size={"13px"} className="text-green fill-green" />

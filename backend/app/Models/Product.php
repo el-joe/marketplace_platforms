@@ -30,6 +30,7 @@ class Product extends Model
         'short_desc_en',
         'short_desc_ar',
         'status',
+        'is_hidden',
         'is_featured',
         'requires_brand_auth',
         'is_age_restricted',
@@ -49,6 +50,7 @@ class Product extends Model
     ];
 
     protected $casts = [
+        'is_hidden' => 'boolean',
         'is_featured' => 'boolean',
         'requires_brand_auth' => 'boolean',
         'is_age_restricted' => 'boolean',
@@ -118,6 +120,15 @@ class Product extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Products that are neither soft-deleted, discontinued/restricted, nor hidden.
+     * Use for anything customer-facing.
+     */
+    public function scopeVisible($query)
+    {
+        return $query->where('is_hidden', false);
     }
 
     public function frequentlyBoughtTogether(): BelongsToMany

@@ -52,7 +52,14 @@ class DashboardController extends Controller
 
         $recentInvitations = MarketerCampaignInvitation::where('marketer_id', $marketer->id)
             ->where('status', 'pending')
-            ->with(['campaign.vendorListing.productVariant.product', 'campaign.adminListing.productVariant.product', 'campaign.country'])
+            ->with([
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.country',
+            ])
             ->latest()
             ->limit(5)
             ->get();

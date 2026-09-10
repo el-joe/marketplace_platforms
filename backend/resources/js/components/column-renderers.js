@@ -185,13 +185,15 @@ window.Renderers = {
                                 ${action.icon || action.label}
                              </a>`;
                 } else if (action.type === 'button') {
-                    // Safely encode row as JSON for data-row attribute
-                    const rowJson = JSON.stringify(row).replace(/'/g, '&#39;');
+                    // URI-encode the row JSON so HTML entities already present in row
+                    // fields (e.g. a product name escaped to "16&quot;") can't be
+                    // re-decoded by the browser's attribute parser and corrupt the JSON.
+                    const rowJson = encodeURIComponent(JSON.stringify(row));
                     html += `<button type="button"
                                 class="btn btn-xs ${action.class || 'btn-ghost'}"
                                 data-action="${action.id}"
                                 data-id="${row.id || ''}"
-                                data-row='${rowJson}'
+                                data-row="${rowJson}"
                                 title="${action.label}">
                                 ${action.icon || action.label}
                              </button>`;

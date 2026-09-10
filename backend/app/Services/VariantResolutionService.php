@@ -22,6 +22,7 @@ class VariantResolutionService
         $variants = ProductVariant::query()
             ->where('product_id', $productId)
             ->where('is_active', true)
+            ->where('is_hidden', false)
             ->get();
 
         foreach ($variants as $variant) {
@@ -39,6 +40,7 @@ class VariantResolutionService
             ->where('product_variant_id', $variantId)
             ->where('country_id', $countryId)
             ->whereIn('status', [VendorListingStatus::Active, VendorListingStatus::OutOfStock])
+            ->whereHas('productVariant', fn ($q) => $q->where('is_hidden', false)->whereHas('product', fn ($q2) => $q2->where('is_hidden', false)))
             ->orderByRaw("CASE WHEN status = ? THEN 0 ELSE 1 END", [VendorListingStatus::Active->value])
             ->orderByRaw('score IS NULL, score DESC')
             ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
@@ -53,6 +55,7 @@ class VariantResolutionService
             ->where('product_variant_id', $variantId)
             ->where('country_id', $countryId)
             ->where('status', AdminListingStatus::Active)
+            ->whereHas('productVariant', fn ($q) => $q->where('is_hidden', false)->whereHas('product', fn ($q2) => $q2->where('is_hidden', false)))
             ->orderByRaw('score IS NULL, score DESC')
             ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
             ->orderBy('rating_count', 'desc')

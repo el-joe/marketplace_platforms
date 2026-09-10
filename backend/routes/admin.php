@@ -144,6 +144,9 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{product}/validate', [ProductController::class, 'validateUpdate'])->name('validate-update');
         Route::put('/{product}', [ProductController::class, 'update'])->name('update');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
+        Route::patch('/{product}/hide', [ProductController::class, 'hide'])->name('hide');
+        Route::delete('/{product}/variants/{variant}', [ProductController::class, 'destroyVariant'])->name('variants.destroy');
+        Route::patch('/{product}/variants/{variant}/hide', [ProductController::class, 'hideVariant'])->name('variants.hide');
 
         // ── Variant slug management ────────────────────────────────────────────
         Route::get('/{product}/variants/{variant}', [ProductController::class, 'variantDetail'])

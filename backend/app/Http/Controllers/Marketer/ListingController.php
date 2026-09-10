@@ -58,6 +58,8 @@ class ListingController extends Controller
             ->whereNull('p.deleted_at')
             ->whereNull('product_variants.deleted_at')
             ->where('product_variants.is_active', true)
+            ->where('p.is_hidden', false)
+            ->where('product_variants.is_hidden', false)
             ->where(function ($sq) use ($q) {
                 $sq->where('p.name_en', 'like', "%{$q}%")
                    ->orWhere('p.name_ar', 'like', "%{$q}%")
@@ -103,6 +105,12 @@ class ListingController extends Controller
         ]);
 
         $country = Country::findOrFail($request->country_id);
+
+        $variant = ProductVariant::with('product')->findOrFail($request->product_variant_id);
+
+        if (! $variant->is_active || $variant->trashed() || $variant->is_hidden || $variant->product?->is_hidden) {
+            return back()->withErrors(['product_variant_id' => 'هذا المنتج غير متاح للإضافة كقائمة.']);
+        }
 
         $exists = MarketerListing::where('marketer_id', $marketer->id)
             ->where('product_variant_id', $request->product_variant_id)

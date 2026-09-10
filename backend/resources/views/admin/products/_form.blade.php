@@ -371,6 +371,12 @@
                                                 title="{{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}">
                                                 {{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}
                                             </button>
+                                            @if($variant->is_hidden)
+                                                <button type="button" class="unhide-variant-row hover:underline text-start text-xs text-red-600 block"
+                                                    data-hide-url="{{ route('admin.products.variants.hide', [$product->id, $variant->id]) }}">
+                                                    {{ __('admin.products.hidden_status') }} · {{ __('admin.products.unhide') }}
+                                                </button>
+                                            @endif
                                         </div>
                                         <input type="hidden" name="variants[{{ $vi }}][variant_name]" value="{{ $variant->variant_name ?: $variant->attributeSummary() }}" class="variant-name-en-input" />
                                         <input type="hidden" name="variants[{{ $vi }}][variant_name_ar]" value="{{ $variant->variant_name_ar }}" class="variant-name-ar-input" />
@@ -458,7 +464,11 @@
                                         </button>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <button type="button" class="remove-variant-row text-gray-400 hover:text-red-600 transition-colors" title="{{ __('admin.products.remove') }}">
+                                        <button type="button" class="remove-variant-row text-gray-400 hover:text-red-600 transition-colors" title="{{ __('admin.products.remove') }}"
+                                            data-variant-id="{{ $variant->id }}"
+                                            data-delete-url="{{ route('admin.products.variants.destroy', [$product->id, $variant->id]) }}"
+                                            data-hide-url="{{ route('admin.products.variants.hide', [$product->id, $variant->id]) }}"
+                                            data-is-hidden="{{ $variant->is_hidden ? '1' : '0' }}">
                                             <x-heroicon name="x-circle" class="w-4 h-4" />
                                         </button>
                                     </td>
@@ -1058,6 +1068,9 @@
             variantNameArPlaceholder: @json(__('admin.products.variant_name_ar_placeholder')),
             editVariantName: @json(__('admin.products.edit_variant_name') ?? 'Click to edit variant name'),
             removeLabel: @json(__('admin.products.remove')),
+            deleteVariantQuestion: @json(__('admin.products.delete_variant_question')),
+            deleteVariantTitle: @json(__('admin.products.delete_variant_title')),
+            hideInstead: @json(__('admin.products.hide_instead')),
             highlightEnLabel: @json(__('admin.products.highlight_en_label')),
             highlightArLabel: @json(__('admin.products.highlight_ar_label')),
             highlightEnPlaceholder: @json(__('admin.products.highlight_en_placeholder')),

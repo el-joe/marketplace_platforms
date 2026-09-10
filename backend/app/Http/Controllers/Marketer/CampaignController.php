@@ -26,8 +26,11 @@ class CampaignController extends Controller
             ->whereHas('campaign', fn ($q) => $q->whereIn('status', ['active', 'auto_approved']))
             ->with([
                 'campaign.vendor',
-                'campaign.vendorListing.productVariant.product',
-                'campaign.adminListing.productVariant.product',
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
                 'campaign.tieredRules',
                 'samples',
@@ -52,8 +55,11 @@ class CampaignController extends Controller
             ->whereHas('campaign', fn ($q) => $q->whereIn('status', ['done', 'cancelled', 'rejected']))
             ->with([
                 'campaign.vendor',
-                'campaign.vendorListing.productVariant.product',
-                'campaign.adminListing.productVariant.product',
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
             ])
             ->withCount('conversions')

@@ -29,8 +29,11 @@ class InvitationController extends Controller
         $invitations = MarketerCampaignInvitation::where('marketer_id', $marketer->id)
             ->with([
                 'campaign.vendor',
-                'campaign.vendorListing.productVariant.product',
-                'campaign.adminListing.productVariant.product',
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
             ])
             ->latest()

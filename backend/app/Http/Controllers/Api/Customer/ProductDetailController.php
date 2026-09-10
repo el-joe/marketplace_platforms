@@ -39,6 +39,7 @@ class ProductDetailController extends Controller
         $variant = ProductVariant::with(['product.brand', 'product.category'])
             ->where('id', $variantId)
             ->where('is_active', true)
+            ->where('is_hidden', false)
             ->whereNull('deleted_at')
             ->first();
 
@@ -48,7 +49,7 @@ class ProductDetailController extends Controller
 
         $product = $variant->product;
 
-        if (!$product || $product->status !== ProductStatus::Active) {
+        if (!$product || $product->status !== ProductStatus::Active || $product->is_hidden) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
@@ -130,6 +131,7 @@ class ProductDetailController extends Controller
     {
         $product = Product::where('slug', $productSlug)
             ->where('status', ProductStatus::Active)
+            ->where('is_hidden', false)
             ->first();
 
         if (!$product) {
@@ -152,6 +154,7 @@ class ProductDetailController extends Controller
     {
         $product = Product::where('slug', $productSlug)
             ->where('status', ProductStatus::Active)
+            ->where('is_hidden', false)
             ->first();
 
         if (!$product) {
@@ -161,6 +164,7 @@ class ProductDetailController extends Controller
         $variant = ProductVariant::where('product_id', $product->id)
             ->where('variant_name', $variantSlug)
             ->where('is_active', true)
+            ->where('is_hidden', false)
             ->whereNull('deleted_at')
             ->first();
 
@@ -180,6 +184,7 @@ class ProductDetailController extends Controller
         $variant = ProductVariant::where('product_id', $productId)
             ->where('is_default', 1)
             ->where('is_active', true)
+            ->where('is_hidden', false)
             ->whereNull('deleted_at')
             ->first();
 
@@ -189,6 +194,7 @@ class ProductDetailController extends Controller
 
         return ProductVariant::where('product_id', $productId)
             ->where('is_active', true)
+            ->where('is_hidden', false)
             ->whereNull('deleted_at')
             ->orderBy('position')
             ->first();
@@ -358,6 +364,7 @@ class ProductDetailController extends Controller
 
         $allVariants = ProductVariant::where('product_id', $product->id)
             ->where('is_active', true)
+            ->where('is_hidden', false)
             ->whereNull('deleted_at')
             ->with(['variantAttributes.attribute', 'variantAttributes.attributeValue'])
             ->get();

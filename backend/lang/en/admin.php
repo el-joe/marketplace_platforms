@@ -3628,6 +3628,13 @@ return [
         'active_status'             => 'Active',
         'discontinued_status'       => 'Discontinued',
         'restricted_status'         => 'Restricted',
+        'hidden_column'              => 'Hidden',
+        'hidden_status'              => 'Hidden',
+        'hide'                       => 'Hide',
+        'unhide'                     => 'Unhide',
+        'hide_instead'                => 'Hide instead',
+        'delete_variant_title'        => 'Delete variant?',
+        'delete_variant_question'     => 'Delete this variant?',
 
         // ─── Datatable / index ──────────────────────────────────────────────
         'column_product'            => 'Product',

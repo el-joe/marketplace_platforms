@@ -104,7 +104,8 @@ class AssignmentController extends Controller
 
         $assignment->load([
             'subOrder.order.customer',
-            'subOrder.items.productVariant.product',
+            'subOrder.items.productVariant' => fn ($q) => $q->withTrashed(),
+            'subOrder.items.productVariant.product' => fn ($q) => $q->withTrashed(),
             'shipment',
         ]);
 

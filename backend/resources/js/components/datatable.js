@@ -215,10 +215,10 @@ $(document).on('click', '[data-action]', function (e) {
 
     const action = $(this).data('action');
     const id = $(this).data('id');
-    let row = $(this).data('row');
+    let row = $(this).attr('data-row');
 
     if (typeof row === 'string') {
-        try { row = JSON.parse(row); } catch (_) { row = {}; }
+        try { row = JSON.parse(decodeURIComponent(row)); } catch (_) { row = {}; }
     }
 
     if (window.tableActions && typeof window.tableActions[action] === 'function') {

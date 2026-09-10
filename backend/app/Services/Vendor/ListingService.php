@@ -19,9 +19,9 @@ class ListingService
 
     public function create(array $data, Vendor $vendor): VendorListing
     {
-        $variant = ProductVariant::findOrFail($data['product_variant_id']);
+        $variant = ProductVariant::with('product')->findOrFail($data['product_variant_id']);
 
-        if (! $variant->is_active || $variant->trashed()) {
+        if (! $variant->is_active || $variant->trashed() || $variant->is_hidden || $variant->product?->is_hidden) {
             throw ValidationException::withMessages([
                 'product_variant_id' => ['This product variant is not available for listing.'],
             ]);

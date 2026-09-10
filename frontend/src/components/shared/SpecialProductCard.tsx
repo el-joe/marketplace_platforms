@@ -54,6 +54,12 @@ const SpecialProductCard = ({ productData }: Props) => {
           {locale === "ar" ? productData.name_ar : productData.name_en}
         </h3>
 
+        {!!productData.variant_name && (
+          <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-fit line-clamp-1 overflow-auto">
+            {productData.variant_name}
+          </p>
+        )}
+
         <Price
           className="mt-auto pt-1"
           currentPrice={productData.price}

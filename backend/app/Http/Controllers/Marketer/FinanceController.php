@@ -25,7 +25,12 @@ class FinanceController extends Controller
         $marketer = $this->marketer();
         $invitationIds = MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
 
-        $conversions = MarketerCampaignConversion::with(['campaign.vendorListing.productVariant.product', 'order', 'invitation'])
+        $conversions = MarketerCampaignConversion::with([
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'order',
+                'invitation',
+            ])
             ->whereIn('invitation_id', $invitationIds)
             ->when($request->filled('campaign_id'), fn ($q) => $q->where('campaign_id', $request->campaign_id))
             ->when($request->filled('from'), fn ($q) => $q->whereDate('created_at', '>=', $request->from))

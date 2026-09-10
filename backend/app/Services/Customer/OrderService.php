@@ -37,7 +37,7 @@ class OrderService
         return Order::where('order_number', $orderNumber)
             ->where('customer_id', $customer->id)
             ->with([
-                'subOrders.items.productVariant',
+                'subOrders.items.productVariant' => fn ($q) => $q->withTrashed(),
                 'subOrders.items.vendorListing',
                 'subOrders.vendor',
                 'subOrders.carrier',

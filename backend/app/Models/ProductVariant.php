@@ -28,12 +28,14 @@ class ProductVariant extends Model
         'height_cm',
         'is_default',
         'is_active',
+        'is_hidden',
         'position',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
         'is_active' => 'boolean',
+        'is_hidden' => 'boolean',
     ];
 
     protected static function boot(): void
@@ -130,6 +132,20 @@ class ProductVariant extends Model
     public function adminListings(): HasMany
     {
         return $this->hasMany(AdminListing::class);
+    }
+
+    public function marketerListings(): HasMany
+    {
+        return $this->hasMany(MarketerListing::class);
+    }
+
+    /**
+     * Variants that are neither soft-deleted, inactive, nor hidden.
+     * Use for anything customer-facing.
+     */
+    public function scopeVisible($query)
+    {
+        return $query->where('is_active', true)->where('is_hidden', false);
     }
 
     /**

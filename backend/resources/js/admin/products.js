@@ -377,20 +377,76 @@ function renderVariantRows(variants) {
 
 function initVariantTableEvents() {
     // Remove row
-    $(document).on('click', '.remove-variant-row', function () {
-        const $row = $(this).closest('tr.variant-row');
+    $(document).on('click', '.remove-variant-row', async function () {
+        const $btn = $(this);
+        const $row = $btn.closest('tr.variant-row');
         const idx = $row.attr('data-row-index');
+        const deleteUrl = $btn.data('delete-url');
 
-        if (idx !== undefined) {
-            if (window.__pendingVariantImages) delete window.__pendingVariantImages[idx];
-            if (window.__variantRowAttributes) delete window.__variantRowAttributes[idx];
+        const removeRow = function () {
+            if (idx !== undefined) {
+                if (window.__pendingVariantImages) delete window.__pendingVariantImages[idx];
+                if (window.__variantRowAttributes) delete window.__variantRowAttributes[idx];
+            }
+
+            $row.remove();
+            reindexVariantRows();
+            if ($('#variants-tbody tr.variant-row').length === 0) {
+                $('#no-variants-msg').removeClass('hidden');
+            }
+        };
+
+        // Unsaved/new rows have no delete-url (not yet persisted) — remove locally.
+        if (!deleteUrl) {
+            removeRow();
+            return;
         }
 
-        $row.remove();
-        reindexVariantRows();
-        if ($('#variants-tbody tr.variant-row').length === 0) {
-            $('#no-variants-msg').removeClass('hidden');
-        }
+        const confirmed = window.confirmDelete
+            ? await window.confirmDelete(window.TRANSLATIONS?.deleteVariantQuestion || 'Delete this variant?', { title: window.TRANSLATIONS?.deleteVariantTitle })
+            : confirm('Delete this variant?');
+        if (!confirmed) return;
+
+        $.ajax({ url: deleteUrl, method: 'DELETE' })
+            .done(function (res) {
+                window.Toast && window.Toast.success(res.message);
+                removeRow();
+            })
+            .fail(async function (xhr) {
+                const data = xhr.responseJSON || {};
+
+                if (xhr.status === 409 && data.has_listings) {
+                    const hideConfirmed = window.confirmDialog
+                        ? await window.confirmDialog({ title: window.TRANSLATIONS?.deleteVariantTitle, text: data.message, icon: 'warning', confirmButtonText: window.TRANSLATIONS?.hideInstead || 'Hide instead' })
+                        : confirm(data.message);
+
+                    if (hideConfirmed) {
+                        $.ajax({ url: $btn.data('hide-url'), method: 'PATCH' })
+                            .done(function (res) {
+                                window.Toast && window.Toast.success(res.message);
+                                window.location.reload();
+                            })
+                            .fail(function (hxhr) {
+                                window.Toast && window.Toast.error(hxhr.responseJSON?.message);
+                            });
+                    }
+                    return;
+                }
+
+                window.Toast && window.Toast.error(data.message || 'Delete failed.');
+            });
+    });
+
+    // Unhide a hidden variant
+    $(document).on('click', '.unhide-variant-row', function () {
+        $.ajax({ url: $(this).data('hide-url'), method: 'PATCH' })
+            .done(function (res) {
+                window.Toast && window.Toast.success(res.message);
+                window.location.reload();
+            })
+            .fail(function (xhr) {
+                window.Toast && window.Toast.error(xhr.responseJSON?.message);
+            });
     });
 
     // Sync default radio → hidden is_default flags

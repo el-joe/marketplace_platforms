@@ -3591,6 +3591,13 @@ return [
         'active_status'             => 'نشط',
         'discontinued_status'       => 'متوقف',
         'restricted_status'         => 'مقيّد',
+        'hidden_column'              => 'مخفي',
+        'hidden_status'              => 'مخفي',
+        'hide'                       => 'إخفاء',
+        'unhide'                     => 'إظهار',
+        'hide_instead'                => 'إخفاء بدلاً من الحذف',
+        'delete_variant_title'        => 'حذف المتغير؟',
+        'delete_variant_question'     => 'هل تريد حذف هذا المتغير؟',
 
         // ─── Datatable / index ──────────────────────────────────────────────
         'column_product'            => 'المنتج',

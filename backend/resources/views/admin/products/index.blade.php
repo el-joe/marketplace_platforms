@@ -33,6 +33,14 @@
                                                                 restricted:   { label: "' . __('admin.products.restricted_status') . '",   color: "danger"  }
                                                             })'
             ],
+            [
+                'title' => __('admin.products.hidden_column'),
+                'data' => 'is_hidden',
+                'name' => 'is_hidden',
+                'orderable' => false,
+                'searchable' => false,
+                'render' => 'function (v) { return v ? Renderers.badge({ 1: { label: "' . __('admin.products.hidden_status') . '", color: "danger" } })(1) : ""; }'
+            ],
             ['title' => __('admin.products.column_sellers'), 'data' => 'seller_count', 'name' => 'seller_count', 'searchable' => false, 'className' => 'text-end'],
             ['title' => __('admin.products.column_rating'), 'data' => 'rating_avg', 'name' => 'rating_avg', 'searchable' => false, 'className' => 'text-end'],
             ['title' => __('admin.products.column_sold'), 'data' => 'total_sold', 'name' => 'total_sold', 'searchable' => false, 'className' => 'text-end'],
@@ -52,6 +60,8 @@
                 'className' => 'text-end',
                 'render' => 'Renderers.actions([
                                                                     { type: "link",   label: "' . __('common.edit') . '",   url: ":edit_url" },
+                                                                    { type: "button", label: "' . __('admin.products.unhide') . '", id: "unhide", class: "btn-ghost", condition: (row) => row.is_hidden },
+                                                                    { type: "button", label: "' . __('admin.products.hide') . '", id: "hide", class: "btn-ghost", condition: (row) => !row.is_hidden },
                                                                     { type: "button", label: "' . __('common.delete') . '", id: "delete", class: "btn-danger" }
                                                                 ])'
             ],
@@ -104,7 +114,7 @@
     <x-table.datatable id="products-table" url="{{ route('admin.products.datatable') }}" :columns="$columns"
         :filters="$filters" :bulk-actions="$bulkActions"
         :create-action="['url' => route('admin.products.create'), 'label' => __('admin.products.add_product')]" :selectable="true"
-        :page-length="25" :order="[[8, 'desc']]" />
+        :page-length="25" :order="[[9, 'desc']]" />
 @endsection
 
 @push('scripts')
@@ -117,6 +127,7 @@
             productDeleted: @json(__('admin.products.product_deleted')),
             deleteFailed: @json(__('admin.products.delete_failed')),
             productsUpdatedSuffix: @json(__('admin.products.products_updated')),
+            hideInstead: @json(__('admin.products.hide_instead')),
         });
 
         window.tableActions = window.tableActions || {};
@@ -133,10 +144,36 @@
                     window.Toast && window.Toast.success(res.message || window.TRANSLATIONS.productDeleted);
                     window.reloadDataTable('products-table');
                 })
+                .fail(async function (xhr) {
+                    const data = xhr.responseJSON || {};
+
+                    if (xhr.status === 409 && data.has_listings) {
+                        const hideConfirmed = window.confirmDialog
+                            ? await window.confirmDialog({ title: window.TRANSLATIONS.deleteProductTitle, text: data.message, icon: 'warning', confirmButtonText: window.TRANSLATIONS.hideInstead })
+                            : confirm(data.message);
+
+                        if (hideConfirmed) {
+                            window.tableActions.hide(id, row);
+                        }
+                        return;
+                    }
+
+                    window.Toast && window.Toast.error(data.message || window.TRANSLATIONS.deleteFailed);
+                });
+        };
+
+        window.tableActions.hide = function (id, row) {
+            $.ajax({ url: row.hide_url, method: 'PATCH' })
+                .done(function (res) {
+                    window.Toast && window.Toast.success(res.message);
+                    window.reloadDataTable('products-table');
+                })
                 .fail(function (xhr) {
                     window.Toast && window.Toast.error(xhr.responseJSON?.message || window.TRANSLATIONS.deleteFailed);
                 });
         };
+
+        window.tableActions.unhide = window.tableActions.hide;
 
         ['publish', 'archive', 'feature'].forEach(function (action) {
             window.tableActions[action] = function (ids, tableId) {

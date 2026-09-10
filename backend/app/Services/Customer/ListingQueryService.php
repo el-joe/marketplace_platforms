@@ -44,6 +44,8 @@ class ListingQueryService
             ->whereIn('p.category_id', $categoryIds)
             ->where('p.status', ProductStatus::Active->value)
             ->whereNull('p.deleted_at')
+            ->where('p.is_hidden', false)
+            ->where('pv.is_hidden', false)
             ->where('v.global_status', VendorGlobalStatus::Active->value)
             ->select('vendor_listings.*');
     }
@@ -64,6 +66,8 @@ class ListingQueryService
             ->whereNull('vendor_listings.deleted_at')
             ->where('p.status', ProductStatus::Active->value)
             ->whereNull('p.deleted_at')
+            ->where('p.is_hidden', false)
+            ->where('pv.is_hidden', false)
             ->where('v.global_status', VendorGlobalStatus::Active->value)
             ->select('vendor_listings.*');
 
