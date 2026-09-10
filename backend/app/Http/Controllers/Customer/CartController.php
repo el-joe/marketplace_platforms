@@ -7,7 +7,6 @@ use App\Http\Requests\Customer\AddCartItemRequest;
 use App\Http\Requests\Customer\AddCartItemsRequest;
 use App\Http\Requests\Customer\ApplyCouponRequest;
 use App\Http\Requests\Customer\UpdateCartItemRequest;
-use App\Http\Resources\Customer\BannerResource;
 use App\Http\Resources\Customer\CartItemResource;
 use App\Http\Resources\Customer\CartResource;
 use App\Http\Responses\ApiResponse;
@@ -31,6 +30,7 @@ class CartController extends Controller
         private readonly BannerService $bannerService,
         private readonly SavingsBenefitsService $savingsBenefitsService,
         private readonly WarrantyPlanService $warrantyPlanService,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {
     }
 
@@ -208,14 +208,17 @@ class CartController extends Controller
         ];
     }
 
-    private function resolveCartBanner(Request $request): ?BannerResource
+    private function resolveCartBanner(Request $request): ?array
     {
         $country = $request->attributes->get('country');
         $audience = auth('customer')->check() ? 'logged_in' : 'guest';
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
 
-        $banner = $this->bannerService->getActivePlacement('cart_banner', $country?->id, $audience);
+        if (!$country) {
+            return null;
+        }
 
-        return $banner ? new BannerResource($banner) : null;
+        return $this->placementAds->resolve('cart_banner', $country, $audience, $sessionId);
     }
 
     public function addItem(AddCartItemRequest $request): JsonResponse

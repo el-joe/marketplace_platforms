@@ -6,7 +6,7 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
-import { AdBadge } from "@/src/components/shared/ad-badge";
+import { SponsoredLink } from "@/src/components/shared/sponsored-link";
 
 type Props = {
   data: Block;
@@ -81,10 +81,12 @@ export default function HeroSlider({ data }: Props) {
           banner?.mobile_url?.[locale] || banner?.mobile_url?.en;
         return (
           <SwiperSlide key={banner.id} className="h-auto! max-h-100">
-            <Link
+            <SponsoredLink
               href={banner?.cta_url || "#"}
-              className="block relative h-full"
-              target={banner.cta_open_new_tab ? "_blank" : "_self"}
+              isExternal={banner.is_external}
+              ad={banner.ad}
+              isPaid={banner.is_paid}
+              className="h-full"
             >
               <picture>
                 <source
@@ -121,8 +123,7 @@ export default function HeroSlider({ data }: Props) {
                   height={400}
                 />
               </picture>
-              {banner?.is_paid && <AdBadge />}
-            </Link>
+            </SponsoredLink>
           </SwiperSlide>
         );
       })}

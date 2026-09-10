@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Marketer\AdBookingController;
+use App\Http\Controllers\Api\Marketer\AdSlotController;
 use App\Http\Controllers\Api\Marketer\AuthController;
 use App\Http\Controllers\Api\Marketer\CampaignController;
 use App\Http\Controllers\Api\Marketer\DashboardController;
@@ -31,4 +33,23 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/campaigns/finished',                  [CampaignController::class, 'finished']);
 
     Route::get('/reports',                             [ReportController::class, 'index']);
+
+    // Paid ad slots (AS-07) — marketer booking of admin-managed placements/page-block slots
+    Route::prefix('ad-slots')->name('marketer.api.ad-slots.')->group(function (): void {
+        Route::get('/',                    [AdSlotController::class, 'index'])->name('index');
+        Route::get('destinations',         [AdSlotController::class, 'destinations'])->name('destinations'); // before {id}
+        Route::get('{id}',                 [AdSlotController::class, 'show'])->name('show');
+        Route::get('{id}/calendar',        [AdSlotController::class, 'calendar'])->name('calendar');
+        Route::post('{id}/quote',          [AdSlotController::class, 'quote'])->name('quote');
+    });
+    Route::prefix('ad-bookings')->name('marketer.api.ad-bookings.')->group(function (): void {
+        Route::get('/',                    [AdBookingController::class, 'index'])->name('index');
+        Route::post('/',                   [AdBookingController::class, 'store'])->name('store');
+        Route::get('{id}',                 [AdBookingController::class, 'show'])->name('show');
+        Route::post('{id}/creative',       [AdBookingController::class, 'uploadCreative'])->name('creative');
+        Route::post('{id}/submit',         [AdBookingController::class, 'submit'])->name('submit');
+        Route::post('{id}/pay',            [AdBookingController::class, 'pay'])->name('pay');
+        Route::post('{id}/cancel',         [AdBookingController::class, 'cancel'])->name('cancel');
+        Route::get('{id}/stats',           [AdBookingController::class, 'stats'])->name('stats');
+    });
 });

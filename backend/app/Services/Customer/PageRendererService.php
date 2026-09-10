@@ -25,6 +25,7 @@ use App\Models\ProductCountrySetting;
 use App\Models\ProductVariant;
 use App\Models\VendorListing;
 use App\Enums\VendorGlobalStatus;
+use App\Services\Ads\PaidAdInjector;
 use App\Support\Bilingual;
 use App\Support\SafeCache;
 use Illuminate\Support\Collection;
@@ -60,6 +61,7 @@ class PageRendererService
     public function __construct(
         private readonly ProductQueryService $productQuery,
         private readonly \App\Services\Customer\ListingQueryService $listingQuery,
+        private readonly PaidAdInjector $adInjector,
     ) {
     }
 
@@ -115,12 +117,12 @@ class PageRendererService
             dispatch(new LogAbImpressionJob($test->id, $variant));
         }
 
-        return $this->assemble($page, $country, $customer, $chosenVariants, $appContextKey);
+        return $this->assemble($page, $country, $customer, $chosenVariants, $sessionId, $appContextKey);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function assemble(Page $page, Country $country, ?Customer $customer, array $chosenVariants, ?string $appContextKey = null): array
+    private function assemble(Page $page, Country $country, ?Customer $customer, array $chosenVariants, string $sessionId, ?string $appContextKey = null): array
     {
         $sections = PageSection::where('page_id', $page->id)
             ->where('is_visible', true)
@@ -137,7 +139,7 @@ class PageRendererService
 
         foreach ($sections as $section) {
             $sectionBlocks = $resolvedBlocks->where('section_id', $section->id)->values();
-            $hydrated = $this->hydrateBlocks($sectionBlocks, $page, $country, $customer);
+            $hydrated = $this->hydrateBlocks($sectionBlocks, $page, $country, $customer, $sessionId);
 
             if ($hydrated->isNotEmpty()) {
                 $sectionsData[] = [
@@ -161,7 +163,7 @@ class PageRendererService
         // Blocks not assigned to any section go in a virtual section.
         $unsectioned = $resolvedBlocks->whereNull('section_id')->values();
         if ($unsectioned->isNotEmpty()) {
-            $hydrated = $this->hydrateBlocks($unsectioned, $page, $country, $customer);
+            $hydrated = $this->hydrateBlocks($unsectioned, $page, $country, $customer, $sessionId);
             if ($hydrated->isNotEmpty()) {
                 $sectionsData[] = [
                     'id'                   => null,
@@ -235,10 +237,10 @@ class PageRendererService
         })->values();
     }
 
-    private function hydrateBlocks(Collection $blocks, Page $page, Country $country, ?Customer $customer): Collection
+    private function hydrateBlocks(Collection $blocks, Page $page, Country $country, ?Customer $customer, string $sessionId): Collection
     {
         return $blocks
-            ->map(function (PageBlock $block) use ($page, $country, $customer) {
+            ->map(function (PageBlock $block) use ($page, $country, $customer, $sessionId) {
                 $cached = $this->hydrateBlockCached($block, $country, $customer);
 
                 if ($cached === null) {
@@ -248,7 +250,7 @@ class PageRendererService
                 // Fire-and-forget impression tracking — never blocks the response.
                 dispatch(new FlushBlockImpressionJob($block->id, $page->id, $country->id));
 
-                return [
+                $row = [
                     'id'                => $block->id,
                     'type'              => $block->block_type,
                     'column_index'      => (int) $block->column_index,
@@ -265,6 +267,8 @@ class PageRendererService
                                             : null,
                     'data'              => $cached,
                 ];
+
+                return $this->adInjector->injectNested($row, $country->id, $sessionId);
             })
             ->filter()
             ->values();

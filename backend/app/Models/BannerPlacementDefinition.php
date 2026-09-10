@@ -15,6 +15,8 @@ class BannerPlacementDefinition extends Model
         'description',
         'width_px',
         'height_px',
+        'mobile_width_px',
+        'mobile_height_px',
         'max_file_size_kb',
         'allowed_formats',
         'device_restriction',

@@ -25,11 +25,15 @@ use App\Models\SliderSlide;
 use Illuminate\Validation\Rule;
 use App\Models\Vendor;
 use App\Models\File;
+use App\Services\Ads\AdBookingService;
+use App\Services\Ads\AdSlotBlockGuard;
+use App\Services\Ads\PaidAdResolver;
 use App\Services\PageBuilderService;
 use App\Services\Shared\PageCacheService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
@@ -39,6 +43,9 @@ class PageBuilderController extends Controller
     public function __construct(
         private PageBuilderService $service,
         private PageCacheService $pageCache,
+        private AdSlotBlockGuard $adSlotGuard,
+        private AdBookingService $adBookingService,
+        private PaidAdResolver $adResolver,
     ) {
     }
 
@@ -145,7 +152,7 @@ class PageBuilderController extends Controller
         return response()->json(['success' => true, 'message' => 'Page updated.']);
     }
 
-    public function deletePage(Page $page)
+    public function deletePage(Request $request, Page $page)
     {
         $this->authorizeManage();
         abort_if(
@@ -153,7 +160,35 @@ class PageBuilderController extends Controller
             403,
             'Cannot delete a published page without the pages.delete_published permission.'
         );
-        $page->delete();
+
+        $bookings = $this->adSlotGuard->activeBookingsOnPage($page);
+        if ($bookings->isNotEmpty() && ! $request->boolean('confirm')) {
+            return response()->json([
+                'requires_confirmation' => true,
+                'booking_count' => $bookings->count(),
+                'message' => __('admin.ad_slots.delete_page_with_bookings', ['count' => $bookings->count()]),
+                'hint' => __('admin.ad_slots.prorated_refund_hint'),
+                'bookings' => $bookings->map(fn ($b) => [
+                    'reference' => $b->booking_reference,
+                    'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
+                    'status' => $b->status->label(),
+                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                ])->values(),
+            ], 409);
+        }
+
+        $admin = $this->admin();
+
+        DB::transaction(function () use ($page, $bookings, $admin) {
+            foreach ($bookings as $booking) {
+                $this->adBookingService->cancel($booking, 'admin', 'The page hosting this ad slot was deleted.', $admin);
+            }
+            if ($bookings->isNotEmpty()) {
+                DB::afterCommit(fn () => $this->adResolver->bust($page->country_id));
+            }
+            $page->delete();
+        });
+
         return response()->json(['success' => true, 'message' => 'Page deleted.']);
     }
 
@@ -532,19 +567,68 @@ class PageBuilderController extends Controller
             'visible_until' => 'nullable|date|after_or_equal:visible_from',
             'device_target' => 'nullable|in:all,desktop,mobile,app',
             'audience' => 'nullable|in:all,guest,logged_in,vip',
+            'confirm' => 'nullable|boolean',
         ]);
+
+        $turningHidden = ! filter_var($data['is_visible'], FILTER_VALIDATE_BOOLEAN) && (bool) $block->is_visible;
+
+        if ($turningHidden && ! $request->boolean('confirm')) {
+            $bookings = $this->adSlotGuard->activeBookingsOnBlock($block);
+            if ($bookings->isNotEmpty()) {
+                return response()->json([
+                    'requires_confirmation' => true,
+                    'booking_count' => $bookings->count(),
+                    'message' => __('admin.ad_slots.hide_block_warning', ['count' => $bookings->count()]),
+                    'bookings' => $bookings->map(fn ($b) => [
+                        'reference' => $b->booking_reference,
+                        'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
+                        'status' => $b->status->label(),
+                        'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                    ])->values(),
+                ], 409);
+            }
+        }
 
         $revisionNumber = $this->service->updateBlockVisibility($block, $data, $this->admin());
         $this->pageCache->bustBlock($block);
 
+        if ($turningHidden) {
+            DB::afterCommit(fn () => $this->adSlotGuard->onBlockHidden($block));
+        }
+
         return response()->json(['success' => true, 'revision_number' => $revisionNumber]);
     }
 
-    public function removeBlock(PageBlock $block)
+    public function removeBlock(Request $request, PageBlock $block)
     {
         $this->authorizeManage();
+
+        $bookings = $this->adSlotGuard->activeBookingsOnBlock($block);
+        if ($bookings->isNotEmpty() && ! $request->boolean('confirm')) {
+            return response()->json([
+                'requires_confirmation' => true,
+                'booking_count' => $bookings->count(),
+                'message' => __('admin.ad_slots.delete_block_with_bookings', ['count' => $bookings->count()]),
+                'hint' => __('admin.ad_slots.prorated_refund_hint'),
+                'bookings' => $bookings->map(fn ($b) => [
+                    'reference' => $b->booking_reference,
+                    'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
+                    'status' => $b->status->label(),
+                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                ])->values(),
+            ], 409);
+        }
+
         $page = $block->page;
-        $this->service->removeBlock($block);
+        $adminId = $this->admin()->id;
+
+        DB::transaction(function () use ($block, $bookings, $adminId) {
+            $this->service->removeBlock($block);
+            if ($bookings->isNotEmpty()) {
+                DB::afterCommit(fn () => $this->adSlotGuard->onBlockDeleted($block, $adminId));
+            }
+        });
+
         if ($page) {
             $this->pageCache->bustPage($page);
         }
@@ -738,11 +822,38 @@ class PageBuilderController extends Controller
         return response()->json(['slide' => $slide]);
     }
 
-    public function deleteSlide(SliderSlide $slide)
+    public function deleteSlide(Request $request, SliderSlide $slide)
     {
         $this->authorizeManage();
-        $block = $slide->block;
-        $slide->delete();
+        $block = $slide->pageBlock;
+
+        $rank = $block ? $this->adSlotGuard->slideVisualRank($slide) : null;
+        $bookings = ($block && $rank) ? $this->adSlotGuard->activeBookingsAtPosition($block->id, $rank) : collect();
+
+        if ($bookings->isNotEmpty() && ! $request->boolean('confirm')) {
+            return response()->json([
+                'requires_confirmation' => true,
+                'booking_count' => $bookings->count(),
+                'message' => __('admin.ad_slots.delete_item_with_bookings', ['count' => $bookings->count()]),
+                'hint' => __('admin.ad_slots.prorated_refund_hint'),
+                'bookings' => $bookings->map(fn ($b) => [
+                    'reference' => $b->booking_reference,
+                    'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
+                    'status' => $b->status->label(),
+                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                ])->values(),
+            ], 409);
+        }
+
+        $adminId = $this->admin()->id;
+
+        DB::transaction(function () use ($slide, $block, $rank, $bookings, $adminId) {
+            $slide->delete();
+            if ($block && $rank && $bookings->isNotEmpty()) {
+                DB::afterCommit(fn () => $this->adSlotGuard->onItemDeleted($block, $rank, $adminId));
+            }
+        });
+
         if ($block) {
             $this->pageCache->bustBlock($block);
         }
@@ -759,7 +870,17 @@ class PageBuilderController extends Controller
             'slides.*.position' => 'required|integer|min:0',
         ]);
 
-        $this->service->reorderSlides($data['slides']);
+        $rankedIds = collect($data['slides'])
+            ->sortBy('position')
+            ->pluck('id')
+            ->values()
+            ->all();
+
+        DB::transaction(function () use ($data, $block, $rankedIds) {
+            $this->service->reorderSlides($data['slides']);
+            DB::afterCommit(fn () => $this->adSlotGuard->onItemsReordered($block, $rankedIds));
+        });
+
         return response()->json(['success' => true]);
     }
 
@@ -803,10 +924,41 @@ class PageBuilderController extends Controller
         return response()->json(['item' => $item]);
     }
 
-    public function deleteAdImage(AdImageItem $adImage)
+    public function deleteAdImage(Request $request, AdImageItem $adImage)
     {
         $this->authorizeManage();
-        $adImage->delete();
+        $block = $adImage->pageBlock;
+
+        $rank = $block ? $this->adSlotGuard->adImageVisualRank($adImage) : null;
+        $bookings = ($block && $rank) ? $this->adSlotGuard->activeBookingsAtPosition($block->id, $rank) : collect();
+
+        if ($bookings->isNotEmpty() && ! $request->boolean('confirm')) {
+            return response()->json([
+                'requires_confirmation' => true,
+                'booking_count' => $bookings->count(),
+                'message' => __('admin.ad_slots.delete_item_with_bookings', ['count' => $bookings->count()]),
+                'hint' => __('admin.ad_slots.prorated_refund_hint'),
+                'bookings' => $bookings->map(fn ($b) => [
+                    'reference' => $b->booking_reference,
+                    'advertiser' => $b->vendor->store_name ?? $b->marketer->name ?? null,
+                    'status' => $b->status->label(),
+                    'booked_until' => optional($b->booked_until)->format('Y-m-d'),
+                ])->values(),
+            ], 409);
+        }
+
+        $adminId = $this->admin()->id;
+
+        DB::transaction(function () use ($adImage, $block, $rank, $bookings, $adminId) {
+            $adImage->delete();
+            if ($block && $rank && $bookings->isNotEmpty()) {
+                DB::afterCommit(fn () => $this->adSlotGuard->onItemDeleted($block, $rank, $adminId));
+            }
+        });
+
+        if ($block) {
+            $this->pageCache->bustBlock($block);
+        }
         return response()->json(['success' => true]);
     }
 
@@ -994,7 +1146,17 @@ class PageBuilderController extends Controller
             'items.*.position' => 'required|integer|min:0',
         ]);
 
-        $this->service->reorderAdImages($data['items']);
+        $rankedIds = collect($data['items'])
+            ->sortBy('position')
+            ->pluck('id')
+            ->values()
+            ->all();
+
+        DB::transaction(function () use ($data, $block, $rankedIds) {
+            $this->service->reorderAdImages($data['items']);
+            DB::afterCommit(fn () => $this->adSlotGuard->onItemsReordered($block, $rankedIds));
+        });
+
         return response()->json(['success' => true]);
     }
 

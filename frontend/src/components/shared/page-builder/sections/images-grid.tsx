@@ -2,14 +2,14 @@
 import React from "react";
 import { Block } from "../types";
 import Image from "next/image";
-import { Link } from "@/i18n/navigation";
 import useLocale from "@/src/hooks/use-locale";
-import { AdBadge } from "@/src/components/shared/ad-badge";
+import { SponsoredLink } from "@/src/components/shared/sponsored-link";
 
 export default function ImagesGrid({ data }: { data: Block }) {
   const locale = useLocale();
   const isPromoTiles = data?.block_type === "promo_tiles";
   const gridCols = Number(data?.config?.grid_cols) || 2;
+  const items = data.items ?? data.images;
   return (
     <div
       className="flex-1 p-3"
@@ -31,9 +31,12 @@ export default function ImagesGrid({ data }: { data: Block }) {
                 "/images/no-image-available-icon.jpg";
 
               return (
-                <Link
+                <SponsoredLink
                   href={item?.link_url || ""}
-                  className="relative h-30 lg:h-40 xl:h-50 2xl:h-65 block"
+                  isExternal={item?.is_external}
+                  ad={item?.ad}
+                  isPaid={item?.is_paid}
+                  className="h-30 lg:h-40 xl:h-50 2xl:h-65"
                   style={{
                     width:
                       gridCols > 1
@@ -49,14 +52,16 @@ export default function ImagesGrid({ data }: { data: Block }) {
                     height={800}
                     className={"object-fill h-full"}
                   />
-                  {item?.is_paid && <AdBadge />}
-                </Link>
+                </SponsoredLink>
               );
             })
-          : data.items?.map((item, i) => (
-              <Link
+          : items?.map((item, i) => (
+              <SponsoredLink
                 href={item?.link_url || ""}
-                className="relative h-30 lg:h-40 xl:h-50 2xl:h-65 block"
+                isExternal={item?.is_external}
+                ad={item?.ad}
+                isPaid={item?.is_paid}
+                className="h-30 lg:h-40 xl:h-50 2xl:h-65"
                 style={{
                   width:
                     gridCols > 1
@@ -72,8 +77,7 @@ export default function ImagesGrid({ data }: { data: Block }) {
                   height={800}
                   className={"object-fill h-full"}
                 />
-                {item?.is_paid && <AdBadge />}
-              </Link>
+              </SponsoredLink>
             ))}
       </div>
     </div>

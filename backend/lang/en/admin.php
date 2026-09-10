@@ -8897,6 +8897,11 @@ return [
             'priority'                 => 'Priority',
             'actions'                  => 'Actions',
         ],
+        'hide_block_warning'       => 'This block has :count active ad booking(s). Hiding it will stop those ads from rendering. Confirm to continue.',
+        'delete_block_with_bookings' => 'This block has :count active ad booking(s). Deleting it will cancel and refund those bookings. Confirm to continue.',
+        'delete_item_with_bookings'  => 'This position has :count active ad booking(s). Deleting it will cancel and refund those bookings. Confirm to continue.',
+        'delete_page_with_bookings'  => 'This page has :count active ad booking(s). Deleting it will cancel and refund those bookings. Confirm to continue.',
+        'prorated_refund_hint'       => 'Advertisers will receive a prorated refund for the unused portion of their booking.',
     ],
 
     // ─── Announcement Bars ────────────────────────────────────────────────────

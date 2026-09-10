@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Vendor\AdCampaignController;
+use App\Http\Controllers\Vendor\AdSlotController;
+use App\Http\Controllers\Vendor\AdBookingController;
 use App\Http\Controllers\Vendor\ClassifiedListingController;
 use App\Http\Controllers\Vendor\AuthController;
 use App\Http\Controllers\Vendor\CouponController;
@@ -214,6 +216,25 @@ Route::prefix('v1')->group(function (): void {
                 Route::put('{id}/resume',                [AdCampaignController::class, 'resume'])->name('resume');
                 Route::get('{id}/performance',           [AdCampaignController::class, 'performance'])->name('performance');
                 Route::get('{id}/quality-score',         [AdCampaignController::class, 'qualityScore'])->name('quality-score');
+            });
+
+            // Paid ad slots (AS-06) — vendor booking of admin-managed placements/page-block slots
+            Route::prefix('ad-slots')->name('vendor.ad-slots.')->group(function (): void {
+                Route::get('/',                    [AdSlotController::class, 'index'])->name('index');
+                Route::get('destinations',         [AdSlotController::class, 'destinations'])->name('destinations'); // before {id}
+                Route::get('{id}',                 [AdSlotController::class, 'show'])->name('show');
+                Route::get('{id}/calendar',        [AdSlotController::class, 'calendar'])->name('calendar'); // ?month=YYYY-MM
+                Route::post('{id}/quote',          [AdSlotController::class, 'quote'])->name('quote');
+            });
+            Route::prefix('ad-bookings')->name('vendor.ad-bookings.')->group(function (): void {
+                Route::get('/',                    [AdBookingController::class, 'index'])->name('index'); // ?status=
+                Route::post('/',                   [AdBookingController::class, 'store'])->name('store');
+                Route::get('{id}',                 [AdBookingController::class, 'show'])->name('show');
+                Route::post('{id}/creative',       [AdBookingController::class, 'uploadCreative'])->name('creative'); // multipart
+                Route::post('{id}/submit',         [AdBookingController::class, 'submit'])->name('submit');
+                Route::post('{id}/pay',            [AdBookingController::class, 'pay'])->name('pay');
+                Route::post('{id}/cancel',         [AdBookingController::class, 'cancel'])->name('cancel');
+                Route::get('{id}/stats',           [AdBookingController::class, 'stats'])->name('stats');
             });
 
             // Classified listings (vendor-owned)

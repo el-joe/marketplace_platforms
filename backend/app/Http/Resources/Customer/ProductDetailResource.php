@@ -10,7 +10,8 @@ class ProductDetailResource extends JsonResource
 {
     public bool $isWishlisted = false;
 
-    public ?\App\Models\Banner $banner = null;
+    /** @var array<string, mixed>|null Pre-shaped banner/ad array from PlacementAdService::resolve(). */
+    public ?array $banner = null;
 
     /** @var array<string, mixed> */
     public array $enrichment = [];
@@ -149,7 +150,7 @@ class ProductDetailResource extends JsonResource
                 ProductListResource::collection($this->related)->resolve()
             ),
             'is_wishlisted'    => $this->isWishlisted,
-            'banner'           => $this->banner ? (new BannerResource($this->banner))->toArray($request) : null,
+            'banner'           => $this->banner,
             'seo'              => [
                 'title'       => [
                     'ar' => $countrySetting?->seo_title ?? $this->seo_title_ar,

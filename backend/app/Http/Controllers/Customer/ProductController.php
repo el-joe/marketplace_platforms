@@ -41,6 +41,7 @@ class ProductController extends Controller
         private readonly \App\Services\Customer\ListingIdentifierService $identifiers,
         private readonly PageBuilderService $pageBuilder,
         private readonly BannerService $bannerService,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {
     }
 
@@ -308,7 +309,8 @@ class ProductController extends Controller
             ->all();
 
         $audience = auth('customer')->check() ? 'logged_in' : 'guest';
-        $banner = $this->bannerService->getActivePlacement('product_page_bottom', $country->id, $audience, $product->id);
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
+        $banner = $this->placementAds->resolve('product_page_bottom', $country, $audience, $sessionId, $product->id, $product->category_id);
 
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;

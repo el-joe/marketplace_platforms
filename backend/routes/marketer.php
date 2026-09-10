@@ -9,6 +9,8 @@ use App\Http\Controllers\Marketer\InvitationController;
 use App\Http\Controllers\Marketer\ListingController;
 use App\Http\Controllers\Marketer\OrderController;
 use App\Http\Controllers\Marketer\ProfileController;
+use App\Http\Controllers\Marketer\PromoteBookingController;
+use App\Http\Controllers\Marketer\PromoteController;
 use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
 use App\Http\Controllers\Marketer\SupportController;
@@ -115,6 +117,28 @@ Route::middleware('web')->group(function () {
             Route::get('/commissions',        [FinanceController::class, 'commissions'])->name('commissions');
             Route::get('/wallet',             [FinanceController::class, 'wallet'])->name('wallet');
             Route::post('/wallet/withdraw',   [FinanceController::class, 'requestWithdrawal'])->name('wallet.withdraw');
+        });
+
+        // Promote: paid ad slot booking (AS-07)
+        Route::prefix('promote')->name('promote.')->group(function () {
+            Route::get('/', [PromoteController::class, 'index'])->name('index');
+            Route::get('/slots/{slot}', [PromoteController::class, 'show'])->name('show');
+            Route::get('/slots/{slot}/calendar', [PromoteController::class, 'calendar'])->name('calendar');
+            Route::post('/slots/{slot}/quote', [PromoteController::class, 'quote'])->name('quote');
+            Route::get('/destinations', [PromoteController::class, 'destinations'])->name('destinations');
+            Route::get('/wallet-balance', [PromoteController::class, 'walletBalance'])->name('wallet-balance');
+
+            Route::prefix('bookings')->name('bookings.')->group(function () {
+                Route::get('/', [PromoteBookingController::class, 'index'])->name('index');
+                Route::post('/datatable', [PromoteBookingController::class, 'datatable'])->name('datatable');
+                Route::post('/', [PromoteBookingController::class, 'store'])->name('store');
+                Route::get('/{booking}', [PromoteBookingController::class, 'show'])->name('show');
+                Route::post('/{booking}/creative', [PromoteBookingController::class, 'uploadCreative'])->name('creative');
+                Route::post('/{booking}/submit', [PromoteBookingController::class, 'submit'])->name('submit');
+                Route::post('/{booking}/pay', [PromoteBookingController::class, 'pay'])->name('pay');
+                Route::post('/{booking}/cancel', [PromoteBookingController::class, 'cancel'])->name('cancel');
+                Route::get('/{booking}/stats', [PromoteBookingController::class, 'stats'])->name('stats');
+            });
         });
 
         // Flash sale invitations

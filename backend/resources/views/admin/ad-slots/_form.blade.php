@@ -123,15 +123,6 @@
                 placeholder="e.g. 90" />
         </div>
 
-        {{-- Min Seller Tier --}}
-        <div>
-            <x-form-input
-                name="min_seller_tier"
-                label="{{ __('admin.ad_slots.min_seller_tier') }}"
-                :value="old('min_seller_tier', $adSlot?->min_seller_tier)"
-                placeholder="{{ __('admin.ad_slots.min_seller_tier_placeholder') }}" />
-        </div>
-
         {{-- Notes for Vendors --}}
         <div class="sm:col-span-2">
             <x-form-textarea

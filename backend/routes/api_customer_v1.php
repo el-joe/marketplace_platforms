@@ -9,6 +9,7 @@ use App\Http\Controllers\Customer\ListingController;
 use App\Http\Controllers\Api\Customer\ListingController as ApiListingController;
 use App\Http\Controllers\Customer\CategoryController;
 use App\Http\Controllers\Customer\PageController;
+use App\Http\Controllers\Customer\PaidAdTrackingController;
 use App\Http\Controllers\Customer\VendorPageController;
 use App\Http\Controllers\Customer\BrandPageController;
 use App\Http\Controllers\Customer\WalletController;
@@ -181,6 +182,14 @@ use Illuminate\Support\Facades\Route;
         Route::post('blocks/{id}/click', [PageController::class, 'click'])
             ->middleware('throttle:60,1')
             ->name('customer.blocks.click');
+
+        // ── Paid ad impression/click tracking (public) ─────────────────────────
+        Route::post('ads/impressions', [PaidAdTrackingController::class, 'impressions'])
+            ->middleware('throttle:120,1')
+            ->name('customer.ads.impressions');
+        Route::post('ads/clicks', [PaidAdTrackingController::class, 'click'])
+            ->middleware('throttle:60,1')
+            ->name('customer.ads.clicks');
 
         // ── Vendor storefront page (public) ───────────────────────────────────
         Route::get('vendors/{vendor_id}', [VendorPageController::class, 'show'])

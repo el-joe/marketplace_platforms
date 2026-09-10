@@ -12,8 +12,8 @@ import PaymentDiscount from "@/src/features/noon/productView/payment-discount";
 import ProductImagesPreview from "@/src/features/noon/productView/Product-images-preview";
 import ProductOverview from "@/src/features/noon/productView/product-overview";
 import { getTranslations } from "next-intl/server";
-import Image from "next/image";
 import React from "react";
+import { PlacementBanner } from "@/src/components/shared/placement-banner";
 import { getProduct } from "./api/get";
 import getLocale from "@/src/helpers/getLocale";
 import Variants from "./variants";
@@ -95,14 +95,7 @@ export default async function ProductView({ slug }: { slug: string }) {
           <div className="lg:col-span-5">
             {/* seller data */}
             <SellerCard productData={productData} />
-            <Image
-              src={
-                "https://a.nooncdn.com/mpcms/EN0001/assets/d7459e74-052b-4de2-8e11-b87834ad940f.png?width=2400"
-              }
-              alt="banner"
-              width={800}
-              height={260}
-            />
+            <PlacementBanner banner={productData.banner} variant="product" />
           </div>
         </div>
         <ProductOverview

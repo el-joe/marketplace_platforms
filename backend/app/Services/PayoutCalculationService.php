@@ -8,6 +8,7 @@ use App\Models\PaymentTransaction;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\Vendor;
+use App\Services\Ads\AdBillingService;
 use Carbon\Carbon;
 
 class PayoutCalculationService
@@ -16,6 +17,10 @@ class PayoutCalculationService
      * Sub-order statuses that are eligible for payout calculation.
      */
     private const PAYABLE_STATUSES = ['delivered', 'completed'];
+
+    public function __construct(private readonly AdBillingService $adBillingService)
+    {
+    }
 
     /**
      * Calculate payout summaries for a vendor over a given period, grouped by currency.
@@ -98,7 +103,11 @@ class PayoutCalculationService
                 ->whereBetween('processed_at', [$from->startOfDay(), $to->endOfDay()])
                 ->sum('amount');
 
-            $netAmount = $grossSales - $commission - $gatewayFee - $refundsDeducted - $chargebacksDeducted;
+            $netBeforeAds = $grossSales - $commission - $gatewayFee - $refundsDeducted - $chargebacksDeducted;
+
+            [$adFees, $adChargeIds] = $this->selectAdCharges($vendor, $currency, $netBeforeAds);
+
+            $netAmount = $netBeforeAds - $adFees;
 
             $results[$currency] = [
                 'vendor_id'                  => $vendor->id,
@@ -110,13 +119,53 @@ class PayoutCalculationService
                 'refunds_deducted'           => $refundsDeducted,
                 'chargebacks_deducted'       => $chargebacksDeducted,
                 'storage_fees'               => 0,
-                'ad_fees'                    => 0,
+                'ad_fees'                    => $adFees,
                 'other_adjustments'          => 0,
                 'net_amount'                 => max(0, $netAmount),
                 'currency'                   => $currency,
+                'ad_charge_ids'              => $adChargeIds,
             ];
         }
 
         return $results;
+    }
+
+    /**
+     * Deterministically select which unsettled PaidAdCharge rows go into this
+     * payout: all negative (refund) rows first, then positive rows oldest-first,
+     * stopping at the first positive row that would push the running sum above
+     * max(0, $netBeforeAds). Rows not taken stay unsettled and roll forward.
+     *
+     * @return array{0: int, 1: array<int, string>} [ad_fees, charge_ids]
+     */
+    private function selectAdCharges(Vendor $vendor, string $currency, int $netBeforeAds): array
+    {
+        $charges = $this->adBillingService->unsettledForPayout($vendor, $currency)
+            ->sortBy('created_at')
+            ->values();
+
+        $cap = max(0, $netBeforeAds);
+
+        $refunds = $charges->filter(fn ($c) => ($c->amount + $c->tax_amount) < 0);
+        $positives = $charges->filter(fn ($c) => ($c->amount + $c->tax_amount) >= 0);
+
+        $sum = 0;
+        $ids = [];
+
+        foreach ($refunds as $charge) {
+            $sum += $charge->amount + $charge->tax_amount;
+            $ids[] = $charge->id;
+        }
+
+        foreach ($positives as $charge) {
+            $amount = $charge->amount + $charge->tax_amount;
+            if ($sum + $amount > $cap) {
+                break;
+            }
+            $sum += $amount;
+            $ids[] = $charge->id;
+        }
+
+        return [$sum, $ids];
     }
 }

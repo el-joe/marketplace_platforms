@@ -24,6 +24,7 @@ class BrowseService
         private readonly ClassifiedBrowseQueryService $classifiedQuery,
         private readonly TravelBrowseQueryService $travelQuery,
         private readonly PageBuilderService $pageBuilder,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {}
 
     public function browse(
@@ -59,10 +60,15 @@ class BrowseService
         $payload      = $this->productQuery->buildProductsPayload($paginator, $country, $page, 'category_top');
         $pageBuilder  = $this->categoryService->resolvePageBuilder($category, $country);
 
+        $audience = auth('customer')->check() ? 'logged_in' : 'guest';
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
+        $topBanner = $this->placementAds->resolve('category_top', $country, $audience, $sessionId, null, $category->id);
+
         return [
             'category'     => (new BrowseCategoryResource($category, 'product'))->toArray($request),
             'page_builder' => $pageBuilder,
             'items'        => array_merge($payload, ['facets' => $facets]),
+            'top_banner'   => $topBanner,
         ];
     }
 

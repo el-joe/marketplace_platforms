@@ -51,7 +51,9 @@ use App\Policies\WarehouseInventoryPolicy;
 use App\Models\ClassifiedListing;
 use App\Models\ClassifiedInquiry;
 use App\Models\PaidAdSlot;
+use App\Models\PaidAdBooking;
 use App\Policies\AdSlotPolicy;
+use App\Policies\PaidAdBookingPolicy;
 use App\Policies\ClassifiedListingPolicy;
 use App\Policies\ClassifiedInquiryPolicy;
 use App\Observers\SubOrderObserver;
@@ -133,6 +135,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ClassifiedListing::class, ClassifiedListingPolicy::class);
         Gate::policy(ClassifiedInquiry::class, ClassifiedInquiryPolicy::class);
         Gate::policy(PaidAdSlot::class, AdSlotPolicy::class);
+        Gate::policy(PaidAdBooking::class, PaidAdBookingPolicy::class);
 
         VendorListing::observe(VendorListingObserver::class);
         AdminListing::observe(AdminListingObserver::class);

@@ -1,11 +1,13 @@
 import { Product } from "@/types/globals";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
+import { PlacementBanner } from "@/src/types/placement-banner";
 
 export interface ShopResponse {
   data: {
     page_builder: PageBuilder;
     facets: Facets;
     items: Product[];
+    top_banner?: PlacementBanner | null;
     category: {
       id: string;
       name: { en: string; ar: string };

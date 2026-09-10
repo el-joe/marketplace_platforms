@@ -1,9 +1,14 @@
 <?php
 
 return [
-    'pending' => 'قيد الانتظار',
+    'draft' => 'مسودة',
+    'pending_review' => 'قيد المراجعة',
+    'approved' => 'معتمد',
+    'scheduled' => 'مجدول',
     'active' => 'نشط',
+    'paused' => 'متوقف مؤقتًا',
+    'completed' => 'مكتمل',
     'rejected' => 'مرفوض',
     'cancelled' => 'ملغى',
-    'ended' => 'منتهي',
+    'expired' => 'منتهي الصلاحية',
 ];

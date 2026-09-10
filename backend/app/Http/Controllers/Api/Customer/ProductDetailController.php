@@ -31,6 +31,7 @@ class ProductDetailController extends Controller
         private readonly ShippingMethodResolverService $shippingMethodResolver,
         private readonly ListingQueryService $listings,
         private readonly BannerService $bannerService,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {
     }
 
@@ -92,7 +93,15 @@ class ProductDetailController extends Controller
             : false;
 
         $audience = $customerId ? 'logged_in' : 'guest';
-        $banner = $this->bannerService->getActivePlacement('product_page_bottom', $countryId, $audience, $product->id);
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
+        $banner = $this->placementAds->resolve(
+            'product_page_bottom',
+            $request->attributes->get('country'),
+            $audience,
+            $sessionId,
+            $product->id,
+            $product->category_id,
+        );
 
         return ApiResponse::success([
             'product' => $this->productShape($product),
@@ -108,7 +117,7 @@ class ProductDetailController extends Controller
             'current_url' => $url,
             'url_param' => $url_param,
             'is_wishlisted' => $isWishlisted,
-            'banner' => $banner ? (new \App\Http\Resources\Customer\BannerResource($banner))->toArray($request) : null,
+            'banner' => $banner,
         ]);
     }
 

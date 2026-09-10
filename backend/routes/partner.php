@@ -21,6 +21,8 @@ use App\Http\Controllers\Partner\TeamController;
 use App\Http\Controllers\Partner\VendorChangeRequestController;
 use App\Http\Controllers\Partner\WarehouseController;
 use App\Http\Controllers\Partner\AdsController;
+use App\Http\Controllers\Partner\AdSlotMarketController;
+use App\Http\Controllers\Partner\AdBookingController;
 use App\Http\Controllers\Partner\ClassifiedListingController;
 use App\Http\Controllers\Partner\MarketerCampaignController;
 use App\Http\Controllers\NotificationController;
@@ -421,6 +423,27 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::get('/{id}/quality-score', [AdsController::class, 'qualityScore'])->name('quality-score');
         Route::post('/{id}/pause',        [AdsController::class, 'pause'])->name('pause');
         Route::post('/{id}/resume',       [AdsController::class, 'resume'])->name('resume');
+    });
+
+    // ─── Ad Slots (AS-06) — new self-serve booking of admin-managed ad placements ────
+    // Both vendor types allowed: classified vendors advertise classified listings.
+    Route::prefix('ad-slots')->name('ad-slots.')->group(function () {
+        Route::get('/',                    [AdSlotMarketController::class, 'index'])->name('index')->middleware('vendor.can:ad_slots.view');
+        Route::get('/{slot}',              [AdSlotMarketController::class, 'show'])->name('show')->middleware('vendor.can:ad_slots.view');
+        Route::get('/{slot}/calendar',     [AdSlotMarketController::class, 'calendar'])->name('calendar')->middleware('vendor.can:ad_slots.view');
+        Route::post('/{slot}/quote',       [AdSlotMarketController::class, 'quote'])->name('quote')->middleware('vendor.can:ad_slots.book');
+        Route::get('/destinations/search', [AdSlotMarketController::class, 'destinations'])->name('destinations')->middleware('vendor.can:ad_slots.book');
+    });
+    Route::prefix('ad-bookings')->name('ad-bookings.')->group(function () {
+        Route::get('/',                    [AdBookingController::class, 'index'])->name('index');
+        Route::post('/datatable',          [AdBookingController::class, 'datatable'])->name('datatable');
+        Route::post('/',                   [AdBookingController::class, 'store'])->name('store');
+        Route::get('/{booking}',           [AdBookingController::class, 'show'])->name('show');
+        Route::post('/{booking}/creative', [AdBookingController::class, 'uploadCreative'])->name('creative');
+        Route::post('/{booking}/submit',   [AdBookingController::class, 'submit'])->name('submit');
+        Route::post('/{booking}/pay',      [AdBookingController::class, 'pay'])->name('pay')->middleware('vendor.can:ad_slots.pay');
+        Route::post('/{booking}/cancel',   [AdBookingController::class, 'cancel'])->name('cancel');
+        Route::get('/{booking}/stats',     [AdBookingController::class, 'stats'])->name('stats');
     });
 
     // ─── السوق المفتوح (Classifieds) ─────────────────────────────────────────

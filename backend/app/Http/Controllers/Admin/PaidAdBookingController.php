@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PaidAdBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\PaidAdBooking;
 use App\Models\PaidAdCreative;
-use App\Notifications\Vendor\AdSlotBookingApproved;
-use App\Notifications\Vendor\AdSlotBookingRejected;
-use Illuminate\Support\Facades\Notification;
+use App\Services\Ads\AdBookingService;
+use App\Services\Ads\AdCreativeService;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,17 +18,23 @@ class PaidAdBookingController extends Controller
 {
     use HasDataTable;
 
+    public function __construct(
+        private readonly AdBookingService $bookingService,
+        private readonly AdCreativeService $creativeService,
+    ) {
+    }
+
     // ─── Index ────────────────────────────────────────────────────────────────
 
     public function index(): \Illuminate\View\View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
+        abort_unless($admin->hasPermissionTo('ad_bookings.view'), 403);
 
         $stats = [
-            'pending' => PaidAdBooking::where('status', 'pending')->count(),
-            'active' => PaidAdBooking::where('status', 'active')->count(),
-            'rejected' => PaidAdBooking::where('status', 'rejected')->count(),
+            'pending' => PaidAdBooking::where('status', PaidAdBookingStatus::PendingReview->value)->count(),
+            'active' => PaidAdBooking::where('status', PaidAdBookingStatus::Active->value)->count(),
+            'rejected' => PaidAdBooking::where('status', PaidAdBookingStatus::Rejected->value)->count(),
         ];
 
         return view('admin.paid-ad-bookings.index', compact('stats'));
@@ -38,7 +45,7 @@ class PaidAdBookingController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
+        abort_unless($admin->hasPermissionTo('ad_bookings.view'), 403);
 
         $query = PaidAdBooking::query()
             ->with(['slot', 'vendor', 'country', 'creatives' => fn($q) => $q->where('is_current', true)]);
@@ -63,29 +70,33 @@ class PaidAdBookingController extends Controller
         ];
 
         $statusColors = [
-            'pending' => 'warning',
+            'pending_review' => 'warning',
+            'approved' => 'info',
+            'scheduled' => 'info',
             'active' => 'success',
+            'paused' => 'warning',
+            'completed' => 'gray',
             'rejected' => 'danger',
             'cancelled' => 'gray',
-            'ended' => 'gray',
+            'expired' => 'gray',
         ];
 
         $paymentColors = [
             'unpaid' => 'danger',
             'paid' => 'success',
-            'invoiced' => 'warning',
+            'reserved' => 'warning',
             'refunded' => 'gray',
         ];
 
-        $canEdit = $admin->hasPermissionTo('ad_campaigns.edit');
+        $canReview = $admin->hasPermissionTo('ad_bookings.review');
 
-        return $this->dataTableResponse($request, $query, $columns, function (PaidAdBooking $row) use ($statusColors, $paymentColors, $canEdit) {
+        return $this->dataTableResponse($request, $query, $columns, function (PaidAdBooking $row) use ($statusColors, $paymentColors, $canReview) {
             $statusColor = $statusColors[$row->status->value] ?? 'gray';
             $statusLabel = $row->status->label();
             $statusBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{$statusColor}-100 text-{$statusColor}-700\">{$statusLabel}</span>";
 
-            $payColor = $paymentColors[$row->payment_status] ?? 'gray';
-            $payLabel = ucfirst($row->payment_status ?? 'unpaid');
+            $payColor = $paymentColors[$row->payment_status?->value] ?? 'gray';
+            $payLabel = ucfirst($row->payment_status?->value ?? 'unpaid');
             $payBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{$payColor}-100 text-{$payColor}-700\">{$payLabel}</span>";
 
             $showUrl = route('admin.paid-ad-bookings.show', $row->id);
@@ -94,7 +105,7 @@ class PaidAdBookingController extends Controller
 
             $actions = '<div class="flex items-center gap-1">';
             $actions .= "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>";
-            if ($canEdit && $row->status?->value === 'pending') {
+            if ($canReview && $row->status === PaidAdBookingStatus::PendingReview) {
                 $actions .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-booking-btn\" data-url=\"{$approveUrl}\" data-ref=\"" . e($row->booking_reference) . "\">Approve</button>";
                 $actions .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-booking-btn\" data-url=\"{$rejectUrl}\" data-ref=\"" . e($row->booking_reference) . "\">Reject</button>";
             }
@@ -108,10 +119,10 @@ class PaidAdBookingController extends Controller
 
             return [
                 'reference' => '<span class="font-mono text-xs">' . e($row->booking_reference) . '</span><br>' . $creativeStatus,
-                'vendor' => e($row->vendor?->store_name ?? '—'),
+                'vendor' => e($row->vendor?->store_name ?? $row->marketer?->company_name ?? '—'),
                 'slot' => e($row->slot?->name ?? '—'),
                 'dates' => Carbon::parse($row->booked_from)->format('d M') . ' – ' . Carbon::parse($row->booked_until)->format('d M Y'),
-                'rate' => number_format($row->agreed_rate, 2) . ' <span class="text-xs text-gray-400">' . strtoupper($row->currency ?? '') . '</span>',
+                'rate' => number_format($row->agreed_rate) . ' <span class="text-xs text-gray-400">' . strtoupper($row->currency ?? '') . '</span>',
                 'status' => $statusBadge,
                 'payment_status' => $payBadge,
                 'actions' => $actions,
@@ -125,9 +136,9 @@ class PaidAdBookingController extends Controller
     public function show(PaidAdBooking $paidAdBooking): \Illuminate\View\View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
+        abort_unless($admin->hasPermissionTo('ad_bookings.view'), 403);
 
-        $paidAdBooking->load(['slot.placementDefinition', 'vendor', 'country', 'approvedByAdmin', 'creatives.reviewedByAdmin']);
+        $paidAdBooking->load(['slot.placementDefinition', 'vendor', 'marketer', 'country', 'approvedByAdmin', 'creatives.reviewedByAdmin']);
 
         return view('admin.paid-ad-bookings.show', compact('paidAdBooking'));
     }
@@ -137,20 +148,13 @@ class PaidAdBookingController extends Controller
     public function approve(PaidAdBooking $paidAdBooking): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_bookings.review'), 403);
 
-        if ($paidAdBooking->status?->value !== 'pending') {
-            return response()->json(['message' => 'Booking is not pending approval.'], 422);
+        try {
+            $this->bookingService->approve($paidAdBooking, $admin);
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $paidAdBooking->load('adSlot');
-        $paidAdBooking->update([
-            'status' => 'active',
-            'approved_by_admin_id' => $admin->id,
-            'approved_at' => now(),
-        ]);
-
-        Notification::send($paidAdBooking->vendor->vendorAdmins, new AdSlotBookingApproved($paidAdBooking));
 
         return response()->json(['message' => 'Booking approved.']);
     }
@@ -160,19 +164,17 @@ class PaidAdBookingController extends Controller
     public function reject(Request $request, PaidAdBooking $paidAdBooking): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_bookings.review'), 403);
 
         $request->validate([
             'rejection_reason' => ['required', 'string', 'max:1000'],
         ]);
 
-        $paidAdBooking->load('adSlot');
-        $paidAdBooking->update([
-            'status' => 'rejected',
-            'rejection_reason' => $request->input('rejection_reason'),
-        ]);
-
-        Notification::send($paidAdBooking->vendor->vendorAdmins, new AdSlotBookingRejected($paidAdBooking, $request->input('rejection_reason')));
+        try {
+            $this->bookingService->reject($paidAdBooking, $admin, $request->input('rejection_reason'));
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['message' => 'Booking rejected.']);
     }
@@ -182,7 +184,7 @@ class PaidAdBookingController extends Controller
     public function reviewCreative(Request $request, PaidAdCreative $paidAdCreative): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_bookings.review'), 403);
 
         $request->validate([
             'action' => ['required', 'in:approve,reject'],
@@ -192,23 +194,19 @@ class PaidAdBookingController extends Controller
 
         $action = $request->input('action');
 
-        if ($action === 'approve') {
-            $paidAdCreative->update([
-                'status' => 'approved',
-                'reviewed_by_admin_id' => $admin->id,
-                'reviewed_at' => now(),
-                'approved_at' => now(),
-                'rejection_reason' => null,
-                'rejection_code' => null,
-            ]);
-        } else {
-            $paidAdCreative->update([
-                'status' => 'rejected',
-                'reviewed_by_admin_id' => $admin->id,
-                'reviewed_at' => now(),
-                'rejection_reason' => $request->input('rejection_reason'),
-                'rejection_code' => $request->input('rejection_code'),
-            ]);
+        try {
+            if ($action === 'approve') {
+                $this->creativeService->approve($paidAdCreative, $admin);
+            } else {
+                $this->creativeService->reject(
+                    $paidAdCreative,
+                    $admin,
+                    $request->input('rejection_reason'),
+                    $request->input('rejection_code'),
+                );
+            }
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return response()->json(['message' => 'Creative ' . $action . 'd.']);

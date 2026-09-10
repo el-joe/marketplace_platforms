@@ -61,6 +61,9 @@ class VendorPermissionSeeder extends Seeder
             'marketer_invitations.view',
             'marketer_invitations.respond',
             'marketer_reports.view',
+            'ad_slots.view',
+            'ad_slots.book',
+            'ad_slots.pay',
         ];
 
         foreach ($permissions as $name) {

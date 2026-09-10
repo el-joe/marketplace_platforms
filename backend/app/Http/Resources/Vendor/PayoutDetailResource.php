@@ -17,6 +17,15 @@ class PayoutDetailResource extends JsonResource
             'net'          => $item->net,
         ]);
 
+        $adCharges = $this->whenLoaded('adCharges', fn () => $this->adCharges->map(fn ($charge) => [
+            'id'                  => $charge->id,
+            'paid_ad_booking_id'  => $charge->paid_ad_booking_id,
+            'type'                => $charge->type?->value,
+            'amount'              => $charge->amount,
+            'tax_amount'          => $charge->tax_amount,
+            'currency'            => $charge->currency,
+        ]));
+
         return [
             'id'              => $this->id,
             'payout_number'   => $this->payout_number,
@@ -49,6 +58,7 @@ class PayoutDetailResource extends JsonResource
             ]),
 
             'items'      => $items,
+            'ad_charges' => $adCharges,
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

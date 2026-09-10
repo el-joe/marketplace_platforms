@@ -148,6 +148,13 @@
                     المحفظة
                 </a>
 
+                <a href="{{ route('marketer.promote.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.promote.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    الترويج المدفوع
+                </a>
+
                 <a href="{{ route('marketer.support.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.support.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

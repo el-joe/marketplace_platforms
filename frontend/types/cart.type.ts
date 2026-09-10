@@ -1,10 +1,11 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Warranty } from "@/src/features/noon/productView/types/product-details";
+import { PlacementBanner } from "@/src/types/placement-banner";
 
 export interface ICart {
   cart: Cart;
   shipping_groups: ShippingGroup[];
-  cart_banner: CartBanner;
+  cart_banner: PlacementBanner | null;
   savings_and_benefits: SavingsAndBenefits;
   wallet: Wallet;
   guest_cart_token?: string;
@@ -86,21 +87,6 @@ export interface Summary {
   estimated_tax: number;
   estimated_total: number;
   item_count: number;
-}
-
-export interface CartBanner {
-  id: string;
-  title_en: string;
-  title_ar: string;
-  subtitle_en: string;
-  subtitle_ar: string;
-  cta_label_en: string;
-  cta_label_ar: string;
-  cta_url: string;
-  link_type: string;
-  link_reference_id: string | null;
-  desktop_image_url: string;
-  mobile_image_url: string;
 }
 
 export interface SavingsAndBenefits {

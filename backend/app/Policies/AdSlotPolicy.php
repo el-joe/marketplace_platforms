@@ -10,37 +10,28 @@ class AdSlotPolicy
 {
     use HandlesAuthorization;
 
-    public function before(mixed $user, string $ability): bool|null
+    public function viewAny(Admin $admin): bool
     {
-        if ($user instanceof Admin) {
-            return true;
-        }
-
-        return false;
+        return $admin->hasPermissionTo('ad_slots.view');
     }
 
-    public function viewAny(mixed $user): bool
+    public function view(Admin $admin, PaidAdSlot $adSlot): bool
     {
-        return false;
+        return $admin->hasPermissionTo('ad_slots.view');
     }
 
-    public function view(mixed $user, PaidAdSlot $adSlot): bool
+    public function create(Admin $admin): bool
     {
-        return false;
+        return $admin->hasPermissionTo('ad_slots.create');
     }
 
-    public function create(mixed $user): bool
+    public function update(Admin $admin, PaidAdSlot $adSlot): bool
     {
-        return false;
+        return $admin->hasPermissionTo('ad_slots.edit');
     }
 
-    public function update(mixed $user, PaidAdSlot $adSlot): bool
+    public function delete(Admin $admin, PaidAdSlot $adSlot): bool
     {
-        return false;
-    }
-
-    public function delete(mixed $user, PaidAdSlot $adSlot): bool
-    {
-        return false;
+        return $admin->hasPermissionTo('ad_slots.delete');
     }
 }

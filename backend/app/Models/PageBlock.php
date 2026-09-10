@@ -109,11 +109,6 @@ class PageBlock extends Model
         return $this->hasMany(PageBlockBrand::class)->orderBy('position');
     }
 
-    public function paidBannerBookings(): HasMany
-    {
-        return $this->hasMany(PaidBannerBooking::class);
-    }
-
     public function analytics(): HasMany
     {
         return $this->hasMany(BlockAnalytic::class)->orderByDesc('date');

@@ -41,7 +41,7 @@ class WalletService
         }
 
         return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId) {
-            $wallet->lockForUpdate()->refresh();
+            $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
             $newBalance = $wallet->balance + $amountCents;
             $wallet->update(['balance' => $newBalance]);
 
@@ -72,7 +72,7 @@ class WalletService
         }
 
         return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId) {
-            $wallet->lockForUpdate()->refresh();
+            $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
 
             if ($wallet->balance < $amountCents) {
                 throw new InsufficientBalanceException($amountCents, $wallet->balance, $wallet->currency);

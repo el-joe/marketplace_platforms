@@ -1,5 +1,12 @@
 import { Category, Name, Product, SEO } from "@/types/globals";
 
+export interface PaidAdMeta {
+  id: string;
+  sig: string;
+  advertiser_label: Name;
+  pricing_model: "cpm" | "cpc" | "fixed";
+}
+
 export interface Block {
   id: string;
   block_type: string;
@@ -8,6 +15,7 @@ export interface Block {
   config: BlockConfig;
   background_color: null | string;
   items?: BlockItem[];
+  images?: BlockItem[];
   title?: Name;
   columns?: number;
   rows?: number;
@@ -90,6 +98,8 @@ export interface Slide {
   link_type: null | string;
   link_reference_id: null | string;
   is_paid?: boolean;
+  is_external?: boolean;
+  ad?: PaidAdMeta | null;
 }
 
 export interface Banner {
@@ -101,6 +111,9 @@ export interface Banner {
   alt_text: Name;
   aspect_ratio: string;
   mobile_aspect_ratio: string;
+  is_paid?: boolean;
+  is_external?: boolean;
+  ad?: PaidAdMeta | null;
 }
 
 export interface ConfigTile {
@@ -119,6 +132,8 @@ export interface ColumnTile {
   image_url: Name;
   link_url: string;
   is_paid?: boolean;
+  is_external?: boolean;
+  ad?: PaidAdMeta | null;
 }
 
 export interface BlockItem {
@@ -135,6 +150,8 @@ export interface BlockItem {
   show_title_overlay: boolean;
   aspect_ratio: string;
   is_paid: boolean;
+  is_external?: boolean;
+  ad?: PaidAdMeta | null;
 }
 
 export interface PageBuilder {

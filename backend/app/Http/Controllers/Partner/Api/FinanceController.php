@@ -129,7 +129,7 @@ class FinanceController extends Controller
     public function showPayout(int $id): JsonResponse
     {
         $payout = Payout::where('vendor_id', $this->vendorId())
-            ->with(['items', 'bankAccount'])
+            ->with(['items', 'bankAccount', 'adCharges'])
             ->findOrFail($id);
 
         return ApiResponse::success(new PayoutDetailResource($payout));

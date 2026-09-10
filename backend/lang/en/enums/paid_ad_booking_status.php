@@ -1,9 +1,14 @@
 <?php
 
 return [
-    'pending' => 'Pending',
+    'draft' => 'Draft',
+    'pending_review' => 'Pending Review',
+    'approved' => 'Approved',
+    'scheduled' => 'Scheduled',
     'active' => 'Active',
+    'paused' => 'Paused',
+    'completed' => 'Completed',
     'rejected' => 'Rejected',
     'cancelled' => 'Cancelled',
-    'ended' => 'Ended',
+    'expired' => 'Expired',
 ];

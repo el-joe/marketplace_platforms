@@ -65,4 +65,9 @@ class Payout extends Model
     {
         return $this->hasMany(PayoutItem::class);
     }
+
+    public function adCharges(): HasMany
+    {
+        return $this->hasMany(PaidAdCharge::class, 'payout_id');
+    }
 }

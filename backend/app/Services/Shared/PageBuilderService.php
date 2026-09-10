@@ -10,9 +10,9 @@ use App\Models\FlashSale;
 use App\Models\Page;
 use App\Models\PageBlock;
 use App\Models\PageSection;
-use App\Models\PaidBannerBooking;
 use App\Models\Product;
 use App\Models\ProductCountrySetting;
+use App\Services\Ads\PaidAdInjector;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\UnifiedListingQueryService;
 use App\Support\Bilingual;
@@ -30,6 +30,7 @@ class PageBuilderService
     public function __construct(
         private readonly ListingQueryService $listingQuery,
         private readonly UnifiedListingQueryService $unifiedQuery,
+        private readonly PaidAdInjector $adInjector,
     ) {
     }
 
@@ -63,6 +64,8 @@ class PageBuilderService
             return null;
         }
 
+        $sessionId = request()?->header('X-Session-Id') ?? request()?->cookie('session_id');
+
         $now = now();
 
         $blocks = $page->blocks()
@@ -90,13 +93,6 @@ class PageBuilderService
             ])
             ->get();
 
-        $bookings = PaidBannerBooking::whereIn('page_block_id', $blocks->pluck('id'))
-            ->where('status', 'active')
-            ->where('booked_from', '<=', $now)
-            ->where('booked_until', '>=', $now)
-            ->get()
-            ->keyBy('page_block_id');
-
         $sections = PageSection::where('page_id', $page->id)
             ->where('is_visible', true)
             ->orderBy('position')
@@ -104,7 +100,7 @@ class PageBuilderService
 
         $blocksBySection = $blocks->groupBy('section_id');
 
-        $sectionsData = $sections->map(function ($section) use ($blocksBySection, $bookings, $country) {
+        $sectionsData = $sections->map(function ($section) use ($blocksBySection, $country) {
             $sectionBlocks = $blocksBySection->get($section->id, collect());
 
             // For column-layout sections, group blocks by column_index
@@ -114,7 +110,7 @@ class PageBuilderService
                     ->sortKeys()
                     ->map(fn ($colBlocks) =>
                         $colBlocks->map(fn (PageBlock $b) =>
-                            $this->hydrateBlock($b, $bookings->get($b->id), $country)
+                            $this->adInjector->injectFlat($this->hydrateBlock($b, $country), $country->id, $sessionId)
                         )->values()->all()
                     )->values()->all();
 
@@ -150,7 +146,7 @@ class PageBuilderService
                 'background_image_type' => $section->background_image_type ?? 'section',
                 'columns'          => [],
                 'blocks'           => $sectionBlocks
-                    ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $bookings->get($b->id), $country))
+                    ->map(fn (PageBlock $b) => $this->adInjector->injectFlat($this->hydrateBlock($b, $country), $country->id, $sessionId))
                     ->values()
                     ->all(),
             ];
@@ -168,7 +164,7 @@ class PageBuilderService
             'sections' => $sectionsData,
             'blocks' => $blocks
                 ->filter(fn (PageBlock $b) => is_null($b->section_id))
-                ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $bookings->get($b->id), $country))
+                ->map(fn (PageBlock $b) => $this->adInjector->injectFlat($this->hydrateBlock($b, $country), $country->id, $sessionId))
                 ->values()
                 ->all(),
             'has_sections'      => count($sectionsData) > 0,
@@ -178,9 +174,9 @@ class PageBuilderService
 
     /**
      * Attach whichever block-specific relations have data (slides, ad images,
-     * products, sellers, categories, paid banner) alongside the base block fields.
+     * products, sellers, categories) alongside the base block fields.
      */
-    private function hydrateBlock(PageBlock $b, ?PaidBannerBooking $booking, Country $country): array
+    private function hydrateBlock(PageBlock $b, Country $country): array
     {
         $data = [
             'id'               => $b->id,
@@ -488,14 +484,6 @@ class PageBuilderService
             $data['app_store_url']    = $cfg['app_store_url'] ?? null;
             $data['play_store_url']   = $cfg['play_store_url'] ?? null;
             $data['phone_mockup_url'] = $cfg['phone_mockup_url'] ?? null;
-        }
-
-        if ($booking !== null) {
-            $data['paid_banner'] = [
-                'image_url' => $booking->image_url,
-                'link_url' => $booking->link_url,
-                'alt_text' => $booking->alt_text,
-            ];
         }
 
         if (empty($data['products']) && in_array($b->block_type, ['product_row', 'flash_sale', 'deal_of_day'], true)) {

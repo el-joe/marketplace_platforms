@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\PayoutStatus;
 use App\Http\Controllers\Controller;
 use App\Models\LedgerEntry;
+use App\Models\PaidAdCharge;
 use App\Models\Payout;
 use App\Services\LedgerService;
 use App\Services\PayoutCalculationService;
@@ -254,10 +255,18 @@ class PayoutController extends Controller
 
         $request->validate(['reason' => 'required|string|max:500']);
 
-        $payout->update([
-            'status'        => PayoutStatus::OnHold,
-            'failed_reason' => $request->reason,
-        ]);
+        DB::transaction(function () use ($payout, $request) {
+            $payout->update([
+                'status'        => PayoutStatus::OnHold,
+                'failed_reason' => $request->reason,
+            ]);
+
+            // Release any ad charges tied to this payout so they roll into the next one.
+            PaidAdCharge::where('payout_id', $payout->id)->update([
+                'payout_id'  => null,
+                'settled_at' => null,
+            ]);
+        });
 
         return response()->json(['success' => true, 'message' => 'Payout placed on hold.']);
     }
@@ -280,17 +289,26 @@ class PayoutController extends Controller
                 \Carbon\Carbon::parse($payout->period_end)
             );
 
-            $payout->update([
-                'gross_sales'          => $calc['gross_sales'],
-                'commission'           => $calc['commission'],
-                'gateway_fee_deducted' => $calc['gateway_fee_deducted'],
-                'refunds_deducted'     => $calc['refunds_deducted'],
-                'chargebacks_deducted' => $calc['chargebacks_deducted'],
-                'storage_fees'         => $calc['storage_fees'],
-                'ad_fees'              => $calc['ad_fees'],
-                'other_adjustments'    => $calc['other_adjustments'],
-                'net_amount'           => $calc['net_amount'],
-            ]);
+            DB::transaction(function () use ($payout, $calc) {
+                $payout->update([
+                    'gross_sales'          => $calc['gross_sales'],
+                    'commission'           => $calc['commission'],
+                    'gateway_fee_deducted' => $calc['gateway_fee_deducted'],
+                    'refunds_deducted'     => $calc['refunds_deducted'],
+                    'chargebacks_deducted' => $calc['chargebacks_deducted'],
+                    'storage_fees'         => $calc['storage_fees'],
+                    'ad_fees'              => $calc['ad_fees'],
+                    'other_adjustments'    => $calc['other_adjustments'],
+                    'net_amount'           => $calc['net_amount'],
+                ]);
+
+                if (! empty($calc['ad_charge_ids'])) {
+                    PaidAdCharge::whereIn('id', $calc['ad_charge_ids'])->update([
+                        'payout_id'  => $payout->id,
+                        'settled_at' => now(),
+                    ]);
+                }
+            });
 
             return response()->json([
                 'success'      => true,

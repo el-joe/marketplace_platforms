@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PaidAdBookingStatus;
 use App\Enums\PaidAdSlotPricingModel;
+use App\Enums\PaidAdSlotTargetType;
 use App\Http\Controllers\Controller;
+use App\Models\AdImageItem;
 use App\Models\BannerPlacementDefinition;
 use App\Models\Country;
 use App\Models\PaidAdSlot;
+use App\Models\SliderSlide;
 use App\Traits\HasDataTable;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +26,7 @@ class AdSlotController extends Controller
     public function index(): \Illuminate\View\View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.view'), 403);
 
         $stats = [
             'total' => PaidAdSlot::count(),
@@ -39,7 +43,7 @@ class AdSlotController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.view'), 403);
 
         $query = PaidAdSlot::query()->with(['placementDefinition', 'country']);
 
@@ -59,14 +63,14 @@ class AdSlotController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
-        $canEdit = $admin->hasPermissionTo('ad_campaigns.edit');
+        $canEdit = $admin->hasPermissionTo('ad_slots.edit');
 
         return $this->dataTableResponse($request, $query, $columns, function (PaidAdSlot $row) use ($canEdit) {
             $isAvailBadge = $row->is_available
                 ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">' . __('admin.ad_campaigns.available_badge') . '</span>'
                 : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' . __('admin.ad_campaigns.unavailable_badge') . '</span>';
 
-            $rate = '$' . number_format($row->base_rate, 2);
+            $rate = number_format($row->base_rate) . ' ' . strtoupper($row->currency ?? '');
             $pricingModelLabel = ucwords(str_replace('_', '/', $row->pricing_model->value));
 
             $editUrl = route('admin.ad-slots.edit', $row->id);
@@ -100,7 +104,7 @@ class AdSlotController extends Controller
     public function create(): \Illuminate\View\View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.create'), 403);
 
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
@@ -113,7 +117,7 @@ class AdSlotController extends Controller
     public function store(Request $request): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.create'), 403);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
@@ -127,14 +131,26 @@ class AdSlotController extends Controller
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
             'is_available' => ['boolean'],
             'requires_approval' => ['boolean'],
-            'min_seller_tier' => ['nullable', 'string', 'max:20'],
             'notes_for_vendors' => ['nullable', 'string'],
+            // Page-block-bound slots (target_type=page_block): optional — the
+            // create form only wires up placement-based slots today, but a
+            // page_block_id + item_position pair lets the admin bind this slot
+            // directly to a carousel slide / ad image position.
+            'target_type' => ['nullable', Rule::enum(PaidAdSlotTargetType::class)],
+            'page_block_id' => ['nullable', 'uuid', 'exists:page_blocks,id'],
+            'item_position' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        $targetType = $validated['target_type'] ?? PaidAdSlotTargetType::Placement->value;
 
         PaidAdSlot::create([
             'name' => $validated['name'],
             'slot_code' => $validated['slot_code'],
+            'target_type' => $targetType,
             'placement_definition_id' => $validated['banner_placement_definition_id'],
+            'page_block_id' => $validated['page_block_id'] ?? null,
+            'item_position' => $validated['item_position'] ?? null,
+            'bound_item_id' => $this->resolveBoundItemId($validated['page_block_id'] ?? null, $validated['item_position'] ?? null),
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
             'base_rate' => (int) round($validated['base_rate_display']),
@@ -143,7 +159,6 @@ class AdSlotController extends Controller
             'max_booking_days' => $validated['max_booking_days'] ?? null,
             'is_available' => $request->boolean('is_available'),
             'requires_approval' => $request->boolean('requires_approval'),
-            'min_seller_tier' => $validated['min_seller_tier'] ?? null,
             'notes_for_vendors' => $validated['notes_for_vendors'] ?? null,
             'created_by_admin_id' => $admin->id,
         ]);
@@ -159,7 +174,7 @@ class AdSlotController extends Controller
     public function edit(PaidAdSlot $adSlot): \Illuminate\View\View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.edit'), 403);
 
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
@@ -172,7 +187,7 @@ class AdSlotController extends Controller
     public function update(Request $request, PaidAdSlot $adSlot): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.edit'), 403);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
@@ -185,11 +200,12 @@ class AdSlotController extends Controller
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
             'is_available' => ['boolean'],
             'requires_approval' => ['boolean'],
-            'min_seller_tier' => ['nullable', 'string', 'max:20'],
             'notes_for_vendors' => ['nullable', 'string'],
+            'page_block_id' => ['nullable', 'uuid', 'exists:page_blocks,id'],
+            'item_position' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $adSlot->update([
+        $update = [
             'name' => $validated['name'],
             'placement_definition_id' => $validated['banner_placement_definition_id'],
             'country_id' => $validated['country_id'] ?? null,
@@ -200,9 +216,17 @@ class AdSlotController extends Controller
             'max_booking_days' => $validated['max_booking_days'] ?? null,
             'is_available' => $request->boolean('is_available'),
             'requires_approval' => $request->boolean('requires_approval'),
-            'min_seller_tier' => $validated['min_seller_tier'] ?? null,
             'notes_for_vendors' => $validated['notes_for_vendors'] ?? null,
-        ]);
+        ];
+
+        if (array_key_exists('item_position', $validated)) {
+            $pageBlockId = $validated['page_block_id'] ?? $adSlot->page_block_id;
+            $update['page_block_id'] = $pageBlockId;
+            $update['item_position'] = $validated['item_position'];
+            $update['bound_item_id'] = $this->resolveBoundItemId($pageBlockId, $validated['item_position']);
+        }
+
+        $adSlot->update($update);
 
         return response()->json([
             'message' => __('admin.ad_campaigns.ad_slot_updated'),
@@ -215,10 +239,10 @@ class AdSlotController extends Controller
     public function destroy(PaidAdSlot $adSlot): JsonResponse
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.delete'), 403);
 
         $activeBookings = $adSlot->bookings()
-            ->whereIn('status', ['pending', 'approved', 'active', 'paused'])
+            ->whereIn('status', PaidAdBookingStatus::holdingStatuses())
             ->exists();
 
         if ($activeBookings) {
@@ -232,12 +256,48 @@ class AdSlotController extends Controller
         return response()->json(['message' => __('admin.ad_campaigns.ad_slot_deleted')]);
     }
 
+    // ─── Page-block binding ───────────────────────────────────────────────────
+
+    /**
+     * Resolve the DB id of the SliderSlide or AdImageItem currently sitting at
+     * the given 1-based visual position (among active items, ordered by
+     * `position`) inside the given block, so AdSlotBlockGuard::onItemsReordered
+     * can remap item_position after a drag-reorder even though the slide/image
+     * itself never changes id.
+     *
+     * hero_slider blocks are backed by SliderSlide rows; every other block type
+     * that supports paid slot binding (e.g. ad_image_grid/full_banner variants)
+     * is backed by AdImageItem rows — mirrors the model usage already in
+     * PageBuilderService::saveSlide()/saveAdImage() and PageRendererService.
+     */
+    private function resolveBoundItemId(?string $pageBlockId, ?int $itemPosition): ?string
+    {
+        if (! $pageBlockId || ! $itemPosition) {
+            return null;
+        }
+
+        $block = \App\Models\PageBlock::find($pageBlockId);
+        if (! $block) {
+            return null;
+        }
+
+        $query = $block->block_type === 'hero_slider'
+            ? SliderSlide::where('page_block_id', $pageBlockId)
+            : AdImageItem::where('page_block_id', $pageBlockId);
+
+        return $query->where('is_active', true)
+            ->orderBy('position')
+            ->pluck('id')
+            ->values()
+            ->get($itemPosition - 1);
+    }
+
     // ─── Bookings for slot ────────────────────────────────────────────────────
 
     public function bookings(PaidAdSlot $adSlot): \Illuminate\View\View
     {
         $admin = auth('admin')->user();
-        abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
+        abort_unless($admin->hasPermissionTo('ad_slots.view'), 403);
 
         $adSlot->load(['placementDefinition', 'country']);
 

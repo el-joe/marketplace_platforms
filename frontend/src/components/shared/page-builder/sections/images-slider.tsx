@@ -1,11 +1,10 @@
 "use client";
-import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import React from "react";
 import { Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { cn } from "@/src/lib/utils";
-import { AdBadge } from "@/src/components/shared/ad-badge";
+import { SponsoredLink } from "@/src/components/shared/sponsored-link";
 import { chunks } from "../helpers/chunks-arr";
 import { Block } from "../types";
 import SectionTitle from "./section-title";
@@ -53,11 +52,14 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
         {chunksRows.map((row, rowIndex) => (
           <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col! gap-4">
             {row.map((i) => (
-              <Link
+              <SponsoredLink
                 href={i?.link_url || "#"}
+                isExternal={i?.is_external}
+                ad={i?.ad}
+                isPaid={i?.is_paid}
                 key={i.id}
                 className={cn(
-                  "block relative mb-2",
+                  "mb-2",
                   row.length === Number(data?.config?.rows) && "flex-1",
                 )}
               >
@@ -78,8 +80,7 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
                     ],
                   )}
                 />
-                {i?.is_paid && <AdBadge />}
-              </Link>
+              </SponsoredLink>
             ))}
           </SwiperSlide>
         ))}

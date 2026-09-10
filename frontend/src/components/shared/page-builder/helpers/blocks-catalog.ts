@@ -14,6 +14,8 @@ export const blocks = {
   mega_deals: MegaDeals,
   product_row: ProductsSlider,
   ad_images_2col: ImagesGrid,
+  ad_images_3col: ImagesGrid,
+  ad_images_4col: ImagesGrid,
   promo_tiles: ImagesGrid,
   flash_sale: FlashSale,
   text_block: HtmlContent,

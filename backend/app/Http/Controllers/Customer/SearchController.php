@@ -21,6 +21,7 @@ class SearchController extends Controller
         private readonly SponsoredProductService $sponsored,
         private readonly ListingQueryService $listings,
         private readonly PageBuilderService $pageBuilder,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {
     }
 
@@ -77,6 +78,10 @@ class SearchController extends Controller
         $pageBuilder    = $this->resolvePageBuilder($country, $data, $deviceTarget, $audience);
         $hasPageBuilder = $pageBuilder !== null;
 
+        $bannerAudience = auth('customer')->check() ? 'logged_in' : 'guest';
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
+        $topBanner = $this->placementAds->resolve('search_top', $country, $bannerAudience, $sessionId, null, $data['category'] ?? null);
+
         return ApiResponse::success([
             'items' => $items,
             'facets' => $facets,
@@ -88,6 +93,7 @@ class SearchController extends Controller
             ],
             'page_builder'     => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
+            'top_banner'       => $topBanner,
         ]);
     }
 

@@ -1,5 +1,6 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { IProduct } from "@/types";
+import { PlacementBanner } from "@/src/types/placement-banner";
 
 export interface IProductDetails {
   listing: Listing;
@@ -17,6 +18,7 @@ export interface IProductDetails {
   frequently_bought_together: FrequentlyBoughtTogether;
   related_products: IProduct[];
   warranty_plans: Warranty[];
+  banner: PlacementBanner | null;
 }
 
 export interface DeliveryOption {

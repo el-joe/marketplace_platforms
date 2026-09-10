@@ -956,7 +956,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
 
     // ─── Ad Slots ──────────────────────────────────────────────────────────────────
-    Route::prefix('ad-slots')->name('ad-slots.')->middleware('admin.permission:ad_campaigns.view')->group(function () {
+    Route::prefix('ad-slots')->name('ad-slots.')->middleware('admin.permission:ad_slots.view')->group(function () {
         Route::post('/datatable', [AdSlotController::class, 'datatable'])->name('datatable');
         Route::get('/create', [AdSlotController::class, 'create'])->name('create');
         Route::post('/', [AdSlotController::class, 'store'])->name('store');
@@ -968,7 +968,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     });
 
     // ─── Paid Ad Bookings ──────────────────────────────────────────────────────────
-    Route::prefix('paid-ad-bookings')->name('paid-ad-bookings.')->middleware('admin.permission:ad_campaigns.view')->group(function () {
+    Route::prefix('paid-ad-bookings')->name('paid-ad-bookings.')->middleware('admin.permission:ad_bookings.view')->group(function () {
         Route::post('/datatable', [PaidAdBookingController::class, 'datatable'])->name('datatable');
         Route::post('/creatives/{paidAdCreative}/review', [PaidAdBookingController::class, 'reviewCreative'])->name('creatives.review');
         Route::get('/', [PaidAdBookingController::class, 'index'])->name('index');

@@ -115,6 +115,9 @@ export default defineConfig({
                 'resources/js/delivery/app.js',
                 'resources/js/marketer/app.js',
                 'resources/js/marketer/reports.js',
+                'resources/js/marketer/promote-wizard.js',
+                'resources/js/marketer/promote-bookings.js',
+                'resources/js/marketer/promote-booking-show.js',
                 // Travel Agency Portal (travel-agency subdomain)
                 'resources/js/travel_agency/campaigns.js',
                 'resources/js/travel_agency/team.js',

@@ -14,6 +14,7 @@ use App\Jobs\PublishScheduledBlogPostsJob;
 use App\Jobs\RecalculateBestSellerRankingsJob;
 use App\Jobs\ProcessAcquisitionCommissionsJob;
 use App\Jobs\MonitorCampaignStockJob;
+use App\Jobs\Ads\PaidAdSchedulerJob;
 use Carbon\Carbon;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -32,6 +33,7 @@ Schedule::job(new BannerSchedulerJob)->everyFiveMinutes();
 Schedule::job(new \App\Jobs\PageSchedulerJob)->everyFiveMinutes()->name('page-scheduler');
 Schedule::job(new PublishScheduledBlogPostsJob)->everyFiveMinutes()->name('publish-scheduled-blog-posts');
 Schedule::job(new MonitorCampaignStockJob)->hourly()->name('monitor-campaign-stock');
+Schedule::job(new PaidAdSchedulerJob)->everyFiveMinutes()->withoutOverlapping()->name('paid-ad-scheduler');
 
 // Process vendor acquisition agent commissions for the previous month
 Schedule::job(new ProcessAcquisitionCommissionsJob)->monthlyOn(1, '02:00')->name('process-acquisition-commissions');

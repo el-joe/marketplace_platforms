@@ -35,6 +35,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
   let totalPages = TOTAL_PAGES;
   let totalCount = 0;
   let hasFilters = false;
+  let topBanner: ShopResponse["data"]["top_banner"] = null;
   let categoryName =
     isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
 
@@ -71,6 +72,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
     totalPages = res.data?.meta?.last_page ?? TOTAL_PAGES;
     totalCount = res.data?.meta?.total ?? products.length;
     hasFilters = isSearch ? true : (res.data?.category?.has_filters ?? false);
+    topBanner = res.data?.top_banner ?? null;
 
     // Prefer the resolved entity's own localized name (works identically for a
     // category or a custom page — the API returns the same shape either way)
@@ -98,6 +100,8 @@ export default async function ShopPage({ params, searchParams }: Props) {
           products={products}
           totalPages={totalPages}
           totalCount={totalCount}
+          topBanner={topBanner}
+          isSearch={isSearch}
         />
       </div>
     </main>

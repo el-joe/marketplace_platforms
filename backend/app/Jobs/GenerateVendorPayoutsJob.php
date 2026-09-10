@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Admin;
+use App\Models\PaidAdCharge;
 use App\Models\Payout;
 use App\Models\PayoutItem;
 use App\Models\Vendor;
@@ -151,6 +152,13 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 $sampleItem->update([
                                     'fee_deducted'    => true,
                                     'fee_deducted_at' => now(),
+                                ]);
+                            }
+
+                            if (! empty($calc['ad_charge_ids'])) {
+                                PaidAdCharge::whereIn('id', $calc['ad_charge_ids'])->update([
+                                    'payout_id'   => $payout->id,
+                                    'settled_at'  => now(),
                                 ]);
                             }
                         });
