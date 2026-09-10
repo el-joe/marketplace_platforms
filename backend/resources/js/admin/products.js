@@ -381,14 +381,13 @@ function initVariantTableEvents() {
         const variantId = $btn.data('variant-id');
         const $slugInput = $btn.closest('tr').find('.variant-slug-input');
 
-        const basePath = window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '');
         if (!variantId) {
             $btn.prop('disabled', false);
             return;
         }
 
         $.ajax({
-            url: basePath + '/variants/' + variantId + '/regenerate-slug',
+            url: $btn.data('regenerate-url'),
             method: 'PATCH',
         })
             .done(function (res) {

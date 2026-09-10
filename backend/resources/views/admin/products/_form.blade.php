@@ -359,6 +359,7 @@
                                     <td class="px-4 py-3 font-medium text-gray-800">
                                         <button type="button" class="view-variant-detail hover:underline hover:text-primary-700 text-start"
                                             data-variant-id="{{ $variant->id }}"
+                                            data-detail-url="{{ route('admin.products.variants.show', [$product->id, $variant->id]) }}"
                                             title="{{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}">
                                             {{ $variant->variant_name ?: ($variant->attributeSummary() ?: __('admin.products.default_variant')) }}
                                         </button>
@@ -378,6 +379,7 @@
                                             <button type="button"
                                                 class="regenerate-variant-slug flex-shrink-0 p-1.5 text-gray-400 hover:text-primary-600 transition-colors"
                                                 data-variant-id="{{ $variant->id }}"
+                                                data-regenerate-url="{{ route('admin.products.variants.regenerate-slug', [$product->id, $variant->id]) }}"
                                                 title="{{ __('admin.products.regenerate_slug') }}">
                                                 <x-heroicon name="arrow-path" class="w-4 h-4" />
                                             </button>
@@ -1242,10 +1244,8 @@
             });
 
             $(document).on('click', '.view-variant-detail', function () {
-                const variantId = $(this).data('variant-id');
-                const basePath = window.location.pathname.replace(/\/(create|[^/]+\/edit).*/, '');
                 window.dispatchEvent(new CustomEvent('open-variant-detail', {
-                    detail: { url: basePath + '/variants/' + variantId },
+                    detail: { url: $(this).data('detail-url') },
                 }));
             });
 
