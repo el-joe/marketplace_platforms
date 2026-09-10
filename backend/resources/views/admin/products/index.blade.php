@@ -92,12 +92,6 @@
                 'searchable' => true,
                 'placeholder' => __('admin.products.all_brands')
             ],
-            [
-                'type' => 'select',
-                'name' => 'is_active',
-                'label' => __('common.status'),
-                'options' => ['1' => __('admin.products.active_status'), '0' => __('admin.products.draft_status')]
-            ],
             ['type' => 'date_range', 'name' => 'date', 'label' => __('admin.products.created_column')],
             [
                 'type' => 'select',

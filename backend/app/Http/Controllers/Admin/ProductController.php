@@ -80,9 +80,8 @@ class ProductController extends Controller
     /**
      * Shared base query for the datatable and export, with request-driven filters applied.
      *
-     * Note: `products` has no `sku` or `is_active` column (see migrations). `sku` lives on the
-     * default `product_variants` row, and "active" is expressed via the `status` enum
-     * (draft|active|discontinued|restricted). Both are substituted accordingly below.
+     * Note: `products` has no `sku` column (see migrations) — it lives on the default
+     * `product_variants` row and is substituted accordingly below.
      */
     private function buildProductsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
@@ -134,10 +133,6 @@ class ProductController extends Controller
             'status' => fn($q, $v) => $q->where('products.status', $v),
             'category_id' => fn($q, $v) => $q->where('products.category_id', $v),
             'brand_id' => fn($q, $v) => $q->where('products.brand_id', $v),
-            // Substitution: no products.is_active column exists; "active" maps to status = active.
-            'is_active' => fn($q, $v) => $v
-                ? $q->where('products.status', 'active')
-                : $q->where('products.status', '!=', 'active'),
             'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('products.name_en', 'like', "%{$v}%")
                     ->orWhere('products.name_ar', 'like', "%{$v}%")
