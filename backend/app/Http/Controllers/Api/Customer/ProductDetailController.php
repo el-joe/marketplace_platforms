@@ -295,7 +295,7 @@ class ProductDetailController extends Controller
         return [
             'id' => $variant->id,
             'sku' => $variant->sku,
-            'variant_name' => $variant->variant_name,
+            'variant_name' => $variant->displayName(),
             'weight_grams' => $variant->weight_grams,
             'length_cm' => $variant->length_cm,
             'width_cm' => $variant->width_cm,

@@ -52,7 +52,7 @@ class ProductListResource extends JsonResource
             'product_slug'        => $this->slug,
             'slug'                => $this->slug,
             'variant_slug'        => $this->buy_box_variant_slug,
-            'variant_name'        => $this->buy_box_variant_name ?? null,
+            'variant_name'        => $this->buildVariantName($name),
             'variant_image'       => $variantImage,
             'product_url'         => $productUrl,
             'name'                => $name,
@@ -95,5 +95,27 @@ class ProductListResource extends JsonResource
                 ]
                 : null,
         ];
+    }
+
+    /**
+     * Customer-facing variant name: the product's name followed by the variant's
+     * distinguishing detail (e.g. "Samsung Galaxy Book4 Pro 16 Moon Gray / 512GB"),
+     * resolved for the current locale.
+     *
+     * @param  array{ar: ?string, en: ?string}  $name
+     */
+    private function buildVariantName(array $name): ?string
+    {
+        if (! $this->buy_box_variant_id) {
+            return null;
+        }
+
+        $locale = app()->getLocale();
+        $productName = $locale === 'ar' ? $name['ar'] : $name['en'];
+        $detail = $locale === 'ar'
+            ? ($this->buy_box_variant_name_ar ?: $this->buy_box_variant_name)
+            : $this->buy_box_variant_name;
+
+        return trim(collect([$productName, $detail])->filter()->implode(' ')) ?: null;
     }
 }

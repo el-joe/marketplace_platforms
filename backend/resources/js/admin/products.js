@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initGenerateVariants();
     initVariantTableEvents();
     initBulkUploadModal();
+    initVariantNameModal();
     initCountryToggles();
     initSeoPreview();
     initFilePond();
@@ -248,14 +249,38 @@ function variantComboKey(v) {
         .join('|');
 }
 
+function productNameEn() {
+    return ($('#name_en').val() || '').trim();
+}
+
+function productNameAr() {
+    return ($('#name_ar').val() || '').trim();
+}
+
 function buildVariantRowHtml(i, key, v) {
     const T = window.TRANSLATIONS || {};
     const skuPlaceholder = esc(T.skuAutoGeneratePlaceholder || 'Auto-generate');
     const removeLabel = esc(T.removeLabel || 'Remove');
+    const nameEn = productNameEn();
+    const nameAr = productNameAr();
+    const detailEn = v.name || '';
+    const detailAr = v.name_ar || '';
+
+    const displayName = esc((nameEn + ' ' + detailEn).trim());
 
     return `
 <tr class="variant-row hover:bg-gray-50" data-row-index="${i}" data-combo-key="${esc(key)}">
-  <td class="px-4 py-3 font-medium text-gray-800">${esc(v.name)}</td>
+  <td class="px-4 py-3 font-medium text-gray-800 min-w-[220px]">
+    <div class="space-y-1">
+      <button type="button" class="edit-variant-name-btn hover:underline hover:text-primary-700 text-start"
+        data-product-name-en="${esc(nameEn)}" data-product-name-ar="${esc(nameAr)}"
+        title="${esc(T.editVariantName || 'Click to edit variant name')}">
+        <span class="variant-name-display">${displayName}</span>
+      </button>
+    </div>
+    <input type="hidden" name="variants[${i}][variant_name]" value="${esc(detailEn)}" class="variant-name-en-input" />
+    <input type="hidden" name="variants[${i}][variant_name_ar]" value="${esc(detailAr)}" class="variant-name-ar-input" />
+  </td>
   <td class="px-4 py-3"><input type="text" name="variants[${i}][sku]" value="${esc(v.sku)}" placeholder="${skuPlaceholder}" class="form-input text-sm py-1.5 w-full" /></td>
   <td class="px-4 py-3"><input type="text" name="variants[${i}][slug]" value="${esc(v.slug || '')}" maxlength="255" class="form-input text-sm py-1.5 w-full variant-slug-input" /></td>
   <td class="px-4 py-3"><input type="text" name="variants[${i}][barcode]" value="${esc(v.barcode)}" class="form-input text-sm py-1.5 w-full" /></td>
@@ -272,7 +297,7 @@ function buildVariantRowHtml(i, key, v) {
   </td>
   <td class="px-4 py-3 text-center">
     <button type="button" class="manage-variant-images inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
-      data-pending="1" data-variant-index="${i}" data-variant-name="${esc(v.name)}">
+      data-pending="1" data-variant-index="${i}" data-variant-name="${esc((nameEn + ' ' + detailEn).trim())}">
       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3 12v-3a3 3 0 0 1 3-3h3m12 0v3m0-3h-3m-9 0h3m6 0v3m0-3h-3M3 15v3a3 3 0 0 0 3 3h3m12-6v3a3 3 0 0 1-3 3h-3"/>
       </svg>
@@ -436,6 +461,78 @@ function reindexVariantRows() {
     if (window.__variantRowAttributes) {
         window.__variantRowAttributes = remappedAttrs;
     }
+}
+
+// ─── Edit variant name modal ──────────────────────────────────────────────────
+
+let $activeVariantNameRow = null;
+
+function initVariantNameModal() {
+    $(document).on('click', '.edit-variant-name-btn', function () {
+        openVariantNameModal($(this).closest('tr.variant-row'));
+    });
+
+    $(document).on('click', '#variant-name-close, #variant-name-cancel, #variant-name-backdrop', function () {
+        closeVariantNameModal();
+    });
+
+    $(document).on('click', '#variant-name-save', function () {
+        saveVariantNameModal();
+    });
+
+    // Enter key submits, Escape closes
+    $(document).on('keydown', '#variant-name-modal-en, #variant-name-modal-ar', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveVariantNameModal();
+        }
+    });
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' && !$('#variant-name-modal').hasClass('hidden')) {
+            closeVariantNameModal();
+        }
+    });
+}
+
+function openVariantNameModal($row) {
+    const $btn = $row.find('.edit-variant-name-btn');
+    const nameEn = $btn.data('product-name-en') || '';
+    const nameAr = $btn.data('product-name-ar') || '';
+
+    $activeVariantNameRow = $row;
+
+    $('#variant-name-modal-prefix-en').text(nameEn).attr('title', nameEn);
+    $('#variant-name-modal-prefix-ar').text(nameAr).attr('title', nameAr);
+    $('#variant-name-modal-en').val($row.find('.variant-name-en-input').val() || '');
+    $('#variant-name-modal-ar').val($row.find('.variant-name-ar-input').val() || '');
+
+    $('#variant-name-modal').removeClass('hidden').addClass('flex');
+    $('#variant-name-modal-en').trigger('focus');
+}
+
+function closeVariantNameModal() {
+    $('#variant-name-modal').addClass('hidden').removeClass('flex');
+    $activeVariantNameRow = null;
+}
+
+function saveVariantNameModal() {
+    if (!$activeVariantNameRow) {
+        closeVariantNameModal();
+        return;
+    }
+
+    const $row = $activeVariantNameRow;
+    const $btn = $row.find('.edit-variant-name-btn');
+    const nameEn = ($btn.data('product-name-en') || '').toString();
+    const detailEn = ($('#variant-name-modal-en').val() || '').trim();
+    const detailAr = ($('#variant-name-modal-ar').val() || '').trim();
+
+    $row.find('.variant-name-en-input').val(detailEn);
+    $row.find('.variant-name-ar-input').val(detailAr);
+    $row.find('.variant-name-display').text([nameEn, detailEn].filter(Boolean).join(' '));
+    $row.find('.manage-variant-images').attr('data-variant-name', [nameEn, detailEn].filter(Boolean).join(' '));
+
+    closeVariantNameModal();
 }
 
 // ─── Bulk upload variant images ──────────────────────────────────────────────

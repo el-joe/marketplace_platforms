@@ -118,7 +118,7 @@ class MarketerProfileController extends Controller
             ->where('country_id', $country->id)
             ->where('status', 'active')
             ->with([
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
                 'productVariant.product:id,name_en,name_ar,slug,category_id,brand_id',
                 'productVariant.product.images',

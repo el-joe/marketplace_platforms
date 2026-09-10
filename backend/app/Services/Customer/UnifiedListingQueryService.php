@@ -94,7 +94,7 @@ class UnifiedListingQueryService
 
         $sharedWith = [
             'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
-            'productVariant:id,sku,slug,variant_name,product_id',
+            'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
             'productVariant.images',
             'productVariant.product.brand',
         ];

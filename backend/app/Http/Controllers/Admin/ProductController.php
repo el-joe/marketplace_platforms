@@ -542,7 +542,7 @@ class ProductController extends Controller
         $grouped = Attribute::query()->from('attributes as a')
             ->join('attribute_values as av', 'av.attribute_id', '=', 'a.id')
             ->whereIn('av.id', $request->input('value_ids'))
-            ->select('a.id as attr_id', 'a.name_en as attr_name', 'av.id as value_id', 'av.value_en as value_name')
+            ->select('a.id as attr_id', 'a.name_en as attr_name', 'av.id as value_id', 'av.value_en as value_name', 'av.value_ar as value_name_ar')
             ->orderBy('a.sort_order')
             ->orderBy('av.sort_order')
             ->get()
@@ -564,6 +564,7 @@ class ProductController extends Controller
                             'attr_name' => $v->attr_name,
                             'value_id' => $v->value_id,
                             'value_name' => $v->value_name,
+                            'value_name_ar' => $v->value_name_ar,
                         ]
                     ]);
                 }
@@ -576,6 +577,7 @@ class ProductController extends Controller
             $variants[] = [
                 'index' => $i,
                 'name' => collect($combo)->pluck('value_name')->join(' / '),
+                'name_ar' => collect($combo)->pluck('value_name_ar')->filter()->join(' / '),
                 'attributes' => $combo,
                 'sku' => '',
                 'barcode' => '',
@@ -1112,6 +1114,8 @@ class ProductController extends Controller
                 'sku' => $resolvedSku,
                 'slug' => $this->resolveVariantSlug($productId, $v['slug'] ?? null, $variantId, $resolvedSku),
                 'barcode' => $v['barcode'] ?: null,
+                'variant_name' => isset($v['variant_name']) ? trim((string) $v['variant_name']) ?: null : null,
+                'variant_name_ar' => isset($v['variant_name_ar']) ? trim((string) $v['variant_name_ar']) ?: null : null,
                 'weight_grams' => isset($v['weight_grams']) && $v['weight_grams'] !== '' ? (int) $v['weight_grams'] : null,
                 'is_default' => isset($v['is_default']) && (bool) $v['is_default'],
                 'is_active' => !isset($v['is_active']) || (bool) $v['is_active'],

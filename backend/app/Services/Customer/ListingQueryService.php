@@ -88,7 +88,9 @@ class ListingQueryService
                 $q->where('p.name_en', 'like', $pattern)
                     ->orWhere('p.name_ar', 'like', $pattern)
                     ->orWhere('p.short_desc_en', 'like', $pattern)
-                    ->orWhere('p.model_number', 'like', $pattern);
+                    ->orWhere('p.model_number', 'like', $pattern)
+                    ->orWhere('pv.variant_name', 'like', $pattern)
+                    ->orWhere('pv.variant_name_ar', 'like', $pattern);
             });
         }
     }
@@ -182,7 +184,7 @@ class ListingQueryService
         $builder = $this->baseCategoryQuery($country, $categoryIds)
             ->with([
                 'vendor:id,store_name,store_rating_avg',
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
@@ -290,7 +292,7 @@ class ListingQueryService
             ->whereNull('deleted_at')
             ->with([
                 'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
                 'productVariant.product.brand',
             ])
@@ -307,7 +309,7 @@ class ListingQueryService
             ->with([
                 'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
                 'vendor:id,store_name,store_rating_avg',
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
                 'productVariant.product.brand',
             ])
@@ -327,7 +329,7 @@ class ListingQueryService
             ->with([
                 'marketer:id,name,marketer_type',
                 'marketer.marketerProfile:id,marketer_id,profile_slug,qr_code_path',
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
                 'productVariant.product.brand',
             ])
@@ -435,7 +437,7 @@ class ListingQueryService
             'variant_slug' => $variant->slug,
             'product_url' => $url,
             'url_param' => $url_param,
-            'variant_name' => $variant->variant_name ?? $variant->sku,
+            'variant_name' => $this->customerVariantName($variant, $product),
             'variant_image' => $variantImage,
             'primary_image' => $variantImage,
             'images' => $imagesSlider,
@@ -541,7 +543,7 @@ class ListingQueryService
             'slug'             => $product->slug,
             'variant_id'       => $variant->id,
             'variant_slug'     => $variant->slug,
-            'variant_name'     => $variant->variant_name ?? $variant->sku,
+            'variant_name'     => $this->customerVariantName($variant, $product),
             'variant_image'    => $variantImage,
             'primary_image'    => $variantImage,
             'images'           => $imagesSlider,
@@ -624,7 +626,7 @@ class ListingQueryService
             'variant_slug'      => $variant->slug,
             'product_url'       => $url,
             'url_param'         => $urlParam,
-            'variant_name'      => $variant->variant_name ?? $variant->sku,
+            'variant_name'      => $this->customerVariantName($variant, $product),
             'variant_image'     => $variantImage,
             'primary_image'     => $variantImage,
             'images'            => $imagesSlider,
@@ -839,5 +841,22 @@ class ListingQueryService
             ])->toArray(),
             'link' => '/travel',
         ];
+    }
+
+    /**
+     * Customer-facing variant name: the product's name followed by the variant's
+     * distinguishing detail, resolved for the current locale, e.g.
+     * "Samsung Galaxy Book4 Pro 16 Moon Gray / 512GB".
+     */
+    private function customerVariantName(\App\Models\ProductVariant $variant, Product $product): string
+    {
+        $locale = app()->getLocale();
+        $productName = $locale === 'ar' ? $product->name_ar : $product->name_en;
+        $detail = $locale === 'ar'
+            ? ($variant->variant_name_ar ?: $variant->variant_name)
+            : $variant->variant_name;
+        $detail = $detail ?: $variant->sku;
+
+        return trim(collect([$productName, $detail])->filter()->implode(' '));
     }
 }

@@ -78,7 +78,7 @@ class ProductController extends Controller
             ->whereNull('p.deleted_at')
             ->select('admin_listings.*')
             ->with([
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
                 'productVariant.product.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',
@@ -113,7 +113,7 @@ class ProductController extends Controller
             ->select('vendor_listings.*')
             ->with([
                 'vendor:id,store_name,store_rating_avg',
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
                 'productVariant.product.images' => fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',

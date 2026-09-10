@@ -465,7 +465,7 @@ class ListingDetailController extends Controller
             'id' => $variant->id,
             'sku' => $variant->sku,
             'barcode' => $variant->barcode,
-            'variant_name' => $variant->variant_name,
+            'variant_name' => $variant->displayName(),
             'is_default' => $variant->is_default,
             'attributes' => $variant->variantAttributes->map(fn($va) => [
                 'attribute_name' => [
@@ -512,7 +512,7 @@ class ListingDetailController extends Controller
             'listing_id' => $listing->id,
             'listing_ref' => $this->identifiers->buildListingRef($listing),
             'sku' => $listing->productVariant->sku,
-            'variant_name' => $listing->productVariant->variant_name,
+            'variant_name' => $listing->productVariant->displayName(),
             'price' => $listing->price,
             'price_formatted' => number_format($listing->price, 2),
             'currency' => $listing->currency,
@@ -659,7 +659,7 @@ class ListingDetailController extends Controller
                 ] : null),
             'variant'        => $resolvedListing?->productVariant ? [
                 'id'         => $resolvedListing->productVariant->id,
-                'variant_name' => $resolvedListing->productVariant->variant_name,
+                'variant_name' => $resolvedListing->productVariant->displayName(),
                 'attributes' => $resolvedListing->productVariant->variantAttributes->map(fn($va) => [
                     'name'  => ['ar' => $va->attribute?->name_ar, 'en' => $va->attribute?->name_en],
                     'value' => ['ar' => $va->attributeValue?->value_ar ?? $va->value_text_ar,

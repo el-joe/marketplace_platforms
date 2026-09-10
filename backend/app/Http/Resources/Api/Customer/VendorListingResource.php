@@ -53,7 +53,7 @@ class VendorListingResource extends JsonResource
             'listing_id' => $listing->id,
             'listing_type' => 'vendor',
             'variant_id' => $variant->id,
-            'variant_name' => $variant->variant_name ?? $variant->sku,
+            'variant_name' => $variant->setRelation('product', $product)->displayName(),
             'product_url' => $url, // ✓ correct UUID format
             'url_param' => $url_param,
             'primary_image' => $primaryImage?->url,

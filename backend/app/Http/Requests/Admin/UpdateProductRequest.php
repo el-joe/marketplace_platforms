@@ -44,6 +44,8 @@ class UpdateProductRequest extends FormRequest
             'variants.*.id' => ['nullable', 'exists:product_variants,id'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.barcode' => ['nullable', 'string', 'max:50'],
+            'variants.*.variant_name' => ['nullable', 'string', 'max:255'],
+            'variants.*.variant_name_ar' => ['nullable', 'string', 'max:255'],
             'variants.*.weight_grams' => ['nullable', 'integer', 'min:0'],
             'variants.*.is_default' => ['nullable', 'boolean'],
             'variants.*.is_active' => ['nullable', 'boolean'],

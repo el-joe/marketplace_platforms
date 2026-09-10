@@ -33,7 +33,7 @@ class ReviewResource extends JsonResource
             'variant'              => $this->whenLoaded('vendorListing', fn() =>
                 $this->vendorListing?->productVariant ? [
                     'id'           => $this->vendorListing->productVariant->id,
-                    'variant_name' => $this->vendorListing->productVariant->variant_name,
+                    'variant_name' => $this->vendorListing->productVariant->displayName(),
                     'attributes'   => $this->vendorListing->productVariant->variantAttributes->map(fn($va) => [
                         'name'  => $va->attribute ? Bilingual::pair($va->attribute, 'name') : ['ar' => null, 'en' => null],
                         'value' => [

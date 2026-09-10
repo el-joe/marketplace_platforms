@@ -251,6 +251,11 @@ class ProductQueryService
                 'COALESCE('.$al('pv_b.variant_name').', '.$vl('pv_b.variant_name').', '.$ml('pv_b.variant_name').') as buy_box_variant_name',
                 [$country->id, $country->id, 'active', $country->id],
             )
+            // ── buy_box_variant_name_ar ─────────────────────────────────────────
+            ->selectRaw(
+                'COALESCE('.$al('pv_b.variant_name_ar').', '.$vl('pv_b.variant_name_ar').', '.$ml('pv_b.variant_name_ar').') as buy_box_variant_name_ar',
+                [$country->id, $country->id, 'active', $country->id],
+            )
             // ── buy_box_variant_id ────────────────────────────────────────────
             ->selectRaw(
                 'COALESCE('.$al('pv_b.id').', '.$vl('pv_b.id').', '.$ml('pv_b.id').') as buy_box_variant_id',

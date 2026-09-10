@@ -39,7 +39,7 @@ class SearchService
         $builder = $this->listings->baseSearchQuery($country, $query)
             ->with([
                 'vendor:id,store_name,store_rating_avg',
-                'productVariant:id,sku,slug,variant_name,product_id',
+                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images' => fn ($q) => $q->orderBy('position')->limit(1),
                 'productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',
@@ -124,7 +124,9 @@ class SearchService
                 $q2->where('p.name_en', 'like', $pattern)
                     ->orWhere('p.name_ar', 'like', $pattern)
                     ->orWhere('p.short_desc_en', 'like', $pattern)
-                    ->orWhere('p.model_number', 'like', $pattern);
+                    ->orWhere('p.model_number', 'like', $pattern)
+                    ->orWhere('pv.variant_name', 'like', $pattern)
+                    ->orWhere('pv.variant_name_ar', 'like', $pattern);
             });
         }
 
@@ -198,7 +200,9 @@ class SearchService
                 $q->whereRaw('LOWER(p.name_en) like ?', [$prefix])
                     ->orWhereRaw('LOWER(p.name_ar) like ?', [$prefix])
                     ->orWhereRaw('LOWER(p.name_en) like ?', [$contains])
-                    ->orWhereRaw('LOWER(p.name_ar) like ?', [$contains]);
+                    ->orWhereRaw('LOWER(p.name_ar) like ?', [$contains])
+                    ->orWhereRaw('LOWER(pv.variant_name) like ?', [$contains])
+                    ->orWhereRaw('LOWER(pv.variant_name_ar) like ?', [$contains]);
             })
             ->select([
                 'vl.id as listing_id',
@@ -206,6 +210,8 @@ class SearchService
                 'p.slug',
                 'p.name_en',
                 'p.name_ar',
+                'pv.variant_name',
+                'pv.variant_name_ar',
                 'v.store_name',
             ])
             ->limit(10)
@@ -223,11 +229,15 @@ class SearchService
         $productSuggestions = $rows->map(function ($row) use ($images) {
             $image = $images->get($row->product_id);
 
+            $isAr = app()->getLocale() === 'ar';
+            $productName = $isAr ? $row->name_ar : $row->name_en;
+            $variantDetail = $isAr ? ($row->variant_name_ar ?: $row->variant_name) : $row->variant_name;
+
             return [
                 'id' => $row->listing_id,
                 'product_id' => $row->product_id,
                 'slug' => $row->slug,
-                'name' => app()->getLocale() === 'ar' ? $row->name_ar : $row->name_en,
+                'name' => trim(collect([$productName, $variantDetail])->filter()->implode(' ')),
                 'vendor' => $row->store_name,
                 'type' => 'product',
                 'primary_image' => $image ? \Illuminate\Support\Facades\Storage::disk($image->disk)->url($image->path) : null,

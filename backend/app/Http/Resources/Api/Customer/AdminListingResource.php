@@ -54,7 +54,7 @@ class AdminListingResource extends JsonResource
             'listing_id' => $listing->id,
             'listing_type' => 'admin',
             'variant_id' => $variant->id,
-            'variant_name' => $variant->variant_name ?? $variant->sku,
+            'variant_name' => $variant->setRelation('product', $product)->displayName(),
             'product_url' => $url, // ✓ correct UUID format
             'primary_image' => $primaryImage?->url,
             'images' => $imagesSlider,

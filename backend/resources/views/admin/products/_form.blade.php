@@ -357,13 +357,23 @@
                                 @foreach($variants ?? [] as $vi => $variant)
                                 <tr class="variant-row hover:bg-gray-50" data-row-index="{{ $vi }}"
                                     data-combo-key="{{ collect($variant->attribute_values ?? [])->pluck('value_id')->sort()->values()->implode('|') }}">
-                                    <td class="px-4 py-3 font-medium text-gray-800">
-                                        <button type="button" class="view-variant-detail hover:underline hover:text-primary-700 text-start"
-                                            data-variant-id="{{ $variant->id }}"
-                                            data-detail-url="{{ route('admin.products.variants.show', [$product->id, $variant->id]) }}"
-                                            title="{{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}">
-                                            {{ $variant->variant_name ?: ($variant->attributeSummary() ?: __('admin.products.default_variant')) }}
-                                        </button>
+                                    <td class="px-4 py-3 font-medium text-gray-800 min-w-[220px]">
+                                        <div class="space-y-1">
+                                            <button type="button" class="edit-variant-name-btn hover:underline hover:text-primary-700 text-start"
+                                                data-product-name-en="{{ $product->name_en }}"
+                                                data-product-name-ar="{{ $product->name_ar }}"
+                                                title="{{ __('admin.products.edit_variant_name') ?? 'Click to edit variant name' }}">
+                                                <span class="variant-name-display">{{ $product->name_en }} {{ $variant->variant_name ?: $variant->attributeSummary() }}</span>
+                                            </button>
+                                            <button type="button" class="view-variant-detail hover:underline hover:text-primary-700 text-start text-xs text-gray-400 block"
+                                                data-variant-id="{{ $variant->id }}"
+                                                data-detail-url="{{ route('admin.products.variants.show', [$product->id, $variant->id]) }}"
+                                                title="{{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}">
+                                                {{ __('admin.products.view_variant_detail') ?? 'View attributes, listings & UUID' }}
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="variants[{{ $vi }}][variant_name]" value="{{ $variant->variant_name ?: $variant->attributeSummary() }}" class="variant-name-en-input" />
+                                        <input type="hidden" name="variants[{{ $vi }}][variant_name_ar]" value="{{ $variant->variant_name_ar }}" class="variant-name-ar-input" />
                                         <input type="hidden" name="variants[{{ $vi }}][id]" value="{{ $variant->id }}" />
                                     </td>
                                     <td class="px-4 py-3">
@@ -439,7 +449,7 @@
                                     <td class="px-4 py-3 text-center">
                                         <button type="button" class="manage-variant-images inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
                                             data-variant-id="{{ $variant->id }}"
-                                            data-variant-name="{{ $variant->variant_name ?: ($variant->attributeSummary() ?: __('admin.products.default_variant')) }}"
+                                            data-variant-name="{{ $variant->displayName('en') }}"
                                             data-images-url="{{ route('admin.products.variants.images', [$product->id, $variant->id]) }}"
                                             data-reorder-url="{{ route('admin.products.variants.reorder-images', [$product->id, $variant->id]) }}"
                                             data-upload-url="{{ route('admin.products.upload-image') }}">
@@ -605,6 +615,49 @@
                     <div class="flex justify-end gap-2 pt-2">
                         <button type="button" id="bulk-upload-cancel" class="btn btn-outline btn-sm">{{ __('admin.cancel') ?? 'Cancel' }}</button>
                         <button type="button" id="bulk-upload-apply" class="btn btn-primary btn-sm">{{ __('admin.products.upload_and_apply') ?? 'Upload & apply' }}</button>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Edit variant name modal --}}
+            <div id="variant-name-modal" class="fixed inset-0 z-50 hidden items-center justify-center">
+                <div id="variant-name-backdrop" class="absolute inset-0 bg-black/40"></div>
+                <div class="relative bg-white w-full max-w-2xl rounded-xl shadow-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-800">{{ __('admin.products.edit_variant_name') ?? 'Edit variant name' }}</h3>
+                        <button type="button" id="variant-name-close" class="text-gray-400 hover:text-gray-600">
+                            <x-heroicon name="x-mark" class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-gray-500">
+                        {{ __('admin.products.variant_name_modal_hint') ?? 'The product name always comes first. Add the details that distinguish this variant (e.g. color, storage) after it.' }}
+                    </p>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.name_en') ?? 'Name (English)' }}</label>
+                            <div class="flex flex-wrap items-stretch rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500">
+                                <span id="variant-name-modal-prefix-en" class="inline-flex items-center px-3 py-2 bg-gray-50 text-gray-500 text-sm border-e border-gray-300 whitespace-normal break-words" dir="ltr"></span>
+                                <input type="text" id="variant-name-modal-en" dir="ltr" maxlength="255"
+                                    placeholder="{{ __('admin.products.variant_name_en_placeholder') ?? 'e.g. Moon Gray / 512GB' }}"
+                                    class="flex-1 min-w-[10rem] border-0 focus:ring-0 text-sm py-2 px-3" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.products.name_ar_label') ?? 'Name (Arabic)' }}</label>
+                            <div class="flex flex-wrap items-stretch rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500">
+                                <span id="variant-name-modal-prefix-ar" class="inline-flex items-center px-3 py-2 bg-gray-50 text-gray-500 text-sm border-s border-gray-300 whitespace-normal break-words" dir="rtl"></span>
+                                <input type="text" id="variant-name-modal-ar" dir="rtl" maxlength="255"
+                                    placeholder="{{ __('admin.products.variant_name_ar_placeholder') ?? 'مثال: رمادي قمري / 512 جيجا' }}"
+                                    class="flex-1 min-w-[10rem] border-0 focus:ring-0 text-sm py-2 px-3" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" id="variant-name-cancel" class="btn btn-outline btn-sm">{{ __('admin.cancel') ?? 'Cancel' }}</button>
+                        <button type="button" id="variant-name-save" class="btn btn-primary btn-sm">{{ __('admin.save') ?? 'Save' }}</button>
                     </div>
                 </div>
             </div>
@@ -1001,6 +1054,9 @@
             generateCombinations: @json(__('admin.products.generate_combinations')),
             generateVariantsFailed: @json(__('admin.products.generate_variants_failed')),
             skuAutoGeneratePlaceholder: @json(__('admin.products.sku_auto_generate_placeholder')),
+            variantNameEnPlaceholder: @json(__('admin.products.variant_name_en_placeholder')),
+            variantNameArPlaceholder: @json(__('admin.products.variant_name_ar_placeholder')),
+            editVariantName: @json(__('admin.products.edit_variant_name') ?? 'Click to edit variant name'),
             removeLabel: @json(__('admin.products.remove')),
             highlightEnLabel: @json(__('admin.products.highlight_en_label')),
             highlightArLabel: @json(__('admin.products.highlight_ar_label')),

@@ -54,8 +54,10 @@ class SponsoredProductService
             }
 
             $product->setAttribute('buy_box_listing_id', $listing->id);
+            $product->setAttribute('buy_box_variant_id', $listing->productVariant->id);
             $product->setAttribute('buy_box_variant_slug', $listing->productVariant->slug);
             $product->setAttribute('buy_box_variant_name', $listing->productVariant->variant_name);
+            $product->setAttribute('buy_box_variant_name_ar', $listing->productVariant->variant_name_ar);
 
             $sponsoredItem = array_merge(
                 (new \App\Http\Resources\Customer\ProductListResource($product))->resolve(),

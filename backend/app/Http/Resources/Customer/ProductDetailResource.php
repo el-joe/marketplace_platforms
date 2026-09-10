@@ -104,7 +104,8 @@ class ProductDetailResource extends JsonResource
                 $this->variants->filter(fn($v) => $v->is_active)->map(fn($v) => [
                     'id'           => $v->id,
                     'sku'          => $v->sku,
-                    'variant_name' => $v->variant_name,
+                    'variant_name' => trim(collect([$name['en'] ?? null, $v->variant_name ?: null])->filter()->implode(' ')),
+                    'variant_name_ar' => trim(collect([$name['ar'] ?? null, $v->variant_name_ar ?: $v->variant_name ?: null])->filter()->implode(' ')),
                     'is_default'   => $v->is_default,
                     'position'     => $v->position,
                     'images'       => $v->relationLoaded('images')

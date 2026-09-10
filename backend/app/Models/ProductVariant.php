@@ -21,6 +21,7 @@ class ProductVariant extends Model
         'slug',
         'barcode',
         'variant_name',
+        'variant_name_ar',
         'weight_grams',
         'length_cm',
         'width_cm',
@@ -143,5 +144,24 @@ class ProductVariant extends Model
             ->map(fn (AttributeValue $value) => $value->value_en)
             ->filter()
             ->implode(' / ');
+    }
+
+    /**
+     * Locale-aware customer-facing variant name: the product's name followed by this
+     * variant's distinguishing details, e.g. "Samsung Galaxy Book4 Pro 16 Moon Gray / 512GB".
+     * Falls back to the auto-generated attribute summary for variants saved before variant_name existed.
+     */
+    public function displayName(?string $locale = null): string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $product = $this->relationLoaded('product') ? $this->product : $this->product()->first();
+
+        $productName = $locale === 'ar' ? $product?->name_ar : $product?->name_en;
+
+        $detail = $locale === 'ar'
+            ? ($this->variant_name_ar ?: ($this->variant_name ?: $this->attributeSummary()))
+            : ($this->variant_name ?: $this->attributeSummary());
+
+        return trim(collect([$productName, $detail])->filter()->implode(' '));
     }
 }
