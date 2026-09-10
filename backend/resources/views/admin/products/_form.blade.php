@@ -355,7 +355,8 @@
                             <tbody id="variants-tbody" class="divide-y divide-gray-100">
                                 @if($isEdit)
                                 @foreach($variants ?? [] as $vi => $variant)
-                                <tr class="variant-row hover:bg-gray-50" data-row-index="{{ $vi }}">
+                                <tr class="variant-row hover:bg-gray-50" data-row-index="{{ $vi }}"
+                                    data-combo-key="{{ collect($variant->attribute_values ?? [])->pluck('value_id')->sort()->values()->implode('|') }}">
                                     <td class="px-4 py-3 font-medium text-gray-800">
                                         <button type="button" class="view-variant-detail hover:underline hover:text-primary-700 text-start"
                                             data-variant-id="{{ $variant->id }}"
