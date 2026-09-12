@@ -26,29 +26,31 @@ Route::middleware('web')
         $locale = $request->input('locale');
         abort_unless(in_array($locale, config('app.available_locales', ['ar', 'en'])), 422);
         $request->session()->put([
-            'locale'          => $locale,
+            'locale' => $locale,
             'locale_override' => $locale,
-            'dir'             => $locale === 'ar' ? 'rtl' : 'ltr',
+            'dir' => $locale === 'ar' ? 'rtl' : 'ltr',
         ]);
         \Carbon\Carbon::setLocale($locale);
         \Illuminate\Support\Facades\App::setLocale($locale);
         return back();
     })->name('locale.switch');
 
+Route::redirect('/', '/dashboard')->name('home');
+
 Route::middleware('web')->group(function () {
 
     // ── Guest routes ──────────────────────────────────────────────────────
     Route::middleware('guest:marketer')->group(function () {
-        Route::get('/login',                [AuthController::class, 'showLogin'])->name('login');
-        Route::post('/login',               [AuthController::class, 'login'])->name('login.post');
+        Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-        Route::get('/register',             [AuthController::class, 'showRegister'])->name('register');
-        Route::post('/register',            [AuthController::class, 'register'])->name('register.post');
+        Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+        Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 
-        Route::get('/forgot-password',      [AuthController::class, 'forgotPassword'])->name('auth.forgot');
-        Route::post('/forgot-password',     [AuthController::class, 'sendResetLink'])->name('auth.forgot.send');
+        Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('auth.forgot');
+        Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('auth.forgot.send');
         Route::get('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('auth.reset');
-        Route::post('/reset-password',      [AuthController::class, 'updatePassword'])->name('auth.reset.update');
+        Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('auth.reset.update');
     });
 
     // ── Authenticated routes ───────────────────────────────────────────────
@@ -63,60 +65,60 @@ Route::middleware('web')->group(function () {
         Route::prefix('notifications')->name('notifications.')
             ->controller(NotificationController::class)
             ->group(function () {
-                Route::get('/',               'index')->name('index');
-                Route::get('/recent',         'recent')->name('recent');
-                Route::get('/unread-count',   'unreadCount')->name('unread-count');
-                Route::get('/unread',         'unread')->name('unread');
+                Route::get('/', 'index')->name('index');
+                Route::get('/recent', 'recent')->name('recent');
+                Route::get('/unread-count', 'unreadCount')->name('unread-count');
+                Route::get('/unread', 'unread')->name('unread');
                 Route::post('/mark-all-read', 'markAllRead')->name('mark-all-read');
-                Route::post('/{id}/read',     'markRead')->name('mark-read');
+                Route::post('/{id}/read', 'markRead')->name('mark-read');
             });
 
         // Profile
-        Route::get('/profile',  [ProfileController::class, 'show'])->name('profile');
-        Route::put('/profile',  [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
         // Campaign invitations
         Route::prefix('invitations')->name('invitations.')->group(function () {
-            Route::get('/',                        [InvitationController::class, 'index'])->name('index');
-            Route::post('/{invitation}/accept',    [InvitationController::class, 'accept'])->name('accept');
-            Route::post('/{invitation}/reject',    [InvitationController::class, 'reject'])->name('reject');
+            Route::get('/', [InvitationController::class, 'index'])->name('index');
+            Route::post('/{invitation}/accept', [InvitationController::class, 'accept'])->name('accept');
+            Route::post('/{invitation}/reject', [InvitationController::class, 'reject'])->name('reject');
         });
 
         // Active campaigns (accepted invitations)
-        Route::get('/campaigns/active',   [CampaignController::class, 'active'])->name('campaigns.active');
+        Route::get('/campaigns/active', [CampaignController::class, 'active'])->name('campaigns.active');
 
         // Finished campaigns
         Route::get('/campaigns/finished', [CampaignController::class, 'finished'])->name('campaigns.finished');
 
         // Samples
-        Route::get('/samples',            [SampleController::class, 'index'])->name('samples.index');
+        Route::get('/samples', [SampleController::class, 'index'])->name('samples.index');
         Route::post('/samples/{sample}/address', [SampleController::class, 'submitAddress'])->name('samples.address');
 
         // Orders (read-only — via referral conversions)
         Route::prefix('orders')->name('orders.')->group(function () {
-            Route::get('/',           [OrderController::class, 'index'])->name('index');
-            Route::get('/{orderId}',  [OrderController::class, 'show'])->name('show');
+            Route::get('/', [OrderController::class, 'index'])->name('index');
+            Route::get('/{orderId}', [OrderController::class, 'show'])->name('show');
         });
 
         // Reports
-        Route::get('/reports',            [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
         // Listings management
         Route::prefix('listings')->name('listings.')->group(function () {
-            Route::get('/',                             [ListingController::class, 'index'])->name('index');
-            Route::get('/create',                       [ListingController::class, 'create'])->name('create');
-            Route::post('/',                            [ListingController::class, 'store'])->name('store');
-            Route::get('/search-products',              [ListingController::class, 'searchProducts'])->name('search-products');
-            Route::post('/{listing}/toggle-status',     [ListingController::class, 'toggleStatus'])->name('toggle-status');
-            Route::patch('/{listing}/price',            [ListingController::class, 'updatePrice'])->name('update-price');
-            Route::delete('/{listing}',                 [ListingController::class, 'destroy'])->name('destroy');
+            Route::get('/', [ListingController::class, 'index'])->name('index');
+            Route::get('/create', [ListingController::class, 'create'])->name('create');
+            Route::post('/', [ListingController::class, 'store'])->name('store');
+            Route::get('/search-products', [ListingController::class, 'searchProducts'])->name('search-products');
+            Route::post('/{listing}/toggle-status', [ListingController::class, 'toggleStatus'])->name('toggle-status');
+            Route::patch('/{listing}/price', [ListingController::class, 'updatePrice'])->name('update-price');
+            Route::delete('/{listing}', [ListingController::class, 'destroy'])->name('destroy');
         });
 
         // Finance: commissions, wallet, payout (withdrawal) requests
         Route::prefix('finance')->name('finance.')->group(function () {
-            Route::get('/commissions',        [FinanceController::class, 'commissions'])->name('commissions');
-            Route::get('/wallet',             [FinanceController::class, 'wallet'])->name('wallet');
-            Route::post('/wallet/withdraw',   [FinanceController::class, 'requestWithdrawal'])->name('wallet.withdraw');
+            Route::get('/commissions', [FinanceController::class, 'commissions'])->name('commissions');
+            Route::get('/wallet', [FinanceController::class, 'wallet'])->name('wallet');
+            Route::post('/wallet/withdraw', [FinanceController::class, 'requestWithdrawal'])->name('wallet.withdraw');
         });
 
         // Promote: paid ad slot booking (AS-07)
@@ -143,17 +145,17 @@ Route::middleware('web')->group(function () {
 
         // Flash sale invitations
         Route::prefix('flash-sales')->name('flash-sales.')->group(function () {
-            Route::get('/',                          [FlashSaleController::class, 'index'])->name('index');
-            Route::post('/{invitation}/accept',      [FlashSaleController::class, 'accept'])->name('accept');
-            Route::post('/{invitation}/decline',     [FlashSaleController::class, 'decline'])->name('decline');
+            Route::get('/', [FlashSaleController::class, 'index'])->name('index');
+            Route::post('/{invitation}/accept', [FlashSaleController::class, 'accept'])->name('accept');
+            Route::post('/{invitation}/decline', [FlashSaleController::class, 'decline'])->name('decline');
         });
 
         // Support tickets
         Route::prefix('support')->name('support.')->group(function () {
-            Route::get('/',                [SupportController::class, 'index'])->name('index');
-            Route::get('/create',          [SupportController::class, 'create'])->name('create');
-            Route::post('/',               [SupportController::class, 'store'])->name('store');
-            Route::get('/{ticketNumber}',  [SupportController::class, 'show'])->name('show');
+            Route::get('/', [SupportController::class, 'index'])->name('index');
+            Route::get('/create', [SupportController::class, 'create'])->name('create');
+            Route::post('/', [SupportController::class, 'store'])->name('store');
+            Route::get('/{ticketNumber}', [SupportController::class, 'show'])->name('show');
             Route::post('/{ticketNumber}/reply', [SupportController::class, 'reply'])->name('reply');
             Route::post('/{ticketNumber}/close', [SupportController::class, 'close'])->name('close');
         });
