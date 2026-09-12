@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Enums\AdminListingStatus;
 use App\Enums\DeliveryInstruction;
 use App\Enums\GlobalSystemType;
+use App\Enums\InventoryMovementType;
 use App\Enums\VendorListingStatus;
 use App\Events\SubOrderPlaced;
 use App\Http\Controllers\Controller;
@@ -1018,7 +1019,7 @@ class CheckoutController extends Controller
 
                     InventoryMovement::create([
                         'warehouse_inventory_id' => $inventory->id,
-                        'movement_type' => 'reservation_release',
+                        'movement_type' => InventoryMovementType::Release->value,
                         'quantity_delta' => -$item->quantity,
                         'quantity_after' => $inventory->quantity_on_hand,
                         'reference_type' => 'order',
