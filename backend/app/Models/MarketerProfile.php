@@ -25,11 +25,30 @@ class MarketerProfile extends Model
         'total_conversions',
         'total_earnings',
         'earnings_currency',
+        'ad_price',
+        'ad_price_currency',
+        'can_self_edit_ad_price',
+        'clothing_size',
+        'shirt_size',
+        'pants_size',
+        'dress_size',
+        'abaya_size',
+        'shoe_size',
+        'shoe_size_system',
+        'chest_cm',
+        'waist_cm',
+        'height_cm',
+        'measurements_notes',
     ];
 
     protected $casts = [
-        'social_links'    => 'array',
-        'contact_details' => 'array',
+        'social_links'           => 'array',
+        'contact_details'        => 'array',
+        'ad_price'               => 'integer',
+        'can_self_edit_ad_price' => 'boolean',
+        'chest_cm'               => 'float',
+        'waist_cm'               => 'float',
+        'height_cm'              => 'float',
     ];
 
     public function marketer(): BelongsTo

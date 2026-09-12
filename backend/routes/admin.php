@@ -937,6 +937,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->name('suspend')->middleware('admin.permission:marketers.manage');
         Route::post('/{marketer}/activate', [\App\Http\Controllers\Admin\MarketerController::class, 'activate'])
             ->name('activate')->middleware('admin.permission:marketers.manage');
+        Route::put('/{marketer}/profile', [\App\Http\Controllers\Admin\MarketerController::class, 'updateProfile'])
+            ->name('profile.update')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketer}/category-commissions', [\App\Http\Controllers\Admin\MarketerController::class, 'storeCategoryCommission'])
+            ->name('category-commissions.store')->middleware('admin.permission:marketers.manage');
+        Route::delete('/{marketer}/category-commissions/{commission}', [\App\Http\Controllers\Admin\MarketerController::class, 'destroyCategoryCommission'])
+            ->name('category-commissions.destroy')->middleware('admin.permission:marketers.manage');
     });
 
     // ─── Marketer Campaigns ────────────────────────────────────────────────────────

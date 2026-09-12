@@ -76,6 +76,7 @@ Route::middleware('web')->group(function () {
         // Profile
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/ad-price', [ProfileController::class, 'updateAdPrice'])->name('profile.ad-price.update');
 
         // Campaign invitations
         Route::prefix('invitations')->name('invitations.')->group(function () {

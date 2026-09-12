@@ -175,6 +175,23 @@ class MarketerProfileController extends Controller
             ];
         })->values()->all();
 
+        $measurements = null;
+        if ($marketer->isInfluencer()) {
+            $measurements = [
+                'clothing_size'     => $profile->clothing_size,
+                'shirt_size'        => $profile->shirt_size,
+                'pants_size'        => $profile->pants_size,
+                'dress_size'        => $profile->dress_size,
+                'abaya_size'        => $profile->abaya_size,
+                'shoe_size'         => $profile->shoe_size,
+                'shoe_size_system'  => $profile->shoe_size_system,
+                'chest_cm'          => $profile->chest_cm,
+                'waist_cm'          => $profile->waist_cm,
+                'height_cm'         => $profile->height_cm,
+                'notes'             => $profile->measurements_notes,
+            ];
+        }
+
         $qrUrl = $profile->qr_code_path
             ? Storage::disk('public')->url($profile->qr_code_path)
             : null;
@@ -203,6 +220,7 @@ class MarketerProfileController extends Controller
                 'banner_url'      => $profile->bannerFile?->url,
                 'qr_code_url'     => $qrUrl,
                 'profile_url'     => $frontendUrl . '/marketer/' . $profile->profile_slug,
+                'measurements'    => $measurements,
             ],
             'listings' => [
                 'items' => $productCards,

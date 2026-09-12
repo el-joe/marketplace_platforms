@@ -90,6 +90,30 @@ class ProfileController extends Controller
         return back()->with('success', 'تم حفظ البروفايل.');
     }
 
+    /**
+     * Self-edit for ad_price. Only marketers granted can_self_edit_ad_price
+     * by admin may use this — guarded even if the endpoint is hit directly.
+     */
+    public function updateAdPrice(Request $request): RedirectResponse
+    {
+        $marketer = $this->marketer();
+        $profile  = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+
+        abort_unless($profile->can_self_edit_ad_price, 403, 'غير مسموح لك بتعديل سعر الإعلان.');
+
+        $request->validate([
+            'ad_price'          => ['required', 'integer', 'min:0'],
+            'ad_price_currency' => ['nullable', 'string', 'size:3'],
+        ]);
+
+        $profile->update([
+            'ad_price'          => $request->integer('ad_price'),
+            'ad_price_currency' => $request->input('ad_price_currency', $profile->ad_price_currency),
+        ]);
+
+        return back()->with('success', 'تم تحديث سعر الإعلان.');
+    }
+
     private function generateQrCode(MarketerProfile $profile): void
     {
         // Points to the customer-facing marketer profile page (handled by Next.js frontend)

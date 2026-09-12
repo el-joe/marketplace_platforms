@@ -69,6 +69,159 @@
         </div>
     </div>
 
+    {{-- Ad price & self-edit permission --}}
+    <div class="bg-white rounded-xl border p-6 space-y-4">
+        <h3 class="font-bold text-gray-800">سعر الإعلان المعروض (Ad Display Price)</h3>
+        <form method="POST" action="{{ route('admin.marketers.profile.update', $marketer) }}" class="space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">السعر</label>
+                    <input type="number" min="0" name="ad_price" value="{{ old('ad_price', $marketer->marketerProfile?->ad_price) }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">العملة</label>
+                    <input type="text" maxlength="3" name="ad_price_currency" value="{{ old('ad_price_currency', $marketer->marketerProfile?->ad_price_currency) }}"
+                           placeholder="SAR" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+                </div>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <input type="checkbox" name="can_self_edit_ad_price" value="1"
+                       @checked(old('can_self_edit_ad_price', $marketer->marketerProfile?->can_self_edit_ad_price))
+                       class="rounded border-gray-300">
+                السماح للماركتر بتعديل سعره الخاص (استثناء)
+            </label>
+
+            @if($marketer->isInfluencer())
+            <div class="pt-4 border-t border-gray-100 space-y-4">
+                <h4 class="font-bold text-gray-800">مقاسات المؤثر (Sample Sizes)</h4>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">المقاس العام</label>
+                        <input type="text" name="clothing_size" value="{{ old('clothing_size', $marketer->marketerProfile?->clothing_size) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس القميص</label>
+                        <input type="text" name="shirt_size" value="{{ old('shirt_size', $marketer->marketerProfile?->shirt_size) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس البنطلون</label>
+                        <input type="text" name="pants_size" value="{{ old('pants_size', $marketer->marketerProfile?->pants_size) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس الفستان</label>
+                        <input type="text" name="dress_size" value="{{ old('dress_size', $marketer->marketerProfile?->dress_size) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس العباية</label>
+                        <input type="text" name="abaya_size" value="{{ old('abaya_size', $marketer->marketerProfile?->abaya_size) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس الحذاء</label>
+                            <input type="text" name="shoe_size" value="{{ old('shoe_size', $marketer->marketerProfile?->shoe_size) }}"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div class="w-24">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">النظام</label>
+                            <select name="shoe_size_system" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm">
+                                <option value="">-</option>
+                                @foreach(['EU', 'US', 'UK'] as $sys)
+                                <option value="{{ $sys }}" @selected(old('shoe_size_system', $marketer->marketerProfile?->shoe_size_system) === $sys)>{{ $sys }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الصدر (سم)</label>
+                        <input type="number" step="0.1" name="chest_cm" value="{{ old('chest_cm', $marketer->marketerProfile?->chest_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الخصر (سم)</label>
+                        <input type="number" step="0.1" name="waist_cm" value="{{ old('waist_cm', $marketer->marketerProfile?->waist_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">الطول (سم)</label>
+                        <input type="number" step="0.1" name="height_cm" value="{{ old('height_cm', $marketer->marketerProfile?->height_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
+                    <textarea name="measurements_notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">{{ old('measurements_notes', $marketer->marketerProfile?->measurements_notes) }}</textarea>
+                </div>
+            </div>
+            @endif
+
+            <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">حفظ</button>
+        </form>
+    </div>
+
+    {{-- Category commission overrides --}}
+    <div class="bg-white rounded-xl border overflow-hidden">
+        <div class="px-5 py-4 border-b flex items-center justify-between">
+            <h3 class="font-bold text-gray-800">نسب العمولة حسب القسم</h3>
+        </div>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs">
+                <tr>
+                    <th class="px-4 py-3 text-start">القسم</th>
+                    <th class="px-4 py-3 text-center">نسبة العمولة</th>
+                    <th class="px-4 py-3 text-center"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($marketer->categoryCommissions as $cc)
+                <tr>
+                    <td class="px-4 py-3 font-medium">{{ $cc->category?->name_ar ?? 'افتراضي (كل الأقسام)' }}</td>
+                    <td class="px-4 py-3 text-center">{{ number_format($cc->commission_rate, 2) }}%</td>
+                    <td class="px-4 py-3 text-center">
+                        <form method="POST" action="{{ route('admin.marketers.category-commissions.destroy', [$marketer, $cc]) }}"
+                              onsubmit="return confirm('حذف نسبة العمولة؟');">
+                            @csrf
+                            @method('DELETE')
+                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">لا توجد نسب عمولة مخصصة بعد.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+        <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t bg-gray-50 flex flex-wrap items-end gap-3">
+            @csrf
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
+                <select name="category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
+                    <option value="">افتراضي (كل الأقسام)</option>
+                    @foreach($categories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name_ar }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">نسبة العمولة %</label>
+                <input type="number" step="0.01" min="0" max="100" name="commission_rate" required
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
+            </div>
+            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">إضافة / تحديث</button>
+        </form>
+    </div>
+
     {{-- Campaign invitations --}}
     @if($marketer->invitations->isNotEmpty())
     <div class="bg-white rounded-xl border overflow-hidden">
