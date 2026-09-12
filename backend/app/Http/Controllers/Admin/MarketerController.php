@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\MarketerCommissionDiscountType;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
 use App\Models\MarketerCategoryCommission;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MarketerController extends Controller
 {
@@ -80,6 +82,10 @@ class MarketerController extends Controller
             'broker_category_id'      => ['nullable', 'uuid', 'exists:categories,id'],
             'broker_city_id'          => ['nullable', 'uuid', 'exists:cities,id'],
             'broker_serves_all_cities' => ['nullable', 'boolean'],
+            'commission_discount_type' => ['nullable', Rule::enum(MarketerCommissionDiscountType::class)],
+            'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
+            'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
@@ -88,6 +94,10 @@ class MarketerController extends Controller
             'ad_price'               => $validated['ad_price'] ?? 0,
             'ad_price_currency'      => $validated['ad_price_currency'] ?? null,
             'can_self_edit_ad_price' => $request->boolean('can_self_edit_ad_price'),
+            'commission_discount_type'       => $validated['commission_discount_type'] ?? 'none',
+            'commission_discount_flat'       => $validated['commission_discount_flat'] ?? 0,
+            'commission_discount_percentage' => $validated['commission_discount_percentage'] ?? 0,
+            'commission_discount_notes'      => $validated['commission_discount_notes'] ?? null,
         ];
 
         // Sample-size measurement fields only apply to influencer marketers.

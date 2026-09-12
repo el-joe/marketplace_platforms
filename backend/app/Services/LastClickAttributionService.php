@@ -41,7 +41,7 @@ class LastClickAttributionService
 
         $invitation = MarketerCampaignInvitation::where('referral_code', $click['referral_code'])
             ->where('status', 'accepted')
-            ->with('campaign.tieredRules')
+            ->with(['campaign.tieredRules', 'marketer.marketerProfile'])
             ->first();
 
         if (!$invitation) {
@@ -121,6 +121,11 @@ class LastClickAttributionService
                 $flashSaleBonusAmount = (int) round(
                     $order->total * ((float) $liveFlashSaleInvitation->extra_commission_rate / 100)
                 );
+            }
+
+            $marketerProfile = $invitation->marketer->marketerProfile;
+            if ($marketerProfile) {
+                $commissionAmount = $marketerProfile->applyCommissionDiscount($commissionAmount);
             }
 
             $conversion = MarketerCampaignConversion::create([

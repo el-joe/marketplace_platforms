@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MarketerCommissionDiscountType;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -47,6 +48,10 @@ class MarketerProfile extends Model
         'broker_category_id',
         'broker_city_id',
         'broker_serves_all_cities',
+        'commission_discount_type',
+        'commission_discount_flat',
+        'commission_discount_percentage',
+        'commission_discount_notes',
     ];
 
     protected $casts = [
@@ -63,6 +68,9 @@ class MarketerProfile extends Model
         'sleeve_from_shoulder_cm'  => 'float',
         'sleeve_width_cm'          => 'float',
         'broker_serves_all_cities' => 'boolean',
+        'commission_discount_type' => MarketerCommissionDiscountType::class,
+        'commission_discount_flat' => 'integer',
+        'commission_discount_percentage' => 'float',
     ];
 
     public function marketer(): BelongsTo
@@ -83,6 +91,22 @@ class MarketerProfile extends Model
     public function brokerCity(): BelongsTo
     {
         return $this->belongsTo(City::class, 'broker_city_id');
+    }
+
+    /**
+     * Apply this marketer's admin-granted commission discount to a gross
+     * commission amount (platform base currency units, BIGINT). Never
+     * discounts below zero.
+     */
+    public function applyCommissionDiscount(int $grossCommission): int
+    {
+        $discount = match ($this->commission_discount_type) {
+            MarketerCommissionDiscountType::Flat => min($this->commission_discount_flat, $grossCommission),
+            MarketerCommissionDiscountType::Percentage => (int) floor($grossCommission * $this->commission_discount_percentage / 100),
+            default => 0,
+        };
+
+        return max(0, $grossCommission - $discount);
     }
 
     protected static function booted(): void

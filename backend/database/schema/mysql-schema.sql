@@ -1689,6 +1689,7 @@ CREATE TABLE `coupons` (
   `value` decimal(15,2) NOT NULL,
   `currency` char(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `scope` enum('platform','vendor','category','product') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `shipping_type_restriction` enum('all','fbn','fbp','fbm') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all' COMMENT 'fbn=Nawi fulfillment, fbp=partner/cross-dock carrier, fbm=vendor self-ship, all=no restriction',
   `country_ids` json DEFAULT NULL COMMENT 'JSON array of country UUIDs. NULL = all countries.',
   `vendor_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `category_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -1723,6 +1724,8 @@ CREATE TABLE `currencies` (
   `code` char(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `symbol` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `symbol_type` enum('text','image') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text' COMMENT 'text = render the symbol column as text; image = render symbol_image via an <img>/SVG.',
+  `symbol_image` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Storage path (public disk) for the symbol image/SVG. Only used when symbol_type=image.',
   `decimal_places` tinyint NOT NULL DEFAULT '2',
   `base_currency_code` char(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'USD',
   `exchange_rate_to_base` decimal(15,6) NOT NULL DEFAULT '1.000000',
@@ -3405,6 +3408,10 @@ CREATE TABLE `marketer_profiles` (
   `total_campaigns` int unsigned NOT NULL DEFAULT '0',
   `total_conversions` int unsigned NOT NULL DEFAULT '0',
   `total_earnings` bigint NOT NULL DEFAULT '0' COMMENT 'BIGINT base-currency. No /100.',
+  `commission_discount_type` enum('none','flat','percentage') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Admin-granted discount off this marketer''s platform commission.',
+  `commission_discount_flat` bigint NOT NULL DEFAULT '0' COMMENT 'Flat discount in platform base currency units. Only used when type=flat.',
+  `commission_discount_percentage` decimal(5,2) NOT NULL DEFAULT '0.00' COMMENT 'Percentage discount off computed commission. Only used when type=percentage.',
+  `commission_discount_notes` text COLLATE utf8mb4_unicode_ci COMMENT 'Admin notes explaining why this discount was granted.',
   `earnings_currency` char(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ad_price` bigint unsigned NOT NULL DEFAULT '0' COMMENT 'Display ad price shown on the marketer public profile. BIGINT base-currency. No /100.',
   `ad_price_currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -3418,7 +3425,12 @@ CREATE TABLE `marketer_profiles` (
   `shoe_size_system` enum('EU','US','UK') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `chest_cm` decimal(5,1) DEFAULT NULL,
   `waist_cm` decimal(5,1) DEFAULT NULL,
+  `hip_cm` decimal(5,1) DEFAULT NULL COMMENT 'محيط الحوض — Hip circumference in cm',
   `height_cm` decimal(5,1) DEFAULT NULL,
+  `item_length_cm` decimal(5,1) DEFAULT NULL COMMENT 'طول الملابس — Full garment length in cm',
+  `sleeve_from_neck_cm` decimal(5,1) DEFAULT NULL COMMENT 'الكم من الرقبة — Sleeve length measured from neck',
+  `sleeve_from_shoulder_cm` decimal(5,1) DEFAULT NULL COMMENT 'الكم من الكتف — Sleeve length measured from shoulder',
+  `sleeve_width_cm` decimal(5,1) DEFAULT NULL COMMENT 'عرض الكم — Sleeve width / arms width in cm',
   `measurements_notes` text COLLATE utf8mb4_unicode_ci,
   `broker_category_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `broker_city_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -6603,6 +6615,10 @@ CREATE TABLE `vendors` (
   `whatsapp_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `business_address_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `commission_rate` decimal(5,2) DEFAULT NULL,
+  `commission_discount_type` enum('none','flat','percentage') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'none' COMMENT 'Admin-granted discount off this vendor''s platform commission.',
+  `commission_discount_flat` bigint NOT NULL DEFAULT '0' COMMENT 'Flat discount in platform base currency units. Only used when type=flat.',
+  `commission_discount_percentage` decimal(5,2) NOT NULL DEFAULT '0.00' COMMENT 'Percentage discount off computed commission. Only used when type=percentage.',
+  `commission_discount_notes` text COLLATE utf8mb4_unicode_ci COMMENT 'Admin notes explaining why this discount was granted.',
   `default_warehouse_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payout_schedule` enum('weekly','biweekly','monthly') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'monthly',
   `payout_hold_active` tinyint(1) NOT NULL DEFAULT '0',
@@ -7626,3 +7642,10 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (509,'2026_09_12_00
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (510,'2026_09_12_000021_create_vendor_listing_addon_groups_table',65);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (511,'2026_09_12_000022_create_vendor_listing_addon_options_table',66);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (512,'2026_09_12_000023_create_order_item_custom_inputs_table',66);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (513,'2026_09_12_172713_add_commission_discount_to_vendors_table',67);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (514,'2026_09_12_172800_add_shipping_type_restriction_to_coupons_table',68);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (515,'2026_09_12_172900_update_omr_currency_symbol',69);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (516,'2026_09_12_173000_add_cod_limit_settings',70);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (517,'2026_09_12_180000_add_symbol_type_to_currencies_table',71);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (518,'2026_09_12_000012_add_missing_measurements_to_marketer_profiles_table',72);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (519,'2026_09_12_180000_add_commission_discount_to_marketer_profiles_table',73);
