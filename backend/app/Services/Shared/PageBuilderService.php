@@ -100,7 +100,7 @@ class PageBuilderService
 
         $blocksBySection = $blocks->groupBy('section_id');
 
-        $sectionsData = $sections->map(function ($section) use ($blocksBySection, $country) {
+        $sectionsData = $sections->map(function ($section) use ($blocksBySection, $country, $sessionId) {
             $sectionBlocks = $blocksBySection->get($section->id, collect());
 
             // For column-layout sections, group blocks by column_index
