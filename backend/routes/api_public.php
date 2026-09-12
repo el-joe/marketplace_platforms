@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Public\AdPopupController;
 use App\Http\Controllers\Api\Public\MarketerProfileController;
 use App\Http\Controllers\Api\PublicSettingsController;
 use App\Http\Controllers\Customer\LiveStreamController as PublicLiveStreamController;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function (): void {
+
+    // ── Nawi Ads popup (public — no auth) ────────────────────────────────────
+    Route::get('active-popup', [AdPopupController::class, 'show'])->name('public.active-popup');
 
     // ── Live Streams (public — no auth) ──────────────────────────────────────
     Route::prefix('streams')->name('public.streams.')->group(function () {

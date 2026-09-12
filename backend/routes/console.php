@@ -68,6 +68,13 @@ Schedule::command('gift-cards:expire')
     ->runInBackground()
     ->name('expire-gift-cards');
 
+// Expire Nawi Ads listing-boost subscriptions past their end date
+Schedule::command('ads:expire-boosts')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->name('ads-expire-boosts');
+
 // Deactivate coupons whose valid_until has passed
 Schedule::command('coupons:deactivate-expired')
     ->dailyAt('00:15')

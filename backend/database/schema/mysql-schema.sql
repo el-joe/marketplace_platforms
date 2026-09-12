@@ -296,6 +296,25 @@ CREATE TABLE `ad_impressions` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `ad_packages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ad_packages` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tier` enum('serious','serious_featured') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name_en` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name_ar` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description_en` text COLLATE utf8mb4_unicode_ci,
+  `description_ar` text COLLATE utf8mb4_unicode_ci,
+  `price_monthly` bigint NOT NULL,
+  `currency` char(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AED',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `sort_order` int unsigned NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `ad_quality_scores`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -3867,7 +3886,7 @@ CREATE TABLE `paid_ad_bookings` (
   `vendor_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `marketer_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `country_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `pricing_model` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pricing_model` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pricing_units` int unsigned NOT NULL DEFAULT '0' COMMENT 'days / weeks / months for fixed models; 0 for cpm/cpc',
   `unit_rate` bigint NOT NULL DEFAULT '0' COMMENT 'Snapshot of slot.base_rate',
   `quoted_amount` bigint NOT NULL DEFAULT '0' COMMENT 'Fixed total before tax',
@@ -5900,6 +5919,37 @@ CREATE TABLE `vendor_acquisition_commissions` (
   CONSTRAINT `vendor_acquisition_commissions_vendor_id_foreign` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `vendor_ad_subscriptions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_ad_subscriptions` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_listing_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ad_package_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('active','expired','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `starts_at` timestamp NOT NULL,
+  `ends_at` timestamp NOT NULL,
+  `amount_paid` bigint NOT NULL,
+  `currency` char(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'AED',
+  `popup_title_en` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `popup_title_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `popup_body_en` text COLLATE utf8mb4_unicode_ci,
+  `popup_body_ar` text COLLATE utf8mb4_unicode_ci,
+  `popup_image_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `popup_cta_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `vendor_ad_subscriptions_vendor_id_foreign` (`vendor_id`),
+  KEY `vendor_ad_subscriptions_ad_package_id_foreign` (`ad_package_id`),
+  KEY `vendor_ad_subscriptions_vendor_listing_id_status_ends_at_index` (`vendor_listing_id`,`status`,`ends_at`),
+  KEY `vendor_ad_subscriptions_status_ends_at_index` (`status`,`ends_at`),
+  CONSTRAINT `vendor_ad_subscriptions_ad_package_id_foreign` FOREIGN KEY (`ad_package_id`) REFERENCES `ad_packages` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `vendor_ad_subscriptions_vendor_id_foreign` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `vendor_ad_subscriptions_vendor_listing_id_foreign` FOREIGN KEY (`vendor_listing_id`) REFERENCES `vendor_listings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vendor_admin_password_resets`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -6169,6 +6219,8 @@ CREATE TABLE `vendor_listings` (
   `declared_width_cm` decimal(8,2) DEFAULT NULL,
   `declared_height_cm` decimal(8,2) DEFAULT NULL,
   `campaign_enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Vendor opted this listing into a marketer campaign',
+  `is_ad_boosted` tinyint(1) NOT NULL DEFAULT '0',
+  `ad_boost_expires_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `vendor_listings_vendor_id_index` (`vendor_id`),
   KEY `vendor_listings_product_variant_id_index` (`product_variant_id`),
@@ -6181,6 +6233,7 @@ CREATE TABLE `vendor_listings` (
   KEY `vendor_listings_country_status_score_index` (`country_id`,`status`,`score`),
   KEY `vendor_listings_variant_country_status_index` (`product_variant_id`,`country_id`,`status`),
   KEY `vl_variant_country_status_score_idx` (`product_variant_id`,`country_id`,`status`,`score`),
+  KEY `vendor_listings_is_ad_boosted_ad_boost_expires_at_index` (`is_ad_boosted`,`ad_boost_expires_at`),
   CONSTRAINT `vendor_listings_primary_shipping_method_id_foreign` FOREIGN KEY (`primary_shipping_method_id`) REFERENCES `shipping_methods` (`id`) ON DELETE SET NULL,
   CONSTRAINT `vendor_listings_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -7338,3 +7391,10 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (484,'2026_09_11_00
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (485,'2026_09_11_000005_create_paid_ad_daily_stats_table',58);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (486,'2026_09_11_000006_update_banner_placement_definitions_for_ads',59);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (487,'2026_09_11_000007_drop_paid_banner_bookings_table',60);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (488,'2026_09_11_000030_add_bound_item_id_to_paid_ad_slots',61);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (489,'2026_09_11_000007_widen_paid_ad_bookings_pricing_model',62);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (490,'2026_09_11_000010_grant_ad_slot_permissions',62);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (491,'2026_09_11_000020_grant_vendor_ad_slot_permissions',62);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (492,'2026_09_12_000001_create_ad_packages_table',62);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (493,'2026_09_12_000002_create_vendor_ad_subscriptions_table',62);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (494,'2026_09_12_000003_add_ad_boost_to_vendor_listings',62);

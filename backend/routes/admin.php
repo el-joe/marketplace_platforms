@@ -69,6 +69,8 @@ use App\Http\Controllers\Admin\DeliveryZoneController;
 use App\Http\Controllers\Admin\DeliveryAssignmentController;
 use App\Http\Controllers\Admin\DeliveryPayoutController;
 use App\Http\Controllers\Admin\SubscriptionController;
+use App\Http\Controllers\Admin\AdPackageController;
+use App\Http\Controllers\Admin\AdSubscriptionController;
 use App\Http\Controllers\Admin\FbnController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\NotificationController;
@@ -1384,6 +1386,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         Route::get('/{subscription}', [SubscriptionController::class, 'show'])->name('show');
         Route::post('/{subscription}/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('cancel');
+    });
+
+    // ── Nawi Ads (listing boost / popup packages) ───────────────────────────────
+    Route::prefix('ad-packages')->name('ad-packages.')->group(function () {
+        Route::get('/', [AdPackageController::class, 'index'])->name('index');
+        Route::post('/', [AdPackageController::class, 'store'])->name('store');
+        Route::put('/{adPackage}', [AdPackageController::class, 'update'])->name('update');
+        Route::post('/{adPackage}/toggle-active', [AdPackageController::class, 'toggleActive'])->name('toggle-active');
+        Route::delete('/{adPackage}', [AdPackageController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('ad-subscriptions')->name('ad-subscriptions.')->group(function () {
+        Route::get('/', [AdSubscriptionController::class, 'index'])->name('index');
+        Route::post('/{subscription}/cancel', [AdSubscriptionController::class, 'cancel'])->name('cancel');
     });
 
     // ─── Classifieds ──────────────────────────────────────────────────────────

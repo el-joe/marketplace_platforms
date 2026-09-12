@@ -29,6 +29,8 @@ class VendorListing extends Model
             'declared_width_cm' => 'decimal:2',
             'declared_height_cm' => 'decimal:2',
             'campaign_enabled' => 'boolean',
+            'is_ad_boosted' => 'boolean',
+            'ad_boost_expires_at' => 'datetime',
         ];
     }
 
@@ -73,6 +75,8 @@ class VendorListing extends Model
         'declared_weight_grams',
         'declared_length_cm',
         'declared_width_cm',
+        'is_ad_boosted',
+        'ad_boost_expires_at',
         'declared_height_cm',
         'campaign_enabled',
     ];
