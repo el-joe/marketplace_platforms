@@ -82,14 +82,16 @@ class ProductDetailResource extends JsonResource
                     'position' => $h->position,
                 ])
             ),
-            'specifications'   => $this->whenLoaded('specifications', fn() =>
-                $this->specifications->map(fn($s) => [
+            'specifications'   => $this->whenLoaded('specifications', function () {
+                $locale = app()->getLocale();
+
+                return $this->specifications->map(fn($s) => [
                     'id'       => $s->id,
-                    'key'      => Bilingual::pair($s, 'key'),
-                    'value'    => Bilingual::pair($s, 'value'),
+                    'label'    => Bilingual::pair($s, 'key')[$locale],
+                    'value'    => Bilingual::pair($s, 'value')[$locale],
                     'position' => $s->position,
-                ])
-            ),
+                ]);
+            }),
             'images'           => $this->whenLoaded('images', fn() =>
                 $this->images->map(fn($img) => [
                     'id'             => $img->id,
