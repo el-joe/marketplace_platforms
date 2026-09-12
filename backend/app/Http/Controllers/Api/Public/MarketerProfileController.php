@@ -35,6 +35,7 @@ class MarketerProfileController extends Controller
                 'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
                 'bannerFile',
             ])
+            ->addSelect(['ad_price', 'ad_price_currency'])
             ->when($request->type, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('marketer_type', $request->type)))
             ->when($countryId, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('country_id', $countryId)))
             ->orderByDesc('total_conversions')
@@ -55,6 +56,8 @@ class MarketerProfileController extends Controller
                 'total_campaigns'   => $marketer->total_campaigns,
                 'total_conversions' => $marketer->total_conversions,
                 'avatar_initial'    => mb_substr($marketer->name, 0, 1),
+                'ad_price'          => $profile->ad_price,
+                'ad_price_currency' => $profile->ad_price_currency,
             ];
         })->values()->all();
 
@@ -240,6 +243,8 @@ class MarketerProfileController extends Controller
                 'banner_url'      => $profile->bannerFile?->url,
                 'qr_code_url'     => $qrUrl,
                 'profile_url'     => $frontendUrl . '/marketer/' . $profile->profile_slug,
+                'ad_price'        => $profile->ad_price,
+                'ad_price_currency' => $profile->ad_price_currency,
                 'measurements'    => $measurements,
                 'broker_specialization' => $brokerSpecialization,
             ],

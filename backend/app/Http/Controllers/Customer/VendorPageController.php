@@ -22,6 +22,35 @@ class VendorPageController extends Controller
     ) {}
 
     /**
+     * GET /vendors
+     * Public store directory: paginated, searchable list of active vendors.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $country = $request->attributes->get('country');
+
+        $vendors = Vendor::where('global_status', 'active')
+            ->when($country, fn ($q) => $q->where('country_id', $country->id))
+            ->when($request->filled('search'), fn ($q) => $q->where(function ($q2) use ($request) {
+                $q2->where('store_name', 'LIKE', "%{$request->search}%")
+                    ->orWhere('store_description', 'LIKE', "%{$request->search}%");
+            }))
+            ->with(['country:id,name_en,name_ar'])
+            ->orderByDesc('store_rating_avg')
+            ->paginate($request->integer('per_page', 20));
+
+        return ApiResponse::success([
+            'items' => VendorPageVendorResource::collection($vendors->getCollection())->resolve(),
+            'meta' => [
+                'current_page' => $vendors->currentPage(),
+                'last_page' => $vendors->lastPage(),
+                'per_page' => $vendors->perPage(),
+                'total' => $vendors->total(),
+            ],
+        ]);
+    }
+
+    /**
      * GET /vendors/{vendor_id}
      * Vendor storefront page: vendor metadata, page_builder, and live listing grid.
      */

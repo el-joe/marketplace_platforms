@@ -194,6 +194,10 @@ use Illuminate\Support\Facades\Route;
             ->middleware('throttle:60,1')
             ->name('customer.ads.clicks');
 
+        // ── Store directory (public) ───────────────────────────────────────────
+        Route::get('vendors', [VendorPageController::class, 'index'])
+            ->name('customer.vendors.index');
+
         // ── Vendor storefront page (public) ───────────────────────────────────
         Route::get('vendors/{vendor_id}', [VendorPageController::class, 'show'])
             ->name('customer.vendors.show');
