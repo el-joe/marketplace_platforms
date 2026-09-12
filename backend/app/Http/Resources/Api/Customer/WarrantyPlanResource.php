@@ -19,6 +19,7 @@ class WarrantyPlanResource extends JsonResource
             'features'       => $locale === 'ar' ? $this->features_ar : $this->features_en,
             'price'          => $this->price,
             'currency'       => $this->currency,
+            'image_url'      => $this->image_url,
         ];
     }
 
