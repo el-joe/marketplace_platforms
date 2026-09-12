@@ -6274,6 +6274,14 @@ return [
         'rate_last_updated' => 'آخر تحديث للسعر: :date (:diff)',
         'manual_override_notice' => 'تم تجاوز سعر صرف هذه العملة يدويًا. ستتخطاها مهمة المزامنة التلقائية حتى تلغي التجاوز.',
         'edit_currency_title' => 'تعديل العملة: :code',
+        'symbol_text_hint'  => 'يُستخدم عندما يكون نوع الرمز نصًا.',
+        'symbol_type'       => 'نوع الرمز',
+        'symbol_type_text'  => 'نص',
+        'symbol_type_image' => 'صورة (SVG/PNG)',
+        'symbol_image'      => 'صورة الرمز',
+        'no_symbol_image_yet' => 'لم يتم رفع صورة بعد.',
+        'uploading'         => 'جارٍ الرفع',
+        'symbol_image_hint' => 'تُستخدم عندما يكون نوع الرمز صورة، مثل الرمز الرسمي للعملة كملف SVG/PNG. الحد الأقصى 512 كيلوبايت.',
     ],
 
     // ─── Payment Methods ─────────────────────────────────────────────────────

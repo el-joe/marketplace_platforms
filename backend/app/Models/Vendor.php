@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PayoutSchedule;
 use App\Enums\VendorBusinessType;
+use App\Enums\VendorCommissionDiscountType;
 use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -63,6 +64,10 @@ class Vendor extends Model
         'warranty_months',
         'easy_returns_enabled',
         'secure_payments_enabled',
+        'commission_discount_type',
+        'commission_discount_flat',
+        'commission_discount_percentage',
+        'commission_discount_notes',
     ];
 
     protected function casts(): array
@@ -84,6 +89,9 @@ class Vendor extends Model
             'warranty_months' => 'integer',
             'easy_returns_enabled' => 'boolean',
             'secure_payments_enabled' => 'boolean',
+            'commission_discount_type' => VendorCommissionDiscountType::class,
+            'commission_discount_flat' => 'integer',
+            'commission_discount_percentage' => 'float',
         ];
     }
 
@@ -95,6 +103,22 @@ class Vendor extends Model
     public function isClassifiedVendor(): bool
     {
         return $this->vendor_type === VendorType::ClassifiedVendor;
+    }
+
+    /**
+     * Apply this vendor's admin-granted commission discount to a gross
+     * commission amount (platform base currency units, BIGINT). Never
+     * discounts below zero.
+     */
+    public function applyCommissionDiscount(int $grossCommission): int
+    {
+        $discount = match ($this->commission_discount_type) {
+            VendorCommissionDiscountType::Flat => min($this->commission_discount_flat, $grossCommission),
+            VendorCommissionDiscountType::Percentage => (int) floor($grossCommission * $this->commission_discount_percentage / 100),
+            default => 0,
+        };
+
+        return max(0, $grossCommission - $discount);
     }
 
     public function getPositiveRatingPctAttribute(): ?int

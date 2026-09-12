@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\PayoutSchedule;
 use App\Enums\VendorBusinessType;
+use App\Enums\VendorCommissionDiscountType;
 use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorType;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,6 +33,10 @@ class UpdateVendorRequest extends FormRequest
             'contact_email' => ['nullable', 'email', 'max:150'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
             'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_discount_type' => ['nullable', Rule::enum(VendorCommissionDiscountType::class)],
+            'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
+            'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
             'payout_schedule' => ['nullable', Rule::enum(PayoutSchedule::class)],
             'global_status' => ['nullable', Rule::enum(VendorGlobalStatus::class)],
             'vendor_type' => ['nullable', Rule::enum(VendorType::class)],

@@ -458,6 +458,8 @@ return [
             'cart_empty'                 => 'Cart is empty.',
             'address_not_found'          => 'Address not found.',
             'cod_unavailable'            => 'Cash on delivery is not available for your location.',
+            'cod_limit_exceeded'         => 'Your cart total exceeds the maximum allowed for Cash on Delivery (:limit).',
+            'cod_supermall_limit_exceeded' => 'Your Super Mall items exceed the maximum allowed for Cash on Delivery (:limit).',
             'invalid_coupon'             => 'Invalid coupon code.',
             'order_already_placed'       => 'Order already placed.',
             'order_placed'               => 'Order placed successfully',

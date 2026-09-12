@@ -458,6 +458,8 @@ return [
             'cart_empty'                 => 'السلة فارغة.',
             'address_not_found'          => 'العنوان غير موجود.',
             'cod_unavailable'            => 'الدفع عند الاستلام غير متاح لموقعك.',
+            'cod_limit_exceeded'         => 'إجمالي سلتك يتجاوز الحد الأقصى المسموح به للدفع عند الاستلام (:limit).',
+            'cod_supermall_limit_exceeded' => 'منتجات سوبر مول في سلتك تتجاوز الحد الأقصى المسموح به للدفع عند الاستلام (:limit).',
             'invalid_coupon'             => 'رمز الكوبون غير صالح.',
             'order_already_placed'       => 'تم تقديم الطلب بالفعل.',
             'order_placed'               => 'تم تقديم الطلب بنجاح',

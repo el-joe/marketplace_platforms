@@ -42,6 +42,7 @@ use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
+use App\Services\Customer\CodValidationService;
 use App\Services\Customer\CityShippingSurchargeService;
 use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\WarehouseShippingSurchargeService;
@@ -72,6 +73,7 @@ class CheckoutController extends Controller
         private readonly ShippingSubsidyService $shippingSubsidyService,
         private readonly CouponService $couponService,
         private readonly LoyaltyService $loyaltyService,
+        private readonly CodValidationService $codValidationService,
     ) {}
 
     public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
@@ -190,6 +192,14 @@ class CheckoutController extends Controller
         }
 
         $cartItems = $cart->items->all();
+
+        if ($isCod) {
+            $codErrors = $this->codValidationService->validate($cartItems);
+            if (!empty($codErrors)) {
+                return ApiResponse::error($codErrors[0], ['errors' => $codErrors], 422);
+            }
+        }
+
         $totalItemsQty = collect($cartItems)->sum('quantity');
 
         // Build shipping per cart-item group using each item's selected_shipping_method_id
@@ -449,6 +459,13 @@ class CheckoutController extends Controller
 
         $cartItems = $cart->items->all();
 
+        if ($isCod) {
+            $codErrors = $this->codValidationService->validate($cartItems);
+            if (!empty($codErrors)) {
+                return ApiResponse::error($codErrors[0], ['errors' => $codErrors], 422);
+            }
+        }
+
         // Derive shipping per group from each item's selected_shipping_method_id
         $shippingMethodIds = collect($cartItems)
             ->pluck('selected_shipping_method_id')
@@ -661,6 +678,9 @@ class CheckoutController extends Controller
                     }
 
                     $warehouseId = $reservedInventories[$items->first()->id]->warehouse_id;
+
+                    $vendorModel = $items->first()->vendorListing->vendor;
+                    $totalCommission = $vendorModel->applyCommissionDiscount($totalCommission);
 
                     $subOrder = SubOrder::create([
                         'order_id' => $order->id,

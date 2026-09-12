@@ -16,7 +16,7 @@ class CurrencySeeder extends Seeder
             ['code' => 'KWD', 'name' => 'Kuwaiti Dinar', 'symbol' => 'د.ك', 'decimal_places' => 3, 'exchange_rate_to_base' => 0.307000],
             ['code' => 'QAR', 'name' => 'Qatari Riyal', 'symbol' => 'ر.ق', 'decimal_places' => 2, 'exchange_rate_to_base' => 3.640000],
             ['code' => 'BHD', 'name' => 'Bahraini Dinar', 'symbol' => 'ب.د', 'decimal_places' => 3, 'exchange_rate_to_base' => 0.376000],
-            ['code' => 'OMR', 'name' => 'Omani Rial', 'symbol' => 'ر.ع', 'decimal_places' => 3, 'exchange_rate_to_base' => 0.385000],
+            ['code' => 'OMR', 'name' => 'Omani Rial', 'symbol' => 'ر.ع.', 'decimal_places' => 3, 'exchange_rate_to_base' => 0.385000],
             ['code' => 'EGP', 'name' => 'Egyptian Pound', 'symbol' => 'ج.م', 'decimal_places' => 2, 'exchange_rate_to_base' => 48.600000],
             ['code' => 'JOD', 'name' => 'Jordanian Dinar', 'symbol' => 'د.أ', 'decimal_places' => 3, 'exchange_rate_to_base' => 0.709000],
             ['code' => 'MAD', 'name' => 'Moroccan Dirham', 'symbol' => 'د.م.', 'decimal_places' => 2, 'exchange_rate_to_base' => 9.980000],

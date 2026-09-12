@@ -1,10 +1,8 @@
 "use client";
 import React from "react";
 import { useTranslations } from "next-intl";
-import {
-  CurrencyCode,
-  getCurrencySymbol,
-} from "@/src/helpers/get-currency-symbol";
+import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
+import CurrencySymbol from "@/src/components/shared/CurrencySymbol";
 
 type Props = {
   currentPrice: number | string;
@@ -55,7 +53,7 @@ const Price = ({
       {/* current price */}
       <div className={`flex items-center ${currentPriceSize[size]}`}>
         <span className="font-[currency-font]">
-          {getCurrencySymbol(currency)}
+          <CurrencySymbol code={currency} />
         </span>
         <p>{currentPrice.toLocaleString()}</p>
       </div>

@@ -104,7 +104,7 @@ export const currencySymbols = {
   NOK: "kr",
   NPR: "₨",
   NZD: "$",
-  OMR: "﷼",
+  OMR: "ر.ع.",
   PAB: "B/.",
   PEN: "S/.",
   PGK: "K",

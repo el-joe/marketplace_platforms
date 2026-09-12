@@ -56,6 +56,9 @@ use Illuminate\Support\Facades\Route;
         // ── Unified navigation tree (public) ─────────────────────────────────
         Route::get('nav', [NavigationController::class, 'index'])->name('customer.nav.index');
 
+        // ── Active currencies with display symbol (public) ───────────────────
+        Route::get('currencies', [\App\Http\Controllers\Customer\CurrencyController::class, 'index'])->name('customer.currencies.index');
+
         // ── Product catalog (public) ──────────────────────────────────────────
         Route::prefix('products')->name('customer.products.')->group(function (): void {
             // ── Product detail shorthand: /products/v-{uuid} or /products/p-{uuid} ──────

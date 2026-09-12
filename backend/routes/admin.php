@@ -680,6 +680,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{code}/edit', [CurrencyController::class, 'edit'])->name('edit');
         Route::put('/{code}', [CurrencyController::class, 'update'])->name('update');
         Route::patch('/{code}/rate', [CurrencyController::class, 'updateRate'])->name('update-rate');
+        Route::post('/{code}/symbol-image', [CurrencyController::class, 'uploadSymbolImage'])->name('symbol-image.upload')->middleware('admin.permission:settings.edit');
+        Route::delete('/{code}/symbol-image', [CurrencyController::class, 'deleteSymbolImage'])->name('symbol-image.delete')->middleware('admin.permission:settings.edit');
     });
 
     // ─── Coupons ─────────────────────────────────────────────────────────────────

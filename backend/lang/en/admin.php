@@ -6306,6 +6306,14 @@ return [
         'rate_last_updated' => 'Rate last updated: :date (:diff)',
         'manual_override_notice' => 'This currency\'s exchange rate is manually overridden. The automatic sync job will skip it until you unset the override.',
         'edit_currency_title' => 'Edit Currency: :code',
+        'symbol_text_hint'  => 'Used when symbol type is Text.',
+        'symbol_type'       => 'Symbol Type',
+        'symbol_type_text'  => 'Text',
+        'symbol_type_image' => 'Image (SVG/PNG)',
+        'symbol_image'      => 'Symbol Image',
+        'no_symbol_image_yet' => 'No image uploaded yet.',
+        'uploading'         => 'Uploading',
+        'symbol_image_hint' => 'Used when symbol type is Image, e.g. an official currency glyph as SVG/PNG. Max 512KB.',
     ],
 
     // ─── Payment Methods ─────────────────────────────────────────────────────
