@@ -429,6 +429,110 @@
                     </button>
                 </form>
             @endif
+
+            {{-- Custom Fields, Add-ons, Order Notes & Size Guide --}}
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 mt-6"
+                x-data="customizationSection({
+                    listingId: '{{ $listing->id }}',
+                    hasOrderNotes: {{ $listing->has_order_notes ? 'true' : 'false' }},
+                    sizeGuideUrl: @js($listing->size_guide_image_url),
+                    customFields: @js($listing->customFields),
+                    addonGroups: @js($listing->addonGroups),
+                })">
+                <h3 class="font-semibold text-gray-800">تخصيص المنتج (قياسات، إضافات، ملاحظات)</h3>
+
+                {{-- Order notes toggle --}}
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" x-model="hasOrderNotes" @change="saveSettings()"
+                        class="rounded border-gray-300 text-yellow-500 focus:ring-yellow-400">
+                    <span class="text-sm text-gray-700">السماح للعميل بإضافة ملاحظة نصية عند الشراء</span>
+                </label>
+
+                {{-- Size guide image --}}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">صورة دليل المقاسات</label>
+                    <div class="flex items-center gap-3">
+                        <template x-if="sizeGuideUrl">
+                            <img :src="sizeGuideUrl" class="w-16 h-16 rounded-lg border border-gray-200 object-cover">
+                        </template>
+                        <input type="file" accept="image/png,image/jpeg,image/webp" @change="uploadSizeGuide($event)"
+                            class="text-sm">
+                        <button type="button" x-show="sizeGuideUrl" @click="deleteSizeGuide()"
+                            class="text-xs text-red-500 hover:underline">إزالة</button>
+                    </div>
+                </div>
+
+                {{-- Custom fields --}}
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">الحقول المخصصة (مثل: القياسات)</label>
+                        <button type="button" @click="addCustomField()" class="text-xs text-yellow-600 hover:underline">+ إضافة حقل</button>
+                    </div>
+                    <div class="space-y-2">
+                        <template x-for="(field, idx) in customFields" :key="field.id || idx">
+                            <div class="border border-gray-200 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+                                <input type="text" x-model="field.label_en" placeholder="Label (EN)" class="sm:col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+                                <select x-model="field.field_type" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+                                    <option value="text">Text</option>
+                                    <option value="number">Number</option>
+                                    <option value="textarea">Textarea</option>
+                                    <option value="date">Date</option>
+                                </select>
+                                <input type="text" x-model="field.unit" placeholder="Unit (cm, kg…)" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <label class="flex items-center gap-1 text-xs text-gray-600">
+                                        <input type="checkbox" x-model="field.is_required"> مطلوب
+                                    </label>
+                                    <button type="button" @click="saveCustomField(field, idx)" class="text-xs text-green-600 hover:underline">حفظ</button>
+                                    <button type="button" @click="removeCustomField(field, idx)" class="text-xs text-red-500 hover:underline">حذف</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Add-on groups --}}
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">مجموعات الإضافات</label>
+                        <button type="button" @click="addAddonGroup()" class="text-xs text-yellow-600 hover:underline">+ إضافة مجموعة</button>
+                    </div>
+                    <div class="space-y-3">
+                        <template x-for="(group, gIdx) in addonGroups" :key="group.id || gIdx">
+                            <div class="border border-gray-200 rounded-xl p-3 space-y-2">
+                                <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                                    <input type="text" x-model="group.name_en" placeholder="Group name (EN)" class="sm:col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+                                    <select x-model="group.selection_type" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+                                        <option value="single">اختيار واحد</option>
+                                        <option value="multiple">اختيار متعدد</option>
+                                    </select>
+                                    <div class="flex items-center gap-2">
+                                        <label class="flex items-center gap-1 text-xs text-gray-600">
+                                            <input type="checkbox" x-model="group.is_required"> مطلوب
+                                        </label>
+                                        <button type="button" @click="saveAddonGroup(group, gIdx)" class="text-xs text-green-600 hover:underline">حفظ</button>
+                                        <button type="button" @click="removeAddonGroup(group, gIdx)" class="text-xs text-red-500 hover:underline">حذف</button>
+                                    </div>
+                                </div>
+
+                                <div class="ps-4 space-y-1.5" x-show="group.id">
+                                    <template x-for="(option, oIdx) in (group.options || [])" :key="option.id || oIdx">
+                                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                                            <input type="text" x-model="option.name_en" placeholder="Option (EN)" class="sm:col-span-2 border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+                                            <input type="number" x-model.number="option.extra_price" min="0" placeholder="Extra price (fils/cents)" class="border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+                                            <div class="flex items-center gap-2">
+                                                <button type="button" @click="saveAddonOption(group, option, oIdx)" class="text-xs text-green-600 hover:underline">حفظ</button>
+                                                <button type="button" @click="removeAddonOption(group, option, oIdx)" class="text-xs text-red-500 hover:underline">حذف</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <button type="button" @click="addAddonOption(group)" class="text-xs text-yellow-600 hover:underline">+ إضافة خيار</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -472,6 +576,104 @@
                 },
                 init() {
                     this.fetchInfluencerFee();
+                },
+            };
+        }
+
+        function customizationSection(config) {
+            return {
+                listingId: config.listingId,
+                hasOrderNotes: config.hasOrderNotes,
+                sizeGuideUrl: config.sizeGuideUrl,
+                customFields: config.customFields || [],
+                addonGroups: config.addonGroups || [],
+                csrfToken: document.querySelector('meta[name="csrf-token"]').content,
+
+                baseUrl(path) {
+                    return '{{ url("listings") }}/' + this.listingId + path;
+                },
+                async request(method, path, body, isForm = false) {
+                    const options = {
+                        method,
+                        headers: { 'X-CSRF-TOKEN': this.csrfToken, 'Accept': 'application/json' },
+                    };
+                    if (body && !isForm) {
+                        options.headers['Content-Type'] = 'application/json';
+                        options.body = JSON.stringify(body);
+                    } else if (body) {
+                        options.body = body;
+                    }
+                    const res = await fetch(this.baseUrl(path), options);
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.message || 'حدث خطأ ما.');
+                        throw new Error('request_failed');
+                    }
+                    return res.json();
+                },
+                async saveSettings() {
+                    await this.request('POST', '/settings', { has_order_notes: this.hasOrderNotes });
+                },
+                async uploadSizeGuide(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const form = new FormData();
+                    form.append('file', file);
+                    const data = await this.request('POST', '/size-guide', form, true);
+                    this.sizeGuideUrl = data.data.size_guide_image_url;
+                },
+                async deleteSizeGuide() {
+                    await this.request('DELETE', '/size-guide');
+                    this.sizeGuideUrl = null;
+                },
+                addCustomField() {
+                    this.customFields.push({ label_en: '', field_type: 'text', unit: '', is_required: true });
+                },
+                async saveCustomField(field, idx) {
+                    const payload = {
+                        label_en: field.label_en, label_ar: field.label_ar, field_type: field.field_type,
+                        unit: field.unit, is_required: !!field.is_required,
+                    };
+                    const data = field.id
+                        ? await this.request('PUT', '/custom-fields/' + field.id, payload)
+                        : await this.request('POST', '/custom-fields', payload);
+                    this.customFields[idx] = data.data;
+                },
+                async removeCustomField(field, idx) {
+                    if (field.id) await this.request('DELETE', '/custom-fields/' + field.id);
+                    this.customFields.splice(idx, 1);
+                },
+                addAddonGroup() {
+                    this.addonGroups.push({ name_en: '', selection_type: 'single', is_required: false, options: [] });
+                },
+                async saveAddonGroup(group, idx) {
+                    const payload = {
+                        name_en: group.name_en, name_ar: group.name_ar,
+                        selection_type: group.selection_type, is_required: !!group.is_required,
+                    };
+                    const data = group.id
+                        ? await this.request('PUT', '/addon-groups/' + group.id, payload)
+                        : await this.request('POST', '/addon-groups', payload);
+                    this.addonGroups[idx] = { ...data.data, options: group.options || [] };
+                },
+                async removeAddonGroup(group, idx) {
+                    if (group.id) await this.request('DELETE', '/addon-groups/' + group.id);
+                    this.addonGroups.splice(idx, 1);
+                },
+                addAddonOption(group) {
+                    group.options = group.options || [];
+                    group.options.push({ name_en: '', extra_price: 0 });
+                },
+                async saveAddonOption(group, option, idx) {
+                    const payload = { name_en: option.name_en, name_ar: option.name_ar, extra_price: option.extra_price || 0 };
+                    const data = option.id
+                        ? await this.request('PUT', '/addon-groups/' + group.id + '/options/' + option.id, payload)
+                        : await this.request('POST', '/addon-groups/' + group.id + '/options', payload);
+                    group.options[idx] = data.data;
+                },
+                async removeAddonOption(group, option, idx) {
+                    if (option.id) await this.request('DELETE', '/addon-groups/' + group.id + '/options/' + option.id);
+                    group.options.splice(idx, 1);
                 },
             };
         }

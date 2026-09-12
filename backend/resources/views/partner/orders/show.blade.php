@@ -121,6 +121,49 @@
                                 @endif
                             </div>
                         </div>
+                        @if($item->customInputs->isNotEmpty())
+                            @php
+                                $orderNote = $item->customInputs->firstWhere('input_type', 'order_note');
+                                $customFieldInputs = $item->customInputs->where('input_type', 'custom_field');
+                                $addonInputs = $item->customInputs->where('input_type', 'addon');
+                            @endphp
+                            <div class="ms-[4.5rem] -mt-2 mb-3 bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2">
+                                @if($customFieldInputs->isNotEmpty())
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 mb-1">{{ __('partner.orders.custom_fields') }}</p>
+                                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                                            @foreach($customFieldInputs as $input)
+                                                <div class="flex justify-between sm:block text-xs">
+                                                    <dt class="text-gray-500">{{ $input->label_ar ?? $input->label_en }}</dt>
+                                                    <dd class="text-gray-800 font-medium">{{ $input->value_text }}</dd>
+                                                </div>
+                                            @endforeach
+                                        </dl>
+                                    </div>
+                                @endif
+                                @if($addonInputs->isNotEmpty())
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 mb-1">{{ __('partner.orders.addons') }}</p>
+                                        <ul class="text-xs text-gray-800 space-y-0.5">
+                                            @foreach($addonInputs as $input)
+                                                <li class="flex justify-between">
+                                                    <span>{{ $input->label_ar ?? $input->label_en }}</span>
+                                                    @if(($input->extra_price ?? 0) > 0)
+                                                        <span class="text-gray-500">+{{ number_format($input->extra_price, 2) }} {{ $currency }}</span>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                                @if($orderNote)
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-600 mb-1">{{ __('partner.orders.order_note') }}</p>
+                                        <p class="text-xs text-gray-800">{{ $orderNote->value_text }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                     @endforeach
                 </div>
             </div>

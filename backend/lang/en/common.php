@@ -473,6 +473,10 @@ return [
             'shipping_methods_retrieved' => 'Shipping methods retrieved',
             'preview_ready'              => 'Checkout preview ready',
             'listing_not_available'      => 'Listing :id is no longer available.',
+            'custom_field_required'      => 'Please provide a value for ":label".',
+            'addon_group_required'       => 'Please select an option for ":name".',
+            'addon_group_single_choice'  => 'Only one option may be selected for ":name".',
+            'order_notes_not_supported'  => 'This seller does not accept order notes for this item.',
             'insufficient_stock_available' => 'Insufficient stock for one or more items. Only :available unit(s) available.',
         ],
 

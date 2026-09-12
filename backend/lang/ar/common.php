@@ -473,6 +473,10 @@ return [
             'shipping_methods_retrieved' => 'تم استرجاع طرق الشحن',
             'preview_ready'              => 'معاينة الدفع جاهزة',
             'listing_not_available'      => 'الإعلان :id لم يعد متاحًا.',
+            'custom_field_required'      => 'يرجى إدخال قيمة لـ ":label".',
+            'addon_group_required'       => 'يرجى اختيار خيار لـ ":name".',
+            'addon_group_single_choice'  => 'يمكن اختيار خيار واحد فقط لـ ":name".',
+            'order_notes_not_supported'  => 'هذا البائع لا يقبل ملاحظات على هذا المنتج.',
             'insufficient_stock_available' => 'المخزون غير كافٍ لعنصر واحد أو أكثر. يتوفر فقط :available وحدة.',
         ],
 

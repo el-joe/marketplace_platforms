@@ -1809,6 +1809,33 @@ CREATE TABLE `customer_receivers` (
   CONSTRAINT `customer_receivers_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `customer_special_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_special_requests` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `customer_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `city_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `title_en` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `title_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description_en` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description_ar` text COLLATE utf8mb4_unicode_ci,
+  `budget` bigint DEFAULT NULL COMMENT 'Customer''s budget. BIGINT base-currency. No /100.',
+  `budget_currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('open','in_progress','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open',
+  `brokers_notified` smallint unsigned NOT NULL DEFAULT '0' COMMENT 'Count of brokers auto-notified on creation',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `customer_special_requests_customer_id_foreign` (`customer_id`),
+  KEY `customer_special_requests_city_id_foreign` (`city_id`),
+  KEY `customer_special_requests_category_id_city_id_status_index` (`category_id`,`city_id`,`status`),
+  CONSTRAINT `customer_special_requests_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `customer_special_requests_city_id_foreign` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `customer_special_requests_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `customer_wallets`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -3239,6 +3266,66 @@ CREATE TABLE `marketer_commission_country_settings` (
   CONSTRAINT `marketer_commission_country_settings_updated_by_admin_id_foreign` FOREIGN KEY (`updated_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `marketer_contract_acceptances`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `marketer_contract_acceptances` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `marketer_contract_version_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `customer_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `accepted_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `order_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `mca_customer_version_index` (`customer_id`,`marketer_contract_version_id`),
+  KEY `marketer_contract_acceptances_order_id_index` (`order_id`),
+  KEY `mca_version_foreign` (`marketer_contract_version_id`),
+  CONSTRAINT `marketer_contract_acceptances_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `marketer_contract_acceptances_order_id_foreign` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `mca_version_foreign` FOREIGN KEY (`marketer_contract_version_id`) REFERENCES `marketer_contract_versions` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `marketer_contract_versions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `marketer_contract_versions` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `marketer_contract_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `version_number` int unsigned NOT NULL,
+  `content_type` enum('pdf','text') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `file_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Storage path for PDF contracts',
+  `text_content` longtext COLLATE utf8mb4_unicode_ci COMMENT 'For text/HTML contracts',
+  `title_en` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `title_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `uploaded_by_admin_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `mcv_contract_version_unique` (`marketer_contract_id`,`version_number`),
+  KEY `mcv_contract_active_index` (`marketer_contract_id`,`is_active`),
+  KEY `marketer_contract_versions_uploaded_by_admin_id_foreign` (`uploaded_by_admin_id`),
+  CONSTRAINT `marketer_contract_versions_marketer_contract_id_foreign` FOREIGN KEY (`marketer_contract_id`) REFERENCES `marketer_contracts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `marketer_contract_versions_uploaded_by_admin_id_foreign` FOREIGN KEY (`uploaded_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `marketer_contracts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `marketer_contracts` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `marketer_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `current_version` int unsigned NOT NULL DEFAULT '0',
+  `is_required` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'If true, customer must accept before proceeding',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `marketer_contracts_marketer_id_unique` (`marketer_id`),
+  CONSTRAINT `marketer_contracts_marketer_id_foreign` FOREIGN KEY (`marketer_id`) REFERENCES `marketers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `marketer_influencer_fee_country_settings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -3333,13 +3420,20 @@ CREATE TABLE `marketer_profiles` (
   `waist_cm` decimal(5,1) DEFAULT NULL,
   `height_cm` decimal(5,1) DEFAULT NULL,
   `measurements_notes` text COLLATE utf8mb4_unicode_ci,
+  `broker_category_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `broker_city_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `broker_serves_all_cities` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'If true, broker_city_id is ignored and broker serves all cities',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `marketer_profiles_vendor_id_unique` (`marketer_id`),
   UNIQUE KEY `marketer_profiles_profile_slug_unique` (`profile_slug`),
   KEY `marketer_profiles_banner_file_id_foreign` (`banner_file_id`),
+  KEY `marketer_profiles_broker_category_id_foreign` (`broker_category_id`),
+  KEY `marketer_profiles_broker_city_id_foreign` (`broker_city_id`),
   CONSTRAINT `marketer_profiles_banner_file_id_foreign` FOREIGN KEY (`banner_file_id`) REFERENCES `files` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `marketer_profiles_broker_category_id_foreign` FOREIGN KEY (`broker_category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `marketer_profiles_broker_city_id_foreign` FOREIGN KEY (`broker_city_id`) REFERENCES `cities` (`id`) ON DELETE SET NULL,
   CONSTRAINT `marketer_profiles_marketer_id_foreign` FOREIGN KEY (`marketer_id`) REFERENCES `marketers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3478,6 +3572,30 @@ CREATE TABLE `notifications` (
   KEY `notifications_created_at_index` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `order_item_custom_inputs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `order_item_custom_inputs` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `order_item_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_listing_custom_field_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `vendor_listing_addon_option_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `input_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '"custom_field", "addon", or "order_note"',
+  `label_en` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `label_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `value_text` text COLLATE utf8mb4_unicode_ci COMMENT 'Customer-entered value for custom fields / order notes',
+  `extra_price` bigint DEFAULT NULL COMMENT 'Snapshot of the addon option extra price at order time, BASE CURRENCY CENTS/FILS. No decimals.',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `order_item_custom_inputs_vendor_listing_custom_field_id_foreign` (`vendor_listing_custom_field_id`),
+  KEY `order_item_custom_inputs_vendor_listing_addon_option_id_foreign` (`vendor_listing_addon_option_id`),
+  KEY `order_item_custom_inputs_order_item_id_index` (`order_item_id`),
+  KEY `order_item_custom_inputs_order_item_id_input_type_index` (`order_item_id`,`input_type`),
+  CONSTRAINT `order_item_custom_inputs_vendor_listing_addon_option_id_foreign` FOREIGN KEY (`vendor_listing_addon_option_id`) REFERENCES `vendor_listing_addon_options` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `order_item_custom_inputs_vendor_listing_custom_field_id_foreign` FOREIGN KEY (`vendor_listing_custom_field_id`) REFERENCES `vendor_listing_custom_fields` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `order_items`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -3567,6 +3685,7 @@ CREATE TABLE `orders` (
   `coupon_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `coupon_code_used` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_method` enum('card','wallet','cod','bnpl','bank_transfer') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `marketer_contract_acceptance_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `payment_status` enum('pending','authorized','captured','failed','refunded','partially_refunded') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `shipping_address_snapshot` json NOT NULL,
   `billing_address_snapshot` json DEFAULT NULL,
@@ -3588,7 +3707,9 @@ CREATE TABLE `orders` (
   KEY `orders_country_id_index` (`country_id`),
   KEY `orders_customer_placed_at_index` (`customer_id`,`placed_at`),
   KEY `orders_customer_status_index` (`customer_id`,`status`),
-  CONSTRAINT `orders_country_id_foreign` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE SET NULL
+  KEY `orders_marketer_contract_acceptance_id_foreign` (`marketer_contract_acceptance_id`),
+  CONSTRAINT `orders_country_id_foreign` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `orders_marketer_contract_acceptance_id_foreign` FOREIGN KEY (`marketer_contract_acceptance_id`) REFERENCES `marketer_contract_acceptances` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `packaging_supplies`;
@@ -6205,6 +6326,63 @@ CREATE TABLE `vendor_exceptional_zone_alerts` (
   CONSTRAINT `vendor_exceptional_zone_alerts_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `vendor_listing_addon_groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_listing_addon_groups` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_listing_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name_en` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'E.g. "Gift wrapping", "Engraving"',
+  `name_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `selection_type` enum('single','multiple') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'single' COMMENT 'single = radio (choose one option), multiple = checkboxes',
+  `is_required` tinyint(1) NOT NULL DEFAULT '0',
+  `position` smallint unsigned NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `vendor_listing_addon_groups_vendor_listing_id_position_index` (`vendor_listing_id`,`position`),
+  CONSTRAINT `vendor_listing_addon_groups_vendor_listing_id_foreign` FOREIGN KEY (`vendor_listing_id`) REFERENCES `vendor_listings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `vendor_listing_addon_options`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_listing_addon_options` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `addon_group_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name_en` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `extra_price` bigint NOT NULL DEFAULT '0' COMMENT 'Additional price for this option, BASE CURRENCY CENTS/FILS. No decimals.',
+  `is_default` tinyint(1) NOT NULL DEFAULT '0',
+  `position` smallint unsigned NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `vendor_listing_addon_options_addon_group_id_position_index` (`addon_group_id`,`position`),
+  CONSTRAINT `vendor_listing_addon_options_addon_group_id_foreign` FOREIGN KEY (`addon_group_id`) REFERENCES `vendor_listing_addon_groups` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `vendor_listing_custom_fields`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_listing_custom_fields` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_listing_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `label_en` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'E.g. "Chest measurement (cm)" for made-to-measure items',
+  `label_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `field_type` enum('text','number','textarea','date') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'text',
+  `placeholder_en` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `placeholder_ar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `unit` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'E.g. "cm", "kg" — shown next to the input',
+  `is_required` tinyint(1) NOT NULL DEFAULT '1',
+  `position` smallint unsigned NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `vendor_listing_custom_fields_vendor_listing_id_position_index` (`vendor_listing_id`,`position`),
+  CONSTRAINT `vendor_listing_custom_fields_vendor_listing_id_foreign` FOREIGN KEY (`vendor_listing_id`) REFERENCES `vendor_listings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `vendor_listings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -6226,6 +6404,8 @@ CREATE TABLE `vendor_listings` (
   `status` enum('draft','pending_review','active','paused','rejected','out_of_stock','archived') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `rejection_reason` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `max_order_quantity` int DEFAULT NULL,
+  `has_order_notes` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether the customer may attach a free-text note to this listing at checkout',
+  `size_guide_image_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Optional size/measurement guide image shown alongside custom fields',
   `low_stock_threshold` int NOT NULL DEFAULT '5',
   `buy_box_eligible` tinyint(1) NOT NULL DEFAULT '1',
   `buy_box_won_at` timestamp NULL DEFAULT NULL,
@@ -7435,3 +7615,14 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (494,'2026_09_12_00
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (495,'2026_09_12_000010_add_ad_price_fields_to_marketer_profiles_table',63);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (496,'2026_09_12_000011_add_influencer_measurements_to_marketer_profiles_table',63);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (497,'2026_09_12_000012_create_marketer_category_commissions_table',63);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (502,'2026_09_12_000013_create_marketer_contracts_table',64);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (503,'2026_09_12_000014_create_marketer_contract_versions_table',64);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (504,'2026_09_12_000015_create_marketer_contract_acceptances_table',64);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (505,'2026_09_12_000016_add_contract_acceptance_to_orders_table',64);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (506,'2026_09_12_000017_add_broker_specialization_to_marketer_profiles_table',64);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (507,'2026_09_12_000018_create_customer_special_requests_table',64);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (508,'2026_09_12_000019_add_custom_inputs_settings_to_vendor_listings_table',65);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (509,'2026_09_12_000020_create_vendor_listing_custom_fields_table',65);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (510,'2026_09_12_000021_create_vendor_listing_addon_groups_table',65);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (511,'2026_09_12_000022_create_vendor_listing_addon_options_table',66);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (512,'2026_09_12_000023_create_order_item_custom_inputs_table',66);

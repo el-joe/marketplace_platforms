@@ -32,6 +32,7 @@ use App\Exceptions\InsufficientWalletBalanceException;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemCustomInput;
 use App\Models\PaymentTransaction;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
@@ -370,6 +371,8 @@ class CheckoutController extends Controller
             'items.vendorListing.productVariant.product.brand',
             'items.vendorListing.productVariant.product.images',
             'items.vendorListing.warehouseInventories',
+            'items.vendorListing.customFields',
+            'items.vendorListing.addonGroups.options',
             // Admin listing (platform stock)
             'items.adminListing.productVariant.product.category',
             'items.adminListing.productVariant.product.brand',
@@ -544,6 +547,9 @@ class CheckoutController extends Controller
                 $gatewayCode, $isCod, $isWallet, $methodConfig
             ) {
                 $vendorShippingMap = $vendorShipping['per_vendor'];
+                $customInputsByListing = collect($validated['custom_inputs'] ?? [])
+                    ->keyBy('listing_id')
+                    ->all();
                 $order = Order::create([
                     'order_number' => $this->generateOrderNumber(),
                     'customer_id' => $customer->id,
@@ -718,6 +724,8 @@ class CheckoutController extends Controller
                             'fulfillment_status' => 'pending',
                             'return_eligible_until' => null,
                         ]);
+
+                        $this->persistCustomInputs($orderItem, $listing, $customInputsByListing[$listing->id] ?? null);
 
                         if (isset($warrantySelections[$cartItem->id])) {
                             $plan = $warrantySelections[$cartItem->id]['plan'];
@@ -1083,6 +1091,92 @@ class CheckoutController extends Controller
             'latitude' => $address->latitude,
             'longitude' => $address->longitude,
         ];
+    }
+
+    /**
+     * Validates and persists the customer's custom field / add-on / order-note
+     * answers for a single order item, based on the vendor listing's configured
+     * customization options. Throws \DomainException on missing required fields,
+     * which the caller catches and converts to a 422 response (same pattern used
+     * for insufficient-stock failures earlier in this same transaction).
+     */
+    private function persistCustomInputs(OrderItem $orderItem, VendorListing $listing, ?array $submitted): void
+    {
+        $submittedFields = collect($submitted['fields'] ?? [])->keyBy('field_id');
+        $submittedAddonOptionIds = collect($submitted['addon_options'] ?? []);
+        $orderNote = $submitted['order_note'] ?? null;
+
+        foreach ($listing->customFields as $field) {
+            $answer = $submittedFields->get($field->id);
+            $value = $answer['value'] ?? null;
+
+            if ($field->is_required && ($value === null || trim((string) $value) === '')) {
+                throw new \DomainException(
+                    __('common.exceptions.checkout.custom_field_required', ['label' => $field->label_en])
+                );
+            }
+
+            if ($value === null || trim((string) $value) === '') {
+                continue;
+            }
+
+            OrderItemCustomInput::create([
+                'id' => (string) Str::uuid(),
+                'order_item_id' => $orderItem->id,
+                'vendor_listing_custom_field_id' => $field->id,
+                'input_type' => 'custom_field',
+                'label_en' => $field->label_en,
+                'label_ar' => $field->label_ar,
+                'value_text' => $value,
+            ]);
+        }
+
+        foreach ($listing->addonGroups as $group) {
+            $selectedOptions = $group->options->filter(
+                fn($option) => $submittedAddonOptionIds->contains($option->id)
+            );
+
+            if ($group->is_required && $selectedOptions->isEmpty()) {
+                throw new \DomainException(
+                    __('common.exceptions.checkout.addon_group_required', ['name' => $group->name_en])
+                );
+            }
+
+            if ($group->selection_type === 'single' && $selectedOptions->count() > 1) {
+                throw new \DomainException(
+                    __('common.exceptions.checkout.addon_group_single_choice', ['name' => $group->name_en])
+                );
+            }
+
+            foreach ($selectedOptions as $option) {
+                OrderItemCustomInput::create([
+                    'id' => (string) Str::uuid(),
+                    'order_item_id' => $orderItem->id,
+                    'vendor_listing_addon_option_id' => $option->id,
+                    'input_type' => 'addon',
+                    'label_en' => $group->name_en.': '.$option->name_en,
+                    'label_ar' => (! empty($group->name_ar) || ! empty($option->name_ar))
+                        ? trim(($group->name_ar ?? '').': '.($option->name_ar ?? ''), ': ')
+                        : null,
+                    'extra_price' => $option->extra_price,
+                ]);
+            }
+        }
+
+        if ($orderNote !== null && trim($orderNote) !== '') {
+            if (! $listing->has_order_notes) {
+                throw new \DomainException(
+                    __('common.exceptions.checkout.order_notes_not_supported')
+                );
+            }
+
+            OrderItemCustomInput::create([
+                'id' => (string) Str::uuid(),
+                'order_item_id' => $orderItem->id,
+                'input_type' => 'order_note',
+                'value_text' => $orderNote,
+            ]);
+        }
     }
 
     private function buildProductSnapshot(VendorListing $listing): array

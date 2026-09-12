@@ -39,6 +39,35 @@ class SellerListingResource extends JsonResource
             'stock_level'       => $stock > 10 ? 'high' : ($stock > 0 ? 'low' : 'out_of_stock'),
             'max_order_quantity' => $this->max_order_quantity,
             'is_buy_box_winner' => $this->score !== null && $this->score > 0,
+            'has_order_notes'   => (bool) $this->has_order_notes,
+            'size_guide_image_url' => $this->size_guide_image_url,
+            'custom_fields'     => $this->whenLoaded('customFields', fn() =>
+                $this->customFields->map(fn($f) => [
+                    'id'              => $f->id,
+                    'label'           => ['ar' => $f->label_ar, 'en' => $f->label_en],
+                    'field_type'      => $f->field_type,
+                    'placeholder'     => ['ar' => $f->placeholder_ar, 'en' => $f->placeholder_en],
+                    'unit'            => $f->unit,
+                    'is_required'     => (bool) $f->is_required,
+                    'position'        => (int) $f->position,
+                ])
+            ),
+            'addon_groups'      => $this->whenLoaded('addonGroups', fn() =>
+                $this->addonGroups->map(fn($g) => [
+                    'id'             => $g->id,
+                    'name'           => ['ar' => $g->name_ar, 'en' => $g->name_en],
+                    'selection_type' => $g->selection_type,
+                    'is_required'    => (bool) $g->is_required,
+                    'position'       => (int) $g->position,
+                    'options'        => $g->relationLoaded('options') ? $g->options->map(fn($o) => [
+                        'id'          => $o->id,
+                        'name'        => ['ar' => $o->name_ar, 'en' => $o->name_en],
+                        'extra_price' => (int) $o->extra_price,
+                        'is_default'  => (bool) $o->is_default,
+                        'position'    => (int) $o->position,
+                    ]) : [],
+                ])
+            ),
             'vendor_details'    => $this->vendor ? [
                 'rating_avg'              => (float) $this->vendor->store_rating_avg,
                 'rating_count'            => (int) $this->vendor->store_rating_count,
