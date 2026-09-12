@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdPackage;
+use App\Models\Currency;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,6 +15,7 @@ class AdPackageController extends Controller
     public function index(): View
     {
         $packages = AdPackage::ordered()->get();
+        $currencies = Currency::where('is_active', true)->orderBy('code')->get();
 
         return view('admin.ad-packages.index', [
             'breadcrumbs' => [
@@ -21,6 +23,7 @@ class AdPackageController extends Controller
                 ['label' => 'Nawi Ads'],
             ],
             'packages' => $packages,
+            'currencies' => $currencies,
         ]);
     }
 
@@ -32,11 +35,16 @@ class AdPackageController extends Controller
             'name_ar' => 'required|string|max:255',
             'description_en' => 'nullable|string',
             'description_ar' => 'nullable|string',
-            'price_monthly' => 'required|integer|min:0',
-            'currency' => 'required|string|size:3',
+            'price' => 'required|numeric|min:0',
+            'currency' => 'required|string|exists:currencies,code',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
         ]);
+
+        $currency = Currency::findOrFail($data['currency']);
+        unset($data['price']);
+        $data['currency'] = $currency->code;
+        $data['price_monthly'] = (int) round($request->input('price') * (10 ** $currency->decimal_places));
 
         $package = AdPackage::create($data);
 
@@ -50,11 +58,16 @@ class AdPackageController extends Controller
             'name_ar' => 'required|string|max:255',
             'description_en' => 'nullable|string',
             'description_ar' => 'nullable|string',
-            'price_monthly' => 'required|integer|min:0',
-            'currency' => 'required|string|size:3',
+            'price' => 'required|numeric|min:0',
+            'currency' => 'required|string|exists:currencies,code',
             'is_active' => 'boolean',
             'sort_order' => 'integer|min:0',
         ]);
+
+        $currency = Currency::findOrFail($data['currency']);
+        unset($data['price']);
+        $data['currency'] = $currency->code;
+        $data['price_monthly'] = (int) round($request->input('price') * (10 ** $currency->decimal_places));
 
         $adPackage->update($data);
 

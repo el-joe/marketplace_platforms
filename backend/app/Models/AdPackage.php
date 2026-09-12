@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AdPackage extends Model
@@ -45,9 +46,24 @@ class AdPackage extends Model
         return $this->tier === 'serious_featured';
     }
 
+    public function currencyModel(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'currency', 'code');
+    }
+
+    public function decimalPlaces(): int
+    {
+        return $this->currencyModel?->decimal_places ?? 2;
+    }
+
+    public function priceDecimal(): float
+    {
+        return $this->price_monthly / (10 ** $this->decimalPlaces());
+    }
+
     public function priceFormatted(): string
     {
-        return number_format($this->price_monthly, 2) . ' ' . $this->currency;
+        return number_format($this->priceDecimal(), $this->decimalPlaces()) . ' ' . $this->currency;
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────

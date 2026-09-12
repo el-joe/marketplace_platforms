@@ -35,7 +35,7 @@
                             </span>
                         </td>
                         <td class="px-4 py-3">{{ $sub->ends_at?->format('d M Y') }}</td>
-                        <td class="px-4 py-3">{{ number_format($sub->amount_paid) }} {{ $sub->currency }}</td>
+                        <td class="px-4 py-3">{{ $sub->amountFormatted() }}</td>
                         <td class="px-4 py-3 text-right">
                             @if ($sub->status === 'active')
                                 <button type="button" class="btn btn-xs btn-danger btn-cancel-sub" data-id="{{ $sub->id }}">Cancel</button>

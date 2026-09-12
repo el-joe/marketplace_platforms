@@ -30,13 +30,16 @@
                 </div>
 
                 <p class="text-2xl font-extrabold text-gray-900 mb-1">
-                    {{ number_format($package->price_monthly) }}
-                    <span class="text-sm font-medium text-gray-400">{{ $package->currency }}/mo</span>
+                    {{ $package->priceFormatted() }}
+                    <span class="text-sm font-medium text-gray-400">/mo</span>
                 </p>
 
                 <div class="flex gap-2 pt-3 border-t border-gray-100 mt-3">
                     <button type="button" class="flex-1 btn btn-ghost btn-xs btn-edit-package"
-                        data-package="{{ json_encode($package) }}">Edit</button>
+                        data-package="{{ json_encode(array_merge($package->toArray(), [
+                            'price' => $package->priceDecimal(),
+                            'decimal_places' => $package->decimalPlaces(),
+                        ])) }}">Edit</button>
                     <button type="button"
                         class="btn btn-xs btn-toggle-package {{ $package->is_active ? 'btn-warning' : 'btn-success' }}"
                         data-id="{{ $package->id }}">
@@ -81,12 +84,18 @@
                     <textarea id="pkg-desc-ar" rows="2" class="form-input w-full text-sm" dir="rtl"></textarea>
                 </div>
                 <div>
-                    <label class="label-sm">Price / month (smallest unit) <span class="text-red-500">*</span></label>
-                    <input type="number" id="pkg-price" class="form-input w-full text-sm">
+                    <label class="label-sm">Price / month <span class="text-red-500">*</span></label>
+                    <input type="number" id="pkg-price" class="form-input w-full text-sm" step="0.01" min="0" placeholder="e.g. 500.00">
                 </div>
                 <div>
                     <label class="label-sm">Currency <span class="text-red-500">*</span></label>
-                    <input type="text" id="pkg-currency" class="form-input w-full text-sm" value="AED" maxlength="3">
+                    <select id="pkg-currency" class="form-input w-full text-sm">
+                        @foreach ($currencies as $currency)
+                            <option value="{{ $currency->code }}" data-decimals="{{ $currency->decimal_places }}" {{ $currency->code === 'AED' ? 'selected' : '' }}>
+                                {{ $currency->code }} ({{ $currency->symbol }})
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label class="label-sm">Sort order</label>
@@ -117,6 +126,7 @@
                 ['name-en', 'name-ar', 'desc-en', 'desc-ar'].forEach(id => $('#pkg-' + id).val(''));
                 $('#pkg-price').val('');
                 $('#pkg-currency').val('AED');
+                $('#pkg-price').attr('step', 1 / Math.pow(10, $('#pkg-currency option:selected').data('decimals') ?? 2));
                 $('#pkg-sort-order').val('0');
                 $('#pkg-tier').prop('disabled', false);
                 $('#package-modal').modal('open');
@@ -131,13 +141,18 @@
                 $('#pkg-name-ar').val(p.name_ar);
                 $('#pkg-desc-en').val(p.description_en);
                 $('#pkg-desc-ar').val(p.description_ar);
-                $('#pkg-price').val(p.price_monthly);
                 $('#pkg-currency').val(p.currency);
+                $('#pkg-price').attr('step', 1 / Math.pow(10, p.decimal_places ?? 2));
+                $('#pkg-price').val(p.price);
                 $('#pkg-sort-order').val(p.sort_order ?? 0);
                 $('#package-modal').modal('open');
             });
 
             $('#package-modal-cancel').on('click', () => $('#package-modal').modal('close'));
+
+            $('#pkg-currency').on('change', function() {
+                $('#pkg-price').attr('step', 1 / Math.pow(10, $(this).find(':selected').data('decimals') ?? 2));
+            });
 
             $('#package-modal-save').on('click', function() {
                 const id = $('#pkg-id').val();
@@ -147,7 +162,7 @@
                     name_ar: $('#pkg-name-ar').val(),
                     description_en: $('#pkg-desc-en').val(),
                     description_ar: $('#pkg-desc-ar').val(),
-                    price_monthly: parseInt($('#pkg-price').val()) || 0,
+                    price: parseFloat($('#pkg-price').val()) || 0,
                     currency: $('#pkg-currency').val(),
                     sort_order: parseInt($('#pkg-sort-order').val()) || 0,
                 };

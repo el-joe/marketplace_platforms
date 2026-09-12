@@ -60,6 +60,13 @@ class VendorAdSubscription extends Model
         return $this->status === 'active' && $this->ends_at->isFuture();
     }
 
+    public function amountFormatted(): string
+    {
+        $decimals = Currency::find($this->currency)?->decimal_places ?? 2;
+
+        return number_format($this->amount_paid / (10 ** $decimals), $decimals) . ' ' . $this->currency;
+    }
+
     // ── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeActive($query)

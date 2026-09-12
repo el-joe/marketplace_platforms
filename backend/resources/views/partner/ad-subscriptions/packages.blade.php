@@ -13,8 +13,8 @@
                 <p class="text-sm font-semibold text-gray-800 mt-2">{{ $package->name_en }}</p>
                 <p class="text-xs text-gray-500 mt-1">{{ $package->description_en }}</p>
                 <p class="text-2xl font-extrabold text-gray-900 mt-3">
-                    {{ number_format($package->price_monthly) }}
-                    <span class="text-sm font-medium text-gray-400">{{ $package->currency }}/mo</span>
+                    {{ $package->priceFormatted() }}
+                    <span class="text-sm font-medium text-gray-400">/mo</span>
                 </p>
                 <button type="button" class="btn btn-primary btn-sm w-full mt-3 btn-choose-package"
                     data-id="{{ $package->id }}" data-tier="{{ $package->tier }}" data-name="{{ $package->name_en }}">
