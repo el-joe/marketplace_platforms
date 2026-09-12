@@ -19,7 +19,10 @@ function Breadcrumb({ list }: props) {
             <BreadcrumbItem className="text-lg">
               {!!e.href.trim().length ? (
                 <BreadcrumbLink
-                  className="text-xs md:text-sm lg:text-base"
+                  className={cn(
+                    "text-xs md:text-sm lg:text-base",
+                    i === list.length - 1 && "text-foreground",
+                  )}
                   render={<Link href={e.href} />}
                 >
                   {e.label}

@@ -129,7 +129,7 @@ export function useWishlist() {
   });
 
   const checkItem = useCallback(
-    (listingId: string) => checkWishlistItemService(listingId),
+    async (listingId: string) => await checkWishlistItemService(listingId),
     [],
   );
 
