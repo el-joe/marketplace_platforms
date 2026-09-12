@@ -12,8 +12,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const locale = await getLocale();
   const product = await getProduct(slug);
-  const title =
-    product.variant?.variant_name || product.product.name[locale];
+  const title = String(
+    product.variant?.variant_name || product.product.name[locale],
+  );
 
   return { title };
 }
