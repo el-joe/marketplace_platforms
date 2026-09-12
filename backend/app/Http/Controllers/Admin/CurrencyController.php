@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CurrencySymbolType;
 use App\Http\Controllers\Controller;
 use App\Jobs\UpdateExchangeRatesJob;
 use App\Models\Currency;
@@ -9,6 +10,8 @@ use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CurrencyController extends Controller
@@ -57,6 +60,7 @@ class CurrencyController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'symbol' => ['required', 'string', 'max:10'],
+            'symbol_type' => ['required', Rule::enum(CurrencySymbolType::class)],
             'decimal_places' => ['required', 'integer', 'min:0', 'max:4'],
             'exchange_rate_to_base' => ['required', 'numeric', 'min:0.000001'],
             'base_currency_code' => ['required', 'string', 'size:3'],
@@ -112,6 +116,45 @@ class CurrencyController extends Controller
         return response()->json([
             'message' => "{$currency->code} rate updated to {$data['rate']}.",
         ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // AJAX: Upload / remove the currency's image symbol
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function uploadSymbolImage(Request $request, string $code): JsonResponse
+    {
+        $request->validate([
+            'symbol_image' => ['required', 'image', 'max:512', 'mimes:png,jpg,jpeg,svg,webp'],
+        ]);
+
+        $currency = Currency::findOrFail(strtoupper($code));
+
+        if ($currency->symbol_image) {
+            Storage::disk('public')->delete($currency->symbol_image);
+        }
+
+        $path = $request->file('symbol_image')->store('currencies', 'public');
+
+        $currency->update(['symbol_image' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'symbol_image_url' => Storage::disk('public')->url($path),
+            'message' => "{$currency->code} symbol image updated.",
+        ]);
+    }
+
+    public function deleteSymbolImage(string $code): JsonResponse
+    {
+        $currency = Currency::findOrFail(strtoupper($code));
+
+        if ($currency->symbol_image) {
+            Storage::disk('public')->delete($currency->symbol_image);
+            $currency->update(['symbol_image' => null]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Symbol image removed.']);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

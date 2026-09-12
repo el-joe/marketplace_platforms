@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class LastClickAttributionService
 {
+    public function __construct(
+        private readonly MarketerCommissionRateService $commissionRates = new MarketerCommissionRateService(),
+    ) {}
+
     /**
      * Record a referral click from a referral code.
      * Called when a customer visits the referral link so it can be matched at checkout.
@@ -74,6 +78,19 @@ class LastClickAttributionService
                                 ? $setting->influencer_commission_amount
                                 : $setting->affiliate_commission_amount)
                             : 0;
+                    }
+
+                    // Final fallback: marketer × category commission rate override
+                    // (admin-configured per marketer, optionally per category).
+                    if ($commissionAmount == 0) {
+                        $categoryId = $campaign->vendorListing?->productVariant?->product?->category_id
+                            ?? $campaign->adminListing?->productVariant?->product?->category_id;
+
+                        $commissionAmount = $this->commissionRates->calculateCommissionAmount(
+                            $invitation->marketer_id,
+                            $categoryId,
+                            (int) $order->total
+                        );
                     }
                     break;
 

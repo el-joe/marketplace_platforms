@@ -213,6 +213,16 @@ class CheckoutCalculationService
             }
         }
 
+        if ($coupon->shipping_type_restriction !== \App\Enums\CouponShippingTypeRestriction::All) {
+            $mismatched = collect($cartItems)->contains(
+                fn ($item) => $this->resolveItemShippingType($item) !== $coupon->shipping_type_restriction->value
+            );
+
+            if ($mismatched) {
+                return ['discount' => 0, 'error' => 'This coupon is only valid for '.strtoupper($coupon->shipping_type_restriction->value).' shipping orders'];
+            }
+        }
+
         $applicableSubtotal = $this->resolveApplicableSubtotal($coupon, $subtotalCents, $cartItems);
 
         if ($applicableSubtotal <= 0) {
@@ -238,6 +248,19 @@ class CheckoutCalculationService
             'error' => null,
             'type' => $coupon->type?->value,
         ];
+    }
+
+    private function resolveItemShippingType(\App\Models\CartItem $item): string
+    {
+        if ($item->adminListing !== null) {
+            return 'fbn';
+        }
+
+        return match ($item->vendorListing?->fulfillment_model) {
+            'fbn' => 'fbn',
+            'cross_dock' => 'fbp',
+            default => 'fbm',
+        };
     }
 
     /**

@@ -61,6 +61,12 @@ Route::middleware('web')->group(function () {
         // Dashboard / statistics
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+        // Special requests (broker specialization matches)
+        Route::prefix('special-requests')->name('special-requests.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'index'])->name('index');
+            Route::get('{id}', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'show'])->name('show');
+        });
+
         // Notifications
         Route::prefix('notifications')->name('notifications.')
             ->controller(NotificationController::class)
@@ -76,6 +82,7 @@ Route::middleware('web')->group(function () {
         // Profile
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/ad-price', [ProfileController::class, 'updateAdPrice'])->name('profile.ad-price.update');
 
         // Campaign invitations
         Route::prefix('invitations')->name('invitations.')->group(function () {

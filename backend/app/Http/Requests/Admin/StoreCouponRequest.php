@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\CouponCustomerEligibility;
+use App\Enums\CouponShippingTypeRestriction;
 use App\Enums\CouponType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -54,6 +55,7 @@ class StoreCouponRequest extends FormRequest
             // Admin panel only manages platform/category scoped coupons; vendor/product
             // scopes belong to the vendor panel and are read-only here.
             'scope' => ['required', Rule::in(['platform', 'category'])],
+            'shipping_type_restriction' => ['nullable', Rule::enum(CouponShippingTypeRestriction::class)],
             'category_id' => [
                 Rule::when(fn () => $this->input('scope') === 'category', ['required'], ['nullable']),
                 'uuid', 'exists:categories,id',

@@ -124,8 +124,47 @@ class CouponService
         }
 
         $this->validateScope($coupon, $cart);
+        $this->validateShippingType($coupon, $cart);
 
         return $coupon;
+    }
+
+    /**
+     * Coupons restricted to a shipping method only apply when every item in
+     * the cart is fulfilled via that method.
+     */
+    protected function validateShippingType(Coupon $coupon, Cart $cart): void
+    {
+        if ($coupon->shipping_type_restriction === \App\Enums\CouponShippingTypeRestriction::All) {
+            return;
+        }
+
+        $items = $cart->items()->with(['vendorListing', 'adminListing'])->get();
+
+        $mismatched = $items->contains(function ($item) use ($coupon) {
+            return $this->resolveItemShippingType($item) !== $coupon->shipping_type_restriction->value;
+        });
+
+        if ($mismatched) {
+            throw ValidationException::withMessages([
+                'coupon' => __('This coupon is only valid for :type shipping orders', [
+                    'type' => strtoupper($coupon->shipping_type_restriction->value),
+                ]),
+            ]);
+        }
+    }
+
+    private function resolveItemShippingType(\App\Models\CartItem $item): string
+    {
+        if ($item->adminListing !== null) {
+            return 'fbn';
+        }
+
+        return match ($item->vendorListing?->fulfillment_model) {
+            'fbn' => 'fbn',
+            'cross_dock' => 'fbp',
+            default => 'fbm',
+        };
     }
 
     protected function validateScope(Coupon $coupon, Cart $cart): void

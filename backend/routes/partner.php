@@ -6,6 +6,7 @@ use App\Http\Controllers\Partner\CouponController;
 use App\Http\Controllers\Partner\DashboardController;
 use App\Http\Controllers\Partner\InventoryController;
 use App\Http\Controllers\Partner\ListingController;
+use App\Http\Controllers\Partner\ListingCustomizationController;
 use App\Http\Controllers\Partner\OrderController;
 use App\Http\Controllers\Partner\FlashSaleController;
 use App\Http\Controllers\Partner\PayoutController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Partner\WarehouseController;
 use App\Http\Controllers\Partner\AdsController;
 use App\Http\Controllers\Partner\AdSlotMarketController;
 use App\Http\Controllers\Partner\AdBookingController;
+use App\Http\Controllers\Partner\AdSubscriptionController as PartnerAdSubscriptionController;
 use App\Http\Controllers\Partner\ClassifiedListingController;
 use App\Http\Controllers\Partner\MarketerCampaignController;
 use App\Http\Controllers\NotificationController;
@@ -135,6 +137,27 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
             ->name('clear-cache')
             ->middleware('vendor.can:listings.view');
     });
+
+    // ── Listing customization (custom fields / add-ons / order notes / size guide) ──
+    Route::prefix('listings/{listing}')->name('listings.')->controller(ListingCustomizationController::class)
+        ->middleware(['vendor.type:product_vendor', 'vendor.can:listings.edit'])
+        ->group(function () {
+            Route::post('/settings', 'updateSettings')->name('settings.update');
+            Route::post('/size-guide', 'uploadSizeGuide')->name('size-guide.upload');
+            Route::delete('/size-guide', 'deleteSizeGuide')->name('size-guide.delete');
+
+            Route::post('/custom-fields', 'storeCustomField')->name('custom-fields.store');
+            Route::put('/custom-fields/{field}', 'updateCustomField')->name('custom-fields.update');
+            Route::delete('/custom-fields/{field}', 'destroyCustomField')->name('custom-fields.destroy');
+
+            Route::post('/addon-groups', 'storeAddonGroup')->name('addon-groups.store');
+            Route::put('/addon-groups/{group}', 'updateAddonGroup')->name('addon-groups.update');
+            Route::delete('/addon-groups/{group}', 'destroyAddonGroup')->name('addon-groups.destroy');
+
+            Route::post('/addon-groups/{group}/options', 'storeAddonOption')->name('addon-groups.options.store');
+            Route::put('/addon-groups/{group}/options/{option}', 'updateAddonOption')->name('addon-groups.options.update');
+            Route::delete('/addon-groups/{group}/options/{option}', 'destroyAddonOption')->name('addon-groups.options.destroy');
+        });
 
     // ── Inventory module ─────────────────────────────────────────────────────
     Route::prefix('inventory')->name('inventory.')->controller(InventoryController::class)->middleware('vendor.type:product_vendor')->group(function () {
@@ -423,6 +446,14 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::get('/{id}/quality-score', [AdsController::class, 'qualityScore'])->name('quality-score');
         Route::post('/{id}/pause',        [AdsController::class, 'pause'])->name('pause');
         Route::post('/{id}/resume',       [AdsController::class, 'resume'])->name('resume');
+    });
+
+    // ─── Nawi Ads (listing boost / popup packages) ──────────────────────────────
+    Route::prefix('ad-subscriptions')->name('ad-subscriptions.')->middleware('vendor.type:product_vendor')->group(function () {
+        Route::get('/', [PartnerAdSubscriptionController::class, 'index'])->name('index');
+        Route::get('/packages', [PartnerAdSubscriptionController::class, 'packages'])->name('packages');
+        Route::post('/subscribe', [PartnerAdSubscriptionController::class, 'subscribe'])->name('subscribe');
+        Route::post('/{subscription}/cancel', [PartnerAdSubscriptionController::class, 'cancel'])->name('cancel');
     });
 
     // ─── Ad Slots (AS-06) — new self-serve booking of admin-managed ad placements ────

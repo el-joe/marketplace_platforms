@@ -29,6 +29,9 @@ class VendorListing extends Model
             'declared_width_cm' => 'decimal:2',
             'declared_height_cm' => 'decimal:2',
             'campaign_enabled' => 'boolean',
+            'is_ad_boosted' => 'boolean',
+            'ad_boost_expires_at' => 'datetime',
+            'has_order_notes' => 'boolean',
         ];
     }
 
@@ -73,8 +76,12 @@ class VendorListing extends Model
         'declared_weight_grams',
         'declared_length_cm',
         'declared_width_cm',
+        'is_ad_boosted',
+        'ad_boost_expires_at',
         'declared_height_cm',
         'campaign_enabled',
+        'has_order_notes',
+        'size_guide_image_url',
     ];
 
     public function vendor(): BelongsTo
@@ -130,6 +137,16 @@ class VendorListing extends Model
     public function primaryShippingMethod(): BelongsTo
     {
         return $this->belongsTo(ShippingMethod::class, 'primary_shipping_method_id');
+    }
+
+    public function customFields(): HasMany
+    {
+        return $this->hasMany(VendorListingCustomField::class)->orderBy('position');
+    }
+
+    public function addonGroups(): HasMany
+    {
+        return $this->hasMany(VendorListingAddonGroup::class)->orderBy('position');
     }
 
     /**

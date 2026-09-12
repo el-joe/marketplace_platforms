@@ -66,11 +66,17 @@ class Order extends Model
         'loyalty_discount',
         'loyalty_points_used',
         'loyalty_points_earned',
+        'marketer_contract_acceptance_id',
     ];
 
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function contractAcceptance(): BelongsTo
+    {
+        return $this->belongsTo(MarketerContractAcceptance::class, 'marketer_contract_acceptance_id');
     }
 
     public function country(): BelongsTo

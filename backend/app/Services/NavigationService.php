@@ -585,6 +585,20 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => 'Nawi Ads',
+                        'route' => 'admin.ad-packages.index',
+                        'icon' => 'megaphone',
+                        'permission' => 'transactions.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => 'Ad Subscriptions',
+                        'route' => 'admin.ad-subscriptions.index',
+                        'icon' => 'chart-bar',
+                        'permission' => 'transactions.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.fbn_inbound'),
                         'route' => 'admin.fbn.inbound.index',
                         'icon' => 'inbox-stack',

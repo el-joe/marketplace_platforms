@@ -866,6 +866,8 @@ class ListingController extends Controller
             'productVariant.product.images',
             'warehouseInventories.warehouse',
             'country',
+            'customFields',
+            'addonGroups.options',
         ]);
 
         $fulfillmentModels = [

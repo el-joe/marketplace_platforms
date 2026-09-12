@@ -791,19 +791,32 @@ class ListingQueryService
     }
 
     /**
-     * Paginate active TravelPackage, optionally filtered by travel category.
+     * Paginate active TravelPackage, optionally filtered by travel category,
+     * destination country/city, and departure date range.
      */
-    public function paginateTravelPackages(?string $travelCategoryId, int $perPage = 20): LengthAwarePaginator
-    {
+    public function paginateTravelPackages(
+        ?string $travelCategoryId,
+        int $perPage = 20,
+        ?string $travelCountryId = null,
+        ?string $travelCityId = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+    ): LengthAwarePaginator {
         return TravelPackage::where('status', TravelPackageStatus::Active->value)
             ->where('departure_date', '>=', \Illuminate\Support\Carbon::today())
             ->when($travelCategoryId, fn($q) => $q->whereHas(
                 'categories',
                 fn($q2) => $q2->where('travel_categories.id', $travelCategoryId),
             ))
+            ->when($travelCountryId, fn($q) => $q->where('destination_travel_country_id', $travelCountryId))
+            ->when($travelCityId, fn($q) => $q->where('destination_travel_city_id', $travelCityId))
+            ->when($dateFrom, fn($q) => $q->where('departure_date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->where('departure_date', '<=', $dateTo))
             ->with([
                 'agency:id,name',
                 'categories:id,name_en,name_ar,slug',
+                'destinationCountry:id,name_en,name_ar',
+                'destinationCity:id,name_en,name_ar',
                 'media' => fn($q) => $q->orderBy('position')->limit(1),
             ])
             ->orderByDesc('departure_date')
@@ -829,6 +842,14 @@ class ListingQueryService
             ])->values()->all(),
             'destination_country' => $package->destination_country,
             'destination_city' => $package->destination_city,
+            'destination' => [
+                'country_id' => $package->destination_travel_country_id,
+                'country_en' => $package->destinationCountry?->name_en,
+                'country_ar' => $package->destinationCountry?->name_ar,
+                'city_id' => $package->destination_travel_city_id,
+                'city_en' => $package->destinationCity?->name_en,
+                'city_ar' => $package->destinationCity?->name_ar,
+            ],
             'departure_date' => $package->departure_date?->toDateString(),
             'return_date' => $package->return_date?->toDateString(),
             'duration_days' => $package->duration_days,

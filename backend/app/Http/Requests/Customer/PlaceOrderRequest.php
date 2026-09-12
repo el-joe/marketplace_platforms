@@ -29,6 +29,15 @@ class PlaceOrderRequest extends FormRequest
             'warranty_selections.*.listing_id'      => ['required_with:warranty_selections', 'uuid'],
             'warranty_selections.*.warranty_plan_id' => ['required_with:warranty_selections', 'uuid'],
             'loyalty_points_to_use'      => ['nullable', 'numeric', 'min:1'],
+            'contract_acceptance_id'     => ['nullable', 'uuid', 'exists:marketer_contract_acceptances,id'],
+            'custom_inputs'               => ['nullable', 'array'],
+            'custom_inputs.*.listing_id'  => ['required_with:custom_inputs', 'uuid'],
+            'custom_inputs.*.order_note'  => ['nullable', 'string', 'max:500'],
+            'custom_inputs.*.fields'      => ['nullable', 'array'],
+            'custom_inputs.*.fields.*.field_id' => ['required_with:custom_inputs.*.fields', 'uuid'],
+            'custom_inputs.*.fields.*.value'    => ['nullable', 'string', 'max:1000'],
+            'custom_inputs.*.addon_options'      => ['nullable', 'array'],
+            'custom_inputs.*.addon_options.*'    => ['uuid'],
         ];
     }
 

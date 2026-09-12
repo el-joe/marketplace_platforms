@@ -25,6 +25,7 @@ class Coupon extends Model
         'value',
         'currency',
         'scope',
+        'shipping_type_restriction',
         'vendor_id',
         'category_id',
         'min_order_amount',
@@ -48,6 +49,7 @@ class Coupon extends Model
     protected $casts = [
         'type' => \App\Enums\CouponType::class,
         'scope' => \App\Enums\CouponScope::class,
+        'shipping_type_restriction' => \App\Enums\CouponShippingTypeRestriction::class,
         'customer_eligibility' => \App\Enums\CouponCustomerEligibility::class,
         'terms_ar' => 'array',
         'terms_en' => 'array',

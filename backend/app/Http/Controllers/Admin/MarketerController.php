@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
+use App\Models\MarketerCategoryCommission;
 use Illuminate\Http\Request;
 
 class MarketerController extends Controller
@@ -38,9 +39,118 @@ class MarketerController extends Controller
             'approvedBy',
             'marketerProfile',
             'invitations.campaign.vendor',
+            'categoryCommissions.category',
         ]);
 
-        return view('admin.marketers.show', compact('marketer'));
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $cities = \App\Models\City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+
+        return view('admin.marketers.show', compact('marketer', 'categories', 'cities'));
+    }
+
+    /**
+     * Update the marketer profile's admin-editable fields: ad display price,
+     * the self-edit permission flag, and (for influencer marketers) the
+     * sample-size measurement fields.
+     */
+    public function updateProfile(Request $request, Marketer $marketer)
+    {
+        abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
+
+        $validated = $request->validate([
+            'ad_price'                => ['nullable', 'integer', 'min:0'],
+            'ad_price_currency'       => ['nullable', 'string', 'size:3'],
+            'can_self_edit_ad_price'  => ['nullable', 'boolean'],
+            'clothing_size'           => ['nullable', 'string', 'max:20'],
+            'shirt_size'              => ['nullable', 'string', 'max:20'],
+            'pants_size'              => ['nullable', 'string', 'max:20'],
+            'dress_size'              => ['nullable', 'string', 'max:20'],
+            'abaya_size'              => ['nullable', 'string', 'max:20'],
+            'shoe_size'               => ['nullable', 'string', 'max:10'],
+            'shoe_size_system'        => ['nullable', 'in:EU,US,UK'],
+            'chest_cm'                => ['nullable', 'numeric', 'min:0'],
+            'waist_cm'                => ['nullable', 'numeric', 'min:0'],
+            'height_cm'               => ['nullable', 'numeric', 'min:0'],
+            'measurements_notes'      => ['nullable', 'string', 'max:2000'],
+            'broker_category_id'      => ['nullable', 'uuid', 'exists:categories,id'],
+            'broker_city_id'          => ['nullable', 'uuid', 'exists:cities,id'],
+            'broker_serves_all_cities' => ['nullable', 'boolean'],
+        ]);
+
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+
+        $data = [
+            'ad_price'               => $validated['ad_price'] ?? 0,
+            'ad_price_currency'      => $validated['ad_price_currency'] ?? null,
+            'can_self_edit_ad_price' => $request->boolean('can_self_edit_ad_price'),
+        ];
+
+        // Sample-size measurement fields only apply to influencer marketers.
+        if ($marketer->isInfluencer()) {
+            $data += $request->only([
+                'clothing_size', 'shirt_size', 'pants_size', 'dress_size', 'abaya_size',
+                'shoe_size', 'shoe_size_system', 'chest_cm', 'waist_cm', 'height_cm', 'measurements_notes',
+            ]);
+        }
+
+        // Broker specialization (category + city) only applies to affiliate marketers.
+        if ($marketer->isAffiliate()) {
+            $data['broker_category_id']       = $validated['broker_category_id'] ?? null;
+            $data['broker_serves_all_cities'] = $request->boolean('broker_serves_all_cities');
+            $data['broker_city_id']           = $data['broker_serves_all_cities']
+                ? null
+                : ($validated['broker_city_id'] ?? null);
+        }
+
+        $profile->fill($data)->save();
+
+        return back()->with('success', 'تم حفظ بيانات البروفايل.');
+    }
+
+    /**
+     * Store or update a marketer × category commission override.
+     * category_id = null means "default rate for all categories".
+     */
+    public function storeCategoryCommission(Request $request, Marketer $marketer)
+    {
+        abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
+
+        $validated = $request->validate([
+            'category_id'     => ['nullable', 'uuid', 'exists:categories,id'],
+            'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $categoryId = $validated['category_id'] ?? null;
+
+        $existing = MarketerCategoryCommission::where('marketer_id', $marketer->id)
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'))
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'commission_rate'      => $validated['commission_rate'],
+                'updated_by_admin_id'  => auth('admin')->id(),
+            ]);
+        } else {
+            MarketerCategoryCommission::create([
+                'marketer_id'          => $marketer->id,
+                'category_id'          => $categoryId,
+                'commission_rate'      => $validated['commission_rate'],
+                'updated_by_admin_id'  => auth('admin')->id(),
+            ]);
+        }
+
+        return back()->with('success', 'تم حفظ نسبة العمولة.');
+    }
+
+    public function destroyCategoryCommission(Marketer $marketer, MarketerCategoryCommission $commission)
+    {
+        abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
+        abort_unless($commission->marketer_id === $marketer->id, 404);
+
+        $commission->delete();
+
+        return back()->with('success', 'تم حذف نسبة العمولة.');
     }
 
     public function approve(Marketer $marketer)

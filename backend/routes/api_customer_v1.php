@@ -56,6 +56,9 @@ use Illuminate\Support\Facades\Route;
         // ── Unified navigation tree (public) ─────────────────────────────────
         Route::get('nav', [NavigationController::class, 'index'])->name('customer.nav.index');
 
+        // ── Active currencies with display symbol (public) ───────────────────
+        Route::get('currencies', [\App\Http\Controllers\Customer\CurrencyController::class, 'index'])->name('customer.currencies.index');
+
         // ── Product catalog (public) ──────────────────────────────────────────
         Route::prefix('products')->name('customer.products.')->group(function (): void {
             // ── Product detail shorthand: /products/v-{uuid} or /products/p-{uuid} ──────
@@ -262,6 +265,14 @@ use Illuminate\Support\Facades\Route;
             });
         });
 
+        // ── Marketer Contracts (view + accept before checkout) ──
+        Route::prefix('marketers/{marketer}/contract')->name('customer.api.marketer-contract.')->group(function (): void {
+            Route::get('/', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'show'])->name('show');
+            Route::post('accept', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'accept'])
+                ->middleware('auth:customer')
+                ->name('accept');
+        });
+
         // Cart — guest + auth (session resolved via X-Cart-Token header)
         Route::prefix('cart')->name('customer.cart.')->middleware(['guest.cart.token', 'auth.optional'])->group(function (): void {
             Route::get('/', [CartController::class, 'show'])->name('show');
@@ -294,6 +305,14 @@ use Illuminate\Support\Facades\Route;
             // Payment transaction history (read-only)
             Route::get('payment-history', [PaymentHistoryController::class, 'index'])
                 ->name('customer.payment-history.index');
+
+            // Special requests — smart broker notification routing
+            Route::prefix('special-requests')->name('customer.special-requests.')->group(function (): void {
+                Route::get('/', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'store'])->name('store');
+                Route::get('{id}', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'show'])->name('show');
+                Route::patch('{id}/close', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'close'])->name('close');
+            });
 
             // Profile
             Route::prefix('profile')->name('customer.profile.')->group(function (): void {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Vendor;
 
+use App\Enums\CouponShippingTypeRestriction;
 use App\Enums\CouponType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -34,6 +35,7 @@ class UpdateCouponRequest extends FormRequest
                 'string', 'size:3',
             ],
             'scope' => ['required', Rule::in(['vendor', 'product'])],
+            'shipping_type_restriction' => ['nullable', Rule::enum(CouponShippingTypeRestriction::class)],
             'product_ids' => [
                 Rule::when(fn () => $this->input('scope') === 'product', ['required', 'array', 'min:1'], ['nullable']),
             ],

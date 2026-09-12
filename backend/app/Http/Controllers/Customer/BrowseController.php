@@ -203,8 +203,22 @@ class BrowseController extends Controller
             )
             : null;
 
+        $request->validate([
+            'country_id' => 'nullable|uuid|exists:travel_countries,id',
+            'city_id'    => 'nullable|uuid|exists:travel_cities,id',
+            'date_from'  => 'nullable|date',
+            'date_to'    => 'nullable|date|after_or_equal:date_from',
+        ]);
+
         $perPage   = $request->integer('per_page', 20);
-        $paginator = $this->listings->paginateTravelPackages($travelCategory?->id, $perPage);
+        $paginator = $this->listings->paginateTravelPackages(
+            $travelCategory?->id,
+            $perPage,
+            $request->string('country_id')->value() ?: null,
+            $request->string('city_id')->value() ?: null,
+            $request->string('date_from')->value() ?: null,
+            $request->string('date_to')->value() ?: null,
+        );
 
         $items = $paginator->getCollection()
             ->map(fn ($package) => $this->listings->toTravelCardShape($package))

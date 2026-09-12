@@ -88,6 +88,11 @@ class Marketer extends Model
         return $this->hasMany(FlashSaleMarketerInvitation::class);
     }
 
+    public function categoryCommissions(): HasMany
+    {
+        return $this->hasMany(MarketerCategoryCommission::class);
+    }
+
     // ── Type helpers ───────────────────────────────────────────────────────
 
     public function isInfluencer(): bool
