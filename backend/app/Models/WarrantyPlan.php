@@ -46,7 +46,7 @@ class WarrantyPlan extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image_path ? Storage::url($this->image_path) : null;
+        return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
     }
 
     public function category(): BelongsTo
