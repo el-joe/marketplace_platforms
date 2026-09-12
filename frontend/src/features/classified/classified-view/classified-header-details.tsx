@@ -13,27 +13,36 @@ import {
   Building2,
   Check,
 } from "lucide-react";
-import { IClassified } from "./helpers/types";
-import useLocale from "@/src/hooks/use-locale";
-import Price from "@/src/components/shared/Price";
+import { ClassifiedDetail } from "./types";
 
 interface ClassifiedHeaderDetailsProps {
-  listing: IClassified;
+  listing: ClassifiedDetail;
 }
 
 export default function ClassifiedHeaderDetails({
   listing,
 }: ClassifiedHeaderDetailsProps) {
+  const [isFavorite, setIsFavorite] = useState(listing.isFavorite);
+  const [favCount, setFavCount] = useState(listing.favoritesCount);
   const [isNotified, setIsNotified] = useState(false);
   const [copied, setCopied] = useState(false);
-  const locale = useLocale();
+
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      setIsFavorite(false);
+      setFavCount((c) => Math.max(0, c - 1));
+    } else {
+      setIsFavorite(true);
+      setFavCount((c) => c + 1);
+    }
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: listing.title[locale],
-          text: `${listing.title[locale]} - ${listing.price.toLocaleString()} ${listing.currency}`,
+          title: listing.titleAr,
+          text: `${listing.titleAr} - ${listing.price.toLocaleString()} ${listing.currency}`,
           url: window.location.href,
         });
       } catch {
@@ -67,13 +76,9 @@ export default function ClassifiedHeaderDetails({
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
         {/* Left: Price and notification link */}
         <div className="flex items-baseline flex-wrap gap-2.5 sm:gap-3">
-          <Price
-            currentPrice={listing.price / 100}
-            currency={listing.currency}
-          />
-          {/* <div className="text-2xl sm:text-3xl font-extrabold text-red-600 tracking-tight">
+          <div className="text-2xl sm:text-3xl font-extrabold text-red-600 tracking-tight">
             {listing.price.toLocaleString()} {listing.currency}
-          </div> */}
+          </div>
           <button
             onClick={() => setIsNotified(!isNotified)}
             className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 font-medium transition-colors"
@@ -91,13 +96,16 @@ export default function ClassifiedHeaderDetails({
 
         {/* Right: Favourite & Share */}
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700 hover:text-red-500 transition-colors py-1 px-2 rounded-lg hover:bg-gray-50">
+          <button
+            onClick={toggleFavorite}
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700 hover:text-red-500 transition-colors py-1 px-2 rounded-lg hover:bg-gray-50"
+          >
             <Heart
               className={`w-4 h-4 transition-colors ${
-                true ? "fill-red-500 text-red-500" : "text-gray-600"
+                isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"
               }`}
             />
-            <span>Favourite (5 dummy_data)</span>
+            <span>Favourite ({favCount})</span>
           </button>
 
           <button
@@ -116,35 +124,29 @@ export default function ClassifiedHeaderDetails({
 
       {/* Main Title (Arabic) */}
       <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 leading-snug mb-1">
-        {listing.title[locale]}
+        {listing.titleAr}
       </h1>
 
       {/* English / Model Subtitle */}
       <p className="text-sm font-medium text-gray-600 mb-2">
-        {listing.category.name[locale]}
+        {listing.titleEn}
       </p>
 
       {/* Rating badge & Reviews link */}
       <div className="flex items-center gap-2 mb-3">
         <div className="inline-flex items-center gap-1 bg-emerald-700 text-white text-xs font-bold px-1.5 py-0.5 rounded">
           <Star className="w-3 h-3 fill-white text-white" />
-          <span>4 dummy_data</span>
+          <span>{listing.rating.toFixed(1)}</span>
         </div>
         <button className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 font-medium flex items-center hover:underline">
-          <span>{listing.views_count} Reviews dummy_data</span>
+          <span>{listing.reviewsCount} Reviews</span>
           <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
         </button>
       </div>
 
       {/* Quick Specs Badges */}
       <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700">
-        {[
-          { type: "tag", label: "New" },
-          { type: "speedometer", label: "2 km" },
-          { type: "gas", label: "Gasoline" },
-          { type: "dealership", label: "Dealership" },
-          { type: "dealership", label: "dummy_data" },
-        ].map((spec, i) => (
+        {listing.quickSpecs.map((spec, i) => (
           <div
             key={i}
             className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100"

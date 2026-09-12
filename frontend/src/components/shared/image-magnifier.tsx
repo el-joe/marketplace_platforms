@@ -45,7 +45,7 @@ export default function ImageMagnifier({
       onMouseEnter={() => setShowMagnifier(true)}
       onMouseLeave={() => setShowMagnifier(false)}
       onMouseMove={handleMouseMove}
-      className="cursor-zoom-in"
+      className="cursor-zoom-in py-10 px-4"
     >
       <Image
         src={src}

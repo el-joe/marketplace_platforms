@@ -8,7 +8,10 @@ import {
 } from "@tanstack/react-query";
 import { useCart } from "../hooks/use-cart";
 import { ApiRequestError } from "../lib/utils";
-import { ICartResponseBody } from "../services/cart";
+import {
+  IAddToCartResponseBodyWithData,
+  ICartResponseBody,
+} from "../services/cart";
 
 interface ICartContext {
   cart: ICart | undefined;
@@ -19,7 +22,7 @@ interface ICartContext {
     options?: RefetchOptions,
   ) => Promise<QueryObserverResult<ICart, ApiRequestError>>;
   addItem: UseMutateAsyncFunction<
-    ICartResponseBody,
+    IAddToCartResponseBodyWithData,
     Error,
     {
       vendorListingId: string;
@@ -56,6 +59,15 @@ interface ICartContext {
     string,
     unknown
   >;
+  updateItemWarranty: UseMutateAsyncFunction<
+    ICartResponseBody,
+    Error,
+    {
+      cartItemId: string;
+      warrantyPlanId: string | null;
+    },
+    unknown
+  >;
   clearCart: UseMutateAsyncFunction<ICartResponseBody, Error, void, unknown>;
   applyCoupon: UseMutateAsyncFunction<
     ICartResponseBody,
@@ -82,7 +94,7 @@ const initialState: ICartContext = {
   > => {
     throw new Error("Not implemented");
   },
-  addItem: async (): Promise<ICartResponseBody> => {
+  addItem: async (): Promise<IAddToCartResponseBodyWithData> => {
     throw new Error("Not implemented");
   },
   addItemsBulk: async (): Promise<ICartResponseBody> => {
@@ -95,6 +107,9 @@ const initialState: ICartContext = {
     throw new Error("Not implemented");
   },
   removeItemWarranty: async (): Promise<ICartResponseBody> => {
+    throw new Error("Not implemented");
+  },
+  updateItemWarranty: async (): Promise<ICartResponseBody> => {
     throw new Error("Not implemented");
   },
   clearCart: async (): Promise<ICartResponseBody> => {
@@ -130,6 +145,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     updateItemQuantity,
     removeItem,
     removeItemWarranty,
+    updateItemWarranty,
     clearCart,
     applyCoupon,
     applyCouponErr,
@@ -153,6 +169,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         updateItemQuantity,
         removeItem,
         removeItemWarranty,
+        updateItemWarranty,
         clearCart,
         applyCoupon,
         applyCouponErr,

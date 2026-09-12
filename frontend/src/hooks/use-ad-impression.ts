@@ -22,7 +22,10 @@ export function useAdImpression(
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= VIEWABILITY_THRESHOLD) {
+        if (
+          entry.isIntersecting &&
+          entry.intersectionRatio >= VIEWABILITY_THRESHOLD
+        ) {
           if (!timer) {
             timer = setTimeout(() => {
               trackedRef.current = true;

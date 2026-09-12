@@ -37,7 +37,7 @@ export default async function BaseInfo({ product }: Props) {
         )}
       </Link>
       {/* product name + variant name */}
-      <h3 className="text-xl mt-4 mb-2 font-semibold">
+      <h3 className="text-xl mt-2 mb-2 font-bold">
         {product?.variant?.variant_name || product?.product?.name?.[locale]}
       </h3>
       {/* rate */}

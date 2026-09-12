@@ -40,15 +40,17 @@ export default function ExtendedWarranty({
         slidesPerView={1.1}
         spaceBetween={14}
         breakpoints={{
-          1280: { slidesPerView: 1.6 },
+          1280: { slidesPerView: 1.3 },
         }}
         className="pe-8!"
       >
         {warrantiesData.map((warranty) => (
-          <SwiperSlide key={warranty.id} className="">
+          <SwiperSlide key={warranty.id} className="h-auto!">
             <div
-              className={`p-3 rounded-md border cursor-pointer transition-all hover:border-black ${
-                selectedPlanId === warranty.id ? "border-blue-3" : "border-border"
+              className={`p-3 rounded-md border cursor-pointer transition-all hover:border-black h-full flex flex-col ${
+                selectedPlanId === warranty.id
+                  ? "border-blue-3"
+                  : "border-border"
               }`}
             >
               <div className="flex gap-2 items-center">
@@ -73,20 +75,22 @@ export default function ExtendedWarranty({
                 {warranty.features.map((benefit, i) => (
                   <li
                     key={i}
-                    className="text-xs lg:text-sm text-gray flex items-center"
+                    className="text-xs lg:text-sm text-gray flex items-start"
                   >
                     <ArrowBigRight />
                     {benefit}
                   </li>
                 ))}
               </ul>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mt-auto">
                 <Price
                   currentPrice={warranty.price}
                   currency={warranty.currency}
                 />
                 <Button
-                  variant={selectedPlanId === warranty.id ? "default" : "outline"}
+                  variant={
+                    selectedPlanId === warranty.id ? "default" : "outline"
+                  }
                   onClick={() => selectPlan(warranty.id)}
                   className={
                     selectedPlanId === warranty.id

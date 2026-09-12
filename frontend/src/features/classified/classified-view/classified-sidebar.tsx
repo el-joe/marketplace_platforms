@@ -14,11 +14,9 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { ClassifiedSeller } from "./types";
-import { Link } from "@/i18n/navigation";
-import { IClassified } from "./helpers/types";
 
 interface ClassifiedSidebarProps {
-  seller: IClassified["seller"];
+  seller: ClassifiedSeller;
   onOpenChat?: () => void;
 }
 
@@ -39,7 +37,7 @@ export default function ClassifiedSidebar({
           className="w-full bg-[#0070f3] hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-xs flex items-center justify-center gap-2.5 text-base sm:text-lg transition-colors cursor-pointer"
         >
           <Phone className="w-5 h-5 fill-white text-white" />
-          <span> 01111111100 dummy_data </span>
+          <span>{phoneRevealed ? seller.phone : seller.phoneMasked}</span>
         </button>
 
         {/* Chat Button */}
@@ -58,11 +56,11 @@ export default function ClassifiedSidebar({
           <div className="flex items-center gap-3">
             {/* Avatar */}
             <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-              {false ? (
+              {seller.avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={""}
-                  alt={seller.display_name}
+                  src={seller.avatar}
+                  alt={seller.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -73,7 +71,7 @@ export default function ClassifiedSidebar({
             {/* Seller Name & Follow */}
             <div>
               <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-tight">
-                {seller.display_name}
+                {seller.name}
               </h3>
               <button
                 onClick={() => setIsFollowing(!isFollowing)}
@@ -100,20 +98,20 @@ export default function ClassifiedSidebar({
           <div>
             <span className="text-gray-500 block text-[11px]">Rating</span>
             <div className="flex items-center gap-1 mt-0.5 font-medium text-gray-800">
-              <span className="font-bold">4 dummy_data</span>
+              <span className="font-bold">{seller.rating}</span>
               <div className="flex items-center text-gray-300">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
                     className={`w-3 h-3 ${
-                      i < 4
+                      i < seller.rating
                         ? "fill-yellow-400 text-yellow-400"
                         : "fill-gray-200 text-gray-300"
                     }`}
                   />
                 ))}
               </div>
-              <span className="text-gray-400">(21 dummy_data)</span>
+              <span className="text-gray-400">({seller.reviewsCount})</span>
             </div>
           </div>
 
@@ -122,7 +120,7 @@ export default function ClassifiedSidebar({
               Member Since
             </span>
             <span className="font-bold text-gray-800 block mt-0.5">
-              {seller.member_since}
+              {seller.memberSince}
             </span>
           </div>
         </div>
@@ -132,7 +130,7 @@ export default function ClassifiedSidebar({
           href="#seller-listings"
           className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
         >
-          <span>View All Listings ({seller.active_listings})</span>
+          <span>View All Listings ({seller.totalListings})</span>
           <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
         </a>
       </div>
@@ -168,13 +166,13 @@ export default function ClassifiedSidebar({
           <p className="text-[11px] sm:text-xs text-gray-500 truncate">
             Do you have a similar Listing?
           </p>
-          <Link
+          <a
             href="/classified/new"
             className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-0.5 hover:underline"
           >
             <span>Add New Listing</span>
             <ArrowRight className="w-3 h-3 rtl:rotate-180" />
-          </Link>
+          </a>
         </div>
       </div>
 
@@ -190,13 +188,13 @@ export default function ClassifiedSidebar({
           <p className="text-[11px] sm:text-xs text-gray-500 truncate">
             Promote or Repost your listing
           </p>
-          <Link
+          <a
             href="/classified/promote"
             className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-0.5 hover:underline"
           >
             <span>Explore More</span>
             <ArrowRight className="w-3 h-3 rtl:rotate-180" />
-          </Link>
+          </a>
         </div>
       </div>
     </aside>

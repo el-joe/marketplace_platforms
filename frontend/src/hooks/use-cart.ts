@@ -129,6 +129,18 @@ export function useCart() {
     onError,
   });
 
+  const updateItemWarranty = useMutation({
+    mutationFn: ({
+      cartItemId,
+      warrantyPlanId,
+    }: {
+      cartItemId: string;
+      warrantyPlanId: string | null;
+    }) => updateItemWarrantyCartService(cartItemId, warrantyPlanId),
+    onSuccess: invalidate,
+    onError,
+  });
+
   const clearCart = useMutation({
     mutationFn: () => clearCartService(),
     onSuccess: invalidate,
@@ -194,6 +206,7 @@ export function useCart() {
     updateItemQuantity: updateItemQuantity.mutateAsync,
     removeItem: removeItem.mutateAsync,
     removeItemWarranty: removeItemWarranty.mutateAsync,
+    updateItemWarranty: updateItemWarranty.mutateAsync,
     clearCart: clearCart.mutateAsync,
     applyCoupon: applyCoupon.mutateAsync,
     applyCouponErr: applyCoupon?.error,
@@ -210,7 +223,10 @@ export function useCart() {
         addItemsBulk.variables.map((e) => e.vendor_listing_id)) ||
       (updateItemQuantity.isPending &&
         updateItemQuantity.variables.cartItemId) ||
-      (removeItem.isPending && removeItem.variables),
+      (removeItem.isPending && removeItem.variables) ||
+      (updateItemWarranty.isPending &&
+        updateItemWarranty.variables.warrantyPlanId) ||
+      "",
 
     targetCoupon: applyCoupon.isPending && applyCoupon.variables,
 
@@ -220,6 +236,7 @@ export function useCart() {
       updateItemQuantity.isPending ||
       removeItem.isPending ||
       removeItemWarranty.isPending ||
+      updateItemWarranty.isPending ||
       clearCart.isPending ||
       applyCoupon.isPending ||
       removeCoupon.isPending ||
