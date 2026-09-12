@@ -3197,6 +3197,26 @@ CREATE TABLE `marketer_campaigns` (
   CONSTRAINT `chk_campaign_listing_xor_v2` CHECK (((((if((`vendor_listing_id` is not null),1,0) + if((`admin_listing_id` is not null),1,0)) + if((`travel_package_id` is not null),1,0)) + if((`classified_listing_id` is not null),1,0)) = 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `marketer_category_commissions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `marketer_category_commissions` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `marketer_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `category_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Null = default rate applied across all categories for this marketer.',
+  `commission_rate` decimal(5,2) NOT NULL DEFAULT '0.00' COMMENT 'Percentage, e.g. 8.00 = 8%.',
+  `updated_by_admin_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `marketer_category_commissions_marketer_id_category_id_unique` (`marketer_id`,`category_id`),
+  KEY `marketer_category_commissions_category_id_foreign` (`category_id`),
+  KEY `marketer_category_commissions_updated_by_admin_id_foreign` (`updated_by_admin_id`),
+  CONSTRAINT `marketer_category_commissions_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `marketer_category_commissions_marketer_id_foreign` FOREIGN KEY (`marketer_id`) REFERENCES `marketers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `marketer_category_commissions_updated_by_admin_id_foreign` FOREIGN KEY (`updated_by_admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `marketer_commission_country_settings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -3299,6 +3319,20 @@ CREATE TABLE `marketer_profiles` (
   `total_conversions` int unsigned NOT NULL DEFAULT '0',
   `total_earnings` bigint NOT NULL DEFAULT '0' COMMENT 'BIGINT base-currency. No /100.',
   `earnings_currency` char(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ad_price` bigint unsigned NOT NULL DEFAULT '0' COMMENT 'Display ad price shown on the marketer public profile. BIGINT base-currency. No /100.',
+  `ad_price_currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `can_self_edit_ad_price` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'When true, the marketer is allowed to edit their own ad_price from the marketer panel.',
+  `clothing_size` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'General clothing size label, e.g. M, L, XL. Influencer marketers only.',
+  `shirt_size` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `pants_size` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `dress_size` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `abaya_size` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `shoe_size` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `shoe_size_system` enum('EU','US','UK') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `chest_cm` decimal(5,1) DEFAULT NULL,
+  `waist_cm` decimal(5,1) DEFAULT NULL,
+  `height_cm` decimal(5,1) DEFAULT NULL,
+  `measurements_notes` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -7398,3 +7432,6 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (491,'2026_09_11_00
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (492,'2026_09_12_000001_create_ad_packages_table',62);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (493,'2026_09_12_000002_create_vendor_ad_subscriptions_table',62);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (494,'2026_09_12_000003_add_ad_boost_to_vendor_listings',62);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (495,'2026_09_12_000010_add_ad_price_fields_to_marketer_profiles_table',63);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (496,'2026_09_12_000011_add_influencer_measurements_to_marketer_profiles_table',63);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (497,'2026_09_12_000012_create_marketer_category_commissions_table',63);

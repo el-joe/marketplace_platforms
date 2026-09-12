@@ -943,6 +943,15 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->name('category-commissions.store')->middleware('admin.permission:marketers.manage');
         Route::delete('/{marketer}/category-commissions/{commission}', [\App\Http\Controllers\Admin\MarketerController::class, 'destroyCategoryCommission'])
             ->name('category-commissions.destroy')->middleware('admin.permission:marketers.manage');
+
+        Route::get('/{marketer}/contract', [\App\Http\Controllers\Admin\MarketerContractController::class, 'show'])
+            ->name('contract.show');
+        Route::post('/{marketer}/contract/upload', [\App\Http\Controllers\Admin\MarketerContractController::class, 'upload'])
+            ->name('contract.upload')->middleware('admin.permission:marketers.manage');
+        Route::get('/{marketer}/contract/acceptances', [\App\Http\Controllers\Admin\MarketerContractController::class, 'acceptances'])
+            ->name('contract.acceptances');
+        Route::get('/{marketer}/contract/versions/{version}/download', [\App\Http\Controllers\Admin\MarketerContractController::class, 'download'])
+            ->name('contract.download');
     });
 
     // ─── Marketer Campaigns ────────────────────────────────────────────────────────

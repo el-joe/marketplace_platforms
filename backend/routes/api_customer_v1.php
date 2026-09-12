@@ -262,6 +262,14 @@ use Illuminate\Support\Facades\Route;
             });
         });
 
+        // ── Marketer Contracts (view + accept before checkout) ──
+        Route::prefix('marketers/{marketer}/contract')->name('customer.api.marketer-contract.')->group(function (): void {
+            Route::get('/', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'show'])->name('show');
+            Route::post('accept', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'accept'])
+                ->middleware('auth:customer')
+                ->name('accept');
+        });
+
         // Cart — guest + auth (session resolved via X-Cart-Token header)
         Route::prefix('cart')->name('customer.cart.')->middleware(['guest.cart.token', 'auth.optional'])->group(function (): void {
             Route::get('/', [CartController::class, 'show'])->name('show');

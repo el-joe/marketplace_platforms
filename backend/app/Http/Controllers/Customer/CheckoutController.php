@@ -571,7 +571,15 @@ class CheckoutController extends Controller
                     'placed_at' => now(),
                     'marketer_id' => $attribution['marketer_id'] ?? null,
                     'marketer_campaign_id' => $attribution['campaign_id'] ?? null,
+                    'marketer_contract_acceptance_id' => $validated['contract_acceptance_id'] ?? null,
                 ]);
+
+                if (! empty($validated['contract_acceptance_id'])) {
+                    \App\Models\MarketerContractAcceptance::where('id', $validated['contract_acceptance_id'])
+                        ->where('customer_id', $customer->id)
+                        ->whereNull('order_id')
+                        ->update(['order_id' => $order->id]);
+                }
 
                 $shippingMethodCache = [];
                 $resolveShippingMethod = function (?string $shippingMethodId) use (&$shippingMethodCache) {

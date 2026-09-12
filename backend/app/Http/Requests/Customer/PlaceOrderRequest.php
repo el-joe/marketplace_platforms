@@ -29,6 +29,7 @@ class PlaceOrderRequest extends FormRequest
             'warranty_selections.*.listing_id'      => ['required_with:warranty_selections', 'uuid'],
             'warranty_selections.*.warranty_plan_id' => ['required_with:warranty_selections', 'uuid'],
             'loyalty_points_to_use'      => ['nullable', 'numeric', 'min:1'],
+            'contract_acceptance_id'     => ['nullable', 'uuid', 'exists:marketer_contract_acceptances,id'],
         ];
     }
 
