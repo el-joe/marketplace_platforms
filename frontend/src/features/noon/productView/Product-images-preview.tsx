@@ -9,6 +9,7 @@ import type { Swiper as SwiperType } from "swiper/types";
 import { IProductDetails } from "./types";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Spinner } from "@/src/components/ui/spinner";
+import ImageMagnifier from "@/src/components/shared/image-magnifier";
 
 type Props = {
   product: IProductDetails;
@@ -30,8 +31,38 @@ export default function ProductImagesPreview({ product }: Props) {
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div>
-      <div className="md:px-8 xl:px-20 relative">
+    <div className="flex">
+      {" "}
+      {/* pagination thumbs */}
+      <div className="hidden md:block min-w-17">
+        <Swiper
+          className="p-2! productSwiperThumbs "
+          onSwiper={setThumbsSwiper}
+          spaceBetween={"9px"}
+          slidesPerView={"auto"}
+          freeMode={true}
+          watchSlidesProgress={true}
+          loop
+          direction="vertical"
+          modules={[FreeMode, Thumbs]}
+        >
+          {product.product.images.map((image, i) => (
+            <SwiperSlide
+              key={i}
+              className="w-fit! h-15! cursor-pointer opacity-45 border-2 rounded-md overflow-hidden"
+            >
+              <Image
+                src={image.url || "/images/no-image-available-icon.jpg"}
+                alt=""
+                width={92}
+                height={120}
+                className="max-h-full w-14 object-contain"
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+      <div className=" relative w-10/12 group">
         {/* wishlist button */}
         <Button
           variant={"ghost"}
@@ -50,27 +81,27 @@ export default function ProductImagesPreview({ product }: Props) {
             <Spinner />
           ) : (
             <HeartIcon
-              className={`size-4 md:size-6 ${isWishlisted ? "text-red fill-red" : ""} `}
+              className={`size-4 md:size-6 ${isWishlisted ? "text-[#0b5893] fill-[#0b5893]" : ""} `}
             />
           )}
         </Button>
         {/* navigation buttons */}
         <button
           ref={prevRef}
-          className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer opacity-35 bg-black text-white px-2 py-6 rounded-e-sm"
+          className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer bg-black text-white px-2 py-6 rounded-e-sm opacity-0 group-hover:opacity-35 transition"
         >
           <ChevronLeft size={"28px"} />
         </button>
         <button
           ref={nextRef}
-          className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer opacity-35 bg-black text-white px-2 py-6 rounded-s-sm"
+          className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer bg-black text-white px-2 py-6 rounded-s-sm opacity-0 group-hover:opacity-35 transition"
         >
           <ChevronRight size={"28px"} />
         </button>
         {/* preview image */}
         <Swiper
           modules={[Navigation, Thumbs, Pagination]}
-          pagination
+          // pagination
           loop
           onBeforeInit={(swiper) => {
             if (
@@ -85,46 +116,16 @@ export default function ProductImagesPreview({ product }: Props) {
           thumbs={{
             swiper: thumbsSwiper,
           }}
+          className="w-full!"
         >
           {product.product.images.map((image, i) => (
-            <SwiperSlide
-              key={i}
-              className="select-none md:h-[calc(100vh-260px)]! max-h-200"
-            >
-              <Image
+            <SwiperSlide key={i} className="select-none md:h-screen! max-h-180">
+              <ImageMagnifier
                 src={image.url || "/images/no-image-available-icon.jpg"}
                 alt=""
                 width={400}
                 height={450}
-                className="mx-auto h-full object-contain "
-              />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-      {/* pagination thumbs */}
-      <div className="hidden md:block">
-        <Swiper
-          className="p-2! productSwiperThumbs h-30"
-          onSwiper={setThumbsSwiper}
-          spaceBetween={"9px"}
-          slidesPerView={"auto"}
-          freeMode={true}
-          watchSlidesProgress={true}
-          loop
-          modules={[FreeMode, Thumbs]}
-        >
-          {product.product.images.map((image, i) => (
-            <SwiperSlide
-              key={i}
-              className="w-fit! h-24! cursor-pointer opacity-45 border-2 rounded-lg overflow-hidden"
-            >
-              <Image
-                src={image.url || "/images/no-image-available-icon.jpg"}
-                alt=""
-                width={92}
-                height={120}
-                className="max-h-full w-18.75"
+                zoomLevel={3}
               />
             </SwiperSlide>
           ))}
