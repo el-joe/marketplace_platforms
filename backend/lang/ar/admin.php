@@ -8036,6 +8036,7 @@ return [
         'add_value'         => 'إضافة قيمة',
         'no_values'         => 'لا توجد قيم بعد.',
         'add_new_value'     => 'إضافة قيمة جديدة',
+        'edit_value'        => 'تعديل القيمة',
         'new_value_en_placeholder' => 'قيمة بالإنجليزية',
         'new_value_ar_placeholder' => 'قيمة بالعربي',
         'save_changes'      => 'حفظ التغييرات',

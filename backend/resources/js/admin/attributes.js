@@ -183,22 +183,46 @@ function initEditValueActions() {
         });
     });
 
-    // Edit value (inline quick-edit via prompt for simplicity; a modal would be overkill)
+    // Edit value: open modal pre-filled with current values
+    const $editModal = $('#edit-value-modal');
+
     $(document).on('click', '.edit-value-btn', function () {
         const id = $(this).data('id');
-        const valueEn = $(this).data('value-en');
-        const newEn = window.prompt(t('admin.attributes.prompt_english_value'), valueEn);
-        if (newEn === null || newEn.trim() === '') return;
+        const colorHex = $(this).data('color-hex') || '#000000';
 
-        const valueAr = $(this).data('value-ar');
-        const newAr = window.prompt(t('admin.attributes.prompt_arabic_value'), valueAr ?? '');
+        $editModal.data('regenerate-url', $(this).data('regenerate-url'));
+        $('#edit-value-id').val(id);
+        $('#edit-value-en').val($(this).data('value-en'));
+        $('#edit-value-ar').val($(this).data('value-ar') ?? '');
+        $('#edit-value-slug').val($(this).data('slug') ?? '');
+        $('#edit-color-hex').val(colorHex);
+        $('#edit-color-hex-text').val(colorHex);
 
-        const currentSlug = $(this).data('slug');
-        const newSlug = window.prompt(t('admin.attributes.prompt_slug'), currentSlug ?? '');
-        if (newSlug === null) return;
+        $editModal.modal('open');
+    });
 
-        const colorHex = $(this).data('color-hex');
-        const regenerateUrl = $(this).data('regenerate-url');
+    // Sync color text <-> picker in edit modal
+    document.getElementById('edit-color-hex')?.addEventListener('input', function () {
+        const textInput = document.getElementById('edit-color-hex-text');
+        if (textInput) textInput.value = this.value;
+    });
+    document.getElementById('edit-color-hex-text')?.addEventListener('input', function () {
+        const picker = document.getElementById('edit-color-hex');
+        if (picker && /^#[0-9A-Fa-f]{6}$/.test(this.value)) picker.value = this.value;
+    });
+
+    // Save edit modal
+    document.getElementById('save-edit-value')?.addEventListener('click', function () {
+        const id = $('#edit-value-id').val();
+        const newEn = $('#edit-value-en').val()?.trim();
+        if (!newEn) {
+            window.Toast?.error(t('admin.attributes.english_value_required'));
+            return;
+        }
+        const newAr = $('#edit-value-ar').val()?.trim();
+        const newSlug = $('#edit-value-slug').val()?.trim();
+        const colorHex = $('#edit-color-hex-text').val()?.trim() || $('#edit-color-hex').val() || null;
+        const regenerateUrl = $editModal.data('regenerate-url');
 
         const url = (window.ROUTES_ATTR_EDIT.updateValue || '').replace(':value_id', id);
 
@@ -206,9 +230,9 @@ function initEditValueActions() {
             url: url,
             method: 'PUT',
             data: JSON.stringify({
-                value_en: newEn.trim(),
-                value_ar: newAr?.trim() || null,
-                slug: newSlug.trim() || null,
+                value_en: newEn,
+                value_ar: newAr || null,
+                slug: newSlug || null,
                 code_hex: colorHex || null,
             }),
             contentType: 'application/json',
@@ -216,12 +240,13 @@ function initEditValueActions() {
         }).done(function (res) {
             const item = document.querySelector(`.value-item[data-id="${id}"]`);
             if (item) {
-                item.querySelector('span.flex-1').textContent = newEn.trim();
+                item.querySelector('span.flex-1').textContent = newEn;
                 const slugEl = item.querySelector('.value-slug');
                 if (slugEl && res.slug) slugEl.textContent = res.slug;
             }
-            $(`.edit-value-btn[data-id="${id}"]`).data('value-en', newEn.trim()).data('value-ar', newAr?.trim()).data('slug', res.slug);
+            $(`.edit-value-btn[data-id="${id}"]`).data('value-en', newEn).data('value-ar', newAr).data('slug', res.slug).data('color-hex', colorHex);
             window.Toast?.success(t('admin.attributes.value_updated'));
+            $editModal.modal('close');
 
             if (res.slug_changed && res.affected_variants > 0) {
                 showSlugWarning(id, res.affected_variants, regenerateUrl);

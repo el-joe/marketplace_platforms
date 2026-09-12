@@ -8077,6 +8077,7 @@ return [
         'add_value'         => 'Add Value',
         'no_values'         => 'No values yet.',
         'add_new_value'     => 'Add New Value',
+        'edit_value'        => 'Edit Value',
         'new_value_en_placeholder' => 'Value in English',
         'new_value_ar_placeholder' => 'Value in Arabic',
         'save_changes'      => 'Save Changes',

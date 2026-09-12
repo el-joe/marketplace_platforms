@@ -259,6 +259,40 @@
                         @endif
                         <button type="button" id="save-new-value" class="btn btn-primary btn-sm">{{ __('admin.attributes_section.add_value') }}</button>
                     </div>
+
+                    {{-- Edit value modal --}}
+                    <div id="edit-value-modal" class="modal modal-backdrop fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
+                        <div class="relative bg-white rounded-xl shadow-lg w-full max-w-md mx-4 p-6 space-y-4">
+                            <h3 class="text-sm font-semibold text-gray-800">{{ __('admin.attributes_section.edit_value') }}</h3>
+                            <input type="hidden" id="edit-value-id" />
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs font-medium text-gray-600">{{ __('admin.attributes_section.value_en') }}</label>
+                                    <input type="text" id="edit-value-en" class="input w-full mt-1" placeholder="{{ __('admin.attributes_section.new_value_en_placeholder') }}" dir="ltr" />
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-gray-600">{{ __('admin.attributes_section.value_ar') }}</label>
+                                    <input type="text" id="edit-value-ar" class="input w-full mt-1" placeholder="{{ __('admin.attributes_section.new_value_ar_placeholder') }}" dir="rtl" />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-gray-600">{{ __('admin.attributes_section.slug') }}</label>
+                                <input type="text" id="edit-value-slug" class="input w-full mt-1 font-mono text-sm" placeholder="{{ __('admin.attributes_section.slug_placeholder') }}" dir="ltr" pattern="[a-z0-9-]+" />
+                                <p class="text-xs text-gray-400 mt-1">{{ __('admin.attributes_section.slug_hint') }}</p>
+                            </div>
+                            @if($attribute->type === \App\Enums\AttributeType::Color)
+                            <div class="flex items-center gap-3">
+                                <label class="text-xs font-medium text-gray-600">{{ __('admin.attributes_section.hex_color') }}</label>
+                                <input type="color" id="edit-color-hex" class="w-10 h-8 rounded border border-gray-300 cursor-pointer" value="#000000" />
+                                <input type="text" id="edit-color-hex-text" class="input w-28 text-xs" placeholder="#000000" maxlength="7" />
+                            </div>
+                            @endif
+                            <div class="flex items-center justify-end gap-2 pt-2">
+                                <button type="button" class="btn btn-ghost btn-sm" data-modal-close>{{ __('common.cancel') }}</button>
+                                <button type="button" id="save-edit-value" class="btn btn-primary btn-sm">{{ __('common.save') }}</button>
+                            </div>
+                        </div>
+                    </div>
                     @endif
 
                 </div>
