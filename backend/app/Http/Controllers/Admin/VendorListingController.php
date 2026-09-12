@@ -97,6 +97,7 @@ class VendorListingController extends Controller
                 'id' => $row->id,
                 'product_name' => e($row->product_name),
                 'variant_name' => e($row->variant_name),
+                'display_name' => e(trim($row->product_name . ' ' . $row->variant_name)),
                 'vendor_name' => e($row->vendor_name),
                 'country' => e($row->country_name),
                 'currency' => e($row->currency),

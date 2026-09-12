@@ -75,6 +75,7 @@ class ListingController extends Controller
             'variant_name' => $v->variant_name,
             'name_ar'      => $v->name_ar,
             'name_en'      => $v->name_en,
+            'display_name' => trim($v->name_en . ' ' . $v->variant_name),
         ]));
     }
 

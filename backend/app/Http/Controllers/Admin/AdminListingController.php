@@ -175,6 +175,7 @@ class AdminListingController extends Controller
                 ] : null,
                 'product_name' => e($row->product_name),
                 'variant_name' => e($row->variant_name),
+                'display_name' => e(trim($row->product_name . ' ' . $row->variant_name)),
                 'variant_sku' => e($row->variant_sku),
                 'country' => e($row->country_name),
                 'currency' => e($row->currency),

@@ -36,9 +36,9 @@ export default async function BaseInfo({ product }: Props) {
           <ChevronRight size={"18px"} />
         )}
       </Link>
-      {/* product name */}
+      {/* product name + variant name */}
       <h3 className="text-xl mt-4 mb-2 font-semibold">
-        {product?.product?.name?.[locale]}
+        {product?.variant?.variant_name || product?.product?.name?.[locale]}
       </h3>
       {/* rate */}
       <div className="flex items-center gap-2">
