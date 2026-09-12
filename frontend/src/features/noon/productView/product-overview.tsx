@@ -58,7 +58,7 @@ export default async function ProductOverview({ overviewData }: props) {
                   className="even:bg-gray-5 odd:bg-gray-4 flex p-3 gap-3"
                 >
                   <p className="w-[45%] md:w-[30%] text-light ">
-                    {sp.label[locale]}
+                    {sp.key[locale]}
                   </p>
                   <p className="">{sp.value[locale]}</p>
                 </div>
@@ -72,7 +72,7 @@ export default async function ProductOverview({ overviewData }: props) {
                   className="even:bg-gray-5 odd:bg-gray-4 flex p-3 gap-3"
                 >
                   <p className="w-[45%] md:w-[30%] text-light ">
-                    {sp.label[locale]}
+                    {sp.key[locale]}
                   </p>
                   <p className="">{sp.value[locale]}</p>
                 </div>

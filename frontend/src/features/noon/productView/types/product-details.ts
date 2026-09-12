@@ -153,7 +153,7 @@ export interface Highlight {
 }
 export interface Specifications {
   id: string;
-  label: Locales;
+  key: Locales;
   value: Locales;
   position: number;
 }
