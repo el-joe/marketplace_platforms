@@ -43,8 +43,9 @@ class MarketerController extends Controller
         ]);
 
         $categories = \App\Models\Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $cities = \App\Models\City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
-        return view('admin.marketers.show', compact('marketer', 'categories'));
+        return view('admin.marketers.show', compact('marketer', 'categories', 'cities'));
     }
 
     /**
@@ -71,6 +72,9 @@ class MarketerController extends Controller
             'waist_cm'                => ['nullable', 'numeric', 'min:0'],
             'height_cm'               => ['nullable', 'numeric', 'min:0'],
             'measurements_notes'      => ['nullable', 'string', 'max:2000'],
+            'broker_category_id'      => ['nullable', 'uuid', 'exists:categories,id'],
+            'broker_city_id'          => ['nullable', 'uuid', 'exists:cities,id'],
+            'broker_serves_all_cities' => ['nullable', 'boolean'],
         ]);
 
         $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
@@ -87,6 +91,15 @@ class MarketerController extends Controller
                 'clothing_size', 'shirt_size', 'pants_size', 'dress_size', 'abaya_size',
                 'shoe_size', 'shoe_size_system', 'chest_cm', 'waist_cm', 'height_cm', 'measurements_notes',
             ]);
+        }
+
+        // Broker specialization (category + city) only applies to affiliate marketers.
+        if ($marketer->isAffiliate()) {
+            $data['broker_category_id']       = $validated['broker_category_id'] ?? null;
+            $data['broker_serves_all_cities'] = $request->boolean('broker_serves_all_cities');
+            $data['broker_city_id']           = $data['broker_serves_all_cities']
+                ? null
+                : ($validated['broker_city_id'] ?? null);
         }
 
         $profile->fill($data)->save();

@@ -303,6 +303,14 @@ use Illuminate\Support\Facades\Route;
             Route::get('payment-history', [PaymentHistoryController::class, 'index'])
                 ->name('customer.payment-history.index');
 
+            // Special requests — smart broker notification routing
+            Route::prefix('special-requests')->name('customer.special-requests.')->group(function (): void {
+                Route::get('/', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'store'])->name('store');
+                Route::get('{id}', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'show'])->name('show');
+                Route::patch('{id}/close', [\App\Http\Controllers\Api\Customer\SpecialRequestController::class, 'close'])->name('close');
+            });
+
             // Profile
             Route::prefix('profile')->name('customer.profile.')->group(function (): void {
                 Route::get('/', [ProfileController::class, 'show'])->name('show');

@@ -61,6 +61,12 @@ Route::middleware('web')->group(function () {
         // Dashboard / statistics
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+        // Special requests (broker specialization matches)
+        Route::prefix('special-requests')->name('special-requests.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'index'])->name('index');
+            Route::get('{id}', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'show'])->name('show');
+        });
+
         // Notifications
         Route::prefix('notifications')->name('notifications.')
             ->controller(NotificationController::class)

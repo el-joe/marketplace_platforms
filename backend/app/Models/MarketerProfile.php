@@ -39,16 +39,20 @@ class MarketerProfile extends Model
         'waist_cm',
         'height_cm',
         'measurements_notes',
+        'broker_category_id',
+        'broker_city_id',
+        'broker_serves_all_cities',
     ];
 
     protected $casts = [
-        'social_links'           => 'array',
-        'contact_details'        => 'array',
-        'ad_price'               => 'integer',
-        'can_self_edit_ad_price' => 'boolean',
-        'chest_cm'               => 'float',
-        'waist_cm'               => 'float',
-        'height_cm'              => 'float',
+        'social_links'             => 'array',
+        'contact_details'          => 'array',
+        'ad_price'                 => 'integer',
+        'can_self_edit_ad_price'   => 'boolean',
+        'chest_cm'                 => 'float',
+        'waist_cm'                 => 'float',
+        'height_cm'                => 'float',
+        'broker_serves_all_cities' => 'boolean',
     ];
 
     public function marketer(): BelongsTo
@@ -59,6 +63,16 @@ class MarketerProfile extends Model
     public function bannerFile(): BelongsTo
     {
         return $this->belongsTo(File::class, 'banner_file_id');
+    }
+
+    public function brokerCategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'broker_category_id');
+    }
+
+    public function brokerCity(): BelongsTo
+    {
+        return $this->belongsTo(City::class, 'broker_city_id');
     }
 
     protected static function booted(): void

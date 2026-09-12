@@ -166,6 +166,47 @@
             </div>
             @endif
 
+            @if($marketer->isAffiliate())
+            <div class="border-t pt-4 mt-2">
+                <h4 class="text-sm font-bold text-gray-700 mb-3">تخصص السمسار (Broker Specialization)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">القسم المتخصص فيه</label>
+                        <select name="broker_category_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="">— بدون تحديد —</option>
+                            @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}"
+                                {{ old('broker_category_id', $marketer->marketerProfile?->broker_category_id) === $cat->id ? 'selected' : '' }}>
+                                {{ $cat->name_ar }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">المدينة</label>
+                        <select name="broker_city_id" id="brokerCitySelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                {{ old('broker_serves_all_cities', $marketer->marketerProfile?->broker_serves_all_cities) ? 'disabled' : '' }}>
+                            <option value="">— اختر مدينة —</option>
+                            @foreach($cities as $city)
+                            <option value="{{ $city->id }}"
+                                {{ old('broker_city_id', $marketer->marketerProfile?->broker_city_id) === $city->id ? 'selected' : '' }}>
+                                {{ $city->name_ar }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-end pb-2">
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" name="broker_serves_all_cities" value="1" id="brokerAllCitiesCheck"
+                                   {{ old('broker_serves_all_cities', $marketer->marketerProfile?->broker_serves_all_cities) ? 'checked' : '' }}
+                                   onchange="document.getElementById('brokerCitySelect').disabled = this.checked">
+                            يخدم كل المدن
+                        </label>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">حفظ</button>
         </form>
     </div>

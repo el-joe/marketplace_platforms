@@ -96,6 +96,8 @@ class MarketerProfileController extends Controller
                 'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
                 'marketer.country:id,name_en,name_ar,currency_code',
                 'bannerFile',
+                'brokerCategory:id,name_en,name_ar',
+                'brokerCity:id,name_en,name_ar',
             ])
             ->first();
 
@@ -192,6 +194,19 @@ class MarketerProfileController extends Controller
             ];
         }
 
+        $brokerSpecialization = null;
+        if ($marketer->isAffiliate()) {
+            $brokerSpecialization = [
+                'category_id'       => $profile->broker_category_id,
+                'category_name_en'  => $profile->brokerCategory?->name_en,
+                'category_name_ar'  => $profile->brokerCategory?->name_ar,
+                'city_id'           => $profile->broker_city_id,
+                'city_name_en'      => $profile->brokerCity?->name_en,
+                'city_name_ar'      => $profile->brokerCity?->name_ar,
+                'serves_all_cities' => $profile->broker_serves_all_cities,
+            ];
+        }
+
         $qrUrl = $profile->qr_code_path
             ? Storage::disk('public')->url($profile->qr_code_path)
             : null;
@@ -221,6 +236,7 @@ class MarketerProfileController extends Controller
                 'qr_code_url'     => $qrUrl,
                 'profile_url'     => $frontendUrl . '/marketer/' . $profile->profile_slug,
                 'measurements'    => $measurements,
+                'broker_specialization' => $brokerSpecialization,
             ],
             'listings' => [
                 'items' => $productCards,
