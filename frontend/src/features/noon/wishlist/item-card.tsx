@@ -78,7 +78,7 @@ export default function ItemCard({ item }: Props) {
                 : item.listing.product.name_en}
             </h3>
             {!!item.listing.variant_name && (
-              <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-fit line-clamp-1 overflow-auto">
+              <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-full line-clamp-1 overflow-hidden">
                 {item.listing.variant_name}
               </p>
             )}
