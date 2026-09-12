@@ -1,0 +1,598 @@
+[
+    {
+    "category": {
+      "ar": "الإلكترونيات",
+      "en": "Electronics"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "الجوالات والاكسسوارات",
+          "en": "Mobiles & Accessories"
+        },
+        "children": [
+          {
+            "ar": "سلسلة Huawei Pura 90",
+            "en": "Huawei Pura 90 Series"
+          },
+          {
+            "ar": "جالاكسي AI",
+            "en": "Galaxy AI"
+          },
+          {
+            "ar": "سلسلة أيفون 17",
+            "en": "iPhone 17 Series"
+          },
+          {
+            "ar": "جوالات أندرويد فخمة",
+            "en": "Premium Android Phones"
+          },
+          {
+            "ar": "تابلت",
+            "en": "Tablets"
+          },
+          {
+            "ar": "سماعات ومكبرات صوت",
+            "en": "Headphones & Speakers"
+          },
+          {
+            "ar": "أجهزة الارتداء",
+            "en": "Wearables"
+          },
+          {
+            "ar": "شواحن متنقلة",
+            "en": "Power Banks"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "سلسلة أيفون 17",
+          "en": "iPhone 17 Series"
+        },
+        "children": [
+          {
+            "ar": "أيفون 17",
+            "en": "iPhone 17"
+          },
+          {
+            "ar": "أيفون 17 إير",
+            "en": "iPhone 17 Air"
+          },
+          {
+            "ar": "أيفون 17 برو",
+            "en": "iPhone 17 Pro"
+          },
+          {
+            "ar": "أيفون 17 برو ماكس",
+            "en": "iPhone 17 Pro Max"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "اللابتوبات واكسسواراتها",
+          "en": "Laptops & Accessories"
+        },
+        "children": [
+          {
+            "ar": "ماك بوك",
+            "en": "MacBook"
+          },
+          {
+            "ar": "لابتوبات قوية",
+            "en": "Performance Laptops"
+          },
+          {
+            "ar": "لابتوبات لعب",
+            "en": "Gaming Laptops"
+          },
+          {
+            "ar": "لابتوبات على الميزانية",
+            "en": "Budget Laptops"
+          },
+          {
+            "ar": "شاشات",
+            "en": "Monitors"
+          },
+          {
+            "ar": "طابعات",
+            "en": "Printers"
+          },
+          {
+            "ar": "أجهزة تخزين",
+            "en": "Storage Devices"
+          },
+          {
+            "ar": "أجهزة إدخال",
+            "en": "Input Devices"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "أساسيات اللعب",
+          "en": "Gaming Essentials"
+        },
+        "children": [
+          {
+            "ar": "أجهزة اللعب",
+            "en": "Gaming Consoles"
+          },
+          {
+            "ar": "أكسسوارات اللعب",
+            "en": "Gaming Accessories"
+          },
+          {
+            "ar": "ألعاب الفيديو",
+            "en": "Video Games"
+          },
+          {
+            "ar": "شاشات اللعب",
+            "en": "Gaming Monitors"
+          },
+          {
+            "ar": "بطاقات رقمية",
+            "en": "Digital Cards"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "التلفزيونات والترفيه المنزلي",
+          "en": "Televisions & Home Entertainment"
+        },
+        "children": [
+          {
+            "ar": "LED",
+            "en": "LED"
+          },
+          {
+            "ar": "QLED",
+            "en": "QLED"
+          },
+          {
+            "ar": "OLED",
+            "en": "OLED"
+          },
+          {
+            "ar": "4K",
+            "en": "4K"
+          },
+          {
+            "ar": "بروجكترات",
+            "en": "Projectors"
+          },
+          {
+            "ar": "ساوند بار",
+            "en": "Soundbars"
+          },
+          {
+            "ar": "أجهزة البث",
+            "en": "Streaming Devices"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "كاميرات",
+          "en": "Cameras"
+        },
+        "children": [
+          {
+            "ar": "كاميرات حركية",
+            "en": "Action Cameras"
+          },
+          {
+            "ar": "كاميرات رقمية",
+            "en": "Digital Cameras"
+          },
+          {
+            "ar": "كاميرات مراقبة",
+            "en": "Security Cameras"
+          },
+          {
+            "ar": "كاميرات فورية",
+            "en": "Instant Cameras"
+          },
+          {
+            "ar": "اكسسوارات الكاميرات",
+            "en": "Camera Accessories"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "أفضل الماركات",
+          "en": "Top Brands"
+        },
+        "children": [
+          {
+            "ar": "هواوي",
+            "en": "Huawei"
+          },
+          {
+            "ar": "سامسونج",
+            "en": "Samsung"
+          },
+          {
+            "ar": "سوني",
+            "en": "Sony"
+          },
+          {
+            "ar": "إل جي",
+            "en": "LG"
+          },
+          {
+            "ar": "لينوفو",
+            "en": "Lenovo"
+          },
+          {
+            "ar": "إتش بي",
+            "en": "HP"
+          },
+          {
+            "ar": "شاومي",
+            "en": "Xiaomi"
+          },
+          {
+            "ar": "ديل",
+            "en": "Dell"
+          },
+          {
+            "ar": "هايسنس",
+            "en": "Hisense"
+          },
+          {
+            "ar": "هونر",
+            "en": "Honor"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "الجمال والعطور",
+      "en": "Beauty & Fragrances"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "مكياج",
+          "en": "Makeup"
+        },
+        "children": [
+          {
+            "ar": "مسكارا",
+            "en": "Mascara"
+          },
+          {
+            "ar": "كريمات الأساس",
+            "en": "Foundation"
+          },
+          {
+            "ar": "البلاشر والبرونزر",
+            "en": "Blush & Bronzer"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "العناية بالبشرة",
+          "en": "Skincare"
+        },
+        "children": [
+          {
+            "ar": "مرطبات",
+            "en": "Moisturizers"
+          },
+          {
+            "ar": "واقيات الشمس",
+            "en": "Sunscreens"
+          },
+          {
+            "ar": "غسولات",
+            "en": "Cleansers"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "عطور",
+          "en": "Fragrances"
+        },
+        "children": [
+          {
+            "ar": "عطور نسائية",
+            "en": "Women's Fragrances"
+          },
+          {
+            "ar": "عطور رجالية",
+            "en": "Men's Fragrances"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "المنزل",
+      "en": "Home"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "المطبخ والسفرة",
+          "en": "Kitchen & Dining"
+        },
+        "children": [
+          {
+            "ar": "أواني الطبخ",
+            "en": "Cookware"
+          },
+          {
+            "ar": "التخزين والتنظيم",
+            "en": "Storage & Organization"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "الأثاث",
+          "en": "Furniture"
+        },
+        "children": [
+          {
+            "ar": "الكنب",
+            "en": "Sofas"
+          },
+          {
+            "ar": "طاولات القهوة",
+            "en": "Coffee Tables"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "البقالة",
+      "en": "Grocery"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "مستلزمات العناية بالبيت",
+          "en": "Home Care Supplies"
+        },
+        "children": [
+          {
+            "ar": "منظفات البيت",
+            "en": "Household Cleaners"
+          },
+          {
+            "ar": "العناية بالغسيل",
+            "en": "Laundry Care"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "مشروبات",
+          "en": "Beverages"
+        },
+        "children": [
+          {
+            "ar": "شاي",
+            "en": "Tea"
+          },
+          {
+            "ar": "قهوة",
+            "en": "Coffee"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "أزياء الرجال",
+      "en": "Men's Fashion"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "ربيع/صيف",
+          "en": "Spring/Summer"
+        },
+        "children": [
+          {
+            "ar": "تيشرتات",
+            "en": "T-shirts"
+          },
+          {
+            "ar": "البولو",
+            "en": "Polo Shirts"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "أحذية",
+          "en": "Shoes"
+        },
+        "children": [
+          {
+            "ar": "أحذية رياضية",
+            "en": "Sports Shoes"
+          },
+          {
+            "ar": "سنيكرز",
+            "en": "Sneakers"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "أزياء النساء",
+      "en": "Women's Fashion"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "ملابس",
+          "en": "Clothing"
+        },
+        "children": [
+          {
+            "ar": "بلايز",
+            "en": "Tops"
+          },
+          {
+            "ar": "فساتين",
+            "en": "Dresses"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "الشنط والاكسسوارات",
+          "en": "Bags & Accessories"
+        },
+        "children": [
+          {
+            "ar": "شنط الظهر",
+            "en": "Backpacks"
+          },
+          {
+            "ar": "شنط اليد",
+            "en": "Handbags"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "مستلزمات الأم والبيبي",
+      "en": "Baby & Maternity"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "أساسيات البيبي",
+          "en": "Baby Essentials"
+        },
+        "children": [
+          {
+            "ar": "الأفضل مبيعا",
+            "en": "Best Sellers"
+          },
+          {
+            "ar": "متجر الهدايا",
+            "en": "Gift Shop"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "أساسيات الإطعام",
+          "en": "Feeding Essentials"
+        },
+        "children": [
+          {
+            "ar": "مضخات الثدي",
+            "en": "Breast Pumps"
+          },
+          {
+            "ar": "الرضاعات",
+            "en": "Baby Bottles"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "الألعاب",
+      "en": "Toys"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "الألعاب الخارجية",
+          "en": "Outdoor Toys"
+        },
+        "children": [
+          {
+            "ar": "مسدسات اللعب",
+            "en": "Blasters"
+          },
+          {
+            "ar": "الترامبولين والألعاب النطاطة",
+            "en": "Trampolines & Bouncers"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "الألعاب الداخلية",
+          "en": "Indoor Toys"
+        },
+        "children": [
+          {
+            "ar": "البزل",
+            "en": "Puzzles"
+          },
+          {
+            "ar": "البطاقات والألعاب اللوحية",
+            "en": "Card & Board Games"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category": {
+      "ar": "أزياء الأطفال",
+      "en": "Kids Fashion"
+    },
+    "children": [
+      {
+        "category": {
+          "ar": "ملابس البنات",
+          "en": "Girls Clothing"
+        },
+        "children": [
+          {
+            "ar": "تيشرتات",
+            "en": "T-shirts"
+          },
+          {
+            "ar": "بناطيل وليقنز",
+            "en": "Pants & Leggings"
+          }
+        ]
+      },
+      {
+        "category": {
+          "ar": "أحذية",
+          "en": "Shoes"
+        },
+        "children": [
+          {
+            "ar": "أحذية رياضية",
+            "en": "Sports Shoes"
+          },
+          {
+            "ar": "سنيكرز",
+            "en": "Sneakers"
+          }
+        ]
+      }
+    ]
+  }
+]
