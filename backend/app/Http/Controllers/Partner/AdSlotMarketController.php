@@ -46,6 +46,9 @@ class AdSlotMarketController extends Controller
             ->get();
 
         $grouped = $slots->groupBy(function (PaidAdSlot $slot) {
+            if ($slot->target_type === \App\Enums\PaidAdSlotTargetType::ListingPromotion) {
+                return 'promotions';
+            }
             if ($slot->target_type->value === 'page_block') {
                 return 'homepage';
             }

@@ -8,6 +8,8 @@
             slot: {!! json_encode([
                 'id' => $slot->id,
                 'name' => $slot->name,
+                'target_type' => $slot->target_type->value,
+                'shows_popup' => (bool) $slot->shows_popup,
                 'currency' => $slot->country?->currency_code,
                 'pricing_model' => $slot->pricing_model->value,
                 'min_booking_days' => $slot->min_booking_days,
@@ -86,33 +88,46 @@
 
     <!-- Step 4: Creative -->
     <div x-show="step === 4" class="space-y-4">
-        <p class="text-xs text-gray-500">
-            {{ __('partner.ad_slots.creative_required_size') }}:
-            desktop <span x-text="slot.creative_spec?.desktop?.w"></span>×<span x-text="slot.creative_spec?.desktop?.h"></span>px,
-            mobile <span x-text="slot.creative_spec?.mobile?.w"></span>×<span x-text="slot.creative_spec?.mobile?.h"></span>px
-        </p>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.desktop_en') }} *</label>
-                <input type="file" accept="image/*" @change="onFile($event, 'desktop_en')">
+        <template x-if="isBoostOnly">
+            <p class="text-sm text-gray-500">{{ __('partner.ad_slots.boost_no_creative_needed') }}</p>
+        </template>
+        <template x-if="!isBoostOnly">
+            <div class="space-y-4">
+                <p class="text-xs text-gray-500">
+                    {{ __('partner.ad_slots.creative_required_size') }}:
+                    desktop <span x-text="slot.creative_spec?.desktop?.w"></span>×<span x-text="slot.creative_spec?.desktop?.h"></span>px,
+                    mobile <span x-text="slot.creative_spec?.mobile?.w"></span>×<span x-text="slot.creative_spec?.mobile?.h"></span>px
+                </p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.desktop_en') }} *</label>
+                        <input type="file" accept="image/*" @change="onFile($event, 'desktop_en')">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.desktop_ar') }}</label>
+                        <input type="file" accept="image/*" @change="onFile($event, 'desktop_ar')">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.mobile_en') }} *</label>
+                        <input type="file" accept="image/*" @change="onFile($event, 'mobile_en')">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.mobile_ar') }}</label>
+                        <input type="file" accept="image/*" @change="onFile($event, 'mobile_ar')">
+                    </div>
+                </div>
+                <template x-if="slot.shows_popup">
+                    <div class="grid grid-cols-2 gap-4">
+                        <textarea placeholder="{{ __('partner.ad_slots.subtitle_en') }}" x-model="form.subtitle_en" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm" rows="3"></textarea>
+                        <textarea placeholder="{{ __('partner.ad_slots.subtitle_ar') }}" x-model="form.subtitle_ar" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm" rows="3" dir="rtl"></textarea>
+                    </div>
+                </template>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="{{ __('partner.ad_slots.title_en') }}" x-model="form.title_en" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
+                    <input type="text" placeholder="{{ __('partner.ad_slots.title_ar') }}" x-model="form.title_ar" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm" dir="rtl">
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.desktop_ar') }}</label>
-                <input type="file" accept="image/*" @change="onFile($event, 'desktop_ar')">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.mobile_en') }} *</label>
-                <input type="file" accept="image/*" @change="onFile($event, 'mobile_en')">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('partner.ad_slots.mobile_ar') }}</label>
-                <input type="file" accept="image/*" @change="onFile($event, 'mobile_ar')">
-            </div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-            <input type="text" placeholder="{{ __('partner.ad_slots.title_en') }}" x-model="form.title_en" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
-            <input type="text" placeholder="{{ __('partner.ad_slots.title_ar') }}" x-model="form.title_ar" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm" dir="rtl">
-        </div>
+        </template>
     </div>
 
     <!-- Step 5: Payment -->

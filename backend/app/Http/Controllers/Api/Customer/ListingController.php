@@ -294,7 +294,7 @@ class ListingController extends Controller
 
     private function applyVendorSort(Builder $query, ?string $sort): void
     {
-        $query->orderByRaw('(is_ad_boosted = 1 AND ad_boost_expires_at > NOW()) DESC');
+        $query->orderByRaw('(is_ad_boosted = 1 AND (ad_boost_expires_at IS NULL OR ad_boost_expires_at > NOW())) DESC');
 
         match ($sort) {
             'price_asc' => $query->orderBy('price', 'asc'),

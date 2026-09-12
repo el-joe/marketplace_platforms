@@ -23,6 +23,7 @@ use App\Notifications\Ads\AdBookingLiveNotification;
 use App\Notifications\Ads\AdBookingPausedNotification;
 use App\Notifications\Ads\AdBookingRejectedNotification;
 use App\Notifications\Ads\AdBookingSubmittedNotification;
+use App\Services\Ads\PaidAdBoostSyncService;
 use Carbon\Carbon;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,7 @@ class AdBookingService
         private readonly AdSlotQuoteService $quoteService,
         private readonly AdBillingService $billingService,
         private readonly PaidAdResolver $resolver,
+        private readonly PaidAdBoostSyncService $boostSync,
     ) {
     }
 
@@ -121,6 +123,7 @@ class AdBookingService
             }
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             $autoApproved = ! $slot->requires_approval && $creative->status === PaidAdCreativeStatus::Approved;
 
@@ -151,6 +154,7 @@ class AdBookingService
             ]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             try {
                 $this->billingService->collect($b);
@@ -206,6 +210,7 @@ class AdBookingService
             ]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             if ($wasApproved) {
                 $this->notifyApproved($b, $target === PaidAdBookingStatus::Active ? 'live' : 'scheduled');
@@ -236,6 +241,7 @@ class AdBookingService
             ]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             DB::afterCommit(fn () => AdBookingRecipients::advertiserAdmins($b)->each(
                 fn ($admin) => $admin->notify(new AdBookingRejectedNotification($b, $reason))
@@ -256,6 +262,7 @@ class AdBookingService
             ]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             DB::afterCommit(fn () => AdBookingRecipients::advertiserAdmins($b)->each(
                 fn ($admin) => $admin->notify(new AdBookingPausedNotification($b, $reason))
@@ -277,6 +284,7 @@ class AdBookingService
             $b->update(['status' => $target->value]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
         });
     }
 
@@ -300,6 +308,7 @@ class AdBookingService
             ]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             DB::afterCommit(fn () => AdBookingRecipients::advertiserAdmins($b)->each(
                 fn ($admin) => $admin->notify(new AdBookingCompletedNotification($b))
@@ -321,6 +330,7 @@ class AdBookingService
             $b->update(['status' => PaidAdBookingStatus::Expired->value]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             DB::afterCommit(fn () => AdBookingRecipients::advertiserAdmins($b)->each(
                 fn ($admin) => $admin->notify(new AdBookingExpiredNotification($b))
@@ -361,6 +371,7 @@ class AdBookingService
             ]);
 
             $this->resolver->bust($b->country_id);
+            $this->boostSync->sync($b);
 
             DB::afterCommit(function () use ($b, $by, $refundAmount) {
                 $recipients = AdBookingRecipients::advertiserAdmins($b);

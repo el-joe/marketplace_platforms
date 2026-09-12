@@ -10,4 +10,5 @@ enum PaidAdSlotTargetType: string
 
     case Placement = 'placement';
     case PageBlock = 'page_block';
+    case ListingPromotion = 'listing_promotion';
 }

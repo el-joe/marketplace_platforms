@@ -23,6 +23,7 @@ window.adBookingWizard = function () {
         error: '',
         slot: cfg.slot,
         isMetered: ['cpm', 'cpc'].includes(cfg.slot.pricing_model),
+        isBoostOnly: cfg.slot.target_type === 'listing_promotion' && !cfg.slot.shows_popup,
         listingDestinationType: cfg.slot.vendor_type === 'classified_vendor' ? 'classified_listing' : 'listing',
         listingDestinationTypeLabel: cfg.slot.vendor_type === 'classified_vendor' ? 'Classified listing' : 'Product listing',
         dateHint: '',
@@ -74,7 +75,7 @@ window.adBookingWizard = function () {
                 return;
             }
             if (this.step === 4) {
-                if (!this.files.desktop_en || !this.files.mobile_en) {
+                if (!this.isBoostOnly && (!this.files.desktop_en || !this.files.mobile_en)) {
                     this.error = 'Desktop EN and Mobile EN creatives are required.';
                     return;
                 }

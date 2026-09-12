@@ -22,6 +22,7 @@ class PaidAdSlot extends Model
         'target_type' => PaidAdSlotTargetType::class,
         'is_available' => 'boolean',
         'requires_approval' => 'boolean',
+        'shows_popup' => 'boolean',
         'min_booking_days' => 'integer',
         'max_booking_days' => 'integer',
         'item_position' => 'integer',
@@ -37,6 +38,7 @@ class PaidAdSlot extends Model
 
     protected $fillable = [
         'target_type',
+        'shows_popup',
         'placement_definition_id',
         'page_block_id',
         'item_position',

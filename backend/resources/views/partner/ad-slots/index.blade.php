@@ -19,7 +19,7 @@
         </select>
     </div>
 
-    @foreach (['homepage' => __('partner.ad_slots.group_homepage'), 'cart' => __('partner.ad_slots.group_cart'), 'product' => __('partner.ad_slots.group_product'), 'search' => __('partner.ad_slots.group_search'), 'category' => __('partner.ad_slots.group_category')] as $key => $label)
+    @foreach (['promotions' => __('partner.ad_slots.group_promotions'), 'homepage' => __('partner.ad_slots.group_homepage'), 'cart' => __('partner.ad_slots.group_cart'), 'product' => __('partner.ad_slots.group_product'), 'search' => __('partner.ad_slots.group_search'), 'category' => __('partner.ad_slots.group_category')] as $key => $label)
         @if ($grouped->has($key))
             <h3 class="text-sm font-semibold text-gray-700 mt-6 mb-3">{{ $label }}</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

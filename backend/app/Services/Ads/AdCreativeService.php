@@ -4,6 +4,7 @@ namespace App\Services\Ads;
 
 use App\Enums\PaidAdBookingStatus;
 use App\Enums\PaidAdCreativeStatus;
+use App\Enums\PaidAdSlotTargetType;
 use App\Models\Admin;
 use App\Models\File;
 use App\Models\PaidAdBooking;
@@ -47,17 +48,24 @@ class AdCreativeService
             ]));
         }
 
-        foreach (self::REQUIRED_SLOTS as $slot) {
-            if (empty($files[$slot])) {
-                throw new DomainException(__('ads.errors.creative_required'));
+        // Boost-only listing promotions (no popup) link straight to the listing and need
+        // no creative artwork at all — the image requirement below does not apply to them.
+        $isBoostOnly = $booking->slot->target_type === PaidAdSlotTargetType::ListingPromotion
+            && ! $booking->slot->shows_popup;
+
+        if (! $isBoostOnly) {
+            foreach (self::REQUIRED_SLOTS as $slot) {
+                if (empty($files[$slot])) {
+                    throw new DomainException(__('ads.errors.creative_required'));
+                }
             }
-        }
 
-        $spec = $booking->slot->creativeSpec();
+            $spec = $booking->slot->creativeSpec();
 
-        foreach ([...self::REQUIRED_SLOTS, ...self::OPTIONAL_SLOTS] as $slot) {
-            if (! empty($files[$slot])) {
-                $this->validateImage($files[$slot], $slot, $spec);
+            foreach ([...self::REQUIRED_SLOTS, ...self::OPTIONAL_SLOTS] as $slot) {
+                if (! empty($files[$slot])) {
+                    $this->validateImage($files[$slot], $slot, $spec);
+                }
             }
         }
 
