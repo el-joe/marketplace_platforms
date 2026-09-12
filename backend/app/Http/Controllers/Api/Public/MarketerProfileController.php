@@ -187,10 +187,15 @@ class MarketerProfileController extends Controller
                 'abaya_size'        => $profile->abaya_size,
                 'shoe_size'         => $profile->shoe_size,
                 'shoe_size_system'  => $profile->shoe_size_system,
-                'chest_cm'          => $profile->chest_cm,
-                'waist_cm'          => $profile->waist_cm,
-                'height_cm'         => $profile->height_cm,
-                'notes'             => $profile->measurements_notes,
+                'chest_cm'                  => $profile->chest_cm,
+                'waist_cm'                  => $profile->waist_cm,
+                'hip_cm'                    => $profile->hip_cm,
+                'height_cm'                 => $profile->height_cm,
+                'item_length_cm'            => $profile->item_length_cm,
+                'sleeve_from_neck_cm'       => $profile->sleeve_from_neck_cm,
+                'sleeve_from_shoulder_cm'   => $profile->sleeve_from_shoulder_cm,
+                'sleeve_width_cm'           => $profile->sleeve_width_cm,
+                'notes'                     => $profile->measurements_notes,
             ];
         }
 

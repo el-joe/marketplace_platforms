@@ -70,7 +70,12 @@ class MarketerController extends Controller
             'shoe_size_system'        => ['nullable', 'in:EU,US,UK'],
             'chest_cm'                => ['nullable', 'numeric', 'min:0'],
             'waist_cm'                => ['nullable', 'numeric', 'min:0'],
+            'hip_cm'                  => ['nullable', 'numeric', 'min:0'],
             'height_cm'               => ['nullable', 'numeric', 'min:0'],
+            'item_length_cm'          => ['nullable', 'numeric', 'min:0'],
+            'sleeve_from_neck_cm'     => ['nullable', 'numeric', 'min:0'],
+            'sleeve_from_shoulder_cm' => ['nullable', 'numeric', 'min:0'],
+            'sleeve_width_cm'         => ['nullable', 'numeric', 'min:0'],
             'measurements_notes'      => ['nullable', 'string', 'max:2000'],
             'broker_category_id'      => ['nullable', 'uuid', 'exists:categories,id'],
             'broker_city_id'          => ['nullable', 'uuid', 'exists:cities,id'],
@@ -89,7 +94,9 @@ class MarketerController extends Controller
         if ($marketer->isInfluencer()) {
             $data += $request->only([
                 'clothing_size', 'shirt_size', 'pants_size', 'dress_size', 'abaya_size',
-                'shoe_size', 'shoe_size_system', 'chest_cm', 'waist_cm', 'height_cm', 'measurements_notes',
+                'shoe_size', 'shoe_size_system', 'chest_cm', 'waist_cm', 'hip_cm', 'height_cm',
+                'item_length_cm', 'sleeve_from_neck_cm', 'sleeve_from_shoulder_cm', 'sleeve_width_cm',
+                'measurements_notes',
             ]);
         }
 

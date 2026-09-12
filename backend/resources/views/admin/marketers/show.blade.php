@@ -154,8 +154,35 @@
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الحوض (سم)</label>
+                        <input type="number" step="0.1" name="hip_cm" value="{{ old('hip_cm', $marketer->marketerProfile?->hip_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">الطول (سم)</label>
                         <input type="number" step="0.1" name="height_cm" value="{{ old('height_cm', $marketer->marketerProfile?->height_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">طول الملابس (سم)</label>
+                        <input type="number" step="0.1" name="item_length_cm" value="{{ old('item_length_cm', $marketer->marketerProfile?->item_length_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">الكم من الرقبة (سم)</label>
+                        <input type="number" step="0.1" name="sleeve_from_neck_cm" value="{{ old('sleeve_from_neck_cm', $marketer->marketerProfile?->sleeve_from_neck_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">الكم من الكتف (سم)</label>
+                        <input type="number" step="0.1" name="sleeve_from_shoulder_cm" value="{{ old('sleeve_from_shoulder_cm', $marketer->marketerProfile?->sleeve_from_shoulder_cm) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">عرض الكم (سم)</label>
+                        <input type="number" step="0.1" name="sleeve_width_cm" value="{{ old('sleeve_width_cm', $marketer->marketerProfile?->sleeve_width_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                 </div>
