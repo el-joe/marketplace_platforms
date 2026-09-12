@@ -438,6 +438,8 @@
                     sizeGuideUrl: @js($listing->size_guide_image_url),
                     customFields: @js($listing->customFields),
                     addonGroups: @js($listing->addonGroups),
+                    fieldTemplates: @js(config('listing_field_templates')),
+                    defaultSizeGuides: @js(array_filter(config('size_guides', []))),
                 })">
                 <h3 class="font-semibold text-gray-800">تخصيص المنتج (قياسات، إضافات، ملاحظات)</h3>
 
@@ -460,13 +462,31 @@
                         <button type="button" x-show="sizeGuideUrl" @click="deleteSizeGuide()"
                             class="text-xs text-red-500 hover:underline">إزالة</button>
                     </div>
+                    <template x-if="!sizeGuideUrl && Object.keys(defaultSizeGuides).length">
+                        <div class="mt-2 flex items-center gap-2 flex-wrap">
+                            <span class="text-xs text-gray-500">أو استخدم دليل مقاسات جاهز:</span>
+                            <template x-for="(path, type) in defaultSizeGuides" :key="type">
+                                <button type="button" @click="useDefaultSizeGuide(type)"
+                                    class="text-xs border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50"
+                                    x-text="'استخدام دليل ' + type"></button>
+                            </template>
+                        </div>
+                    </template>
                 </div>
 
                 {{-- Custom fields --}}
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <label class="block text-sm font-medium text-gray-700">الحقول المخصصة (مثل: القياسات)</label>
-                        <button type="button" @click="addCustomField()" class="text-xs text-yellow-600 hover:underline">+ إضافة حقل</button>
+                        <div class="flex items-center gap-2">
+                            <select x-model="selectedTemplate" class="text-xs border border-gray-200 rounded-lg px-2 py-1">
+                                <template x-for="(tpl, key) in fieldTemplates" :key="key">
+                                    <option :value="key" x-text="tpl.label_ar"></option>
+                                </template>
+                            </select>
+                            <button type="button" @click="applyFieldTemplate()" class="text-xs text-blue-600 hover:underline">تطبيق القالب</button>
+                            <button type="button" @click="addCustomField()" class="text-xs text-yellow-600 hover:underline">+ إضافة حقل</button>
+                        </div>
                     </div>
                     <div class="space-y-2">
                         <template x-for="(field, idx) in customFields" :key="field.id || idx">
@@ -587,6 +607,9 @@
                 sizeGuideUrl: config.sizeGuideUrl,
                 customFields: config.customFields || [],
                 addonGroups: config.addonGroups || [],
+                fieldTemplates: config.fieldTemplates || {},
+                defaultSizeGuides: config.defaultSizeGuides || {},
+                selectedTemplate: Object.keys(config.fieldTemplates || {})[0] || '',
                 csrfToken: document.querySelector('meta[name="csrf-token"]').content,
 
                 baseUrl(path) {
@@ -625,6 +648,15 @@
                 async deleteSizeGuide() {
                     await this.request('DELETE', '/size-guide');
                     this.sizeGuideUrl = null;
+                },
+                async useDefaultSizeGuide(type) {
+                    const data = await this.request('POST', '/size-guide/default', { type });
+                    this.sizeGuideUrl = data.data.size_guide_image_url;
+                },
+                async applyFieldTemplate() {
+                    if (!this.selectedTemplate) return;
+                    const data = await this.request('POST', '/custom-fields/apply-template', { template: this.selectedTemplate });
+                    this.customFields.push(...data.data);
                 },
                 addCustomField() {
                     this.customFields.push({ label_en: '', field_type: 'text', unit: '', is_required: true });

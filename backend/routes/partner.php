@@ -145,10 +145,12 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
             Route::post('/settings', 'updateSettings')->name('settings.update');
             Route::post('/size-guide', 'uploadSizeGuide')->name('size-guide.upload');
             Route::delete('/size-guide', 'deleteSizeGuide')->name('size-guide.delete');
+            Route::post('/size-guide/default', 'useDefaultSizeGuide')->name('size-guide.default');
 
             Route::post('/custom-fields', 'storeCustomField')->name('custom-fields.store');
             Route::put('/custom-fields/{field}', 'updateCustomField')->name('custom-fields.update');
             Route::delete('/custom-fields/{field}', 'destroyCustomField')->name('custom-fields.destroy');
+            Route::post('/custom-fields/apply-template', 'applyCustomFieldTemplate')->name('custom-fields.apply-template');
 
             Route::post('/addon-groups', 'storeAddonGroup')->name('addon-groups.store');
             Route::put('/addon-groups/{group}', 'updateAddonGroup')->name('addon-groups.update');

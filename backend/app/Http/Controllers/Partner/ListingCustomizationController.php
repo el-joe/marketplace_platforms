@@ -80,6 +80,27 @@ class ListingCustomizationController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function useDefaultSizeGuide(Request $request, string $listing): JsonResponse
+    {
+        $listing = $this->findOwnedListing($listing);
+
+        $validated = $request->validate([
+            'type' => ['required', 'string', 'in:'.implode(',', array_keys(array_filter(config('size_guides', []))))],
+        ]);
+
+        $path = config('size_guides.'.$validated['type']);
+
+        $listing->update([
+            'size_guide_image_url' => Storage::disk('public')->url($path),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated successfully.',
+            'data' => ['size_guide_image_url' => $listing->size_guide_image_url],
+        ]);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Custom fields (measurements etc.)
     // ─────────────────────────────────────────────────────────────────────────
@@ -142,6 +163,41 @@ class ListingCustomizationController extends Controller
         $listing->customFields()->findOrFail($field)->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    public function applyCustomFieldTemplate(Request $request, string $listing): JsonResponse
+    {
+        $listing = $this->findOwnedListing($listing);
+
+        $validated = $request->validate([
+            'template' => ['required', 'string', 'in:'.implode(',', array_keys(config('listing_field_templates', [])))],
+        ]);
+
+        $template = config('listing_field_templates.'.$validated['template']);
+        $existingLabels = $listing->customFields()->pluck('label_en')->all();
+        $nextPosition = ($listing->customFields()->max('position') ?? 0) + 1;
+
+        $created = [];
+        foreach ($template['fields'] as $field) {
+            if (in_array($field['label_en'], $existingLabels, true)) {
+                continue;
+            }
+
+            $created[] = VendorListingCustomField::create([
+                'id' => (string) Str::uuid(),
+                'vendor_listing_id' => $listing->id,
+                'label_en' => $field['label_en'],
+                'label_ar' => $field['label_ar'] ?? null,
+                'field_type' => $field['field_type'],
+                'placeholder_en' => $field['placeholder_en'] ?? null,
+                'placeholder_ar' => $field['placeholder_ar'] ?? null,
+                'unit' => $field['unit'] ?? null,
+                'is_required' => $field['is_required'] ?? true,
+                'position' => $nextPosition++,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'data' => $created]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
