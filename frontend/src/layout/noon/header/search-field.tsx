@@ -298,28 +298,31 @@ const SearchField = () => {
               {/* Suggestions */}
               {hasSuggestions ? (
                 <div className="">
-                  {/* Suggested Query terms */}
-                  {suggestions?.queries && suggestions?.queries.length > 0 && (
+                  {/* Suggested Products */}
+                  {suggestions?.products && suggestions?.products.length > 0 && (
                     <div className="py-1">
-                      {suggestions?.queries.map((suggestedQuery, idx) => (
+                      {suggestions?.products.map((product) => (
                         <button
-                          key={`query-${idx}-${suggestedQuery}`}
+                          key={`prod-${product.id}-${product.slug}`}
                           type="button"
                           onClick={() => {
-                            setQuery(suggestedQuery);
-                            handleSearch(suggestedQuery);
+                            setIsOpen(false);
+                            router.push(`/products/${product.slug}`);
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
                         >
                           <Image
-                            src={"/images/no-image-available-icon.jpg"}
-                            alt="Oops"
+                            src={
+                              product.primary_image ||
+                              "/images/no-image-available-icon.jpg"
+                            }
+                            alt={product.name}
                             width={50}
                             height={60}
-                            className="border border-border rounded-lg"
+                            className="border border-border rounded-lg object-cover"
                           />
                           <p className="line-clamp-1 font-medium">
-                            {suggestedQuery}
+                            {product.name}
                           </p>
                         </button>
                       ))}

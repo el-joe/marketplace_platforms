@@ -7,6 +7,7 @@ export interface ISearchSuggestionProduct {
   name: string;
   vendor: string;
   type: string;
+  primary_image: string | null;
 }
 
 export interface ISearchSuggestionCategory {
