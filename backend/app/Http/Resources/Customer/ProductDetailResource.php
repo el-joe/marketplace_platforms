@@ -87,8 +87,8 @@ class ProductDetailResource extends JsonResource
 
                 return $this->specifications->map(fn($s) => [
                     'id'       => $s->id,
-                    'label'    => Bilingual::pair($s, 'key')[$locale],
-                    'value'    => Bilingual::pair($s, 'value')[$locale],
+                    'label'    => Bilingual::pair($s, 'key'),
+                    'value'    => Bilingual::pair($s, 'value'),
                     'position' => $s->position,
                 ]);
             }),

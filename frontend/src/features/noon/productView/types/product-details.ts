@@ -142,13 +142,20 @@ export interface Product {
   rating_avg: number;
   rating_count: number;
   attributes_summary: Locales;
-  highlights: string[];
+  highlights: Highlight[];
   specifications: Specifications[];
   seo: SEO;
 }
+export interface Highlight {
+  id: string;
+  text: Locales;
+  position: number;
+}
 export interface Specifications {
-  label: string;
-  value: string;
+  id: string;
+  label: Locales;
+  value: Locales;
+  position: number;
 }
 
 export interface Brand {

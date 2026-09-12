@@ -35,9 +35,9 @@ export default async function ProductOverview({ overviewData }: props) {
         <>
           <h5 className="text-sm text-light uppercase">{t("highlights")}</h5>
           <ul className="pt-8 pb-5 text-secondary list-disc ps-6 ">
-            {overviewData.highlights.map((ov, i) => (
-              <li key={i} className="not-last:mb-1">
-                {ov}
+            {overviewData.highlights.map((ov) => (
+              <li key={ov.id} className="not-last:mb-1">
+                {ov.text[locale]}
               </li>
             ))}
           </ul>
@@ -52,25 +52,29 @@ export default async function ProductOverview({ overviewData }: props) {
           <div className="md:flex gap-x-4 flex-wrap text-xs md:text-sm xl:text-base">
             {/*left col  */}
             <div className="md:w-[calc((100%-16px)/2)]">
-              {leftColumn.map((sp, i) => (
+              {leftColumn.map((sp) => (
                 <div
-                  key={i}
+                  key={sp.id}
                   className="even:bg-gray-5 odd:bg-gray-4 flex p-3 gap-3"
                 >
-                  <p className="w-[45%] md:w-[30%] text-light ">{sp.label}</p>
-                  <p className="">{sp.value}</p>
+                  <p className="w-[45%] md:w-[30%] text-light ">
+                    {sp.label[locale]}
+                  </p>
+                  <p className="">{sp.value[locale]}</p>
                 </div>
               ))}
             </div>
             {/*right col  */}
             <div className="md:w-[calc((100%-16px)/2)]">
-              {rightColumn.map((sp, i) => (
+              {rightColumn.map((sp) => (
                 <div
-                  key={i}
+                  key={sp.id}
                   className="even:bg-gray-5 odd:bg-gray-4 flex p-3 gap-3"
                 >
-                  <p className="w-[45%] md:w-[30%] text-light ">{sp.label}</p>
-                  <p className="">{sp.value}</p>
+                  <p className="w-[45%] md:w-[30%] text-light ">
+                    {sp.label[locale]}
+                  </p>
+                  <p className="">{sp.value[locale]}</p>
                 </div>
               ))}
             </div>
