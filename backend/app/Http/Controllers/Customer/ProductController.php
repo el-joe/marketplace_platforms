@@ -257,6 +257,7 @@ class ProductController extends Controller
                 'images',
                 'variants.variantAttributes.attribute',
                 'variants.variantAttributes.attributeValue',
+                'variants.images',
                 'countrySettings' => fn($q) => $q->where('country_id', $country->id),
             ])
             ->firstOrFail();

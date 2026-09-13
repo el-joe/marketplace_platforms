@@ -431,7 +431,7 @@ class ListingDetailController extends Controller
 
     private function productAttributesForListing($product, $productVariant, $country): array
     {
-        $variants = $product->variants->loadMissing('variantAttributes.attribute', 'variantAttributes.attributeValue');
+        $variants = $product->variants->loadMissing('variantAttributes.attribute', 'variantAttributes.attributeValue', 'images');
         $listingsByVariant = $this->variantListingsMap($product, $country);
 
         return $this->productAttributesShape($variants, $productVariant, $listingsByVariant);

@@ -26,12 +26,15 @@ trait BuildsProductAttributeSelector
 
         $variantCombos = $variants->mapWithKeys(fn($variant) => [$variant->id => $comboFor($variant)]);
         $selectedCombo = $comboFor($selectedVariant);
+        $variantImages = $variants->mapWithKeys(fn($variant) => [
+            $variant->id => $variant->images->firstWhere('is_primary', true) ?? $variant->images->first(),
+        ]);
 
         return $variants
             ->flatMap(fn($variant) => $variant->variantAttributes)
             ->filter(fn($va) => $va->attribute !== null)
             ->groupBy('attribute_id')
-            ->map(function ($group, $attributeId) use ($selectedCombo, $variantCombos, $listingsByVariant) {
+            ->map(function ($group, $attributeId) use ($selectedCombo, $variantCombos, $listingsByVariant, $variantImages) {
                 $attribute = $group->first()->attribute;
 
                 return [
@@ -42,7 +45,7 @@ trait BuildsProductAttributeSelector
                     ],
                     'values' => $group
                         ->unique(fn($va) => $va->attribute_value_id ?? $va->value_text_en)
-                        ->map(function ($va) use ($attributeId, $selectedCombo, $variantCombos, $listingsByVariant) {
+                        ->map(function ($va) use ($attributeId, $selectedCombo, $variantCombos, $listingsByVariant, $variantImages) {
 
                             $candidateCombo = $selectedCombo;
                             $candidateCombo[$attributeId] = $va->attribute_value_id;
@@ -50,6 +53,7 @@ trait BuildsProductAttributeSelector
                             $matchedVariantId = $variantCombos->search(fn($combo) => $combo == $candidateCombo);
                             $matchedVariantId = $matchedVariantId === false ? null : $matchedVariantId;
                             $listing = $matchedVariantId ? ($listingsByVariant[$matchedVariantId] ?? null) : null;
+                            $variantImage = $matchedVariantId ? ($variantImages[$matchedVariantId] ?? null) : null;
 
                             if($matchedVariantId && $listing) {
                                 $url = route('customer.listing.show', [request()->attributes->get('country')->site_code, $matchedVariantId .'--' . $listing['listing_id']]);
@@ -68,6 +72,7 @@ trait BuildsProductAttributeSelector
                                 'url' => $url,
                                 'url_param' => $url_param,
                                 'color_hex' => $va->attributeValue?->color_hex,
+                                'variant_image' => $variantImage?->url,
                                 'selected' => ($selectedCombo[$attributeId] ?? null) === $va->attribute_value_id,
                                 'disabled' => $listing === null,
                                 'variant_id' => $matchedVariantId,
