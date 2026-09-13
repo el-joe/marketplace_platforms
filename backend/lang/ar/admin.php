@@ -1463,6 +1463,7 @@ return [
         'select_country'                => 'اختر دولة',
         'vendor_listing'                => 'عرض التاجر',
         'select_vendor_first'           => 'اختر تاجرًا أولاً',
+        'click_to_search_listings'      => 'انقر للبحث عن العروض...',
         'vendor_listing_hint'           => 'اختياري. اختر العرض المطلوب ترويجه (جميع العروض النشطة).',
         'marketers'                     => 'المسوّقون',
         'select_marketers'              => 'اختر المسوّقين لدعوتهم',

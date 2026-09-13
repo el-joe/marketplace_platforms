@@ -106,6 +106,13 @@
             listingSelect.setAttribute('data-config', JSON.stringify(config));
 
             jQuery(listingSelect).prop('disabled', !vendorId);
+
+            if (vendorId) {
+                jQuery(listingSelect).select2('destroy');
+                listingSelect.setAttribute('placeholder', '{{ __("admin.marketer_campaigns.click_to_search_listings") }}');
+                initSelect2(jQuery(listingSelect).closest('form'));
+            }
+
             jQuery(listingSelect).val(null).trigger('change');
 
             if (countrySelect && vendorId && vendorCountries[vendorId]) {

@@ -1506,6 +1506,7 @@ return [
         'select_country'                => 'Select a country',
         'vendor_listing'                => 'Vendor Listing',
         'select_vendor_first'           => 'Select a vendor first',
+        'click_to_search_listings'      => 'Click to search listings...',
         'vendor_listing_hint'           => 'Optional. Select the product listing to promote (all active listings).',
         'marketers'                     => 'Marketers',
         'select_marketers'              => 'Select marketers to invite',
