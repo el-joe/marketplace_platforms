@@ -8,9 +8,10 @@ import { ShippingGroupItem, ShippingMethod } from "@/types/cart.type";
 import { StoreIcon, Trash2Icon, TruckIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import CouponDetailsModal from "./coupon-details-modal";
+import { getImageURL } from "@/src/helpers/get-image-url";
 
 type Props = {
   item: ShippingGroupItem;
@@ -49,6 +50,7 @@ export default function CartItem({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ItemQuantity]);
+
   return (
     <div
       key={item.id}
@@ -59,7 +61,7 @@ export default function CartItem({
         <div className="relative w-21 md:w-24 lg:w-28 xl:w-32 h-fit">
           <div className="rounded-[16px] w-full h-fit max-h-48 overflow-hidden">
             <Image
-              src={item?.primary_image || "/images/no-image-available-icon.jpg"}
+              src={getImageURL(item.primary_image as string)}
               alt={
                 locale === "ar" ? item.product_name_ar : item.product_name_en
               }

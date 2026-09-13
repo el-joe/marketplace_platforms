@@ -5,6 +5,7 @@ import { IPrepareCheckout } from "./types/checkout.type";
 import { useTranslations } from "next-intl";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useLocale from "@/src/hooks/use-locale";
+import { getImageURL } from "@/src/helpers/get-image-url";
 
 export default function ItemsList({
   shipment_groups,
@@ -33,6 +34,7 @@ const Shipment = ({
 }) => {
   const t = useTranslations("checkout");
   const locale = useLocale();
+
   return (
     <div className="bg-white rounded-2xl">
       <div className="flex gap-2 items-center p-3">
@@ -52,7 +54,7 @@ const Shipment = ({
               <div className="relative w-21 md:w-24 lg:w-28 xl:w-32 h-fit">
                 <div className="rounded-[16px] w-full h-fit max-h-48 overflow-hidden">
                   <Image
-                    src={item.primary_image || ""}
+                    src={getImageURL(item.primary_image as string)}
                     alt={
                       locale === "ar"
                         ? item.product_name_ar

@@ -10,7 +10,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-
 export const apiBaseUrl = `${process.env.NEXT_PUBLIC_BASE_API_URL}/${region}`;
 /** Base URL for the country-agnostic `/v1/...` endpoints (no region segment) — e.g. `/v1/countries`. */
 export const apiBaseUrlGlobal = `${process.env.NEXT_PUBLIC_BASE_API_URL}`;

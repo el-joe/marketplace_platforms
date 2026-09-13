@@ -21,6 +21,7 @@ import { Spinner } from "../ui/spinner";
 import useLocale from "@/src/hooks/use-locale";
 import AddToCartButton from "./add-to-cart-button";
 import { useTranslations } from "next-intl";
+import { getImageURL } from "@/src/helpers/get-image-url";
 
 type Props = {
   productData: Product | IProduct;
@@ -51,6 +52,7 @@ const ProductCard = ({ productData }: Props) => {
       swiper.slideTo(0);
     }
   };
+
   return (
     <div
       className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
@@ -139,13 +141,7 @@ const ProductCard = ({ productData }: Props) => {
               key={image.id}
               className="flex! justify-center! items-center!"
             >
-              <Image
-                src={image?.url || "/images/no-image-available-icon.jpg"}
-                alt={image?.alt[locale] as string}
-                width={500}
-                height={600}
-                className="max-h-full"
-              />
+              <ProductImage image={image} locale={locale} />
             </SwiperSlide>
           ))}
         </Swiper>
@@ -220,3 +216,22 @@ const ProductCard = ({ productData }: Props) => {
 };
 
 export default ProductCard;
+
+const ProductImage = ({
+  image,
+  locale,
+}: {
+  image: Product["images"][number];
+  locale: "ar" | "en";
+}) => {
+
+  return (
+    <Image
+      src={getImageURL(image.url)}
+      alt={image?.alt?.[locale] || ("" as string)}
+      width={500}
+      height={600}
+      className="max-h-full"
+    />
+  );
+};

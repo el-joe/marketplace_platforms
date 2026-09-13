@@ -20,8 +20,6 @@ export default function BookingCard({ booking }: Props) {
 
   const locale = useLocale() as "ar" | "en";
 
-  console.log(booking);
-
   return (
     <Card className="overflow-hidden flex flex-col shadow-sm border border-border">
       <div className="relative h-52">
@@ -66,7 +64,7 @@ export default function BookingCard({ booking }: Props) {
         </div>
 
         <p className="text-sm text-light">
-          {t("operatedBy", { agency: booking.package.agency.name })}
+          {t("myBookings.operatedBy", { agency: booking.package.agency.name })}
         </p>
 
         <div className="flex items-end justify-between mt-auto pt-3 border-t border-border">
