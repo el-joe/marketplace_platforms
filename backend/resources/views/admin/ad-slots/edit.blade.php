@@ -2,6 +2,10 @@
 
 @section('title', __('admin.ad_slots.edit_slot_title'))
 
+@push('styles')
+    @vite(['resources/js/admin/ad-slots.js'])
+@endpush
+
 @section('content')
 
     <div class="mb-6">
@@ -14,7 +18,7 @@
         <p class="text-sm text-gray-500 mt-0.5 font-mono">{{ $adSlot->slot_code }}</p>
     </div>
 
-    <form method="POST" action="{{ route('admin.ad-slots.update', $adSlot->id) }}">
+    <form id="ad-slot-form" method="POST" action="{{ route('admin.ad-slots.update', $adSlot->id) }}">
         @csrf
         @method('PUT')
         @include('admin.ad-slots._form', ['adSlot' => $adSlot])

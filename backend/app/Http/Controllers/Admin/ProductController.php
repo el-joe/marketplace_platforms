@@ -905,7 +905,20 @@ class ProductController extends Controller
     {
         $request->validate([
             'images' => 'required|array|min:1',
-            'images.*' => 'file|mimes:jpg,jpeg,png,webp,avif|max:5120', // 5 MB per image
+            'images.*' => [
+                'file',
+                'mimes:jpg,jpeg,png,webp,avif,mp4,mov,webm',
+                function ($attribute, $value, $fail) {
+                    $isVideo = str_starts_with((string) $value->getMimeType(), 'video/');
+                    $maxKb = $isVideo ? 51200 : 5120; // 50 MB per video, 5 MB per image
+
+                    if ($value->getSize() > $maxKb * 1024) {
+                        $fail($isVideo
+                            ? __('admin.products.video_too_large')
+                            : __('admin.products.image_too_large'));
+                    }
+                },
+            ],
             'variant_id' => 'nullable|string',
         ]);
 

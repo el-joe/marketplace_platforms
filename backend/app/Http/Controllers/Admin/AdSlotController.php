@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AdImageItem;
 use App\Models\BannerPlacementDefinition;
 use App\Models\Country;
+use App\Models\Currency;
 use App\Models\PaidAdSlot;
 use App\Models\SliderSlide;
 use App\Traits\HasDataTable;
@@ -108,8 +109,9 @@ class AdSlotController extends Controller
 
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
+        $currencies = Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']);
 
-        return view('admin.ad-slots.create', compact('placements', 'countries'));
+        return view('admin.ad-slots.create', compact('placements', 'countries', 'currencies'));
     }
 
     // ─── Store ────────────────────────────────────────────────────────────────
@@ -121,17 +123,24 @@ class AdSlotController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
+            'name_ar' => ['nullable', 'string', 'max:150'],
             'slot_code' => ['required', 'string', 'max:50', 'unique:paid_ad_slots,slot_code'],
-            'banner_placement_definition_id' => ['required', 'uuid', 'exists:banner_placement_definitions,id'],
+            'banner_placement_definition_id' => [
+                Rule::requiredIf($request->input('target_type') !== PaidAdSlotTargetType::ListingPromotion->value),
+                'nullable', 'uuid', 'exists:banner_placement_definitions,id',
+            ],
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
             'pricing_model' => ['required', Rule::enum(PaidAdSlotPricingModel::class)],
             'base_rate_display' => ['required', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'exists:currencies,code'],
             'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
+            'max_concurrent' => ['nullable', 'integer', 'min:1', 'max:4294967295'],
             'is_available' => ['boolean'],
             'requires_approval' => ['boolean'],
+            'shows_popup' => ['boolean'],
             'notes_for_vendors' => ['nullable', 'string'],
+            'notes_for_vendors_ar' => ['nullable', 'string'],
             // Page-block-bound slots (target_type=page_block): optional — the
             // create form only wires up placement-based slots today, but a
             // page_block_id + item_position pair lets the admin bind this slot
@@ -145,9 +154,11 @@ class AdSlotController extends Controller
 
         PaidAdSlot::create([
             'name' => $validated['name'],
+            'name_ar' => $validated['name_ar'] ?? null,
             'slot_code' => $validated['slot_code'],
             'target_type' => $targetType,
-            'placement_definition_id' => $validated['banner_placement_definition_id'],
+            'shows_popup' => $request->boolean('shows_popup'),
+            'placement_definition_id' => $validated['banner_placement_definition_id'] ?? null,
             'page_block_id' => $validated['page_block_id'] ?? null,
             'item_position' => $validated['item_position'] ?? null,
             'bound_item_id' => $this->resolveBoundItemId($validated['page_block_id'] ?? null, $validated['item_position'] ?? null),
@@ -157,9 +168,11 @@ class AdSlotController extends Controller
             'currency' => $validated['currency'],
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
+            'max_concurrent' => $validated['max_concurrent'] ?? 1,
             'is_available' => $request->boolean('is_available'),
             'requires_approval' => $request->boolean('requires_approval'),
             'notes_for_vendors' => $validated['notes_for_vendors'] ?? null,
+            'notes_for_vendors_ar' => $validated['notes_for_vendors_ar'] ?? null,
             'created_by_admin_id' => $admin->id,
         ]);
 
@@ -178,8 +191,9 @@ class AdSlotController extends Controller
 
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
+        $currencies = Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']);
 
-        return view('admin.ad-slots.edit', compact('adSlot', 'placements', 'countries'));
+        return view('admin.ad-slots.edit', compact('adSlot', 'placements', 'countries', 'currencies'));
     }
 
     // ─── Update ───────────────────────────────────────────────────────────────
@@ -191,32 +205,45 @@ class AdSlotController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'banner_placement_definition_id' => ['required', 'uuid', 'exists:banner_placement_definitions,id'],
+            'name_ar' => ['nullable', 'string', 'max:150'],
+            'target_type' => ['nullable', Rule::enum(PaidAdSlotTargetType::class)],
+            'banner_placement_definition_id' => [
+                Rule::requiredIf($request->input('target_type') !== PaidAdSlotTargetType::ListingPromotion->value),
+                'nullable', 'uuid', 'exists:banner_placement_definitions,id',
+            ],
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
             'pricing_model' => ['required', Rule::enum(PaidAdSlotPricingModel::class)],
             'base_rate_display' => ['required', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'exists:currencies,code'],
             'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
+            'max_concurrent' => ['nullable', 'integer', 'min:1', 'max:4294967295'],
             'is_available' => ['boolean'],
             'requires_approval' => ['boolean'],
+            'shows_popup' => ['boolean'],
             'notes_for_vendors' => ['nullable', 'string'],
+            'notes_for_vendors_ar' => ['nullable', 'string'],
             'page_block_id' => ['nullable', 'uuid', 'exists:page_blocks,id'],
             'item_position' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $update = [
             'name' => $validated['name'],
-            'placement_definition_id' => $validated['banner_placement_definition_id'],
+            'name_ar' => $validated['name_ar'] ?? null,
+            'target_type' => $validated['target_type'] ?? $adSlot->target_type,
+            'shows_popup' => $request->boolean('shows_popup'),
+            'placement_definition_id' => $validated['banner_placement_definition_id'] ?? null,
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
             'base_rate' => (int) round($validated['base_rate_display']),
             'currency' => $validated['currency'],
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
+            'max_concurrent' => $validated['max_concurrent'] ?? 1,
             'is_available' => $request->boolean('is_available'),
             'requires_approval' => $request->boolean('requires_approval'),
             'notes_for_vendors' => $validated['notes_for_vendors'] ?? null,
+            'notes_for_vendors_ar' => $validated['notes_for_vendors_ar'] ?? null,
         ];
 
         if (array_key_exists('item_position', $validated)) {

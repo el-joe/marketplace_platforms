@@ -43,7 +43,7 @@
     <div x-show="step === 1" class="space-y-4">
         <label class="block text-sm font-medium text-gray-700">{{ __('partner.ad_slots.dates') }}</label>
         <div class="grid grid-cols-2 gap-4">
-            <input type="date" x-model="form.booked_from" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
+            <input type="date" x-model="form.booked_from" @change="onStartDateChange()" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
             <input type="date" x-model="form.booked_until" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
         </div>
         <template x-if="isMetered">

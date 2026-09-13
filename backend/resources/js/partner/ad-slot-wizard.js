@@ -47,6 +47,17 @@ window.adBookingWizard = function () {
             if (this.slot.pricing_model === 'fixed_monthly') this.dateHint = 'Range must be a multiple of 30 days.';
         },
 
+        onStartDateChange() {
+            if (!this.form.booked_from) return;
+
+            const minDays = this.slot.min_booking_days || 1;
+            const start = new Date(`${this.form.booked_from}T00:00:00`);
+            const end = new Date(start);
+            end.setDate(end.getDate() + minDays);
+
+            this.form.booked_until = end.toISOString().slice(0, 10);
+        },
+
         async next() {
             this.error = '';
             if (this.step === 1) {

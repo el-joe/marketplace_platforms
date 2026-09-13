@@ -890,8 +890,11 @@ function initFilePond() {
         allowMultiple: true,
         allowReorder: true,
         maxFiles: 20,
-        acceptedFileTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
-        maxFileSize: '5MB',
+        acceptedFileTypes: [
+            'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml', 'image/avif',
+            'video/mp4', 'video/quicktime', 'video/webm',
+        ],
+        maxFileSize: '50MB',
         labelIdle: T.filepondLabelIdle || 'Drag &amp; drop images or <span class="filepond--label-action">Browse</span>',
 
         server: {

@@ -2610,6 +2610,8 @@ return [
         'group_search' => 'البحث',
         'group_category' => 'صفحات التصنيف',
         'no_slots' => 'لا توجد مساحات إعلانية متاحة لحسابك حاليًا.',
+        'tier_listing_boost' => 'تعزيز القائمة',
+        'tier_boost_popup' => 'تعزيز + نافذة منبثقة',
         'book' => 'احجز',
         'wizard_title' => 'حجز مساحة إعلانية',
         'step' => 'خطوة',

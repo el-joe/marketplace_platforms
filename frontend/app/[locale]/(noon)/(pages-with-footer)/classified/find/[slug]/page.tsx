@@ -6,7 +6,7 @@ type Props = {
 };
 
 export default async function ClassifiedDetailPage({ params }: Props) {
-  const { slug } = await params;
+  await params;
 
-  return <ClassifiedView slug={slug} />;
+  return <ClassifiedView />;
 }

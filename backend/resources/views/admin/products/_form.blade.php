@@ -689,7 +689,7 @@
                     id="product-images-filepond"
                     name="images[]"
                     multiple
-                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/quicktime,video/webm"
                     data-process-field="file"
                     data-upload-url="{{ route('admin.products.upload-image') }}"
                     data-revert-base="{{ Str::beforeLast(route('admin.products.delete-image', ['mediaId' => '__id__']), '/__id__') }}"

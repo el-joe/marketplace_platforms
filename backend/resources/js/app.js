@@ -233,9 +233,17 @@ window.injectValidationErrors = function ($form, errors) {
 };
 
 /* ---------- Alpine ---------- */
-// Defer start so page-level scripts (ads.js, etc.) can register their
-// window.* component factories before Alpine walks the DOM.
-queueMicrotask(() => Alpine.start());
+// Defer start until all deferred/module scripts have run (DOMContentLoaded
+// fires after them), so page-level scripts loaded later in the document
+// (e.g. via @push('scripts')) can register their window.* component
+// factories before Alpine walks the DOM.
+//
+// This script is itself a deferred module, so by the time it runs the
+// document has already finished parsing and readyState is "interactive"
+// (never "loading") — DOMContentLoaded has NOT fired yet at this point
+// (it only fires once all deferred/module scripts finish), so always
+// listening for it here is correct. Do not gate this on readyState.
+document.addEventListener('DOMContentLoaded', () => Alpine.start());
 
 /* ---------- Reverb / Echo ---------- */
 import './shared/echo-setup.js';
