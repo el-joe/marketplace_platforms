@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaignInvitation;
 use App\Services\LastClickAttributionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 
@@ -14,38 +15,46 @@ class ReferralTrackingController extends Controller
 
     /**
      * GET /r/{code}
-     * Track a referral click and redirect to the product page.
+     * Track a referral click and return/redirect to the product page.
+     * Responds with JSON when called via fetch (the Next.js /r/[code] page),
+     * falls back to a plain redirect for any non-JS/legacy direct navigation.
      */
-    public function track(string $code, Request $request): RedirectResponse
+    public function track(string $code, Request $request): RedirectResponse|JsonResponse
     {
         $invitation = MarketerCampaignInvitation::where('referral_code', $code)
             ->where('status', 'accepted')
-            ->with('campaign.vendorListing.productVariant')
+            ->with('campaign.vendorListing.productVariant.product')
             ->first();
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
 
         if (!$invitation) {
-            return redirect($frontendUrl . '?ref=' . urlencode($code))
-                ->cookie('mkt_ref', $code, 60 * 24 * 30, '/', null, true, false);
+            $destination = $frontendUrl . '?ref=' . urlencode($code);
+
+            return $request->wantsJson()
+                ? response()->json(['destination' => $destination])
+                : redirect($destination);
         }
 
         $sessionId = $request->header('X-Session-Id')
+            ?? $request->query('session_id')
             ?? $request->cookie('session_id')
             ?? session()->getId();
 
         $this->attributionService->recordClick($code, $sessionId);
 
-        $vendorListing = $invitation->campaign?->vendorListing;
-        $listingId = $vendorListing?->id;
+        $slug = $invitation->campaign
+            ?->vendorListing
+            ?->productVariant
+            ?->product
+            ?->slug;
 
-        $destination = $listingId
-            ? "{$frontendUrl}/products/{$listingId}?ref=" . urlencode($code)
+        $destination = $slug
+            ? "{$frontendUrl}/products/{$slug}?ref=" . urlencode($code)
             : $frontendUrl . '?ref=' . urlencode($code);
 
-        // 30-day cookie so the referral code survives registration even if
-        // the customer browses before signing up.
-        return redirect($destination)
-            ->cookie('mkt_ref', $code, 60 * 24 * 30, '/', null, true, false);
+        return $request->wantsJson()
+            ? response()->json(['destination' => $destination])
+            : redirect($destination);
     }
 }

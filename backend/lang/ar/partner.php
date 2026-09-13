@@ -2318,6 +2318,12 @@ return [
         'tiered_rules' => 'قواعد العمولة المتدرجة',
         'status_timeline' => 'الجدول الزمني للحالة',
 
+        'commission_type' => [
+            'fixed' => 'ثابتة',
+            'tiered' => 'متدرجة',
+            'last_click' => 'آخر نقرة',
+        ],
+
         'tab_info' => 'معلومات الحملة',
         'tab_marketers' => 'المسوّقون المدعوون',
         'tab_conversions' => 'التحويلات',
