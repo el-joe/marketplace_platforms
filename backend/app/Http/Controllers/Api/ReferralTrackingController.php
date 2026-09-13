@@ -37,6 +37,7 @@ class ReferralTrackingController extends Controller
         }
 
         $sessionId = $request->header('X-Session-Id')
+            ?? $request->query('session_id')
             ?? $request->cookie('session_id')
             ?? session()->getId();
 
