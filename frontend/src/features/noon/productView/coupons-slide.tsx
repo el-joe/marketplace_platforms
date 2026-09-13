@@ -23,22 +23,22 @@ export default function CouponsSlide({
         modules={[Navigation, FreeMode]}
         navigation
         freeMode={true}
-        slidesPerView={1.2}
+        slidesPerView={"auto"}
         spaceBetween={6}
-        breakpoints={{
-          1024: {
-            spaceBetween: 12,
-          },
-          1440: {
-            slidesPerView: 1.7,
-            spaceBetween: 16,
-          },
-        }}
+        // breakpoints={{
+        //   1024: {
+        //     spaceBetween: 12,
+        //   },
+        //   1440: {
+        //     slidesPerView: 1.7,
+        //     spaceBetween: 16,
+        //   },
+        // }}
         className="pe-8!"
       >
         {coupons.map((coupon) => (
-          <SwiperSlide key={coupon.id} className="">
-            <div className="flex items-center p-2 border le text-sm border-border rounded-md gap-1 bg-[linear-gradient(90deg,#fff_35%,#effdf2_100%)]">
+          <SwiperSlide key={coupon.id} className="w-fit!">
+            <div className="flex items-center p-2 border text-sm border-border rounded-md gap-1.5 bg-[linear-gradient(90deg,#fff_35%,#effdf2_100%)]">
               <span className="min-w-9 h-9 grid rounded-full bg-light-green text-green place-items-center">
                 <TicketPercent className="w-1/2 h-1/2" />
               </span>
