@@ -205,7 +205,7 @@ window.adBookingWizard = function () {
                     return;
                 }
                 toast('Booking submitted for review.');
-                window.location.href = `/partner/ad-bookings/${this.bookingId}`;
+                window.location.href = cfg.showUrlTemplate.replace('__ID__', this.bookingId);
             } catch (e) {
                 this.error = 'Network error.';
             } finally { this.loading = false; }

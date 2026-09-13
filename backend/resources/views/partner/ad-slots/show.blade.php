@@ -24,6 +24,7 @@
             storeBookingUrl: "{{ route('partner.ad-bookings.store') }}",
             uploadCreativeUrlTemplate: "{{ route('partner.ad-bookings.creative', ['booking' => '__ID__']) }}",
             submitUrlTemplate: "{{ route('partner.ad-bookings.submit', ['booking' => '__ID__']) }}",
+            showUrlTemplate: "{{ route('partner.ad-bookings.show', ['booking' => '__ID__']) }}",
             walletBalanceUrl: "{{ route('partner.wallet.index') }}",
         };
     </script>
