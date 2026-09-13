@@ -1,3 +1,4 @@
+"use client";
 import { Link } from "@/i18n/navigation";
 import Price from "@/src/components/shared/Price";
 import { RatingStars } from "@/src/components/ui/RatingStars";
@@ -9,20 +10,43 @@ import {
   CircleStarIcon,
   StarIcon,
 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
 import React from "react";
 import { IProductDetails } from "./types";
-import getLocale from "@/src/helpers/getLocale";
+import { Badge } from "@/src/components/ui/badge";
+import { useCartContext } from "@/src/providers/cart-provider";
+import useLocale from "@/src/hooks/use-locale";
+import { useTranslations } from "next-intl";
+import Image from "next/image";
 
 type Props = {
   product: IProductDetails;
 };
 
-export default async function BaseInfo({ product }: Props) {
-  const locale = await getLocale();
-  const t = await getTranslations("productView");
+export default function BaseInfo({ product }: Props) {
+  const locale = useLocale();
+  const t = useTranslations("productView");
+  const { cart } = useCartContext();
+  const isInCart = cart?.cart.items.find(
+    (item) => item.listing_id === product.listing.listing_id,
+  );
   return (
     <>
+      <div className="flex mb-5">
+        <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
+          Mega deal 📣
+        </Badge>
+        {!!isInCart && (
+          <Badge className="text-sm font-bold bg-green text-white ms-auto">
+            <Image
+              src="/images/shopping-cart-green.svg"
+              alt=""
+              width={18}
+              height={18}
+            />{" "}
+            {t("inYourCart")}
+          </Badge>
+        )}
+      </div>
       {/* brand link */}
       <Link
         href={`/brands/${product.product.brand.slug}`}
@@ -52,9 +76,9 @@ export default async function BaseInfo({ product }: Props) {
         >
           {product?.product?.rating_count} {t("ratings")}
         </Link>
-        {/* price */}
       </div>
-      <div className="flex mt-4 mb-2 gap-2 flex-wrap">
+      {/* price */}
+      <div className="flex mt-8 mb-2 gap-2 flex-wrap">
         <Price
           size="xl"
           currentPrice={product.listing.price}

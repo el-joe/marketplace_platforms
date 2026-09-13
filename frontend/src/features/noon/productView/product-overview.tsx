@@ -27,8 +27,10 @@ export default async function ProductOverview({ overviewData }: props) {
       {/* overview */}
       <Separator />
       <div
-        dangerouslySetInnerHTML={{ __html: overviewData.overview[locale] as string }}
-        className="pt-8 pb-5 text-secondary ps-6"
+        dangerouslySetInnerHTML={{
+          __html: overviewData.overview[locale] as string,
+        }}
+        className="pt-8 pb-5 text-secondary"
       />
       {/* highlights */}
       {!!overviewData.highlights.length && (

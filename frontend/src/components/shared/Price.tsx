@@ -56,7 +56,7 @@ const Price = ({
         <span className="font-[currency-font]">
           <CurrencySymbol code={currency} />
         </span>
-        <p>{currentPrice.toLocaleString()}</p>
+        <p>{currentPrice?.toLocaleString()}</p>
       </div>
       {variant === "default" && (
         <>
@@ -64,7 +64,7 @@ const Price = ({
             <p
               className={`font-semibold line-through text-gray ${oldPriceSize[size]}`}
             >
-              {oldPrice.toLocaleString()}
+              {oldPrice?.toLocaleString()}
             </p>
           )}
           {discountPercent && (
@@ -82,7 +82,7 @@ const Price = ({
             <p
               className={`font-semibold line-through text-gray ${oldPriceSize[size]}`}
             >
-              {oldPrice.toLocaleString()}
+              {oldPrice?.toLocaleString()}
             </p>
           )}
           {discountPercent && (
