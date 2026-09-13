@@ -960,6 +960,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->middleware('admin.permission:marketer_campaigns.view')->group(function () {
         Route::get('/', [MarketerCampaignController::class, 'index'])->name('index');
         Route::get('/financials', [MarketerCampaignController::class, 'financials'])->name('financials');
+        Route::get('/search-listings', [MarketerCampaignController::class, 'searchVendorListings'])->name('search-listings')
+            ->middleware('admin.permission:marketer_campaigns.create');
+        Route::get('/create', [MarketerCampaignController::class, 'create'])->name('create')
+            ->middleware('admin.permission:marketer_campaigns.create');
+        Route::post('/', [MarketerCampaignController::class, 'store'])->name('store')
+            ->middleware('admin.permission:marketer_campaigns.create');
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show');
         Route::post('/{marketerCampaign}/approve', [MarketerCampaignController::class, 'approve'])->name('approve');
         Route::post('/{marketerCampaign}/reject', [MarketerCampaignController::class, 'reject'])->name('reject');

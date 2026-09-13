@@ -131,6 +131,72 @@ class MarketerCampaignController extends Controller
         return back()->with('success', 'تم تسجيل دفع رسوم الإنفلوينسر.');
     }
 
+    public function create()
+    {
+        abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
+
+        $vendors   = \App\Models\Vendor::orderBy('store_name')->get();
+        $marketers = \App\Models\Marketer::where('global_status', 'active')->orderBy('name')->get();
+        $countries = \App\Models\Country::orderBy('name_en')->get();
+
+        return view('admin.marketer_campaigns.create', compact('vendors', 'marketers', 'countries'));
+    }
+
+    public function store(Request $request)
+    {
+        abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
+
+        $data = $request->validate([
+            'vendor_id'              => 'required|uuid|exists:vendors,id',
+            'vendor_listing_id'      => 'nullable|uuid|exists:vendor_listings,id',
+            'marketer_ids'           => 'required|array|min:1',
+            'marketer_ids.*'         => 'uuid|exists:marketers,id',
+            'country_id'             => 'required|uuid|exists:countries,id',
+            'currency'               => 'required|string|size:3',
+            'commission_type'        => 'required|in:fixed,percentage,last_click,tiered',
+            'max_commission_budget'  => 'required|integer|min:0',
+            'title'                  => 'nullable|string|max:255',
+            'notes'                  => 'nullable|string|max:1000',
+        ]);
+
+        $vendor = \App\Models\Vendor::findOrFail($data['vendor_id']);
+
+        try {
+            $campaign = $this->service->createCampaign($vendor, $data);
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('admin.marketer-campaigns.show', $campaign)
+            ->with('success', 'تم إنشاء الحملة بنجاح.');
+    }
+
+    public function searchVendorListings(Request $request)
+    {
+        abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
+
+        $request->validate([
+            'vendor_id' => 'required|uuid|exists:vendors,id',
+            'search'    => 'nullable|string',
+        ]);
+
+        $listings = \App\Models\VendorListing::with('productVariant.product')
+            ->where('vendor_id', $request->vendor_id)
+            ->where('fulfillment_model', 'fbn')
+            ->whereHas('productVariant.product', fn ($q) =>
+                $q->where('name_en', 'like', "%{$request->search}%")
+            )
+            ->limit(20)
+            ->get()
+            ->map(fn ($l) => [
+                'id'   => $l->id,
+                'text' => ($l->productVariant?->product?->name_en ?? '—') . ' — ' . $l->id,
+            ]);
+
+        return response()->json(['results' => $listings]);
+    }
+
     public function financials(Request $request)
     {
         abort_unless(auth('admin')->user()->can('marketer_campaigns.view'), 403);

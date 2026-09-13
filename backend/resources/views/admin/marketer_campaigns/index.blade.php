@@ -19,12 +19,19 @@
         <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.marketer_campaigns.title') }}</h1>
         <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.marketer_campaigns.manage_subtitle') }}</p>
     </div>
-    @if($pendingCount > 0)
-        <span class="inline-flex items-center gap-2 rounded-lg bg-warning-100 text-warning-800 px-3 py-1.5 text-sm font-medium">
-            <span>{{ __('admin.marketer_campaigns.pending_review') }}</span>
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-warning-600 text-white text-xs font-bold">{{ $pendingCount }}</span>
-        </span>
-    @endif
+    <div class="flex items-center gap-3">
+        @if($pendingCount > 0)
+            <span class="inline-flex items-center gap-2 rounded-lg bg-warning-100 text-warning-800 px-3 py-1.5 text-sm font-medium">
+                <span>{{ __('admin.marketer_campaigns.pending_review') }}</span>
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-warning-600 text-white text-xs font-bold">{{ $pendingCount }}</span>
+            </span>
+        @endif
+        @if(auth('admin')->user()->can('marketer_campaigns.create'))
+            <a href="{{ route('admin.marketer-campaigns.create') }}" class="btn btn-primary btn-sm">
+                + {{ __('admin.marketer_campaigns.new_campaign') }}
+            </a>
+        @endif
+    </div>
 </div>
 
 {{-- ─── Filters ─────────────────────────────────────────────────────────────── --}}
@@ -78,7 +85,7 @@
                     @php
                         $product = $campaign->vendorListing?->productVariant?->product
                             ?? $campaign->adminListing?->productVariant?->product;
-                        $productName = $product?->name
+                        $productName = $product?->name_en
                             ?? $campaign->travelPackage?->title_en
                             ?? $campaign->classifiedListing?->title_en
                             ?? '—';
