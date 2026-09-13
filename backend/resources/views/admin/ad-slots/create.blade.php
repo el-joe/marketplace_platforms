@@ -2,6 +2,10 @@
 
 @section('title', __('admin.ad_slots.create_slot_title'))
 
+@push('styles')
+    @vite(['resources/js/admin/ad-slots.js'])
+@endpush
+
 @section('content')
 
     <div class="mb-6">
@@ -13,7 +17,7 @@
         <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.ad_slots.create_slot_title') }}</h1>
     </div>
 
-    <form method="POST" action="{{ route('admin.ad-slots.store') }}">
+    <form id="ad-slot-form" method="POST" action="{{ route('admin.ad-slots.store') }}">
         @csrf
         @include('admin.ad-slots._form', ['adSlot' => null])
     </form>

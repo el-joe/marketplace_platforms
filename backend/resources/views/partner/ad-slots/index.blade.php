@@ -26,7 +26,29 @@
                 @foreach ($grouped[$key] as $slot)
                     <div class="ad-slot-card bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                          data-surface="{{ $slot->target_type->value }}" data-pricing="{{ $slot->pricing_model->value }}">
-                        <img src="{{ asset('images/ad-slots/generic.png') }}" alt="" class="w-full h-32 object-cover bg-gray-50">
+                        @if ($slot->target_type->value === 'listing_promotion')
+                            <div class="w-full h-32 flex items-center justify-center bg-primary-50">
+                                <div class="text-center text-primary-600">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                d="M15 11V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v6M5 11h14l-1.5 4.5a1 1 0 01-.95.7H7.45a1 1 0 01-.95-.7L5 11zM12 16v5" />
+                                        </svg>
+                                        @if ($slot->shows_popup)
+                                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                    d="M4 6h16M4 6v12a1 1 0 001 1h6M4 6l1-2h14l1 2M12 20l4-4h4v-6h-8v6z" />
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <div class="text-xs font-semibold mt-2">
+                                        {{ $slot->shows_popup ? __('partner.ad_slots.tier_boost_popup') : __('partner.ad_slots.tier_listing_boost') }}
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif ($slot->creative_width_px > 0 || $slot->creative_height_px > 0)
+                            <img src="{{ asset('images/ad-slots/generic.png') }}" alt="" class="w-full h-32 object-cover bg-gray-50">
+                        @endif
                         <div class="p-4">
                             <div class="text-sm font-semibold text-gray-900">
                                 {{ app()->getLocale() === 'ar' && $slot->name_ar ? $slot->name_ar : $slot->name }}
@@ -44,7 +66,9 @@
                                     {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }} / {{ str_replace('fixed_', '', $slot->pricing_model->value) }}
                                 @endif
                             </div>
-                            <div class="text-xs text-gray-400 mt-1">{{ $slot->creative_width_px }}×{{ $slot->creative_height_px }}px</div>
+                            @if ($slot->target_type->value !== 'listing_promotion' && ($slot->creative_width_px > 0 || $slot->creative_height_px > 0))
+                                <div class="text-xs text-gray-400 mt-1">{{ $slot->creative_width_px }}×{{ $slot->creative_height_px }}px</div>
+                            @endif
                             <a href="{{ route('partner.ad-slots.show', $slot->id) }}"
                                class="mt-3 block text-center rounded-lg bg-primary-600 text-white text-sm font-medium py-2 hover:bg-primary-700">
                                 {{ __('partner.ad_slots.book') }}

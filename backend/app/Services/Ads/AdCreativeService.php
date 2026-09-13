@@ -62,9 +62,11 @@ class AdCreativeService
 
             $spec = $booking->slot->creativeSpec();
 
-            foreach ([...self::REQUIRED_SLOTS, ...self::OPTIONAL_SLOTS] as $slot) {
-                if (! empty($files[$slot])) {
-                    $this->validateImage($files[$slot], $slot, $spec);
+            if ($spec !== null) {
+                foreach ([...self::REQUIRED_SLOTS, ...self::OPTIONAL_SLOTS] as $slot) {
+                    if (! empty($files[$slot])) {
+                        $this->validateImage($files[$slot], $slot, $spec);
+                    }
                 }
             }
         }

@@ -52,7 +52,7 @@ class AdSlotResource extends JsonResource
                 'cpc' => 'per click',
                 default => null,
             },
-            'creative_spec' => [
+            'creative_spec' => $spec === null ? null : [
                 'desktop' => $spec['desktop'],
                 'mobile' => $spec['mobile'],
                 'max_kb' => $spec['max_kb'],

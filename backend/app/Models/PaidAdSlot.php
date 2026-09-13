@@ -105,7 +105,7 @@ class PaidAdSlot extends Model
      * placement definition. page_block slots have no placement definition, so
      * an admin must set the overrides directly on the slot.
      */
-    public function creativeSpec(): array
+    public function creativeSpec(): ?array
     {
         $placement = $this->target_type === PaidAdSlotTargetType::Placement
             ? $this->placementDefinition
@@ -119,6 +119,11 @@ class PaidAdSlot extends Model
         $formats = $placement?->allowed_formats;
 
         if ($desktopW === null || $desktopH === null) {
+            // listing_promotion slots have no banner dimensions — return null
+            // so callers can check and skip creative spec requirements
+            if ($this->target_type === PaidAdSlotTargetType::ListingPromotion) {
+                return null;
+            }
             throw new DomainException(
                 "Ad slot [{$this->id}] has no creative dimensions — set creative_width_px/creative_height_px on the slot."
             );

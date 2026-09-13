@@ -2610,6 +2610,8 @@ return [
         'group_search' => 'Search',
         'group_category' => 'Category pages',
         'no_slots' => 'No ad slots available for your account right now.',
+        'tier_listing_boost' => 'Listing Boost',
+        'tier_boost_popup' => 'Boost + Popup',
         'book' => 'Book',
         'wizard_title' => 'Book Ad Slot',
         'step' => 'Step',

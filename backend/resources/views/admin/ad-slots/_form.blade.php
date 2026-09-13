@@ -142,12 +142,18 @@
 
         {{-- Currency --}}
         <div>
-            <x-form-input
+            <x-form-select
                 name="currency"
                 label="{{ __('admin.ad_slots.currency') }}"
                 :value="old('currency', $adSlot?->currency ?? 'USD')"
-                placeholder="USD"
-                required />
+                required>
+                <option value="">{{ __('admin.ad_slots.select_currency') }}</option>
+                @foreach($currencies as $cur)
+                    <option value="{{ $cur->code }}" {{ old('currency', $adSlot?->currency ?? 'USD') === $cur->code ? 'selected' : '' }}>
+                        {{ $cur->code }} ({{ $cur->symbol }}) — {{ $cur->name }}
+                    </option>
+                @endforeach
+            </x-form-select>
         </div>
 
         {{-- Min Booking Days --}}
@@ -180,6 +186,7 @@
                 label="{{ __('admin.ad_slots.max_concurrent') }}"
                 :value="old('max_concurrent', $adSlot?->max_concurrent)"
                 min="1"
+                max="4294967295"
                 placeholder="{{ __('admin.ad_slots.max_concurrent_placeholder') }}" />
             <p class="text-xs text-gray-400 mt-1">{{ __('admin.ad_slots.max_concurrent_help') }}</p>
         </div>
