@@ -42,7 +42,7 @@
     </div>
 
     {{-- Earnings Chart --}}
-    @if($stats['monthlyEarnings']->isNotEmpty())
+    @if(!empty($stats['monthlyEarnings']))
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h3 class="font-bold text-gray-800 mb-4">الأرباح الشهرية (آخر 12 شهراً)</h3>
         <canvas id="earningsChart" height="80"></canvas>
@@ -92,15 +92,15 @@
 
 @push('scripts')
 <script>
-@if($stats['monthlyEarnings']->isNotEmpty())
+@if(!empty($stats['monthlyEarnings']))
 const ctx = document.getElementById('earningsChart').getContext('2d');
 new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: @json($stats['monthlyEarnings']->pluck('month')),
+        labels: @json(array_column($stats['monthlyEarnings'], 'month')),
         datasets: [{
             label: 'الأرباح',
-            data: @json($stats['monthlyEarnings']->pluck('total')),
+            data: @json(array_column($stats['monthlyEarnings'], 'total')),
             backgroundColor: 'rgba(234, 179, 8, 0.7)',
             borderColor: 'rgb(234, 179, 8)',
             borderWidth: 1,

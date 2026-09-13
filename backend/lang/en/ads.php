@@ -47,4 +47,8 @@ return [
         'approved' => 'Approved',
         'rejected' => 'Rejected',
     ],
+    'payment_method' => [
+        'wallet' => 'Wallet',
+        'payout_deduction' => 'Payout deduction',
+    ],
 ];

@@ -38,7 +38,8 @@ class DashboardController extends Controller
                 ->groupBy('month')
                 ->orderBy('month')
                 ->limit(12)
-                ->get();
+                ->get()
+                ->toArray();
 
             return compact(
                 'pendingInvitations',

@@ -47,4 +47,8 @@ return [
         'approved' => 'موافق عليه',
         'rejected' => 'مرفوض',
     ],
+    'payment_method' => [
+        'wallet' => 'المحفظة',
+        'payout_deduction' => 'خصم من الدفعة',
+    ],
 ];
