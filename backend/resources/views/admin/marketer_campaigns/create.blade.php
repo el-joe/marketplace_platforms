@@ -28,9 +28,11 @@
                     placeholder="{{ __('admin.marketer_campaigns.select_country') }}" />
 
                 <div class="sm:col-span-2">
-                    <x-form.select name="vendor_listing_id" id="vendor_listing_id" label="{{ __('admin.marketer_campaigns.vendor_listing') }}" :select2="true"
+                    <label for="vendor_listing_id" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.vendor_listing') }}</label>
+                    <select name="vendor_listing_id" id="vendor_listing_id" data-async-select disabled
+                        data-config='{{ json_encode(["url" => route("admin.marketer-campaigns.search-listings"), "param" => "search", "minLength" => 0, "delay" => 250]) }}'
                         placeholder="{{ __('admin.marketer_campaigns.select_vendor_first') }}"
-                        data-search-url="{{ route('admin.marketer-campaigns.search-listings') }}" />
+                        class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500"></select>
                     <p class="text-xs text-gray-500 mt-1">{{ __('admin.marketer_campaigns.vendor_listing_hint') }}</p>
                 </div>
             </div>
@@ -94,31 +96,16 @@
         var listingSelect = document.getElementById('vendor_listing_id');
         if (!vendorSelect || !listingSelect || typeof jQuery === 'undefined') return;
 
+        // select2 (data-select2-init/data-async-select) fires jQuery 'change', not native DOM 'change'
         jQuery(vendorSelect).on('change', function () {
+            var vendorId = vendorSelect.value;
+            var config = JSON.parse(listingSelect.getAttribute('data-config') || '{}');
+            config.vendor_id = vendorId;
+            listingSelect.setAttribute('data-config', JSON.stringify(config));
+
+            jQuery(listingSelect).prop('disabled', !vendorId);
             jQuery(listingSelect).val(null).trigger('change');
         });
-
-        if (jQuery.fn.select2) {
-            jQuery(listingSelect).select2('destroy').select2({
-                width: '100%',
-                placeholder: listingSelect.dataset.placeholder || '',
-                ajax: {
-                    url: listingSelect.dataset.searchUrl,
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return {
-                            vendor_id: vendorSelect.value,
-                            search: params.term,
-                        };
-                    },
-                    processResults: function (data) {
-                        return data;
-                    },
-                },
-                minimumInputLength: 0,
-            });
-        }
     });
 </script>
 @endpush
