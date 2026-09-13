@@ -347,6 +347,7 @@ class ProductController extends Controller
 
         $images = ProductImage::query()->from('product_images as pi')
             ->where('pi.product_id', $product)
+            ->whereNull('pi.product_variant_id')
             ->orderBy('pi.position')
             ->select('pi.id', 'pi.path', 'pi.is_primary', 'pi.alt_text_en', 'pi.size_bytes', 'pi.mime_type')
             ->get();
@@ -1436,9 +1437,12 @@ class ProductController extends Controller
 
     private function syncImages(string $productId, array $imageIds): void
     {
-        // Remove images belonging to this product that the user deleted from FilePond
+        // Remove images belonging to this product that the user deleted from FilePond.
+        // Scoped to product_variant_id IS NULL — variant images share the same product_id
+        // but are managed separately via the variant images panel, not this list.
         $removed = ProductImage::query()
             ->where('product_id', $productId)
+            ->whereNull('product_variant_id')
             ->when(!empty($imageIds), fn($q) => $q->whereNotIn('id', $imageIds))
             ->get(['id', 'path', 'disk']);
 

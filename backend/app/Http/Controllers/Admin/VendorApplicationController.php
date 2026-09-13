@@ -233,10 +233,13 @@ class VendorApplicationController extends Controller
         $hasBankAccount = $vendor->bankAccounts->isNotEmpty();
         $storeProfileComplete = !empty($vendor->store_name) && !empty($vendor->store_description);
 
+        $onboardingComplete = (bool) $vendor->onboarding_completed_at;
+
         $checklist = [
             'business_info' => ['label' => 'Business info complete', 'pass' => $businessInfoComplete],
             'docs_uploaded' => ['label' => 'All required docs uploaded', 'pass' => $allRequiredUploaded],
             'docs_verified' => ['label' => 'All required docs verified', 'pass' => $allRequiredVerified],
+            'onboarding' => ['label' => 'Onboarding completed', 'pass' => $onboardingComplete, 'required' => false],
             'bank_account' => ['label' => 'Bank account added', 'pass' => $hasBankAccount, 'required' => false],
             'store_profile' => ['label' => 'Store profile complete', 'pass' => $storeProfileComplete],
         ];

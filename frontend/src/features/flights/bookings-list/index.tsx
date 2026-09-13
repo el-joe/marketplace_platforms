@@ -12,6 +12,7 @@ type Props = {
 
 export default function BookingsList({ data }: Props) {
   const t = useTranslations("flights");
+
   const { status, setStatus, filtered } = useBookingsList(data);
 
   return (
