@@ -127,7 +127,7 @@ class SettingsSeeder extends Seeder
 
             // ─── marketer ─────────────────────────────────────────────────────
             ['key' => 'marketer_campaign_auto_approve_hours', 'value' => 36, 'category' => 'marketer', 'description' => 'Hours before a pending campaign is auto-approved if admin does not act', 'is_public' => 0],
-            ['key' => 'marketer_invitation_timeout_hours', 'value' => 12, 'category' => 'marketer', 'description' => 'Hours a marketer has to respond to a campaign invitation before auto-rejection', 'is_public' => 0],
+            ['key' => 'marketer_invitation_timeout_hours', 'value' => 168, 'category' => 'marketer', 'description' => 'Hours a marketer has to respond to a campaign invitation before auto-rejection (minimum 168 = 7 days)', 'is_public' => 0],
             ['key' => 'marketer_replacement_min_accepted_campaigns', 'value' => 0, 'category' => 'marketer', 'description' => 'When replacing a rejected/timed-out marketer, prefer marketers with at least this many accepted campaigns', 'is_public' => 0],
         ];
 

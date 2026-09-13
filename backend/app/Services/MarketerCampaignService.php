@@ -245,7 +245,7 @@ class MarketerCampaignService
      */
     public function dispatchInvitation(MarketerCampaign $campaign, string $marketerId): MarketerCampaignInvitation
     {
-        $timeoutHours = (int) setting('marketer_invitation_timeout_hours', 12);
+        $timeoutHours = max(168, (int) setting('marketer_invitation_timeout_hours', 168));
         $referralCode = strtoupper(Str::random(10));
 
         $invitation = MarketerCampaignInvitation::create([
