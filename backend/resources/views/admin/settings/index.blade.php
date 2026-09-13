@@ -59,6 +59,7 @@
                     'security' => 'shield-check',
                     'vendors' => 'building-storefront',
                     'promotion' => 'megaphone',
+                    'marketer' => 'user-group',
                 ];
                 $tabLabels = [
                     'appearance' => __('admin.settings_section.appearance'),
@@ -70,6 +71,7 @@
                     'security' => __('admin.settings_section.security'),
                     'vendors' => __('admin.settings_section.vendors_tab'),
                     'promotion' => __('admin.settings_section.promotion_tab'),
+                    'marketer' => __('admin.settings_section.marketer_tab'),
                 ];
             @endphp
 
