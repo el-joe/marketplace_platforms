@@ -10,6 +10,7 @@ import { IProductDetails } from "./types";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Spinner } from "@/src/components/ui/spinner";
 import ImageMagnifier from "@/src/components/shared/image-magnifier";
+import useLocale from "@/src/hooks/use-locale";
 
 type Props = {
   product: IProductDetails;
@@ -22,6 +23,7 @@ export default function ProductImagesPreview({ product }: Props) {
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType>();
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
+  const locale = useLocale();
   const { addItem, isMutating, checkItem } = useWishlistContext();
   useEffect(() => {
     (async () => {
@@ -31,10 +33,10 @@ export default function ProductImagesPreview({ product }: Props) {
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div className="flex">
+    <div className="flex flex-col-reverse md:flex-row ">
       {" "}
       {/* pagination thumbs */}
-      <div className="hidden md:block min-w-17">
+      <div className="block min-w-17">
         <Swiper
           className="p-2! productSwiperThumbs "
           onSwiper={setThumbsSwiper}
@@ -43,7 +45,11 @@ export default function ProductImagesPreview({ product }: Props) {
           freeMode={true}
           watchSlidesProgress={true}
           loop
-          direction="vertical"
+          breakpoints={{
+            768: {
+              direction: "vertical",
+            },
+          }}
           modules={[FreeMode, Thumbs]}
         >
           {product.product.images.map((image, i) => (
@@ -62,7 +68,7 @@ export default function ProductImagesPreview({ product }: Props) {
           ))}
         </Swiper>
       </div>
-      <div className=" relative w-10/12 group">
+      <div className=" relative w-full md:w-10/12 group">
         {/* wishlist button */}
         <Button
           variant={"ghost"}
@@ -88,20 +94,33 @@ export default function ProductImagesPreview({ product }: Props) {
         {/* navigation buttons */}
         <button
           ref={prevRef}
-          className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer bg-black text-white px-2 py-6 rounded-e-sm opacity-0 group-hover:opacity-35 transition"
+          className="hidden md:flex absolute top-1/2 inset-s-0 z-10 cursor-pointer bg-black text-white px-1.5 py-5 rounded-e-sm opacity-0 group-hover:opacity-35 transition"
         >
-          <ChevronLeft size={"28px"} />
+          {locale === "ar" ? (
+            <ChevronRight className="size-4" />
+          ) : (
+            <ChevronLeft className="size-4" />
+          )}
         </button>
         <button
           ref={nextRef}
-          className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer bg-black text-white px-2 py-6 rounded-s-sm opacity-0 group-hover:opacity-35 transition"
+          className="hidden md:flex absolute top-1/2 inset-e-0 z-10 cursor-pointer bg-black text-white px-1.5 py-5 rounded-s-sm opacity-0 group-hover:opacity-35 transition"
         >
-          <ChevronRight size={"28px"} />
+          {locale === "ar" ? (
+            <ChevronLeft className="size-4" />
+          ) : (
+            <ChevronRight className="size-4" />
+          )}
         </button>
         {/* preview image */}
         <Swiper
           modules={[Navigation, Thumbs, Pagination]}
           // pagination
+          // breakpoints={{
+          //   728: {
+          //     pagination: { enabled: false },
+          //   },
+          // }}
           loop
           onBeforeInit={(swiper) => {
             if (
@@ -119,7 +138,10 @@ export default function ProductImagesPreview({ product }: Props) {
           className="w-full!"
         >
           {product.product.images.map((image, i) => (
-            <SwiperSlide key={i} className="select-none md:h-screen! max-h-180">
+            <SwiperSlide
+              key={i}
+              className="select-none h-auto max-h-[calc(100vh-420px)]"
+            >
               <ImageMagnifier
                 src={image.url || "/images/no-image-available-icon.jpg"}
                 alt=""

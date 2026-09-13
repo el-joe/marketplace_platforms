@@ -36,15 +36,15 @@ export default function ClassifiedGallery({
         {/* Main Large Image (8 cols on desktop) */}
         <div
           onClick={() => setIsLightboxOpen(true)}
-          className="relative md:col-span-8 aspect-[16/10] md:aspect-auto md:h-[400px] lg:h-[450px] cursor-pointer group overflow-hidden rounded-xl bg-neutral-900"
+          className="relative md:col-span-8 aspect-[16/10] md:aspect-auto md:h-[400px] lg:h-[450px] bg-neutral-900 cursor-pointer group overflow-hidden rounded-lg md:rounded-r-none"
         >
           <Image
             src={mainImage.url}
             alt={mainImage.alt || "Classified vehicle image"}
             fill
             priority
-            className="object-cover transition-transform duration-300 group-hover:scale-102 rounded-xl"
-            sizes="   (max-width: 768px) 100vw, (max-width: 1200px) 66vw, 750px"
+            className="object-cover transition-transform duration-300 group-hover:scale-102"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 750px"
           />
 
           {/* Badges on Bottom Left */}
@@ -85,26 +85,6 @@ export default function ClassifiedGallery({
         {/* Desktop Side Thumbnails Stack (4 cols on desktop) */}
         <div className="hidden md:flex md:col-span-4 flex-col gap-2 h-[400px] lg:h-[450px]">
           {/* Thumb 1 */}
-          {images[0] && (
-            <div
-              onClick={() => setSelectedIndex(0)}
-              className={`relative flex-1 rounded-lg overflow-hidden cursor-pointer bg-neutral-900 border-2 transition-all ${
-                selectedIndex === 0
-                  ? "border-blue-600 ring-1 ring-blue-600"
-                  : "border-transparent opacity-90 hover:opacity-100"
-              }`}
-            >
-              <Image
-                src={images[0].url}
-                alt={images[0].alt || "Thumbnail 1"}
-                fill
-                className="object-cover"
-                sizes="300px"
-              />
-            </div>
-          )}
-
-          {/* Thumb 2 */}
           {images[1] && (
             <div
               onClick={() => setSelectedIndex(1)}
@@ -116,7 +96,27 @@ export default function ClassifiedGallery({
             >
               <Image
                 src={images[1].url}
-                alt={images[1].alt || "Thumbnail 2"}
+                alt={images[1].alt || "Thumbnail 1"}
+                fill
+                className="object-cover"
+                sizes="300px"
+              />
+            </div>
+          )}
+
+          {/* Thumb 2 */}
+          {images[2] && (
+            <div
+              onClick={() => setSelectedIndex(2)}
+              className={`relative flex-1 rounded-lg overflow-hidden cursor-pointer bg-neutral-900 border-2 transition-all ${
+                selectedIndex === 2
+                  ? "border-blue-600 ring-1 ring-blue-600"
+                  : "border-transparent opacity-90 hover:opacity-100"
+              }`}
+            >
+              <Image
+                src={images[2].url}
+                alt={images[2].alt || "Thumbnail 2"}
                 fill
                 className="object-cover"
                 sizes="300px"
@@ -125,14 +125,14 @@ export default function ClassifiedGallery({
           )}
 
           {/* Thumb 3 with "Show More Photos" overlay */}
-          {images[2] && (
+          {images[3] && (
             <div
               onClick={() => setIsLightboxOpen(true)}
               className="relative flex-1 rounded-lg overflow-hidden cursor-pointer bg-neutral-900 group"
             >
               <Image
-                src={images[2].url}
-                alt={images[2].alt || "Thumbnail 3"}
+                src={images[3].url}
+                alt={images[3].alt || "Thumbnail 3"}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform"
                 sizes="300px"

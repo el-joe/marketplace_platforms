@@ -220,7 +220,7 @@ const SearchField = () => {
                             alt="Oops"
                             width={50}
                             height={40}
-                            className="min-w-8"
+                            className="min-w-8 h-14"
                           />
                         </span>
                         <p className="text-sm flex-1 line-clamp-2">{item}</p>
@@ -299,35 +299,37 @@ const SearchField = () => {
               {hasSuggestions ? (
                 <div className="">
                   {/* Suggested Products */}
-                  {suggestions?.products && suggestions?.products.length > 0 && (
-                    <div className="py-1">
-                      {suggestions?.products.map((product) => (
-                        <button
-                          key={`prod-${product.id}-${product.slug}`}
-                          type="button"
-                          onClick={() => {
-                            setIsOpen(false);
-                            router.push(`/products/${product.slug}`);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
-                        >
-                          <Image
-                            src={
-                              product.primary_image ||
-                              "/images/no-image-available-icon.jpg"
-                            }
-                            alt={product.name}
-                            width={50}
-                            height={60}
-                            className="border border-border rounded-lg object-cover"
-                          />
-                          <p className="line-clamp-1 font-medium">
-                            {product.name}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  {suggestions?.products &&
+                    suggestions?.products.length > 0 && (
+                      <div className="py-1">
+                        {suggestions?.products.map((product) => (
+                          <button
+                            key={`prod-${product.id}-${product.slug}`}
+                            type="button"
+                            onClick={() => {
+                              setIsOpen(false);
+                              addSearch(product.name.trim());
+                              router.push(`/products/${product.id}`);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
+                          >
+                            <Image
+                              src={
+                                product.primary_image ||
+                                "/images/no-image-available-icon.jpg"
+                              }
+                              alt={product.name}
+                              width={50}
+                              height={60}
+                              className="border border-border rounded-lg object-cover h-14"
+                            />
+                            <p className="line-clamp-1 font-medium">
+                              {product.name}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                   {/* Suggested Categories */}
                   {/* {suggestions?.categories &&

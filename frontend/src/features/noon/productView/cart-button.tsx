@@ -26,7 +26,8 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
     targetItemMutating,
   } = useCartContext();
   const [selectedDelivery] = useQueryState("selectedDelivery");
-  const { selectedPlanId, clearSelection } = useWarrantySelection();
+  const { selectedPlanId, clearSelection, handleProductAddedToCart } =
+    useWarrantySelection();
   return (
     <>
       {isLoading ? (
@@ -61,16 +62,21 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
         />
       ) : (
         <Button
-          onClick={() =>
+          onClick={() => {
+            const hadWarrantySelected = Boolean(selectedPlanId);
             addItem({
               vendorListingId: listingId,
               quantity,
               shippingMethodId: selectedDelivery as string,
               warrantyPlanId: selectedPlanId,
-            }).then(() => {
+            }).then((cartData) => {
               clearSelection();
-            })
-          }
+              handleProductAddedToCart?.(
+                hadWarrantySelected,
+                cartData?.data?.item?.cart_item_id,
+              );
+            });
+          }}
           disabled={isMutating}
           size={"lg"}
           className={

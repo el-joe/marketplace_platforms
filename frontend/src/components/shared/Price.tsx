@@ -49,6 +49,7 @@ const Price = ({
   return (
     <div
       className={`inline-flex items-end font-bold gap-1 ${variant === "cart" ? "flex-col" : ""} ${className}`}
+      dir="ltr"
     >
       {/* current price */}
       <div className={`flex items-center ${currentPriceSize[size]}`}>

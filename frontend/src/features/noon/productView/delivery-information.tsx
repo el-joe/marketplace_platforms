@@ -90,19 +90,19 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
                     </span>
                   ) : (
                     <span className="ms-auto flex items-center">
-                      <Price
-                        currentPrice={option?.shipping_fee}
-                      />
+                      <Price currentPrice={option?.shipping_fee} />
                       <ArrowUpRight />
                     </span>
                   ))}
               </div>
               {/* or separator */}
-              <div className="flex items-center max-w-xs gap-2 mx-auto my-3 group-[[data-last=true]]:hidden!">
-                <Separator className={"flex-1"} />
-                <span className="text-sm">{t("or")}</span>
-                <Separator className={"flex-1"} />
-              </div>
+              {i !== lastI && (
+                <div className="flex items-center max-w-xs gap-2 mx-auto my-3 group-[[data-last=true]]:hidden!">
+                  <Separator className={"flex-1"} />
+                  <span className="text-sm">{t("or")}</span>
+                  <Separator className={"flex-1"} />
+                </div>
+              )}
             </div>
           );
         })}

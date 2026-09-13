@@ -1,5 +1,6 @@
 import { ICart } from "@/types";
 import { fetchInstance } from "../lib/utils";
+import { CartItem } from "@/types/cart.type";
 
 export interface ICartResponseBody {
   success: string;
@@ -7,6 +8,9 @@ export interface ICartResponseBody {
 }
 export interface ICartResponseBodyWithData extends ICartResponseBody {
   data: ICart;
+}
+export interface IAddToCartResponseBodyWithData extends ICartResponseBody {
+  data: { cart: ICart; item: CartItem };
 }
 
 export const getCartService = () =>
@@ -20,7 +24,7 @@ export const addItemCartService = (body: {
   shipping_method_id?: string;
   warranty_plan_id?: string | null;
 }) =>
-  fetchInstance<ICartResponseBody>("/cart/items", {
+  fetchInstance<IAddToCartResponseBodyWithData>("/cart/items", {
     method: "POST",
     body: JSON.stringify(body),
   });

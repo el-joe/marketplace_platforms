@@ -2,7 +2,7 @@
 import CarouselProducts from "@/src/components/shared/CarouselProducts";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import { Separator } from "@/src/components/ui/separator";
-import BaseInfo from "@/src/features/noon/productView/BaseInfo";
+import BaseInfo from "@/src/features/noon/productView/base-info";
 import BoughtTogether from "@/src/features/noon/productView/BoughtTogether";
 import CouponsSlide from "@/src/features/noon/productView/coupons-slide";
 import DeliveryInformation from "@/src/features/noon/productView/delivery-information";
@@ -20,7 +20,8 @@ import Variants from "./variants";
 import SellerCard from "./seller-card";
 import RatingAndReviews from "./rating-and-reviews";
 import { WarrantySelectionProvider } from "./warranty-selection-context";
-import AddBar from "./add-bar";
+import AdBar from "./ad-bar";
+import AddedToCartSheet from "./added-to-cart-sheet";
 
 export default async function ProductView({ slug }: { slug: string }) {
   const t = await getTranslations("productView");
@@ -28,9 +29,9 @@ export default async function ProductView({ slug }: { slug: string }) {
   const productData = await getProduct(slug);
   return (
     <>
-      <AddBar />
+      <AdBar />
       <div className="container">
-        <WarrantySelectionProvider>
+        <WarrantySelectionProvider productData={productData}>
           {/* breadcrumb */}
           <Breadcrumb
             list={[
@@ -112,6 +113,8 @@ export default async function ProductView({ slug }: { slug: string }) {
           <CarouselProducts title={t("customersAlsoViewed")} />
           {/* floating add to cart button for small screens */}
           <FloatingCartButton listingId={productData.listing.listing_id} />
+          {/* added to cart side sheet */}
+          <AddedToCartSheet productData={productData} />
         </WarrantySelectionProvider>
       </div>
     </>
