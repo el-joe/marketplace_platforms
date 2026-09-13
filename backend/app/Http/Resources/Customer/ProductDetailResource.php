@@ -103,6 +103,16 @@ class ProductDetailResource extends JsonResource
                 ])
             ),
             'product_attributes' => $this->productAttributes,
+            'has_custom_attributes' => (bool) $this->has_custom_attributes,
+            'custom_attributes' => $this->has_custom_attributes
+                ? $this->whenLoaded('customAttributes', fn () => $this->customAttributes->map(fn ($a) => [
+                    'id'          => $a->id,
+                    'label'       => $a->label,
+                    'unit'        => $a->unit,
+                    'is_required' => (bool) $a->is_required,
+                    'sort_order'  => $a->sort_order,
+                ]), [])
+                : [],
             'variants'         => $this->whenLoaded('variants', fn() =>
                 $this->variants->filter(fn($v) => $v->is_active)->map(fn($v) => [
                     'id'           => $v->id,

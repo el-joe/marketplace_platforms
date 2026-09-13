@@ -94,7 +94,11 @@ const ProductCard = ({ productData }: Props) => {
           )}
         </Button>
         {/* cart button */}
-        <AddToCartButton listingId={productData.listing_id} />
+        <AddToCartButton
+          listingId={productData.listing_id}
+          hasCustomAttributes={!!productData.has_custom_attributes}
+          customAttributes={productData.custom_attributes ?? []}
+        />
         {/* navigation buttons */}
         <button
           ref={prevRef}

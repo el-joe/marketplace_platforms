@@ -180,6 +180,7 @@ class OrderController extends Controller
             'subOrders.items.productVariant' => fn ($q) => $q->withTrashed(),
             'subOrders.items.adminListing' => fn ($q) => $q->withTrashed(),
             'subOrders.items.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+            'subOrders.items.customAttributeValues',
             'subOrders.items.vendor',
             'subOrders.vendor',
             'subOrders.carrier',

@@ -108,6 +108,16 @@
                                     <p class="text-xs text-gray-500 mt-0.5">{{ $variant }}</p>
                                 @endif
                                 <p class="text-xs text-gray-400 mt-0.5 font-mono">{{ $item->sku }}</p>
+                                @if($item->customAttributeValues->isNotEmpty())
+                                    <div class="mt-1 space-y-0.5">
+                                        @foreach($item->customAttributeValues as $customValue)
+                                            <p class="text-xs text-gray-500">
+                                                <span class="font-medium">{{ $customValue->label }}:</span>
+                                                {{ $customValue->value }}{{ $customValue->unit ? ' ' . $customValue->unit : '' }}
+                                            </p>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                             <div class="text-right shrink-0">
                                 <p class="text-sm text-gray-500">{{ $item->quantity }} ×

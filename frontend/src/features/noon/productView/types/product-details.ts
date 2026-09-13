@@ -145,6 +145,15 @@ export interface Product {
   highlights: Highlight[];
   specifications: Specifications[];
   seo: SEO;
+  has_custom_attributes?: boolean;
+  custom_attributes?: ProductCustomAttribute[];
+}
+export interface ProductCustomAttribute {
+  id: string;
+  label: string;
+  unit: string | null;
+  is_required: boolean;
+  sort_order: number;
 }
 export interface Highlight {
   id: string;

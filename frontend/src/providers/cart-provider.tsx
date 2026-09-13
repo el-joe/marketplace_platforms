@@ -31,6 +31,10 @@ interface ICartContext {
       adminProductListingId?: string;
       shippingMethodId?: string;
       warrantyPlanId?: string | null;
+      customAttributeValues?: {
+        product_custom_attribute_id: string;
+        value: string;
+      }[];
     },
     unknown
   >;

@@ -20,6 +20,9 @@ class AddCartItemRequest extends FormRequest
             'quantity'            => ['required', 'integer', 'min:1', 'max:999'],
             'shipping_method_id'  => ['nullable', 'uuid', 'exists:shipping_methods,id'],
             'warranty_plan_id'    => ['nullable', 'uuid', 'exists:warranty_plans,id'],
+            'custom_attribute_values' => ['nullable', 'array'],
+            'custom_attribute_values.*.product_custom_attribute_id' => ['required_with:custom_attribute_values', 'uuid', 'exists:product_custom_attributes,id'],
+            'custom_attribute_values.*.value' => ['required_with:custom_attribute_values', 'string', 'max:1000'],
         ];
     }
 }

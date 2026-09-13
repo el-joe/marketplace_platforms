@@ -180,6 +180,7 @@ class ListingController extends Controller
                 'specifications',
                 'variants.variantAttributes.attribute',
                 'variants.variantAttributes.attributeValue',
+                'customAttributes',
                 'countrySettings' => fn ($q) => $q->where('country_id', $country->id),
             ])
             ->firstOrFail();

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CartItem extends Model
 {
@@ -44,5 +45,10 @@ class CartItem extends Model
     public function selectedShippingMethod(): BelongsTo
     {
         return $this->belongsTo(ShippingMethod::class, 'selected_shipping_method_id');
+    }
+
+    public function customAttributeValues(): HasMany
+    {
+        return $this->hasMany(CartItemCustomAttributeValue::class);
     }
 }

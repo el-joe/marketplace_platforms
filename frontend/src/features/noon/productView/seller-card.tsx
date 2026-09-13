@@ -167,7 +167,11 @@ const SellerCard = ({ productData }: Props) => {
       {/* add to cart button */}
 
       <div className="p-4 text-sm hidden lg:block">
-        <CartButton listingId={productData.listing.listing_id} />
+        <CartButton
+          listingId={productData.listing.listing_id}
+          hasCustomAttributes={!!productData.product.has_custom_attributes}
+          customAttributes={productData.product.custom_attributes ?? []}
+        />
       </div>
     </div>
   );

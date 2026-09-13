@@ -77,6 +77,7 @@ export function useCart() {
       adminProductListingId,
       shippingMethodId,
       warrantyPlanId,
+      customAttributeValues,
     }: {
       vendorListingId: string;
       quantity: number;
@@ -84,6 +85,7 @@ export function useCart() {
       adminProductListingId?: string;
       shippingMethodId?: string;
       warrantyPlanId?: string | null;
+      customAttributeValues?: import("../services/cart").ICustomAttributeValueInput[];
     }) =>
       addItemCartService({
         vendor_listing_id: vendorListingId,
@@ -92,6 +94,7 @@ export function useCart() {
         shipping_method_id: shippingMethodId,
         admin_product_listing_id: adminProductListingId,
         warranty_plan_id: warrantyPlanId ?? null,
+        custom_attribute_values: customAttributeValues,
       }),
     onSuccess: invalidate,
     onError,

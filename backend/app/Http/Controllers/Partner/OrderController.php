@@ -223,6 +223,7 @@ class OrderController extends Controller
                 'shipments.trackingEvents',
                 'carrier',
                 'shippingMethod',
+                'items.customAttributeValues',
             ])
             ->firstOrFail();
 

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { Spinner } from "../ui/spinner";
@@ -6,10 +6,15 @@ import { PlusIcon } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/src/lib/utils";
 import { Counter } from "./Counter";
+import CustomAttributesModal, {
+  CustomAttributeDefinition,
+} from "./custom-attributes-modal";
 
 type Props = {
   listingId: string;
   size?: "sm" | "base" | "lg";
+  hasCustomAttributes?: boolean;
+  customAttributes?: CustomAttributeDefinition[];
 };
 
 const sizes: Record<NonNullable<Props["size"]>, string> = {
@@ -18,7 +23,12 @@ const sizes: Record<NonNullable<Props["size"]>, string> = {
   lg: "",
 };
 
-export default function AddToCartButton({ listingId, size = "base" }: Props) {
+export default function AddToCartButton({
+  listingId,
+  size = "base",
+  hasCustomAttributes = false,
+  customAttributes = [],
+}: Props) {
   const {
     cart,
     addItem,
@@ -27,6 +37,8 @@ export default function AddToCartButton({ listingId, size = "base" }: Props) {
     updateItemQuantity,
     removeItem,
   } = useCartContext();
+  const [showCustomAttributesModal, setShowCustomAttributesModal] =
+    useState(false);
 
   const cartItem = useMemo(
     () => cart?.cart?.items.find((item) => item.listing_id === listingId),
@@ -39,6 +51,7 @@ export default function AddToCartButton({ listingId, size = "base" }: Props) {
       targetItemMutating === cartItem?.cart_item_id);
 
   return (
+    <>
     <Button
       variant={"outline"}
       className={cn(
@@ -51,6 +64,10 @@ export default function AddToCartButton({ listingId, size = "base" }: Props) {
       onClick={(e) => {
         e.preventDefault();
         if (cartItem) return;
+        if (hasCustomAttributes) {
+          setShowCustomAttributesModal(true);
+          return;
+        }
         addItem({ quantity: 1, vendorListingId: listingId });
       }}
     >
@@ -83,5 +100,21 @@ export default function AddToCartButton({ listingId, size = "base" }: Props) {
         <PlusIcon className="size-4 lg:size-6" />
       )}
     </Button>
+    {hasCustomAttributes && (
+      <CustomAttributesModal
+        open={showCustomAttributesModal}
+        attributes={customAttributes}
+        onClose={() => setShowCustomAttributesModal(false)}
+        isSubmitting={isThisItemMutating}
+        onSubmit={(customAttributeValues) => {
+          addItem({
+            quantity: 1,
+            vendorListingId: listingId,
+            customAttributeValues,
+          }).then(() => setShowCustomAttributesModal(false));
+        }}
+      />
+    )}
+    </>
   );
 }

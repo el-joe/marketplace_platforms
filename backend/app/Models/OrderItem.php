@@ -100,4 +100,9 @@ class OrderItem extends Model
         return $this->belongsTo(WarrantyPurchase::class);
     }
 
+    public function customAttributeValues(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderItemCustomAttributeValue::class);
+    }
+
 }

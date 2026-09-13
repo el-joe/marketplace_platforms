@@ -287,6 +287,16 @@
                                                                 @if(!empty($snap['variant_label']))
                                                                     <p class="text-xs text-gray-400">{{ $snap['variant_label'] }}</p>
                                                                 @endif
+                                                                @if($item->customAttributeValues->isNotEmpty())
+                                                                    <div class="mt-1 space-y-0.5">
+                                                                        @foreach($item->customAttributeValues as $customValue)
+                                                                            <p class="text-xs text-gray-500">
+                                                                                <span class="font-medium">{{ $customValue->label }}:</span>
+                                                                                {{ $customValue->value }}{{ $customValue->unit ? ' ' . $customValue->unit : '' }}
+                                                                            </p>
+                                                                        @endforeach
+                                                                    </div>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                     </td>

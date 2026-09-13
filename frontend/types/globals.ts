@@ -52,6 +52,14 @@ export interface Product {
   total_sold: number;
   is_wishlisted: boolean;
   is_sponsored: boolean;
+  has_custom_attributes?: boolean;
+  custom_attributes?: {
+    id: string;
+    label: string;
+    unit: string | null;
+    is_required: boolean;
+    sort_order: number;
+  }[];
 }
 
 export interface Images {

@@ -16,6 +16,11 @@ export interface IAddToCartResponseBodyWithData extends ICartResponseBody {
 export const getCartService = () =>
   fetchInstance<ICartResponseBodyWithData>("/cart", { method: "GET" });
 
+export interface ICustomAttributeValueInput {
+  product_custom_attribute_id: string;
+  value: string;
+}
+
 export const addItemCartService = (body: {
   vendor_listing_id: string;
   quantity: number;
@@ -23,6 +28,7 @@ export const addItemCartService = (body: {
   admin_product_listing_id?: string;
   shipping_method_id?: string;
   warranty_plan_id?: string | null;
+  custom_attribute_values?: ICustomAttributeValueInput[];
 }) =>
   fetchInstance<IAddToCartResponseBodyWithData>("/cart/items", {
     method: "POST",

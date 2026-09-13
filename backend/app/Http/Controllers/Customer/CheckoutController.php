@@ -32,6 +32,7 @@ use App\Exceptions\InsufficientWalletBalanceException;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemCustomAttributeValue;
 use App\Models\PaymentTransaction;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
@@ -387,6 +388,7 @@ class CheckoutController extends Controller
             'items.adminListing.productVariant.product.brand',
             'items.adminListing.productVariant.product.images',
             'items.adminListing.warehouseInventories',
+            'items.customAttributeValues.productCustomAttribute',
         ]);
 
         if ($cart->items->isEmpty()) {
@@ -740,6 +742,24 @@ class CheckoutController extends Controller
                             'fulfillment_status' => 'pending',
                             'return_eligible_until' => null,
                         ]);
+
+                        // Snapshot any customer-entered custom attribute values from the
+                        // cart item onto the order item. Snapshotting label/unit here
+                        // means later edits/deletion of the ProductCustomAttribute
+                        // definition never change historical order display. This works
+                        // for both vendor-listing and admin-listing cart items since the
+                        // relation is keyed on cart_item_id, not listing type.
+                        foreach ($cartItem->customAttributeValues as $cartAttrValue) {
+                            $definition = $cartAttrValue->productCustomAttribute;
+
+                            OrderItemCustomAttributeValue::create([
+                                'order_item_id' => $orderItem->id,
+                                'product_custom_attribute_id' => $cartAttrValue->product_custom_attribute_id,
+                                'label' => $definition?->label ?? '',
+                                'unit' => $definition?->unit,
+                                'value' => $cartAttrValue->value,
+                            ]);
+                        }
 
                         if (isset($warrantySelections[$cartItem->id])) {
                             $plan = $warrantySelections[$cartItem->id]['plan'];

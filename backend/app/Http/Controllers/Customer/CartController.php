@@ -228,11 +228,13 @@ class CartController extends Controller
 
         $isAdmin = $request->input('listing_type') === 'admin';
 
+        $customAttributeValues = $request->input('custom_attribute_values', []);
+
         try {
             if ($isAdmin) {
-                $item = $this->cartService->addAdminItem($cart, $request->admin_listing_id, $request->quantity, $request->shipping_method_id, $countryId);
+                $item = $this->cartService->addAdminItem($cart, $request->admin_listing_id, $request->quantity, $request->shipping_method_id, $countryId, $customAttributeValues);
             } else {
-                $item = $this->cartService->addItem($cart, $request->vendor_listing_id, $request->quantity, $request->shipping_method_id, $countryId);
+                $item = $this->cartService->addItem($cart, $request->vendor_listing_id, $request->quantity, $request->shipping_method_id, $countryId, $customAttributeValues);
             }
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), [], 422);

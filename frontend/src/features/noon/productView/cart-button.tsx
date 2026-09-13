@@ -6,15 +6,24 @@ import { Spinner } from "@/src/components/ui/spinner";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
-import React from "react";
+import React, { useState } from "react";
 import { useWarrantySelection } from "./warranty-selection-context";
+import CustomAttributesModal from "@/src/components/shared/custom-attributes-modal";
+import { ProductCustomAttribute } from "./types/product-details";
 
 type Props = {
   listingId: string;
   quantity?: number;
+  hasCustomAttributes?: boolean;
+  customAttributes?: ProductCustomAttribute[];
 };
 
-export default function CartButton({ listingId, quantity = 1 }: Props) {
+export default function CartButton({
+  listingId,
+  quantity = 1,
+  hasCustomAttributes = false,
+  customAttributes = [],
+}: Props) {
   const t = useTranslations("productView");
   const {
     addItem,
@@ -28,8 +37,46 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
   const [selectedDelivery] = useQueryState("selectedDelivery");
   const { selectedPlanId, clearSelection, handleProductAddedToCart } =
     useWarrantySelection();
+  const [showCustomAttributesModal, setShowCustomAttributesModal] =
+    useState(false);
+
+  const performAddToCart = (
+    customAttributeValues?: {
+      product_custom_attribute_id: string;
+      value: string;
+    }[],
+  ) => {
+    const hadWarrantySelected = Boolean(selectedPlanId);
+    return addItem({
+      vendorListingId: listingId,
+      quantity,
+      shippingMethodId: selectedDelivery as string,
+      warrantyPlanId: selectedPlanId,
+      customAttributeValues,
+    }).then((cartData) => {
+      clearSelection();
+      handleProductAddedToCart?.(
+        hadWarrantySelected,
+        cartData?.data?.item?.cart_item_id,
+      );
+    });
+  };
+
   return (
     <>
+      {hasCustomAttributes && (
+        <CustomAttributesModal
+          open={showCustomAttributesModal}
+          attributes={customAttributes}
+          onClose={() => setShowCustomAttributesModal(false)}
+          isSubmitting={isMutating}
+          onSubmit={(values) => {
+            performAddToCart(values).then(() =>
+              setShowCustomAttributesModal(false),
+            );
+          }}
+        />
+      )}
       {isLoading ? (
         <Skeleton className="w-full h-11" />
       ) : cart?.cart.items.find((item) => item.listing_id === listingId) ? (
@@ -63,19 +110,11 @@ export default function CartButton({ listingId, quantity = 1 }: Props) {
       ) : (
         <Button
           onClick={() => {
-            const hadWarrantySelected = Boolean(selectedPlanId);
-            addItem({
-              vendorListingId: listingId,
-              quantity,
-              shippingMethodId: selectedDelivery as string,
-              warrantyPlanId: selectedPlanId,
-            }).then((cartData) => {
-              clearSelection();
-              handleProductAddedToCart?.(
-                hadWarrantySelected,
-                cartData?.data?.item?.cart_item_id,
-              );
-            });
+            if (hasCustomAttributes) {
+              setShowCustomAttributesModal(true);
+              return;
+            }
+            performAddToCart();
           }}
           disabled={isMutating}
           size={"lg"}

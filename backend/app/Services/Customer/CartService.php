@@ -142,7 +142,43 @@ class CartService
         return $customerCart->fresh(array_merge(self::itemEagerLoads(), ['coupon']));
     }
 
-    public function addItem(Cart $cart, string $vendorListingId, int $quantity, ?string $shippingMethodId, string $countryId): CartItem
+    /**
+     * Validates that every is_required=true ProductCustomAttribute on the
+     * product has a corresponding value in $values, then persists each
+     * incoming value as a CartItemCustomAttributeValue row for the given
+     * (newly created) cart item. Never touches the `attribute_values` table
+     * — that table is reserved for variant-defining pick-list attributes.
+     *
+     * @param array<int, array{product_custom_attribute_id: string, value: string}> $values
+     */
+    private function applyCustomAttributeValues(CartItem $item, \App\Models\Product $product, array $values): void
+    {
+        $requiredIds = $product->customAttributes()
+            ->where('is_required', true)
+            ->pluck('id')
+            ->all();
+
+        $providedIds = array_column($values, 'product_custom_attribute_id');
+
+        foreach ($requiredIds as $requiredId) {
+            if (!in_array($requiredId, $providedIds, true)) {
+                throw new \DomainException(__('common.exceptions.cart.custom_attribute_required'));
+            }
+        }
+
+        foreach ($values as $value) {
+            if (empty($value['product_custom_attribute_id']) || !isset($value['value']) || $value['value'] === '') {
+                continue;
+            }
+
+            $item->customAttributeValues()->create([
+                'product_custom_attribute_id' => $value['product_custom_attribute_id'],
+                'value' => $value['value'],
+            ]);
+        }
+    }
+
+    public function addItem(Cart $cart, string $vendorListingId, int $quantity, ?string $shippingMethodId, string $countryId, array $customAttributeValues = []): CartItem
     {
         $listing = VendorListing::with(['warehouseInventories', 'productVariant.product'])->findOrFail($vendorListingId);
 
@@ -182,6 +218,8 @@ class CartService
                 'added_at' => now(),
                 'selected_shipping_method_id' => $shippingMethodId,
             ]);
+
+            $this->applyCustomAttributeValues($item, $listing->productVariant->product, $customAttributeValues);
         }
 
         $this->recalculateCart($cart);
@@ -190,7 +228,7 @@ class CartService
     }
 
     /**
-     * @param array<int, array{vendor_listing_id?: string, admin_listing_id?: string, listing_type?: string, quantity: int, shipping_method_id?: ?string}> $items
+     * @param array<int, array{vendor_listing_id?: string, admin_listing_id?: string, listing_type?: string, quantity: int, shipping_method_id?: ?string, custom_attribute_values?: array}> $items
      * @return array<int, CartItem>
      */
     public function addItems(Cart $cart, array $items, string $countryId): array
@@ -199,9 +237,9 @@ class CartService
 
         foreach ($items as $item) {
             if (($item['listing_type'] ?? null) === 'admin') {
-                $added[] = $this->addAdminItem($cart, $item['admin_listing_id'], $item['quantity'], $item['shipping_method_id'] ?? null, $countryId);
+                $added[] = $this->addAdminItem($cart, $item['admin_listing_id'], $item['quantity'], $item['shipping_method_id'] ?? null, $countryId, $item['custom_attribute_values'] ?? []);
             } else {
-                $added[] = $this->addItem($cart, $item['vendor_listing_id'], $item['quantity'], $item['shipping_method_id'] ?? null, $countryId);
+                $added[] = $this->addItem($cart, $item['vendor_listing_id'], $item['quantity'], $item['shipping_method_id'] ?? null, $countryId, $item['custom_attribute_values'] ?? []);
             }
         }
 
@@ -212,7 +250,7 @@ class CartService
      * Adds a platform-owned admin listing to the cart. Only valid in the
      * nawy_now app context, and only for listings explicitly featured there.
      */
-    public function addAdminItem(Cart $cart, string $adminListingId, int $quantity, ?string $shippingMethodId, string $countryId): CartItem
+    public function addAdminItem(Cart $cart, string $adminListingId, int $quantity, ?string $shippingMethodId, string $countryId, array $customAttributeValues = []): CartItem
     {
         if (!$this->appContextService->isNawyNow()) {
             throw new \DomainException(__('common.exceptions.cart.admin_listing_not_allowed'));
@@ -261,6 +299,8 @@ class CartService
                 'added_at' => now(),
                 'selected_shipping_method_id' => $shippingMethodId,
             ]);
+
+            $this->applyCustomAttributeValues($item, $listing->productVariant->product, $customAttributeValues);
         }
 
         $this->recalculateCart($cart);

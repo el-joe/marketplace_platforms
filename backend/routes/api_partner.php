@@ -6,6 +6,7 @@ use App\Http\Controllers\Partner\Api\OrderController;
 use App\Http\Controllers\Partner\Api\ReturnController;
 use App\Http\Controllers\Partner\Api\WarrantyClaimController;
 use App\Http\Controllers\Partner\Api\ListingController;
+use App\Http\Controllers\Partner\Api\ProductCustomAttributeController;
 use App\Http\Controllers\Partner\Api\InventoryController;
 use App\Http\Controllers\Partner\Api\WarehouseController;
 use App\Http\Controllers\Partner\Api\ClassifiedController;
@@ -77,6 +78,17 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/',      [ListingController::class, 'index'])->name('index');
             Route::get('{id}',   [ListingController::class, 'show'])->name('show');
         });
+
+        // Product custom attributes (shared per-product, order-scoped fields).
+        // Ownership: vendor must have >=1 active listing on the product (not exclusive).
+        Route::prefix('products/{product}/custom-attributes')->name('partner.api.products.custom-attributes.')->group(function (): void {
+            Route::get('/',                  [ProductCustomAttributeController::class, 'index'])->name('index');
+            Route::post('/',                 [ProductCustomAttributeController::class, 'store'])->name('store');
+            Route::put('{customAttribute}',  [ProductCustomAttributeController::class, 'update'])->name('update');
+            Route::delete('{customAttribute}', [ProductCustomAttributeController::class, 'destroy'])->name('destroy');
+        });
+        Route::post('products/{product}/toggle-custom-attributes', [ProductCustomAttributeController::class, 'toggle'])
+            ->name('partner.api.products.toggle-custom-attributes');
 
         // Inventory (read-only)
         Route::prefix('inventory')->name('partner.api.inventory.')->group(function (): void {
