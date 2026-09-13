@@ -27,6 +27,14 @@ const CarouselProducts = ({ title, showViewAllButton }: props) => {
       }
     },
   });
+  const items = (data?.items ?? []).filter(
+    (product) =>
+      product.slug &&
+      product.product_url &&
+      product.price > 0 &&
+      (product.thumbnail || product.primary_image),
+  );
+
   return (
     <div className="container py-6">
       <SectionTitle title={title} showVewAllButton={showViewAllButton} />
@@ -44,7 +52,7 @@ const CarouselProducts = ({ title, showViewAllButton }: props) => {
           },
         }}
       >
-        {(data?.items ?? []).map((product) => (
+        {items.map((product) => (
           <SwiperSlide key={product.listing_id} className="w-fit! h-auto!">
             <ProductCard productData={product} />
           </SwiperSlide>

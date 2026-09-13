@@ -47,11 +47,25 @@ class SponsoredProductService
             }
 
             $listing = $sponsored->shift();
-            $product = $listing->productVariant->product ?? null;
+            $baseProduct = $listing->productVariant->product ?? null;
+
+            if (!$baseProduct) {
+                continue;
+            }
+
+            // Re-fetch through the same enriched query used for normal listings so
+            // price_range, images, category_name, stock, etc. are populated instead
+            // of coming back null/empty from a bare Eloquent relation load.
+            $product = app(ProductQueryService::class)
+                ->baseQuery($country)
+                ->where('products.id', $baseProduct->id)
+                ->first();
 
             if (!$product) {
                 continue;
             }
+
+            $product->load('images');
 
             $product->setAttribute('buy_box_listing_id', $listing->id);
             $product->setAttribute('buy_box_variant_id', $listing->productVariant->id);
