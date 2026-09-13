@@ -38,6 +38,7 @@ use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
+use App\Services\LastClickAttributionService;
 use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
 use App\Services\Customer\CartService;
@@ -74,6 +75,7 @@ class CheckoutController extends Controller
         private readonly CouponService $couponService,
         private readonly LoyaltyService $loyaltyService,
         private readonly CodValidationService $codValidationService,
+        private readonly LastClickAttributionService $attributionService,
     ) {}
 
     public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
@@ -846,6 +848,11 @@ class CheckoutController extends Controller
 
         $subOrders = $result['sub_orders'];
         $order = $result['order'];
+
+        $sessionId = $request->header('X-Session-Id')
+            ?? $request->cookie('session_id')
+            ?? session()->getId();
+        $this->attributionService->resolveAndRecordConversion($order, $sessionId);
 
         $paymentRedirectUrl = null;
         $bankTransferDetails = null;

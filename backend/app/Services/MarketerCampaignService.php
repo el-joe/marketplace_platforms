@@ -255,8 +255,7 @@ class MarketerCampaignService
             'acceptance_window_hours' => $timeoutHours,
             'expires_at'              => now()->addHours($timeoutHours),
             'referral_code'           => $referralCode,
-            // VERIFY: route once the customer-facing referral tracking endpoint exists
-            'referral_link'           => url("/r/{$referralCode}"),
+            'referral_link'           => url("/api/r/{$referralCode}"),
         ]);
 
         // Generate QR code for this invitation's referral link

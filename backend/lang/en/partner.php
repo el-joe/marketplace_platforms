@@ -2318,6 +2318,12 @@ return [
         'tiered_rules' => 'Tiered Commission Rules',
         'status_timeline' => 'Status Timeline',
 
+        'commission_type' => [
+            'fixed' => 'Fixed',
+            'tiered' => 'Tiered',
+            'last_click' => 'Last Click',
+        ],
+
         'tab_info' => 'Campaign Info',
         'tab_marketers' => 'Invited Marketers',
         'tab_conversions' => 'Conversions',
