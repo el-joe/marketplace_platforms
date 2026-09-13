@@ -64,7 +64,7 @@ const Price = ({
             <p
               className={`font-semibold line-through text-gray ${oldPriceSize[size]}`}
             >
-              {oldPrice.toLocaleString()}
+              {oldPrice?.toLocaleString()}
             </p>
           )}
           {discountPercent && (
@@ -82,7 +82,7 @@ const Price = ({
             <p
               className={`font-semibold line-through text-gray ${oldPriceSize[size]}`}
             >
-              {oldPrice.toLocaleString()}
+              {oldPrice?.toLocaleString()}
             </p>
           )}
           {discountPercent && (

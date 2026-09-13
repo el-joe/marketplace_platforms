@@ -22,6 +22,9 @@ import RatingAndReviews from "./rating-and-reviews";
 import { WarrantySelectionProvider } from "./warranty-selection-context";
 import AdBar from "./ad-bar";
 import AddedToCartSheet from "./added-to-cart-sheet";
+import Image from "next/image";
+import { Link } from "@/i18n/navigation";
+import FloatingProductSummary from "./floating-product-summary";
 
 export default async function ProductView({ slug }: { slug: string }) {
   const t = await getTranslations("productView");
@@ -86,6 +89,28 @@ export default async function ProductView({ slug }: { slug: string }) {
                   />
                 </>
               )}
+              <Link href={"#"}>
+                <Image
+                  src={
+                    "https://a.nooncdn.com/mpcms/EN0001/assets/a6985a10-940c-45b5-823b-6166c2a6b6e7.png?width=2400"
+                  }
+                  alt=""
+                  width={1280}
+                  height={380}
+                  className="block my-6"
+                />
+              </Link>
+              <Link href={"#"}>
+                <Image
+                  src={
+                    "https://a.nooncdn.com/mpcms/EN0001/assets/89b0f2ee-d29e-4057-828f-b3fceee56be8.png?width=2400"
+                  }
+                  alt=""
+                  width={1280}
+                  height={380}
+                  className="block my-6"
+                />
+              </Link>
               {productData.frequently_bought_together.items.length > 1 && (
                 <>
                   <Separator className={"my-6"} />
@@ -113,6 +138,7 @@ export default async function ProductView({ slug }: { slug: string }) {
           <CarouselProducts title={t("customersAlsoViewed")} />
           {/* floating add to cart button for small screens */}
           <FloatingCartButton listingId={productData.listing.listing_id} />
+          <FloatingProductSummary product={productData} />
           {/* added to cart side sheet */}
           <AddedToCartSheet productData={productData} />
         </WarrantySelectionProvider>
