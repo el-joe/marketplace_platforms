@@ -18,6 +18,8 @@ use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
+use App\Services\Customer\UnifiedListingQueryService;
+use App\Models\ProductView;
 use App\Services\WarrantyPlanService;
 use App\Support\Bilingual;
 use App\Support\Concerns\BuildsProductAttributeSelector;
@@ -36,6 +38,7 @@ class ListingDetailController extends Controller
         private readonly WarrantyPlanService $warrantyPlanService,
         private readonly ListingQueryService $listings,
         private readonly AppContextService $appContext,
+        private readonly UnifiedListingQueryService $unifiedQuery,
     ) {
     }
 
@@ -202,6 +205,9 @@ class ListingDetailController extends Controller
             ],
             'frequently_bought_together' => $this->frequentlyBoughtTogetherShape($product, $listing, $country),
             'related_products' => $this->relatedProductsShape($product, $country),
+            'more_from_brand' => $this->moreFromBrandShape($product, $country),
+            'previously_browsed' => $this->previouslyBrowsedShape($request, $product, $country),
+            'top_picks' => $this->topPicksShape($request, $product, $country),
             'warranty_plans' => $warrantyPlans,
         ]));
     }
@@ -609,6 +615,127 @@ class ListingDetailController extends Controller
         }
 
         return $items;
+    }
+
+    /**
+     * "More from [Brand]" — other active products from the same brand, excluding the
+     * current product. Hidden entirely when the product has no brand.
+     */
+    private function moreFromBrandShape($product, $country): array
+    {
+        if (!$product->brand_id) {
+            return [];
+        }
+
+        $candidates = Product::where('brand_id', $product->brand_id)
+            ->where('id', '!=', $product->id)
+            ->where('status', 'active')
+            ->with(['variants', 'images'])
+            ->orderByRating()
+            ->limit(8)
+            ->get();
+
+        return $this->productsToBuyBoxCards($candidates, $country);
+    }
+
+    /**
+     * "Previously Browsed" — distinct products from this session's/customer's
+     * product_views, most-recent-first, excluding the product currently being viewed.
+     */
+    private function previouslyBrowsedShape(Request $request, $product, $country): array
+    {
+        $customerId = auth('customer')->id();
+        $sessionId = $request->header('X-Session-Id')
+            ?? $request->cookie('session_id')
+            ?? ($request->hasSession() ? $request->session()->getId() : null);
+
+        $productIds = ProductView::query()
+            ->when($customerId,
+                fn ($q) => $q->where('customer_id', $customerId),
+                fn ($q) => $q->where('session_id', $sessionId)
+            )
+            ->where('product_id', '!=', $product->id)
+            ->orderByDesc('created_at')
+            ->limit(60)
+            ->pluck('product_id')
+            ->unique()
+            ->take(12)
+            ->values();
+
+        if ($productIds->isEmpty()) {
+            return [];
+        }
+
+        $candidates = Product::whereIn('id', $productIds)
+            ->where('status', 'active')
+            ->with(['variants', 'images'])
+            ->get()
+            ->sortBy(fn ($p) => $productIds->search($p->id))
+            ->values();
+
+        return $this->productsToBuyBoxCards($candidates, $country);
+    }
+
+    /**
+     * "Top Picks For You" — v1 heuristic (no personalization engine yet): best-rated,
+     * best-selling products from categories this session/customer has actually viewed.
+     * Falls back to a global rating/sales blend when there's no view history yet.
+     */
+    private function topPicksShape(Request $request, $product, $country): array
+    {
+        $customerId = auth('customer')->id();
+        $sessionId = $request->header('X-Session-Id')
+            ?? $request->cookie('session_id')
+            ?? ($request->hasSession() ? $request->session()->getId() : null);
+
+        $viewedCategoryIds = ProductView::query()
+            ->when($customerId,
+                fn ($q) => $q->where('customer_id', $customerId),
+                fn ($q) => $q->where('session_id', $sessionId)
+            )
+            ->join('products', 'products.id', '=', 'product_views.product_id')
+            ->distinct()
+            ->limit(10)
+            ->pluck('products.category_id');
+
+        $query = Product::where('status', 'active')
+            ->where('id', '!=', $product->id)
+            ->with(['variants', 'images']);
+
+        if ($viewedCategoryIds->isNotEmpty()) {
+            $query->whereIn('category_id', $viewedCategoryIds);
+        }
+
+        $candidates = $query->orderByRating()->orderByDesc('total_sold')->limit(8)->get();
+
+        return $this->productsToBuyBoxCards($candidates, $country);
+    }
+
+    /**
+     * Shared buy-box card builder for the section carousels above — resolves the
+     * correct listing (admin > vendor > marketer) per product via UnifiedListingQueryService,
+     * same pipeline PageBuilderService uses, so every card here has a real price/image.
+     */
+    private function productsToBuyBoxCards($candidates, $country): array
+    {
+        if ($candidates->isEmpty()) {
+            return [];
+        }
+
+        $buyBox = $this->unifiedQuery->getBuyBoxForProducts($candidates, $country);
+        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
+
+        return $candidates
+            ->map(fn ($p) => [$p, $buyBox[$p->id] ?? null])
+            ->filter(fn (array $pair) => $pair[1] !== null)
+            ->map(fn (array $pair) => $this->listings->toMixedCardShape(
+                $pair[1],
+                $pair[0],
+                $country,
+                in_array($pair[1]->id, $wishlistIds, true),
+            ))
+            ->values()
+            ->all();
     }
 
     private function fbtItemShape(VendorListing|AdminListing $listing, $product, $country): array

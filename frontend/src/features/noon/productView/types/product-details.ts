@@ -17,6 +17,9 @@ export interface IProductDetails {
   reviews: Reviews;
   frequently_bought_together: FrequentlyBoughtTogether;
   related_products: IProduct[];
+  more_from_brand: IProduct[];
+  previously_browsed: IProduct[];
+  top_picks: IProduct[];
   warranty_plans: Warranty[];
   banner: PlacementBanner | null;
 }

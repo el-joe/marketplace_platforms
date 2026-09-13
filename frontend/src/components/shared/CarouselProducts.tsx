@@ -11,9 +11,12 @@ import { IProduct } from "@/types";
 type props = {
   title: string;
   showViewAllButton?: boolean;
+  // When provided, the carousel renders these products directly instead of
+  // fetching its own data (e.g. sections already included in a page payload).
+  items?: IProduct[];
 };
 
-const CarouselProducts = ({ title, showViewAllButton }: props) => {
+const CarouselProducts = ({ title, showViewAllButton, items: providedItems }: props) => {
   const { data } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
@@ -26,14 +29,17 @@ const CarouselProducts = ({ title, showViewAllButton }: props) => {
         return { items: [] };
       }
     },
+    enabled: providedItems === undefined,
   });
-  const items = (data?.items ?? []).filter(
+  const items = (providedItems ?? data?.items ?? []).filter(
     (product) =>
       product.slug &&
       product.product_url &&
       product.price > 0 &&
       (product.thumbnail || product.primary_image),
   );
+
+  if (items.length === 0) return null;
 
   return (
     <div className="container py-6">

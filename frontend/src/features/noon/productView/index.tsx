@@ -136,6 +136,30 @@ export default async function ProductView({ slug }: { slug: string }) {
           />
           <RatingAndReviews reviews={productData.reviews} />
           <CarouselProducts title={t("customersAlsoViewed")} />
+          {!!productData.related_products.length && (
+            <CarouselProducts
+              title={t("relatedProducts")}
+              items={productData.related_products}
+            />
+          )}
+          {!!productData.more_from_brand.length && (
+            <CarouselProducts
+              title={`${t("moreFrom")} ${productData.product.brand?.name.en ?? ""}`}
+              items={productData.more_from_brand}
+            />
+          )}
+          {!!productData.previously_browsed.length && (
+            <CarouselProducts
+              title={t("previouslyBrowsed")}
+              items={productData.previously_browsed}
+            />
+          )}
+          {!!productData.top_picks.length && (
+            <CarouselProducts
+              title={t("topPicksForYou")}
+              items={productData.top_picks}
+            />
+          )}
           {/* floating add to cart button for small screens */}
           <FloatingCartButton listingId={productData.listing.listing_id} />
           <FloatingProductSummary product={productData} />
