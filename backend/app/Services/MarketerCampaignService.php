@@ -80,7 +80,7 @@ class MarketerCampaignService
         return DB::transaction(function () use ($vendor, $data) {
             $category = null;
 
-            if (isset($data['vendor_listing_id'])) {
+            if (!empty($data['vendor_listing_id'])) {
                 $listing = VendorListing::where('id', $data['vendor_listing_id'])
                     ->where('vendor_id', $vendor->id)
                     ->where('fulfillment_model', 'fbn') // Must be FBN
