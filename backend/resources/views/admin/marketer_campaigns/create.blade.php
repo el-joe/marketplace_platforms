@@ -110,7 +110,10 @@
             if (vendorId) {
                 jQuery(listingSelect).select2('destroy');
                 listingSelect.setAttribute('placeholder', '{{ __("admin.marketer_campaigns.click_to_search_listings") }}');
-                initSelect2(jQuery(listingSelect).closest('form'));
+                // Scope reinit to just this field — re-running initSelect2 on the whole
+                // form would destroy/recreate vendor_id's own Select2 mid-handler (we're
+                // inside its 'change' callback), breaking that element's DOM.
+                initSelect2(jQuery(listingSelect).parent());
             }
 
             jQuery(listingSelect).val(null).trigger('change');
