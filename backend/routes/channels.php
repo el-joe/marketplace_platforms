@@ -14,23 +14,23 @@ use Illuminate\Support\Facades\Broadcast;
 */
 
 Broadcast::channel('admin.{adminId}', function ($user, $adminId) {
-    return (int) $user->id === (int) $adminId;
+    return (string) $user->id === (string) $adminId;
 });
 
 Broadcast::channel('vendor.{vendorAdminId}', function ($user, $vendorAdminId) {
-    return (int) $user->id === (int) $vendorAdminId;
+    return (string) $user->id === (string) $vendorAdminId;
 });
 
 Broadcast::channel('delivery-agent.{agentId}', function ($user, $agentId) {
-    return (int) $user->id === (int) $agentId;
+    return (string) $user->id === (string) $agentId;
 });
 
 Broadcast::channel('carrier-supervisor.{supervisorId}', function ($user, $supervisorId) {
-    return (int) $user->id === (int) $supervisorId;
+    return (string) $user->id === (string) $supervisorId;
 });
 
 Broadcast::channel('travel-agency.{agencyId}', function ($user, $agencyId) {
-    return (int) $user->id === (int) $agencyId;
+    return (string) $user->id === (string) $agencyId;
 });
 
 Broadcast::channel('marketer.{marketerAdminId}', function ($user, $marketerAdminId) {
