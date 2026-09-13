@@ -63,8 +63,8 @@
         <table class="min-w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 border-b border-gray-100">
-                    <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.campaign_id_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.vendor_column') }}</th>
+                    <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.marketer_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.product_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.country_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.commission_type_column') }}</th>
@@ -78,11 +78,16 @@
                     @php
                         $product = $campaign->vendorListing?->productVariant?->product
                             ?? $campaign->adminListing?->productVariant?->product;
+                        $productName = $product?->name
+                            ?? $campaign->travelPackage?->title_en
+                            ?? $campaign->classifiedListing?->title_en
+                            ?? '—';
+                        $marketerName = $campaign->invitations->first()?->marketer?->name ?? '—';
                     @endphp
                     <tr class="border-b border-gray-50">
-                        <td class="py-2 pr-4 font-mono text-xs text-gray-500">{{ substr($campaign->id, 0, 8) }}</td>
                         <td class="py-2 pr-4 font-medium text-gray-900">{{ $campaign->vendor?->store_name ?? '—' }}</td>
-                        <td class="py-2 pr-4">{{ $product?->name ?? '—' }}</td>
+                        <td class="py-2 pr-4">{{ $marketerName }}</td>
+                        <td class="py-2 pr-4">{{ $productName }}</td>
                         <td class="py-2 pr-4">{{ $campaign->country?->name_en ?? '—' }}</td>
                         <td class="py-2 pr-4">{{ __('admin.marketer_campaigns.commission_type_' . $campaign->commission_type) }}</td>
                         <td class="py-2 pr-4">

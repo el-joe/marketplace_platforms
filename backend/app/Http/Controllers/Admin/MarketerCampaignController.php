@@ -21,6 +21,7 @@ class MarketerCampaignController extends Controller
             'vendor', 'country',
             'vendorListing.productVariant.product',
             'adminListing.productVariant.product',
+            'travelPackage', 'classifiedListing',
             'invitations.marketer',
         ])
         ->when($request->status, fn($q) => $q->where('status', $request->status))
