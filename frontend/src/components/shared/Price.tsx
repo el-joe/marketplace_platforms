@@ -56,7 +56,7 @@ const Price = ({
         <span className="font-[currency-font]">
           <CurrencySymbol code={currency} />
         </span>
-        <p>{currentPrice.toLocaleString()}</p>
+        <p>{(currentPrice ?? 0).toLocaleString()}</p>
       </div>
       {variant === "default" && (
         <>
