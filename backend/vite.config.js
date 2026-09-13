@@ -99,6 +99,7 @@ export default defineConfig({
                 'resources/js/partner/performance.js',
                 'resources/js/partner/profile.js',
                 'resources/js/partner/ad-slot-wizard.js',
+                'resources/js/partner/ad-booking-show.js',
                 'resources/js/partner/team.js',
                 'resources/js/partner/support.js',
                 'resources/js/partner/disputes.js',
