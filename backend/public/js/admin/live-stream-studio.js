@@ -120,7 +120,7 @@
     btnGoLive.addEventListener('click', async () => {
       btnGoLive.disabled = true;
       btnGoLive.textContent = 'Starting…';
-      const res = await fetch(`/admin/live-streams/${STREAM_ID}/go-live`, {
+      const res = await fetch(`/live-streams/${STREAM_ID}/go-live`, {
         method:  'POST',
         headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
       }).then(r => r.json());
@@ -154,7 +154,7 @@
 
   async function endStream() {
     if (!confirm('End this live stream?')) return;
-    await fetch(`/admin/live-streams/${STREAM_ID}/end`, {
+    await fetch(`/live-streams/${STREAM_ID}/end`, {
       method:  'POST',
       headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
     });
@@ -227,7 +227,7 @@
   }
 
   function sendSignal(targetPeerId, type, payload) {
-    fetch(`/admin/live-streams/${STREAM_ID}/signal`, {
+    fetch(`/live-streams/${STREAM_ID}/signal`, {
       method:  'POST',
       headers: { 'X-CSRF-TOKEN': CSRF, 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body:    JSON.stringify({ type, payload, to: targetPeerId }),
@@ -281,7 +281,7 @@
   $('comments-list')?.addEventListener('click', async (e) => {
     const btn = e.target.closest('.delete-comment');
     if (!btn) return;
-    await fetch(`/admin/live-streams/${STREAM_ID}/comments/${btn.dataset.id}`, {
+    await fetch(`/live-streams/${STREAM_ID}/comments/${btn.dataset.id}`, {
       method:  'DELETE',
       headers: { 'X-CSRF-TOKEN': CSRF },
     });
