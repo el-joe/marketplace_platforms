@@ -1553,6 +1553,9 @@ return [
         'sample_confirm_return'         => 'هل تريد تسجيل هذه العينة كمُرتجعة؟',
         'sample_total'                  => 'الإجمالي',
         'sample_delivered_count'        => 'تم تسليمها',
+        'invite_marketers'              => 'دعوة ماركترز',
+        'no_marketers_available'        => 'تم دعوة جميع الماركترز النشطين في هذه الدولة بالفعل.',
+        'cancel'                        => 'إلغاء',
     ],
 
     'marketer_settings' => [

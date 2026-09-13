@@ -307,6 +307,16 @@
     {{-- ── Invitations ──────────────────────────────────────────────────── --}}
     <div x-show="tab === 'invitations'">
         <x-card title="{{ __('admin.marketer_campaigns.tab_invitations') }}">
+            @can('marketer_campaigns.create')
+                @if(in_array($marketerCampaign->status, ['pending_admin', 'active']))
+                    <x-slot name="actions">
+                        <button type="button" @click="document.getElementById('invite-marketers-modal').classList.remove('hidden')"
+                                class="btn btn-primary btn-sm">
+                            <i class="fas fa-user-plus"></i> {{ __('admin.marketer_campaigns.invite_marketers') }}
+                        </button>
+                    </x-slot>
+                @endif
+            @endcan
             @if($marketerCampaign->invitations->isEmpty())
                 <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
             @else
@@ -390,6 +400,57 @@
                 </div>
             @endif
         </x-card>
+
+        @can('marketer_campaigns.create')
+            @if(in_array($marketerCampaign->status, ['pending_admin', 'active']))
+                @php
+                    $alreadyInvitedIds = $marketerCampaign->invitations
+                        ->whereIn('status', ['pending', 'accepted'])
+                        ->pluck('marketer_id')
+                        ->all();
+                    $availableMarketers = \App\Models\Marketer::where('global_status', 'active')
+                        ->where('country_id', $marketerCampaign->country_id)
+                        ->whereNotIn('id', $alreadyInvitedIds)
+                        ->orderBy('name')
+                        ->get();
+                @endphp
+                <div id="invite-marketers-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+                    <div class="bg-white rounded-2xl p-6 w-full max-w-lg">
+                        <h3 class="text-lg font-semibold mb-4">{{ __('admin.marketer_campaigns.invite_marketers') }}</h3>
+                        <form method="POST"
+                              action="{{ route('admin.marketer-campaigns.invite-marketers', $marketerCampaign) }}">
+                            @csrf
+
+                            @if($availableMarketers->isEmpty())
+                                <p class="text-sm text-gray-500">
+                                    {{ __('admin.marketer_campaigns.no_marketers_available') }}
+                                </p>
+                            @else
+                                <x-form.select
+                                    name="marketer_ids"
+                                    label="{{ __('admin.marketer_campaigns.select_marketers') }}"
+                                    :multiple="true"
+                                    :select2="true"
+                                    :options="$availableMarketers->mapWithKeys(fn ($m) =>
+                                        [$m->id => $m->name . ' (' . ucfirst($m->marketer_type) . ')'])->toArray()"
+                                />
+                            @endif
+
+                            <div class="flex gap-3 mt-6">
+                                <button type="submit" class="btn btn-primary" @if($availableMarketers->isEmpty()) disabled @endif>
+                                    {{ __('admin.marketer_campaigns.invite_marketers') }}
+                                </button>
+                                <button type="button"
+                                        onclick="document.getElementById('invite-marketers-modal').classList.add('hidden')"
+                                        class="btn btn-ghost">
+                                    {{ __('admin.marketer_campaigns.cancel') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+        @endcan
     </div>
 
     {{-- ── Conversions ──────────────────────────────────────────────────── --}}

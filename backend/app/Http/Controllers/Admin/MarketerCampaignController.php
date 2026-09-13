@@ -131,6 +131,25 @@ class MarketerCampaignController extends Controller
         return back()->with('success', 'تم تسجيل دفع رسوم الإنفلوينسر.');
     }
 
+    public function inviteMarketers(Request $request, MarketerCampaign $marketerCampaign)
+    {
+        abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
+
+        $request->validate([
+            'marketer_ids'   => ['required', 'array', 'min:1'],
+            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
+        ]);
+
+        $result = $this->service->inviteMarketers($marketerCampaign, $request->marketer_ids);
+
+        $message = count($result['invited']) . ' marketer(s) invited.';
+        if (!empty($result['skipped'])) {
+            $message .= ' ' . count($result['skipped']) . ' skipped (already invited or inactive).';
+        }
+
+        return back()->with('success', $message);
+    }
+
     public function create()
     {
         abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
@@ -141,7 +160,15 @@ class MarketerCampaignController extends Controller
         $vendorCountries = $vendors->mapWithKeys(fn ($v) => [$v->id => $v->country_id]);
         $countryCurrencies = \App\Models\Country::pluck('currency_code', 'id');
 
-        return view('admin.marketer_campaigns.create', compact('vendors', 'marketers', 'countries', 'vendorCountries', 'countryCurrencies'));
+        $oldVendorListing = null;
+        if (old('vendor_listing_id')) {
+            $oldVendorListing = \App\Models\VendorListing::with('productVariant.product')
+                ->find(old('vendor_listing_id'));
+        }
+
+        return view('admin.marketer_campaigns.create', compact(
+            'vendors', 'marketers', 'countries', 'vendorCountries', 'countryCurrencies', 'oldVendorListing'
+        ));
     }
 
     public function store(Request $request)
@@ -186,6 +213,7 @@ class MarketerCampaignController extends Controller
         $listings = \App\Models\VendorListing::with('productVariant.product')
             ->where('vendor_id', $request->vendor_id)
             ->where('status', 'active')
+            ->where('fulfillment_model', 'fbn') // createCampaign() only accepts FBN listings
             ->when($request->filled('search'), fn ($q) =>
                 $q->whereHas('productVariant.product', fn ($q2) =>
                     $q2->where('name_en', 'like', "%{$request->search}%")

@@ -40,7 +40,16 @@ class MarketerCampaignController extends Controller
     {
         abort_unless($vendorListing->vendor_id === $this->vendorId(), 403);
         abort_unless($vendorListing->fulfillment_model === 'fbn', 403, 'حملات الماركتر متاحة فقط لقوائم FBN.');
-        abort_if($this->hasActiveCampaign($vendorListing->id), 403, 'هذه القائمة لديها حملة نشطة أو قيد المراجعة بالفعل.');
+
+        $existing = MarketerCampaign::where('vendor_listing_id', $vendorListing->id)
+            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
+            ->first();
+
+        if ($existing) {
+            return redirect()
+                ->route('partner.marketer-campaigns.show', $existing)
+                ->with('info', 'هذه القائمة لديها حملة نشطة بالفعل. يمكنك دعوة المزيد من الماركترز من هنا.');
+        }
 
         $vendorListing->load('productVariant.product');
 
@@ -133,6 +142,31 @@ class MarketerCampaignController extends Controller
         ]);
 
         return view('partner.marketer_campaigns.show', compact('marketerCampaign'));
+    }
+
+    public function inviteMarketers(Request $request, MarketerCampaign $marketerCampaign)
+    {
+        abort_unless(
+            auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create'),
+            403
+        );
+        abort_unless($marketerCampaign->vendor_id === $this->vendorId(), 403);
+
+        $request->validate([
+            'marketer_ids'   => ['required', 'array', 'min:1'],
+            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
+        ]);
+
+        $result = $this->marketerCampaignService->inviteMarketers(
+            $marketerCampaign, $request->input('marketer_ids', [])
+        );
+
+        $message = count($result['invited']) . ' ماركتر تمت دعوته.';
+        if (!empty($result['skipped'])) {
+            $message .= ' تم تجاهل ' . count($result['skipped']) . ' (مدعو بالفعل أو غير نشط).';
+        }
+
+        return back()->with('success', $message);
     }
 
     public function cancel(MarketerCampaign $marketerCampaign)

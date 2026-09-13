@@ -434,6 +434,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::post('/',               [MarketerCampaignController::class, 'store'])->name('store')->middleware('vendor.can:marketer_campaigns.create');
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show')->middleware('vendor.can:marketer_campaigns.view');
         Route::post('/{marketerCampaign}/cancel', [MarketerCampaignController::class, 'cancel'])->name('cancel')->middleware('vendor.can:marketer_campaigns.cancel');
+        Route::post('/{marketerCampaign}/invite-marketers', [MarketerCampaignController::class, 'inviteMarketers'])->name('invite-marketers')->middleware('vendor.can:marketer_campaigns.create');
     });
     // Keep this route — vendor needs to search for marketers when creating campaigns
     Route::get('/campaigns/search-marketers', [MarketerCampaignController::class, 'searchMarketers'])

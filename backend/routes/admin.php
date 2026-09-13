@@ -969,6 +969,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show');
         Route::post('/{marketerCampaign}/approve', [MarketerCampaignController::class, 'approve'])->name('approve');
         Route::post('/{marketerCampaign}/reject', [MarketerCampaignController::class, 'reject'])->name('reject');
+        Route::post('/{marketerCampaign}/invite-marketers', [MarketerCampaignController::class, 'inviteMarketers'])->name('invite-marketers')
+            ->middleware('admin.permission:marketer_campaigns.create');
         Route::patch('/{marketerCampaign}/samples/{sample}', [MarketerCampaignController::class, 'updateSampleStatus'])->name('samples.update');
         Route::patch('/{marketerCampaign}/invitations/{invitation}/mark-fee-paid', [MarketerCampaignController::class, 'markInvitationFeePaid'])->name('invitations.mark-fee-paid');
     });

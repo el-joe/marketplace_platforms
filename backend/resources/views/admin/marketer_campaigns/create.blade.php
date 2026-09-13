@@ -33,10 +33,16 @@
 
                 <div class="sm:col-span-2">
                     <label for="vendor_listing_id" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.vendor_listing') }}</label>
-                    <select name="vendor_listing_id" id="vendor_listing_id" data-async-select disabled
-                        data-config='{{ json_encode(["url" => route("admin.marketer-campaigns.search-listings"), "param" => "search", "minLength" => 0, "delay" => 250]) }}'
+                    <select name="vendor_listing_id" id="vendor_listing_id" data-async-select @if(!old('vendor_id')) disabled @endif
+                        data-config='{{ json_encode(["url" => route("admin.marketer-campaigns.search-listings"), "param" => "search", "minLength" => 0, "delay" => 250, "vendor_id" => old('vendor_id')]) }}'
                         placeholder="{{ __('admin.marketer_campaigns.select_vendor_first') }}"
-                        class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500"></select>
+                        class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500">
+                        @if($oldVendorListing)
+                            <option value="{{ $oldVendorListing->id }}" selected>
+                                {{ $oldVendorListing->productVariant?->product?->name_en ?? '—' }} — {{ $oldVendorListing->id }}
+                            </option>
+                        @endif
+                    </select>
                     <p class="text-xs text-gray-500 mt-1">{{ __('admin.marketer_campaigns.vendor_listing_hint') }}</p>
                 </div>
             </div>
@@ -107,9 +113,10 @@
         var currencyInput = document.getElementById('currency');
         if (!vendorSelect || !listingSelect || typeof jQuery === 'undefined') return;
 
-        // select2 (data-select2-init/data-async-select) fires jQuery 'change', not native DOM 'change'
-        jQuery(vendorSelect).on('change', function () {
-            var vendorId = vendorSelect.value;
+        // Enables/reinits the async listing selector for the given vendor. Pass
+        // resetValue=false to preserve an already-selected listing (e.g. on
+        // validation-error redisplay); true clears it (user actively switched vendors).
+        function syncListingSelect(vendorId, resetValue) {
             var config = JSON.parse(listingSelect.getAttribute('data-config') || '{}');
             config.vendor_id = vendorId;
             listingSelect.setAttribute('data-config', JSON.stringify(config));
@@ -125,12 +132,27 @@
                 initSelect2(jQuery(listingSelect).parent());
             }
 
-            jQuery(listingSelect).val(null).trigger('change');
+            if (resetValue) {
+                jQuery(listingSelect).val(null).trigger('change');
+            }
+        }
+
+        // select2 (data-select2-init/data-async-select) fires jQuery 'change', not native DOM 'change'
+        jQuery(vendorSelect).on('change', function () {
+            var vendorId = vendorSelect.value;
+            syncListingSelect(vendorId, true);
 
             if (countrySelect && vendorId && vendorCountries[vendorId]) {
                 jQuery(countrySelect).val(vendorCountries[vendorId]).trigger('change');
             }
         });
+
+        // On validation-error redisplay, the vendor is already selected but no
+        // 'change' event fires for it — without this the listing selector stays
+        // disabled/placeholder and the previously chosen listing is unreachable.
+        if (vendorSelect.value) {
+            syncListingSelect(vendorSelect.value, false);
+        }
 
         if (countrySelect) {
             jQuery(countrySelect).on('change', function () {

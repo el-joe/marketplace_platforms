@@ -177,6 +177,14 @@
 
     {{-- ═══ Tab 2: Invited Marketers ═══ --}}
     <div x-show="tab === 'marketers'" x-cloak>
+        @if (auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create') && in_array($marketerCampaign->status, ['pending_admin', 'active']))
+            <div class="flex justify-end mb-4">
+                <button type="button" onclick="document.getElementById('invite-marketers-modal').classList.remove('hidden')"
+                        class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors">
+                    {{ __('partner.marketer_campaigns_my.invite_marketers') }}
+                </button>
+            </div>
+        @endif
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             @if ($marketerCampaign->invitations->isEmpty())
                 <p class="p-6 text-center text-sm text-gray-400">{{ __('partner.marketer_campaigns_my.no_invitations') }}</p>
@@ -236,6 +244,57 @@
                 </div>
             @endif
         </div>
+
+        @if (auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create') && in_array($marketerCampaign->status, ['pending_admin', 'active']))
+            @php
+                $alreadyInvitedIds = $marketerCampaign->invitations
+                    ->whereIn('status', ['pending', 'accepted'])
+                    ->pluck('marketer_id')
+                    ->all();
+                $availableMarketers = \App\Models\Marketer::where('global_status', 'active')
+                    ->where('country_id', $marketerCampaign->country_id)
+                    ->whereNotIn('id', $alreadyInvitedIds)
+                    ->orderBy('name')
+                    ->get();
+            @endphp
+            <div id="invite-marketers-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+                <div class="bg-white rounded-2xl p-6 w-full max-w-lg">
+                    <h3 class="text-lg font-semibold mb-4">{{ __('partner.marketer_campaigns_my.invite_marketers') }}</h3>
+                    <form method="POST"
+                          action="{{ route('partner.marketer-campaigns.invite-marketers', $marketerCampaign) }}">
+                        @csrf
+
+                        @if ($availableMarketers->isEmpty())
+                            <p class="text-sm text-gray-500">
+                                {{ __('partner.marketer_campaigns_my.no_marketers_available') }}
+                            </p>
+                        @else
+                            <x-form.select
+                                name="marketer_ids"
+                                label="{{ __('partner.marketer_campaigns_my.select_marketers') }}"
+                                :multiple="true"
+                                :select2="true"
+                                :options="$availableMarketers->mapWithKeys(fn ($m) =>
+                                    [$m->id => $m->name . ' (' . __('partner.marketer_types.' . $m->marketer_type) . ')'])->toArray()"
+                            />
+                        @endif
+
+                        <div class="flex gap-3 mt-6">
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors"
+                                    @if ($availableMarketers->isEmpty()) disabled @endif>
+                                {{ __('partner.marketer_campaigns_my.invite_marketers') }}
+                            </button>
+                            <button type="button"
+                                    onclick="document.getElementById('invite-marketers-modal').classList.add('hidden')"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                                {{ __('partner.marketer_campaigns_my.close_modal') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- ═══ Tab 3: Conversions ═══ --}}

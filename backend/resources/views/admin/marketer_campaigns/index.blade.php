@@ -27,8 +27,11 @@
             </span>
         @endif
         @if(auth('admin')->user()->can('marketer_campaigns.create'))
-            <a href="{{ route('admin.marketer-campaigns.create') }}" class="btn btn-primary btn-sm">
-                + {{ __('admin.marketer_campaigns.new_campaign') }}
+            {{-- Campaigns are created automatically when a vendor enables one at listing
+                 time. This is a rare bootstrap-only path, so it stays secondary — inviting
+                 more marketers to an existing campaign (from its show page) is the primary action now. --}}
+            <a href="{{ route('admin.marketer-campaigns.create') }}" class="btn btn-ghost btn-sm text-gray-500">
+                {{ __('admin.marketer_campaigns.new_campaign') }}
             </a>
         @endif
     </div>

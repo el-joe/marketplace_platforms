@@ -277,6 +277,54 @@ class MarketerCampaignService
         return $invitation;
     }
 
+    /**
+     * Invite one or more marketers to an EXISTING campaign.
+     * Skips marketers who already have a pending or accepted invitation
+     * on this campaign — dispatchInvitation() itself has no duplicate guard,
+     * so this is the only safe entry point for bulk/repeated invites.
+     *
+     * @return array{invited: array<string>, skipped: array<string,string>}
+     *   invited = marketer IDs successfully invited
+     *   skipped = marketer ID => reason (e.g. 'already_pending', 'already_accepted', 'inactive')
+     */
+    public function inviteMarketers(MarketerCampaign $campaign, array $marketerIds): array
+    {
+        $invited = [];
+        $skipped = [];
+
+        if (!in_array($campaign->status, ['pending_admin', 'active'])) {
+            foreach ($marketerIds as $id) {
+                $skipped[$id] = 'campaign_not_open';
+            }
+            return ['invited' => $invited, 'skipped' => $skipped];
+        }
+
+        $existingInvitations = MarketerCampaignInvitation::where('campaign_id', $campaign->id)
+            ->whereIn('marketer_id', $marketerIds)
+            ->whereIn('status', ['pending', 'accepted'])
+            ->pluck('status', 'marketer_id');
+
+        $marketers = Marketer::whereIn('id', $marketerIds)->get()->keyBy('id');
+
+        foreach ($marketerIds as $marketerId) {
+            if ($existingInvitations->has($marketerId)) {
+                $skipped[$marketerId] = 'already_' . $existingInvitations[$marketerId];
+                continue;
+            }
+
+            $marketer = $marketers->get($marketerId);
+            if (!$marketer || $marketer->global_status !== 'active') {
+                $skipped[$marketerId] = 'inactive';
+                continue;
+            }
+
+            $this->dispatchInvitation($campaign, $marketerId);
+            $invited[] = $marketerId;
+        }
+
+        return ['invited' => $invited, 'skipped' => $skipped];
+    }
+
     private function generateQrCode(string $url, string $invitationId): ?string
     {
         try {

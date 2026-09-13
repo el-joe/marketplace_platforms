@@ -1596,6 +1596,9 @@ return [
         'sample_confirm_return'         => 'Mark this sample as returned?',
         'sample_total'                  => 'Total',
         'sample_delivered_count'        => 'delivered',
+        'invite_marketers'              => 'Invite Marketers',
+        'no_marketers_available'        => 'All active marketers in this country have already been invited.',
+        'cancel'                        => 'Cancel',
     ],
 
     'marketer_settings' => [
