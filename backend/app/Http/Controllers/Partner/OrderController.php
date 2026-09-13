@@ -219,7 +219,6 @@ class OrderController extends Controller
             ->with([
                 'order',
                 'order.customer',
-                'items.customInputs',
                 'statusHistories' => fn($q) => $q->orderBy('created_at'),
                 'shipments.trackingEvents',
                 'carrier',

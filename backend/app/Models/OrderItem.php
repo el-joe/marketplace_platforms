@@ -100,8 +100,4 @@ class OrderItem extends Model
         return $this->belongsTo(WarrantyPurchase::class);
     }
 
-    public function customInputs(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(OrderItemCustomInput::class);
-    }
 }
