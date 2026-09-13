@@ -184,9 +184,11 @@ class MarketerCampaignController extends Controller
 
         $listings = \App\Models\VendorListing::with('productVariant.product')
             ->where('vendor_id', $request->vendor_id)
-            ->where('fulfillment_model', 'fbn')
-            ->whereHas('productVariant.product', fn ($q) =>
-                $q->where('name_en', 'like', "%{$request->search}%")
+            ->where('status', 'active')
+            ->when($request->filled('search'), fn ($q) =>
+                $q->whereHas('productVariant.product', fn ($q2) =>
+                    $q2->where('name_en', 'like', "%{$request->search}%")
+                )
             )
             ->limit(20)
             ->get()

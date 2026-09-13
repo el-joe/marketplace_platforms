@@ -1463,7 +1463,7 @@ return [
         'select_country'                => 'اختر دولة',
         'vendor_listing'                => 'عرض التاجر',
         'select_vendor_first'           => 'اختر تاجرًا أولاً',
-        'vendor_listing_hint'           => 'اختياري. ابحث عن عروض التاجر المحدد (عروض FBN فقط).',
+        'vendor_listing_hint'           => 'اختياري. اختر العرض المطلوب ترويجه (جميع العروض النشطة).',
         'marketers'                     => 'المسوّقون',
         'select_marketers'              => 'اختر المسوّقين لدعوتهم',
         'type_influencer'               => 'مؤثر',

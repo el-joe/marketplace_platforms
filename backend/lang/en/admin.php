@@ -1506,7 +1506,7 @@ return [
         'select_country'                => 'Select a country',
         'vendor_listing'                => 'Vendor Listing',
         'select_vendor_first'           => 'Select a vendor first',
-        'vendor_listing_hint'           => 'Optional. Search listings for the selected vendor (FBN listings only).',
+        'vendor_listing_hint'           => 'Optional. Select the product listing to promote (all active listings).',
         'marketers'                     => 'Marketers',
         'select_marketers'              => 'Select marketers to invite',
         'type_influencer'               => 'Influencer',
