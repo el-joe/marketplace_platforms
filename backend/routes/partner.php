@@ -430,6 +430,8 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     // ─── Marketer Campaigns (My Campaigns — vendor's own influencer/affiliate campaigns) ──
     Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/',                [MarketerCampaignController::class, 'index'])->name('index')->middleware('vendor.can:marketer_campaigns.view');
+        Route::get('/create/{vendorListing}', [MarketerCampaignController::class, 'create'])->name('create')->middleware('vendor.can:marketer_campaigns.create');
+        Route::post('/',               [MarketerCampaignController::class, 'store'])->name('store')->middleware('vendor.can:marketer_campaigns.create');
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show')->middleware('vendor.can:marketer_campaigns.view');
         Route::post('/{marketerCampaign}/cancel', [MarketerCampaignController::class, 'cancel'])->name('cancel')->middleware('vendor.can:marketer_campaigns.cancel');
     });

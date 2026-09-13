@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaign;
+use App\Models\VendorListing;
+use App\Services\MarketerCampaignService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,9 +15,81 @@ class MarketerCampaignController extends Controller
 {
     use AuthorizesRequests;
 
+    public function __construct(private readonly MarketerCampaignService $marketerCampaignService)
+    {
+    }
+
     private function vendorId(): string
     {
         return Auth::guard('vendor')->user()->vendor_id;
+    }
+
+    private function vendor(): \App\Models\Vendor
+    {
+        return Auth::guard('vendor')->user()->vendor;
+    }
+
+    private function hasActiveCampaign(string $vendorListingId): bool
+    {
+        return MarketerCampaign::where('vendor_listing_id', $vendorListingId)
+            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
+            ->exists();
+    }
+
+    public function create(VendorListing $vendorListing)
+    {
+        abort_unless($vendorListing->vendor_id === $this->vendorId(), 403);
+        abort_unless($vendorListing->fulfillment_model === 'fbn', 403, 'حملات الماركتر متاحة فقط لقوائم FBN.');
+        abort_if($this->hasActiveCampaign($vendorListing->id), 403, 'هذه القائمة لديها حملة نشطة أو قيد المراجعة بالفعل.');
+
+        $vendorListing->load('productVariant.product');
+
+        $marketerVendors = \App\Models\Marketer::where('global_status', 'active')
+            ->where('country_id', $vendorListing->country_id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'marketer_type']);
+
+        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors'));
+    }
+
+    public function store(Request $request)
+    {
+        $vendor = $this->vendor();
+
+        $request->validate([
+            'vendor_listing_id'     => ['required', 'uuid', 'exists:vendor_listings,id'],
+            'commission_type'       => ['required', 'in:fixed,tiered,last_click'],
+            'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
+            'marketer_ids'          => ['required', 'array', 'min:1'],
+            'marketer_ids.*'        => ['uuid', 'distinct', 'exists:marketers,id'],
+            'tiered_rules'          => ['nullable', 'array'],
+        ]);
+
+        $listing = VendorListing::where('id', $request->vendor_listing_id)
+            ->where('vendor_id', $vendor->id)
+            ->firstOrFail();
+
+        abort_unless($listing->fulfillment_model === 'fbn', 403, 'حملات الماركتر متاحة فقط لقوائم FBN.');
+        abort_if($this->hasActiveCampaign($listing->id), 403, 'هذه القائمة لديها حملة نشطة أو قيد المراجعة بالفعل.');
+
+        try {
+            $this->marketerCampaignService->createCampaign($vendor, array_merge(
+                $request->only(['commission_type', 'max_commission_budget']),
+                [
+                    'vendor_listing_id' => $listing->id,
+                    'country_id'        => $listing->country_id,
+                    'currency'          => $listing->currency,
+                    'marketer_ids'      => $request->input('marketer_ids', []),
+                    'tiered_rules'      => $request->input('tiered_rules', []),
+                ]
+            ));
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', 'تعذر إنشاء حملة الماركتر: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('partner.marketer-campaigns.index')
+            ->with('success', 'تم إنشاء حملة الماركتر بنجاح.');
     }
 
     public function index()

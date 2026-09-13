@@ -2,6 +2,10 @@
 
 @section('title', __('admin.marketer_campaigns.new_campaign'))
 
+@push('styles')
+    @vite(['resources/js/components/select2.js'])
+@endpush
+
 @section('content')
 
 <div class="mb-6">
