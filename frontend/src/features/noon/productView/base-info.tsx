@@ -2,9 +2,11 @@ import { Link } from "@/i18n/navigation";
 import Price from "@/src/components/shared/Price";
 import { RatingStars } from "@/src/components/ui/RatingStars";
 import {
+  CarIcon,
   // BadgeCheckIcon,
   ChevronLeft,
   ChevronRight,
+  CircleStarIcon,
   StarIcon,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -52,7 +54,7 @@ export default async function BaseInfo({ product }: Props) {
         </Link>
         {/* price */}
       </div>
-      <div className="flex mt-4 mb-2">
+      <div className="flex mt-4 mb-2 gap-2 flex-wrap">
         <Price
           size="xl"
           currentPrice={product.listing.price}
@@ -60,6 +62,24 @@ export default async function BaseInfo({ product }: Props) {
           // oldPrice={product.oldPrice}
           // discountPercent={product.discount}
         />
+        <div className="bg-gray-2 px-2 py-1 flex items-center gap-2 rounded-md">
+          <CarIcon className="size-4 text-orange" /> Free Delivery
+        </div>
+        <Link
+          href={`/bestseller/${product.product.category.slug}`}
+          className="bg-gray-2 px-3 py-2 mt-2 flex items-center gap-2 rounded-md w-full font-bold"
+        >
+          <CircleStarIcon className="size-6 fill-purple-500 text-white" />{" "}
+          {t("exploreOtherBestsellerIn")}
+          <span className="text-blue-2">
+            {product.product.category.name[locale]}
+          </span>
+          {locale === "ar" ? (
+            <ChevronLeft className="size-6 ms-auto" />
+          ) : (
+            <ChevronRight className="size-6 ms-auto" />
+          )}
+        </Link>
       </div>
       {/* best seller bar */}
       {false && (
