@@ -138,8 +138,9 @@ class MarketerCampaignController extends Controller
         $vendors   = \App\Models\Vendor::orderBy('store_name')->get();
         $marketers = \App\Models\Marketer::where('global_status', 'active')->orderBy('name')->get();
         $countries = \App\Models\Country::orderBy('name_en')->get();
+        $vendorCountries = $vendors->mapWithKeys(fn ($v) => [$v->id => $v->country_id]);
 
-        return view('admin.marketer_campaigns.create', compact('vendors', 'marketers', 'countries'));
+        return view('admin.marketer_campaigns.create', compact('vendors', 'marketers', 'countries', 'vendorCountries'));
     }
 
     public function store(Request $request)

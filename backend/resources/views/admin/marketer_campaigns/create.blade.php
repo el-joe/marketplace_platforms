@@ -94,6 +94,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         var vendorSelect = document.getElementById('vendor_id');
         var listingSelect = document.getElementById('vendor_listing_id');
+        var countrySelect = document.getElementById('country_id');
+        var vendorCountries = @json($vendorCountries);
         if (!vendorSelect || !listingSelect || typeof jQuery === 'undefined') return;
 
         // select2 (data-select2-init/data-async-select) fires jQuery 'change', not native DOM 'change'
@@ -105,6 +107,10 @@
 
             jQuery(listingSelect).prop('disabled', !vendorId);
             jQuery(listingSelect).val(null).trigger('change');
+
+            if (countrySelect && vendorId && vendorCountries[vendorId]) {
+                jQuery(countrySelect).val(vendorCountries[vendorId]).trigger('change');
+            }
         });
     });
 </script>
