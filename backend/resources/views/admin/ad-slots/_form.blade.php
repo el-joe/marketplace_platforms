@@ -25,8 +25,48 @@
             @endif
         </div>
 
-        {{-- Placement --}}
+        {{-- Target Type --}}
         <div>
+            @php
+                $targetTypeValue = old('target_type', $adSlot?->target_type?->value ?? \App\Enums\PaidAdSlotTargetType::Placement->value);
+            @endphp
+            <x-form-select
+                name="target_type"
+                id="targetTypeSelect"
+                label="{{ __('admin.ad_slots.target_type') }}"
+                :value="$targetTypeValue"
+                required>
+                @foreach(\App\Enums\PaidAdSlotTargetType::cases() as $tt)
+                    <option value="{{ $tt->value }}" {{ $targetTypeValue === $tt->value ? 'selected' : '' }}>
+                        {{ $tt->label() }}
+                    </option>
+                @endforeach
+            </x-form-select>
+            <p class="text-xs text-gray-400 mt-1">{{ __('admin.ad_slots.target_type_help') }}</p>
+        </div>
+
+        {{-- Nawi Ads Tier (shows_popup) — visible only when target_type = listing_promotion --}}
+        <div id="showsPopupWrapper" style="{{ $targetTypeValue !== \App\Enums\PaidAdSlotTargetType::ListingPromotion->value ? 'display:none' : '' }}">
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.ad_slots.shows_popup') }}</label>
+            <div class="flex items-center gap-2">
+                <input type="hidden" name="shows_popup" value="0">
+                <input
+                    type="checkbox"
+                    id="showsPopupCheck"
+                    name="shows_popup"
+                    value="1"
+                    class="form-checkbox"
+                    {{ old('shows_popup', $adSlot?->shows_popup ?? false) ? 'checked' : '' }}>
+                <label for="showsPopupCheck" class="text-sm text-gray-700">{{ __('admin.ad_slots.shows_popup_label') }}</label>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                {{ __('admin.ad_slots.shows_popup_help_unchecked') }}<br>
+                {{ __('admin.ad_slots.shows_popup_help_checked') }}
+            </p>
+        </div>
+
+        {{-- Placement --}}
+        <div id="placementWrapper" style="{{ $targetTypeValue === \App\Enums\PaidAdSlotTargetType::ListingPromotion->value ? 'display:none' : '' }}">
             <x-form-select
                 name="banner_placement_definition_id"
                 label="{{ __('admin.ad_slots.placement') }}"
@@ -164,3 +204,23 @@
         {{ $adSlot ? __('admin.ad_slots.save_changes') : __('admin.ad_slots.create_slot') }}
     </button>
 </div>
+
+<script>
+(function () {
+    const targetTypeSelect = document.getElementById('targetTypeSelect');
+    const popupWrapper = document.getElementById('showsPopupWrapper');
+    const placementWrapper = document.getElementById('placementWrapper');
+    const popupCheck = document.getElementById('showsPopupCheck');
+
+    function syncTargetType() {
+        const isPromotion = targetTypeSelect.value === 'listing_promotion';
+        popupWrapper.style.display = isPromotion ? '' : 'none';
+        placementWrapper.style.display = isPromotion ? 'none' : '';
+        if (!isPromotion) {
+            popupCheck.checked = false;
+        }
+    }
+
+    targetTypeSelect.addEventListener('change', syncTargetType);
+})();
+</script>
