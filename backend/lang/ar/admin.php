@@ -1604,6 +1604,7 @@ return [
         'reset'             => 'إعادة ضبط',
         'vendor'            => 'التاجر',
         'dates'             => 'التواريخ',
+        'created'           => 'تاريخ الإنشاء',
         'actions'           => 'الإجراءات',
         'approve_campaign_title'   => 'الموافقة على الحملة',
         'approve_campaign_confirm' => 'الموافقة على الحملة :name؟ ستصبح نشطة فوراً.',

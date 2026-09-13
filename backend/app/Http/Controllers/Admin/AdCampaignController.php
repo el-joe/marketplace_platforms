@@ -124,6 +124,7 @@ class AdCampaignController extends Controller
             ['searchable_columns' => [], 'orderable_column' => null], // utilization
             ['searchable_columns' => [], 'orderable_column' => 'ad_campaigns.quality_score'],
             ['searchable_columns' => [], 'orderable_column' => 'ad_campaigns.starts_at'],
+            ['searchable_columns' => [], 'orderable_column' => 'ad_campaigns.created_at'],
             ['searchable_columns' => [], 'orderable_column' => null], // actions
         ];
 
@@ -183,6 +184,7 @@ class AdCampaignController extends Controller
                 'utilization' => $progressBar,
                 'quality' => $qualityBadge,
                 'date_range' => $dateRange,
+                'created_at' => $row->created_at?->format('d M Y'),
                 'actions' => $this->buildCampaignRowActions($row, $canEdit),
                 'DT_RowData' => ['id' => $row->id, 'status' => $row->status?->value],
             ];

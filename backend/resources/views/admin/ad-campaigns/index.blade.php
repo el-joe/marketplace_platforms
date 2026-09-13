@@ -17,6 +17,7 @@
             utilization: @json(__('admin.ad_campaigns.utilization')),
             quality: @json(__('admin.ad_campaigns.quality')),
             dates: @json(__('admin.ad_campaigns.dates')),
+            created: @json(__('admin.ad_campaigns.created')),
             ipAddress: @json(__('admin.ad_campaigns.ip_address')),
             clicksHr: @json(__('admin.ad_campaigns.clicks_hr')),
             clicksPer24h: @json(__('admin.ad_campaigns.clicks_per_24h')),
@@ -176,6 +177,7 @@
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.ad_campaigns.utilization') }}</th>
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.ad_campaigns.quality') }}</th>
                         <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.ad_campaigns.dates') }}</th>
+                        <th class="py-2 pr-4 text-xs font-medium text-gray-500 uppercase">{{ __('admin.ad_campaigns.created') }}</th>
                         <th class="py-2 text-xs font-medium text-gray-500 uppercase text-end">{{ __('admin.ad_campaigns.actions') }}</th>
                     </tr>
                 </thead>

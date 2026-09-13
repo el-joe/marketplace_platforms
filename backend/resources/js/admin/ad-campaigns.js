@@ -57,6 +57,7 @@ function initCampaignsTable() {
             { data: 'utilization', title: window.TRANSLATIONS?.utilization || 'Utilization', orderable: false },
             { data: 'quality', title: window.TRANSLATIONS?.quality || 'Quality', orderable: false },
             { data: 'date_range', title: window.TRANSLATIONS?.dates || 'Dates', orderable: false },
+            { data: 'created_at', title: window.TRANSLATIONS?.created || 'Created' },
             { data: 'actions', title: '', orderable: false },
         ],
         order: [[0, 'asc']],

@@ -1647,6 +1647,7 @@ return [
         'reset'             => 'Reset',
         'vendor'            => 'Vendor',
         'dates'             => 'Dates',
+        'created'           => 'Created',
         'actions'           => 'Actions',
         'approve_campaign_title'   => 'Approve Campaign',
         'approve_campaign_confirm' => 'Approve campaign :name? It will become active immediately.',
