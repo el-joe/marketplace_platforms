@@ -2,13 +2,23 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
         {{-- Name --}}
-        <div class="sm:col-span-2">
+        <div>
             <x-form-input
                 name="name"
                 label="{{ __('admin.ad_slots.slot_name') }}"
                 :value="old('name', $adSlot?->name)"
                 placeholder="{{ __('admin.ad_slots.slot_name_placeholder') }}"
                 required />
+        </div>
+
+        {{-- Name (Arabic) --}}
+        <div>
+            <x-form-input
+                name="name_ar"
+                label="{{ __('admin.ad_slots.slot_name_ar') }}"
+                :value="old('name_ar', $adSlot?->name_ar)"
+                placeholder="{{ __('admin.ad_slots.slot_name_ar_placeholder') }}"
+                dir="rtl" />
         </div>
 
         {{-- Slot Code --}}
@@ -32,7 +42,6 @@
             @endphp
             <x-form-select
                 name="target_type"
-                id="targetTypeSelect"
                 label="{{ __('admin.ad_slots.target_type') }}"
                 :value="$targetTypeValue"
                 required>
@@ -163,6 +172,18 @@
                 placeholder="e.g. 90" />
         </div>
 
+        {{-- Max Concurrent Bookings --}}
+        <div>
+            <x-form-input
+                type="number"
+                name="max_concurrent"
+                label="{{ __('admin.ad_slots.max_concurrent') }}"
+                :value="old('max_concurrent', $adSlot?->max_concurrent)"
+                min="1"
+                placeholder="{{ __('admin.ad_slots.max_concurrent_placeholder') }}" />
+            <p class="text-xs text-gray-400 mt-1">{{ __('admin.ad_slots.max_concurrent_help') }}</p>
+        </div>
+
         {{-- Notes for Vendors --}}
         <div class="sm:col-span-2">
             <x-form-textarea
@@ -171,6 +192,17 @@
                 :value="old('notes_for_vendors', $adSlot?->notes_for_vendors)"
                 rows="3"
                 placeholder="{{ __('admin.ad_slots.notes_for_vendors_placeholder') }}" />
+        </div>
+
+        {{-- Notes for Vendors (Arabic) --}}
+        <div class="sm:col-span-2">
+            <x-form-textarea
+                name="notes_for_vendors_ar"
+                label="{{ __('admin.ad_slots.notes_for_vendors_ar') }}"
+                :value="old('notes_for_vendors_ar', $adSlot?->notes_for_vendors_ar)"
+                rows="3"
+                dir="rtl"
+                placeholder="{{ __('admin.ad_slots.notes_for_vendors_ar_placeholder') }}" />
         </div>
 
         {{-- Toggles --}}
@@ -191,7 +223,7 @@
                 name="requires_approval"
                 value="1"
                 class="form-checkbox"
-                {{ old('requires_approval', $adSlot?->requires_approval ?? true) ? 'checked' : '' }}>
+                {{ old('requires_approval', $adSlot?->requires_approval ?? false) ? 'checked' : '' }}>
             <label for="requires_approval" class="text-sm font-medium text-gray-700">{{ __('admin.ad_slots.requires_admin_approval') }}</label>
         </div>
 
@@ -207,20 +239,25 @@
 
 <script>
 (function () {
-    const targetTypeSelect = document.getElementById('targetTypeSelect');
+    const targetTypeSelect = document.getElementById('target_type');
     const popupWrapper = document.getElementById('showsPopupWrapper');
     const placementWrapper = document.getElementById('placementWrapper');
     const popupCheck = document.getElementById('showsPopupCheck');
 
+    if (!targetTypeSelect) {
+        return;
+    }
+
     function syncTargetType() {
         const isPromotion = targetTypeSelect.value === 'listing_promotion';
-        popupWrapper.style.display = isPromotion ? '' : 'none';
-        placementWrapper.style.display = isPromotion ? 'none' : '';
-        if (!isPromotion) {
+        if (popupWrapper) popupWrapper.style.display = isPromotion ? '' : 'none';
+        if (placementWrapper) placementWrapper.style.display = isPromotion ? 'none' : '';
+        if (!isPromotion && popupCheck) {
             popupCheck.checked = false;
         }
     }
 
     targetTypeSelect.addEventListener('change', syncTargetType);
+    syncTargetType();
 })();
 </script>

@@ -121,6 +121,7 @@ class AdSlotController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
+            'name_ar' => ['nullable', 'string', 'max:150'],
             'slot_code' => ['required', 'string', 'max:50', 'unique:paid_ad_slots,slot_code'],
             'banner_placement_definition_id' => [
                 Rule::requiredIf($request->input('target_type') !== PaidAdSlotTargetType::ListingPromotion->value),
@@ -132,10 +133,12 @@ class AdSlotController extends Controller
             'currency' => ['required', 'string', 'size:3'],
             'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
+            'max_concurrent' => ['nullable', 'integer', 'min:1'],
             'is_available' => ['boolean'],
             'requires_approval' => ['boolean'],
             'shows_popup' => ['boolean'],
             'notes_for_vendors' => ['nullable', 'string'],
+            'notes_for_vendors_ar' => ['nullable', 'string'],
             // Page-block-bound slots (target_type=page_block): optional — the
             // create form only wires up placement-based slots today, but a
             // page_block_id + item_position pair lets the admin bind this slot
@@ -149,6 +152,7 @@ class AdSlotController extends Controller
 
         PaidAdSlot::create([
             'name' => $validated['name'],
+            'name_ar' => $validated['name_ar'] ?? null,
             'slot_code' => $validated['slot_code'],
             'target_type' => $targetType,
             'shows_popup' => $request->boolean('shows_popup'),
@@ -162,9 +166,11 @@ class AdSlotController extends Controller
             'currency' => $validated['currency'],
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
+            'max_concurrent' => $validated['max_concurrent'] ?? null,
             'is_available' => $request->boolean('is_available'),
             'requires_approval' => $request->boolean('requires_approval'),
             'notes_for_vendors' => $validated['notes_for_vendors'] ?? null,
+            'notes_for_vendors_ar' => $validated['notes_for_vendors_ar'] ?? null,
             'created_by_admin_id' => $admin->id,
         ]);
 
@@ -196,6 +202,7 @@ class AdSlotController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
+            'name_ar' => ['nullable', 'string', 'max:150'],
             'target_type' => ['nullable', Rule::enum(PaidAdSlotTargetType::class)],
             'banner_placement_definition_id' => [
                 Rule::requiredIf($request->input('target_type') !== PaidAdSlotTargetType::ListingPromotion->value),
@@ -207,16 +214,19 @@ class AdSlotController extends Controller
             'currency' => ['required', 'string', 'size:3'],
             'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
+            'max_concurrent' => ['nullable', 'integer', 'min:1'],
             'is_available' => ['boolean'],
             'requires_approval' => ['boolean'],
             'shows_popup' => ['boolean'],
             'notes_for_vendors' => ['nullable', 'string'],
+            'notes_for_vendors_ar' => ['nullable', 'string'],
             'page_block_id' => ['nullable', 'uuid', 'exists:page_blocks,id'],
             'item_position' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $update = [
             'name' => $validated['name'],
+            'name_ar' => $validated['name_ar'] ?? null,
             'target_type' => $validated['target_type'] ?? $adSlot->target_type,
             'shows_popup' => $request->boolean('shows_popup'),
             'placement_definition_id' => $validated['banner_placement_definition_id'] ?? null,
@@ -226,9 +236,11 @@ class AdSlotController extends Controller
             'currency' => $validated['currency'],
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
+            'max_concurrent' => $validated['max_concurrent'] ?? null,
             'is_available' => $request->boolean('is_available'),
             'requires_approval' => $request->boolean('requires_approval'),
             'notes_for_vendors' => $validated['notes_for_vendors'] ?? null,
+            'notes_for_vendors_ar' => $validated['notes_for_vendors_ar'] ?? null,
         ];
 
         if (array_key_exists('item_position', $validated)) {
