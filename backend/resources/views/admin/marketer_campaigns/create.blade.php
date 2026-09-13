@@ -59,8 +59,11 @@
 
                 <div class="space-y-1">
                     <label for="currency" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.currency') }} <span class="text-danger-500">*</span></label>
-                    <input type="text" name="currency" id="currency" maxlength="3" required placeholder="EGP"
-                        class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 uppercase" />
+                    <input type="text" name="currency" id="currency" readonly required
+                        class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm bg-gray-50 cursor-not-allowed uppercase" />
+                    <p class="text-xs text-gray-500 mt-1">
+                        Automatically set from the selected country.
+                    </p>
                 </div>
 
                 <div class="space-y-1">
@@ -100,6 +103,8 @@
         var listingSelect = document.getElementById('vendor_listing_id');
         var countrySelect = document.getElementById('country_id');
         var vendorCountries = @json($vendorCountries);
+        var countryCurrencies = @json($countryCurrencies);
+        var currencyInput = document.getElementById('currency');
         if (!vendorSelect || !listingSelect || typeof jQuery === 'undefined') return;
 
         // select2 (data-select2-init/data-async-select) fires jQuery 'change', not native DOM 'change'
@@ -126,6 +131,23 @@
                 jQuery(countrySelect).val(vendorCountries[vendorId]).trigger('change');
             }
         });
+
+        if (countrySelect) {
+            jQuery(countrySelect).on('change', function () {
+                var countryId = countrySelect.value;
+                if (currencyInput && countryId && countryCurrencies[countryId]) {
+                    currencyInput.value = countryCurrencies[countryId];
+                } else if (currencyInput) {
+                    currencyInput.value = '';
+                }
+            });
+
+            // Also fire once if country is already selected on page load
+            // (e.g. validation error redisplay)
+            if (countrySelect.value) {
+                jQuery(countrySelect).trigger('change');
+            }
+        }
     });
 </script>
 @endpush

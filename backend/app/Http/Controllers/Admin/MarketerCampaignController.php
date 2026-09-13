@@ -139,8 +139,9 @@ class MarketerCampaignController extends Controller
         $marketers = \App\Models\Marketer::where('global_status', 'active')->orderBy('name')->get();
         $countries = \App\Models\Country::orderBy('name_en')->get();
         $vendorCountries = $vendors->mapWithKeys(fn ($v) => [$v->id => $v->country_id]);
+        $countryCurrencies = \App\Models\Country::pluck('currency_code', 'id');
 
-        return view('admin.marketer_campaigns.create', compact('vendors', 'marketers', 'countries', 'vendorCountries'));
+        return view('admin.marketer_campaigns.create', compact('vendors', 'marketers', 'countries', 'vendorCountries', 'countryCurrencies'));
     }
 
     public function store(Request $request)
@@ -153,7 +154,7 @@ class MarketerCampaignController extends Controller
             'marketer_ids'           => 'required|array|min:1',
             'marketer_ids.*'         => 'uuid|exists:marketers,id',
             'country_id'             => 'required|uuid|exists:countries,id',
-            'currency'               => 'required|string|size:3',
+            'currency'               => 'required|string|size:3|exists:currencies,code',
             'commission_type'        => 'required|in:fixed,percentage,last_click,tiered',
             'max_commission_budget'  => 'required|integer|min:0',
             'title'                  => 'nullable|string|max:255',

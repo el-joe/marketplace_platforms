@@ -578,7 +578,7 @@
                     {{ __('partner.listings.show.marketer_campaign.no_campaign') }}
                 </p>
                 @if($listing->fulfillment_model === 'fbn')
-                    <a href="{{ route('partner.listings.edit', $listing) }}#campaign-section"
+                    <a href="{{ route('partner.marketer-campaigns.create', $listing) }}"
                         class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
                         <i class="fas fa-bullhorn"></i>
                         {{ __('partner.listings.show.marketer_campaign.create_campaign_cta') }}
