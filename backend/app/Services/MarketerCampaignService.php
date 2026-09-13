@@ -255,7 +255,7 @@ class MarketerCampaignService
             'acceptance_window_hours' => $timeoutHours,
             'expires_at'              => now()->addHours($timeoutHours),
             'referral_code'           => $referralCode,
-            'referral_link'           => url("/api/r/{$referralCode}"),
+            'referral_link' => rtrim(config('app.frontend_url'), '/') . "/r/{$referralCode}"
         ]);
 
         // Generate QR code for this invitation's referral link
