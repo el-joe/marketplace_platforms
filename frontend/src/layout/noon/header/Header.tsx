@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import {
   ChevronDownIcon,
   ChevronLeft,
@@ -48,6 +49,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import CategoriesNav from "./categories-nav";
+import { HelpSheet } from "@/src/features/help-sheet";
 
 const profileDropdownLinks: {
   href: string;
@@ -92,6 +94,7 @@ const Header = () => {
   const locale = useLocale();
   const toggleLang = useToggleLang();
   const { setAuthDialogIsOpen, isLogged, profile, logout } = useAuthContext();
+  const [helpSheetOpen, setHelpSheetOpen] = useState(false);
 
   const splittedName = profile?.name?.split(" ");
 
@@ -178,8 +181,8 @@ const Header = () => {
                 <DropdownMenuSeparator />
 
                 {/* profile menu */}
-                {profileDropdownLinks.map(({ href, Icon, labelKey }) => (
-                  <Link href={href} key={href}>
+                {profileDropdownLinks.map(({ href, Icon, labelKey }) => {
+                  const itemContent = (
                     <DropdownMenuItem className="flex items-center gap-3 py-2.5 px-4">
                       <Image
                         src={Icon}
@@ -193,8 +196,25 @@ const Header = () => {
                         {t(labelKey)}
                       </span>
                     </DropdownMenuItem>
-                  </Link>
-                ))}
+                  );
+
+                  if (labelKey === "needHelp") {
+                    return (
+                      <div
+                        key={labelKey}
+                        onClick={() => setHelpSheetOpen(true)}
+                      >
+                        {itemContent}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link href={href} key={href}>
+                      {itemContent}
+                    </Link>
+                  );
+                })}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
@@ -210,6 +230,17 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+
+          {/* need help sheet, opened from the profile dropdown's "Need help?" item */}
+          <HelpSheet
+            open={helpSheetOpen}
+            onOpenChange={setHelpSheetOpen}
+            greeting={
+              profile?.name
+                ? t("hi", { name: profile.name.split(" ")[0] })
+                : undefined
+            }
+          />
 
           {/* links */}
           {/* orders link */}
