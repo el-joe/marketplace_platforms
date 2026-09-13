@@ -101,6 +101,7 @@ export default defineConfig({
                 'resources/js/partner/ad-slot-wizard.js',
                 'resources/js/partner/ad-booking-show.js',
                 'resources/js/partner/team.js',
+                'resources/js/partner/ad-bookings.js',
                 'resources/js/partner/support.js',
                 'resources/js/partner/disputes.js',
                 'resources/js/partner/returns.js',
