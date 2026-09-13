@@ -37,10 +37,6 @@ class VendorApprovalService
             $blockers[] = 'Business info is incomplete.';
         }
 
-        if (!$vendor->onboarding_completed_at) {
-            $blockers[] = 'Vendor has not completed onboarding.';
-        }
-
         foreach (self::REQUIRED_DOC_TYPES as $type) {
             $doc = $vendor->documents()->whereHas('documentType', fn ($q) => $q->where('code', $type))->first();
             if (!$doc || $doc->status !== VendorDocumentStatus::Approved) {
@@ -61,6 +57,10 @@ class VendorApprovalService
 
         if (!$vendor->bankAccounts()->exists()) {
             $warnings[] = 'No bank account on file — payouts will not be possible until one is added.';
+        }
+
+        if (!$vendor->onboarding_completed_at) {
+            $warnings[] = 'Vendor has not completed onboarding.';
         }
 
         return $warnings;
