@@ -312,10 +312,18 @@ class ProductController extends Controller
         $audience = auth('customer')->check() ? 'logged_in' : 'guest';
         $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
         $banner = $this->placementAds->resolve('product_page_bottom', $country, $audience, $sessionId, $product->id, $product->category_id);
+        $crossSellAd = $this->sponsored->forProductPage(
+            country:          $country,
+            categoryId:       $product->category_id,
+            excludeProductId: $product->id,
+            customerId:       auth('customer')->id(),
+            sessionId:        $sessionId,
+        );
 
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;
         $resource->banner = $banner;
+        $resource->crossSellAd = $crossSellAd;
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
         $resource->productAttributes = $selectedVariant
             ? $this->productAttributesShape($product->variants, $selectedVariant, $listingsByVariant)

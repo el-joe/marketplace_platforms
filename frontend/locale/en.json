@@ -102,6 +102,8 @@
     "viewAll": "View all"
   },
   "productView": {
+    "ad": "Ad",
+    "sponsoredProduct": "Sponsored",
     "home": "Home",
     "ratings": "Ratings",
     "deliveryInformation": "Delivery information",

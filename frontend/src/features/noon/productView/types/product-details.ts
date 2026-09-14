@@ -22,6 +22,32 @@ export interface IProductDetails {
   top_picks: IProduct[];
   warranty_plans: Warranty[];
   banner: PlacementBanner | null;
+  cross_sell_ad: CrossSellAd | null;
+}
+
+export interface CrossSellAdShippingBadge {
+  label: Locales;
+  color_hex: string;
+  text_color_hex: string;
+  delivery_days_min: number;
+  delivery_days_max: number;
+  is_express: boolean;
+}
+
+export interface CrossSellAd {
+  impression_id: string;
+  listing_id: string;
+  campaign_id: string;
+  campaign_type: "cpc" | "cpm";
+  product_id: string | null;
+  product_slug: string | null;
+  url_param: string;
+  name: Locales;
+  thumbnail: string | null;
+  price: number;
+  currency: CurrencyCode;
+  shipping_badge: CrossSellAdShippingBadge | null;
+  is_express: boolean;
 }
 
 export interface DeliveryOption {

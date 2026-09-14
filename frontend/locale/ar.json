@@ -102,6 +102,8 @@
     "viewAll": "عرض الكل"
   },
   "productView": {
+    "ad": "إعلان",
+    "sponsoredProduct": "برعاية",
     "home": "الرئيسية",
     "ratings": "التقييمات",
     "deliveryInformation": "معلومات التوصيل",

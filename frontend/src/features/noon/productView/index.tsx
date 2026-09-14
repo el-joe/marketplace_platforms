@@ -32,7 +32,7 @@ export default async function ProductView({ slug }: { slug: string }) {
   const productData = await getProduct(slug);
   return (
     <>
-      <AdBar />
+      {productData.cross_sell_ad && <AdBar ad={productData.cross_sell_ad} />}
       <div className="container">
         <WarrantySelectionProvider productData={productData}>
           {/* breadcrumb */}
