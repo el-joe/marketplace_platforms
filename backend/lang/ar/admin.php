@@ -1543,6 +1543,8 @@ return [
         'no_samples'                    => 'لا توجد عينات لهذه الحملة.',
         'sample_marketer'               => 'الماركتر',
         'sample_change_status'          => 'تغيير الحالة',
+        'sample_custom_details'         => 'مواصفات العينة',
+        'sample_awaiting_vendor_details' => 'بانتظار قيام التاجر بإدخال مواصفات العينة.',
         'sample_status_pending'         => 'انتظار',
         'sample_status_dispatched'      => 'تم الشحن',
         'sample_status_delivered'       => 'تم التسليم',

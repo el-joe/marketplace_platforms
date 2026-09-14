@@ -2317,6 +2317,10 @@ return [
         'per_marketer_samples' => 'Per-Marketer Samples',
         'tiered_rules' => 'Tiered Commission Rules',
         'status_timeline' => 'Status Timeline',
+        'sample_custom_details' => 'Sample Specification',
+        'sample_custom_details_saved' => 'Sample specification saved.',
+        'fill_sample_details' => 'Fill Sample Details',
+        'edit_sample_details' => 'Edit',
 
         'commission_type' => [
             'fixed' => 'Fixed',

@@ -580,6 +580,23 @@
                                     @endif
                                 </td>
                             </tr>
+                            @php $sampleProduct = $sample->product(); @endphp
+                            @if($sample->customAttributeValues->isNotEmpty())
+                                <tr>
+                                    <td colspan="8" class="px-4 py-2 bg-purple-50 text-xs">
+                                        <strong class="text-purple-700">{{ __('admin.marketer_campaigns.sample_custom_details') }}:</strong>
+                                        @foreach($sample->customAttributeValues as $val)
+                                            <span class="me-3">{{ $val->label }}: <strong>{{ $val->value }}</strong> {{ $val->unit }}</span>
+                                        @endforeach
+                                    </td>
+                                </tr>
+                            @elseif($sampleProduct?->has_custom_attributes)
+                                <tr>
+                                    <td colspan="8" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                        {{ __('admin.marketer_campaigns.sample_awaiting_vendor_details') }}
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                     <tfoot class="bg-gray-50 border-t-2 border-gray-100">

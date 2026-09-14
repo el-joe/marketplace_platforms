@@ -42,4 +42,19 @@ class MarketerCampaignSample extends Model
             'marketer_id'   // FK on invitations
         );
     }
+
+    public function customAttributeValues(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MarketerCampaignSampleCustomAttributeValue::class, 'marketer_campaign_sample_id');
+    }
+
+    /**
+     * Resolve the product this sample is for, through campaign -> listing.
+     */
+    public function product(): ?Product
+    {
+        $listing = $this->campaign->vendorListing ?? $this->campaign->adminListing;
+
+        return $listing?->productVariant?->product;
+    }
 }

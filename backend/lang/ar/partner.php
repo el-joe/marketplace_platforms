@@ -2317,6 +2317,10 @@ return [
         'per_marketer_samples' => 'عينات لكل مسوّق',
         'tiered_rules' => 'قواعد العمولة المتدرجة',
         'status_timeline' => 'الجدول الزمني للحالة',
+        'sample_custom_details' => 'مواصفات العينة',
+        'sample_custom_details_saved' => 'تم حفظ مواصفات العينة.',
+        'fill_sample_details' => 'إدخال تفاصيل العينة',
+        'edit_sample_details' => 'تعديل',
 
         'commission_type' => [
             'fixed' => 'ثابتة',

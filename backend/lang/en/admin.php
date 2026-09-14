@@ -1586,6 +1586,8 @@ return [
         'no_samples'                    => 'No samples for this campaign.',
         'sample_marketer'               => 'Marketer',
         'sample_change_status'          => 'Change Status',
+        'sample_custom_details'         => 'Sample Specification',
+        'sample_awaiting_vendor_details' => 'Awaiting vendor specification for this sample.',
         'sample_status_pending'         => 'Pending',
         'sample_status_dispatched'      => 'Dispatched',
         'sample_status_delivered'       => 'Delivered',

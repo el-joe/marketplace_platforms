@@ -46,6 +46,7 @@ class MarketerCampaignController extends Controller
             'tieredRules',
             'conversions.order',
             'samples.invitation.marketer',
+            'samples.customAttributeValues',
         ]);
 
         $categoryId = $marketerCampaign->vendorListing?->productVariant?->product?->category_id
