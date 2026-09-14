@@ -28,7 +28,7 @@ export default function FloatingProductSummary({ product }: Props) {
   return (
     <div
       ref={containerRef}
-      className="hidden fixed -bottom-28 bg-white shadow-lg rounded-3xl px-6 py-3 inset-s-1/2 -translate-x-1/2 z-50 lg:flex items-center gap-4 max-w-[100vw] transition-all duration-500"
+      className={`hidden fixed -bottom-28 bg-white shadow-lg rounded-3xl px-6 py-3 inset-s-1/2 ${locale === "ar" ? "translate-x-1/2" : "-translate-x-1/2"} z-50 lg:flex items-center gap-4 max-w-[100vw] transition-all duration-500`}
     >
       <Image
         src={

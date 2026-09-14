@@ -33,12 +33,12 @@ export default function ProductImagesPreview({ product }: Props) {
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div className="flex flex-col-reverse md:flex-row ">
+    <div className="flex flex-col-reverse md:flex-row h-173.75! max-h-[calc(100vh-420px)]!">
       {" "}
       {/* pagination thumbs */}
       <div className="block min-w-17">
         <Swiper
-          className="p-2! productSwiperThumbs "
+          className="p-2! productSwiperThumbs h-full"
           onSwiper={setThumbsSwiper}
           spaceBetween={"9px"}
           slidesPerView={"auto"}
@@ -135,13 +135,10 @@ export default function ProductImagesPreview({ product }: Props) {
           thumbs={{
             swiper: thumbsSwiper,
           }}
-          className="w-full!"
+          className="w-full! h-full!"
         >
           {product.product.images.map((image, i) => (
-            <SwiperSlide
-              key={i}
-              className="select-none h-auto max-h-[calc(100vh-420px)]"
-            >
+            <SwiperSlide key={i} className="select-none h-full!">
               <ImageMagnifier
                 src={image.url || "/images/no-image-available-icon.jpg"}
                 alt=""

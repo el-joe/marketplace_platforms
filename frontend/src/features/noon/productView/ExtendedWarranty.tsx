@@ -4,11 +4,13 @@ import { Button } from "@/src/components/ui/button";
 import { ArrowBigRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
+import { Warranty } from "./types/product-details";
 import { useWarrantySelection } from "./warranty-selection-context";
+import ExtendedWarrantySheet from "./dialogs/extended-warranty-sheet";
 
 const FALLBACK_WARRANTY_IMAGE =
   "https://f.nooncdn.com/noon-cdn/s/app/com/noon/images/external-warranty/images/extended_warranty_v4.png";
@@ -23,6 +25,8 @@ export default function ExtendedWarranty({
   const locale = useLocale();
   const { selectedPlanId, selectPlan: setSelectedPlan } =
     useWarrantySelection();
+  const [activeWarrantyForSheet, setActiveWarrantyForSheet] =
+    useState<Warranty | null>(null);
 
   const selectPlan = (planId: string) => {
     setSelectedPlan(selectedPlanId === planId ? null : planId);
@@ -47,6 +51,7 @@ export default function ExtendedWarranty({
         {warrantiesData.map((warranty) => (
           <SwiperSlide key={warranty.id} className="h-auto!">
             <div
+              onClick={() => setActiveWarrantyForSheet(warranty)}
               className={`p-3 rounded-md border cursor-pointer transition-all hover:border-black h-full flex flex-col ${
                 selectedPlanId === warranty.id
                   ? "border-blue-3"
@@ -91,7 +96,10 @@ export default function ExtendedWarranty({
                   variant={
                     selectedPlanId === warranty.id ? "default" : "outline"
                   }
-                  onClick={() => selectPlan(warranty.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectPlan(warranty.id);
+                  }}
                   className={
                     selectedPlanId === warranty.id
                       ? "px-12 py-2 text-lg font-bold bg-blue-3 text-white border-blue-3"
@@ -105,6 +113,20 @@ export default function ExtendedWarranty({
           </SwiperSlide>
         ))}
       </Swiper>
+
+      <ExtendedWarrantySheet
+        open={Boolean(activeWarrantyForSheet)}
+        onOpenChange={(open) => {
+          if (!open) setActiveWarrantyForSheet(null);
+        }}
+        warranty={activeWarrantyForSheet}
+        isSelected={selectedPlanId === activeWarrantyForSheet?.id}
+        onSelect={() => {
+          if (activeWarrantyForSheet) {
+            selectPlan(activeWarrantyForSheet.id);
+          }
+        }}
+      />
     </>
   );
 }

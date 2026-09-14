@@ -35,7 +35,10 @@ const AuthDialog = () => {
       {/* <DialogTrigger render={triggerButton} /> */}
       <DialogContent className={"max-w-xl max-h-screen overflow-auto"}>
         <DialogHeader>
-          <div className="relative h-80 max-w-xl -mx-4 -mt-4 overflow-hidden">
+          <div
+            className="relative h-80 max-w-xl -mx-4 -mt-4 overflow-hidden"
+            dir="ltr"
+          >
             <div className="absolute w-275 h-full  animate-inf-y-scroll">
               <Image
                 src={"/images/auth-dialog-header-bg.png"}
