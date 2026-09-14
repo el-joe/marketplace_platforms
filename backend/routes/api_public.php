@@ -21,13 +21,13 @@ Route::prefix('v1')->group(function (): void {
 
     // ── Live Streams (public — no auth) ──────────────────────────────────────
     Route::prefix('streams')->name('public.streams.')->group(function () {
-        Route::get('/',                   [PublicLiveStreamController::class, 'index'])->name('index');
-        Route::get('/{stream}',           [PublicLiveStreamController::class, 'show'])->name('show');
+        Route::get('/', [PublicLiveStreamController::class, 'index'])->name('index');
+        Route::get('/{stream}', [PublicLiveStreamController::class, 'show'])->name('show');
 
         // Mutation endpoints — throttled to prevent abuse
         Route::middleware('throttle:30,1')->group(function () {
             Route::post('/{stream}/comments', [PublicLiveStreamController::class, 'comment'])->name('comment');
-            Route::post('/{stream}/like',     [PublicLiveStreamController::class, 'like'])->name('like');
+            Route::post('/{stream}/like', [PublicLiveStreamController::class, 'like'])->name('like');
         });
 
         // Signal — high frequency during WebRTC negotiation; generous limit

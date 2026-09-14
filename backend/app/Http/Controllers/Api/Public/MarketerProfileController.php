@@ -101,11 +101,17 @@ class MarketerProfileController extends Controller
             Cache::put($headerKey, $header, 300);
         }
 
+        $country = Country::find($header['_country_id']);
+
+        if (!$country) {
+            return ApiResponse::error('Marketer not found.', [], 404);
+        }
+
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
         [$ownListings, $campaignListings] = $this->buildListings(
             $header['_marketer_id'],
-            $header['_country'],
+            $country,
             $ownPage,
             $campaignPage,
             $perPage,
@@ -113,7 +119,7 @@ class MarketerProfileController extends Controller
         );
 
         $response = $header;
-        unset($response['_marketer_id'], $response['_country']);
+        unset($response['_marketer_id'], $response['_country_id']);
         $response['own_listings']      = $ownListings;
         $response['campaign_listings'] = $campaignListings;
 
@@ -217,7 +223,7 @@ class MarketerProfileController extends Controller
                 'broker_specialization' => $brokerSpecialization,
             ],
             '_marketer_id' => $marketer->id,
-            '_country'     => $country,
+            '_country_id'  => $country->id,
         ];
     }
 
