@@ -880,6 +880,8 @@ return [
         'store_description_ar'  => 'وصف المتجر (عربي)',
         'specialization_en'     => 'التخصص (إنجليزي)',
         'specialization_ar'     => 'التخصص (عربي)',
+        'product_as_described_pct' => 'مطابقة المنتج للوصف (%)',
+        'product_as_described_help' => 'نسبة يحددها المشرف تظهر في صفحة البائع العامة.',
         'start_review'          => 'بدء المراجعة',
         'assign_to_me'          => 'تعيين لي',
         'back_to_queue'         => '← العودة للطابور',

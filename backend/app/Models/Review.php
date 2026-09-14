@@ -38,6 +38,8 @@ class Review extends Model
         'moderated_by_admin_id',
         'helpful_count',
         'not_helpful_count',
+        'translated_body',
+        'original_language',
     ];
 
     public function product(): BelongsTo
