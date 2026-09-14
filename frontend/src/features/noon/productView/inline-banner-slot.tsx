@@ -4,8 +4,9 @@ import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
-import { apiBaseUrl } from "@/src/lib/utils";
+import { apiBaseUrlGlobal } from "@/src/lib/utils";
 import { PlacementBanner } from "@/src/types/placement-banner";
+import resolveCookie from "@/src/helpers/resolveCookie";
 
 interface Props {
   banner: PlacementBanner;
@@ -16,18 +17,23 @@ export default function InlineBannerSlot({ banner }: Props) {
   const t = useTranslations();
 
   const desktopSrc =
-    (locale === "ar" && banner.desktop_image_url_ar) || banner.desktop_image_url;
+    (locale === "ar" && banner.desktop_image_url_ar) ||
+    banner.desktop_image_url;
   const mobileSrc =
     (locale === "ar" && banner.mobile_image_url_ar) || banner.mobile_image_url;
   const imgSrc = desktopSrc || mobileSrc;
 
   if (!imgSrc) return null;
 
-  const title = locale === "ar" ? banner.title_ar ?? banner.title_en : banner.title_en ?? banner.title_ar;
+  const title =
+    locale === "ar"
+      ? (banner.title_ar ?? banner.title_en)
+      : (banner.title_en ?? banner.title_ar);
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!banner.id) return;
-    fetch(`${apiBaseUrl}/banners/${banner.id}/click`, {
+    const country = await resolveCookie("country");
+    fetch(`${apiBaseUrlGlobal}/${country}/banners/${banner.id}/click`, {
       method: "POST",
       keepalive: true,
     }).catch(() => {});
@@ -41,7 +47,9 @@ export default function InlineBannerSlot({ banner }: Props) {
         target={banner.is_external ? "_blank" : undefined}
       >
         <picture>
-          {mobileSrc && <source media="(max-width: 767px)" srcSet={mobileSrc} />}
+          {mobileSrc && (
+            <source media="(max-width: 767px)" srcSet={mobileSrc} />
+          )}
           <Image
             src={imgSrc}
             alt={title || ""}

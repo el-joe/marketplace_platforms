@@ -5,8 +5,9 @@ import Price from "@/src/components/shared/Price";
 import useLocale from "@/src/hooks/use-locale";
 import { useTranslations } from "next-intl";
 import { getImageURL } from "@/src/helpers/get-image-url";
-import { apiBaseUrl } from "@/src/lib/utils";
+import { apiBaseUrlGlobal } from "@/src/lib/utils";
 import { CrossSellAd } from "./types/product-details";
+import resolveCookie from "@/src/helpers/resolveCookie";
 
 interface Props {
   ad: CrossSellAd;
@@ -16,8 +17,9 @@ const AdBar = ({ ad }: Props) => {
   const locale = useLocale();
   const t = useTranslations("productView");
 
-  const handleClick = () => {
-    fetch(`${apiBaseUrl}/ads/sponsored/click`, {
+  const handleClick = async () => {
+    const country = await resolveCookie("country");
+    fetch(`${apiBaseUrlGlobal}/${country}/ads/sponsored/click`, {
       method: "POST",
       keepalive: true,
       headers: { "Content-Type": "application/json" },
