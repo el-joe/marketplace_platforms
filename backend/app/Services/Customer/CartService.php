@@ -31,6 +31,8 @@ class CartService
             'items.vendorListing.warehouseInventories',
             'items.adminListing.productVariant.product.images',
             'items.adminListing.productVariant.images',
+            'items.marketerListing.productVariant.product.images',
+            'items.marketerListing.productVariant.images',
             'items.selectedShippingMethod',
         ];
     }
@@ -309,6 +311,46 @@ class CartService
     }
 
     /**
+     * Adds a marketer listing (a marketer's promoted product) to the cart.
+     * Marketer listings have no independent shipping/inventory of their own —
+     * they ride on the underlying vendor/admin listing's fulfillment via checkout.
+     */
+    public function addMarketerItem(Cart $cart, string $marketerListingId, int $quantity, string $countryId): CartItem
+    {
+        $listing = \App\Models\MarketerListing::with(['productVariant.product'])
+            ->where('id', $marketerListingId)
+            ->where('country_id', $countryId)
+            ->where('status', 'active')
+            ->firstOrFail();
+
+        $currentCount = $cart->items()->count();
+
+        $existingItem = $cart->items()->where('marketer_listing_id', $marketerListingId)->first();
+
+        if ($existingItem) {
+            $newQty = $existingItem->quantity + $quantity;
+            $existingItem->update(['quantity' => $newQty]);
+            $item = $existingItem;
+        } else {
+            if ($currentCount >= self::MAX_ITEMS) {
+                throw new \DomainException(__('common.exceptions.cart.max_items', ['max' => self::MAX_ITEMS]));
+            }
+            $item = $cart->items()->create([
+                'marketer_listing_id' => $marketerListingId,
+                'vendor_listing_id'   => null,
+                'admin_listing_id'    => null,
+                'quantity'            => $quantity,
+                'unit_price'          => $listing->price,
+                'added_at'            => now(),
+            ]);
+        }
+
+        $this->recalculateCart($cart);
+
+        return $item->fresh();
+    }
+
+    /**
      * $shippingMethodProvided distinguishes "client omitted shipping_method_id"
      * (leave the item's current selection untouched) from "client explicitly
      * sent it" (validate and apply, auto-assigning the default when null).
@@ -413,6 +455,24 @@ class CartService
         $priceChanges = [];
 
         foreach ($cart->items as $item) {
+            if ($item->marketer_listing_id !== null) {
+                $listing = $item->marketerListing;
+
+                if (!$listing || $listing->status !== 'active') {
+                    $item->delete();
+                    continue;
+                }
+
+                $livePrice = (int) $listing->price;
+
+                if ((int) $item->unit_price !== $livePrice) {
+                    $priceChanges[$item->id] = true;
+                    $item->update(['unit_price' => $livePrice]);
+                }
+
+                continue;
+            }
+
             if ($item->admin_listing_id !== null) {
                 $listing = $item->adminListing;
 
@@ -489,11 +549,14 @@ class CartService
             ->with([
                 'vendorListing.vendor',
                 'adminListing',
+                'marketerListing',
                 'selectedShippingMethod',
                 'vendorListing.productVariant.product',
                 'vendorListing.productVariant.images',
                 'adminListing.productVariant.product',
                 'adminListing.productVariant.images',
+                'marketerListing.productVariant.product.images',
+                'marketerListing.productVariant.images',
                 'warrantyPlan',
             ])
             ->get();
@@ -533,8 +596,12 @@ class CartService
                 'group_subtotal' => $groupSubtotal,
                 'items_count' => $groupItems->count(),
                 'items' => $groupItems->map(function (CartItem $item) use ($method) {
-                    $isVendor = (bool) $item->vendor_listing_id;
-                    $listing = $isVendor ? $item->vendorListing : $item->adminListing;
+                    $isMarketer = (bool) $item->marketer_listing_id;
+                    $isVendor   = !$isMarketer && (bool) $item->vendor_listing_id;
+                    $listing    = $isMarketer
+                        ? $item->marketerListing
+                        : ($isVendor ? $item->vendorListing : $item->adminListing);
+                    $listingType = $isMarketer ? 'marketer' : ($isVendor ? 'vendor' : 'admin');
                     $variant = $listing?->productVariant;
                     $product = $variant?->product;
                     // Try variant-specific image first; fall back to product-level (variant-agnostic) image.
@@ -551,14 +618,14 @@ class CartService
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
                         'line_total' => $item->unit_price * $item->quantity,
-                        'product_url' => "/products/{$variant?->id}/" . ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id),
+                        'product_url' => "/products/{$variant?->id}/" . ($isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id)),
                         'product_name_en' => $product?->name_en,
                         'product_name_ar' => $product?->name_ar,
                         'max_order_quantity' => $listing?->max_order_quantity,
                         'variant_name' => ($variant && $product) ? $variant->setRelation('product', $product)->displayName() : $variant?->variant_name,
                         'primary_image' => $primaryImage?->path,
-                        'listing_id' => $isVendor ? $item->vendor_listing_id : $item->admin_listing_id,
-                        'listing_type' => $isVendor ? 'vendor' : 'admin',
+                        'listing_id' => $isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id),
+                        'listing_type' => $listingType,
                         'vendor' => $isVendor ? [
                             'id' => $item->vendorListing->vendor->id,
                             'store_name' => $item->vendorListing->vendor->store_name,

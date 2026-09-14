@@ -40,6 +40,7 @@ class WishlistService
         'vendor_listing' => 'vendor_listing_id',
         'admin_listing' => 'admin_listing_id',
         'classified' => 'classified_listing_id',
+        'marketer_listing' => 'marketer_listing_id',
     ];
 
     public function addItem(
@@ -93,6 +94,7 @@ class WishlistService
                 'vendor_listing_id' => $itemType === 'vendor_listing' ? $listingId : null,
                 'admin_listing_id' => $itemType === 'admin_listing' ? $listingId : null,
                 'classified_listing_id' => $itemType === 'classified' ? $listingId : null,
+                'marketer_listing_id' => $itemType === 'marketer_listing' ? $listingId : null,
                 'product_variant_id' => $productVariantId,
                 'added_at' => now(),
             ]);

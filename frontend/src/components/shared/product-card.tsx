@@ -99,6 +99,7 @@ const ProductCard = ({ productData }: Props) => {
         {/* cart button */}
         <AddToCartButton
           listingId={productData.listing_id}
+          listingType={productData.listing_type}
           hasCustomAttributes={!!productData.has_custom_attributes}
           customAttributes={productData.custom_attributes ?? []}
         />
@@ -167,6 +168,11 @@ const ProductCard = ({ productData }: Props) => {
         >
           {productData.marketer.name}
         </a>
+      )}
+      {"campaign_context" in productData && productData.campaign_context?.vendor_name && (
+        <span className="px-1 lg:px-2.5 text-[8px] md:text-[10px] text-blue-500 font-medium">
+          🛍 {productData.campaign_context.vendor_name}
+        </span>
       )}
       {/* card body (title, rate, price, bottom badge) */}
       {/* <Link href={`/products/${productData.id}`}> */}

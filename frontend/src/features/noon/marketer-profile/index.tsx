@@ -1,9 +1,7 @@
-import React from "react";
 import { getTranslations } from "next-intl/server";
-import ProductCard from "@/src/components/shared/product-card";
-import MarketerProfileSidebar from "./marketer-profile-sidebar";
 import MarketerProfileBanner from "./marketer-profile-banner";
-import { toProductCard } from "./helpers/to-product-card";
+import MarketerProfileSidebar from "./marketer-profile-sidebar";
+import MarketerListingsGrid from "./marketer-listings-grid";
 import { MarketerProfileData } from "./helpers/types";
 
 interface Props {
@@ -11,7 +9,7 @@ interface Props {
 }
 
 export default async function MarketerProfileView({ data }: Props) {
-  const { marketer, profile, listings } = data;
+  const { marketer, profile, own_listings, campaign_listings } = data;
   const t = await getTranslations("marketerProfile");
 
   return (
@@ -38,34 +36,54 @@ export default async function MarketerProfileView({ data }: Props) {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           <MarketerProfileSidebar marketer={marketer} profile={profile} />
-
           <div className="hidden lg:block w-px bg-gray-200 self-stretch" />
 
-          <main className="flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
+          <main className="flex-1 space-y-10">
+            {/* Section A — Own products */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
                 {t("selectedProducts")}
-                {listings.total > 0 && (
+                {own_listings.meta.total > 0 && (
                   <span className="ms-2 text-sm font-normal text-gray-400">
-                    ({t("productsCount", { count: listings.total })})
+                    ({t("productsCount", { count: own_listings.meta.total })})
                   </span>
                 )}
               </h2>
-            </div>
+              <MarketerListingsGrid
+                slug={profile.slug}
+                section="own"
+                marketer={marketer}
+                profile={profile}
+                initialItems={own_listings.items}
+                initialTotal={own_listings.meta.total}
+                initialLastPage={own_listings.meta.last_page}
+                emptyLabel={t("emptyProducts")}
+                loadMoreLabel={t("loadMore")}
+              />
+            </section>
 
-            {listings.items.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="text-5xl mb-3">📦</div>
-                <p className="text-gray-500">{t("emptyProducts")}</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
-                {listings.items.map((item) => (
-                  <div key={item.listing_id} className="[&>div]:w-full">
-                    <ProductCard productData={toProductCard(item, marketer, profile)} />
-                  </div>
-                ))}
-              </div>
+            {/* Section B — Campaign products (only if any) */}
+            {campaign_listings.meta.total > 0 && (
+              <section>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">
+                  {t("campaignProducts")}
+                  <span className="ms-2 text-sm font-normal text-gray-400">
+                    ({t("productsCount", { count: campaign_listings.meta.total })})
+                  </span>
+                </h2>
+                <p className="text-xs text-gray-400 mb-4">{t("campaignProductsHint")}</p>
+                <MarketerListingsGrid
+                  slug={profile.slug}
+                  section="campaign"
+                  marketer={marketer}
+                  profile={profile}
+                  initialItems={campaign_listings.items}
+                  initialTotal={campaign_listings.meta.total}
+                  initialLastPage={campaign_listings.meta.last_page}
+                  emptyLabel={t("emptyProducts")}
+                  loadMoreLabel={t("loadMore")}
+                />
+              </section>
             )}
           </main>
         </div>

@@ -166,17 +166,22 @@ class WishlistController extends Controller
 
         $data = $request->validate([
             'listing_id' => ['required', 'uuid'],
-            'item_type' => ['sometimes', 'in:classified'],
+            'item_type' => ['sometimes', 'in:classified,marketer'],
             'product_variant_id' => ['required_unless:item_type,classified', 'uuid'],
             'group_id' => ['sometimes', 'nullable', 'uuid'],
         ]);
 
-        $isClassified = ($data['item_type'] ?? null) === 'classified';
-        $isAdminListing = !$isClassified && ListingModeResolver::isNawyNow($request);
+        $isClassified   = ($data['item_type'] ?? null) === 'classified';
+        $isMarketer     = ($data['item_type'] ?? null) === 'marketer';
+        $isAdminListing = !$isClassified && !$isMarketer && ListingModeResolver::isNawyNow($request);
 
         if ($isClassified) {
             $listing = \App\Models\ClassifiedListing::where('id', $data['listing_id'])
                 ->where('status', \App\Enums\ClassifiedListingStatus::Active)
+                ->first();
+        } elseif ($isMarketer) {
+            $listing = \App\Models\MarketerListing::where('id', $data['listing_id'])
+                ->where('status', 'active')
                 ->first();
         } elseif ($isAdminListing) {
             $listing = AdminListing::where('id', $data['listing_id'])
@@ -200,7 +205,12 @@ class WishlistController extends Controller
             }
         }
 
-        $itemType = $isClassified ? 'classified' : ($isAdminListing ? 'admin_listing' : 'vendor_listing');
+        $itemType = match (true) {
+            $isClassified   => 'classified',
+            $isMarketer     => 'marketer_listing',
+            $isAdminListing => 'admin_listing',
+            default         => 'vendor_listing',
+        };
 
         $result = $this->wishlistService->addItemOfType(
             customer: $customer,
@@ -218,7 +228,12 @@ class WishlistController extends Controller
                 'id' => $result['item']->id,
                 'added_at' => $result['item']->added_at,
                 'type' => $isClassified ? 'classified' : 'product',
-                'listing_type' => $isClassified ? null : ($isAdminListing ? 'admin_listing' : 'vendor_listing'),
+                'listing_type' => match ($itemType) {
+                    'classified'       => null,
+                    'marketer_listing' => 'marketer_listing',
+                    'admin_listing'    => 'admin_listing',
+                    default            => 'vendor_listing',
+                },
             ],
             'group' => $this->groupShape($group),
         ], $result['already_existed'] ? __('customer_api.wishlist.already_in_wishlist') : __('customer_api.wishlist.added_to_wishlist'), $status);

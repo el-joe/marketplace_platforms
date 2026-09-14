@@ -60,6 +60,7 @@ export interface Product {
     is_required: boolean;
     sort_order: number;
   }[];
+  campaign_context?: { id: string; title: string | null; vendor_name: string | null } | null;
 }
 
 export interface Images {

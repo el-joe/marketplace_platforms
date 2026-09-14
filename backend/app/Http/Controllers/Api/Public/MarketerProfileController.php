@@ -83,24 +83,44 @@ class MarketerProfileController extends Controller
     public function show(Request $request, $countryId, string $slug): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
-        $cacheKey  = MarketerProfileCache::key($slug, $countryId);
 
-        $cached = Cache::get($cacheKey);
+        $ownPage      = max(1, (int) $request->query('own_page', 1));
+        $campaignPage = max(1, (int) $request->query('campaign_page', 1));
+        $perPage      = min(24, max(1, (int) $request->query('per_page', 12)));
 
-        if ($cached === null) {
-            $cached = $this->buildProfileResponse($request, $slug);
+        $headerKey = MarketerProfileCache::key($slug, $countryId) . ':header';
+        $header    = Cache::get($headerKey);
 
-            if ($cached === null) {
+        if ($header === null) {
+            $header = $this->buildHeader($request, $slug);
+
+            if ($header === null) {
                 return ApiResponse::error('Marketer not found.', [], 404);
             }
 
-            Cache::put($cacheKey, $cached, 300);
+            Cache::put($headerKey, $header, 300);
         }
 
-        return ApiResponse::success($cached);
+        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
+
+        [$ownListings, $campaignListings] = $this->buildListings(
+            $header['_marketer_id'],
+            $header['_country'],
+            $ownPage,
+            $campaignPage,
+            $perPage,
+            $wishlistIds,
+        );
+
+        $response = $header;
+        unset($response['_marketer_id'], $response['_country']);
+        $response['own_listings']      = $ownListings;
+        $response['campaign_listings'] = $campaignListings;
+
+        return ApiResponse::success($response);
     }
 
-    private function buildProfileResponse(Request $request, string $slug): ?array
+    private function buildHeader(Request $request, string $slug): ?array
     {
         $profile = MarketerProfile::where('profile_slug', $slug)
             ->with([
@@ -126,38 +146,6 @@ class MarketerProfileController extends Controller
         if (!$country) {
             return null;
         }
-
-        $marketerListings = MarketerListing::query()
-            ->where('marketer_id', $marketer->id)
-            ->where('country_id', $country->id)
-            ->where('status', 'active')
-            ->with([
-                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
-                'productVariant.images',
-                'productVariant.product:id,name_en,name_ar,slug,category_id,brand_id',
-                'productVariant.product.images',
-                'productVariant.product.category:id,name_en,name_ar,slug',
-                'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
-                'marketer:id,name,marketer_type',
-                'marketer.marketerProfile:id,marketer_id,profile_slug',
-            ])
-            ->orderByDesc('total_sold')
-            ->orderByDesc('created_at')
-            ->limit(60)
-            ->get();
-
-        // Dedup by variant (in case a marketer has both a campaign-linked and an
-        // independent listing for the same variant).
-        $deduped = $this->listings->dedupByVariant($marketerListings->all());
-
-        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
-
-        $productCards = collect($deduped)->map(fn (MarketerListing $listing) => $this->listings->toMarketerCardShape(
-            listing: $listing,
-            product: $listing->productVariant->product,
-            country: $country,
-            isWishlisted: in_array($listing->id, $wishlistIds, true),
-        ))->values()->all();
 
         $measurements = null;
         if ($marketer->isInfluencer()) {
@@ -228,9 +216,124 @@ class MarketerProfileController extends Controller
                 'measurements'    => $measurements,
                 'broker_specialization' => $brokerSpecialization,
             ],
-            'listings' => [
-                'items' => $productCards,
-                'total' => count($productCards),
+            '_marketer_id' => $marketer->id,
+            '_country'     => $country,
+        ];
+    }
+
+    /**
+     * Fetches the two listing sections (own + campaign), never cached —
+     * they change with page params and per-customer wishlist state.
+     *
+     * @return array{0: array, 1: array}
+     */
+    private function buildListings(
+        string $marketerId,
+        Country $country,
+        int $ownPage,
+        int $campaignPage,
+        int $perPage,
+        array $wishlistIds,
+    ): array {
+        $ownOffset      = ($ownPage - 1) * $perPage;
+        $campaignOffset = ($campaignPage - 1) * $perPage;
+
+        $eagerLoads = [
+            'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
+            'productVariant.images',
+            'productVariant.product:id,name_en,name_ar,slug,category_id,brand_id',
+            'productVariant.product.images',
+            'productVariant.product.category:id,name_en,name_ar,slug',
+            'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+            'marketer:id,name,marketer_type',
+            'marketer.marketerProfile:id,marketer_id,profile_slug',
+        ];
+
+        // Section A — own listings (no campaign link)
+        $ownBaseQuery = fn () => MarketerListing::query()
+            ->where('marketer_id', $marketerId)
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->whereNull('invitation_id');
+
+        $ownListings = $ownBaseQuery()
+            ->with($eagerLoads)
+            ->orderByDesc('total_sold')
+            ->orderByDesc('created_at')
+            ->skip($ownOffset)
+            ->take($perPage)
+            ->get();
+
+        $ownTotal = $ownBaseQuery()->count();
+
+        // Section B — campaign-linked listings
+        $campaignBaseQuery = fn () => MarketerListing::query()
+            ->where('marketer_id', $marketerId)
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->whereNotNull('invitation_id');
+
+        $campaignListings = $campaignBaseQuery()
+            ->with(array_merge($eagerLoads, [
+                'invitation:id,campaign_id,referral_code',
+                'invitation.campaign:id,vendor_id,title,status',
+                'invitation.campaign.vendor:id,store_name',
+            ]))
+            ->orderByDesc('total_sold')
+            ->orderByDesc('created_at')
+            ->skip($campaignOffset)
+            ->take($perPage)
+            ->get();
+
+        $campaignTotal = $campaignBaseQuery()->count();
+
+        $ownCards = collect($ownListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
+            $card = $this->listings->toMarketerCardShape(
+                listing: $listing,
+                product: $listing->productVariant->product,
+                country: $country,
+                isWishlisted: in_array($listing->id, $wishlistIds, true),
+            );
+            $card['campaign'] = null;
+            return $card;
+        })->values()->all();
+
+        $campaignCards = collect($campaignListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
+            $card = $this->listings->toMarketerCardShape(
+                listing: $listing,
+                product: $listing->productVariant->product,
+                country: $country,
+                isWishlisted: in_array($listing->id, $wishlistIds, true),
+            );
+            $card['campaign'] = $listing->invitation?->campaign ? [
+                'id'          => $listing->invitation->campaign->id,
+                'title'       => $listing->invitation->campaign->title,
+                'vendor_name' => $listing->invitation->campaign->vendor?->store_name,
+            ] : null;
+            return $card;
+        })->values()->all();
+
+        $ownLastPage      = (int) max(1, ceil($ownTotal / $perPage));
+        $campaignLastPage = (int) max(1, ceil($campaignTotal / $perPage));
+
+        return [
+            [
+                'items' => $ownCards,
+                'meta'  => [
+                    'current_page' => $ownPage,
+                    'last_page'    => $ownLastPage,
+                    'per_page'     => $perPage,
+                    'total'        => $ownTotal,
+                ],
+            ],
+            [
+                'items' => $campaignCards,
+                'meta'  => [
+                    'current_page' => $campaignPage,
+                    'last_page'    => $campaignLastPage,
+                    'per_page'     => $perPage,
+                    'total'        => $campaignTotal,
+                ],
             ],
         ];
     }

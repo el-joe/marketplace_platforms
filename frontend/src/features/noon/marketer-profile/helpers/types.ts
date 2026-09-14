@@ -18,6 +18,23 @@ export interface MarketerProfileInfo {
   avatar_url: string | null;
   qr_code_url: string | null;
   profile_url: string;
+  ad_price?: number | null;
+  ad_price_currency?: string | null;
+}
+
+export interface CampaignContext {
+  id: string;
+  title: string | null;
+  vendor_name: string | null;
+}
+
+export interface MarketerProfileImage {
+  id: string;
+  url: string;
+  alt: { en: string | null; ar: string | null };
+  is_primary: boolean;
+  position: number;
+  variant_id: string | null;
 }
 
 export interface MarketerProfileListingItem {
@@ -32,7 +49,7 @@ export interface MarketerProfileListingItem {
   name_en: string;
   name_ar: string;
   primary_image: string | null;
-  images: string[];
+  images: MarketerProfileImage[];
   category_name: { en: string | null; ar: string | null };
   brand: { id: string; name: { en: string | null; ar: string | null }; logo_url: string | null } | null;
   price: number;
@@ -47,13 +64,20 @@ export interface MarketerProfileListingItem {
   rating_count: number;
   url_param: string;
   product_url: string;
+  is_wishlisted: boolean;
+  campaign?: CampaignContext | null; // only on campaign_listings items
+}
+
+export interface ListingsMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
 }
 
 export interface MarketerProfileData {
   marketer: MarketerProfileMarketer;
   profile: MarketerProfileInfo;
-  listings: {
-    items: MarketerProfileListingItem[];
-    total: number;
-  };
+  own_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
+  campaign_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
 }

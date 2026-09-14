@@ -12,7 +12,7 @@ class WishlistItem extends Model
 
     protected $fillable = [
         'wishlist_group_id', 'customer_id',
-        'vendor_listing_id', 'admin_listing_id', 'classified_listing_id',
+        'vendor_listing_id', 'admin_listing_id', 'classified_listing_id', 'marketer_listing_id',
         'product_variant_id', 'added_at',
     ];
 
@@ -38,6 +38,11 @@ class WishlistItem extends Model
     public function classifiedListing(): BelongsTo
     {
         return $this->belongsTo(ClassifiedListing::class, 'classified_listing_id');
+    }
+
+    public function marketerListing(): BelongsTo
+    {
+        return $this->belongsTo(MarketerListing::class, 'marketer_listing_id');
     }
 
     public function productVariant(): BelongsTo

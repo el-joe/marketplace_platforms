@@ -226,13 +226,15 @@ class CartController extends Controller
         $cart = $this->resolveCart($request);
         $countryId = $request->attributes->get('country')->id;
 
-        $isAdmin = $request->input('listing_type') === 'admin';
+        $listingType = $request->input('listing_type', 'vendor');
 
         $customAttributeValues = $request->input('custom_attribute_values', []);
 
         try {
-            if ($isAdmin) {
+            if ($listingType === 'admin') {
                 $item = $this->cartService->addAdminItem($cart, $request->admin_listing_id, $request->quantity, $request->shipping_method_id, $countryId, $customAttributeValues);
+            } elseif ($listingType === 'marketer') {
+                $item = $this->cartService->addMarketerItem($cart, $request->vendor_listing_id, $request->quantity, $countryId);
             } else {
                 $item = $this->cartService->addItem($cart, $request->vendor_listing_id, $request->quantity, $request->shipping_method_id, $countryId, $customAttributeValues);
             }
@@ -256,6 +258,8 @@ class CartController extends Controller
             'vendorListing.warehouseInventories',
             'adminListing.productVariant.product.images',
             'adminListing.productVariant.images',
+            'marketerListing.productVariant.product.images',
+            'marketerListing.productVariant.images',
             'selectedShippingMethod',
             'warrantyPlan',
         ]);
