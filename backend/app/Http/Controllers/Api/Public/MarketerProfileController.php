@@ -78,7 +78,7 @@ class MarketerProfileController extends Controller
      * pages don't need real-time freshness, and this keeps response
      * times well under 1s under load.
      */
-    public function show(Request $request,$countryId, string $slug): JsonResponse
+    public function show(Request $request, string $slug): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
         $cacheKey  = MarketerProfileCache::key($slug, $countryId);
@@ -135,6 +135,8 @@ class MarketerProfileController extends Controller
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
                 'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+                'marketer:id,name,marketer_type',
+                'marketer.marketerProfile:id,marketer_id,profile_slug',
             ])
             ->orderByDesc('total_sold')
             ->orderByDesc('created_at')
@@ -145,46 +147,14 @@ class MarketerProfileController extends Controller
         // independent listing for the same variant).
         $deduped = $this->listings->dedupByVariant($marketerListings->all());
 
-        $productCards = collect($deduped)->map(function (MarketerListing $listing) use ($country) {
-            $variant = $listing->productVariant;
-            $product = $variant->product;
+        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
-            return [
-                'listing_id'       => $listing->id,
-                'listing_type'     => 'marketer',
-                'product_id'       => $product->id,
-                'product_slug'     => $product->slug,
-                'variant_id'       => $variant->id,
-                'variant_slug'     => $variant->slug,
-                'variant_name'     => $variant->variant_name ?? $variant->sku,
-                'sku'              => $variant->sku,
-                'name_en'          => $product->name_en,
-                'name_ar'          => $product->name_ar,
-                'primary_image'    => $variant->images->first()?->url ?? $product->images->first()?->url,
-                'images'           => $variant->images->map(fn ($i) => $i->url)->values()->all(),
-                'category_name'    => ['en' => $product->category?->name_en, 'ar' => $product->category?->name_ar],
-                'brand'            => $product->brand ? [
-                    'id'       => $product->brand->id,
-                    'name'     => ['en' => $product->brand->name_en, 'ar' => $product->brand->name_ar],
-                    'logo_url' => $product->brand->logo_url,
-                ] : null,
-                'price'            => $listing->price,
-                'price_formatted'  => number_format($listing->price, 2),
-                'compare_at_price' => $listing->compare_at_price,
-                'currency'         => $country->currency_code,
-                'condition'        => $listing->condition,
-                'referral_code'    => $listing->referral_code,
-                'referral_link'    => $listing->referral_link,
-                'total_sold'       => $listing->total_sold,
-                'rating_avg'       => $listing->rating_avg,
-                'rating_count'     => $listing->rating_count,
-                'url_param'        => $variant->id . '--' . $listing->id,
-                'product_url'      => route('customer.listing.show', [
-                    $country->site_code,
-                    $variant->id . '--' . $listing->id,
-                ]),
-            ];
-        })->values()->all();
+        $productCards = collect($deduped)->map(fn (MarketerListing $listing) => $this->listings->toMarketerCardShape(
+            listing: $listing,
+            product: $listing->productVariant->product,
+            country: $country,
+            isWishlisted: in_array($listing->id, $wishlistIds, true),
+        ))->values()->all();
 
         $measurements = null;
         if ($marketer->isInfluencer()) {
