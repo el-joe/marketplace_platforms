@@ -15,6 +15,7 @@ export interface MarketerProfileInfo {
   social_links: Record<string, string>;
   contact_details: Record<string, string>;
   banner_url: string | null;
+  avatar_url: string | null;
   qr_code_url: string | null;
   profile_url: string;
 }

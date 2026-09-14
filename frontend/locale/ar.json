@@ -1080,5 +1080,41 @@
     "gasoline": "بنزين",
     "dealership": "وارد وكاله",
     "gccSpecs": "مواصفات خليجية"
+  },
+  "marketers": {
+    "pageTitle": "الماركترز | نون",
+    "pageDescription": "تسوّق من صفحات المؤثرين والماركترز على نون",
+    "heading": "الماركترز والمؤثرين",
+    "subtitle": "تسوّق منتجات مختارة من أبرز المؤثرين",
+    "countLabel": "{count} ماركتر",
+    "tabAll": "الكل",
+    "tabInfluencers": "🎬 مؤثرين",
+    "tabAffiliates": "🔗 أفيليت",
+    "emptyState": "لا يوجد ماركترز نشطين بعد",
+    "typeInfluencer": "مؤثر",
+    "typeAffiliate": "أفيليت",
+    "salesCount": "{count} مبيعة"
+  },
+  "marketerProfile": {
+    "pageTitleFallback": "ماركتر | نون",
+    "pageDescriptionFallback": "تسوّق منتجات مختارة من هذا الماركتر على نون",
+    "selectedProducts": "المنتجات المختارة",
+    "productsCount": "{count} منتج",
+    "emptyProducts": "لا توجد منتجات مضافة بعد",
+    "campaigns": "حملة",
+    "sales": "مبيعة",
+    "bio": "نبذة",
+    "country": "الدولة:",
+    "socialMedia": "التواصل الاجتماعي",
+    "video": "فيديو",
+    "videoIframeTitle": "فيديو الماركتر",
+    "influencerBadge": "🎬 مؤثر",
+    "affiliateBadge": "🔗 أفيليت",
+    "copied": "تم النسخ!",
+    "share": "مشاركة",
+    "qrTitle": "كود QR للبروفايل",
+    "qrScanHint": "امسح الكود للوصول لصفحة {name}",
+    "download": "تنزيل",
+    "close": "إغلاق"
   }
 }

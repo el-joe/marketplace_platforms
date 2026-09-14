@@ -1,4 +1,5 @@
 import React from "react";
+import { getTranslations } from "next-intl/server";
 import ProductCard from "@/src/components/shared/product-card";
 import MarketerProfileSidebar from "./marketer-profile-sidebar";
 import MarketerProfileBanner from "./marketer-profile-banner";
@@ -9,17 +10,29 @@ interface Props {
   data: MarketerProfileData;
 }
 
-export default function MarketerProfileView({ data }: Props) {
+export default async function MarketerProfileView({ data }: Props) {
   const { marketer, profile, listings } = data;
+  const t = await getTranslations("marketerProfile");
 
   return (
     <div className="bg-white min-h-screen">
       <MarketerProfileBanner
         bannerUrl={profile.banner_url}
+        avatarUrl={profile.avatar_url}
         marketerName={marketer.name}
         marketerType={marketer.marketer_type}
         profileUrl={profile.profile_url}
         qrCodeUrl={profile.qr_code_url}
+        labels={{
+          influencerBadge: t("influencerBadge"),
+          affiliateBadge: t("affiliateBadge"),
+          copied: t("copied"),
+          share: t("share"),
+          qrTitle: t("qrTitle"),
+          qrScanHint: t("qrScanHint", { name: marketer.name }),
+          download: t("download"),
+          close: t("close"),
+        }}
       />
 
       <div className="container mx-auto px-4 py-8">
@@ -31,10 +44,10 @@ export default function MarketerProfileView({ data }: Props) {
           <main className="flex-1">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">
-                المنتجات المختارة
+                {t("selectedProducts")}
                 {listings.total > 0 && (
                   <span className="ms-2 text-sm font-normal text-gray-400">
-                    ({listings.total} منتج)
+                    ({t("productsCount", { count: listings.total })})
                   </span>
                 )}
               </h2>
@@ -43,7 +56,7 @@ export default function MarketerProfileView({ data }: Props) {
             {listings.items.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-5xl mb-3">📦</div>
-                <p className="text-gray-500">لا توجد منتجات مضافة بعد</p>
+                <p className="text-gray-500">{t("emptyProducts")}</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">

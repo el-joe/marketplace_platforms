@@ -47,6 +47,7 @@ class ProfileController extends Controller
             'contact_details' => 'nullable|array',
             'contact_details.*' => 'nullable|string|max:255',
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
+            'avatar'          => 'nullable|image|max:5120',
             'banner'          => 'nullable|image|max:5120',
         ]);
 
@@ -58,23 +59,12 @@ class ProfileController extends Controller
             'whatsapp_for_campaigns' => $request->whatsapp_for_campaigns,
         ]);
 
+        if ($request->hasFile('avatar')) {
+            $profile->avatar_file_id = $this->storeProfileImage($request, 'avatar', 'marketer-avatars', $profile)->id;
+        }
+
         if ($request->hasFile('banner')) {
-            $upload = $request->file('banner');
-            $path   = $upload->store('marketer-banners/' . $marketer->id, 'public');
-
-            $file = File::create([
-                'key'          => Str::uuid(),
-                'path'         => $path,
-                'storage_type' => 'public',
-                'file_type'    => 'image',
-                'mime_type'    => $upload->getClientMimeType(),
-                'extension'    => $upload->getClientOriginalExtension(),
-                'size'         => $upload->getSize(),
-                'model_type'   => MarketerProfile::class,
-                'model_id'     => $profile->id,
-            ]);
-
-            $profile->banner_file_id = $file->id;
+            $profile->banner_file_id = $this->storeProfileImage($request, 'banner', 'marketer-banners', $profile)->id;
         }
 
         $profile->fill($request->only(['bio_ar', 'bio_en', 'video_url', 'social_links', 'contact_details']));
@@ -112,6 +102,24 @@ class ProfileController extends Controller
         ]);
 
         return back()->with('success', 'تم تحديث سعر الإعلان.');
+    }
+
+    private function storeProfileImage(Request $request, string $field, string $directory, MarketerProfile $profile): File
+    {
+        $upload = $request->file($field);
+        $path   = $upload->store($directory . '/' . $profile->marketer_id, 'public');
+
+        return File::create([
+            'key'          => Str::uuid(),
+            'path'         => $path,
+            'storage_type' => 'public',
+            'file_type'    => 'image',
+            'mime_type'    => $upload->getClientMimeType(),
+            'extension'    => $upload->getClientOriginalExtension(),
+            'size'         => $upload->getSize(),
+            'model_type'   => MarketerProfile::class,
+            'model_id'     => $profile->id,
+        ]);
     }
 
     private function generateQrCode(MarketerProfile $profile): void

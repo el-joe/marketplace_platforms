@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import MarketerProfileView from "@/src/features/noon/marketer-profile";
 import { getMarketerProfile, MarketerProfileNotFoundError } from "@/src/features/noon/marketer-profile/api";
 
@@ -8,15 +9,16 @@ type Props = {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
+  const t = await getTranslations("marketerProfile");
 
   try {
     const data = await getMarketerProfile(slug);
     return {
-      title: data.marketer?.name ? `${data.marketer.name} | نون` : "ماركتر | نون",
-      description: data.profile?.bio_en ?? "تسوّق منتجات مختارة من هذا الماركتر على نون",
+      title: data.marketer?.name ? `${data.marketer.name} | نون` : t("pageTitleFallback"),
+      description: data.profile?.bio_en ?? t("pageDescriptionFallback"),
     };
   } catch {
-    return { title: "ماركتر | نون" };
+    return { title: t("pageTitleFallback") };
   }
 }
 

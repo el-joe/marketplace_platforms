@@ -5,6 +5,7 @@ export interface MarketerCard {
   profile_slug: string;
   profile_url: string;
   banner_url: string | null;
+  avatar_url: string | null;
   total_campaigns: number;
   total_conversions: number;
   avatar_initial: string;

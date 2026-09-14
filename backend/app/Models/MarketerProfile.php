@@ -16,6 +16,7 @@ class MarketerProfile extends Model
     protected $fillable = [
         'marketer_id',
         'banner_file_id',
+        'avatar_file_id',
         'video_url',
         'bio_ar',
         'bio_en',
@@ -82,6 +83,11 @@ class MarketerProfile extends Model
     public function bannerFile(): BelongsTo
     {
         return $this->belongsTo(File::class, 'banner_file_id');
+    }
+
+    public function avatarFile(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'avatar_file_id');
     }
 
     public function brokerCategory(): BelongsTo

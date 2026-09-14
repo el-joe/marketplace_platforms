@@ -8,9 +8,14 @@
     {{-- Profile Info Card --}}
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 rounded-full bg-yellow-400 flex items-center justify-center font-black text-2xl text-gray-900">
-                {{ mb_substr($marketer->name, 0, 1) }}
-            </div>
+            @if($profile->avatarFile)
+                <img src="{{ Storage::url($profile->avatarFile->path) }}" alt="{{ $marketer->name }}"
+                     class="w-16 h-16 rounded-full object-cover">
+            @else
+                <div class="w-16 h-16 rounded-full bg-yellow-400 flex items-center justify-center font-black text-2xl text-gray-900">
+                    {{ mb_substr($marketer->name, 0, 1) }}
+                </div>
+            @endif
             <div>
                 <div class="font-bold text-gray-900 text-lg">{{ $marketer->name }}</div>
                 <div class="text-gray-500 text-sm">{{ $marketer->email }}</div>
@@ -83,9 +88,16 @@
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
             </div>
             <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">الصورة الشخصية</label>
+                @if($profile->avatarFile)
+                    <img src="{{ Storage::url($profile->avatarFile->path) }}" class="w-20 h-20 rounded-full mb-2 object-cover">
+                @endif
+                <input type="file" name="avatar" accept="image/*" class="text-sm text-gray-600">
+            </div>
+            <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">صورة البانر</label>
                 @if($profile->bannerFile)
-                    <img src="{{ Storage::url($profile->bannerFile->path) }}" class="h-24 rounded-lg mb-2 object-cover">
+                    <img src="{{ Storage::url($profile->bannerFile->path) }}" class="h-24 rounded-lg mb-2 object-cover w-full">
                 @endif
                 <input type="file" name="banner" accept="image/*" class="text-sm text-gray-600">
             </div>
