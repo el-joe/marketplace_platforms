@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\ProductListRequest;
 use App\Http\Resources\Customer\ProductCardResource;
 use App\Http\Resources\Customer\ProductDetailResource;
+use App\Http\Resources\Customer\BannerResource;
 use App\Http\Responses\ApiResponse;
 use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
@@ -320,10 +321,22 @@ class ProductController extends Controller
             sessionId:        $sessionId,
         );
 
+        $inlineBanner1 = $this->bannerService->getActivePlacement('product_page_inline_1', $country->id, $audience, $product->id);
+        $inlineBanner2 = $this->bannerService->getActivePlacement('product_page_inline_2', $country->id, $audience, $product->id);
+
+        if ($inlineBanner1) {
+            dispatch(fn () => $inlineBanner1->increment('impressions_count'))->afterResponse();
+        }
+        if ($inlineBanner2) {
+            dispatch(fn () => $inlineBanner2->increment('impressions_count'))->afterResponse();
+        }
+
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;
         $resource->banner = $banner;
         $resource->crossSellAd = $crossSellAd;
+        $resource->inlineBanner1 = $inlineBanner1 ? (new BannerResource($inlineBanner1))->toArray($request) : null;
+        $resource->inlineBanner2 = $inlineBanner2 ? (new BannerResource($inlineBanner2))->toArray($request) : null;
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
         $resource->productAttributes = $selectedVariant
             ? $this->productAttributesShape($product->variants, $selectedVariant, $listingsByVariant)

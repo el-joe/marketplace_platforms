@@ -23,6 +23,8 @@ export interface IProductDetails {
   warranty_plans: Warranty[];
   banner: PlacementBanner | null;
   cross_sell_ad: CrossSellAd | null;
+  inline_banner_1: PlacementBanner | null;
+  inline_banner_2: PlacementBanner | null;
 }
 
 export interface CrossSellAdShippingBadge {

@@ -195,8 +195,11 @@ use Illuminate\Support\Facades\Route;
             ->middleware('throttle:60,1')
             ->name('customer.ads.clicks');
         Route::post('ads/sponsored/click', [SponsoredAdController::class, 'click'])
-            ->middleware('throttle:60,1')
-            ->name('customer.ads.sponsored.click');
+            ->middleware('throttle:60,1');
+
+        Route::post('banners/{banner}/click', [\App\Http\Controllers\Customer\BannerClickController::class, 'click'])
+            ->middleware('throttle:30,1')
+            ->name('customer.banners.click');
 
         // ── Store directory (public) ───────────────────────────────────────────
         Route::get('vendors', [VendorPageController::class, 'index'])
