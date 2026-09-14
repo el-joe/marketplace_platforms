@@ -83,10 +83,16 @@ class MarketerProfileController extends Controller
         $countryId = $request->attributes->get('country')?->id ?? 'global';
         $cacheKey  = MarketerProfileCache::key($slug, $countryId);
 
-        $cached = Cache::remember($cacheKey, 300, fn () => $this->buildProfileResponse($request, $slug));
+        $cached = Cache::get($cacheKey);
 
         if ($cached === null) {
-            return ApiResponse::error('Marketer not found.', [], 404);
+            $cached = $this->buildProfileResponse($request, $slug);
+
+            if ($cached === null) {
+                return ApiResponse::error('Marketer not found.', [], 404);
+            }
+
+            Cache::put($cacheKey, $cached, 300);
         }
 
         return ApiResponse::success($cached);
