@@ -42,14 +42,17 @@ Route::prefix('v1')->group(function (): void {
         ->name('public.settings')
         ->middleware('throttle:60,1');
 
-    // ── Marketer public profile ───────────────────────────────────────────────
-    Route::get('marketers', [MarketerProfileController::class, 'index'])
-        ->name('public.marketers.index')
-        ->middleware('throttle:60,1');
+    // ── Marketer public profile (country-scoped — controller reads the
+    //    resolved country from `detect.country` to filter/localize results) ──
+    Route::prefix('{country}')->middleware('detect.country')->group(function (): void {
+        Route::get('marketers', [MarketerProfileController::class, 'index'])
+            ->name('public.marketers.index')
+            ->middleware('throttle:60,1');
 
-    Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
-        ->name('public.marketers.show')
-        ->middleware('throttle:60,1');
+        Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
+            ->name('public.marketers.show')
+            ->middleware('throttle:60,1');
+    });
 
     // ── Public seller profile (ratings & reviews) ────────────────────────────
     Route::get('sellers/{sellerId}', [SellerController::class, 'show'])
