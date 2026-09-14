@@ -30,6 +30,7 @@ const buildIceServers = (): RTCIceServer[] => {
 const ICE_SERVERS = buildIceServers();
 
 function getGuestPeerId(): string {
+  if (typeof window === 'undefined') return '';
   let id = sessionStorage.getItem('guest_peer_id');
   if (!id) {
     id = 'viewer-' + Math.random().toString(36).slice(2, 10);
@@ -39,6 +40,7 @@ function getGuestPeerId(): string {
 }
 
 function getGuestToken(): string {
+  if (typeof window === 'undefined') return '';
   let t = localStorage.getItem('guest_like_token');
   if (!t) {
     t = Math.random().toString(36).slice(2, 18);

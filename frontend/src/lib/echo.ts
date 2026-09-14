@@ -15,10 +15,8 @@ export function initEcho() {
 
   window.Echo = new Echo({
     broadcaster: "reverb",
-    key: "ss",
-    // key: process.env.NEXT_PUBLIC_REVERB_APP_KEY!,
-    wsHost: "ss",
-    // wsHost: process.env.NEXT_PUBLIC_REVERB_HOST!,
+    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY!,
+    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST!,
     wsPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT ?? "443", 10),
     wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT ?? "443", 10),
     forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "https") === "https",
