@@ -7,6 +7,7 @@ use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class MarketerProfile extends Model
 {
@@ -111,6 +112,14 @@ class MarketerProfile extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $profile) {
+            if (empty($profile->profile_slug)) {
+                $marketer = $profile->marketer ?? Marketer::find($profile->marketer_id);
+                $base = Str::slug($marketer?->name ?? 'marketer');
+                $profile->profile_slug = $base . '-' . Str::lower(Str::random(6));
+            }
+        });
+
         static::saved(function (self $profile) {
             MarketerProfileCache::bump($profile->profile_slug);
 

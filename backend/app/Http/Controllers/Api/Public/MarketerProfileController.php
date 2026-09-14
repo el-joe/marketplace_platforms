@@ -43,7 +43,7 @@ class MarketerProfileController extends Controller
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
 
-        $items = $profiles->getCollection()->map(function (MarketerProfile $profile) use ($frontendUrl) {
+        $items = $profiles->getCollection()->filter(fn (MarketerProfile $profile) => $profile->marketer !== null)->map(function (MarketerProfile $profile) use ($frontendUrl) {
             $marketer = $profile->marketer;
 
             return [
