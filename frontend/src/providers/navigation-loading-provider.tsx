@@ -73,11 +73,11 @@ export const NavigationLoadingProvider = ({
     );
 
     window.history.pushState = (...args) => {
-      stopNavigationLoading();
+      queueMicrotask(stopNavigationLoading);
       return originalPushState(...args);
     };
     window.history.replaceState = (...args) => {
-      stopNavigationLoading();
+      queueMicrotask(stopNavigationLoading);
       return originalReplaceState(...args);
     };
 
