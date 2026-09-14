@@ -102,6 +102,8 @@
     "viewAll": "View all"
   },
   "productView": {
+    "ad": "Ad",
+    "sponsoredProduct": "Sponsored",
     "home": "Home",
     "ratings": "Ratings",
     "deliveryInformation": "Delivery information",
@@ -1088,5 +1090,45 @@
     "dealership": "Dealership",
     "gccSpecs": "GCC Specs",
     "recommendedForYou": "Recommended For You"
+  },
+  "marketers": {
+    "pageTitle": "Marketers | noon",
+    "pageDescription": "Shop from influencer and marketer pages on noon",
+    "heading": "Marketers & Influencers",
+    "subtitle": "Shop curated products from top influencers",
+    "countLabel": "{count} marketers",
+    "tabAll": "All",
+    "tabInfluencers": "🎬 Influencers",
+    "tabAffiliates": "🔗 Affiliates",
+    "emptyState": "No active marketers yet",
+    "typeInfluencer": "Influencer",
+    "typeAffiliate": "Affiliate",
+    "salesCount": "{count} sales"
+  },
+  "marketerProfile": {
+    "pageTitleFallback": "Marketer | noon",
+    "pageDescriptionFallback": "Shop curated products from this marketer on noon",
+    "selectedProducts": "Selected Products",
+    "productsCount": "{count} products",
+    "emptyProducts": "No products added yet",
+    "campaignProducts": "Campaign Products",
+    "campaignProductsHint": "Products from vendor campaigns this marketer is promoting",
+    "loadMore": "Load more",
+    "ownProductsEmpty": "No personal products added yet",
+    "campaigns": "Campaigns",
+    "sales": "Sales",
+    "bio": "Bio",
+    "country": "Country:",
+    "socialMedia": "Social Media",
+    "video": "Video",
+    "videoIframeTitle": "Marketer video",
+    "influencerBadge": "🎬 Influencer",
+    "affiliateBadge": "🔗 Affiliate",
+    "copied": "Copied!",
+    "share": "Share",
+    "qrTitle": "Profile QR Code",
+    "qrScanHint": "Scan the code to access {name}'s page",
+    "download": "Download",
+    "close": "Close"
   }
 }

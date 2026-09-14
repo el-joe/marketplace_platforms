@@ -26,6 +26,7 @@ export default function SellerReviewsList({
     {},
   );
   const [allTranslated, setAllTranslated] = useState(false);
+  const hasAnyTranslation = reviews.some((r) => r.translated_comment);
 
   const toggleTranslate = (reviewId: string) => {
     setTranslatedMap((prev) => ({
@@ -55,17 +56,19 @@ export default function SellerReviewsList({
           {totalReviewsCount.toLocaleString()} reviews for this seller
         </p>
 
-        <Button
-          onClick={toggleTranslateAll}
-          variant="outline"
-          size="sm"
-          className="bg-[#edf2fd] hover:bg-[#e2ebfc] text-[#3866df] border-transparent text-xs font-medium px-3 py-1.5 h-auto rounded-md flex items-center gap-1.5 w-fit"
-        >
-          <Languages className="w-3.5 h-3.5" />
-          <span>
-            {allTranslated ? "Show original reviews" : "Translate all reviews"}
-          </span>
-        </Button>
+        {hasAnyTranslation && (
+          <Button
+            onClick={toggleTranslateAll}
+            variant="outline"
+            size="sm"
+            className="bg-[#edf2fd] hover:bg-[#e2ebfc] text-[#3866df] border-transparent text-xs font-medium px-3 py-1.5 h-auto rounded-md flex items-center gap-1.5 w-fit"
+          >
+            <Languages className="w-3.5 h-3.5" />
+            <span>
+              {allTranslated ? "Show original reviews" : "Translate all reviews"}
+            </span>
+          </Button>
+        )}
       </div>
 
       {/* Reviews List */}

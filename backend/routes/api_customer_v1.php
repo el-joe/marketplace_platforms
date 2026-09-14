@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Customer\ListingController as ApiListingController;
 use App\Http\Controllers\Customer\CategoryController;
 use App\Http\Controllers\Customer\PageController;
 use App\Http\Controllers\Customer\PaidAdTrackingController;
+use App\Http\Controllers\Customer\SponsoredAdController;
 use App\Http\Controllers\Customer\VendorPageController;
 use App\Http\Controllers\Customer\BrandPageController;
 use App\Http\Controllers\Customer\WalletController;
@@ -193,6 +194,12 @@ use Illuminate\Support\Facades\Route;
         Route::post('ads/clicks', [PaidAdTrackingController::class, 'click'])
             ->middleware('throttle:60,1')
             ->name('customer.ads.clicks');
+        Route::post('ads/sponsored/click', [SponsoredAdController::class, 'click'])
+            ->middleware('throttle:60,1');
+
+        Route::post('banners/{banner}/click', [\App\Http\Controllers\Customer\BannerClickController::class, 'click'])
+            ->middleware('throttle:30,1')
+            ->name('customer.banners.click');
 
         // ── Store directory (public) ───────────────────────────────────────────
         Route::get('vendors', [VendorPageController::class, 'index'])

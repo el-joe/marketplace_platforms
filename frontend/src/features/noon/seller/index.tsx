@@ -5,19 +5,14 @@ import SellerBanner from "./seller-banner";
 import SellerInfoSidebar from "./seller-info-sidebar";
 import SellerRatingsSummary from "./seller-ratings-summary";
 import SellerReviewsList from "./seller-reviews-list";
-import { MOCK_SELLER_DATA } from "./mock-data";
 import { ISellerProfile } from "./types";
 
 interface SellerViewProps {
   sellerId?: string;
-  initialData?: ISellerProfile;
+  initialData: ISellerProfile;
 }
 
-export default function SellerView({
-  sellerId,
-  initialData = MOCK_SELLER_DATA,
-}: SellerViewProps) {
-  // Use initial data or mock data (can be updated when API is connected)
+export default function SellerView({ initialData }: SellerViewProps) {
   const seller = initialData;
 
   return (

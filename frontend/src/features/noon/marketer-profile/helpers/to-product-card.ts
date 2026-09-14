@@ -32,13 +32,13 @@ export function toProductCard(
     name_en: item.name_en,
     name_ar: item.name_ar,
     thumbnail: item.primary_image ?? "",
-    images: item.images.map((url, position) => ({
-      id: `${item.listing_id}-${position}`,
-      url,
-      alt: { ar: item.name_ar, en: item.name_en },
-      is_primary: position === 0,
-      position,
-      variant_id: item.variant_id,
+    images: item.images.map((img) => ({
+      id: img.id ?? `${item.listing_id}-${img.position}`,
+      url: img.url,
+      alt: img.alt ?? { ar: item.name_ar, en: item.name_en },
+      is_primary: img.is_primary ?? img.position === 0,
+      position: img.position,
+      variant_id: img.variant_id ?? item.variant_id,
     })),
     category_name: item.category_name,
     price: item.price,
@@ -63,7 +63,8 @@ export function toProductCard(
     rating_avg: item.rating_avg,
     rating_count: item.rating_count,
     total_sold: item.total_sold,
-    is_wishlisted: false,
+    is_wishlisted: item.is_wishlisted ?? false,
     is_sponsored: false,
+    ...(item.campaign ? { campaign_context: item.campaign } : {}),
   };
 }

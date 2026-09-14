@@ -12,6 +12,7 @@ import CustomAttributesModal, {
 
 type Props = {
   listingId: string;
+  listingType?: string;
   size?: "sm" | "base" | "lg";
   hasCustomAttributes?: boolean;
   customAttributes?: CustomAttributeDefinition[];
@@ -25,6 +26,7 @@ const sizes: Record<NonNullable<Props["size"]>, string> = {
 
 export default function AddToCartButton({
   listingId,
+  listingType = "vendor",
   size = "base",
   hasCustomAttributes = false,
   customAttributes = [],
@@ -68,7 +70,7 @@ export default function AddToCartButton({
           setShowCustomAttributesModal(true);
           return;
         }
-        addItem({ quantity: 1, vendorListingId: listingId });
+        addItem({ quantity: 1, vendorListingId: listingId, listingType });
       }}
     >
       {isThisItemMutating ? (
@@ -110,6 +112,7 @@ export default function AddToCartButton({
           addItem({
             quantity: 1,
             vendorListingId: listingId,
+            listingType,
             customAttributeValues,
           }).then(() => setShowCustomAttributesModal(false));
         }}

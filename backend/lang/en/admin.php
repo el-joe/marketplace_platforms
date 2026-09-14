@@ -876,6 +876,8 @@ return [
         'store_description_ar'  => 'Store Description (Arabic)',
         'specialization_en'     => 'Specialization (English)',
         'specialization_ar'     => 'Specialization (Arabic)',
+        'product_as_described_pct' => 'Product As Described (%)',
+        'product_as_described_help' => 'Admin-curated score shown on the public seller page.',
         'start_review'          => 'Start Review',
         'assign_to_me'          => 'Assign to me',
         'back_to_queue'         => '← Back to Queue',

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\ListingDetailResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\AdminListing;
+use App\Models\MarketerListing;
 use App\Models\Country;
 use App\Models\VendorListing;
 use App\Models\Wishlist;
@@ -58,7 +59,7 @@ class ListingDetailController extends Controller
      * Build the full listing detail response from an already-resolved listing.
      * Used when another controller has already determined the listing (e.g. admin buy-box injection).
      */
-    public function showFromListing(Request $request, $country, VendorListing|AdminListing $listing): JsonResponse
+    public function showFromListing(Request $request, $country, VendorListing|AdminListing|MarketerListing $listing): JsonResponse
     {
         return $this->buildDetailResponse($request, $country, $listing);
     }
@@ -122,7 +123,7 @@ class ListingDetailController extends Controller
         return $this->buildDetailResponse($request, $country, $listing);
     }
 
-    private function buildDetailResponse(Request $request, $country, VendorListing|AdminListing $listing): JsonResponse
+    private function buildDetailResponse(Request $request, $country, VendorListing|AdminListing|MarketerListing $listing): JsonResponse
     {
         $siblings = $listing instanceof VendorListing
             ? $this->identifiers->getSiblings($listing, $country)
@@ -138,8 +139,13 @@ class ListingDetailController extends Controller
 
         $isWishlisted = false;
         if ($customerId = auth('customer')->id()) {
+            $wishlistColumn = match (true) {
+                $listing instanceof AdminListing    => 'admin_listing_id',
+                $listing instanceof MarketerListing => 'marketer_listing_id',
+                default                              => 'vendor_listing_id',
+            };
             $isWishlisted = \App\Models\WishlistItem::where('customer_id', $customerId)
-                ->where($listing instanceof AdminListing ? 'admin_listing_id' : 'vendor_listing_id', $listing->id)
+                ->where($wishlistColumn, $listing->id)
                 ->exists();
         }
 
@@ -212,7 +218,7 @@ class ListingDetailController extends Controller
         ]));
     }
 
-    private function resolveListing(string $identifier, $country): VendorListing|AdminListing|null
+    private function resolveListing(string $identifier, $country): VendorListing|AdminListing|MarketerListing|null
     {
         if ($this->appContext->isNawyNow()) {
             return $this->identifiers->resolveAdminListing($identifier, $country->id);
@@ -225,7 +231,7 @@ class ListingDetailController extends Controller
                 return null;
             }
 
-            return VendorListing::whereHas('productVariant', fn($q) => $q->where('id', $parsed['product_variant_id']))
+            $result = VendorListing::whereHas('productVariant', fn($q) => $q->where('id', $parsed['product_variant_id']))
                 ->where('id', 'like', $parsed['listing_id_prefix'] . '%')
                 ->where('country_id', $country->id)
                 ->where('status', 'active')
@@ -241,6 +247,26 @@ class ListingDetailController extends Controller
                     'primaryShippingMethod',
                 ])
                 ->first();
+
+            if (!$result) {
+                $result = MarketerListing::whereHas('productVariant', fn($q) => $q->where('id', $parsed['product_variant_id']))
+                    ->where('id', 'like', $parsed['listing_id_prefix'] . '%')
+                    ->where('country_id', $country->id)
+                    ->where('status', 'active')
+                    ->with([
+                        'productVariant.product.images',
+                        'productVariant.product.category',
+                        'productVariant.product.brand',
+                        'productVariant.product.highlights',
+                        'productVariant.product.specifications',
+                        'productVariant.variantAttributes.attribute',
+                        'productVariant.variantAttributes.attributeValue',
+                        'marketer.marketerProfile',
+                    ])
+                    ->first();
+            }
+
+            return $result;
         }
 
         $type = $this->identifiers->detectType($identifier);
@@ -254,7 +280,7 @@ class ListingDetailController extends Controller
         return $this->identifiers->resolveAdminListing($identifier, $country->id);
     }
 
-    private function listingShape(VendorListing|AdminListing $listing, $country, bool $isWishlisted): array
+    private function listingShape(VendorListing|AdminListing|MarketerListing $listing, $country, bool $isWishlisted): array
     {
         if ($listing instanceof AdminListing) {
             return [
@@ -278,6 +304,46 @@ class ListingDetailController extends Controller
                 'rating_count' => $listing->rating_count,
                 'is_global_shipping' => (bool) $listing->is_global_shipping,
                 'is_wishlisted' => $isWishlisted,
+            ];
+        }
+
+        if ($listing instanceof MarketerListing) {
+            $marketer = $listing->marketer;
+            $profile  = $marketer?->marketerProfile;
+
+            return [
+                'listing_id' => $listing->id,
+                'listing_ref' => $listing->referral_code ?? $listing->id,
+                'vendor_sku' => null,
+                'sku' => $listing->productVariant->sku,
+                'price' => $listing->price,
+                'price_formatted' => number_format($listing->price, 2),
+                'currency' => $country->currency_code,
+                'condition' => $listing->condition,
+                'condition_notes' => null,
+                'is_admin_listing' => false,
+                'is_express_fbn' => false,
+                'fulfillment_model' => 'marketer',
+                'global_system_type' => null,
+                'status' => $listing->status,
+                'max_order_quantity' => null,
+                'total_sold' => $listing->total_sold,
+                'rating_avg' => $listing->rating_avg,
+                'rating_count' => $listing->rating_count,
+                'is_global_shipping' => false,
+                'is_wishlisted' => $isWishlisted,
+                'listing_type' => 'marketer',
+                'vendor' => null,
+                'marketer' => $marketer ? [
+                    'id'            => $marketer->id,
+                    'name'          => $marketer->name,
+                    'marketer_type' => $marketer->marketer_type,
+                    'profile_slug'  => $profile?->profile_slug,
+                    'profile_url'   => $profile?->profile_slug
+                        ? rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug
+                        : null,
+                ] : null,
+                'referral_code' => $listing->referral_code,
             ];
         }
 
@@ -305,7 +371,7 @@ class ListingDetailController extends Controller
         ];
     }
 
-    private function sellerShape(VendorListing|AdminListing $listing): array
+    private function sellerShape(VendorListing|AdminListing|MarketerListing $listing): array
     {
         if ($listing instanceof AdminListing) {
             return [
@@ -314,6 +380,19 @@ class ListingDetailController extends Controller
                 'rating_avg' => $listing->rating_avg,
                 'rating_count' => $listing->rating_count,
                 'is_admin_listing' => true,
+                'vendor_details' => null,
+            ];
+        }
+
+        if ($listing instanceof MarketerListing) {
+            $marketer = $listing->marketer;
+
+            return [
+                'id' => $marketer?->id,
+                'store_name' => $marketer?->name,
+                'rating_avg' => $listing->rating_avg,
+                'rating_count' => $listing->rating_count,
+                'is_admin_listing' => false,
                 'vendor_details' => null,
             ];
         }
@@ -346,7 +425,7 @@ class ListingDetailController extends Controller
         ];
     }
 
-    private function productShape($product, VendorListing|AdminListing $listing, Country $country): array
+    private function productShape($product, VendorListing|AdminListing|MarketerListing $listing, Country $country): array
     {
         return [
             'id' => $product->id,
@@ -548,7 +627,7 @@ class ListingDetailController extends Controller
         ];
     }
 
-    private function frequentlyBoughtTogetherShape($product, VendorListing|AdminListing $listing, $country): array
+    private function frequentlyBoughtTogetherShape($product, VendorListing|AdminListing|MarketerListing $listing, $country): array
     {
         $relatedProducts = $product->frequentlyBoughtTogether()
             ->with(['images', 'variants'])
@@ -743,7 +822,7 @@ class ListingDetailController extends Controller
             ->all();
     }
 
-    private function fbtItemShape(VendorListing|AdminListing $listing, $product, $country): array
+    private function fbtItemShape(VendorListing|AdminListing|MarketerListing $listing, $product, $country): array
     {
         $primaryImage = $product->images->firstWhere('is_primary', true) ?? $product->images->first();
 

@@ -51,13 +51,13 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
       >
         {chunksRows.map((row, rowIndex) => (
           <SwiperSlide key={rowIndex} className="h-auto! flex! flex-col! gap-4">
-            {row.map((i) => (
+            {row.map((i, itemIndex) => (
               <SponsoredLink
                 href={i?.link_url || "#"}
                 isExternal={i?.is_external}
                 ad={i?.ad}
                 isPaid={i?.is_paid}
-                key={i.id}
+                key={i?.id ?? `${rowIndex}-${itemIndex}`}
                 className={cn(
                   "mb-2",
                   row.length === Number(data?.config?.rows) && "flex-1",

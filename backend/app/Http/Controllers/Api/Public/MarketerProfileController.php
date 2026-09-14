@@ -34,8 +34,9 @@ class MarketerProfileController extends Controller
             ->with([
                 'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
                 'bannerFile',
+                'avatarFile',
             ])
-            ->addSelect(['ad_price', 'ad_price_currency'])
+            ->addSelect(['marketer_profiles.*', 'ad_price', 'ad_price_currency'])
             ->when($request->type, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('marketer_type', $request->type)))
             ->when($countryId, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('country_id', $countryId)))
             ->orderByDesc('total_conversions')
@@ -43,7 +44,7 @@ class MarketerProfileController extends Controller
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
 
-        $items = $profiles->getCollection()->map(function (MarketerProfile $profile) use ($frontendUrl) {
+        $items = $profiles->getCollection()->filter(fn (MarketerProfile $profile) => $profile->marketer !== null)->map(function (MarketerProfile $profile) use ($frontendUrl) {
             $marketer = $profile->marketer;
 
             return [
@@ -53,6 +54,7 @@ class MarketerProfileController extends Controller
                 'profile_slug'      => $profile->profile_slug,
                 'profile_url'       => $frontendUrl . '/marketer/' . $profile->profile_slug,
                 'banner_url'        => $profile->bannerFile?->url,
+                'avatar_url'        => $profile->avatarFile?->url,
                 'total_campaigns'   => $marketer->total_campaigns,
                 'total_conversions' => $marketer->total_conversions,
                 'avatar_initial'    => mb_substr($marketer->name, 0, 1),
@@ -78,27 +80,60 @@ class MarketerProfileController extends Controller
      * pages don't need real-time freshness, and this keeps response
      * times well under 1s under load.
      */
-    public function show(Request $request, string $slug): JsonResponse
+    public function show(Request $request, $countryId, string $slug): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
-        $cacheKey  = MarketerProfileCache::key($slug, $countryId);
 
-        $cached = Cache::remember($cacheKey, 300, fn () => $this->buildProfileResponse($request, $slug));
+        $ownPage      = max(1, (int) $request->query('own_page', 1));
+        $campaignPage = max(1, (int) $request->query('campaign_page', 1));
+        $perPage      = min(24, max(1, (int) $request->query('per_page', 12)));
 
-        if ($cached === null) {
+        $headerKey = MarketerProfileCache::key($slug, $countryId) . ':header';
+        $header    = Cache::get($headerKey);
+
+        if ($header === null) {
+            $header = $this->buildHeader($request, $slug);
+
+            if ($header === null) {
+                return ApiResponse::error('Marketer not found.', [], 404);
+            }
+
+            Cache::put($headerKey, $header, 300);
+        }
+
+        $country = Country::find($header['_country_id']);
+
+        if (!$country) {
             return ApiResponse::error('Marketer not found.', [], 404);
         }
 
-        return ApiResponse::success($cached);
+        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
+
+        [$ownListings, $campaignListings] = $this->buildListings(
+            $header['_marketer_id'],
+            $country,
+            $ownPage,
+            $campaignPage,
+            $perPage,
+            $wishlistIds,
+        );
+
+        $response = $header;
+        unset($response['_marketer_id'], $response['_country_id']);
+        $response['own_listings']      = $ownListings;
+        $response['campaign_listings'] = $campaignListings;
+
+        return ApiResponse::success($response);
     }
 
-    private function buildProfileResponse(Request $request, string $slug): ?array
+    private function buildHeader(Request $request, string $slug): ?array
     {
         $profile = MarketerProfile::where('profile_slug', $slug)
             ->with([
                 'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
                 'marketer.country:id,name_en,name_ar,currency_code',
                 'bannerFile',
+                'avatarFile',
                 'brokerCategory:id,name_en,name_ar',
                 'brokerCity:id,name_en,name_ar',
             ])
@@ -117,68 +152,6 @@ class MarketerProfileController extends Controller
         if (!$country) {
             return null;
         }
-
-        $marketerListings = MarketerListing::query()
-            ->where('marketer_id', $marketer->id)
-            ->where('country_id', $country->id)
-            ->where('status', 'active')
-            ->with([
-                'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
-                'productVariant.images',
-                'productVariant.product:id,name_en,name_ar,slug,category_id,brand_id',
-                'productVariant.product.images',
-                'productVariant.product.category:id,name_en,name_ar,slug',
-                'productVariant.product.brand:id,name_en,name_ar,slug,logo_url',
-            ])
-            ->orderByDesc('total_sold')
-            ->orderByDesc('created_at')
-            ->limit(60)
-            ->get();
-
-        // Dedup by variant (in case a marketer has both a campaign-linked and an
-        // independent listing for the same variant).
-        $deduped = $this->listings->dedupByVariant($marketerListings->all());
-
-        $productCards = collect($deduped)->map(function (MarketerListing $listing) use ($country) {
-            $variant = $listing->productVariant;
-            $product = $variant->product;
-
-            return [
-                'listing_id'       => $listing->id,
-                'listing_type'     => 'marketer',
-                'product_id'       => $product->id,
-                'product_slug'     => $product->slug,
-                'variant_id'       => $variant->id,
-                'variant_slug'     => $variant->slug,
-                'variant_name'     => $variant->variant_name ?? $variant->sku,
-                'sku'              => $variant->sku,
-                'name_en'          => $product->name_en,
-                'name_ar'          => $product->name_ar,
-                'primary_image'    => $variant->images->first()?->url ?? $product->images->first()?->url,
-                'images'           => $variant->images->map(fn ($i) => $i->url)->values()->all(),
-                'category_name'    => ['en' => $product->category?->name_en, 'ar' => $product->category?->name_ar],
-                'brand'            => $product->brand ? [
-                    'id'       => $product->brand->id,
-                    'name'     => ['en' => $product->brand->name_en, 'ar' => $product->brand->name_ar],
-                    'logo_url' => $product->brand->logo_url,
-                ] : null,
-                'price'            => $listing->price,
-                'price_formatted'  => number_format($listing->price, 2),
-                'compare_at_price' => $listing->compare_at_price,
-                'currency'         => $country->currency_code,
-                'condition'        => $listing->condition,
-                'referral_code'    => $listing->referral_code,
-                'referral_link'    => $listing->referral_link,
-                'total_sold'       => $listing->total_sold,
-                'rating_avg'       => $listing->rating_avg,
-                'rating_count'     => $listing->rating_count,
-                'url_param'        => $variant->id . '--' . $listing->id,
-                'product_url'      => route('customer.listing.show', [
-                    $country->site_code,
-                    $variant->id . '--' . $listing->id,
-                ]),
-            ];
-        })->values()->all();
 
         $measurements = null;
         if ($marketer->isInfluencer()) {
@@ -241,6 +214,7 @@ class MarketerProfileController extends Controller
                 'social_links'    => $profile->social_links ?? [],
                 'contact_details' => $profile->contact_details ?? [],
                 'banner_url'      => $profile->bannerFile?->url,
+                'avatar_url'      => $profile->avatarFile?->url,
                 'qr_code_url'     => $qrUrl,
                 'profile_url'     => $frontendUrl . '/marketer/' . $profile->profile_slug,
                 'ad_price'        => $profile->ad_price,
@@ -248,9 +222,124 @@ class MarketerProfileController extends Controller
                 'measurements'    => $measurements,
                 'broker_specialization' => $brokerSpecialization,
             ],
-            'listings' => [
-                'items' => $productCards,
-                'total' => count($productCards),
+            '_marketer_id' => $marketer->id,
+            '_country_id'  => $country->id,
+        ];
+    }
+
+    /**
+     * Fetches the two listing sections (own + campaign), never cached —
+     * they change with page params and per-customer wishlist state.
+     *
+     * @return array{0: array, 1: array}
+     */
+    private function buildListings(
+        string $marketerId,
+        Country $country,
+        int $ownPage,
+        int $campaignPage,
+        int $perPage,
+        array $wishlistIds,
+    ): array {
+        $ownOffset      = ($ownPage - 1) * $perPage;
+        $campaignOffset = ($campaignPage - 1) * $perPage;
+
+        $eagerLoads = [
+            'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
+            'productVariant.images',
+            'productVariant.product:id,name_en,name_ar,slug,category_id,brand_id',
+            'productVariant.product.images',
+            'productVariant.product.category:id,name_en,name_ar,slug',
+            'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+            'marketer:id,name,marketer_type',
+            'marketer.marketerProfile:id,marketer_id,profile_slug',
+        ];
+
+        // Section A — own listings (no campaign link)
+        $ownBaseQuery = fn () => MarketerListing::query()
+            ->where('marketer_id', $marketerId)
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->whereNull('invitation_id');
+
+        $ownListings = $ownBaseQuery()
+            ->with($eagerLoads)
+            ->orderByDesc('total_sold')
+            ->orderByDesc('created_at')
+            ->skip($ownOffset)
+            ->take($perPage)
+            ->get();
+
+        $ownTotal = $ownBaseQuery()->count();
+
+        // Section B — campaign-linked listings
+        $campaignBaseQuery = fn () => MarketerListing::query()
+            ->where('marketer_id', $marketerId)
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->whereNotNull('invitation_id');
+
+        $campaignListings = $campaignBaseQuery()
+            ->with(array_merge($eagerLoads, [
+                'invitation:id,campaign_id,referral_code',
+                'invitation.campaign:id,vendor_id,title,status',
+                'invitation.campaign.vendor:id,store_name',
+            ]))
+            ->orderByDesc('total_sold')
+            ->orderByDesc('created_at')
+            ->skip($campaignOffset)
+            ->take($perPage)
+            ->get();
+
+        $campaignTotal = $campaignBaseQuery()->count();
+
+        $ownCards = collect($ownListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
+            $card = $this->listings->toMarketerCardShape(
+                listing: $listing,
+                product: $listing->productVariant->product,
+                country: $country,
+                isWishlisted: in_array($listing->id, $wishlistIds, true),
+            );
+            $card['campaign'] = null;
+            return $card;
+        })->values()->all();
+
+        $campaignCards = collect($campaignListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
+            $card = $this->listings->toMarketerCardShape(
+                listing: $listing,
+                product: $listing->productVariant->product,
+                country: $country,
+                isWishlisted: in_array($listing->id, $wishlistIds, true),
+            );
+            $card['campaign'] = $listing->invitation?->campaign ? [
+                'id'          => $listing->invitation->campaign->id,
+                'title'       => $listing->invitation->campaign->title,
+                'vendor_name' => $listing->invitation->campaign->vendor?->store_name,
+            ] : null;
+            return $card;
+        })->values()->all();
+
+        $ownLastPage      = (int) max(1, ceil($ownTotal / $perPage));
+        $campaignLastPage = (int) max(1, ceil($campaignTotal / $perPage));
+
+        return [
+            [
+                'items' => $ownCards,
+                'meta'  => [
+                    'current_page' => $ownPage,
+                    'last_page'    => $ownLastPage,
+                    'per_page'     => $perPage,
+                    'total'        => $ownTotal,
+                ],
+            ],
+            [
+                'items' => $campaignCards,
+                'meta'  => [
+                    'current_page' => $campaignPage,
+                    'last_page'    => $campaignLastPage,
+                    'per_page'     => $perPage,
+                    'total'        => $campaignTotal,
+                ],
             ],
         ];
     }

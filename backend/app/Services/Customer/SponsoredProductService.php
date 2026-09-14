@@ -6,6 +6,7 @@ use App\Models\AdCampaign;
 use App\Models\AdImpression;
 use App\Models\Country;
 use App\Models\Product;
+use App\Models\VendorListing;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -84,6 +85,114 @@ class SponsoredProductService
         }
 
         return $items;
+    }
+
+    /**
+     * Fetches one sponsored listing to show in the product-page ad bar.
+     *
+     * Picks the highest-scoring active campaign whose products share the same
+     * category as $categoryId, excluding the currently viewed product so the
+     * ad is never the same item. Returns null when no eligible campaign exists.
+     *
+     * @return array{listing_id: string, campaign_id: string, campaign_type: string, product_id: ?string, product_slug: ?string, url_param: string, name: array, thumbnail: ?string, price: int, currency: string, shipping_badge: ?array, is_express: bool, impression_id: string}|null
+     */
+    public function forProductPage(
+        Country $country,
+        string $categoryId,
+        string $excludeProductId,
+        ?string $customerId,
+        ?string $sessionId,
+    ): ?array {
+        $listing = VendorListing::query()
+            ->with(['productVariant.product.images', 'productVariant.images', 'primaryShippingMethod'])
+            ->join('ad_campaign_products as acp', 'acp.vendor_listing_id', '=', 'vendor_listings.id')
+            ->join('ad_campaigns as ac', function ($j) use ($country) {
+                $j->on('ac.id', '=', 'acp.ad_campaign_id')
+                  ->where('ac.country_id', $country->id)
+                  ->where('ac.status', 'active')
+                  ->where(function ($q) {
+                      $q->whereNull('ac.ends_at')->orWhere('ac.ends_at', '>', now());
+                  });
+            })
+            ->whereHas('productVariant.product', fn ($q) => $q->where('category_id', $categoryId)
+                ->where('id', '!=', $excludeProductId))
+            ->where('vendor_listings.status', 'active')
+            ->where('vendor_listings.country_id', $country->id)
+            ->where('acp.is_active', true)
+            ->where(function ($q) {
+                $q->whereRaw('ac.budget_spent_total < ac.budget_total')
+                  ->where(function ($q2) {
+                      $q2->whereNull('ac.budget_daily')->orWhereRaw('ac.budget_spent_today < ac.budget_daily');
+                  });
+            })
+            ->orderByDesc('ac.quality_score')
+            ->orderByDesc('ac.bid')
+            ->select(
+                'vendor_listings.*',
+                'ac.id as _campaign_id',
+                'ac.type as _campaign_type',
+                'ac.bid as _bid',
+                'ac.quality_score as _quality_score',
+            )
+            ->first();
+
+        if (!$listing) {
+            return null;
+        }
+
+        $impressionId = (string) Str::uuid();
+        $campaignId   = $listing->_campaign_id;
+        $bid          = $listing->_bid;
+        $qualityScore = $listing->_quality_score;
+
+        dispatch(function () use ($listing, $country, $customerId, $sessionId, $impressionId, $campaignId, $bid, $qualityScore) {
+            AdImpression::create([
+                'id'                          => $impressionId,
+                'ad_campaign_id'              => $campaignId,
+                'vendor_listing_id'           => $listing->id,
+                'customer_id'                 => $customerId,
+                'session_id'                  => $sessionId ?? Str::random(26),
+                'placement_code'              => 'product_page_top',
+                'search_query'                => null,
+                'position_shown'              => 1,
+                'bid_at_impression'           => $bid ?? 0,
+                'quality_score_at_impression' => $qualityScore ?? 0,
+                'was_clicked'                 => false,
+                'was_converted'               => false,
+                'cost_charged'                => 0,
+                'country_id'                  => $country->id,
+                'device_type'                 => 'desktop',
+                'shown_at'                    => now(),
+            ]);
+        })->afterResponse();
+
+        $variant  = $listing->productVariant;
+        $product  = $variant?->product;
+        $shipping = $listing->primaryShippingMethod;
+
+        return [
+            'impression_id'  => $impressionId,
+            'listing_id'     => $listing->id,
+            'campaign_id'    => $campaignId,
+            'campaign_type'  => $listing->_campaign_type,
+            'product_id'     => $product?->id,
+            'product_slug'   => $product?->slug,
+            'url_param'      => $variant?->id . '--' . $listing->id,
+            'name'           => ['en' => $product?->name_en, 'ar' => $product?->name_ar],
+            'thumbnail'      => $product?->images->first()?->url
+                                ?? $variant?->images->first()?->url ?? null,
+            'price'          => $listing->price,
+            'currency'       => $country->currency_code,
+            'shipping_badge' => $shipping ? [
+                'label'             => ['en' => $shipping->badge_label_en, 'ar' => $shipping->badge_label_ar],
+                'color_hex'         => $shipping->badge_color_hex,
+                'text_color_hex'    => $shipping->badge_text_color_hex,
+                'delivery_days_min' => $shipping->min_delivery_days,
+                'delivery_days_max' => $shipping->max_delivery_days,
+                'is_express'        => (bool) $shipping->is_express_type,
+            ] : null,
+            'is_express'     => (bool) ($shipping?->is_express_type ?? false),
+        ];
     }
 
     private function fetchSponsored(Country $country, int $limit): Collection

@@ -421,7 +421,7 @@ class ListingQueryService
         bool $isSponsored = false,
     ): array {
         $variant = $listing->productVariant;
-        $variantImage = $variant->images->first()?->url ?? $product->images->first()?->url ?? null;
+        $variantImage = $this->ensureHttps($variant->images->first()?->url ?? $product->images->first()?->url ?? null);
         $imagesSlider = $this->buildImagesSlider($variant, $product);
 
         $url = route('customer.listing.show', [$country->site_code, $variant->id .'--' . $listing->id]);
@@ -447,7 +447,7 @@ class ListingQueryService
             'images' => $imagesSlider,
             'name_en' => $product->name_en,
             'name_ar' => $product->name_ar,
-            'thumbnail' => $product->images->first()?->url ?? null,
+            'thumbnail' => $this->ensureHttps($product->images->first()?->url ?? null),
             'category_name' => [
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
@@ -502,6 +502,23 @@ class ListingQueryService
     }
 
     /**
+     * Forces https on storage URLs when the app is behind a reverse proxy
+     * that terminates TLS (standard Laravel practice).
+     */
+    private function ensureHttps(?string $url): ?string
+    {
+        if ($url === null) {
+            return null;
+        }
+
+        if (config('app.env') !== 'local' && str_starts_with($url, 'http://')) {
+            return 'https://' . substr($url, 7);
+        }
+
+        return $url;
+    }
+
+    /**
      * Builds the ordered image slider array for a variant/product pair:
      * variant-specific images first, then product-level images (no variant FK).
      */
@@ -510,7 +527,7 @@ class ListingQueryService
         $variantImages = $variant->images
             ->map(fn ($img) => [
                 'id'         => $img->id,
-                'url'        => $img->url,
+                'url'        => $this->ensureHttps($img->url),
                 'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
                 'is_primary' => (bool) $img->is_primary,
                 'position'   => (int) $img->position,
@@ -521,7 +538,7 @@ class ListingQueryService
             ->filter(fn ($img) => $img->product_variant_id === null)
             ->map(fn ($img) => [
                 'id'         => $img->id,
-                'url'        => $img->url,
+                'url'        => $this->ensureHttps($img->url),
                 'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
                 'is_primary' => (bool) $img->is_primary,
                 'position'   => (int) $img->position,
@@ -542,7 +559,7 @@ class ListingQueryService
         bool $isWishlisted = false,
     ): array {
         $variant = $listing->productVariant;
-        $variantImage = $variant->images->first()?->url ?? $product->images->first()?->url ?? null;
+        $variantImage = $this->ensureHttps($variant->images->first()?->url ?? $product->images->first()?->url ?? null);
         $imagesSlider = $this->buildImagesSlider($variant, $product);
 
         return [
@@ -619,7 +636,7 @@ class ListingQueryService
         bool $isWishlisted = false,
     ): array {
         $variant      = $listing->productVariant;
-        $variantImage = $variant->images->first()?->url ?? $product->images->first()?->url ?? null;
+        $variantImage = $this->ensureHttps($variant->images->first()?->url ?? $product->images->first()?->url ?? null);
         $imagesSlider = $this->buildImagesSlider($variant, $product);
         $marketer     = $listing->marketer;
         $profile      = $marketer?->marketerProfile;
@@ -646,7 +663,7 @@ class ListingQueryService
             'images'            => $imagesSlider,
             'name_en'           => $product->name_en,
             'name_ar'           => $product->name_ar,
-            'thumbnail'         => $product->images->first()?->url ?? null,
+            'thumbnail'         => $this->ensureHttps($product->images->first()?->url ?? null),
             'category_name'     => [
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
@@ -717,11 +734,12 @@ class ListingQueryService
 
         $rows = DB::table('wishlist_items')
             ->where('customer_id', $customerId)
-            ->select('vendor_listing_id', 'admin_listing_id')
+            ->select('vendor_listing_id', 'admin_listing_id', 'marketer_listing_id')
             ->get();
 
         return $rows->pluck('vendor_listing_id')
             ->merge($rows->pluck('admin_listing_id'))
+            ->merge($rows->pluck('marketer_listing_id'))
             ->filter()
             ->unique()
             ->values()

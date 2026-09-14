@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Public\AdPopupController;
 use App\Http\Controllers\Api\Public\MarketerProfileController;
+use App\Http\Controllers\Api\Public\SellerController;
 use App\Http\Controllers\Api\PublicSettingsController;
 use App\Http\Controllers\Customer\LiveStreamController as PublicLiveStreamController;
 use Illuminate\Support\Facades\Route;
@@ -20,13 +21,13 @@ Route::prefix('v1')->group(function (): void {
 
     // ── Live Streams (public — no auth) ──────────────────────────────────────
     Route::prefix('streams')->name('public.streams.')->group(function () {
-        Route::get('/',                   [PublicLiveStreamController::class, 'index'])->name('index');
-        Route::get('/{stream}',           [PublicLiveStreamController::class, 'show'])->name('show');
+        Route::get('/', [PublicLiveStreamController::class, 'index'])->name('index');
+        Route::get('/{stream}', [PublicLiveStreamController::class, 'show'])->name('show');
 
         // Mutation endpoints — throttled to prevent abuse
         Route::middleware('throttle:30,1')->group(function () {
             Route::post('/{stream}/comments', [PublicLiveStreamController::class, 'comment'])->name('comment');
-            Route::post('/{stream}/like',     [PublicLiveStreamController::class, 'like'])->name('like');
+            Route::post('/{stream}/like', [PublicLiveStreamController::class, 'like'])->name('like');
         });
 
         // Signal — high frequency during WebRTC negotiation; generous limit
@@ -41,12 +42,20 @@ Route::prefix('v1')->group(function (): void {
         ->name('public.settings')
         ->middleware('throttle:60,1');
 
-    // ── Marketer public profile ───────────────────────────────────────────────
-    Route::get('marketers', [MarketerProfileController::class, 'index'])
-        ->name('public.marketers.index')
-        ->middleware('throttle:60,1');
+    // ── Marketer public profile (country-scoped — controller reads the
+    //    resolved country from `detect.country` to filter/localize results) ──
+    Route::prefix('{country}')->middleware('detect.country')->group(function (): void {
+        Route::get('marketers', [MarketerProfileController::class, 'index'])
+            ->name('public.marketers.index')
+            ->middleware('throttle:60,1');
 
-    Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
-        ->name('public.marketers.show')
+        Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
+            ->name('public.marketers.show')
+            ->middleware('throttle:60,1');
+    });
+
+    // ── Public seller profile (ratings & reviews) ────────────────────────────
+    Route::get('sellers/{sellerId}', [SellerController::class, 'show'])
+        ->name('public.sellers.show')
         ->middleware('throttle:60,1');
 });

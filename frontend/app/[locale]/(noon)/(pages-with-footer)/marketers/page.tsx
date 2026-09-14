@@ -1,10 +1,15 @@
+import { getTranslations } from "next-intl/server";
 import MarketersListView from "@/src/features/noon/marketers-list";
 import { getMarketersList } from "@/src/features/noon/marketers-list/api";
 
-export const metadata = {
-  title: "الماركترز | نون",
-  description: "تسوّق من صفحات المؤثرين والماركترز على نون",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("marketers");
+
+  return {
+    title: t("pageTitle"),
+    description: t("pageDescription"),
+  };
+}
 
 type Props = {
   searchParams: Promise<{ type?: string }>;

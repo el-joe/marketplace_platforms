@@ -22,9 +22,8 @@ import RatingAndReviews from "./rating-and-reviews";
 import { WarrantySelectionProvider } from "./warranty-selection-context";
 import AdBar from "./ad-bar";
 import AddedToCartSheet from "./added-to-cart-sheet";
-import Image from "next/image";
-import { Link } from "@/i18n/navigation";
 import FloatingProductSummary from "./floating-product-summary";
+import InlineBannerSlot from "./inline-banner-slot";
 
 export default async function ProductView({ slug }: { slug: string }) {
   const t = await getTranslations("productView");
@@ -32,7 +31,7 @@ export default async function ProductView({ slug }: { slug: string }) {
   const productData = await getProduct(slug);
   return (
     <>
-      <AdBar />
+      {productData.cross_sell_ad && <AdBar ad={productData.cross_sell_ad} />}
       <div className="container">
         <WarrantySelectionProvider productData={productData}>
           {/* breadcrumb */}
@@ -89,28 +88,12 @@ export default async function ProductView({ slug }: { slug: string }) {
                   />
                 </>
               )}
-              <Link href={"#"}>
-                <Image
-                  src={
-                    "https://a.nooncdn.com/mpcms/EN0001/assets/a6985a10-940c-45b5-823b-6166c2a6b6e7.png?width=2400"
-                  }
-                  alt=""
-                  width={1280}
-                  height={380}
-                  className="block my-6"
-                />
-              </Link>
-              <Link href={"#"}>
-                <Image
-                  src={
-                    "https://a.nooncdn.com/mpcms/EN0001/assets/89b0f2ee-d29e-4057-828f-b3fceee56be8.png?width=2400"
-                  }
-                  alt=""
-                  width={1280}
-                  height={380}
-                  className="block my-6"
-                />
-              </Link>
+              {productData.inline_banner_1 && (
+                <InlineBannerSlot banner={productData.inline_banner_1} />
+              )}
+              {productData.inline_banner_2 && (
+                <InlineBannerSlot banner={productData.inline_banner_2} />
+              )}
               {productData.frequently_bought_together.items.length > 1 && (
                 <>
                   <Separator className={"my-6"} />

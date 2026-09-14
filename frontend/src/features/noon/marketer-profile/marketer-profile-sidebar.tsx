@@ -1,4 +1,5 @@
 import React from "react";
+import { getTranslations } from "next-intl/server";
 import { MarketerProfileInfo, MarketerProfileMarketer } from "./helpers/types";
 
 interface Props {
@@ -15,23 +16,25 @@ const SOCIAL_ICONS: Record<string, string> = {
   facebook: "👤",
 };
 
-export default function MarketerProfileSidebar({ marketer, profile }: Props) {
+export default async function MarketerProfileSidebar({ marketer, profile }: Props) {
+  const t = await getTranslations("marketerProfile");
+
   return (
     <aside className="w-full lg:w-64 shrink-0 space-y-5">
       <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-2 gap-3">
         <div className="text-center">
           <div className="text-2xl font-black text-gray-900">{marketer.total_campaigns}</div>
-          <div className="text-xs text-gray-500 mt-0.5">حملة</div>
+          <div className="text-xs text-gray-500 mt-0.5">{t("campaigns")}</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-black text-green-600">{marketer.total_conversions}</div>
-          <div className="text-xs text-gray-500 mt-0.5">مبيعة</div>
+          <div className="text-xs text-gray-500 mt-0.5">{t("sales")}</div>
         </div>
       </div>
 
       {(profile.bio_ar || profile.bio_en) && (
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-gray-800">نبذة</h3>
+          <h3 className="text-sm font-bold text-gray-800">{t("bio")}</h3>
           <p className="text-sm text-gray-600 leading-relaxed">
             {profile.bio_ar ?? profile.bio_en}
           </p>
@@ -40,14 +43,14 @@ export default function MarketerProfileSidebar({ marketer, profile }: Props) {
 
       {marketer.country && (
         <div>
-          <span className="text-xs text-gray-400">الدولة: </span>
+          <span className="text-xs text-gray-400">{t("country")} </span>
           <span className="text-xs font-semibold text-gray-700">{marketer.country.name_ar}</span>
         </div>
       )}
 
       {Object.keys(profile.social_links ?? {}).length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-bold text-gray-800">التواصل الاجتماعي</h3>
+          <h3 className="text-sm font-bold text-gray-800">{t("socialMedia")}</h3>
           <div className="flex flex-wrap gap-2">
             {Object.entries(profile.social_links).map(([platform, url]) =>
               url ? (
@@ -69,13 +72,13 @@ export default function MarketerProfileSidebar({ marketer, profile }: Props) {
 
       {profile.video_url && (
         <div>
-          <h3 className="text-sm font-bold text-gray-800 mb-2">فيديو</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-2">{t("video")}</h3>
           <div className="aspect-video rounded-xl overflow-hidden bg-gray-100">
             <iframe
               src={profile.video_url.replace("watch?v=", "embed/")}
               className="w-full h-full"
               allowFullScreen
-              title="Marketer video"
+              title={t("videoIframeTitle")}
             />
           </div>
         </div>

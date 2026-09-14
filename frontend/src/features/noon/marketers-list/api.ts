@@ -5,6 +5,7 @@ export interface MarketerCard {
   profile_slug: string;
   profile_url: string;
   banner_url: string | null;
+  avatar_url: string | null;
   total_campaigns: number;
   total_conversions: number;
   avatar_initial: string;
@@ -15,6 +16,8 @@ export interface MarketerListResult {
   meta: { current_page: number; last_page: number; per_page: number; total: number };
 }
 
+import { region } from "@/src/utils/region";
+
 const PUBLIC_BASE = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "/api/public/v1";
 
 export async function getMarketersList(params: { type?: string; page?: number } = {}): Promise<MarketerListResult> {
@@ -23,7 +26,7 @@ export async function getMarketersList(params: { type?: string; page?: number } 
   if (params.page) query.set("page", String(params.page));
   query.set("per_page", "24");
 
-  const res = await fetch(`${PUBLIC_BASE}/marketers?${query.toString()}`, {
+  const res = await fetch(`${PUBLIC_BASE}/${region}/marketers?${query.toString()}`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });

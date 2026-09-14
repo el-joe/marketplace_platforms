@@ -13,6 +13,13 @@ class ProductDetailResource extends JsonResource
     /** @var array<string, mixed>|null Pre-shaped banner/ad array from PlacementAdService::resolve(). */
     public ?array $banner = null;
 
+    /** @var array<string, mixed>|null Pre-shaped sponsored listing from SponsoredProductService::forProductPage(). */
+    public ?array $crossSellAd = null;
+
+    public ?array $inlineBanner1 = null;
+
+    public ?array $inlineBanner2 = null;
+
     /** @var array<string, mixed> */
     public array $enrichment = [];
 
@@ -163,6 +170,9 @@ class ProductDetailResource extends JsonResource
             ),
             'is_wishlisted'    => $this->isWishlisted,
             'banner'           => $this->banner,
+            'cross_sell_ad'    => $this->crossSellAd,
+            'inline_banner_1'  => $this->inlineBanner1,
+            'inline_banner_2'  => $this->inlineBanner2,
             'seo'              => [
                 'title'       => [
                     'ar' => $countrySetting?->seo_title ?? $this->seo_title_ar,

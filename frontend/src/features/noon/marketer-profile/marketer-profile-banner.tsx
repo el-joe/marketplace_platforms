@@ -3,20 +3,35 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Share2Icon, QrCodeIcon } from "lucide-react";
 
+interface Labels {
+  influencerBadge: string;
+  affiliateBadge: string;
+  copied: string;
+  share: string;
+  qrTitle: string;
+  qrScanHint: string;
+  download: string;
+  close: string;
+}
+
 interface Props {
   bannerUrl: string | null;
+  avatarUrl: string | null;
   marketerName: string;
   marketerType: "influencer" | "affiliate";
   profileUrl: string;
   qrCodeUrl: string | null;
+  labels: Labels;
 }
 
 export default function MarketerProfileBanner({
   bannerUrl,
+  avatarUrl,
   marketerName,
   marketerType,
   profileUrl,
   qrCodeUrl,
+  labels,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
@@ -34,28 +49,39 @@ export default function MarketerProfileBanner({
           <Image src={bannerUrl} alt={marketerName} fill className="object-cover" priority />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-24 rounded-full bg-yellow-400 flex items-center justify-center text-4xl font-black text-gray-900">
-              {marketerName.charAt(0)}
-            </div>
+            {!avatarUrl && (
+              <div className="w-24 h-24 rounded-full bg-yellow-400 flex items-center justify-center text-4xl font-black text-gray-900">
+                {marketerName.charAt(0)}
+              </div>
+            )}
           </div>
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
         <div className="absolute bottom-4 start-6 end-6 flex items-end justify-between">
-          <div>
-            <h1 className="text-white text-2xl md:text-3xl font-black drop-shadow-lg">
-              {marketerName}
-            </h1>
-            <span
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold mt-1 ${
-                marketerType === "influencer"
-                  ? "bg-purple-500 text-white"
-                  : "bg-blue-500 text-white"
-              }`}
-            >
-              {marketerType === "influencer" ? "🎬 مؤثر" : "🔗 أفيليت"}
-            </span>
+          <div className="flex items-end gap-3">
+            <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-lg overflow-hidden shrink-0 bg-yellow-400 flex items-center justify-center text-2xl font-black text-gray-900">
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt={marketerName} fill className="object-cover" />
+              ) : (
+                marketerName.charAt(0)
+              )}
+            </div>
+            <div>
+              <h1 className="text-white text-2xl md:text-3xl font-black drop-shadow-lg">
+                {marketerName}
+              </h1>
+              <span
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold mt-1 ${
+                  marketerType === "influencer"
+                    ? "bg-purple-500 text-white"
+                    : "bg-blue-500 text-white"
+                }`}
+              >
+                {marketerType === "influencer" ? labels.influencerBadge : labels.affiliateBadge}
+              </span>
+            </div>
           </div>
 
           <div className="flex gap-2">
@@ -64,7 +90,7 @@ export default function MarketerProfileBanner({
               className="flex items-center gap-1 px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-lg hover:bg-white/30 transition"
             >
               <Share2Icon className="w-3.5 h-3.5" />
-              {copied ? "تم النسخ!" : "مشاركة"}
+              {copied ? labels.copied : labels.share}
             </button>
             {qrCodeUrl && (
               <button
@@ -88,7 +114,7 @@ export default function MarketerProfileBanner({
             className="bg-white rounded-2xl p-6 text-center shadow-xl max-w-xs w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-bold text-gray-900 mb-3 text-lg">كود QR للبروفايل</h3>
+            <h3 className="font-bold text-gray-900 mb-3 text-lg">{labels.qrTitle}</h3>
             <Image
               src={qrCodeUrl}
               alt="QR Code"
@@ -96,22 +122,20 @@ export default function MarketerProfileBanner({
               height={200}
               className="mx-auto rounded-xl"
             />
-            <p className="text-xs text-gray-400 mt-3">
-              امسح الكود للوصول لصفحة {marketerName}
-            </p>
+            <p className="text-xs text-gray-400 mt-3">{labels.qrScanHint}</p>
             <div className="flex gap-2 mt-4">
               <a
                 href={qrCodeUrl}
                 download={`marketer-${marketerName}-qr.png`}
                 className="flex-1 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500"
               >
-                تنزيل
+                {labels.download}
               </a>
               <button
                 onClick={() => setShowQr(false)}
                 className="flex-1 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg text-sm hover:bg-gray-200"
               >
-                إغلاق
+                {labels.close}
               </button>
             </div>
           </div>

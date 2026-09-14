@@ -166,6 +166,10 @@
                             </div>
                             <x-form.input name="specialization_en" label="{{ __('admin.vendors.specialization_en') }}" :value="$vendor->specialization_en" />
                             <x-form.input name="specialization_ar" label="{{ __('admin.vendors.specialization_ar') }}" :value="$vendor->specialization_ar" dir="rtl" />
+                            <div>
+                                <x-form.input name="product_as_described_pct" label="{{ __('admin.vendors.product_as_described_pct') }}" :value="$vendor->product_as_described_pct" type="number" min="0" max="100"/>
+                                <p class="text-xs text-gray-400 mt-1">{{ __('admin.vendors.product_as_described_help') }}</p>
+                            </div>
                             <div class="col-span-2">
                                 <x-form.textarea name="store_description" label="{{ __('admin.vendors.store_description') }}" :value="$vendor->store_description" rows="3"/>
                             </div>

@@ -99,9 +99,12 @@ Route::post('v1/device-tokens', [ApiDeviceTokenController::class, 'store'])
     ->middleware('auth:customer')
     ->name('customer.api.device-tokens.store');
 
+// ── Countries/cities (country-agnostic path, public — guests must be able to
+//    pick a country before login/registration) ──
+Route::get('v1/countries', [ApiMiscController::class, 'countries'])->name('customer.api.countries.index');
+Route::get('v1/countries/{country}/cities', [ApiMiscController::class, 'cities'])->name('customer.api.countries.cities');
+
 // ── Misc (country-agnostic path, scoped to customer_id) ──
 Route::middleware('auth:customer')->group(function (): void {
-    Route::get('v1/countries', [ApiMiscController::class, 'countries'])->name('customer.api.countries.index');
-    Route::get('v1/countries/{country}/cities', [ApiMiscController::class, 'cities'])->name('customer.api.countries.cities');
     Route::get('v1/shipping-methods', [ApiMiscController::class, 'shippingMethods'])->name('customer.api.shipping-methods.index');
 });

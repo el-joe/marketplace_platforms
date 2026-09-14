@@ -89,9 +89,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
       </div>
       <div className="text-center bg-black text-white">
         {!!p.shipping_badge
-          ? locale === "ar"
-            ? p.shipping_badge?.label_ar
-            : p.shipping_badge?.label_en
+          ? (p.shipping_badge?.label?.[locale] ?? p.shipping_badge?.label?.en)
           : p.vendor?.store_name}
       </div>
     </div>

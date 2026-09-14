@@ -29,6 +29,7 @@ class UpdateVendorRequest extends FormRequest
             'store_description_ar' => ['nullable', 'string', 'max:2000'],
             'specialization_en' => ['nullable', 'string', 'max:150'],
             'specialization_ar' => ['nullable', 'string', 'max:150'],
+            'product_as_described_pct' => ['nullable', 'integer', 'min:0', 'max:100'],
             'business_name' => ['nullable', 'string', 'max:200'],
             'business_type' => ['nullable', Rule::enum(VendorBusinessType::class)],
             'business_registration_number' => ['nullable', 'string', 'max:100'],
