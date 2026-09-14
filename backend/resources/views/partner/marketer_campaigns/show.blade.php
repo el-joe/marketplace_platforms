@@ -389,6 +389,59 @@
                                     </td>
                                 </tr>
                             @endif
+                            @php
+                                $sampleMarketer = $sample->invitation?->marketer;
+                                $sampleProfile  = $sampleMarketer?->marketerProfile;
+                                $isInfluencer   = $sampleMarketer?->marketer_type === 'influencer';
+                            @endphp
+                            @if ($isInfluencer && $sampleProfile)
+                                <tr>
+                                    <td colspan="5" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
+                                        <div class="text-xs font-semibold text-blue-800 mb-2">
+                                            {{ __('partner.marketer_campaigns_my.influencer_measurements') }}
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                                            @foreach([
+                                                'clothing_size'   => $sampleProfile->clothing_size,
+                                                'shirt_size'      => $sampleProfile->shirt_size,
+                                                'pants_size'      => $sampleProfile->pants_size,
+                                                'dress_size'      => $sampleProfile->dress_size,
+                                                'abaya_size'      => $sampleProfile->abaya_size,
+                                                'shoe_size'       => $sampleProfile->shoe_size
+                                                                      ? "{$sampleProfile->shoe_size} ({$sampleProfile->shoe_size_system})"
+                                                                      : null,
+                                                'chest_cm'        => $sampleProfile->chest_cm,
+                                                'waist_cm'        => $sampleProfile->waist_cm,
+                                                'hip_cm'          => $sampleProfile->hip_cm,
+                                                'height_cm'       => $sampleProfile->height_cm,
+                                                'item_length_cm'          => $sampleProfile->item_length_cm,
+                                                'sleeve_from_neck_cm'     => $sampleProfile->sleeve_from_neck_cm,
+                                                'sleeve_from_shoulder_cm' => $sampleProfile->sleeve_from_shoulder_cm,
+                                                'sleeve_width_cm'         => $sampleProfile->sleeve_width_cm,
+                                            ] as $label => $value)
+                                                @if(!is_null($value) && $value !== '')
+                                                <div>
+                                                    <span class="text-gray-500">{{ __('partner.marketer_campaigns_my.measurement_' . $label) }}:</span>
+                                                    <span class="font-medium text-gray-900">{{ $value }}</span>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                        @if ($sampleProfile->measurements_notes)
+                                        <div class="text-xs text-gray-600 mt-2">
+                                            <span class="font-semibold">{{ __('partner.marketer_campaigns_my.measurement_notes') }}:</span>
+                                            {{ $sampleProfile->measurements_notes }}
+                                        </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @elseif ($isInfluencer && !$sampleProfile)
+                                <tr>
+                                    <td colspan="5" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                        {{ __('partner.marketer_campaigns_my.no_measurements_on_file') }}
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>
