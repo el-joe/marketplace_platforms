@@ -106,6 +106,8 @@
     "ratings": "Ratings",
     "deliveryInformation": "Delivery information",
     "exploreOtherBestsellerIn": "Explore other bestseller in",
+    "bestSellerRank": "Best Seller #{rank}",
+    "bestSellerIn": "in",
     "getIt": "Get it",
     "getIn": "Get in",
     "orderIn": "Order in",

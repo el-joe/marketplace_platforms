@@ -6,7 +6,7 @@ export interface IProductDetails {
   listing: Listing;
   seller: Seller;
   delivery_options: DeliveryOption[];
-  best_seller_badge: null;
+  best_seller_badge: BestSellerBadge | null;
   coupons: Coupon[];
   payment_options: PaymentOption[];
   product: Product;
@@ -175,6 +175,21 @@ export interface Brand {
   name: Locales;
   slug: string;
   is_verified?: boolean;
+  authenticity?: BrandAuthenticity | null;
+}
+
+export interface BrandAuthenticity {
+  manufacturer_warranty_months: number | null;
+  notes: Locales;
+  covered_country: Locales;
+}
+
+export interface BestSellerBadge {
+  rank: number;
+  category_name_en: string;
+  category_name_ar: string;
+  category_slug: string;
+  link_url: string;
 }
 
 export interface Image {

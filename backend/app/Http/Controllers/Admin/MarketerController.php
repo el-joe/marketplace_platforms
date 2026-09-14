@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Marketer;
 use App\Models\MarketerCategoryCommission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class MarketerController extends Controller
@@ -28,8 +30,46 @@ class MarketerController extends Controller
             ->paginate(20);
 
         $pendingCount = Marketer::where('global_status', 'pending')->count();
+        $countries = \App\Models\Country::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
-        return view('admin.marketers.index', compact('marketers', 'pendingCount'));
+        return view('admin.marketers.index', compact('marketers', 'pendingCount', 'countries'));
+    }
+
+    public function store(Request $request)
+    {
+        abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
+
+        $validated = $request->validate([
+            'name'          => ['required', 'string', 'max:255'],
+            'email'         => ['required', 'email', 'max:255', 'unique:marketers,email', 'unique:marketer_admins,email'],
+            'phone'         => ['nullable', 'string', 'max:30'],
+            'marketer_type' => ['required', 'in:influencer,affiliate'],
+            'country_id'    => ['nullable', 'uuid', 'exists:countries,id'],
+            'password'      => ['required', 'string', 'min:8'],
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $marketer = Marketer::create([
+                'name'          => $validated['name'],
+                'email'         => $validated['email'],
+                'phone'         => $validated['phone'] ?? null,
+                'marketer_type' => $validated['marketer_type'],
+                'country_id'    => $validated['country_id'] ?? null,
+                'global_status' => 'active',
+                'approved_at'          => now(),
+                'approved_by_admin_id' => auth('admin')->id(),
+            ]);
+
+            $marketer->marketerAdmins()->create([
+                'name'      => $validated['name'],
+                'email'     => $validated['email'],
+                'password'  => Hash::make($validated['password']),
+                'is_owner'  => true,
+                'is_active' => true,
+            ]);
+        });
+
+        return back()->with('success', 'تم إنشاء حساب الماركتر بنجاح.');
     }
 
     public function show(Marketer $marketer)

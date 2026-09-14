@@ -3,7 +3,7 @@
 @section('page-title', 'إدارة الماركترز')
 
 @section('content')
-<div class="space-y-4">
+<div class="space-y-4" x-data="{ showCreateModal: {{ $errors->any() ? 'true' : 'false' }} }">
 
     {{-- Filter bar --}}
     <div class="bg-white rounded-xl border p-4">
@@ -34,7 +34,75 @@
             @if(request()->hasAny(['search','type','status']))
                 <a href="{{ route('admin.marketers.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg">إعادة تعيين</a>
             @endif
+            <button type="button" x-on:click="showCreateModal = true"
+                    class="ms-auto px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                + إضافة ماركتر
+            </button>
         </form>
+    </div>
+
+    {{-- Create marketer modal --}}
+    <div x-show="showCreateModal" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+         x-on:keydown.escape.window="showCreateModal = false">
+        <div class="bg-white rounded-xl w-full max-w-lg p-6 space-y-4" x-on:click.outside="showCreateModal = false">
+            <h3 class="font-bold text-gray-800 text-lg">إضافة ماركتر جديد</h3>
+
+            @if($errors->any())
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                    <ul class="list-disc ps-4">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('admin.marketers.store') }}" class="space-y-3">
+                @csrf
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">الاسم</label>
+                    <input type="text" name="name" value="{{ old('name') }}" required
+                           class="border rounded-lg px-3 py-2 text-sm w-full">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">الإيميل</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required
+                           class="border rounded-lg px-3 py-2 text-sm w-full">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">الهاتف</label>
+                    <input type="text" name="phone" value="{{ old('phone') }}"
+                           class="border rounded-lg px-3 py-2 text-sm w-full">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">النوع</label>
+                    <select name="marketer_type" required class="border rounded-lg px-3 py-2 text-sm w-full">
+                        <option value="influencer" {{ old('marketer_type') === 'influencer' ? 'selected' : '' }}>مؤثر</option>
+                        <option value="affiliate" {{ old('marketer_type') === 'affiliate' ? 'selected' : '' }}>أفيليت</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">الدولة</label>
+                    <select name="country_id" class="border rounded-lg px-3 py-2 text-sm w-full">
+                        <option value="">-</option>
+                        @foreach($countries as $country)
+                            <option value="{{ $country->id }}" {{ old('country_id') === $country->id ? 'selected' : '' }}>{{ $country->name_ar }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">كلمة المرور</label>
+                    <input type="password" name="password" required minlength="8"
+                           class="border rounded-lg px-3 py-2 text-sm w-full">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" x-on:click="showCreateModal = false"
+                            class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50">إلغاء</button>
+                    <button type="submit" class="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">إنشاء</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     @if($pendingCount > 0)

@@ -187,7 +187,7 @@ class ListingDetailController extends Controller
             'best_seller_badge' => $bestSellerBadge,
             'coupons' => $coupons,
             'payment_options' => $paymentOptions,
-            'product' => $this->productShape($product, $listing),
+            'product' => $this->productShape($product, $listing, $country),
             'product_attributes' => $productAttributes,
             'variant' => $this->variantShape($listing->productVariant),
             'other_sellers' => ($listing instanceof VendorListing ? $siblings['same_variant']->push($listing) : $siblings['same_variant'])
@@ -346,7 +346,7 @@ class ListingDetailController extends Controller
         ];
     }
 
-    private function productShape($product, VendorListing|AdminListing $listing): array
+    private function productShape($product, VendorListing|AdminListing $listing, Country $country): array
     {
         return [
             'id' => $product->id,
@@ -358,6 +358,11 @@ class ListingDetailController extends Controller
                 'name' => Bilingual::pair($product->brand, 'name'),
                 'slug' => $product->brand->slug,
                 'is_verified' => $product->brand->is_verified,
+                'authenticity' => $product->brand->has_authenticity_guarantee ? [
+                    'manufacturer_warranty_months' => $product->brand->manufacturer_warranty_months,
+                    'notes' => Bilingual::pairFromKeys($product->brand, 'authenticity_notes_ar', 'authenticity_notes_en'),
+                    'covered_country' => Bilingual::pair($country, 'name'),
+                ] : null,
             ] : null,
             'category' => $product->category ? [
                 'id' => $product->category->id,

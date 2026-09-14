@@ -332,6 +332,78 @@
                 </div>
             </div>
 
+            {{-- Authenticity guarantee ---------------------------------------- --}}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.brands_section.authenticity_heading') }}</h2>
+                </div>
+                <div class="px-5 py-5 space-y-4">
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ __('admin.brands.has_authenticity_guarantee') }}</p>
+                            <p class="text-xs text-gray-500">{{ __('admin.brands_section.authenticity_hint') }}</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer" dir="ltr">
+                            <input type="hidden" name="has_authenticity_guarantee" value="0">
+                            <input
+                                type="checkbox"
+                                name="has_authenticity_guarantee"
+                                value="1"
+                                class="sr-only peer"
+                                {{ $bool('has_authenticity_guarantee') ? 'checked' : '' }}
+                            >
+                            <div class="relative w-10 h-5 bg-gray-200 peer-checked:bg-primary-600 rounded-full transition-colors duration-200"></div>
+                            <span class="absolute top-0.5 left-[2px] bg-white rounded-full h-4 w-4 transition-transform peer-checked:translate-x-5 pointer-events-none"></span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label for="manufacturer_warranty_months" class="block text-xs font-medium text-gray-700 mb-1">
+                            {{ __('admin.brands.manufacturer_warranty_months') }}
+                        </label>
+                        <input
+                            type="number"
+                            id="manufacturer_warranty_months"
+                            name="manufacturer_warranty_months"
+                            min="0"
+                            value="{{ $val('manufacturer_warranty_months') }}"
+                            class="input w-full @error('manufacturer_warranty_months') border-red-400 @enderror"
+                        />
+                        @error('manufacturer_warranty_months') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="authenticity_notes_en" class="block text-xs font-medium text-gray-700 mb-1">
+                            {{ __('admin.brands.authenticity_notes_en') }}
+                        </label>
+                        <textarea
+                            id="authenticity_notes_en"
+                            name="authenticity_notes_en"
+                            rows="3"
+                            dir="ltr"
+                            class="input w-full @error('authenticity_notes_en') border-red-400 @enderror"
+                        >{{ $val('authenticity_notes_en') }}</textarea>
+                        @error('authenticity_notes_en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="authenticity_notes_ar" class="block text-xs font-medium text-gray-700 mb-1">
+                            {{ __('admin.brands.authenticity_notes_ar') }}
+                        </label>
+                        <textarea
+                            id="authenticity_notes_ar"
+                            name="authenticity_notes_ar"
+                            rows="3"
+                            dir="rtl"
+                            class="input w-full @error('authenticity_notes_ar') border-red-400 @enderror"
+                        >{{ $val('authenticity_notes_ar') }}</textarea>
+                        @error('authenticity_notes_ar') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                </div>
+            </div>
+
         </div>
 
     </div>{{-- /flex --}}

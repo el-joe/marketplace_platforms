@@ -930,6 +930,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     // ── Marketer Management ────────────────────────────────────────────────
     Route::prefix('marketers')->name('marketers.')->middleware('admin.permission:marketers.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\MarketerController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\MarketerController::class, 'store'])
+            ->name('store')->middleware('admin.permission:marketers.manage');
         Route::get('/{marketer}', [\App\Http\Controllers\Admin\MarketerController::class, 'show'])->name('show');
         Route::post('/{marketer}/approve', [\App\Http\Controllers\Admin\MarketerController::class, 'approve'])
             ->name('approve')->middleware('admin.permission:marketers.manage');
