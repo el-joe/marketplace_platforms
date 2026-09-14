@@ -44,6 +44,7 @@ export default function ProductImagesPreview({ product }: Props) {
           onSwiper={setThumbsSwiper}
           spaceBetween={"9px"}
           slidesPerView={"auto"}
+          dir="ltr"
           freeMode={true}
           watchSlidesProgress={true}
           loop
@@ -146,7 +147,7 @@ export default function ProductImagesPreview({ product }: Props) {
                 alt=""
                 width={400}
                 height={450}
-                zoomLevel={3}
+                zoomLevel={1.7}
               />
             </SwiperSlide>
           ))}
