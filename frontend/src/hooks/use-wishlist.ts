@@ -16,6 +16,7 @@ import {
   createWishlistGroupService,
   getWishlistGroupService,
   getWishlistGroupsService,
+  IWishlistCheckResponse,
   moveWishlistItemService,
   removeWishlistGroupService,
   removeWishlistItemService,
@@ -129,8 +130,11 @@ export function useWishlist() {
   });
 
   const checkItem = useCallback(
-    async (listingId: string) => await checkWishlistItemService(listingId),
-    [],
+    async (listingId: string) => {
+      if (!isLogged) return null;
+      return await checkWishlistItemService(listingId);
+    },
+    [isLogged],
   );
 
   const moveItem = useMutation({

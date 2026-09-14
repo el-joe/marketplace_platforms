@@ -200,6 +200,7 @@ export interface Value {
   url: null | string;
   url_param: null | string;
   color_hex: string | null;
+  variant_image: string | null;
   selected: boolean;
   disabled: boolean;
   variant_id: null | string;
