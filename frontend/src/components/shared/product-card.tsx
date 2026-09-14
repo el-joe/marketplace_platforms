@@ -213,11 +213,13 @@ const ProductCard = ({ productData }: Props) => {
                 color: productData?.shipping_badge?.text_color_hex,
               }}
             >
-              <span>⚡GET IN </span>
+              <span>⚡{t("getIn")} </span>
               <span>
-                {productData?.shipping_badge?.delivery_days_min ||
-                  productData?.shipping_badge?.delivery_days_max}{" "}
-                {t("day")}
+                {t("$day", {
+                  value:
+                    productData?.shipping_badge?.delivery_days_min ||
+                    productData?.shipping_badge?.delivery_days_max,
+                })}
               </span>
               <ChevronRightIcon className="size-3 lg:size-5" />
             </div>
