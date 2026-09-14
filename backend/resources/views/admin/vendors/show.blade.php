@@ -164,8 +164,13 @@
                                 <x-form.toggle name="easy_returns_enabled" label="{{ __('admin.vendors.easy_returns_enabled') }}" :checked="(bool) $vendor->easy_returns_enabled"/>
                                 <x-form.toggle name="secure_payments_enabled" label="{{ __('admin.vendors.secure_payments_enabled') }}" :checked="(bool) $vendor->secure_payments_enabled"/>
                             </div>
+                            <x-form.input name="specialization_en" label="{{ __('admin.vendors.specialization_en') }}" :value="$vendor->specialization_en" />
+                            <x-form.input name="specialization_ar" label="{{ __('admin.vendors.specialization_ar') }}" :value="$vendor->specialization_ar" dir="rtl" />
                             <div class="col-span-2">
                                 <x-form.textarea name="store_description" label="{{ __('admin.vendors.store_description') }}" :value="$vendor->store_description" rows="3"/>
+                            </div>
+                            <div class="col-span-2">
+                                <x-form.textarea name="store_description_ar" label="{{ __('admin.vendors.store_description_ar') }}" :value="$vendor->store_description_ar" rows="3"/>
                             </div>
                         </div>
 

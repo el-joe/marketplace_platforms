@@ -139,6 +139,32 @@ $businessTypeLabels = [
                                 class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400">{{ old('store_description', $vendor->store_description) }}</textarea>
                         </div>
 
+                        {{-- Store description (Arabic) --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.store_description_ar') }}</label>
+                            <textarea name="store_description_ar" rows="3" dir="rtl"
+                                {{ (! $admin->isOwner() || $storeProfileLocked) ? 'disabled' : '' }}
+                                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400">{{ old('store_description_ar', $vendor->store_description_ar) }}</textarea>
+                        </div>
+
+                        {{-- Specialization --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.specialization_en') }}</label>
+                                <input type="text" name="specialization_en"
+                                    value="{{ old('specialization_en', $vendor->specialization_en) }}"
+                                    {{ (! $admin->isOwner() || $storeProfileLocked) ? 'disabled' : '' }}
+                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.specialization_ar') }}</label>
+                                <input type="text" name="specialization_ar" dir="rtl"
+                                    value="{{ old('specialization_ar', $vendor->specialization_ar) }}"
+                                    {{ (! $admin->isOwner() || $storeProfileLocked) ? 'disabled' : '' }}
+                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400">
+                            </div>
+                        </div>
+
                         {{-- Contact email --}}
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -188,7 +214,7 @@ $businessTypeLabels = [
                         @else
                             <form id="form-change-request-store" novalidate>
                                 <input type="hidden" name="fields" value="{{ implode(',', array_merge(
-                                    $storeProfileLocked ? ['store_name', 'store_description'] : [],
+                                    $storeProfileLocked ? ['store_name', 'store_description', 'store_description_ar', 'specialization_en', 'specialization_ar'] : [],
                                     $contactInfoLocked ? ['contact_email', 'contact_phone', 'whatsapp_number'] : []
                                 )) }}">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -201,6 +227,21 @@ $businessTypeLabels = [
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.store_description') }}</label>
                                             <input type="text" name="store_description" value="{{ $vendor->store_description }}"
+                                                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.store_description_ar') }}</label>
+                                            <input type="text" name="store_description_ar" dir="rtl" value="{{ $vendor->store_description_ar }}"
+                                                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.specialization_en') }}</label>
+                                            <input type="text" name="specialization_en" value="{{ $vendor->specialization_en }}"
+                                                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.profile.specialization_ar') }}</label>
+                                            <input type="text" name="specialization_ar" dir="rtl" value="{{ $vendor->specialization_ar }}"
                                                 class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
                                         </div>
                                     @endif

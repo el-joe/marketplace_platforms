@@ -112,7 +112,7 @@ function initChangeRequestForm() {
         const fields = (formData.get('fields') ?? '').split(',').filter(Boolean);
         const note = formData.get('note');
 
-        const storeProfileFields = ['store_name', 'store_description'];
+        const storeProfileFields = ['store_name', 'store_description', 'store_description_ar', 'specialization_en', 'specialization_ar'];
         const contactInfoFields = ['contact_email', 'contact_phone', 'whatsapp_number'];
 
         const requestsToSend = [];
