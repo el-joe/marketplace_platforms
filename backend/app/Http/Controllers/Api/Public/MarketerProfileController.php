@@ -35,7 +35,7 @@ class MarketerProfileController extends Controller
                 'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
                 'bannerFile',
             ])
-            ->addSelect(['ad_price', 'ad_price_currency'])
+            ->addSelect(['marketer_profiles.*', 'ad_price', 'ad_price_currency'])
             ->when($request->type, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('marketer_type', $request->type)))
             ->when($countryId, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('country_id', $countryId)))
             ->orderByDesc('total_conversions')
