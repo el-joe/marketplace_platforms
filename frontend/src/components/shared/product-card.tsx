@@ -228,14 +228,13 @@ const ProductImage = ({
   image: Product["images"][number];
   locale: "ar" | "en";
 }) => {
-
   return (
     <Image
       src={getImageURL(image.url)}
       alt={image?.alt?.[locale] || ("" as string)}
       width={500}
       height={600}
-      className="max-h-full"
+      className="h-full"
     />
   );
 };

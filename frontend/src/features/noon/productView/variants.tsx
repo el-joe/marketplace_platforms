@@ -25,6 +25,7 @@ function VariantOptionsList({
   list: IProductDetails["product_attributes"][0];
 }) {
   const locale = useLocale();
+  const imagesList = !!list.values.find((v) => !!v.variant_image);
   return (
     <>
       <h5 className="text-gray font-semibold mb-3 uppercase">
@@ -32,7 +33,11 @@ function VariantOptionsList({
       </h5>
       <div className="flex items-center flex-wrap gap-3">
         {list.values.map((value) => (
-          <VariantCard key={value.attribute_value_id} variantData={value} />
+          <VariantCard
+            key={value.attribute_value_id}
+            variantData={value}
+            withImage={imagesList}
+          />
         ))}
       </div>
       <div className="lg:hidden"></div>
@@ -42,13 +47,14 @@ function VariantOptionsList({
 
 function VariantCard({
   variantData,
+  withImage,
 }: {
   variantData: IProductDetails["product_attributes"][0]["values"][0];
+  withImage: boolean;
 }) {
   const router = useRouter();
   const locale = useLocale();
-  //   if (!!variantData?.image) {
-  if (false) {
+  if (!!withImage) {
     return (
       <div
         className={cn(
@@ -61,9 +67,10 @@ function VariantCard({
         }}
       >
         <Image
-          className="max-h-40"
-          //   src={variantData?.image}
-          src={""}
+          className="h-26!"
+          src={
+            variantData?.variant_image || "/images/no-image-available-icon.jpg"
+          }
           alt="color image"
           width={80}
           height={160}

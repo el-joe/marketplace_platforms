@@ -27,13 +27,15 @@ export default function ProductImagesPreview({ product }: Props) {
   const { addItem, isMutating, checkItem } = useWishlistContext();
   useEffect(() => {
     (async () => {
-      const { data } = await checkItem(product.listing.listing_id);
+      const response = await checkItem(product.listing.listing_id);
+      if (!response) return;
+      const { data } = response;
       const { in_wishlist } = data;
       setIsWishlisted(in_wishlist);
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div className="flex flex-col-reverse md:flex-row h-173.75! max-h-[calc(100vh-420px)]!">
+    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]!">
       {" "}
       {/* pagination thumbs */}
       <div className="block min-w-17">

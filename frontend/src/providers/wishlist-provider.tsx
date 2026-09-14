@@ -85,7 +85,7 @@ interface IWishlistContext {
     },
     unknown
   >;
-  checkItem: (listingId: string) => Promise<IWishlistCheckResponse>;
+  checkItem: (listingId: string) => Promise<IWishlistCheckResponse | null>;
 
   targetItemMutating: string | false;
   isMutating: boolean;
