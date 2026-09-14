@@ -78,7 +78,7 @@ class MarketerProfileController extends Controller
      * pages don't need real-time freshness, and this keeps response
      * times well under 1s under load.
      */
-    public function show(Request $request ,$countryId, string $slug): JsonResponse
+    public function show(Request $request,$countryId, string $slug): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
         $cacheKey  = MarketerProfileCache::key($slug, $countryId);
@@ -134,7 +134,7 @@ class MarketerProfileController extends Controller
                 'productVariant.product:id,name_en,name_ar,slug,category_id,brand_id',
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
-                'productVariant.product.brand:id,name_en,name_ar,slug,logo_url',
+                'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
             ])
             ->orderByDesc('total_sold')
             ->orderByDesc('created_at')
