@@ -22,6 +22,7 @@ import useLocale from "@/src/hooks/use-locale";
 import AddToCartButton from "./add-to-cart-button";
 import { useTranslations } from "next-intl";
 import { getImageURL } from "@/src/helpers/get-image-url";
+import { AdBadge } from "./ad-badge";
 
 type Props = {
   productData: Product | IProduct;
@@ -61,6 +62,8 @@ const ProductCard = ({ productData }: Props) => {
     >
       {/* card top (images slide, topleft badge, wishlist but, cart btn) */}
       <div className="relative h-43 md:h-52 lg:h-60 xl:h-92">
+        {/* sponsored/ad badge */}
+        {!!productData.is_sponsored && <AdBadge />}
         {/* top left badge */}
         {!!productData?.category_name?.[locale] && (
           <div className="absolute top-0 left-0 rounded-br-lg bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10">

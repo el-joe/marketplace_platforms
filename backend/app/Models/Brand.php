@@ -23,12 +23,18 @@ class Brand extends Model
         'is_verified',
         'is_restricted',
         'is_active',
+        'has_authenticity_guarantee',
+        'manufacturer_warranty_months',
+        'authenticity_notes_en',
+        'authenticity_notes_ar',
     ];
 
     protected $casts = [
         'is_verified' => 'boolean',
         'is_restricted' => 'boolean',
         'is_active' => 'boolean',
+        'has_authenticity_guarantee' => 'boolean',
+        'manufacturer_warranty_months' => 'integer',
     ];
 
     public function products(): HasMany

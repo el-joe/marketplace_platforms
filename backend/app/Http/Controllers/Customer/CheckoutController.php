@@ -26,6 +26,7 @@ use App\Models\CountryPaymentGateway;
 use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\CustomerReceiver;
+use App\Models\MarketerContract;
 use App\Models\CustomerWallet;
 use App\Exceptions\GiftCardCurrencyMismatchException;
 use App\Exceptions\InsufficientWalletBalanceException;
@@ -320,6 +321,16 @@ class CheckoutController extends Controller
             'delivery_message' => $this->deliveryMessage($v),
         ])->values();
 
+        $attributedMarketerId = session('marketer_attribution.marketer_id');
+        $marketerContractGate = null;
+        if ($attributedMarketerId) {
+            $contract = MarketerContract::where('marketer_id', $attributedMarketerId)->first();
+            $marketerContractGate = [
+                'marketer_id' => $attributedMarketerId,
+                'is_required' => $contract?->is_required && $contract?->current_version > 0,
+            ];
+        }
+
         return ApiResponse::success([
             'total_items_qty' => $totalItemsQty,
             'order_summary' => $summary,
@@ -359,6 +370,7 @@ class CheckoutController extends Controller
                 'label' => $case->label(),
             ])->values(),
             'shipment_groups' => $shipmentGroupsForItems,
+            'marketer_contract_gate' => $marketerContractGate,
         ], __('common.exceptions.checkout.preview_ready'));
     }
 

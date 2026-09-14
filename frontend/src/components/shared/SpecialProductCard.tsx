@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import Price from "./Price";
 import useLocale from "@/src/hooks/use-locale";
 import type { Product } from "@/types/globals";
+import { AdBadge } from "./ad-badge";
 
 type Props = {
   productData: Product;
@@ -30,6 +31,7 @@ const SpecialProductCard = ({ productData }: Props) => {
       className="group flex flex-col bg-white rounded-xl overflow-hidden h-full border border-border-color"
     >
       <div className="relative w-full aspect-square bg-gray-50 overflow-hidden">
+        {!!productData.is_sponsored && <AdBadge />}
         {categoryName && (
           <span className="absolute top-2 start-2 z-10 bg-black/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md leading-tight">
             {categoryName}

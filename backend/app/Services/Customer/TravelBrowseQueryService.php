@@ -49,8 +49,11 @@ class TravelBrowseQueryService
         if (!empty($filters['duration_max'])) {
             $query->where('duration_days', '<=', (int) $filters['duration_max']);
         }
-        if (!empty($filters['destination_country'])) {
-            $query->where('destination_country', $filters['destination_country']);
+        if (!empty($filters['destination_country_id'])) {
+            $query->where('destination_travel_country_id', $filters['destination_country_id']);
+        }
+        if (!empty($filters['destination_city_id'])) {
+            $query->where('destination_travel_city_id', $filters['destination_city_id']);
         }
         if (!empty($filters['departure_from'])) {
             $query->whereDate('departure_date', '>=', $filters['departure_from']);
@@ -82,8 +85,11 @@ class TravelBrowseQueryService
                   ->orWhereColumn('seats_booked', '<', 'available_seats');
             });
 
-        if (!empty($filters['destination_country'])) {
-            $base->where('destination_country', $filters['destination_country']);
+        if (!empty($filters['destination_country_id'])) {
+            $base->where('destination_travel_country_id', $filters['destination_country_id']);
+        }
+        if (!empty($filters['destination_city_id'])) {
+            $base->where('destination_travel_city_id', $filters['destination_city_id']);
         }
 
         $range = (clone $base)
@@ -91,11 +97,19 @@ class TravelBrowseQueryService
             ->first();
 
         $destinations = (clone $base)
+            ->join('travel_countries', 'travel_countries.id', '=', 'travel_packages.destination_travel_country_id')
+            ->select('travel_countries.id', 'travel_countries.name_en', 'travel_countries.name_ar')
             ->distinct()
-            ->orderBy('destination_country')
-            ->pluck('destination_country')
-            ->values()
-            ->toArray();
+            ->orderBy('travel_countries.name_en')
+            ->get();
+
+        $cities = (clone $base)
+            ->whereNotNull('destination_travel_city_id')
+            ->join('travel_cities', 'travel_cities.id', '=', 'travel_packages.destination_travel_city_id')
+            ->select('travel_cities.id', 'travel_cities.name_en', 'travel_cities.name_ar')
+            ->distinct()
+            ->orderBy('travel_cities.name_en')
+            ->get();
 
         return [
             'price_range' => [
@@ -107,6 +121,7 @@ class TravelBrowseQueryService
                 'max' => $range ? (int) $range->dur_max : 0,
             ],
             'destination_countries' => $destinations,
+            'destination_cities' => $cities,
         ];
     }
 

@@ -40,8 +40,21 @@ class SpecialRequestController extends Controller
 
     public function show(string $id): View
     {
+        $marketer = $this->marketer();
+
+        abort_unless($marketer->marketer_type === 'affiliate', 403);
+
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+
         $specialRequest = CustomerSpecialRequest::with(['customer', 'category', 'city'])
-            ->findOrFail($id);
+            ->where('id', $id)
+            ->where('category_id', $profile->broker_category_id)
+            ->when(!$profile->broker_serves_all_cities && $profile->broker_city_id, function ($q) use ($profile) {
+                $q->where(function ($q2) use ($profile) {
+                    $q2->where('city_id', $profile->broker_city_id)->orWhereNull('city_id');
+                });
+            })
+            ->firstOrFail();
 
         return view('marketer.special-requests.show', compact('specialRequest'));
     }

@@ -105,6 +105,8 @@
     "home": "الرئيسية",
     "ratings": "التقييمات",
     "deliveryInformation": "معلومات التوصيل",
+    "bestSellerRank": "الأكثر مبيعاً #{rank}",
+    "bestSellerIn": "في",
     "getIt": "احصل عليه",
     "getIn": "احصل عليه خلال",
     "orderIn": "اطلب خلال",
@@ -698,7 +700,12 @@
     "placeOrder": "إتمام الطلب",
     "shipment": "الشحنة",
     "getItBy": "احصل عليه بحلول",
-    "payWith": "الدفع باستخدام"
+    "payWith": "الدفع باستخدام",
+    "marketerContractTitle": "الشروط والأحكام",
+    "marketerContractAccept": "أوافق",
+    "marketerContractCancel": "إلغاء",
+    "marketerContractRequiredNotice": "يرجى قراءة الشروط والموافقة عليها قبل إتمام طلبك.",
+    "marketerContractDownload": "عرض ملف PDF"
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!",

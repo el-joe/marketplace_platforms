@@ -17,6 +17,7 @@ import { useCartContext } from "@/src/providers/cart-provider";
 import useLocale from "@/src/hooks/use-locale";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import StanderWarrantyDialog from "./dialogs/stander-warranty-dialog";
 
 type Props = {
   product: IProductDetails;
@@ -48,20 +49,53 @@ export default function BaseInfo({ product }: Props) {
         )}
       </div>
       {/* brand link */}
-      <Link
-        href={`/brands/${product.product.brand.slug}`}
-        className="flex items-center gap-1 text-blue!"
-      >
-        {/* <BadgeCheckIcon size={"18px"} /> */}
-        <p className="text-lg font-semibold">
-          {product.product.brand.name[locale]}
-        </p>
-        {locale === "ar" ? (
-          <ChevronLeft size={"18px"} />
-        ) : (
-          <ChevronRight size={"18px"} />
+      <div className="flex items-center gap-3 flex-wrap">
+        <Link
+          href={`/brands/${product.product.brand.slug}`}
+          className="flex items-center gap-1 text-blue!"
+        >
+          {/* <BadgeCheckIcon size={"18px"} /> */}
+          <p className="text-lg font-semibold">
+            {product.product.brand.name[locale]}
+          </p>
+          {locale === "ar" ? (
+            <ChevronLeft size={"18px"} />
+          ) : (
+            <ChevronRight size={"18px"} />
+          )}
+        </Link>
+
+        {product.product.brand.authenticity && (
+          <StanderWarrantyDialog
+            brandName={product.product.brand.name[locale] as string}
+            warrantyYears={
+              product.product.brand.authenticity.manufacturer_warranty_months
+                ? Math.max(
+                    1,
+                    Math.round(
+                      Number(
+                        product.product.brand.authenticity
+                          .manufacturer_warranty_months,
+                      ) / 12,
+                    ),
+                  )
+                : 1
+            }
+            countryName={
+              product.product.brand.authenticity.covered_country?.[
+                locale
+              ] as string
+            }
+            trigger={
+              <button className="flex items-center gap-1 text-blue-600 text-sm font-semibold">
+                {t("coveredBy", {
+                  brand: product.product.brand.name[locale] as string,
+                })}
+              </button>
+            }
+          />
         )}
-      </Link>
+      </div>
       {/* product name + variant name */}
       <h3 className="text-xl mt-2 mb-2 font-bold">
         {product?.variant?.variant_name || product?.product?.name?.[locale]}
@@ -106,9 +140,9 @@ export default function BaseInfo({ product }: Props) {
         </Link>
       </div>
       {/* best seller bar */}
-      {false && (
+      {product.best_seller_badge && (
         <Link
-          href={"#"}
+          href={product.best_seller_badge.link_url}
           className="p-2 bg-gray-2 flex rounded-md items-center gap-2 text-sm"
         >
           <div className="flex">
@@ -116,9 +150,15 @@ export default function BaseInfo({ product }: Props) {
               <StarIcon className="fill-white w-full h-full" />
             </span>
           </div>
-          <p className="font-semibold">Best Seller #1</p>
-          <p>in</p>
-          <p className="text-blue! font-semibold">Lorem, ipsum dolor.</p>
+          <p className="font-semibold">
+            {t("bestSellerRank", { rank: product.best_seller_badge.rank })}
+          </p>
+          <p>{t("bestSellerIn")}</p>
+          <p className="text-blue! font-semibold">
+            {locale === "ar"
+              ? product.best_seller_badge.category_name_ar
+              : product.best_seller_badge.category_name_en}
+          </p>
           {locale === "ar" ? (
             <ChevronLeft className="ms-auto" />
           ) : (

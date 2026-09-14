@@ -109,6 +109,9 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'store_name' => 'sometimes|required|string|max:255',
             'store_description' => 'sometimes|nullable|string|max:2000',
+            'store_description_ar' => 'sometimes|nullable|string|max:2000',
+            'specialization_en' => 'sometimes|nullable|string|max:150',
+            'specialization_ar' => 'sometimes|nullable|string|max:150',
             'contact_email' => 'sometimes|required|email|max:255',
             'contact_phone' => 'sometimes|required|string|max:30',
             'whatsapp_number' => 'sometimes|nullable|string|max:30',
@@ -119,7 +122,7 @@ class ProfileController extends Controller
         $sections = [
             VendorSectionLock::SECTION_STORE_PROFILE => array_intersect_key(
                 $validated,
-                array_flip(['store_name', 'store_description'])
+                array_flip(['store_name', 'store_description', 'store_description_ar', 'specialization_en', 'specialization_ar'])
             ),
             VendorSectionLock::SECTION_CONTACT_INFO => array_intersect_key(
                 $validated,

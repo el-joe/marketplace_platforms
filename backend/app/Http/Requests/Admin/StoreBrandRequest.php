@@ -23,6 +23,10 @@ class StoreBrandRequest extends FormRequest
             'is_verified' => ['boolean'],
             'is_restricted' => ['boolean'],
             'is_active' => ['boolean'],
+            'has_authenticity_guarantee' => ['boolean'],
+            'manufacturer_warranty_months' => ['nullable', 'integer', 'min:0'],
+            'authenticity_notes_en' => ['nullable', 'string', 'max:2000'],
+            'authenticity_notes_ar' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

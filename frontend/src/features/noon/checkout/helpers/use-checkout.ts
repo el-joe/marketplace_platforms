@@ -1,11 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createPrepareCheckoutService, placeOrderService } from "../api/post";
+import {
+  acceptMarketerContract,
+  createPrepareCheckoutService,
+  placeOrderService,
+} from "../api/post";
 import { useEffect, useMemo, useState } from "react";
 import { getAddresses } from "@/src/services/address";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "@/i18n/navigation";
 import { IPrepareCheckout } from "../types/checkout.type";
-import { getPaymentGateways } from "../api/get";
+import { getMarketerContract, getPaymentGateways } from "../api/get";
 
 export const useCheckout = () => {
   const router = useRouter();
@@ -15,6 +19,11 @@ export const useCheckout = () => {
   >(undefined);
 
   const [selectedInstruction, setSelectedInstruction] = useState<
+    string | null
+  >(null);
+
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [contractAcceptanceId, setContractAcceptanceId] = useState<
     string | null
   >(null);
 
@@ -38,6 +47,25 @@ export const useCheckout = () => {
       )?.id,
     [checkoutData?.available_payment_gateways, checkoutData?.gateway_code],
   );
+
+  const contractGate = checkoutData?.marketer_contract_gate;
+  const contractRequired = !!contractGate?.is_required && !contractAcceptanceId;
+
+  const contractQuery = useQuery({
+    queryKey: ["marketer-contract", contractGate?.marketer_id],
+    queryFn: () => getMarketerContract(contractGate!.marketer_id),
+    enabled: !!contractGate?.is_required,
+  });
+  const contract = contractQuery.data?.contract;
+
+  const acceptContract = useMutation({
+    mutationFn: () =>
+      acceptMarketerContract(contractGate!.marketer_id, contract!.version_id),
+    onSuccess: (data) => {
+      setContractAcceptanceId(data.acceptance_id);
+      setIsContractModalOpen(false);
+    },
+  });
 
   const prepareCheckout = useMutation({
     mutationFn: createPrepareCheckoutService,
@@ -93,6 +121,11 @@ export const useCheckout = () => {
   const createOrder = () => {
     if (!selectedAddress || !selectedGatewayId) return;
 
+    if (contractRequired) {
+      setIsContractModalOpen(true);
+      return;
+    }
+
     const warrantySelections: { listing_id: string; warranty_plan_id: string }[] =
       [];
     try {
@@ -126,6 +159,7 @@ export const useCheckout = () => {
         : null,
       warranty_selections:
         warrantySelections.length > 0 ? warrantySelections : null,
+      contract_acceptance_id: contractAcceptanceId,
     });
   };
 
@@ -161,5 +195,11 @@ export const useCheckout = () => {
 
     selectedInstruction,
     setSelectedInstruction,
+
+    contract,
+    isContractModalOpen,
+    closeContractModal: () => setIsContractModalOpen(false),
+    acceptContract: acceptContract.mutate,
+    isAcceptingContract: acceptContract.isPending,
   };
 };

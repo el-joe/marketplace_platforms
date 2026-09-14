@@ -60,4 +60,5 @@ export interface IPlaceOrderPayload {
       }[]
     | null;
   loyalty_points_to_use?: number | null;
+  contract_acceptance_id?: string | null;
 }

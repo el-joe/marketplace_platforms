@@ -139,9 +139,51 @@ class MarketerCampaignController extends Controller
             'tieredRules',
             'conversions.order',
             'samples.invitation.marketer',
+            'samples.customAttributeValues',
         ]);
 
         return view('partner.marketer_campaigns.show', compact('marketerCampaign'));
+    }
+
+    public function saveSampleCustomAttributes(
+        Request $request,
+        MarketerCampaign $marketerCampaign,
+        \App\Models\MarketerCampaignSample $sample
+    ) {
+        abort_unless(
+            auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create'),
+            403
+        );
+        abort_unless($marketerCampaign->vendor_id === $this->vendorId(), 403);
+        abort_unless($sample->campaign_id === $marketerCampaign->id, 403);
+
+        $product = $sample->product();
+        abort_unless($product?->has_custom_attributes, 422, 'This product has no custom attributes enabled.');
+
+        $validated = $request->validate([
+            'values' => ['required', 'array'],
+            'values.*.product_custom_attribute_id' => ['required', 'uuid', 'exists:product_custom_attributes,id'],
+            'values.*.value' => ['required', 'string'],
+        ]);
+
+        $requiredIds = $product->customAttributes()->where('is_required', true)->pluck('id');
+        $providedIds = collect($validated['values'])->pluck('product_custom_attribute_id');
+        abort_if($requiredIds->diff($providedIds)->isNotEmpty(), 422, 'Missing required attribute values.');
+
+        // Replace any prior submission for this sample (vendor can correct before dispatch)
+        $sample->customAttributeValues()->delete();
+
+        foreach ($validated['values'] as $val) {
+            $attribute = \App\Models\ProductCustomAttribute::find($val['product_custom_attribute_id']);
+            $sample->customAttributeValues()->create([
+                'product_custom_attribute_id' => $attribute->id,
+                'label' => $attribute->label,
+                'unit' => $attribute->unit,
+                'value' => $val['value'],
+            ]);
+        }
+
+        return back()->with('success', __('partner.marketer_campaigns_my.sample_custom_details_saved'));
     }
 
     public function inviteMarketers(Request $request, MarketerCampaign $marketerCampaign)

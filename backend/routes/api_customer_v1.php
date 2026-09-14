@@ -272,6 +272,9 @@ use Illuminate\Support\Facades\Route;
         // ── Marketer Contracts (view + accept before checkout) ──
         Route::prefix('marketers/{marketer}/contract')->name('customer.api.marketer-contract.')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'show'])->name('show');
+            Route::get('download', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'downloadActivePdf'])
+                ->middleware('auth:customer')
+                ->name('download');
             Route::post('accept', [\App\Http\Controllers\Api\Customer\MarketerContractController::class, 'accept'])
                 ->middleware('auth:customer')
                 ->name('accept');

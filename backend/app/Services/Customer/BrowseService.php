@@ -112,7 +112,8 @@ class BrowseService
 
         $filters     = $request->only([
             'price_min', 'price_max', 'duration_min', 'duration_max',
-            'destination_country', 'departure_from', 'departure_to', 'sort',
+            'destination_country_id', 'destination_city_id',
+            'departure_from', 'departure_to', 'sort',
         ]);
         $perPage     = (int) ($request->input('per_page', 20));
         $categoryIds = $this->travelQuery->getDescendantIds($category);

@@ -127,7 +127,7 @@ class VendorChangeRequestService
         match ($request->section) {
             'store_profile' => $request->vendor->update(array_intersect_key(
                 $data,
-                array_flip(['store_name', 'store_description', 'store_slug'])
+                array_flip(['store_name', 'store_description', 'store_description_ar', 'store_slug', 'specialization_en', 'specialization_ar'])
             )),
             'business_info' => $request->vendor->update(array_intersect_key(
                 $data,

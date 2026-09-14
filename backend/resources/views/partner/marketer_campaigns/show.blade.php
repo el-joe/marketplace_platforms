@@ -330,10 +330,11 @@
     </div>
 
     {{-- ═══ Tab 4: Samples ═══ --}}
-    <div x-show="tab === 'samples'" x-cloak class="space-y-6">
+    <div x-show="tab === 'samples'" x-cloak class="space-y-6" x-data="sampleAttributesModal()">
         @php
             $platformSamples = $marketerCampaign->samples->where('sample_owner', 'platform');
             $marketerSamples = $marketerCampaign->samples->where('sample_owner', '!=', 'platform');
+            $needsCustomAttributes = $product?->has_custom_attributes ?? false;
         @endphp
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -343,9 +344,14 @@
             @else
                 <ul class="space-y-2 text-sm">
                     @foreach ($platformSamples as $sample)
-                        <li class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-                            <span class="text-gray-700">{{ __('partner.marketer_campaigns_my.field.quantity') }}: {{ $sample->quantity }}</span>
-                            <span class="text-gray-500">{{ $sample->status }}</span>
+                        <li class="rounded-lg border border-gray-100 px-3 py-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-700">{{ __('partner.marketer_campaigns_my.field.quantity') }}: {{ $sample->quantity }}</span>
+                                <span class="text-gray-500">{{ $sample->status }}</span>
+                            </div>
+                            @if ($needsCustomAttributes)
+                                @include('partner.marketer_campaigns._sample_custom_attributes', ['sample' => $sample])
+                            @endif
                         </li>
                     @endforeach
                 </ul>
@@ -376,12 +382,132 @@
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->delivered_at?->format('Y-m-d H:i') ?? '—' }}</td>
                             </tr>
+                            @if ($needsCustomAttributes)
+                                <tr>
+                                    <td colspan="5" class="px-4 pb-2">
+                                        @include('partner.marketer_campaigns._sample_custom_attributes', ['sample' => $sample])
+                                    </td>
+                                </tr>
+                            @endif
+                            @php
+                                $sampleMarketer = $sample->invitation?->marketer;
+                                $sampleProfile  = $sampleMarketer?->marketerProfile;
+                                $isInfluencer   = $sampleMarketer?->marketer_type === 'influencer';
+                            @endphp
+                            @if ($isInfluencer && $sampleProfile)
+                                <tr>
+                                    <td colspan="5" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
+                                        <div class="text-xs font-semibold text-blue-800 mb-2">
+                                            {{ __('partner.marketer_campaigns_my.influencer_measurements') }}
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                                            @foreach([
+                                                'clothing_size'   => $sampleProfile->clothing_size,
+                                                'shirt_size'      => $sampleProfile->shirt_size,
+                                                'pants_size'      => $sampleProfile->pants_size,
+                                                'dress_size'      => $sampleProfile->dress_size,
+                                                'abaya_size'      => $sampleProfile->abaya_size,
+                                                'shoe_size'       => $sampleProfile->shoe_size
+                                                                      ? "{$sampleProfile->shoe_size} ({$sampleProfile->shoe_size_system})"
+                                                                      : null,
+                                                'chest_cm'        => $sampleProfile->chest_cm,
+                                                'waist_cm'        => $sampleProfile->waist_cm,
+                                                'hip_cm'          => $sampleProfile->hip_cm,
+                                                'height_cm'       => $sampleProfile->height_cm,
+                                                'item_length_cm'          => $sampleProfile->item_length_cm,
+                                                'sleeve_from_neck_cm'     => $sampleProfile->sleeve_from_neck_cm,
+                                                'sleeve_from_shoulder_cm' => $sampleProfile->sleeve_from_shoulder_cm,
+                                                'sleeve_width_cm'         => $sampleProfile->sleeve_width_cm,
+                                            ] as $label => $value)
+                                                @if(!is_null($value) && $value !== '')
+                                                <div>
+                                                    <span class="text-gray-500">{{ __('partner.marketer_campaigns_my.measurement_' . $label) }}:</span>
+                                                    <span class="font-medium text-gray-900">{{ $value }}</span>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                        @if ($sampleProfile->measurements_notes)
+                                        <div class="text-xs text-gray-600 mt-2">
+                                            <span class="font-semibold">{{ __('partner.marketer_campaigns_my.measurement_notes') }}:</span>
+                                            {{ $sampleProfile->measurements_notes }}
+                                        </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @elseif ($isInfluencer && !$sampleProfile)
+                                <tr>
+                                    <td colspan="5" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                        {{ __('partner.marketer_campaigns_my.no_measurements_on_file') }}
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>
             @endif
         </div>
+
+        {{-- Fill-in modal, shared by every sample row above --}}
+        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-md" @click.outside="open = false">
+                <h3 class="text-lg font-semibold mb-4">{{ __('partner.marketer_campaigns_my.sample_custom_details') }}</h3>
+
+                <template x-for="attr in attributes" :key="attr.id">
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium mb-1" x-text="attr.label"></label>
+                        <input type="text" x-model="values[attr.id]"
+                               class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
+                </template>
+
+                <div class="flex gap-3 mt-4">
+                    <button type="button" @click="submit()" class="btn btn-primary flex-1">{{ __('common.save') }}</button>
+                    <button type="button" @click="open = false" class="btn btn-ghost">{{ __('common.cancel') }}</button>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
+
+<script>
+function sampleAttributesModal() {
+    return {
+        open: false,
+        sampleId: null,
+        attributes: [],
+        values: {},
+
+        openFor(sampleId, attributes, existingValues) {
+            this.sampleId = sampleId;
+            this.attributes = attributes;
+            this.values = {};
+            (existingValues || []).forEach(v => { this.values[v.product_custom_attribute_id] = v.value; });
+            this.open = true;
+        },
+
+        async submit() {
+            const payload = {
+                values: this.attributes.map(a => ({
+                    product_custom_attribute_id: a.id,
+                    value: this.values[a.id] ?? '',
+                })),
+            };
+
+            const url = '{{ route('partner.marketer-campaigns.samples.custom-attributes', ['marketerCampaign' => $marketerCampaign->id, 'sample' => 'SAMPLE_ID']) }}'.replace('SAMPLE_ID', this.sampleId);
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            window.location.reload();
+        },
+    };
+}
+</script>
 @endsection
