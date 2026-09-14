@@ -1,7 +1,7 @@
+"use client";
 import { createNavigation } from "next-intl/navigation";
-import { routing } from "./routing";
+import { getRouting } from "./routing";
 
-// Lightweight wrappers around Next.js' navigation
-// APIs that consider the routing configuration
+const routing = await getRouting();
 export const { Link, redirect, usePathname, useRouter, getPathname } =
   createNavigation(routing);

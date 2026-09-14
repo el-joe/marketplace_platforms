@@ -15,7 +15,6 @@ export default function FloatingProductSummary({ product }: Props) {
   const locale = useLocale();
   useEffect(() => {
     const handleShow = () => {
-      console.log("window.scrollY >= 500", window.scrollY);
       if (window.scrollY >= 800) {
         containerRef?.current?.classList.replace("-bottom-28", "bottom-4");
       } else if (window.scrollY < 800) {

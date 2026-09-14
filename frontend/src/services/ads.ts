@@ -1,6 +1,7 @@
-import { apiBaseUrl } from "@/src/lib/utils";
 import { getOrCreateSessionId } from "@/src/lib/session-id";
 import { PaidAdMeta } from "@/src/components/shared/page-builder/types";
+import { apiBaseUrlGlobal } from "../lib/utils";
+import resolveCookie from "../helpers/resolveCookie";
 
 const FLUSH_INTERVAL_MS = 5000;
 const MAX_QUEUE_SIZE = 20;
@@ -9,14 +10,15 @@ let queue: Array<{ id: string; sig: string }> = [];
 const seen = new Set<string>();
 let listenersAttached = false;
 
-function flush() {
+async function flush() {
   if (!queue.length) return;
   const items = queue;
   queue = [];
 
   const sessionId = getOrCreateSessionId();
   const payload = JSON.stringify({ items, session_id: sessionId });
-  const url = `${apiBaseUrl}/ads/impressions`;
+  const country = resolveCookie("country");
+  const url = `${apiBaseUrlGlobal}/${country}/ads/impressions`;
 
   if (typeof navigator !== "undefined" && navigator.sendBeacon) {
     const blob = new Blob([payload], { type: "text/plain" });
@@ -57,11 +59,12 @@ export function queueImpression(ad: PaidAdMeta) {
   if (queue.length >= MAX_QUEUE_SIZE) flush();
 }
 
-export function trackAdClick(ad: PaidAdMeta) {
+export async function trackAdClick(ad: PaidAdMeta) {
   if (!ad?.id) return;
 
   const sessionId = getOrCreateSessionId();
-  fetch(`${apiBaseUrl}/ads/clicks`, {
+  const country = await resolveCookie("country");
+  fetch(`${apiBaseUrlGlobal}/${country}/ads/clicks`, {
     method: "POST",
     keepalive: true,
     headers: {

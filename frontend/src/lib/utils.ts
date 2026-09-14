@@ -1,6 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { region } from "@/src/utils/region";
 import resolveCookie from "@/src/helpers/resolveCookie";
 import { CART_TOKEN_KEY } from "../hooks/use-cart";
 import { refreshAccessToken } from "../helpers/refresh-token";
@@ -10,9 +9,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const apiBaseUrl = `${process.env.NEXT_PUBLIC_BASE_API_URL}/${region}`;
 /** Base URL for the country-agnostic `/v1/...` endpoints (no region segment) — e.g. `/v1/countries`. */
+// const country = "uae";
+// const country = await resolveCookie("country");
+
 export const apiBaseUrlGlobal = `${process.env.NEXT_PUBLIC_BASE_API_URL}`;
+// export const apiBaseUrl = `${apiBaseUrlGlobal}/${country}`;
 
 export class ApiRequestError extends Error {
   status: number;
@@ -82,8 +84,12 @@ async function fetchWithAuth<T>(
  * token isomorphically the same way axiosInstance.ts does. Mirrors
  * axiosInstance's baseURL/auth resolution but via Next.js's native fetch.
  */
-export function fetchInstance<T>(path: string, init?: RequestInit): Promise<T> {
-  return fetchWithAuth<T>(apiBaseUrl, path, init);
+export async function fetchInstance<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const country = await resolveCookie("country");
+  return fetchWithAuth<T>(`${apiBaseUrlGlobal}/${country}`, path, init);
 }
 
 /** Same as {@link fetchInstance}, but targets the country-agnostic `/v1/...` routes (see `apiBaseUrlGlobal`). */

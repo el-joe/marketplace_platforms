@@ -1,7 +1,8 @@
 import { ICustomerProfile } from "@/types";
 import { loginFormValues } from "../components/shared/auth/login/schema";
-import { apiBaseUrl, fetchInstance } from "../lib/utils";
+import { apiBaseUrlGlobal, fetchInstance } from "../lib/utils";
 import { registerFormValues } from "../components/shared/auth/register/schema";
+import resolveCookie from "../helpers/resolveCookie";
 
 interface IAuthResponseBody {
   success: boolean;
@@ -22,9 +23,7 @@ export const loginService = (body: loginFormValues) =>
   });
 export const registerService = (body: registerFormValues) => {
   const referralCode =
-    typeof window !== "undefined"
-      ? localStorage.getItem("_mkt_ref")
-      : null;
+    typeof window !== "undefined" ? localStorage.getItem("_mkt_ref") : null;
 
   return fetchInstance<IAuthResponseBody>("/auth/register", {
     method: "POST",
@@ -35,8 +34,10 @@ export const registerService = (body: registerFormValues) => {
   });
 };
 
-export const refreshTokenService = (refreshToken: string) =>
-  fetch(`${apiBaseUrl}/auth/refresh-token`, {
+export const refreshTokenService = async (refreshToken: string) => {
+  const country = await resolveCookie("country");
+
+  return fetch(`${apiBaseUrlGlobal}/${country || "uae"}/auth/refresh-token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,3 +45,4 @@ export const refreshTokenService = (refreshToken: string) =>
     body: JSON.stringify({ refresh_token: refreshToken }),
     cache: "no-store",
   });
+};

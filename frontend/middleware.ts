@@ -1,7 +1,8 @@
 import createMiddleware from "next-intl/middleware";
-import { routing } from "./i18n/routing";
+import { getRouting } from "./i18n/routing";
 import { NextRequest, NextResponse } from "next/server";
 import { refreshAccessToken } from "./src/helpers/refresh-token";
+import { getCountriesService } from "./src/services/countries";
 
 const PROTECTED_ROUTES = [
   "/profile",
@@ -34,24 +35,49 @@ function isProtectedRoute(pathname: string): boolean {
       pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
   );
 }
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const authenticated = isAuthenticated(request);
   const protectedRoute = isProtectedRoute(pathname);
   const accessToken = request.cookies.get("access_token")?.value;
   const refreshToken = request.cookies.get("refresh_token")?.value;
-  // refresh token if needed
+  const pathnameCountry = pathname.split("/")[1].split("-")[0];
+  const { data } = await getCountriesService();
+  const isSupportedCountry = data.find(
+    (c) => c.site_code.toLowerCase() === pathnameCountry.toLocaleLowerCase(),
+  );
+
+  let country =
+    isSupportedCountry?.site_code || request.cookies.get("country")?.value;
+
+  // Only fetch + set cookie if not already set
+  if (!country) {
+    try {
+      const geoRes = await fetch("https://ipapi.co/json/");
+      const geoData = await geoRes.json();
+      country = geoData.country_code_iso3.lowercase() ?? "uae";
+    } catch {
+      country = "uae";
+    }
+  }
   if (!accessToken && !!refreshToken) {
     await refreshAccessToken();
   }
-  // If not authenticated and trying to access protected route
+
   if (!authenticated && protectedRoute) {
     return NextResponse.redirect(new URL("/?authDialog=on", request.url));
   }
+  const routing = await getRouting();
+
   const i18nMiddleware = createMiddleware(routing);
-  const response = i18nMiddleware(request);
+  const response = i18nMiddleware(request); // this is the response that actually gets returned
   response.headers.set("x-params", request.nextUrl.searchParams.toString());
+
+  response.cookies.set("country", country as string, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+
   return response;
 }
 export const config = {

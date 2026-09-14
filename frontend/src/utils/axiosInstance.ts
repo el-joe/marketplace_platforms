@@ -1,11 +1,10 @@
 import axios from "axios";
 import { resolveApiFilters } from "@/src/helpers/resolveApiFilters";
 import resolveCookie from "@/src/helpers/resolveCookie";
-import { region } from "@/src/utils/region";
 const baseAPI = process.env.NEXT_PUBLIC_BASE_API_URL;
 
 const axiosInstance = axios.create({
-  baseURL: `${baseAPI}/${region}`,
+  baseURL: `${baseAPI}/uae`,
 });
 
 // ─── Request Interceptor ────────────────────────────────────────────────────
