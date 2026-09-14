@@ -698,7 +698,12 @@
     "placeOrder": "إتمام الطلب",
     "shipment": "الشحنة",
     "getItBy": "احصل عليه بحلول",
-    "payWith": "الدفع باستخدام"
+    "payWith": "الدفع باستخدام",
+    "marketerContractTitle": "الشروط والأحكام",
+    "marketerContractAccept": "أوافق",
+    "marketerContractCancel": "إلغاء",
+    "marketerContractRequiredNotice": "يرجى قراءة الشروط والموافقة عليها قبل إتمام طلبك.",
+    "marketerContractDownload": "عرض ملف PDF"
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!",

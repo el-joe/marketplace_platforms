@@ -131,6 +131,12 @@ export interface IPrepareCheckout {
   loyalty: Loyalty;
   delivery_instructions: DeliveryInstruction[];
   shipment_groups: ShipmentGroup[];
+  marketer_contract_gate: MarketerContractGate | null;
+}
+
+export interface MarketerContractGate {
+  marketer_id: string;
+  is_required: boolean;
 }
 
 export interface Coupon {

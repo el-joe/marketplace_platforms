@@ -701,7 +701,12 @@
     "placeOrder": "Place order",
     "shipment": "Shipment",
     "getItBy": "Get it by",
-    "payWith": "Pay with"
+    "payWith": "Pay with",
+    "marketerContractTitle": "Terms and conditions",
+    "marketerContractAccept": "I agree",
+    "marketerContractCancel": "Cancel",
+    "marketerContractRequiredNotice": "Please read and accept the terms before placing your order.",
+    "marketerContractDownload": "View PDF"
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "Order Placed Successfully!",

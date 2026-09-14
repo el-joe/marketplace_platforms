@@ -11,6 +11,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCheckout } from "./helpers/use-checkout";
 import { useTranslations } from "next-intl";
 import { Spinner } from "@/src/components/ui/spinner";
+import MarketerContractModal from "./marketer-contract-modal";
 
 export default function Checkout() {
   const t = useTranslations("checkout");
@@ -26,6 +27,11 @@ export default function Checkout() {
     isGettingGateways,
     selectedInstruction,
     setSelectedInstruction,
+    contract,
+    isContractModalOpen,
+    closeContractModal,
+    acceptContract,
+    isAcceptingContract,
   } = useCheckout();
   if (
     (isPreparingCheckout && !checkoutData) ||
@@ -104,6 +110,15 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+      {contract && (
+        <MarketerContractModal
+          open={isContractModalOpen}
+          contract={contract}
+          onAccept={acceptContract}
+          onClose={closeContractModal}
+          isSubmitting={isAcceptingContract}
+        />
+      )}
     </div>
   );
 }
