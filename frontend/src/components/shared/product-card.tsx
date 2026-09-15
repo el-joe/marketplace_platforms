@@ -169,15 +169,16 @@ const ProductCard = ({ productData }: Props) => {
           {productData.marketer.name}
         </a>
       )}
-      {"campaign_context" in productData && productData.campaign_context?.vendor_name && (
-        <span className="px-1 lg:px-2.5 text-[8px] md:text-[10px] text-blue-500 font-medium">
-          🛍 {productData.campaign_context.vendor_name}
-        </span>
-      )}
+      {"campaign_context" in productData &&
+        productData.campaign_context?.vendor_name && (
+          <span className="px-1 lg:px-2.5 text-[8px] md:text-[10px] text-blue-500 font-medium">
+            🛍 {productData.campaign_context.vendor_name}
+          </span>
+        )}
       {/* card body (title, rate, price, bottom badge) */}
       {/* <Link href={`/products/${productData.id}`}> */}
-      <Link href={`/products/${productData.url_param}`}>
-        <div className="flex flex-col gap-2 justify-around p-1 lg:p-2.5 flex-1">
+      <Link href={`/products/${productData.url_param}`} className="flex-1">
+        <div className="flex flex-col gap-2 justify-start p-1 lg:p-2.5 h-full">
           {/* title */}
           <h3 className="text-[10px] font-medium md:text-xs lg:text-sm line-clamp-3">
             {productData.name_en}
@@ -207,7 +208,7 @@ const ProductCard = ({ productData }: Props) => {
           {/* bottom badge */}
           {!!productData.shipping_badge && (
             <div
-              className="flex w-fit font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1"
+              className="flex w-fit font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1 mt-auto"
               style={{
                 background: productData?.shipping_badge?.color_hex,
                 color: productData?.shipping_badge?.text_color_hex,

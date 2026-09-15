@@ -52,7 +52,7 @@ export default function ImageMagnifier({
         alt={alt}
         width={width}
         height={height}
-        className="mx-auto h-full object-contain transition w-full"
+        className="mx-auto h-[400px] md:h-full object-contain transition w-full"
         style={{
           scale: showMagnifier ? zoomLevel : 1,
           transformOrigin: `${position.x}% ${position.y}%`,

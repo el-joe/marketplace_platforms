@@ -35,7 +35,7 @@ export default function ProductImagesPreview({ product }: Props) {
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]!">
+    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]! overflow-hidden">
       {" "}
       {/* pagination thumbs */}
       <div className="block min-w-17">
@@ -145,8 +145,8 @@ export default function ProductImagesPreview({ product }: Props) {
               <ImageMagnifier
                 src={image.url || "/images/no-image-available-icon.jpg"}
                 alt=""
-                width={400}
-                height={450}
+                width={600}
+                height={850}
                 zoomLevel={1.7}
               />
             </SwiperSlide>
