@@ -65,7 +65,7 @@ export default function DetailsStep({
   return (
     <FormProvider {...form}>
       <form onSubmit={handleSubmit(onSave)} className="flex flex-col gap-4 p-4">
-        <section className="h-[70vh] overflow-y-auto">
+        <section className="lg:h-[70vh] overflow-y-auto">
           <div className="flex items-center gap-3 rounded-lg border border-border p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

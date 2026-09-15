@@ -23,6 +23,12 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/src/components/ui/input-group";
+import AddAddressModal from "@/src/features/noon/profile/addresses/add-address-modal";
+import { useQuery } from "@tanstack/react-query";
+import { getCountriesService } from "@/src/services/countries";
+import { getCookie } from "cookies-next";
+import useToggleLocale from "@/src/hooks/use-handle-locale";
+import AddressesList from "./addresses-list";
 type props = {
   triggerButton?: React.ReactElement<
     unknown,
@@ -31,42 +37,58 @@ type props = {
   open?: boolean;
   onClose?: () => void;
 };
-const LocationDialog = ({ triggerButton, open, onClose }: props) => {
+const AddressDialog = ({ triggerButton, open, onClose }: props) => {
   const t = useTranslations("header.locationDialog");
+  const country = getCookie("country");
+  const { handleChangeCountry } = useToggleLocale();
+  const {
+    data: countriesData,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: ["countries"],
+    queryFn: getCountriesService,
+  });
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogTrigger render={triggerButton} />
-      <DialogContent className={"min-w-3xl! w-[50vw]  max-w-none!"}>
-        <DialogHeader className="flex flex-row items-center justify-between pe-9">
+      <DialogContent className={"lg:min-w-3xl! lg:w-[50vw]  max-w-7xl!"}>
+        <DialogHeader className="hidden lg:flex flex-row items-center justify-between pe-9">
           <DialogTitle className={"text-xl font-bold"}>
             {t("title")}
           </DialogTitle>
           {/* countries dropdown */}
           <Dropdown
+            contentClasses="w-fit!"
+            menuProps={{ align: "end" }}
             triggerButton={
               <Button
                 className={
                   "bg-gray-2 rounded-md text-primary font-semibold text-base"
                 }
               >
-                <div className="relative">
-                  <Image
-                    src={
-                      "https://f.nooncdn.com/s/app/com/common/images/flags/ae-icon.svg"
-                    }
-                    fill
-                    sizes="100%"
-                    alt="flag"
-                    className="relative!"
-                  />
-                </div>
-                UAE <ChevronDownIcon />
+                <Image
+                  src={
+                    countriesData?.data.find(
+                      (c) =>
+                        c.site_code.toLowerCase() ===
+                        country?.toString().toLowerCase(),
+                    )?.flag_emoji || "/images/no-image-available-icon.jpg"
+                  }
+                  alt="flag"
+                  width={24}
+                  height={24}
+                />
+                {country?.toString().toUpperCase()} <ChevronDownIcon />
               </Button>
             }
             // countries list
-            items={[{ itemLabel: "egypt", value: "EG" }]}
+            items={countriesData?.data.map((c) => ({
+              itemLabel: c.name,
+              value: c.site_code,
+            }))}
             listTitle="countries"
-            onSelect={(item) => console.log(item)}
+            onSelect={(item) => handleChangeCountry(item.value)}
           />
         </DialogHeader>
         <Tabs defaultValue="address">
@@ -97,27 +119,20 @@ const LocationDialog = ({ triggerButton, open, onClose }: props) => {
                 </InputGroupAddon>
               </InputGroup>
               {/* map button */}
-              <Button className={"h-12 justify-start text-blue-2! text-base!"}>
-                <PlusIcon className="size-5 text-blue-2" />
-                {t("addAddress")}
-              </Button>
+              <AddAddressModal
+                onSave={() => {}}
+                trigger={
+                  <Button
+                    className={"h-12 justify-start text-blue-2! text-base!"}
+                  >
+                    <PlusIcon className="size-5 text-blue-2" />
+                    {t("addAddress")}
+                  </Button>
+                }
+              />
               {/* search result */}
-              <div className="flex flex-col items-center h-80 overflow-auto">
-                <div className="relative">
-                  <Image
-                    src={
-                      "https://f.nooncdn.com/s/app/com/noon/design-system/empty-states/addressesV2-new.svg"
-                    }
-                    width={266}
-                    height={266}
-                    alt="empty result"
-                  />
-                </div>
-                <p className="mb-2 font-bold">{t("noSavedAddresses")}</p>
-                <p className="text-secondary max-w-56 text-center">
-                  {t("noSavedAddressesMessage")}
-                </p>
-              </div>
+
+              <AddressesList />
             </div>
           </TabsContent>
           {/* pickup point tap */}
@@ -165,4 +180,4 @@ const LocationDialog = ({ triggerButton, open, onClose }: props) => {
   );
 };
 
-export default LocationDialog;
+export default AddressDialog;

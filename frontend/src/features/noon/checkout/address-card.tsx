@@ -1,5 +1,5 @@
 "use client";
-import LocationDialog from "@/src/components/shared/dialogs/LocationDialog";
+import LocationDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
 import { Button } from "@/src/components/ui/button";
 import { getAddresses } from "@/src/services/address";
 import { useQuery } from "@tanstack/react-query";

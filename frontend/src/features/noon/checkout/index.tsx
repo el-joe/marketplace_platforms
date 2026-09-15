@@ -6,7 +6,7 @@ import ItemsList from "@/src/features/noon/checkout/items-list";
 import PaymentMethodsCard from "@/src/features/noon/checkout/payment-methods-card";
 import PaymentSummary from "@/src/features/noon/checkout/payment-summary";
 import OrderReceiverCard from "@/src/features/noon/checkout/order-receiver-card";
-import LocationDialog from "@/src/components/shared/dialogs/LocationDialog";
+import LocationDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useCheckout } from "./helpers/use-checkout";
 import { useTranslations } from "next-intl";

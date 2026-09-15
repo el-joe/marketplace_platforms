@@ -10,35 +10,17 @@ import {
   LucideProps,
   MapPinIcon,
   Package2Icon,
-  ShoppingCartIcon,
   UserCircleIcon,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-// import useToggleLang from "../hooks/useToggleLang";
-// import SideCategoriesList from "./noon/SideCategoriesList";
-// import Logo from "../components/shared/Logo";
-// import LocationDialog from "../components/shared/dialogs/LocationDialog";
-// import { Button } from "../components/ui/button";
-// import SearchField from "../components/shared/SearchField";
-// import CategoriesNav from "./noon/CategoriesNav";
-// import { useAuthContext } from "../providers/auth-provider";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from "../components/ui/dropdown-menu";
-// import useLocale from "../hooks/use-locale";
 import Image from "next/image";
 import { useCartContext } from "@/src/providers/cart-provider";
 import useLocale from "@/src/hooks/use-locale";
-import useToggleLang from "@/src/hooks/useToggleLang";
 import { useAuthContext } from "@/src/providers/auth-provider";
 import SideCategoriesList from "./SideCategoriesList";
 import Logo from "@/src/components/shared/Logo";
-import LocationDialog from "@/src/components/shared/dialogs/LocationDialog";
+import AddressDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
 import { Button } from "@/src/components/ui/button";
 import SearchField from "./search-field";
 import {
@@ -50,6 +32,7 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import CategoriesNav from "./categories-nav";
 import { HelpSheet } from "@/src/features/help-sheet";
+import useHandleLocale from "@/src/hooks/use-handle-locale";
 
 const profileDropdownLinks: {
   href: string;
@@ -92,7 +75,7 @@ const profileDropdownLinks: {
 const Header = () => {
   const t = useTranslations("header");
   const locale = useLocale();
-  const toggleLang = useToggleLang();
+  const { handleToggleLang } = useHandleLocale();
   const { setAuthDialogIsOpen, isLogged, profile, logout } = useAuthContext();
   const [helpSheetOpen, setHelpSheetOpen] = useState(false);
 
@@ -109,7 +92,7 @@ const Header = () => {
           {/* logo */}
           <Logo />
           {/* location */}
-          <LocationDialog
+          <AddressDialog
             triggerButton={
               <Button
                 variant={"ghost"}
@@ -131,7 +114,7 @@ const Header = () => {
             Icon={LanguagesIcon}
             text={t("otherLang")}
             title={t("switchLangLabel")}
-            onClick={toggleLang}
+            onClick={handleToggleLang}
             className="hidden md:inline-flex"
           />
           {/* login button if no auth */}
@@ -276,7 +259,7 @@ const Header = () => {
           />
           {/* end links */}
           {/* small screen location button */}
-          <LocationDialog
+          <AddressDialog
             triggerButton={
               <Button
                 variant={"ghost"}

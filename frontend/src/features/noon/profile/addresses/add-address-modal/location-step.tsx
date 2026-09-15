@@ -30,7 +30,7 @@ export default function LocationStep({
   const t = useTranslations("profile");
 
   return (
-    <div className="relative flex flex-col">
+    <div className="relative flex flex-col flex-1">
       <div className="absolute inset-s-1/2 top-2 z-10 flex w-[97%] -translate-x-1/2 items-center gap-2">
         <div className="flex-1">
           <Input
@@ -55,7 +55,7 @@ export default function LocationStep({
         center={center}
         onCenterChanged={onCenterChanged}
         pinLabel={t("deliveredHere")}
-        className="h-[444px]!"
+        className="h-[444px]! flex-1 lg:flex-auto"
       />
 
       <div className="flex items-center justify-between gap-4 border-t border-border bg-muted/40 px-6 py-4">

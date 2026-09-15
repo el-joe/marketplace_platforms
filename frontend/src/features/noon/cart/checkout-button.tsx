@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "@/i18n/navigation";
-import LocationDialog from "@/src/components/shared/dialogs/LocationDialog";
+import LocationDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
 import { Button } from "@/src/components/ui/button";
 import { Spinner } from "@/src/components/ui/spinner";
 import { useAuthContext } from "@/src/providers/auth-provider";

@@ -1,3 +1,5 @@
+import resolveCookie from "@/src/helpers/resolveCookie";
+
 export interface MarketerCard {
   id: string;
   name: string;
@@ -13,26 +15,38 @@ export interface MarketerCard {
 
 export interface MarketerListResult {
   items: MarketerCard[];
-  meta: { current_page: number; last_page: number; per_page: number; total: number };
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
 }
-
-import { region } from "@/src/utils/region";
 
 const PUBLIC_BASE = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "/api/public/v1";
 
-export async function getMarketersList(params: { type?: string; page?: number } = {}): Promise<MarketerListResult> {
+export async function getMarketersList(
+  params: { type?: string; page?: number } = {},
+): Promise<MarketerListResult> {
   const query = new URLSearchParams();
   if (params.type) query.set("type", params.type);
   if (params.page) query.set("page", String(params.page));
   query.set("per_page", "24");
+  const country = await resolveCookie("country");
 
-  const res = await fetch(`${PUBLIC_BASE}/${region}/marketers?${query.toString()}`, {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
+  const res = await fetch(
+    `${PUBLIC_BASE}/${country}/marketers?${query.toString()}`,
+    {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    },
+  );
 
   if (!res.ok) {
-    return { items: [], meta: { current_page: 1, last_page: 1, per_page: 24, total: 0 } };
+    return {
+      items: [],
+      meta: { current_page: 1, last_page: 1, per_page: 24, total: 0 },
+    };
   }
 
   const body: { data: MarketerListResult } = await res.json();

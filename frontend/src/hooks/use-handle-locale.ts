@@ -6,23 +6,26 @@ import { useSearchParams } from "next/navigation";
 import useLocale from "./use-locale";
 import { getCookie } from "cookies-next/client";
 
-const useToggleLang = () => {
+const useHandleLocale = () => {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const country = getCookie("country");
+  const country = getCookie("country") as string;
 
-  const changeLanguage = (newLocale: "en" | "ar") => {
+  const changeLocale = (newLang: "en" | "ar", newCountry: string) => {
     const currentParams = new URLSearchParams(Array.from(params.entries()));
     router.replace(`${pathname}?${currentParams}`, {
-      locale: `${country}-${newLocale}`,
+      locale: `${newCountry}-${newLang}`,
     });
   };
   const handleToggleLang = () => {
-    changeLanguage(locale === "en" ? "ar" : "en");
+    changeLocale(locale === "en" ? "ar" : "en", country?.toLowerCase());
   };
-  return handleToggleLang;
+  const handleChangeCountry = (newCountry: string) => {
+    changeLocale(locale, newCountry);
+  };
+  return { handleToggleLang, handleChangeCountry };
 };
 
-export default useToggleLang;
+export default useHandleLocale;
