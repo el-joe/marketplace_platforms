@@ -263,6 +263,7 @@ return [
         'cart' => [
             'insufficient_stock'         => 'Insufficient stock. Only :available unit(s) available.',
             'exceeds_max_order_quantity' => 'Exceeds maximum order quantity for this listing.',
+            'custom_attribute_required'  => 'Please provide all required product options.',
             'max_items'                  => 'Cart cannot exceed :max items.',
             'coupon_usage_limit_reached'  => 'This coupon has reached its total usage limit.',
             'coupon_customer_limit_reached' => 'You have already used this coupon the maximum number of times.',

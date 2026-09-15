@@ -101,10 +101,10 @@ const Footer = async () => {
               {t("contactWithUs")}
             </h5>
             <div className="flex items-center gap-1.5 justify-center">
-              {socialLinks.map((link) => (
+              {socialLinks.map((link, index) => (
                 <Link
                   href={"/"}
-                  key={link.link}
+                  key={index}
                   className="aspect-square w-10 rounded-full bg-yellow-400 grid place-items-center"
                 >
                   <Image src={link.icon} width={20} height={20} alt="" />

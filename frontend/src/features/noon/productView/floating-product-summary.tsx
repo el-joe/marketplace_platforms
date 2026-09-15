@@ -24,6 +24,8 @@ export default function FloatingProductSummary({ product }: Props) {
     window.addEventListener("scroll", () => handleShow());
     return window.removeEventListener("scroll", () => handleShow());
   }, []);
+  console.log(product);
+  
   return (
     <div
       ref={containerRef}

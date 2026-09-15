@@ -71,9 +71,12 @@ export default function CartButton({
           onClose={() => setShowCustomAttributesModal(false)}
           isSubmitting={isMutating}
           onSubmit={(values) => {
-            performAddToCart(values).then(() =>
-              setShowCustomAttributesModal(false),
-            );
+            performAddToCart(values)
+              .then(() => setShowCustomAttributesModal(false))
+              .catch(() => {
+                // onError in use-cart.ts already surfaces a toast; keep the
+                // modal open so the user can retry instead of losing input.
+              });
           }}
         />
       )}
@@ -114,7 +117,11 @@ export default function CartButton({
               setShowCustomAttributesModal(true);
               return;
             }
-            performAddToCart();
+            performAddToCart().catch(() => {
+              // onError in use-cart.ts already surfaces a toast; swallow
+              // here so the rejection doesn't also bubble up as an
+              // uncaught promise.
+            });
           }}
           disabled={isMutating}
           size={"lg"}

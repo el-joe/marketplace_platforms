@@ -3,6 +3,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  allowedDevOrigins: ["127.0.0.1", "localhost", "noon.codefanz.com"],
   images: {
     remotePatterns: [
       {
