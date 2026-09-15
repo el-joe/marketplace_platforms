@@ -26,7 +26,7 @@ export interface Product {
   variant_slug: string;
   product_url: string;
   url_param: string;
-  variant_name: string;
+  variant_name: Name;
   variant_image: string;
   primary_image: string;
   name_en: string;

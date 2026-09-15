@@ -48,7 +48,7 @@ export default function AddedToCartSheet({ productData }: Props) {
   const hasBoughtTogether =
     (productData?.frequently_bought_together?.items?.length ?? 0) > 1;
 
-  const productName = productData?.variant.variant_name;
+  const productName = productData?.variant.variant_name?.[locale];
   const productImage =
     productData?.product?.images?.[0]?.url ||
     "/images/no-image-available-icon.jpg";

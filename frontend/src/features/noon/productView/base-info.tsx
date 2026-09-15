@@ -98,7 +98,8 @@ export default function BaseInfo({ product }: Props) {
       </div>
       {/* product name + variant name */}
       <h3 className="text-xl mt-2 mb-2 font-bold">
-        {product?.variant?.variant_name || product?.product?.name?.[locale]}
+        {product?.variant?.variant_name?.[locale] ||
+          product?.product?.name?.[locale]}
       </h3>
       {/* rate */}
       <div className="flex items-center gap-2">

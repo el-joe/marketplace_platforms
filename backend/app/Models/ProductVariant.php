@@ -180,4 +180,16 @@ class ProductVariant extends Model
 
         return trim(collect([$productName, $detail])->filter()->implode(' '));
     }
+
+    /**
+     * Same as displayName(), but returns both locales at once as {"ar": ..., "en": ...}
+     * so the frontend can pick by the visitor's current locale client-side.
+     */
+    public function displayNamePair(): array
+    {
+        return [
+            'ar' => $this->displayName('ar'),
+            'en' => $this->displayName('en'),
+        ];
+    }
 }

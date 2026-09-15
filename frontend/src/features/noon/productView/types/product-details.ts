@@ -300,7 +300,7 @@ export interface Variant {
   id: string;
   sku: string;
   barcode: string | null;
-  variant_name: string;
+  variant_name: Locales;
   is_default: boolean;
   attributes: Attribute[];
 }

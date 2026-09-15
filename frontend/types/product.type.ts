@@ -1,4 +1,5 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
+import { Name } from "./globals";
 
 export interface IProduct {
   listing_id: string;
@@ -13,7 +14,7 @@ export interface IProduct {
   variant_slug: string;
   product_url: string;
   url_param: string;
-  variant_name: string;
+  variant_name: Name;
   variant_image: string;
   primary_image: string;
   name_en: string;

@@ -569,7 +569,7 @@ class ListingDetailController extends Controller
             'id' => $variant->id,
             'sku' => $variant->sku,
             'barcode' => $variant->barcode,
-            'variant_name' => $variant->displayName(),
+            'variant_name' => $variant->displayNamePair(),
             'is_default' => $variant->is_default,
             'attributes' => $variant->variantAttributes->map(fn($va) => [
                 'attribute_name' => [

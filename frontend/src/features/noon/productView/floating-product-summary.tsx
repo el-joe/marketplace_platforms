@@ -44,7 +44,8 @@ export default function FloatingProductSummary({ product }: Props) {
       />
       <div>
         <h3 className="line-clamp-1 text-base font-semibold">
-          {product.variant?.variant_name || product.product.name[locale]}
+          {product.variant?.variant_name?.[locale] ||
+            product.product.name[locale]}
         </h3>
         <Price
           size="lg"

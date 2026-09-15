@@ -441,7 +441,7 @@ class ListingQueryService
             'variant_slug' => $variant->slug,
             'product_url' => $url,
             'url_param' => $url_param,
-            'variant_name' => $this->customerVariantName($variant, $product),
+            'variant_name' => $this->customerVariantNamePair($variant, $product),
             'variant_image' => $variantImage,
             'primary_image' => $variantImage,
             'images' => $imagesSlider,
@@ -574,7 +574,7 @@ class ListingQueryService
             'slug'             => $product->slug,
             'variant_id'       => $variant->id,
             'variant_slug'     => $variant->slug,
-            'variant_name'     => $this->customerVariantName($variant, $product),
+            'variant_name'     => $this->customerVariantNamePair($variant, $product),
             'variant_image'    => $variantImage,
             'primary_image'    => $variantImage,
             'images'           => $imagesSlider,
@@ -667,7 +667,7 @@ class ListingQueryService
             'variant_slug'      => $variant->slug,
             'product_url'       => $url,
             'url_param'         => $urlParam,
-            'variant_name'      => $this->customerVariantName($variant, $product),
+            'variant_name'      => $this->customerVariantNamePair($variant, $product),
             'variant_image'     => $variantImage,
             'primary_image'     => $variantImage,
             'images'            => $imagesSlider,
@@ -931,5 +931,28 @@ class ListingQueryService
         $detail = $detail ?: $variant->sku;
 
         return trim(collect([$productName, $detail])->filter()->implode(' '));
+    }
+
+    /**
+     * Same as customerVariantName(), but returns both locales at once as
+     * {"ar": ..., "en": ...} so card shapes carry a locale-aware name that the
+     * frontend can pick from directly, instead of one baked to app()->getLocale().
+     */
+    private function customerVariantNamePair(\App\Models\ProductVariant $variant, Product $product): array
+    {
+        $build = function (string $locale) use ($variant, $product): string {
+            $productName = $locale === 'ar' ? $product->name_ar : $product->name_en;
+            $detail = $locale === 'ar'
+                ? ($variant->variant_name_ar ?: $variant->variant_name)
+                : $variant->variant_name;
+            $detail = $detail ?: $variant->sku;
+
+            return trim(collect([$productName, $detail])->filter()->implode(' '));
+        };
+
+        return [
+            'ar' => $build('ar'),
+            'en' => $build('en'),
+        ];
     }
 }
