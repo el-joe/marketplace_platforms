@@ -61,6 +61,12 @@
             updateDimensionsUrl: '{{ route('partner.listings.update-dimensions', $listing->id) }}',
             shippingPreviewUrl: '{{ route('partner.listings.shipping-preview', $listing->id) }}',
             clearCacheUrl: '{{ route('partner.listings.clear-cache', $listing->id) }}',
+            toggleCustomAttributesUrl: '{{ route('partner.listings.products.toggle-custom-attributes', $product->id) }}',
+            customAttributesUrl: '{{ route('partner.listings.custom-attributes.index', $product->id) }}',
+            storeCustomAttributeUrl: '{{ route('partner.listings.custom-attributes.store', $product->id) }}',
+            deleteCustomAttributeBaseUrl: '{{ route('partner.listings.custom-attributes.index', $product->id) }}',
+            productId: '{{ $product->id }}',
+            hasCustomAttributes: {{ $product->has_custom_attributes ? 'true' : 'false' }},
             csrf: '{{ csrf_token() }}',
         };
     </script>
@@ -789,5 +795,173 @@
             </form>
         </div>
     </div>
+
+    {{-- Custom Attributes Card --}}
+    <div class="bg-white rounded-2xl border border-gray-200 p-5 mt-4"
+         x-data="customAttributeManager()"
+         x-init="init()">
+
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h4 class="font-semibold text-gray-800 text-sm">
+                    {{ __('partner.listings.custom_attributes.title') }}
+                </h4>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    {{ __('partner.listings.custom_attributes.description') }}
+                </p>
+            </div>
+
+            <button @click="toggleEnabled()"
+                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0"
+                    :class="enabled ? 'bg-primary-600' : 'bg-gray-200'">
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
+                      :class="enabled ? 'translate-x-6' : 'translate-x-1'"></span>
+            </button>
+        </div>
+
+        <div x-show="enabled" x-cloak class="space-y-2">
+
+            <template x-for="attr in attributes" :key="attr.id">
+                <div class="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800" x-text="attr.label"></p>
+                        <p class="text-xs text-gray-400" x-show="attr.unit" x-text="'Unit: ' + attr.unit"></p>
+                    </div>
+                    <span x-show="attr.is_required"
+                          class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                        {{ __('partner.listings.custom_attributes.required') }}
+                    </span>
+                    <button @click="deleteAttribute(attr.id)"
+                            class="text-gray-400 hover:text-red-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </template>
+
+            <p x-show="attributes.length === 0" class="text-xs text-gray-400 text-center py-4">
+                {{ __('partner.listings.custom_attributes.empty') }}
+            </p>
+
+            <div class="border-t border-gray-100 pt-3 mt-3" x-show="showForm" x-cloak>
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">
+                            {{ __('partner.listings.custom_attributes.label') }}
+                        </label>
+                        <input type="text" x-model="newAttr.label"
+                               placeholder="{{ __('partner.listings.custom_attributes.label_placeholder') }}"
+                               class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">
+                            {{ __('partner.listings.custom_attributes.unit') }}
+                        </label>
+                        <input type="text" x-model="newAttr.unit"
+                               placeholder="{{ __('partner.listings.custom_attributes.unit_placeholder') }}"
+                               class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" x-model="newAttr.is_required" class="rounded">
+                        {{ __('partner.listings.custom_attributes.mark_required') }}
+                    </label>
+                    <div class="flex gap-2 ms-auto">
+                        <button @click="showForm = false; resetForm()"
+                                class="border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                            {{ __('common.cancel') }}
+                        </button>
+                        <button @click="saveAttribute()"
+                                :disabled="!newAttr.label.trim() || saving"
+                                class="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+                            <span x-show="!saving">{{ __('common.save') }}</span>
+                            <span x-show="saving">...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button x-show="!showForm" @click="showForm = true"
+                    class="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium mt-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                {{ __('partner.listings.custom_attributes.add') }}
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function customAttributeManager() {
+            return {
+                enabled: window.LISTING_DETAIL.hasCustomAttributes,
+                attributes: [],
+                showForm: false,
+                saving: false,
+                newAttr: { label: '', unit: '', is_required: false },
+
+                init() {
+                    if (this.enabled) this.load();
+                },
+
+                async load() {
+                    const res = await fetch(window.LISTING_DETAIL.customAttributesUrl, {
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf }
+                    });
+                    const data = await res.json();
+                    this.attributes = data.data ?? [];
+                },
+
+                async toggleEnabled() {
+                    const res = await fetch(window.LISTING_DETAIL.toggleCustomAttributesUrl, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf }
+                    });
+                    const data = await res.json();
+                    this.enabled = data.data?.has_custom_attributes ?? !this.enabled;
+                    if (this.enabled) this.load();
+                },
+
+                async saveAttribute() {
+                    if (!this.newAttr.label.trim()) return;
+                    this.saving = true;
+                    try {
+                        const res = await fetch(window.LISTING_DETAIL.storeCustomAttributeUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf
+                            },
+                            body: JSON.stringify(this.newAttr)
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.attributes.push(data.data);
+                            this.showForm = false;
+                            this.resetForm();
+                        }
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+
+                async deleteAttribute(id) {
+                    const url = window.LISTING_DETAIL.deleteCustomAttributeBaseUrl + '/' + id;
+                    await fetch(url, {
+                        method: 'DELETE',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': window.LISTING_DETAIL.csrf }
+                    });
+                    this.attributes = this.attributes.filter(a => a.id !== id);
+                },
+
+                resetForm() {
+                    this.newAttr = { label: '', unit: '', is_required: false };
+                }
+            };
+        }
+    </script>
 
 @endsection

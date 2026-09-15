@@ -239,6 +239,7 @@ return [
     'featured_on_homepage'  => 'Featured on Homepage',
     'requires_brand_auth'   => 'Requires Brand Auth',
     'is_hazardous'          => 'Hazardous Item',
+    'has_custom_attributes' => 'Has Custom Attributes',
     'age_restricted'         => 'Age Restricted',
     'convert'               => 'Convert',
     'not_available'         => 'N/A',

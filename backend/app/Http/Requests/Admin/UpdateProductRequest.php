@@ -36,6 +36,7 @@ class UpdateProductRequest extends FormRequest
             'is_age_restricted' => ['boolean'],
             'min_age' => ['nullable', 'integer', 'min:1', 'max:99', 'required_if:is_age_restricted,1'],
             'is_hazardous' => ['boolean'],
+            'has_custom_attributes' => ['boolean'],
             'seo_title' => ['nullable', 'string', 'max:70'],
             'seo_description' => ['nullable', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('products', 'slug')->ignore($productId)],

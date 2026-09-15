@@ -17,6 +17,7 @@ return [
     'featured_on_homepage'  => 'مميز على الصفحة الرئيسية',
     'requires_brand_auth'   => 'يتطلب موافقة العلامة التجارية',
     'is_hazardous'          => 'منتج خطير',
+    'has_custom_attributes' => 'يحتوي على خصائص مخصصة',
     'age_restricted'         => 'مقيد بالعمر',
     'listings'              => 'القوائم',
     'inventory'             => 'المخزون',

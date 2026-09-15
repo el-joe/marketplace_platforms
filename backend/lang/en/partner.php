@@ -226,6 +226,18 @@ return [
 
     'listings' => [
         'title' => 'Listings',
+        'custom_attributes' => [
+            'title' => 'Custom Order Fields',
+            'description' => 'Fields customers fill in at checkout (e.g. engraving text, custom size). Applies to all vendors selling this product.',
+            'add' => 'Add field',
+            'label' => 'Field label',
+            'label_placeholder' => 'e.g. Engraving text',
+            'unit' => 'Unit (optional)',
+            'unit_placeholder' => 'e.g. chars',
+            'mark_required' => 'Required',
+            'required' => 'Required',
+            'empty' => 'No custom fields yet. Add one below.',
+        ],
         'add_product_listing_title' => 'Add Product Listing',
         'create_listing' => 'Create Listing',
         'sale_price' => 'Sale Price',
