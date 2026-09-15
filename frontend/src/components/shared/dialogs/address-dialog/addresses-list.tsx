@@ -13,8 +13,7 @@ export default function AddressesList() {
     queryFn: getAddresses,
   });
   return (
-    <div className="flex flex-col overflow-auto w-full gap-2">
-      {}
+    <div className="overflow-auto w-full h-[330px]">
       {isPending ? (
         <>
           <Skeleton className="h-28" />
@@ -45,6 +44,7 @@ export default function AddressesList() {
             receiverName={address.recipient_name}
             receiverPhone={address.recipient_phone}
             verified={false}
+            className="mb-2"
           />
         ))
       )}
