@@ -206,14 +206,14 @@
                         function updatePreview(type) {
                             const pct = parseFloat(document.querySelector('[name="commission_' + type + '_pct"]').value) || 0;
                             const fixed = parseInt(document.querySelector('[name="commission_' + type + '_fixed"]').value) || 0;
-                            const examplePrice = 10000;
+                            const examplePrice = 100; // base-currency integer (e.g. 100 AED)
                             const exampleQty = 2;
                             const commissionPerUnit = Math.round(examplePrice * pct / 100) + fixed;
                             const total = commissionPerUnit * exampleQty;
                             document.getElementById(type + '-preview').textContent =
-                                '(' + (examplePrice / 100).toFixed(2) + ' × ' + pct + '%) + ' + (fixed / 100).toFixed(2) +
-                                ' = ' + (commissionPerUnit / 100).toFixed(2) + ' per unit × ' + exampleQty +
-                                ' = ' + (total / 100).toFixed(2) + ' total';
+                                '(' + examplePrice.toFixed(2) + ' × ' + pct + '%) + ' + fixed.toFixed(2) +
+                                ' = ' + commissionPerUnit.toFixed(2) + ' per unit × ' + exampleQty +
+                                ' = ' + total.toFixed(2) + ' total';
                         }
                         document.addEventListener('DOMContentLoaded', function () {
                             ['fbp', 'fbn'].forEach(function (t) {

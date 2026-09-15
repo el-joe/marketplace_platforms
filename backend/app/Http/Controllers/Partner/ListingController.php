@@ -12,6 +12,7 @@ use App\Models\Admin;
 use App\Models\Country;
 use App\Models\InventoryMovement;
 use App\Models\Product;
+use App\Models\ProductCustomAttribute;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\VendorListing;
@@ -578,6 +579,106 @@ class ListingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Listing cache cleared. Changes are now live in the customer app.',
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Custom attributes (product_custom_attributes) — shared per-product,
+    // order-scoped fields. Ownership: vendor must have >=1 active listing on
+    // the product (not exclusive), mirroring ProductCustomAttributeController.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private function assertVendorSellsProduct(Product $product): void
+    {
+        $sells = VendorListing::where('vendor_id', $this->vendor()->id)
+            ->where('status', VendorListingStatus::Active)
+            ->whereHas('productVariant', fn ($q) => $q->where('product_id', $product->id))
+            ->exists();
+
+        abort_unless($sells, 403, __('common.exceptions.unauthorized'));
+    }
+
+    private function presentCustomAttribute(ProductCustomAttribute $attribute): array
+    {
+        return [
+            'id' => $attribute->id,
+            'product_id' => $attribute->product_id,
+            'label' => $attribute->label,
+            'unit' => $attribute->unit,
+            'is_required' => (bool) $attribute->is_required,
+            'sort_order' => $attribute->sort_order,
+        ];
+    }
+
+    public function customAttributesIndex(Product $product): JsonResponse
+    {
+        $this->assertVendorSellsProduct($product);
+
+        $attributes = $product->customAttributes()->get();
+
+        return response()->json(['success' => true, 'data' => $attributes->map(fn (ProductCustomAttribute $a) => $this->presentCustomAttribute($a))]);
+    }
+
+    public function customAttributesStore(Request $request, Product $product): JsonResponse
+    {
+        $this->assertVendorSellsProduct($product);
+
+        $validated = $request->validate([
+            'label' => ['required', 'string', 'max:255'],
+            'unit' => ['nullable', 'string', 'max:50'],
+            'is_required' => ['nullable', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $attribute = $product->customAttributes()->create([
+            'label' => $validated['label'],
+            'unit' => $validated['unit'] ?? null,
+            'is_required' => $validated['is_required'] ?? false,
+            'sort_order' => $validated['sort_order'] ?? 0,
+        ]);
+
+        return response()->json(['success' => true, 'data' => $this->presentCustomAttribute($attribute)], 201);
+    }
+
+    public function customAttributesUpdate(Request $request, Product $product, ProductCustomAttribute $customAttribute): JsonResponse
+    {
+        $this->assertVendorSellsProduct($product);
+        abort_unless($customAttribute->product_id === $product->id, 404);
+
+        $validated = $request->validate([
+            'label' => ['sometimes', 'required', 'string', 'max:255'],
+            'unit' => ['nullable', 'string', 'max:50'],
+            'is_required' => ['nullable', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $customAttribute->update($validated);
+
+        return response()->json(['success' => true, 'data' => $this->presentCustomAttribute($customAttribute)]);
+    }
+
+    public function customAttributesDestroy(Product $product, ProductCustomAttribute $customAttribute): JsonResponse
+    {
+        $this->assertVendorSellsProduct($product);
+        abort_unless($customAttribute->product_id === $product->id, 404);
+
+        $customAttribute->delete();
+
+        return response()->json(['success' => true, 'data' => null]);
+    }
+
+    public function toggleCustomAttributes(Product $product): JsonResponse
+    {
+        $this->assertVendorSellsProduct($product);
+
+        $product->update(['has_custom_attributes' => ! $product->has_custom_attributes]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'product_id' => $product->id,
+                'has_custom_attributes' => (bool) $product->has_custom_attributes,
+            ],
         ]);
     }
 

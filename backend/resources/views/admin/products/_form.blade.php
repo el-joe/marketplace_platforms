@@ -1003,6 +1003,7 @@
 
                 <x-form.toggle name="is_featured"         label="{{ __('admin.featured_on_homepage') }}" :value="$bool('is_featured')" />
                 <x-form.toggle name="is_hazardous"        label="{{ __('admin.is_hazardous') }}"       :value="$bool('is_hazardous')" />
+                <x-form.toggle name="has_custom_attributes" label="{{ __('admin.has_custom_attributes') }}" :value="$bool('has_custom_attributes')" />
 
                 {{-- is_age_restricted — synced to Alpine isAgeRestricted --}}
                 <label class="flex items-center gap-3 py-2 cursor-pointer select-none w-full group">

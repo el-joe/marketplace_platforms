@@ -135,6 +135,16 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::post('/{listing}/clear-cache', 'clearCache')
             ->name('clear-cache')
             ->middleware('vendor.can:listings.view');
+
+        Route::prefix('products/{product}/custom-attributes')->name('custom-attributes.')->group(function () {
+            Route::get('/', 'customAttributesIndex')->name('index')->middleware('vendor.can:listings.view');
+            Route::post('/', 'customAttributesStore')->name('store')->middleware('vendor.can:listings.edit');
+            Route::put('/{customAttribute}', 'customAttributesUpdate')->name('update')->middleware('vendor.can:listings.edit');
+            Route::delete('/{customAttribute}', 'customAttributesDestroy')->name('destroy')->middleware('vendor.can:listings.edit');
+        });
+        Route::post('/products/{product}/toggle-custom-attributes', 'toggleCustomAttributes')
+            ->name('products.toggle-custom-attributes')
+            ->middleware('vendor.can:listings.edit');
     });
 
     // ── Inventory module ─────────────────────────────────────────────────────
