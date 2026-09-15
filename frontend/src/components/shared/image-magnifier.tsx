@@ -45,14 +45,14 @@ export default function ImageMagnifier({
       onMouseEnter={() => setShowMagnifier(true)}
       onMouseLeave={() => setShowMagnifier(false)}
       onMouseMove={handleMouseMove}
-      className="cursor-zoom-in py-10 px-4 h-full"
+      className="cursor-zoom-in h-full"
     >
       <Image
         src={src}
         alt={alt}
         width={width}
         height={height}
-        className="mx-auto h-[400px] md:h-full object-contain transition w-full"
+        className="mx-auto max-h-full object-contain transition w-full"
         style={{
           scale: showMagnifier ? zoomLevel : 1,
           transformOrigin: `${position.x}% ${position.y}%`,
