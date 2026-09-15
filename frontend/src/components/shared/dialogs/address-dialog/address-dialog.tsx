@@ -29,6 +29,7 @@ import { getCountriesService } from "@/src/services/countries";
 import { getCookie } from "cookies-next";
 import useToggleLocale from "@/src/hooks/use-handle-locale";
 import AddressesList from "./addresses-list";
+import { useAddressFormActions } from "@/src/features/noon/profile/addresses/helpers/use-address-form-actions";
 type props = {
   triggerButton?: React.ReactElement<
     unknown,
@@ -41,6 +42,7 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
   const t = useTranslations("header.locationDialog");
   const country = getCookie("country");
   const { handleChangeCountry } = useToggleLocale();
+  const { saveNewAddress } = useAddressFormActions();
   const {
     data: countriesData,
     isFetching,
@@ -52,7 +54,11 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogTrigger render={triggerButton} />
-      <DialogContent className={"lg:min-w-3xl! lg:w-[50vw]  max-w-7xl!"}>
+      <DialogContent
+        className={
+          "lg:min-w-3xl! lg:w-[50vw]  max-w-7xl! h-[70vh] flex flex-col"
+        }
+      >
         <DialogHeader className="hidden lg:flex flex-row items-center justify-between pe-9">
           <DialogTitle className={"text-xl font-bold"}>
             {t("title")}
@@ -91,7 +97,7 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
             onSelect={(item) => handleChangeCountry(item.value)}
           />
         </DialogHeader>
-        <Tabs defaultValue="address">
+        <Tabs defaultValue="address" className={"flex-1"}>
           <TabsList
             variant="line"
             className={
@@ -120,7 +126,7 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
               </InputGroup>
               {/* map button */}
               <AddAddressModal
-                onSave={() => {}}
+                onSave={saveNewAddress}
                 trigger={
                   <Button
                     className={"h-12 justify-start text-blue-2! text-base!"}
