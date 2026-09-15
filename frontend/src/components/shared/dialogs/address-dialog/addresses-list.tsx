@@ -13,7 +13,7 @@ export default function AddressesList() {
     queryFn: getAddresses,
   });
   return (
-    <div className="overflow-auto w-full h-[330px]">
+    <div className="overflow-auto w-full min-h-[330px]">
       {isPending ? (
         <>
           <Skeleton className="h-28" />
