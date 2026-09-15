@@ -144,7 +144,11 @@ export default async function ProductView({ slug }: { slug: string }) {
             />
           )}
           {/* floating add to cart button for small screens */}
-          <FloatingCartButton listingId={productData.listing.listing_id} />
+          <FloatingCartButton
+            listingId={productData.listing.listing_id}
+            hasCustomAttributes={!!productData.product.has_custom_attributes}
+            customAttributes={productData.product.custom_attributes ?? []}
+          />
           <FloatingProductSummary product={productData} />
           {/* added to cart side sheet */}
           <AddedToCartSheet productData={productData} />
