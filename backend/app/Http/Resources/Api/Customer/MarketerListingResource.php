@@ -18,8 +18,6 @@ class MarketerListingResource extends JsonResource
         $listing = $this->resource;
         $variant = $listing->productVariant;
         $product = $variant->product;
-        $marketer = $listing->marketer;
-
         $primaryImage = $variant->images->firstWhere('is_primary', true)
             ?? $variant->images->first()
             ?? $product->images->firstWhere('is_primary', true)
@@ -48,8 +46,11 @@ class MarketerListingResource extends JsonResource
 
         $imagesSlider = array_values(array_merge($variantImagesSlider, $productImagesSlider));
 
-        $url = route('customer.listing.show', [$this->country->site_code, $variant->id . '--' . $listing->id]);
-        $urlParam = $variant->id . '--' . $listing->id;
+        $url_param = $variant->id . '--' . $listing->id;
+        $url = route('customer.listing.show', [$this->country->site_code, $url_param]);
+
+        $marketer = $listing->marketer;
+        $profile = $marketer?->marketerProfile;
 
         return [
             'listing_id' => $listing->id,
@@ -57,20 +58,25 @@ class MarketerListingResource extends JsonResource
             'variant_id' => $variant->id,
             'variant_name' => $variant->setRelation('product', $product)->displayName(),
             'product_url' => $url,
-            'url_param' => $urlParam,
+            'url_param' => $url_param,
             'primary_image' => $primaryImage?->url,
             'images' => $imagesSlider,
             'price' => (int) $listing->price,
             'compare_at_price' => $listing->compare_at_price !== null ? (int) $listing->compare_at_price : null,
             'currency' => $listing->currency ?? $this->country->currency_code,
             'condition' => $listing->condition,
-            'global_system_type' => null,
             'status' => $listing->status,
             'rating_avg' => (float) $listing->rating_avg,
             'rating_count' => (int) $listing->rating_count,
             'total_sold' => (int) $listing->total_sold,
-            'vendor_covers_delivery' => false,
             'shipping_badge' => null,
+            'referral_code' => $listing->referral_code,
+            'marketer' => $marketer ? [
+                'id' => $marketer->id,
+                'name' => $marketer->name,
+                'profile_slug' => $profile?->profile_slug,
+                'profile_url' => $profile?->profile_slug ? "/marketers/{$profile->profile_slug}" : null,
+            ] : null,
             'brand' => $product->brand ? [
                 'id'       => $product->brand->id,
                 'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
@@ -102,12 +108,6 @@ class MarketerListingResource extends JsonResource
                 'name_ar' => $variant->name_ar,
                 'name_en' => $variant->name_en,
             ],
-            'marketer' => $marketer ? [
-                'id'            => $marketer->id,
-                'name'          => $marketer->name,
-                'marketer_type' => $marketer->marketer_type,
-            ] : null,
-            'referral_code' => $listing->referral_code,
         ];
     }
 }

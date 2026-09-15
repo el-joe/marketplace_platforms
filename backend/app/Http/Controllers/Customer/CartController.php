@@ -87,6 +87,9 @@ class CartController extends Controller
             'items.adminListing.productVariant.images',
             'items.adminListing.warehouseInventories',
             'items.adminListing.primaryShippingMethod',
+            'items.marketerListing.productVariant.product.category',
+            'items.marketerListing.productVariant.product.images',
+            'items.marketerListing.productVariant.images',
             'items.selectedShippingMethod',
             'items.warrantyPlan',
             'coupon',
@@ -266,7 +269,7 @@ class CartController extends Controller
 
         return $this->cartResponse($cart, [
             'item' => new CartItemResource($item),
-            'listing_ref' => $isAdmin ? null : $this->listingIdentifierService->buildListingRef($item->vendorListing),
+            'listing_ref' => $listingType === 'vendor' ? $this->listingIdentifierService->buildListingRef($item->vendorListing) : null,
         ], __('common.exceptions.cart.item_added'), 201);
     }
 
@@ -307,12 +310,14 @@ class CartController extends Controller
             'adminListing.productVariant.product.images',
             'adminListing.productVariant.images',
             'adminListing.warehouseInventories',
+            'marketerListing.productVariant.product.images',
+            'marketerListing.productVariant.images',
             'selectedShippingMethod',
         ]);
 
         $listing = $item->vendor_listing_id
             ? $item->vendorListing
-            : $item->adminListing;
+            : ($item->admin_listing_id ? $item->adminListing : null);
 
         return ApiResponse::success([
             'cart'        => new CartResource($cart),

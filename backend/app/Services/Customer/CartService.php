@@ -358,6 +358,18 @@ class CartService
     public function updateItem(Cart $cart, string $itemId, int $quantity, ?string $shippingMethodId, bool $shippingMethodProvided, string $countryId): CartItem
     {
         $item = $cart->items()->findOrFail($itemId);
+
+        if ($item->marketer_listing_id !== null) {
+            \App\Models\MarketerListing::where('id', $item->marketer_listing_id)
+                ->where('status', 'active')
+                ->firstOrFail();
+
+            $item->update(['quantity' => $quantity]);
+            $this->recalculateCart($cart);
+
+            return $item->fresh();
+        }
+
         $listingId = $item->vendor_listing_id ?? $item->admin_listing_id;
         $listingType = $item->vendor_listing_id ? 'vendor_listing' : 'admin_listing';
         $listing = $item->vendor_listing_id

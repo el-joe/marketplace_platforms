@@ -137,6 +137,11 @@ class WishlistController extends Controller
                 'classifiedListing.images',
                 'classifiedListing.city',
                 'classifiedListing.seller',
+                'marketerListing.productVariant.product.category',
+                'marketerListing.productVariant.product.images',
+                'marketerListing.productVariant.product.brand',
+                'marketerListing.productVariant.images',
+                'marketerListing.marketer.marketerProfile',
             ])
             ->orderByDesc('added_at')
             ->paginate(15);

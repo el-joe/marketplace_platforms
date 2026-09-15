@@ -30,6 +30,20 @@ class WishlistItemResource extends JsonResource
             ];
         }
 
+        if ($item->marketer_listing_id) {
+            $listing = $item->marketerListing;
+
+            return [
+                'id' => $item->id,
+                'added_at' => $item->added_at,
+                'type' => 'product',
+                'listing_type' => 'marketer_listing',
+                'listing' => $listing
+                    ? (new MarketerListingResource($listing, $this->country))->toArray($request)
+                    : null,
+            ];
+        }
+
         $isAdmin = !is_null($item->admin_listing_id);
         $listing = $isAdmin ? $item->adminListing : $item->vendorListing;
 

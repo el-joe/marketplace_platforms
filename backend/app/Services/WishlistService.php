@@ -155,6 +155,8 @@ class WishlistService
                             $q->where('vendor_listing_id', $item->vendor_listing_id);
                         } elseif ($item->admin_listing_id) {
                             $q->where('admin_listing_id', $item->admin_listing_id);
+                        } elseif ($item->marketer_listing_id) {
+                            $q->where('marketer_listing_id', $item->marketer_listing_id);
                         } else {
                             $q->where('classified_listing_id', $item->classified_listing_id);
                         }
