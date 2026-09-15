@@ -14,6 +14,10 @@ class SponsoredProductService
 {
     private const SPONSORED_SLOTS = [1, 5, 9];
 
+    public function __construct(private ListingQueryService $listings)
+    {
+    }
+
     /**
      * Inject sponsored products at fixed positions 1, 5, 9 (1-based) into a paginated items array.
      * Only injects on page 1.
@@ -48,35 +52,24 @@ class SponsoredProductService
             }
 
             $listing = $sponsored->shift();
-            $baseProduct = $listing->productVariant->product ?? null;
-
-            if (!$baseProduct) {
-                continue;
-            }
-
-            // Re-fetch through the same enriched query used for normal listings so
-            // price_range, images, category_name, stock, etc. are populated instead
-            // of coming back null/empty from a bare Eloquent relation load.
-            $product = app(ProductQueryService::class)
-                ->baseQuery($country)
-                ->where('products.id', $baseProduct->id)
-                ->first();
+            $product = $listing->productVariant->product ?? null;
 
             if (!$product) {
                 continue;
             }
 
-            $product->load('images');
-
-            $product->setAttribute('buy_box_listing_id', $listing->id);
-            $product->setAttribute('buy_box_variant_id', $listing->productVariant->id);
-            $product->setAttribute('buy_box_variant_slug', $listing->productVariant->slug);
-            $product->setAttribute('buy_box_variant_name', $listing->productVariant->variant_name);
-            $product->setAttribute('buy_box_variant_name_ar', $listing->productVariant->variant_name_ar);
-
+            // Shape sponsored items through the exact same card builder used for
+            // normal listings (and by the page builder) so the frontend always
+            // gets a consistent flat shape — price, currency, images, etc.
             $sponsoredItem = array_merge(
-                (new \App\Http\Resources\Customer\ProductListResource($product))->resolve(),
-                ['is_sponsored' => true, '_sponsored_listing_id' => $listing->id]
+                $this->listings->toCardShape(
+                    listing: $listing,
+                    product: $product,
+                    country: $country,
+                    isWishlisted: false,
+                    isSponsored: true,
+                ),
+                ['_sponsored_listing_id' => $listing->id]
             );
 
             array_splice($items, $position - 1, 0, [$sponsoredItem]);
@@ -198,7 +191,15 @@ class SponsoredProductService
     private function fetchSponsored(Country $country, int $limit): Collection
     {
         return \App\Models\VendorListing::query()
-            ->with(['productVariant.product'])
+            ->with([
+                'vendor:id,store_name,store_rating_avg',
+                'productVariant.images',
+                'productVariant.product.images',
+                'productVariant.product.category',
+                'productVariant.product.brand',
+                'productVariant.product.customAttributes',
+                'primaryShippingMethod',
+            ])
             ->join('ad_campaign_products as acp', 'acp.vendor_listing_id', '=', 'vendor_listings.id')
             ->join('ad_campaigns as ac', function ($j) use ($country) {
                 $j->on('ac.id', '=', 'acp.ad_campaign_id')

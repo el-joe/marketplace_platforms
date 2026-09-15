@@ -71,6 +71,21 @@ const SpecialProductCard = ({ productData }: Props) => {
           currency={productData.currency}
           size="sm"
         />
+
+        {!!productData.shipping_badge && (
+          <div
+            className="flex w-fit font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1"
+            style={{
+              background: productData.shipping_badge.color_hex,
+              color: productData.shipping_badge.text_color_hex,
+            }}
+          >
+            <span>
+              {productData.shipping_badge.label?.[locale] ??
+                productData.shipping_badge.label?.en}
+            </span>
+          </div>
+        )}
       </div>
     </Link>
   );

@@ -89,8 +89,8 @@ export interface ShippingBadge {
   label_ar?: string;
   color_hex: string;
   text_color_hex: string;
-  delivery_days_min: number;
-  delivery_days_max: number;
+  delivery_days_min: number | null;
+  delivery_days_max: number | null;
   label?: Name;
 }
 

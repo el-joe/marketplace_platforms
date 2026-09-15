@@ -72,7 +72,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
           </div>
           <Image
             src={p?.thumbnail || "/images/no-image-available-icon.jpg"}
-            alt={p.name_en}
+            alt={locale === "ar" ? p.name_ar : p.name_en}
             width={140}
             height={110}
             className="h-27.5 object-contain"

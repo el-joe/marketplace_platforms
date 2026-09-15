@@ -206,7 +206,13 @@
     "topPicksForYou": "الأفضل لك",
     "viewAllReviews": "عرض جميع المراجعات",
     "Qty": "الكمية",
-    "allReviewsImages": "جميع صور المراجعات"
+    "allReviewsImages": "جميع صور المراجعات",
+    "day": "يوم",
+    "addedToTheCart": "تمت الإضافة إلى السلة",
+    "inYourCart": "في سلتك",
+    "megaDeal": "صفقة ضخمة 📣",
+    "freeDelivery": "توصيل مجاني",
+    "noonExpress": "نون إكسبريس"
   },
   "profile": {
     "disputes": "النزاعات",

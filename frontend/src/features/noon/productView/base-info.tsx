@@ -34,7 +34,7 @@ export default function BaseInfo({ product }: Props) {
     <>
       <div className="flex mb-5">
         <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
-          Mega deal 📣
+          {t("megaDeal")}
         </Badge>
         {!!isInCart && (
           <Badge className="text-sm font-bold bg-green text-white ms-auto">
@@ -122,7 +122,7 @@ export default function BaseInfo({ product }: Props) {
           // discountPercent={product.discount}
         />
         <div className="bg-gray-2 px-2 py-1 flex items-center gap-2 rounded-md">
-          <CarIcon className="size-4 text-orange" /> Free Delivery
+          <CarIcon className="size-4 text-orange" /> {t("freeDelivery")}
         </div>
         <Link
           href={`/bestseller/${product.product.category.slug}`}

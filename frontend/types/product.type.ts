@@ -74,8 +74,8 @@ export interface ShippingBadge {
   color_hex: string;
   text_color_hex: string;
   badge_image_url: string | null;
-  delivery_days_min: number;
-  delivery_days_max: number;
+  delivery_days_min: number | null;
+  delivery_days_max: number | null;
   is_express: boolean;
 }
 

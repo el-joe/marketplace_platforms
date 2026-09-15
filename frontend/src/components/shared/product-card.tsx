@@ -157,7 +157,7 @@ const ProductCard = ({ productData }: Props) => {
       {/* admin listing badge */}
       {productData.listing_type === "admin" && (
         <span className="px-1 lg:px-2.5 text-[9px] md:text-xs text-yellow-600 font-bold uppercase tracking-wide">
-          Noon Express
+          {t("noonExpress")}
         </span>
       )}
       {/* marketer attribution — outside the card Link to avoid nested anchors */}
@@ -181,7 +181,7 @@ const ProductCard = ({ productData }: Props) => {
         <div className="flex flex-col gap-2 justify-start p-1 lg:p-2.5 h-full">
           {/* title */}
           <h3 className="text-[10px] font-medium md:text-xs lg:text-sm line-clamp-3">
-            {productData.name_en}
+            {locale === "ar" ? productData.name_ar : productData.name_en}
           </h3>
           {!!productData.variant_name?.[locale] && (
             <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-full line-clamp-1 overflow-hidden">
@@ -215,13 +215,19 @@ const ProductCard = ({ productData }: Props) => {
               }}
             >
               <span>⚡{t("getIn")} </span>
-              <span>
-                {t("$day", {
-                  value:
-                    productData?.shipping_badge?.delivery_days_min ||
-                    productData?.shipping_badge?.delivery_days_max,
-                })}
-              </span>
+              {(() => {
+                const days =
+                  productData?.shipping_badge?.delivery_days_min ??
+                  productData?.shipping_badge?.delivery_days_max;
+                return days != null ? (
+                  <span>{t("$day", { value: days })}</span>
+                ) : (
+                  <span>
+                    {productData?.shipping_badge?.label?.[locale] ??
+                      productData?.shipping_badge?.label?.en}
+                  </span>
+                );
+              })()}
               <ChevronRightIcon className="size-3 lg:size-5" />
             </div>
           )}
