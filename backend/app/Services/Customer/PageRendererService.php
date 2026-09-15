@@ -444,7 +444,7 @@ class PageRendererService
     {
         $blockProducts = PageBlockProduct::where('page_block_id', $block->id)
             ->when($tabIndex !== null, fn ($q) => $q->where('tab_index', $tabIndex))
-            ->with(['productVariant.product.images', 'productVariant.product.category', 'productVariant.images'])
+            ->with(['productVariant.product.images', 'productVariant.product.category', 'productVariant.product.customAttributes', 'productVariant.images'])
             ->orderBy('position')
             ->when($limit !== null, fn ($q) => $q->limit($limit))
             ->get();
@@ -569,6 +569,7 @@ class PageRendererService
                 'vendorListing.vendor:id,store_name,store_rating_avg',
                 'vendorListing.primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
                 'vendorListing.productVariant.product.images',
+                'vendorListing.productVariant.product.customAttributes',
                 'vendorListing.productVariant.images',
             ])
             ->orderBy('created_at')
@@ -1110,7 +1111,7 @@ class PageRendererService
             $adminListings = \App\Models\AdminListing::where('country_id', $country->id)
                 ->where('status', 'active')
                 ->where('search_boost', '>', 0)
-                ->with(['productVariant.product.images', 'primaryShippingMethod'])
+                ->with(['productVariant.product.images', 'productVariant.product.customAttributes', 'primaryShippingMethod'])
                 ->orderByDesc('search_boost')
                 ->limit((int) ceil($maxProducts / 2))
                 ->get();
@@ -1119,7 +1120,7 @@ class PageRendererService
                 ->where('status', VendorListingStatus::Active->value)
                 ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
                 ->where('score', '>', 0)
-                ->with(['vendor', 'productVariant.product.images', 'primaryShippingMethod'])
+                ->with(['vendor', 'productVariant.product.images', 'productVariant.product.customAttributes', 'primaryShippingMethod'])
                 ->orderByDesc('score')
                 ->limit((int) ceil($maxProducts / 2))
                 ->get();

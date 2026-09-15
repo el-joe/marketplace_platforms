@@ -24,7 +24,12 @@ const MegaDealsCard = ({ data }: { data: Product }) => {
           className="h-46 lg:h-18 xl:h-22 2xl:h-40 object-contain"
         />
         {/* add to cat button */}
-        <AddToCartButton listingId={data?.listing_id} size="sm" />
+        <AddToCartButton
+          listingId={data?.listing_id}
+          size="sm"
+          hasCustomAttributes={!!data?.has_custom_attributes}
+          customAttributes={data?.custom_attributes ?? []}
+        />
       </div>
       {/* body */}
       <Link

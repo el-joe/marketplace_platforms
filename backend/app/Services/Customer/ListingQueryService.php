@@ -622,6 +622,16 @@ class ListingQueryService
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
                 'is_express'       => (bool) $listing->primaryShippingMethod->is_express_type,
             ] : null,
+            'has_custom_attributes' => (bool) $product->has_custom_attributes,
+            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
+                ? $product->customAttributes->map(fn ($a) => [
+                    'id'          => $a->id,
+                    'label'       => $a->label,
+                    'unit'        => $a->unit,
+                    'is_required' => (bool) $a->is_required,
+                    'sort_order'  => $a->sort_order,
+                ])->values()->all()
+                : [],
         ];
     }
 
@@ -700,6 +710,16 @@ class ListingQueryService
             'total_sold'        => $listing->total_sold,
             'is_wishlisted'     => $isWishlisted,
             'is_sponsored'      => false,
+            'has_custom_attributes' => (bool) $product->has_custom_attributes,
+            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
+                ? $product->customAttributes->map(fn ($a) => [
+                    'id'          => $a->id,
+                    'label'       => $a->label,
+                    'unit'        => $a->unit,
+                    'is_required' => (bool) $a->is_required,
+                    'sort_order'  => $a->sort_order,
+                ])->values()->all()
+                : [],
         ];
     }
 

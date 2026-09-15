@@ -31,6 +31,7 @@ class CartRecommendationService
         'productVariant.product.images',
         'productVariant.product.category:id,name_en,name_ar,slug',
         'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+        'productVariant.product.customAttributes',
         'vendor:id,store_name,store_rating_avg',
         'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
     ];
@@ -40,6 +41,7 @@ class CartRecommendationService
         'productVariant.product.images',
         'productVariant.product.category:id,name_en,name_ar,slug',
         'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
+        'productVariant.product.customAttributes',
         'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
     ];
 

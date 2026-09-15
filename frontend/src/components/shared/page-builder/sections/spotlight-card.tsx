@@ -22,7 +22,12 @@ const SpotlightCard = ({ data }: { data: Product }) => {
           </div>
         )}
         {/* cart button */}
-        <AddToCartButton listingId={data?.listing_id} size="sm" />
+        <AddToCartButton
+          listingId={data?.listing_id}
+          size="sm"
+          hasCustomAttributes={!!data?.has_custom_attributes}
+          customAttributes={data?.custom_attributes ?? []}
+        />
         {/* image */}
         <Image
           src={

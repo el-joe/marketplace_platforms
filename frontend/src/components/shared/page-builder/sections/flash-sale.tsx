@@ -78,7 +78,12 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             className="h-27.5 object-contain"
           />
           {/* cart button */}
-          <AddToCartButton listingId={p?.listing_id} size="sm" />
+          <AddToCartButton
+            listingId={p?.listing_id}
+            size="sm"
+            hasCustomAttributes={!!p?.has_custom_attributes}
+            customAttributes={p?.custom_attributes ?? []}
+          />
         </div>
         <div className="flex-1 flex flex-col justify-evenly h-32">
           <h4 className="line-clamp-2">

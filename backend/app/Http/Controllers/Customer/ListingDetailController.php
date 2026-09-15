@@ -77,7 +77,7 @@ class ListingDetailController extends Controller
     {
         $country = $request->attributes->get('country');
 
-        if (! preg_match('/^(v|p)-([0-9a-f\-]{36})$/i', $typeAndId, $m)) {
+        if (!preg_match('/^(v|p)-([0-9a-f\-]{36})$/i', $typeAndId, $m)) {
             return ApiResponse::error(__('common.exceptions.listing_detail.not_found'), [], 404);
         }
 
@@ -93,6 +93,7 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
+                    'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
                     'primaryShippingMethod',
@@ -108,6 +109,7 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
+                    'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
                     'vendor:id,store_name,store_rating_avg,store_rating_count',
@@ -116,7 +118,7 @@ class ListingDetailController extends Controller
                 ->first();
         }
 
-        if (! $listing) {
+        if (!$listing) {
             return ApiResponse::error(__('common.exceptions.listing_detail.not_found'), [], 404);
         }
 
@@ -140,9 +142,9 @@ class ListingDetailController extends Controller
         $isWishlisted = false;
         if ($customerId = auth('customer')->id()) {
             $wishlistColumn = match (true) {
-                $listing instanceof AdminListing    => 'admin_listing_id',
+                $listing instanceof AdminListing => 'admin_listing_id',
                 $listing instanceof MarketerListing => 'marketer_listing_id',
-                default                              => 'vendor_listing_id',
+                default => 'vendor_listing_id',
             };
             $isWishlisted = \App\Models\WishlistItem::where('customer_id', $customerId)
                 ->where($wishlistColumn, $listing->id)
@@ -241,6 +243,7 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
+                    'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
                     'vendor:id,store_name,store_rating_avg,store_rating_count',
@@ -259,6 +262,7 @@ class ListingDetailController extends Controller
                         'productVariant.product.brand',
                         'productVariant.product.highlights',
                         'productVariant.product.specifications',
+                        'productVariant.product.customAttributes',
                         'productVariant.variantAttributes.attribute',
                         'productVariant.variantAttributes.attributeValue',
                         'marketer.marketerProfile',
@@ -309,7 +313,7 @@ class ListingDetailController extends Controller
 
         if ($listing instanceof MarketerListing) {
             $marketer = $listing->marketer;
-            $profile  = $marketer?->marketerProfile;
+            $profile = $marketer?->marketerProfile;
 
             return [
                 'listing_id' => $listing->id,
@@ -335,11 +339,11 @@ class ListingDetailController extends Controller
                 'listing_type' => 'marketer',
                 'vendor' => null,
                 'marketer' => $marketer ? [
-                    'id'            => $marketer->id,
-                    'name'          => $marketer->name,
+                    'id' => $marketer->id,
+                    'name' => $marketer->name,
                     'marketer_type' => $marketer->marketer_type,
-                    'profile_slug'  => $profile?->profile_slug,
-                    'profile_url'   => $profile?->profile_slug
+                    'profile_slug' => $profile?->profile_slug,
+                    'profile_url' => $profile?->profile_slug
                         ? rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug
                         : null,
                 ] : null,
@@ -471,6 +475,16 @@ class ListingDetailController extends Controller
                 'title' => Bilingual::pairFromKeys($product, 'seo_title_ar', 'seo_title_en'),
                 'description' => Bilingual::pairFromKeys($product, 'seo_description_ar', 'seo_description_en'),
             ],
+            'has_custom_attributes' => (bool) $product->has_custom_attributes,
+            'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
+                ? $product->customAttributes->map(fn($a) => [
+                    'id' => $a->id,
+                    'label' => $a->label,
+                    'unit' => $a->unit,
+                    'is_required' => (bool) $a->is_required,
+                    'sort_order' => $a->sort_order,
+                ])->values()->all()
+                : [],
         ];
     }
 
@@ -669,7 +683,7 @@ class ListingDetailController extends Controller
             //     'countrySettings',
             //     fn($q) => $q->where('country_id', $country->id)->where('is_available', true)
             // )
-            ->with(['images', 'variants'])
+            ->with(['images', 'variants', 'customAttributes'])
             ->orderByRating()
             ->limit(8)
             ->get();
@@ -714,7 +728,7 @@ class ListingDetailController extends Controller
         $candidates = Product::where('brand_id', $product->brand_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'active')
-            ->with(['variants', 'images'])
+            ->with(['variants', 'images', 'customAttributes'])
             ->orderByRating()
             ->limit(8)
             ->get();
@@ -734,9 +748,10 @@ class ListingDetailController extends Controller
             ?? ($request->hasSession() ? $request->session()->getId() : null);
 
         $productIds = ProductView::query()
-            ->when($customerId,
-                fn ($q) => $q->where('customer_id', $customerId),
-                fn ($q) => $q->where('session_id', $sessionId)
+            ->when(
+                $customerId,
+                fn($q) => $q->where('customer_id', $customerId),
+                fn($q) => $q->where('session_id', $sessionId)
             )
             ->where('product_id', '!=', $product->id)
             ->orderByDesc('created_at')
@@ -752,9 +767,9 @@ class ListingDetailController extends Controller
 
         $candidates = Product::whereIn('id', $productIds)
             ->where('status', 'active')
-            ->with(['variants', 'images'])
+            ->with(['variants', 'images', 'customAttributes'])
             ->get()
-            ->sortBy(fn ($p) => $productIds->search($p->id))
+            ->sortBy(fn($p) => $productIds->search($p->id))
             ->values();
 
         return $this->productsToBuyBoxCards($candidates, $country);
@@ -773,9 +788,10 @@ class ListingDetailController extends Controller
             ?? ($request->hasSession() ? $request->session()->getId() : null);
 
         $viewedCategoryIds = ProductView::query()
-            ->when($customerId,
-                fn ($q) => $q->where('customer_id', $customerId),
-                fn ($q) => $q->where('session_id', $sessionId)
+            ->when(
+                $customerId,
+                fn($q) => $q->where('customer_id', $customerId),
+                fn($q) => $q->where('session_id', $sessionId)
             )
             ->join('products', 'products.id', '=', 'product_views.product_id')
             ->distinct()
@@ -784,7 +800,7 @@ class ListingDetailController extends Controller
 
         $query = Product::where('status', 'active')
             ->where('id', '!=', $product->id)
-            ->with(['variants', 'images']);
+            ->with(['variants', 'images', 'customAttributes']);
 
         if ($viewedCategoryIds->isNotEmpty()) {
             $query->whereIn('category_id', $viewedCategoryIds);
@@ -810,9 +826,9 @@ class ListingDetailController extends Controller
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
         return $candidates
-            ->map(fn ($p) => [$p, $buyBox[$p->id] ?? null])
-            ->filter(fn (array $pair) => $pair[1] !== null)
-            ->map(fn (array $pair) => $this->listings->toMixedCardShape(
+            ->map(fn($p) => [$p, $buyBox[$p->id] ?? null])
+            ->filter(fn(array $pair) => $pair[1] !== null)
+            ->map(fn(array $pair) => $this->listings->toMixedCardShape(
                 $pair[1],
                 $pair[0],
                 $country,
@@ -848,37 +864,39 @@ class ListingDetailController extends Controller
         $isAdminListing = (bool) $review->admin_listing_id;
 
         return [
-            'id'             => $review->id,
-            'rating'         => $review->rating,
-            'title'          => $review->title,
-            'body'           => $review->body,
-            'reviewer_name'  => $review->customer?->name,
-            'helpful_count'  => $review->helpful_count,
-            'created_at'     => $review->created_at?->toIso8601String(),
-            'images'         => $review->files->map(fn($f) => $f->full_path)->values()->all(),
-            'listing_id'     => $review->vendor_listing_id ?? $review->admin_listing_id,
-            'listing_type'   => $isAdminListing ? 'admin' : 'vendor',
-            'seller'         => $isAdminListing
+            'id' => $review->id,
+            'rating' => $review->rating,
+            'title' => $review->title,
+            'body' => $review->body,
+            'reviewer_name' => $review->customer?->name,
+            'helpful_count' => $review->helpful_count,
+            'created_at' => $review->created_at?->toIso8601String(),
+            'images' => $review->files->map(fn($f) => $f->full_path)->values()->all(),
+            'listing_id' => $review->vendor_listing_id ?? $review->admin_listing_id,
+            'listing_type' => $isAdminListing ? 'admin' : 'vendor',
+            'seller' => $isAdminListing
                 ? [
-                    'id'            => null,
-                    'store_name'    => $resolvedListing?->sold_by_label_en ?? 'Platform',
+                    'id' => null,
+                    'store_name' => $resolvedListing?->sold_by_label_en ?? 'Platform',
                     'store_name_ar' => $resolvedListing?->sold_by_label_ar ?? 'المنصة',
                 ]
                 : ($resolvedListing?->vendor ? [
-                    'id'         => $resolvedListing->vendor->id,
+                    'id' => $resolvedListing->vendor->id,
                     'store_name' => $resolvedListing->vendor->store_name,
                 ] : null),
-            'variant'        => $resolvedListing?->productVariant ? [
-                'id'         => $resolvedListing->productVariant->id,
+            'variant' => $resolvedListing?->productVariant ? [
+                'id' => $resolvedListing->productVariant->id,
                 'variant_name' => $resolvedListing->productVariant->displayName(),
                 'attributes' => $resolvedListing->productVariant->variantAttributes->map(fn($va) => [
-                    'name'  => ['ar' => $va->attribute?->name_ar, 'en' => $va->attribute?->name_en],
-                    'value' => ['ar' => $va->attributeValue?->value_ar ?? $va->value_text_ar,
-                                 'en' => $va->attributeValue?->value_en ?? $va->value_text_en],
+                    'name' => ['ar' => $va->attribute?->name_ar, 'en' => $va->attribute?->name_en],
+                    'value' => [
+                        'ar' => $va->attributeValue?->value_ar ?? $va->value_text_ar,
+                        'en' => $va->attributeValue?->value_en ?? $va->value_text_en
+                    ],
                 ])->values()->all(),
             ] : null,
-            'vendor_reply'   => $review->vendorReply ? [
-                'body'       => $review->vendorReply->body,
+            'vendor_reply' => $review->vendorReply ? [
+                'body' => $review->vendorReply->body,
                 'created_at' => $review->vendorReply->created_at?->toIso8601String(),
             ] : null,
         ];
