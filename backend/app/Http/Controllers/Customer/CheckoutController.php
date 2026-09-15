@@ -166,6 +166,11 @@ class CheckoutController extends Controller
             'items.adminListing.productVariant.product.images',
             'items.adminListing.warehouseInventories',
             'items.adminListing.primaryShippingMethod',
+            'items.marketerListing.invitation.campaign.vendorListing.vendor',
+            'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.category',
+            'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.images',
+            'items.marketerListing.invitation.campaign.vendorListing.warehouseInventories',
+            'items.marketerListing.invitation.campaign.vendorListing.primaryShippingMethod',
             'items.selectedShippingMethod',
             'coupon',
         ]);
@@ -173,6 +178,8 @@ class CheckoutController extends Controller
         if ($cart->items->isEmpty()) {
             return ApiResponse::error(__('common.exceptions.checkout.cart_empty'), [], 422);
         }
+
+        $this->resolveMarketerCartItems($cart->items);
 
         $address = $customer->addresses()->find($validated['address_id']);
         if (! $address) {
@@ -267,6 +274,18 @@ class CheckoutController extends Controller
                 'type' => $coupon->type,
                 'discount' => $discountCents,
             ];
+        }
+
+        if ($cart->affiliate_promo_code_id) {
+            $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
+            if ($affiliatePromoCode) {
+                $subtotalForPromo = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+                $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotalForPromo, $cart->currency);
+
+                if (! $promoResult['error']) {
+                    $discountCents += $promoResult['discount'];
+                }
+            }
         }
 
         $summary = $this->calculationService->buildOrderSummary(
@@ -400,12 +419,19 @@ class CheckoutController extends Controller
             'items.adminListing.productVariant.product.brand',
             'items.adminListing.productVariant.product.images',
             'items.adminListing.warehouseInventories',
+            'items.marketerListing.invitation.campaign.vendorListing.vendor',
+            'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.category',
+            'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.brand',
+            'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.images',
+            'items.marketerListing.invitation.campaign.vendorListing.warehouseInventories',
             'items.customAttributeValues.productCustomAttribute',
         ]);
 
         if ($cart->items->isEmpty()) {
             return ApiResponse::error(__('common.exceptions.checkout.cart_empty'), [], 422);
         }
+
+        $this->resolveMarketerCartItems($cart->items);
 
         foreach ($cart->items as $item) {
             $isAdmin = ! is_null($item->admin_listing_id);
@@ -536,6 +562,19 @@ class CheckoutController extends Controller
             $discountCents = $couponResult['discount'];
         }
         $couponDiscountCents = $discountCents;
+
+        // ── Affiliate/marketer promo code ───────────────────────────────────────
+        if ($cart->affiliate_promo_code_id) {
+            $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
+            if ($affiliatePromoCode) {
+                $subtotalForPromo = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+                $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotalForPromo, $cart->currency);
+
+                if (! $promoResult['error']) {
+                    $discountCents += $promoResult['discount'];
+                }
+            }
+        }
 
         // ── Loyalty redemption ────────────────────────────────────────────────
         $loyaltyDiscount      = 0;
@@ -692,6 +731,14 @@ class CheckoutController extends Controller
                     $vendorModel = $items->first()->vendorListing->vendor;
                     $totalCommission = $vendorModel->applyCommissionDiscount($totalCommission);
 
+                    // Gateway fee is a platform/vendor cost derived from the selected
+                    // payment gateway's configured rate; it never affects the
+                    // customer-facing order total. COD has no card-gateway fee here.
+                    $gatewayFeeRatePct = $isCod ? 0.0 : (float) $methodConfig->fee_pct;
+                    $gatewayFeeCents = $isCod
+                        ? 0
+                        : (int) floor($vendorSubtotal * $gatewayFeeRatePct / 100) + (int) $methodConfig->fee_fixed;
+
                     $subOrder = SubOrder::create([
                         'order_id' => $order->id,
                         'sub_order_number' => $order->order_number.'-'.str_pad((string) $idx, 2, '0', STR_PAD_LEFT),
@@ -706,9 +753,9 @@ class CheckoutController extends Controller
                         'billable_weight_grams' => $vendorBillableWeightGrams,
                         'tax' => $vendorTax,
                         'platform_commission' => $totalCommission,
-                        'gateway_fee' => 0,
-                        'gateway_fee_rate' => 0,
-                        'vendor_payout' => $vendorSubtotal - $totalCommission,
+                        'gateway_fee' => $gatewayFeeCents,
+                        'gateway_fee_rate' => $gatewayFeeRatePct,
+                        'vendor_payout' => $vendorSubtotal - $totalCommission - $gatewayFeeCents,
                         'shipping_method_id' => $subOrderShippingMethodId,
                         'estimated_delivery_date' => $subOrderShippingMethod
                             ? $this->calculateEstimatedDeliveryDate($subOrderShippingMethod)
@@ -729,6 +776,12 @@ class CheckoutController extends Controller
 
                         $productSnapshot = $this->buildProductSnapshot($listing);
                         $productSnapshot['shipping_method'] = $itemShippingMethodSnapshot;
+
+                        if ($cartItem->marketer_listing_id !== null) {
+                            $productSnapshot['listing_type'] = 'marketer';
+                            $productSnapshot['marketer_listing_id'] = $cartItem->marketer_listing_id;
+                            $productSnapshot['referral_code'] = $cartItem->marketerListing?->referral_code;
+                        }
 
                         $orderItem = OrderItem::create([
                             'order_id' => $order->id,
@@ -960,6 +1013,40 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Marketer-listing cart items (marketer_listing_id set, vendor_listing_id
+     * and admin_listing_id null — see CartService::addMarketerItem /
+     * MarketerListing docblock) carry no inventory or vendor of their own:
+     * fulfillment rides on the underlying campaign's source listing. Resolve
+     * that source VendorListing and cache it onto the CartItem's
+     * `vendorListing` relation so the rest of checkout (stock checks,
+     * shipping, commission, coupon scoping, snapshots) can keep treating the
+     * item exactly like a normal vendor-listing line, without a separate
+     * code path.
+     *
+     * Campaigns sourced from an AdminListing (platform stock) have no vendor
+     * to attribute a sub-order to and are left unresolved here; those items
+     * still fail with the pre-existing "listing not available" checkout
+     * error rather than being silently mis-attributed.
+     *
+     * @param  iterable<\App\Models\CartItem>  $cartItems
+     */
+    private function resolveMarketerCartItems(iterable $cartItems): void
+    {
+        foreach ($cartItems as $item) {
+            if ($item->marketer_listing_id === null || $item->vendorListing !== null) {
+                continue;
+            }
+
+            $campaign = $item->marketerListing?->invitation?->campaign;
+            $sourceListing = $campaign?->vendor_listing_id ? $campaign->vendorListing : null;
+
+            if ($sourceListing) {
+                $item->setRelation('vendorListing', $sourceListing);
+            }
+        }
+    }
+
+    /**
      * Resolve per-vendor shipping (FBN vendors ship free). FBP vendor fees
      * go through ShippingSubsidyService for billable-weight-based fees and
      * platform/vendor subsidy splitting; a flat warehouse surcharge is added
@@ -1005,6 +1092,10 @@ class CheckoutController extends Controller
                     $surchargeCents += $this->cityShippingSurchargeService->resolveSurcharge($vendorId, $warehouseId);
                 }
             } elseif ($isFbn) {
+                // Configurable base fee — defaults to 0 (free, platform bears the cost)
+                // until a business decision sets FBN_BASE_SHIPPING_FEE.
+                $vendorBaseShippingCents = (int) config('checkout.fbn_base_shipping_fee', 0);
+
                 foreach ($items as $cartItem) {
                     $warehouseId = $this->resolveCartItemWarehouseId($cartItem);
                     $surchargeCents += $this->warehouseShippingSurchargeService->resolveSurcharge($warehouseId);

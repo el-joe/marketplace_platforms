@@ -280,13 +280,27 @@ class CodSettlementController extends Controller
                 ->pluck('sub_order_id');
 
             if ($subOrderIds->isNotEmpty()) {
-                SubOrder::whereIn('id', $subOrderIds)
+                $newlyConfirmed = SubOrder::whereIn('id', $subOrderIds)
                     ->where('cod_remittance_confirmed', false)
+                    ->get();
+
+                SubOrder::whereIn('id', $newlyConfirmed->pluck('id'))
                     ->update([
                         'cod_remittance_confirmed'    => true,
                         'cod_remittance_confirmed_at' => now(),
                         'cod_settlement_id'           => $settlement->id,
                     ]);
+
+                // Give vendors visibility into their COD remittance status once it's confirmed.
+                $newlyConfirmed->load('vendor.vendorAdmins');
+                foreach ($newlyConfirmed as $subOrder) {
+                    if ($subOrder->vendor?->vendorAdmins->isNotEmpty()) {
+                        \Illuminate\Support\Facades\Notification::send(
+                            $subOrder->vendor->vendorAdmins,
+                            new \App\Notifications\Vendor\CodRemittanceConfirmedNotification($subOrder)
+                        );
+                    }
+                }
             }
         });
 

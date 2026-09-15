@@ -250,6 +250,52 @@ class CheckoutCalculationService
         ];
     }
 
+    /**
+     * Apply an affiliate/marketer promo code (Cart.affiliate_promo_code_id) to
+     * the order subtotal. Mirrors the validation pattern of applyCoupon() but
+     * against the simpler AffiliatePromoCode model (no scoping/eligibility
+     * rules — those codes apply to the whole cart subtotal).
+     */
+    public function applyAffiliatePromoCode(
+        \App\Models\AffiliatePromoCode $promoCode,
+        int $subtotalCents,
+        string $currency,
+    ): array {
+        if (! $promoCode->is_active) {
+            return ['discount' => 0, 'error' => 'Promo code is not active'];
+        }
+
+        $now = Carbon::now();
+        if (($promoCode->valid_from && $now->lt($promoCode->valid_from))
+            || ($promoCode->valid_until && $now->gt($promoCode->valid_until))) {
+            return ['discount' => 0, 'error' => 'Promo code is not valid at this time'];
+        }
+
+        if ($promoCode->currency !== null && $promoCode->currency !== $currency) {
+            return ['discount' => 0, 'error' => 'Promo code currency does not match'];
+        }
+
+        if ($promoCode->min_order_amount !== null && $subtotalCents < $promoCode->min_order_amount) {
+            return ['discount' => 0, 'error' => 'Order does not meet minimum amount for this promo code'];
+        }
+
+        if ($promoCode->usage_limit_total !== null && $promoCode->times_used >= $promoCode->usage_limit_total) {
+            return ['discount' => 0, 'error' => 'Promo code usage limit reached'];
+        }
+
+        $discount = $promoCode->type === 'percentage'
+            ? (int) round($subtotalCents * ((float) $promoCode->value / 100))
+            : (int) round((float) $promoCode->value);
+
+        if ($promoCode->max_discount !== null && $discount > $promoCode->max_discount) {
+            $discount = $promoCode->max_discount;
+        }
+
+        $discount = min($discount, $subtotalCents);
+
+        return ['discount' => $discount, 'error' => null];
+    }
+
     private function resolveItemShippingType(\App\Models\CartItem $item): string
     {
         if ($item->adminListing !== null) {

@@ -16,6 +16,7 @@ class Cart extends Model
         'session_token',
         'currency',
         'coupon_id',
+        'affiliate_promo_code_id',
         'subtotal',
         'discount',
         'wallet_amount_to_use',
@@ -42,6 +43,11 @@ class Cart extends Model
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    public function affiliatePromoCode(): BelongsTo
+    {
+        return $this->belongsTo(AffiliatePromoCode::class);
     }
 
     public function items(): HasMany
