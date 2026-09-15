@@ -94,6 +94,14 @@ export default function Checkout() {
                   ...checkoutData?.order_summary,
                   item_count: checkoutData?.total_items_qty,
                 }}
+                walletDeduction={
+                  checkoutData?.wallet_applicable
+                    ? Math.min(
+                        checkoutData.wallet_balance,
+                        checkoutData?.order_summary?.total ?? 0,
+                      )
+                    : 0
+                }
               />
               {/* place order button */}
               <Button

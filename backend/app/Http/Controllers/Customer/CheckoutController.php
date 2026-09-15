@@ -1092,6 +1092,10 @@ class CheckoutController extends Controller
                     $surchargeCents += $this->cityShippingSurchargeService->resolveSurcharge($vendorId, $warehouseId);
                 }
             } elseif ($isFbn) {
+                // Configurable base fee — defaults to 0 (free, platform bears the cost)
+                // until a business decision sets FBN_BASE_SHIPPING_FEE.
+                $vendorBaseShippingCents = (int) config('checkout.fbn_base_shipping_fee', 0);
+
                 foreach ($items as $cartItem) {
                     $warehouseId = $this->resolveCartItemWarehouseId($cartItem);
                     $surchargeCents += $this->warehouseShippingSurchargeService->resolveSurcharge($warehouseId);

@@ -6,10 +6,12 @@ import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 
 export default function PaymentSummary({
   checkoutSummary,
+  walletDeduction = 0,
 }: {
   checkoutSummary: IPrepareCheckout["order_summary"] & {
     item_count: number;
   };
+  walletDeduction?: number;
 }) {
   const t = useTranslations("checkout");
   const currency = checkoutSummary.currency as CurrencyCode;
@@ -101,10 +103,28 @@ export default function PaymentSummary({
         <p className=" text-gray">{t("tax")}</p>
         <Price currentPrice={checkoutSummary.tax} size="xs" currency={currency} />
       </div>
+      {/* wallet deduction */}
+      {walletDeduction > 0 && (
+        <div className="flex justify-between mb-3">
+          <p className=" text-gray">{t("walletUsed")}</p>
+          <p className="text-green-600">
+            -
+            <Price
+              currentPrice={walletDeduction}
+              size="xs"
+              currency={currency}
+              className="inline text-green-600"
+            />
+          </p>
+        </div>
+      )}
       {/* total */}
       <div className="flex justify-between">
         <p className=" text-lg font-bold">{t("total")}</p>
-        <Price currentPrice={checkoutSummary.total} currency={currency} />
+        <Price
+          currentPrice={Math.max(0, checkoutSummary.total - walletDeduction)}
+          currency={currency}
+        />
       </div>
     </div>
   );
