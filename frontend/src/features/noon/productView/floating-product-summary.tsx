@@ -53,7 +53,11 @@ export default function FloatingProductSummary({ product }: Props) {
         />
       </div>
       <div className="w-58">
-        <CartButton listingId={product.listing.listing_id} />
+        <CartButton
+          listingId={product.listing.listing_id}
+          hasCustomAttributes={!!product.product.has_custom_attributes}
+          customAttributes={product.product.custom_attributes ?? []}
+        />
       </div>
     </div>
   );

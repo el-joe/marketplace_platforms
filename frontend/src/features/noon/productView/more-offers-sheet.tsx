@@ -17,7 +17,7 @@ import { Badge } from "@/src/components/ui/badge";
 import Price from "@/src/components/shared/Price";
 import { ChevronLeft, ChevronRight, StarIcon, StoreIcon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
-import { OtherSeller } from "./types/product-details";
+import { OtherSeller, ProductCustomAttribute } from "./types/product-details";
 import CartButton from "./cart-button";
 
 const MoreOffersSheet = ({
@@ -67,6 +67,8 @@ const MoreOffersSheet = ({
                 seller={seller}
                 isSelected={isSelected}
                 setOpen={setOpen}
+                hasCustomAttributes={!!productData.product.has_custom_attributes}
+                customAttributes={productData.product.custom_attributes ?? []}
               />
             );
           })}
@@ -82,10 +84,14 @@ const SheetSellerCard = ({
   seller,
   isSelected,
   setOpen,
+  hasCustomAttributes,
+  customAttributes,
 }: {
   seller: OtherSeller;
   isSelected: boolean;
   setOpen: (state: boolean) => void;
+  hasCustomAttributes?: boolean;
+  customAttributes?: ProductCustomAttribute[];
 }) => {
   const locale = useLocale();
   const t = useTranslations("productView");
@@ -133,7 +139,11 @@ const SheetSellerCard = ({
           </div>
         </div>
         <div className="min-w-33" onClick={(e) => e.stopPropagation()}>
-          <CartButton listingId={seller.listing_id} />
+          <CartButton
+            listingId={seller.listing_id}
+            hasCustomAttributes={hasCustomAttributes}
+            customAttributes={customAttributes}
+          />
         </div>
       </div>
     </div>
