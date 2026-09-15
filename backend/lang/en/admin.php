@@ -2027,7 +2027,7 @@ return [
         'fbp_pct_hint'          => 'e.g. 8.00 = 8% of item sale price',
         'fixed_fee_label'       => 'Fixed Fee (per unit)',
         'fixed_fee_unit'  => '',
-        'fixed_fee_hint'        => 'e.g. 500 = 5.00 per unit sold',
+        'fixed_fee_hint'        => 'e.g. 5 = 5.00 added per unit sold',
         'example_calc_label'    => 'Example',
         'example_calc_body'     => '100.00 item × 2 qty:',
         'commission_footnote'   => 'Commission per item = (unit_price × %) + fixed_fee. Snapshotted at order time — changing these does not affect existing orders. Subcategories inherit the nearest ancestor\'s rates when their own rates are zero.',
