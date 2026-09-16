@@ -2,6 +2,7 @@
 
 namespace App\Support\Concerns;
 
+use App\Enums\AttributeType;
 use Illuminate\Support\Collection;
 
 /**
@@ -71,8 +72,10 @@ trait BuildsProductAttributeSelector
                                 ],
                                 'url' => $url,
                                 'url_param' => $url_param,
-                                'color_hex' => $va->attributeValue?->color_hex,
-                                'variant_image' => $variantImage?->url,
+                                'color_hex' => $va->attributeValue?->code_hex,
+                                'variant_image' => $attribute->type === AttributeType::Color
+                                    ? ($va->attributeValue?->swatch_image_url ?? $variantImage?->url)
+                                    : null,
                                 'selected' => ($selectedCombo[$attributeId] ?? null) === $va->attribute_value_id,
                                 'disabled' => $listing === null,
                                 'variant_id' => $matchedVariantId,
