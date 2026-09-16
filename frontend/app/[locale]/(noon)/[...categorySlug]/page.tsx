@@ -10,6 +10,7 @@ import {
   FILTER_PREFIX,
   resolveApiFilters,
 } from "@/src/helpers/resolveApiFilters";
+import MobileFiltersSheet from "@/src/features/noon/shop/filter/mobile-view";
 
 const TOTAL_PAGES = 5;
 
@@ -90,7 +91,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
     <main className="container flex flex-col gap-4 py-4 lg:flex-row lg:gap-6">
       {hasFilters && (
         <aside
-          className="lg:w-[250px] w-full h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide shrink-0"
+          className="hidden lg:block lg:w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide shrink-0"
           dir={locale === "ar" ? "rtl" : "ltr"}
         >
           <FilterSidebar
@@ -99,6 +100,12 @@ export default async function ShopPage({ params, searchParams }: Props) {
           />
         </aside>
       )}
+
+      <MobileFiltersSheet
+        facets={facets as ShopResponse["data"]["facets"]}
+        locale={locale}
+      />
+
       <div className={hasFilters ? "min-w-0 flex-1" : "w-full"}>
         <Shop
           pageBuilderData={pageBuilderData}
@@ -108,6 +115,9 @@ export default async function ShopPage({ params, searchParams }: Props) {
           totalCount={totalCount}
           topBanner={topBanner}
           isSearch={isSearch}
+          facets={facets as ShopResponse["data"]["facets"]}
+          hasFilters={hasFilters}
+          locale={locale}
         />
       </div>
     </main>
