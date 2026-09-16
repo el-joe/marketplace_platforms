@@ -137,7 +137,10 @@ export default function BoughtTogether({
             {isMutating && Array.isArray(targetItemMutating) && <Spinner />}
             {t("buy")} {selectedItems.length} {t("togetherFor")}
             <Price
-              currentPrice={selectedItems.reduce((p, c) => (p += c.price), 0)}
+              currentPrice={selectedItems.reduce(
+                (p, c) => p + Number(c.price),
+                0,
+              )}
               currency={boughtTogetherData?.currency}
             />
           </>
