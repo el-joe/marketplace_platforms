@@ -46,7 +46,7 @@ trait BuildsProductAttributeSelector
                     ],
                     'values' => $group
                         ->unique(fn($va) => $va->attribute_value_id ?? $va->value_text_en)
-                        ->map(function ($va) use ($attributeId, $selectedCombo, $variantCombos, $listingsByVariant, $variantImages) {
+                        ->map(function ($va) use ($attribute, $attributeId, $selectedCombo, $variantCombos, $listingsByVariant, $variantImages) {
 
                             $candidateCombo = $selectedCombo;
                             $candidateCombo[$attributeId] = $va->attribute_value_id;
