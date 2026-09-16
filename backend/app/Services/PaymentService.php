@@ -15,6 +15,10 @@ use Illuminate\Support\Str;
 
 class PaymentService
 {
+    public function __construct(
+        private readonly LedgerService $ledgerService = new LedgerService(),
+    ) {}
+
     public function initiatePayment(
         Order $order,
         CountryPaymentGateway $gatewayConfig,
@@ -76,6 +80,13 @@ class PaymentService
 
         if ($result->success) {
             $transaction->order->update(['payment_status' => 'captured']);
+            // enhancement.md P-03 task 5: post the double-entry ledger at
+            // capture. Card orders may also have a wallet portion applied
+            // at place-order time — that portion isn't re-posted here
+            // (postOrderCapture is idempotent per order via the
+            // 'order_capture' reference_type guard), only the amount this
+            // gateway transaction actually settled.
+            $this->ledgerService->postOrderCapture($transaction->order, (int) $transaction->amount);
         }
 
         return $result;

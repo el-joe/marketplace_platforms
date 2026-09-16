@@ -82,6 +82,7 @@ class CheckoutController extends Controller
         private readonly LastClickAttributionService $attributionService,
         private readonly \App\Services\Ads\PlacementAdService $placementAds,
         private readonly CheckoutPricingEngine $pricingEngine,
+        private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
     ) {}
 
     public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
@@ -699,6 +700,49 @@ class CheckoutController extends Controller
         }
         $pricedSubOrdersByVendorId = $pricedCart->subOrders;
 
+        // ── P-03: vendor/platform/marketer/shipping money split ────────────
+        // Computed once here (outside the transaction, alongside everything
+        // else place-order prices) and persisted as-is below, the same
+        // pattern P-01 established for tax/discount.
+        $chargedShippingByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => (int) $v['shipping'])->all();
+        $vendorContributionByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => (int) $v['vendor_contribution'])->all();
+        $adminSubsidyByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => (int) $v['platform_subsidy'])->all();
+        // raw_fee is only resolved for FBP lines that went through
+        // ShippingSubsidyService (see resolveVendorShipping) — for FBN /
+        // admin-listing groups there is no independent carrier quote in
+        // this codebase yet, so computeMoneySplit() falls back to the
+        // charged shipping fee for those groups (enhancement.md P-03 task 3
+        // note: a real carrier-rate integration at checkout is out of scope
+        // here).
+        $carrierRawFeeByGroup = collect($vendorShipping['per_vendor'])
+            ->filter(fn ($v) => ($v['raw_fee'] ?? 0) > 0)
+            ->map(fn ($v) => (int) $v['raw_fee'])
+            ->all();
+
+        // Same wallet-amount resolution place-order uses later (line ~1032)
+        // to decide how much of the order is actually settled through the
+        // card gateway (D4: gateway fee is only charged on that portion).
+        $walletAmountForGatewayCents = (int) ($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $pricedCart->total : 0));
+        $amountDueGatewayCents = ($isCod || $isWallet) ? 0 : max(0, $pricedCart->total - $walletAmountForGatewayCents);
+
+        $moneySplit = $this->pricingEngine->computeMoneySplit(
+            items: $cartItems,
+            country: $country,
+            coupon: $coupon,
+            couponAllocations: $discountAllocations,
+            vendorContributionByGroup: $vendorContributionByGroup,
+            adminSubsidyByGroup: $adminSubsidyByGroup,
+            carrierRawFeeByGroup: $carrierRawFeeByGroup,
+            chargedShippingByGroup: $chargedShippingByGroup,
+            gatewayFeePct: $isCod ? 0.0 : (float) $methodConfig->fee_pct,
+            gatewayFeeFixed: $isCod ? 0 : (int) $methodConfig->fee_fixed,
+            amountDueGatewayCents: $amountDueGatewayCents,
+            isCod: $isCod,
+            codFeeCents: $codFeeCents,
+            warrantyTotalCents: $pricedCart->warrantyTotal,
+        );
+        $moneySplitByGroup = $moneySplit['sub_orders'];
+
         if ($isWallet) {
             $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
 
@@ -720,7 +764,7 @@ class CheckoutController extends Controller
         try {
             $result = DB::transaction(function () use (
                 $customer, $country, $address, $receiver, $validated, $coupon,
-                $cartItems, $summary, $attribution, $vendorShipping,
+                $cartItems, $summary, $attribution, $vendorShipping, $moneySplitByGroup,
                 $warrantySelections, $cart, $couponDiscountCents,
                 $loyaltyDiscount, $loyaltyPointsToUse,
                 $gatewayCode, $isCod, $isWallet, $methodConfig,
@@ -818,9 +862,33 @@ class CheckoutController extends Controller
                     $pricedSubOrder = $pricedSubOrdersByVendorId[$isPlatformSubOrder ? 'platform' : $sellerParty] ?? null;
                     $vendorTax = $pricedSubOrder?->tax ?? 0;
 
+                    // enhancement.md P-03: the vendor/platform/marketer money
+                    // split (commission, gateway fee, coupon funding,
+                    // marketer commission, vendor payout) is computed once
+                    // by CheckoutPricingEngine::computeMoneySplit() above and
+                    // persisted here as-is, the same "no recalculation"
+                    // pattern P-01 established for tax. commission_rate_pct/
+                    // commission_fixed on order_items remain a display-only
+                    // snapshot from the legacy per-line resolver (fed by
+                    // CheckoutCalculationService::calculateCommission);
+                    // commission_amount/vendor_coupon_cost/marketer_commission/
+                    // platform_commission_after_discount below are the
+                    // engine's numbers, the actual money.
+                    $groupSplit = $moneySplitByGroup[$isPlatformSubOrder ? 'platform' : $sellerParty] ?? null;
+                    $totalCommission = $groupSplit['platform_commission'] ?? 0;
+                    $totalCommissionAfterDiscount = $groupSplit['platform_commission_after_discount'] ?? 0;
+                    $vendorCouponCostForSubOrder = $groupSplit['vendor_coupon_cost'] ?? 0;
+                    $platformCouponCostForSubOrder = $groupSplit['platform_coupon_cost'] ?? 0;
+                    $marketerCommissionForSubOrder = $groupSplit['marketer_commission'] ?? 0;
+                    $marketerCommissionOwnerForSubOrder = $groupSplit['marketer_commission_owner'] ?? null;
+                    $warrantyRevenueForSubOrder = 0; // set below once tax/warranty totals for this group are known
+                    $carrierShippingCostForSubOrder = $groupSplit['carrier_shipping_cost'] ?? $vendorShippingCents;
+                    $shippingGapForSubOrder = $groupSplit['shipping_gap'] ?? 0;
+                    $vendorPayoutForSubOrder = $groupSplit['vendor_payout'] ?? 0;
+                    $gatewayFeeForSubOrder = $groupSplit['gateway_fee'] ?? 0;
+
                     $itemCommissions = [];
                     $reservedInventories = [];
-                    $totalCommission = 0;
                     foreach ($items as $cartItem) {
                         $itemSource = $cartLineSources[$cartItem->id];
                         $fulfilmentListing = $itemSource->fulfilmentListing;
@@ -843,8 +911,12 @@ class CheckoutController extends Controller
                                 'vendor_payout_share' => $cartItem->unit_price * $cartItem->quantity,
                             ];
                         }
+                        $lineSplit = $groupSplit['lines'][$cartItem->id] ?? null;
+                        $commission['commission_amount'] = $lineSplit['raw_commission'] ?? $commission['commission_amount'];
+                        $commission['vendor_coupon_cost'] = $lineSplit['vendor_coupon_cost'] ?? 0;
+                        $commission['marketer_commission'] = $lineSplit['marketer_commission'] ?? 0;
+                        $commission['platform_commission_after_discount'] = $lineSplit['platform_commission_after_discount'] ?? 0;
                         $itemCommissions[$cartItem->id] = $commission;
-                        $totalCommission += $commission['commission_amount'];
 
                         $inventoryQuery = $fulfilmentListing instanceof \App\Models\AdminListing
                             ? WarehouseInventory::where('admin_listing_id', $fulfilmentListing->id)
@@ -877,18 +949,14 @@ class CheckoutController extends Controller
 
                     $warehouseId = $reservedInventories[$items->first()->id]->warehouse_id;
 
-                    if (! $isPlatformSubOrder && $firstSource->fulfilmentListing instanceof VendorListing) {
-                        $vendorModel = $firstSource->fulfilmentListing->vendor;
-                        $totalCommission = $vendorModel?->applyCommissionDiscount($totalCommission) ?? $totalCommission;
-                    }
-
-                    // Gateway fee is a platform/vendor cost derived from the selected
-                    // payment gateway's configured rate; it never affects the
-                    // customer-facing order total. COD has no card-gateway fee here.
+                    // Gateway fee rate, stored for audit/recalculation
+                    // transparency (unchanged meaning) — the actual fee
+                    // amount charged to this sub-order is
+                    // $gatewayFeeForSubOrder, the engine's pro-rata split of
+                    // one order-level fee (D4), not a per-sub-order
+                    // recomputation.
                     $gatewayFeeRatePct = $isCod ? 0.0 : (float) $methodConfig->fee_pct;
-                    $gatewayFeeCents = $isCod
-                        ? 0
-                        : (int) floor($vendorSubtotal * $gatewayFeeRatePct / 100) + (int) $methodConfig->fee_fixed;
+                    $warrantyRevenueForSubOrder = $pricedSubOrder?->warrantyTotal ?? 0;
 
                     $subOrder = SubOrder::create([
                         'order_id' => $order->id,
@@ -903,14 +971,26 @@ class CheckoutController extends Controller
                         'fulfillment_model' => $fulfillmentModel,
                         'subtotal' => $vendorSubtotal,
                         'shipping' => $vendorShippingCents,
+                        // enhancement.md P-03 task 3: populated from the
+                        // shipping resolver's raw (pre-subsidy) carrier fee
+                        // when available (FBP via ShippingSubsidyService),
+                        // else falls back to the charged shipping fee — see
+                        // the note where $carrierRawFeeByGroup is built.
+                        'carrier_shipping_cost' => $carrierShippingCostForSubOrder,
+                        'shipping_gap' => $shippingGapForSubOrder,
                         'admin_subsidy_amount' => $vendorAdminSubsidyCents,
                         'vendor_contribution_amount' => $vendorContributionCents,
                         'billable_weight_grams' => $vendorBillableWeightGrams,
                         'tax' => $vendorTax,
-                        'platform_commission' => $totalCommission,
-                        'gateway_fee' => $gatewayFeeCents,
+                        'platform_commission' => $totalCommissionAfterDiscount,
+                        'vendor_coupon_cost' => $vendorCouponCostForSubOrder,
+                        'platform_coupon_cost' => $platformCouponCostForSubOrder,
+                        'marketer_commission' => $marketerCommissionForSubOrder,
+                        'marketer_commission_owner' => $marketerCommissionOwnerForSubOrder,
+                        'warranty_revenue' => $warrantyRevenueForSubOrder,
+                        'gateway_fee' => $gatewayFeeForSubOrder,
                         'gateway_fee_rate' => $gatewayFeeRatePct,
-                        'vendor_payout' => $isPlatformSubOrder ? 0 : $vendorSubtotal - $totalCommission - $gatewayFeeCents,
+                        'vendor_payout' => $vendorPayoutForSubOrder,
                         'shipping_method_id' => $subOrderShippingMethodId,
                         'estimated_delivery_date' => $subOrderShippingMethod
                             ? $this->calculateEstimatedDeliveryDate($subOrderShippingMethod)
@@ -970,6 +1050,9 @@ class CheckoutController extends Controller
                             'commission_fixed' => $commission['commission_fixed'],
                             'commission_category_id' => $commission['commission_category_id'],
                             'commission_amount' => $commission['commission_amount'],
+                            'vendor_coupon_cost' => $commission['vendor_coupon_cost'] ?? 0,
+                            'marketer_commission' => $commission['marketer_commission'] ?? 0,
+                            'platform_commission_after_discount' => $commission['platform_commission_after_discount'] ?? 0,
                             'shipping_method_id' => $cartItem->selected_shipping_method_id,
                             'shipping_method_snapshot' => $itemShippingMethodSnapshot,
                             'fulfillment_status' => 'pending',
@@ -1057,6 +1140,8 @@ class CheckoutController extends Controller
                             'payment_method' => 'wallet',
                             'payment_status' => 'captured',
                         ]);
+                        // enhancement.md P-03 task 5: ledger at capture.
+                        $this->ledgerService->postOrderCapture($order, $walletAmountToUse);
                     }
                 }
 

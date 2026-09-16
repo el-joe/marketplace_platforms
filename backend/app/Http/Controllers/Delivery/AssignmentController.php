@@ -25,8 +25,10 @@ class AssignmentController extends Controller
     use HasDataTable;
     use HasExport;
 
-    public function __construct(private readonly FileService $fileService)
-    {
+    public function __construct(
+        private readonly FileService $fileService,
+        private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
+    ) {
     }
 
     /** Today's assignments grouped by status (or filtered range when status/date filters are given). */
@@ -283,6 +285,9 @@ class AssignmentController extends Controller
                     ->where('gateway', 'cod')
                     ->where('status', 'pending')
                     ->update(['status' => 'succeeded', 'processed_at' => now()]);
+
+                // enhancement.md P-03 task 5: ledger at capture.
+                $this->ledgerService->postOrderCapture($order, (int) $order->total);
             }
 
             $assignment->agent?->increment('total_deliveries');

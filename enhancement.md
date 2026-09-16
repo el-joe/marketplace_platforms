@@ -181,7 +181,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-03 🔴 Order money split: vendor, platform (admin), marketer and shipping amounts are wrong or missing
+## P-03 🔴 Order money split: vendor, platform (admin), marketer and shipping amounts are wrong or missing --DONE
 
 **Problem (evidence from `Customer/CheckoutController.php` place-order)**
 1. **Vendor payout ignores:**

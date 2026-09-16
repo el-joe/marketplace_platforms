@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\CountryPaymentGateway;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Services\LedgerService;
 use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WebhookController extends Controller
 {
+    public function __construct(private readonly LedgerService $ledgerService = new LedgerService()) {}
+
     public function payment(Request $request, string $gatewayCode): JsonResponse
     {
         $methodConfig = CountryPaymentGateway::byGatewayCode($gatewayCode)->active()->first();
@@ -51,6 +54,8 @@ class WebhookController extends Controller
                             'payment_status' => 'captured',
                             'status'         => 'confirmed',
                         ]);
+                        // enhancement.md P-03 task 5: ledger at capture.
+                        $this->ledgerService->postOrderCapture($order, (int) $transaction->amount);
                     }
                 }
             }

@@ -5,10 +5,13 @@ namespace App\Services\Checkout;
 use App\Enums\CouponScope;
 use App\Enums\CouponType;
 use App\Models\Category;
+use App\Models\Commission;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Country;
+use App\Models\CountryCategory;
 use App\Models\Customer;
+use App\Models\Vendor;
 use App\Models\WarrantyPlan;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
@@ -342,6 +345,354 @@ class CheckoutPricingEngine
         );
     }
 
+    /**
+     * The vendor/platform/marketer/shipping money split (enhancement.md
+     * P-03), computed per line and rolled up per sub-order group. Operates
+     * on the same normalized lines priceCart() uses, plus the extra
+     * context priceCart() doesn't need: the coupon (for D1's vendor-funded
+     * share), the selected gateway's fee config (D4), and the per-group
+     * shipping/subsidy/carrier figures already resolved elsewhere in
+     * checkout.
+     *
+     * D4: fee_fixed is charged once per ORDER (not per sub-order) — computed
+     * once here as part of $gatewayFeeTotal, then split pro-rata across
+     * every sub-order (vendor or platform) by that sub-order's share of
+     * $amountDueGatewayCents, via the same largest-remainder allocator
+     * priceCart() uses for coupons. That is how a 3-vendor card order ends
+     * up paying fee_fixed exactly once in total.
+     *
+     * @param  array<int, mixed>  $items  same shape priceCart() accepts
+     * @param  array<string, int>  $couponAllocations  line key => coupon discount (from applyCoupon())
+     * @param  array<string, int>  $vendorContributionByGroup  vendor key (or 'platform') => vendor_contribution_amount
+     * @param  array<string, int>  $adminSubsidyByGroup  vendor key (or 'platform') => admin_subsidy_amount
+     * @param  array<string, int>  $carrierRawFeeByGroup  vendor key (or 'platform') => the shipping resolver's raw (pre-subsidy) carrier fee for that group; falls back to the group's charged shipping when no resolver ran (e.g. FBN/admin — see enhancement.md P-03 task 3 note)
+     * @param  array<string, int>  $chargedShippingByGroup  vendor key (or 'platform') => shipping fee charged to the customer for that group (same values priceCart() was given as $shippingByGroup)
+     * @return array{
+     *   lines: array<string, array{vendor_coupon_cost:int, platform_coupon_cost:int, platform_commission_after_discount:int, marketer_commission:int}>,
+     *   sub_orders: array<string, array{
+     *     vendor_coupon_cost:int, platform_coupon_cost:int, platform_commission:int, platform_commission_after_discount:int,
+     *     marketer_commission:int, marketer_commission_owner:?string, warranty_revenue:int, gateway_fee:int,
+     *     carrier_shipping_cost:int, shipping_gap:int, vendor_payout:int
+     *   }>,
+     *   gateway_fee_total:int, marketer_commission_total:int, carrier_cost_covered_total:int, platform_net:int, tax_total:int
+     * }
+     */
+    public function computeMoneySplit(
+        array $items,
+        Country $country,
+        ?Coupon $coupon,
+        array $couponAllocations,
+        array $vendorContributionByGroup,
+        array $adminSubsidyByGroup,
+        array $carrierRawFeeByGroup,
+        array $chargedShippingByGroup,
+        float $gatewayFeePct,
+        int $gatewayFeeFixed,
+        int $amountDueGatewayCents,
+        bool $isCod,
+        int $codFeeCents,
+        int $warrantyTotalCents,
+    ): array {
+        $lines = $this->normalizeAll($items);
+
+        $vendorSharePct = 0;
+        if ($coupon !== null) {
+            $vendorSharePct = match ((string) ($coupon->funded_by ?? 'platform')) {
+                'vendor' => 100,
+                'shared' => (int) ($coupon->vendor_share_pct ?? 0),
+                default => 0,
+            };
+        }
+
+        $lineResults = [];
+        $groups = [];
+
+        foreach ($lines as $l) {
+            $key = $l['key'];
+            $groupKey = $l['vendor_id'] ?? 'platform';
+            $isPlatformLine = $l['vendor_id'] === null;
+
+            $lineDiscount = (int) ($couponAllocations[$key] ?? 0);
+            $vendorCouponCost = (int) round($lineDiscount * $vendorSharePct / 100);
+            $platformCouponCost = $lineDiscount - $vendorCouponCost;
+
+            if ($isPlatformLine) {
+                // The platform is the seller for admin-listing lines — there
+                // is no vendor payout to compute, the full gross is the
+                // platform's own "commission" (enhancement.md P-03: a
+                // documented design decision, see CheckoutController).
+                $rawCommission = $l['line_subtotal'];
+                $commissionCategoryId = null;
+            } else {
+                $vendor = Vendor::find($l['vendor_id']);
+                $base = $l['commission_base_unit_price'] * $l['quantity']; // D1 + marketer-listing fix: gross, before coupon, vendor listing price
+                [$rawCommission, $commissionCategoryId] = $this->resolveCommission($vendor, $l['category_id'], $l['fulfillment_model'], $country, $base, $l['quantity']);
+            }
+
+            // Marketer commission (D5): owner pays; base is the vendor
+            // listing price, not the marketer's resale price.
+            $marketerCommission = 0;
+            if ($l['is_marketer'] && $l['marketer_commission_type'] === 'fixed') {
+                $marketerCommission = $l['marketer_commission_raw'] * $l['quantity'];
+            }
+
+            $groups[$groupKey]['vendor_id'] = $isPlatformLine ? null : $l['vendor_id'];
+            $groups[$groupKey]['gross'] = ($groups[$groupKey]['gross'] ?? 0) + $l['line_subtotal'];
+            $groups[$groupKey]['discount'] = ($groups[$groupKey]['discount'] ?? 0) + $lineDiscount;
+            $groups[$groupKey]['vendor_coupon_cost'] = ($groups[$groupKey]['vendor_coupon_cost'] ?? 0) + $vendorCouponCost;
+            $groups[$groupKey]['platform_coupon_cost'] = ($groups[$groupKey]['platform_coupon_cost'] ?? 0) + $platformCouponCost;
+            $groups[$groupKey]['raw_commission'] = ($groups[$groupKey]['raw_commission'] ?? 0) + $rawCommission;
+            $groups[$groupKey]['marketer_commission'] = ($groups[$groupKey]['marketer_commission'] ?? 0) + $marketerCommission;
+            $groups[$groupKey]['marketer_owner'] = $l['marketer_owner'] ?? ($groups[$groupKey]['marketer_owner'] ?? null);
+            $groups[$groupKey]['lines'][$key] = [
+                'vendor_coupon_cost' => $vendorCouponCost,
+                'platform_coupon_cost' => $platformCouponCost,
+                'raw_commission' => $rawCommission,
+                'marketer_commission' => $marketerCommission,
+            ];
+
+            $lineResults[$key] = [
+                'group_key' => $groupKey,
+                'vendor_coupon_cost' => $vendorCouponCost,
+                'platform_coupon_cost' => $platformCouponCost,
+                'raw_commission' => $rawCommission,
+                'marketer_commission' => $marketerCommission,
+                'commission_category_id' => $commissionCategoryId,
+            ];
+        }
+
+        // ── Gateway fee: computed once for the whole order (D4), then split
+        //    pro-rata across every group by its share of the card-paid
+        //    amount. fee_fixed is included exactly once in the total below.
+        $gatewayFeeTotal = $isCod || $amountDueGatewayCents <= 0
+            ? 0
+            : (int) floor($amountDueGatewayCents * $gatewayFeePct / 100) + $gatewayFeeFixed;
+
+        $groupGrossWeights = [];
+        foreach ($groups as $groupKey => $g) {
+            $groupGrossWeights[$groupKey] = max(0, $g['gross']);
+        }
+        $gatewayFeeByGroup = $this->allocateProRata($gatewayFeeTotal, $groupGrossWeights);
+
+        $platformNet = 0;
+        $marketerCommissionTotal = 0;
+        $carrierCostCoveredTotal = 0;
+        $subOrders = [];
+
+        foreach ($groups as $groupKey => $g) {
+            $isPlatformGroup = $groupKey === 'platform';
+
+            $platformCommissionAfterDiscount = $g['raw_commission'];
+            if (! $isPlatformGroup && $g['vendor_id'] !== null) {
+                $vendor = Vendor::find($g['vendor_id']);
+                $platformCommissionAfterDiscount = $vendor?->applyCommissionDiscount($g['raw_commission']) ?? $g['raw_commission'];
+            }
+
+            $gatewayFee = (int) ($gatewayFeeByGroup[$groupKey] ?? 0);
+            $vendorContribution = (int) ($vendorContributionByGroup[$groupKey] ?? 0);
+            $adminSubsidy = (int) ($adminSubsidyByGroup[$groupKey] ?? 0);
+            $chargedShipping = (int) ($chargedShippingByGroup[$groupKey] ?? 0);
+            $carrierShippingCost = (int) ($carrierRawFeeByGroup[$groupKey] ?? $chargedShipping);
+            $shippingGap = max(0, $carrierShippingCost - $chargedShipping - $vendorContribution - $adminSubsidy);
+            // shipping_revenue = shipping_charged - carrier_cost (see
+            // enhancement.md P-03 report for the full derivation of why
+            // vendor_contribution/admin_subsidy are added back into
+            // platform_net separately rather than folded in here).
+            $shippingRevenue = $chargedShipping - $carrierShippingCost;
+
+            $marketerOwner = $g['marketer_owner'];
+            $marketerCommission = $g['marketer_commission'];
+            $marketerCommissionTotal += $marketerCommission;
+            $carrierCostCoveredTotal += $carrierShippingCost;
+
+            if ($isPlatformGroup) {
+                $vendorPayout = 0;
+            } else {
+                $vendorPayout = $g['gross']
+                    - $g['vendor_coupon_cost']
+                    - $platformCommissionAfterDiscount
+                    - $gatewayFee
+                    - $vendorContribution
+                    - ($marketerOwner === 'vendor' ? $marketerCommission : 0);
+            }
+
+            // cod_fee and warranty_revenue are order-level (added once,
+            // after the loop below) — they are not per-group here. The
+            // gateway fee is only subtracted from platform_net for the
+            // platform's OWN sub-orders (admin-listing groups) — a vendor
+            // group's gateway_fee share is already paid by that vendor via
+            // vendor_payout above, so subtracting it again here would
+            // double-count it (D4: "gateway_fee(platform share)").
+            $platformNet += $platformCommissionAfterDiscount
+                + $shippingRevenue
+                - $g['platform_coupon_cost']
+                - $adminSubsidy
+                - ($marketerOwner === 'platform' ? $marketerCommission : 0)
+                - ($isPlatformGroup ? $gatewayFee : 0);
+
+            // Allocate the group's after-discount commission back across its
+            // lines (weighted by each line's raw commission), so
+            // Sigma(order_items.platform_commission_after_discount) ==
+            // sub_orders.platform_commission_after_discount exactly.
+            $lineCommissionWeights = array_map(fn ($l) => $l['raw_commission'], $g['lines']);
+            $lineCommissionAfterDiscount = $this->allocateProRata($platformCommissionAfterDiscount, $lineCommissionWeights);
+            $groupLines = $g['lines'];
+            foreach ($groupLines as $lineKey => $lineData) {
+                $groupLines[$lineKey]['platform_commission_after_discount'] = $lineCommissionAfterDiscount[$lineKey] ?? 0;
+            }
+
+            $subOrders[$groupKey] = [
+                'vendor_id' => $g['vendor_id'],
+                'vendor_coupon_cost' => $g['vendor_coupon_cost'],
+                'platform_coupon_cost' => $g['platform_coupon_cost'],
+                'platform_commission' => $g['raw_commission'],
+                'platform_commission_after_discount' => $platformCommissionAfterDiscount,
+                'marketer_commission' => $marketerCommission,
+                'marketer_commission_owner' => $marketerOwner,
+                'gateway_fee' => $gatewayFee,
+                'carrier_shipping_cost' => $carrierShippingCost,
+                'shipping_gap' => $shippingGap,
+                'vendor_payout' => $vendorPayout,
+                'lines' => $groupLines,
+            ];
+        }
+
+        // cod_fee and warranty revenue are order-level, credited once here
+        // (not per sub-order group, to avoid double counting when there are
+        // several vendor groups). Warranty is 100% underwritten by the
+        // platform (documented simplification — D3's coverage-start timing
+        // is not implemented here, only revenue attribution).
+        $platformNet += $codFeeCents + $warrantyTotalCents;
+
+        return [
+            'sub_orders' => $subOrders,
+            'gateway_fee_total' => $gatewayFeeTotal,
+            'marketer_commission_total' => $marketerCommissionTotal,
+            'carrier_cost_covered_total' => $carrierCostCoveredTotal,
+            'platform_net' => $platformNet,
+            'warranty_revenue_total' => $warrantyTotalCents,
+        ];
+    }
+
+    /**
+     * Resolve platform commission for one vendor line: commissions table
+     * (vendor+category, vendor-only or category-only rows, highest
+     * priority/most specific wins) → vendors.commission_rate override (only
+     * when > 0 — the column is NOT NULL DEFAULT 0, so 0 means "no
+     * vendor-level override" here) → country_category → category chain
+     * (walking ancestors), exactly the precedence enhancement.md P-03 task 1
+     * asks for. FBN/FBP is read from the sub-order's own fulfillment_model
+     * (never global_system_type — that mismatch was the bug).
+     *
+     * @return array{0: int, 1: ?string} [commission amount, category id used]
+     */
+    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1): array
+    {
+        $today = Carbon::today()->toDateString();
+
+        $categoryChainIds = [];
+        $category = $categoryId ? Category::find($categoryId) : null;
+        $walker = $category;
+        $levels = 0;
+        while ($walker !== null && $levels < 6) {
+            $categoryChainIds[] = $walker->id;
+            $walker = $walker->parent;
+            $levels++;
+        }
+
+        if ($vendor !== null || ! empty($categoryChainIds)) {
+            $rows = Commission::query()
+                ->where(function ($q) use ($vendor) {
+                    $q->whereNull('vendor_id');
+                    if ($vendor !== null) {
+                        $q->orWhere('vendor_id', $vendor->id);
+                    }
+                })
+                ->where(function ($q) use ($categoryChainIds) {
+                    $q->whereNull('category_id');
+                    if (! empty($categoryChainIds)) {
+                        $q->orWhereIn('category_id', $categoryChainIds);
+                    }
+                })
+                ->where('effective_from', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('effective_until')->orWhere('effective_until', '>=', $today);
+                })
+                ->get();
+
+            $best = null;
+            $bestScore = -1;
+            $bestCategoryDepth = PHP_INT_MAX;
+            foreach ($rows as $row) {
+                $isVendorSpecific = $vendor !== null && $row->vendor_id === $vendor->id;
+                $categoryDepth = $row->category_id ? array_search($row->category_id, $categoryChainIds, true) : null;
+                $isCategorySpecific = $categoryDepth !== false && $categoryDepth !== null;
+
+                $score = ($isVendorSpecific ? 2 : 0) + ($isCategorySpecific ? 1 : 0);
+                $depth = $isCategorySpecific ? $categoryDepth : PHP_INT_MAX;
+
+                if ($score > $bestScore
+                    || ($score === $bestScore && $depth < $bestCategoryDepth)
+                    || ($score === $bestScore && $depth === $bestCategoryDepth && $best !== null && $row->priority > $best->priority)) {
+                    $best = $row;
+                    $bestScore = $score;
+                    $bestCategoryDepth = $depth;
+                }
+            }
+
+            if ($best !== null) {
+                $amount = (int) round($baseAmountCents * ((float) $best->rate_pct) / 100);
+                $amount = max($amount, (int) $best->min_commission);
+                if ($best->max_commission !== null) {
+                    $amount = min($amount, (int) $best->max_commission);
+                }
+
+                return [$amount, $best->category_id];
+            }
+        }
+
+        if ($vendor !== null && (float) $vendor->commission_rate > 0) {
+            return [(int) round($baseAmountCents * ((float) $vendor->commission_rate) / 100), $categoryId];
+        }
+
+        // Category chain fallback (FBN/FBP-specific pct/fixed on the
+        // category itself, walking up to the nearest ancestor that has one),
+        // optionally overridden per-country via country_categories.
+        $isFBN = $fulfillmentModel === 'fbn';
+        $resolved = $category;
+        $walker = $category;
+        $levels = 0;
+        while ($walker !== null && $levels < 6) {
+            $pct = (float) ($isFBN ? $walker->commission_fbn_pct : $walker->commission_fbp_pct);
+            $fixed = (int) ($isFBN ? $walker->commission_fbn_fixed : $walker->commission_fbp_fixed);
+            if ($pct > 0 || $fixed > 0) {
+                $resolved = $walker;
+                break;
+            }
+            $walker = $walker->parent;
+            $levels++;
+        }
+
+        if ($resolved === null) {
+            return [0, null];
+        }
+
+        $countryCategory = CountryCategory::where('country_id', $country->id)
+            ->where('category_id', $resolved->id)
+            ->first();
+
+        $pct = (float) ($isFBN
+            ? ($countryCategory?->commission_fbn_pct ?? $resolved->commission_fbn_pct)
+            : ($countryCategory?->commission_fbp_pct ?? $resolved->commission_fbp_pct)) ?: 0.0;
+        $fixed = (int) ($isFBN
+            ? ($countryCategory?->commission_fbn_fixed ?? $resolved->commission_fbn_fixed)
+            : ($countryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
+
+        $amount = (int) floor($baseAmountCents * $pct / 100) + $fixed * $quantity;
+
+        return [$amount, $resolved->id];
+    }
+
     // ── Coupon eligibility (non-money) ──────────────────────────────────
 
     private function validateCouponEligibility(Coupon $coupon, Customer $customer, int $subtotalCents, string $currency, array $items): ?string
@@ -467,6 +818,12 @@ class CheckoutPricingEngine
                 },
                 'product' => $product,
                 'listing_id' => $listing?->id,
+                'fulfillment_model' => ($item['is_admin'] ?? false) ? 'fbn' : (string) ($listing?->fulfillment_model ?? 'fbm'),
+                'commission_base_unit_price' => (int) $item['unit_price'],
+                'is_marketer' => false,
+                'marketer_owner' => null,
+                'marketer_commission_type' => null,
+                'marketer_commission_raw' => 0,
             ];
         }
 
@@ -480,6 +837,21 @@ class CheckoutPricingEngine
         $listing = $source?->fulfilmentListing;
         $variant = $listing?->productVariant;
         $product = $variant?->product;
+
+        // Marketer-commission owner (D5) and campaign fields, resolved once
+        // here so computeMoneySplit() never has to re-touch CartLineSource.
+        $isMarketer = $source?->marketerListingIdForOrderItem !== null;
+        $marketerOwner = null;
+        $marketerCommissionType = null;
+        $marketerCommissionRaw = 0;
+        if ($isMarketer && $item instanceof \App\Models\CartItem) {
+            $campaign = $item->marketerListing?->invitation?->campaign;
+            if ($campaign) {
+                $marketerOwner = $campaign->vendor_listing_id ? 'vendor' : 'platform';
+                $marketerCommissionType = (string) $campaign->commission_type;
+                $marketerCommissionRaw = (int) ($campaign->marketer_commission_amount ?? 0);
+            }
+        }
 
         return [
             'key' => (string) ($item->id ?? $index),
@@ -496,6 +868,15 @@ class CheckoutPricingEngine
             },
             'product' => $product,
             'listing_id' => $source?->sellable->id ?? $listing?->id,
+            // D1/bug-fix: commission for marketer-sold lines is taken on the
+            // vendor's own listing price (fulfilment listing), never the
+            // marketer's resale price.
+            'fulfillment_model' => $source?->isAdminSeller() ? 'fbn' : (string) ($source?->fulfillmentModel ?? 'fbm'),
+            'commission_base_unit_price' => (int) ($listing?->price ?? $item->unit_price),
+            'is_marketer' => $isMarketer,
+            'marketer_owner' => $marketerOwner,
+            'marketer_commission_type' => $marketerCommissionType,
+            'marketer_commission_raw' => $marketerCommissionRaw,
         ];
     }
 
