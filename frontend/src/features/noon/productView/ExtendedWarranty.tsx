@@ -2,11 +2,12 @@
 import Price from "@/src/components/shared/Price";
 import { Button } from "@/src/components/ui/button";
 import { ArrowBigRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import React, { useState } from "react";
 import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import useLocale from "@/src/hooks/use-locale";
 import { IProductDetails } from "./types";
 import { Warranty } from "./types/product-details";
 import { useWarrantySelection } from "./warranty-selection-context";
@@ -22,7 +23,7 @@ export default function ExtendedWarranty({
   listingId: string;
 }) {
   const t = useTranslations("productView");
-  const locale = useLocale() as "ar" | "en";
+  const locale = useLocale();
   const { selectedPlanId, selectPlan: setSelectedPlan } =
     useWarrantySelection();
   const [activeWarrantyForSheet, setActiveWarrantyForSheet] =
@@ -31,6 +32,7 @@ export default function ExtendedWarranty({
   const selectPlan = (planId: string) => {
     setSelectedPlan(selectedPlanId === planId ? null : planId);
   };
+
 
   return (
     <>

@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import { Info, X } from "lucide-react";
 import {
   Sheet,
@@ -34,7 +35,7 @@ export default function ExtendedWarrantySheet({
   onSelect,
 }: Props) {
   const t = useTranslations("productView");
-  const locale = useLocale() as "ar" | "en";
+  const locale = useLocale();
 
   // Keep displayed warranty during exit animation
   const [cachedWarranty, setCachedWarranty] = useState<Warranty | null>(
