@@ -8,10 +8,10 @@ type PaginatedEnvelope<T> = ApiEnvelope<{
 
 export type WarrantyPlan = {
   id: string;
-  name: string;
+  name: { ar: string; en: string };
   duration_months: number;
-  duration_label: string;
-  features: string[] | null;
+  duration_label: { ar: string; en: string };
+  features: { ar: string[] | null; en: string[] | null };
   price: number;
   currency: string;
 };

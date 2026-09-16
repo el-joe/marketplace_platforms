@@ -71,10 +71,10 @@ class WarrantyPlanService
     {
         return [
             'id' => $plan->id,
-            'name' => app()->getLocale() === 'ar' ? $plan->name_ar : $plan->name_en,
+            'name' => ['ar' => $plan->name_ar, 'en' => $plan->name_en],
             'duration_months' => $plan->duration_months,
             'duration_label' => $this->formatDurationLabel($plan->duration_months),
-            'features' => app()->getLocale() === 'ar' ? $plan->features_ar : $plan->features_en,
+            'features' => ['ar' => $plan->features_ar, 'en' => $plan->features_en],
             'price' => $plan->resolvePrice($listingPrice),
             'price_type' => $plan->price_type,
             'price_pct' => $plan->price_pct,
@@ -83,16 +83,27 @@ class WarrantyPlanService
         ];
     }
 
-    private function formatDurationLabel(int $months): string
+    private function formatDurationLabel(int $months): array
     {
-        return match (true) {
-            $months === 1 => '1 month',
-            $months === 6 => '6 months',
-            $months === 12 => '1 year',
-            $months === 24 => '2 years',
-            $months <= 11 => "{$months} months",
-            $months % 12 === 0 => ($months / 12).' years',
-            default => "{$months} months",
-        };
+        return [
+            'ar' => match (true) {
+                $months === 1 => 'شهر واحد',
+                $months === 6 => '6 أشهر',
+                $months === 12 => 'سنة واحدة',
+                $months === 24 => 'سنتان',
+                $months <= 11 => "{$months} أشهر",
+                $months % 12 === 0 => ($months / 12).' سنوات',
+                default => "{$months} أشهر",
+            },
+            'en' => match (true) {
+                $months === 1 => '1 month',
+                $months === 6 => '6 months',
+                $months === 12 => '1 year',
+                $months === 24 => '2 years',
+                $months <= 11 => "{$months} months",
+                $months % 12 === 0 => ($months / 12).' years',
+                default => "{$months} months",
+            },
+        ];
     }
 }

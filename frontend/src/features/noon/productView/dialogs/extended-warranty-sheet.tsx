@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Info, X } from "lucide-react";
 import {
   Sheet,
@@ -34,6 +34,7 @@ export default function ExtendedWarrantySheet({
   onSelect,
 }: Props) {
   const t = useTranslations("productView");
+  const locale = useLocale() as "ar" | "en";
 
   // Keep displayed warranty during exit animation
   const [cachedWarranty, setCachedWarranty] = useState<Warranty | null>(
@@ -71,17 +72,17 @@ export default function ExtendedWarrantySheet({
           <div className="flex items-center gap-3">
             <Image
               src={activeWarranty.image_url || FALLBACK_WARRANTY_IMAGE}
-              alt={activeWarranty.name}
+              alt={activeWarranty.name[locale] || ""}
               width={46}
               height={46}
               className="rounded-lg object-contain shrink-0"
             />
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold text-blue tracking-wider uppercase leading-none mb-1">
-                {activeWarranty.duration_label}
+                {activeWarranty.duration_label[locale]}
               </span>
               <SheetTitle className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
-                {activeWarranty.name}
+                {activeWarranty.name[locale]}
               </SheetTitle>
             </div>
           </div>

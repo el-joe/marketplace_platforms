@@ -312,10 +312,10 @@ export interface Attribute {
 
 export interface Warranty {
   id: string;
-  name: string;
+  name: { ar: string; en: string };
   duration_months: number;
-  duration_label: string;
-  features: string[];
+  duration_label: { ar: string; en: string };
+  features: { ar: string[] | null; en: string[] | null };
   price: number;
   price_type: "flat" | "percentage";
   price_pct: number | null;

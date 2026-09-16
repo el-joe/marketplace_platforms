@@ -123,10 +123,10 @@ export default function AddedToCartSheet({ productData }: Props) {
                         />
                         <div className="flex-1">
                           <p className="px-2 bg-light-blue text-blue text-sm w-fit mb-1">
-                            {warranty.duration_label}
+                            {warranty.duration_label[locale]}
                           </p>
                           <h4 className="font-semibold text:base lg:text-lg flex items-center">
-                            {warranty.name}
+                            {warranty.name[locale]}
                             {locale === "ar" ? (
                               <ChevronLeft />
                             ) : (
@@ -136,7 +136,7 @@ export default function AddedToCartSheet({ productData }: Props) {
                         </div>
                       </div>
                       <ul className="mt-3 gap-1 flex flex-col">
-                        {warranty.features.map((benefit, i) => (
+                        {(warranty.features[locale] ?? []).map((benefit, i) => (
                           <li
                             key={i}
                             className="text-xs lg:text-sm text-gray flex items-start"

@@ -84,6 +84,16 @@ class WarrantyPlan extends Model
 
     public function getDurationLabelAttribute(): string
     {
+        if (app()->getLocale() === 'ar') {
+            return match ($this->duration_months) {
+                1 => 'شهر واحد',
+                6 => '6 أشهر',
+                12 => 'سنة واحدة',
+                24 => 'سنتان',
+                default => "{$this->duration_months} أشهر",
+            };
+        }
+
         return match ($this->duration_months) {
             1 => '1 month',
             6 => '6 months',
