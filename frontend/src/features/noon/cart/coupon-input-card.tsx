@@ -29,7 +29,7 @@ export default function CouponInputCard() {
           <div className="flex gap-2 items-center bg-light-green text-green border border-green rounded-lg px-3 py-2">
             <Tag className="size-4" />
             <p className="font-bold tracking-wider text-lg">
-              {cart?.cart.coupon?.code ?? "Saeed"}
+              {cart?.cart.coupon?.code}
             </p>
             <Button
               className={"ms-auto"}
@@ -40,7 +40,7 @@ export default function CouponInputCard() {
               <X className="size-6" />
             </Button>
           </div>
-          <p className="text-sm text-gray mt-2">
+          <p className="text-sm text-gray mt-2 md:max-w-[360px] lg:max-w-[404px]">
             {cart?.cart?.coupon?.description}
           </p>
         </div>

@@ -5,22 +5,25 @@ import AddressCard from "../../AddressCard";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { useAuthContext } from "@/src/providers/auth-provider";
 
 export default function AddressesList() {
   const t = useTranslations("header.locationDialog");
-  const { data, isPending } = useQuery({
+  const { isLogged } = useAuthContext();
+  const { data, isPending, isLoading } = useQuery({
     queryKey: ["addresses"],
     queryFn: getAddresses,
+    enabled: isLogged,
   });
   return (
     <div className="overflow-auto w-full min-h-[330px]">
-      {isPending ? (
+      {isLoading ? (
         <>
           <Skeleton className="h-28" />
           <Skeleton className="h-28 my-4" />
           <Skeleton className="h-28" />
         </>
-      ) : !data?.length ? (
+      ) : !data?.length || !isLogged ? (
         <div className="mx-auto text-center">
           <Image
             src={
@@ -28,7 +31,8 @@ export default function AddressesList() {
             }
             width={266}
             height={266}
-            alt="empty result mx-auto"
+            alt="empty result"
+            className="mx-auto"
           />
           <p className="mb-2 font-bold">{t("noSavedAddresses")}</p>
           <p className="text-secondary max-w-56 text-center mx-auto">

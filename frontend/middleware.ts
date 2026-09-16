@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { refreshAccessToken } from "./src/helpers/refresh-token";
 import { getCountriesService } from "./src/services/countries";
 
+const IPINFO_TOKEN = process.env.IPINFO_TOKEN;
+
 const PROTECTED_ROUTES = [
   "/profile",
   "/wishlist",
@@ -53,9 +55,17 @@ export async function middleware(request: NextRequest) {
   // Only fetch + set cookie if not already set
   if (!country) {
     try {
-      const geoRes = await fetch("https://ipapi.co/json/");
+      const geoRes = await fetch(
+        `https://api.ipinfo.io/lite/me?token=${IPINFO_TOKEN}`,
+      );
       const geoData = await geoRes.json();
-      country = geoData.country_code_iso3.lowercase() ?? "uae";
+      country =
+        data
+          .find(
+            (c) =>
+              c.iso_code_2.toLowerCase() === geoData.country_code.toLowerCase(),
+          )
+          ?.site_code?.toLowerCase() || "uae";
     } catch {
       country = "uae";
     }
@@ -67,7 +77,7 @@ export async function middleware(request: NextRequest) {
   if (!authenticated && protectedRoute) {
     return NextResponse.redirect(new URL("/?authDialog=on", request.url));
   }
-  const routing = await getRouting();
+  const routing = await getRouting(country);
 
   const i18nMiddleware = createMiddleware(routing);
   const response = i18nMiddleware(request); // this is the response that actually gets returned
