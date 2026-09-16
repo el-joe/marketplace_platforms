@@ -18,9 +18,9 @@ export const useCheckout = () => {
     IPrepareCheckout | undefined
   >(undefined);
 
-  const [selectedInstruction, setSelectedInstruction] = useState<
-    string | null
-  >(null);
+  const [selectedInstruction, setSelectedInstruction] = useState<string | null>(
+    null,
+  );
 
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [contractAcceptanceId, setContractAcceptanceId] = useState<
@@ -126,8 +126,10 @@ export const useCheckout = () => {
       return;
     }
 
-    const warrantySelections: { listing_id: string; warranty_plan_id: string }[] =
-      [];
+    const warrantySelections: {
+      listing_id: string;
+      warranty_plan_id: string;
+    }[] = [];
     try {
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);

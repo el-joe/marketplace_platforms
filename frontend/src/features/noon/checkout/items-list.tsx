@@ -35,6 +35,7 @@ const Shipment = ({
   const t = useTranslations("checkout");
   const locale = useLocale();
 
+
   return (
     <div className="bg-white rounded-2xl">
       <div className="flex gap-2 items-center p-3">

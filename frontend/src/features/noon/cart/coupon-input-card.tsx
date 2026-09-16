@@ -20,7 +20,9 @@ export default function CouponInputCard() {
   const locale = useLocale();
   const { applyCoupon, applyCouponErr, removeCoupon, cart, isMutating } =
     useCartContext();
+
   const [couponInputValue, setCouponInputValue] = useState<string>("");
+
   return (
     <div className="p-4 rounded-[16px] bg-white">
       <h3 className="font-bold mb-3">{t("gotACoupon")}</h3>
