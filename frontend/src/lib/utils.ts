@@ -107,6 +107,11 @@ export async function fetchInstance<T>(
 export function fetchGlobalInstance<T>(
   path: string,
   init?: RequestInit,
+  isPublic?: boolean,
 ): Promise<T> {
-  return fetchWithAuth<T>(apiBaseUrlGlobal, path, init);
+  return fetchWithAuth<T>(
+    isPublic ? apiPublicBaseUrlGlobal : apiBaseUrlGlobal,
+    path,
+    init,
+  );
 }

@@ -1,3 +1,5 @@
+import { fetchGlobalInstance } from "../lib/utils";
+
 export interface FooterCategoryLink {
   id: string;
   name: { ar: string | null; en: string | null };
@@ -25,18 +27,11 @@ export interface FooterData {
   payment_methods: FooterLink[];
 }
 
-const PUBLIC_BASE =
-  process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "/api/public/v1";
-
-/** Shared: cached storefront footer data (categories + footer settings). GET /footer */
-export async function getFooterData(): Promise<FooterData> {
-  const res = await fetch(`${PUBLIC_BASE}/footer`, {
-    next: { revalidate: 300 },
-    headers: { Accept: "application/json" },
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  const { data } = (await res.json()) as { data: FooterData };
-  return data;
-}
+export const getFooterData = async () => {
+  const res = await fetchGlobalInstance<{ data: FooterData }>(
+    "/footer",
+    undefined,
+    true,
+  );
+  return res.data;
+};

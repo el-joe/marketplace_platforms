@@ -29,8 +29,13 @@ const APP_STORE_ICONS: Record<string, string> = {
 const Footer = async () => {
   const t = await getTranslations("footer");
   const locale = await getLocale();
-  const { categories, social_links, bottom_nav_links, app_store_links, payment_methods } =
-    await getFooterData();
+  const {
+    categories,
+    social_links,
+    bottom_nav_links,
+    app_store_links,
+    payment_methods,
+  } = await getFooterData();
 
   const footerLinks = categories.map((category) => ({
     id: category.id,
