@@ -15,7 +15,11 @@ type OptionsListProps = {
   onToggle?: (value: string, checked: boolean) => void;
 };
 
-const OptionsList = ({ options, selectedValues, onToggle }: OptionsListProps) => {
+const OptionsList = ({
+  options,
+  selectedValues,
+  onToggle,
+}: OptionsListProps) => {
   const [expanded, setExpanded] = useState(false);
   const hasMore = options.length > DEFAULT_VISIBLE_COUNT;
   const visibleOptions = expanded
@@ -26,7 +30,7 @@ const OptionsList = ({ options, selectedValues, onToggle }: OptionsListProps) =>
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-3">
         {visibleOptions.map((option) => (
-          <Label key={option} className="font-normal cursor-pointer">
+          <Label key={option} className="cursor-pointer">
             <Checkbox
               checked={selectedValues?.includes(option)}
               onCheckedChange={(checked) => onToggle?.(option, checked)}

@@ -33,7 +33,7 @@ export default async function Shop({
       ))}
 
       {topBanner && (
-        <div className="mb-4">
+        <div className="my-4">
           <PlacementBanner
             banner={topBanner}
             variant={isSearch ? "search" : "category"}

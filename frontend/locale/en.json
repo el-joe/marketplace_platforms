@@ -1029,7 +1029,13 @@
   "shop": {
     "resultsFor": "Results for",
     "sortBy": "Sort by",
-    "filters": "Filters"
+    "filters": "Filters",
+    "price": "Price",
+    "from": "From",
+    "to": "To",
+    "go": "Go",
+    "seeAll": "See all ({count})",
+    "seeLess": "See less"
   },
   "classified": {
     "city": "City",

@@ -289,14 +289,18 @@ html {
 .productSwiperThumbs .swiper-slide-thumb-active {
   opacity: 1;
   border: 2px solid black;
-  @layer utilities {
-    .scrollbar-hide {
-      scrollbar-width: none;
+}
 
-      &::-webkit-scrollbar {
-        display: none;
-      }
-    }
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 }
 

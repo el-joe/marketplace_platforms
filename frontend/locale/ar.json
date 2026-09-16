@@ -1029,7 +1029,13 @@
   "shop": {
     "resultsFor": "النتائج لـ",
     "sortBy": "ترتيب حسب",
-    "filters": "عوامل التصفية"
+    "filters": "عوامل التصفية",
+    "price": "السعر",
+    "from": "من",
+    "to": "إلى",
+    "go": "بحث",
+    "seeAll": "عرض الكل ({count})",
+    "seeLess": "عرض أقل"
   },
   "classified": {
     "city": "المدينة",

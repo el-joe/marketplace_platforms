@@ -11,11 +11,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/src/components/ui/sheet";
+import useLocale from "@/src/hooks/use-locale";
 
 import FilterSidebar from "./desktop-view";
 
 const MobileFiltersSheet = () => {
   const t = useTranslations("shop");
+  const locale = useLocale();
+  const side = locale === "ar" ? "right" : "left";
 
   return (
     <Sheet>
@@ -27,7 +30,7 @@ const MobileFiltersSheet = () => {
           </Button>
         }
       />
-      <SheetContent side="left" className="overflow-y-auto p-4">
+      <SheetContent side={side} className="overflow-y-auto p-4">
         <SheetHeader className="p-0">
           <SheetTitle>{t("filters")}</SheetTitle>
         </SheetHeader>

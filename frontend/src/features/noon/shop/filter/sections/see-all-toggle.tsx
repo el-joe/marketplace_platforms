@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Button } from "@/src/components/ui/button";
 
 type SeeAllToggleProps = {
@@ -12,16 +14,20 @@ const SeeAllToggle = ({
   expanded,
   totalCount,
   onToggle,
-}: SeeAllToggleProps) => (
-  <Button
-    type="button"
-    variant="link"
-    size="sm"
-    className="h-auto self-start p-0 text-xs text-blue"
-    onClick={onToggle}
-  >
-    {expanded ? "See less" : `See all (${totalCount})`}
-  </Button>
-);
+}: SeeAllToggleProps) => {
+  const t = useTranslations("shop");
+
+  return (
+    <Button
+      type="button"
+      variant="link"
+      size="sm"
+      className="h-auto self-start p-0 text-xs text-blue"
+      onClick={onToggle}
+    >
+      {expanded ? t("seeLess") : t("seeAll", { count: totalCount })}
+    </Button>
+  );
+};
 
 export default SeeAllToggle;
