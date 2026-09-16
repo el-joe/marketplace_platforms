@@ -6,9 +6,13 @@ import type { OrderDetail } from "../../helpers/types";
 
 type Props = {
   address: OrderDetail["shipping_address"];
+  isNegative: boolean;
 };
 
-export default async function DeliveryAddressCard({ address }: Props) {
+export default async function DeliveryAddressCard({
+  address,
+  isNegative,
+}: Props) {
   const t = await getTranslations("profile");
 
   return (
@@ -16,14 +20,16 @@ export default async function DeliveryAddressCard({ address }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-lg">{t("deliveryAddressLabel")}</h2>
 
-        <Button
-          render={<Link href="/addresses" />}
-          nativeButton={false}
-          variant="outline"
-          className="font-semibold"
-        >
-          {t("updateAddress")}
-        </Button>
+        {!isNegative && (
+          <Button
+            render={<Link href="/addresses" />}
+            nativeButton={false}
+            variant="outline"
+            className="font-semibold"
+          >
+            {t("updateAddress")}
+          </Button>
+        )}
       </div>
 
       <div className="mt-4 text-sm">

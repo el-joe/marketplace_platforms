@@ -44,12 +44,14 @@ const trackingBannerKeys: Partial<Record<OrderStatus, string>> = {
   partially_shipped: "trackingBannerPartiallyShipped",
   shipped: "trackingBannerShipped",
   delivered: "trackingBannerDelivered",
+  cancelled: "trackingBannerCancelled",
+  refunded: "trackingBannerRefunded",
 };
 
 /**
  * The tracking status card's banner subtext is status-specific; statuses
- * outside the active placed -> delivered flow (cancelled, refunded, etc.)
- * fall back to the confirmed-stage copy since this card isn't shown for them.
+ * outside the active placed -> delivered flow and without their own banner
+ * copy (e.g. disputed) fall back to the confirmed-stage copy.
  */
 export function getTrackingBannerKey(status: OrderStatus): string {
   return trackingBannerKeys[status] ?? "confirmedOnTimeBanner";
