@@ -160,8 +160,6 @@ const CategoriesNav = () => {
               href={categoryHref(category)}
               className={`py-1 block border-b border-transparent hover:border-black font-semibold ${
                 hoveredCategory?.id === category.id ? "border-b-black" : ""
-              } ${category.type === Type.ClassiFied ? "text-orange-600" : ""} ${
-                category.type === Type.Travel ? "text-teal-600" : ""
               }`}
               onMouseEnter={() => {
                 if (!hoveredCategory) {
