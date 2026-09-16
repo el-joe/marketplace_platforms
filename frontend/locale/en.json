@@ -1123,7 +1123,11 @@
     "emptyState": "No active marketers yet",
     "typeInfluencer": "Influencer",
     "typeAffiliate": "Affiliate",
-    "salesCount": "{count} sales"
+    "salesCount": "{count} sales",
+    "statMarketers": "Marketers",
+    "statCampaigns": "Campaigns",
+    "statSales": "Sales driven",
+    "featuredBadge": "Top performer"
   },
   "marketerProfile": {
     "pageTitleFallback": "Marketer | noon",

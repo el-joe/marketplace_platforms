@@ -16,6 +16,17 @@ export function cn(...inputs: ClassValue[]) {
 export const apiBaseUrlGlobal = `${process.env.NEXT_PUBLIC_BASE_API_URL}`;
 // export const apiBaseUrl = `${apiBaseUrlGlobal}/${country}`;
 
+/**
+ * Base URL for the unauthenticated `/api/public/v1/...` endpoints (marketers,
+ * marketer profiles, sellers, live streams). Same host as `apiBaseUrlGlobal`,
+ * just the `/customer/` segment swapped for `/public/` — falls back to an
+ * explicit env var only if that swap ever stops holding.
+ */
+export const apiPublicBaseUrlGlobal = apiBaseUrlGlobal.replace(
+  "/customer/",
+  "/public/",
+);
+
 export class ApiRequestError extends Error {
   status: number;
 

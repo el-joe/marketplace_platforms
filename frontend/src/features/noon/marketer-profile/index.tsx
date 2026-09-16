@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
-import MarketerProfileBanner from "./marketer-profile-banner";
-import MarketerProfileSidebar from "./marketer-profile-sidebar";
-import MarketerListingsGrid from "./marketer-listings-grid";
+import MarketerProfileBanner from "./components/marketer-profile-banner";
+import MarketerProfileSidebar from "./components/marketer-profile-sidebar";
+import MarketerListingsGrid from "./components/marketer-listings-grid";
 import { MarketerProfileData } from "./helpers/types";
 
 interface Props {
@@ -13,7 +13,7 @@ export default async function MarketerProfileView({ data }: Props) {
   const t = await getTranslations("marketerProfile");
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="min-h-screen bg-white">
       <MarketerProfileBanner
         bannerUrl={profile.banner_url}
         avatarUrl={profile.avatar_url}
@@ -21,30 +21,19 @@ export default async function MarketerProfileView({ data }: Props) {
         marketerType={marketer.marketer_type}
         profileUrl={profile.profile_url}
         qrCodeUrl={profile.qr_code_url}
-        labels={{
-          influencerBadge: t("influencerBadge"),
-          affiliateBadge: t("affiliateBadge"),
-          copied: t("copied"),
-          share: t("share"),
-          qrTitle: t("qrTitle"),
-          qrScanHint: t("qrScanHint", { name: marketer.name }),
-          download: t("download"),
-          close: t("close"),
-        }}
       />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <div className="flex flex-col items-start gap-8 lg:flex-row">
           <MarketerProfileSidebar marketer={marketer} profile={profile} />
-          <div className="hidden lg:block w-px bg-gray-200 self-stretch" />
+          <div className="hidden self-stretch border-l border-border-color lg:block" />
 
           <main className="flex-1 space-y-10">
-            {/* Section A — Own products */}
             <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <h2 className="mb-4 text-xl font-black text-primary">
                 {t("selectedProducts")}
                 {own_listings.meta.total > 0 && (
-                  <span className="ms-2 text-sm font-normal text-gray-400">
+                  <span className="ms-2 text-sm font-normal text-gray">
                     ({t("productsCount", { count: own_listings.meta.total })})
                   </span>
                 )}
@@ -62,16 +51,15 @@ export default async function MarketerProfileView({ data }: Props) {
               />
             </section>
 
-            {/* Section B — Campaign products (only if any) */}
             {campaign_listings.meta.total > 0 && (
               <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-1">
+                <h2 className="mb-1 text-xl font-black text-primary">
                   {t("campaignProducts")}
-                  <span className="ms-2 text-sm font-normal text-gray-400">
+                  <span className="ms-2 text-sm font-normal text-gray">
                     ({t("productsCount", { count: campaign_listings.meta.total })})
                   </span>
                 </h2>
-                <p className="text-xs text-gray-400 mb-4">{t("campaignProductsHint")}</p>
+                <p className="mb-4 text-xs text-gray">{t("campaignProductsHint")}</p>
                 <MarketerListingsGrid
                   slug={profile.slug}
                   section="campaign"

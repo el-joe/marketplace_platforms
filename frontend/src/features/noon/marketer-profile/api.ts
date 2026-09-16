@@ -1,13 +1,12 @@
 import { MarketerProfileData } from "./helpers/types";
 import resolveCookie from "@/src/helpers/resolveCookie";
-
-const PUBLIC_BASE = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "/api/public/v1";
+import { apiPublicBaseUrlGlobal } from "@/src/lib/utils";
 
 export class MarketerProfileNotFoundError extends Error {}
 
 export async function getMarketerProfile(slug: string): Promise<MarketerProfileData> {
   const country = await resolveCookie("country");
-  const res = await fetch(`${PUBLIC_BASE}/${country}/marketers/${slug}`, {
+  const res = await fetch(`${apiPublicBaseUrlGlobal}/${country}/marketers/${slug}`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -41,7 +40,7 @@ export async function getMarketerListings(
     campaign_page: String(campaignPage),
     per_page: String(perPage),
   });
-  const res = await fetch(`${PUBLIC_BASE}/${country}/marketers/${slug}?${qs}`, {
+  const res = await fetch(`${apiPublicBaseUrlGlobal}/${country}/marketers/${slug}?${qs}`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });

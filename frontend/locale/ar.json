@@ -1119,7 +1119,11 @@
     "emptyState": "لا يوجد ماركترز نشطين بعد",
     "typeInfluencer": "مؤثر",
     "typeAffiliate": "أفيليت",
-    "salesCount": "{count} مبيعة"
+    "salesCount": "{count} مبيعة",
+    "statMarketers": "ماركترز",
+    "statCampaigns": "حملات",
+    "statSales": "مبيعات محققة",
+    "featuredBadge": "الأعلى أداءً"
   },
   "marketerProfile": {
     "pageTitleFallback": "ماركتر | نون",
