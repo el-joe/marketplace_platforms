@@ -43,6 +43,7 @@ use App\Services\LastClickAttributionService;
 use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
 use Illuminate\Support\Facades\Log;
+use App\Services\Checkout\CheckoutPricingEngine;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
 use App\Services\Customer\CodValidationService;
@@ -79,6 +80,7 @@ class CheckoutController extends Controller
         private readonly CodValidationService $codValidationService,
         private readonly LastClickAttributionService $attributionService,
         private readonly \App\Services\Ads\PlacementAdService $placementAds,
+        private readonly CheckoutPricingEngine $pricingEngine,
     ) {}
 
     public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
@@ -246,17 +248,16 @@ class CheckoutController extends Controller
 
         $codFeeCents = $isCod ? $codExtraFee : 0;
 
-        $warrantyResult = $this->calculationService->resolveWarrantySelections(
+        $warrantyResult = $this->pricingEngine->resolveWarrantySelections(
             $cartItems,
             $validated['warranty_selections'] ?? [],
             $country,
             $cart->currency,
-            $this->warrantyPlanService,
         );
-        $warrantyTotalCents = $warrantyResult['total'];
 
         $couponResponse = null;
         $discountCents = 0;
+        $discountAllocations = [];
         $coupon = null;
         if (! empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', $validated['coupon_code'])->first();
@@ -267,15 +268,17 @@ class CheckoutController extends Controller
             $coupon = $cart->coupon;
         }
 
+        $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+
         if ($coupon) {
-            $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
-            $couponResult = $this->calculationService->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
+            $couponResult = $this->pricingEngine->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
 
             if ($couponResult['error']) {
                 return ApiResponse::error($couponResult['error'], [], 422);
             }
 
             $discountCents = $couponResult['discount'];
+            $discountAllocations = $couponResult['allocations'];
             $couponResponse = [
                 'code' => $coupon->code,
                 'type' => $coupon->type,
@@ -286,23 +289,38 @@ class CheckoutController extends Controller
         if ($cart->affiliate_promo_code_id) {
             $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
             if ($affiliatePromoCode) {
-                $subtotalForPromo = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
-                $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotalForPromo, $cart->currency);
+                $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotal, $cart->currency);
 
-                if (! $promoResult['error']) {
+                if (! $promoResult['error'] && $promoResult['discount'] > 0) {
                     $discountCents += $promoResult['discount'];
+                    $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => $i->unit_price * $i->quantity])->all();
+                    foreach ($this->pricingEngine->allocateProRata($promoResult['discount'], $weights) as $k => $v) {
+                        $discountAllocations[$k] = ($discountAllocations[$k] ?? 0) + $v;
+                    }
                 }
             }
         }
 
-        $summary = $this->calculationService->buildOrderSummary(
+        $pricedCart = $this->pricingEngine->priceCart(
             $cartItems,
+            $country,
             $vendorShipping['total'],
             $codFeeCents,
             $discountCents,
-            $country,
+            $discountAllocations,
             0,
-            $warrantyTotalCents
+            [],
+            0,
+            $warrantyResult['selections'],
+            collect($vendorShipping['per_vendor'])->map(fn ($v) => $v['shipping'])->all(),
+        );
+
+        $summary = $pricedCart->toArray();
+
+        \Illuminate\Support\Facades\Cache::put(
+            "checkout_prepare_signature:{$customer->id}",
+            $pricedCart->signature(),
+            now()->addMinutes(30),
         );
 
         $availableGateways = CountryPaymentGateway::where('country_id', $country->id)
@@ -545,32 +563,32 @@ class CheckoutController extends Controller
         $shippingFeeCents = $vendorShipping['total'];
         $codFeeCents      = $isCod ? $codExtraFee : 0;
 
-        $warrantyResult = $this->calculationService->resolveWarrantySelections(
+        $warrantyResult = $this->pricingEngine->resolveWarrantySelections(
             $cartItems,
             $validated['warranty_selections'] ?? [],
             $country,
             $cart->currency,
-            $this->warrantyPlanService,
         );
-        $warrantyTotalCents = $warrantyResult['total'];
-        $warrantySelections = $warrantyResult['selections'];
+
+        $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
 
         $coupon = null;
         $discountCents = 0;
+        $discountAllocations = [];
         if (! empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', $validated['coupon_code'])->first();
             if (! $coupon) {
                 return ApiResponse::error(__('common.exceptions.checkout.invalid_coupon'), [], 422);
             }
 
-            $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
-            $couponResult = $this->calculationService->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
+            $couponResult = $this->pricingEngine->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
 
             if ($couponResult['error']) {
                 return ApiResponse::error($couponResult['error'], [], 422);
             }
 
             $discountCents = $couponResult['discount'];
+            $discountAllocations = $couponResult['allocations'];
         }
         $couponDiscountCents = $discountCents;
 
@@ -578,18 +596,45 @@ class CheckoutController extends Controller
         if ($cart->affiliate_promo_code_id) {
             $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
             if ($affiliatePromoCode) {
-                $subtotalForPromo = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
-                $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotalForPromo, $cart->currency);
+                $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotal, $cart->currency);
 
-                if (! $promoResult['error']) {
+                if (! $promoResult['error'] && $promoResult['discount'] > 0) {
                     $discountCents += $promoResult['discount'];
+                    $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => $i->unit_price * $i->quantity])->all();
+                    foreach ($this->pricingEngine->allocateProRata($promoResult['discount'], $weights) as $k => $v) {
+                        $discountAllocations[$k] = ($discountAllocations[$k] ?? 0) + $v;
+                    }
                 }
             }
+        }
+
+        $shippingByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => $v['shipping'])->all();
+
+        // Priced without loyalty — this is what `prepare` could have shown
+        // the customer, so it's what we compare for price-drift detection.
+        $comparablePricedCart = $this->pricingEngine->priceCart(
+            $cartItems, $country, $shippingFeeCents, $codFeeCents,
+            $discountCents, $discountAllocations, 0, [], 0,
+            $warrantyResult['selections'], $shippingByGroup,
+        );
+
+        $preparedSignature = \Illuminate\Support\Facades\Cache::pull("checkout_prepare_signature:{$customer->id}");
+        if ($preparedSignature !== null && $preparedSignature !== $comparablePricedCart->signature()) {
+            return ApiResponse::error(
+                __('common.exceptions.checkout.price_changed', [], 'Prices have changed since you last viewed this order.'),
+                [
+                    'error_code' => 'price_changed',
+                    'prepared' => $preparedSignature,
+                    'current' => $comparablePricedCart->signature(),
+                ],
+                409
+            );
         }
 
         // ── Loyalty redemption ────────────────────────────────────────────────
         $loyaltyDiscount      = 0;
         $loyaltyPointsToUse   = 0.0;
+        $loyaltyAllocations   = [];
         if (! empty($validated['loyalty_points_to_use'])) {
             $loyaltyPointsToUse = (float) $validated['loyalty_points_to_use'];
             try {
@@ -598,23 +643,35 @@ class CheckoutController extends Controller
                     $loyaltyPointsToUse,
                     // Pass a temporary total estimate (subtotal - coupon) for the cap check.
                     // The real cap is re-applied inside debitPointsForOrder after order creation.
-                    max(0, (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity) - $couponDiscountCents),
+                    max(0, $subtotal - $discountCents),
                 );
             } catch (\Illuminate\Validation\ValidationException $e) {
                 return ApiResponse::error($e->getMessage(), $e->errors(), 422);
             }
-            $discountCents += $loyaltyDiscount;
+
+            if ($loyaltyDiscount > 0) {
+                $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => $i->unit_price * $i->quantity])->all();
+                $loyaltyAllocations = $this->pricingEngine->allocateProRata($loyaltyDiscount, $weights);
+            }
         }
 
-        $summary = $this->calculationService->buildOrderSummary(
-            $cartItems,
-            $shippingFeeCents,
-            $codFeeCents,
-            $discountCents,
-            $country,
-            0,
-            $warrantyTotalCents
+        $pricedCart = $this->pricingEngine->priceCart(
+            $cartItems, $country, $shippingFeeCents, $codFeeCents,
+            $discountCents, $discountAllocations, $loyaltyDiscount, $loyaltyAllocations, 0,
+            $warrantyResult['selections'], $shippingByGroup,
         );
+
+        $summary = $pricedCart->toArray();
+        $warrantySelections = $warrantyResult['selections'];
+
+        // Index the engine's per-line/per-sub-order output for O(1) lookup
+        // while persisting — place-order writes the engine's numbers as-is,
+        // with no recalculation (P-01 task 4).
+        $pricedLinesByItemId = [];
+        foreach ($pricedCart->lines as $pricedLine) {
+            $pricedLinesByItemId[$pricedLine->id] = $pricedLine;
+        }
+        $pricedSubOrdersByVendorId = $pricedCart->subOrders;
 
         if ($isWallet) {
             $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
@@ -640,7 +697,8 @@ class CheckoutController extends Controller
                 $cartItems, $summary, $attribution, $vendorShipping,
                 $warrantySelections, $cart, $couponDiscountCents,
                 $loyaltyDiscount, $loyaltyPointsToUse,
-                $gatewayCode, $isCod, $isWallet, $methodConfig
+                $gatewayCode, $isCod, $isWallet, $methodConfig,
+                $pricedLinesByItemId, $pricedSubOrdersByVendorId
             ) {
                 $vendorShippingMap = $vendorShipping['per_vendor'];
                 $order = Order::create([
@@ -710,7 +768,12 @@ class CheckoutController extends Controller
                     $vendorContributionCents = $vendorShippingMap[$vendorId]['vendor_contribution'] ?? 0;
                     $vendorBillableWeightGrams = $vendorShippingMap[$vendorId]['billable_weight_grams'] ?? null;
 
-                    $vendorTax = (int) round($vendorSubtotal * ((float) $country->vat_rate / 100));
+                    // Sub-order tax is the engine's number, not recomputed here — it
+                    // is by construction the sum of this group's line taxes
+                    // (including warranty tax), so Σ sub_orders.tax == orders.tax
+                    // always holds (enhancement.md P-01 / D2).
+                    $pricedSubOrder = $pricedSubOrdersByVendorId[$vendorId] ?? null;
+                    $vendorTax = $pricedSubOrder?->tax ?? 0;
 
                     $itemCommissions = [];
                     $reservedInventories = [];
@@ -793,8 +856,14 @@ class CheckoutController extends Controller
                     foreach ($items as $cartItem) {
                         $listing = $cartItem->vendorListing;
                         $commission = $itemCommissions[$cartItem->id];
-                        $lineSubtotal = $cartItem->unit_price * $cartItem->quantity;
-                        $lineTax = (int) round($cartItem->unit_price * $cartItem->quantity * ((float) $country->vat_rate / 100));
+                        $pricedLine = $pricedLinesByItemId[$cartItem->id] ?? null;
+                        $lineSubtotal = $pricedLine?->lineSubtotal ?? ($cartItem->unit_price * $cartItem->quantity);
+                        $lineDiscount = $pricedLine?->lineDiscount ?? 0;
+                        // D2: tax = round((line_subtotal - line_discount) * vat%),
+                        // computed once by CheckoutPricingEngine and persisted as-is
+                        // (no recalculation here — enhancement.md P-01 task 4).
+                        $lineTax = $pricedLine?->lineTax ?? 0;
+                        $lineTotal = $lineSubtotal - $lineDiscount + $lineTax;
 
                         $itemShippingMethod = $resolveShippingMethod($cartItem->selected_shipping_method_id);
                         $itemShippingMethodSnapshot = $itemShippingMethod
@@ -822,9 +891,9 @@ class CheckoutController extends Controller
                             'unit_price' => $cartItem->unit_price,
                             'unit_cost_price' => $listing->cost_price,
                             'line_subtotal' => $lineSubtotal,
-                            'line_discount' => 0,
+                            'line_discount' => $lineDiscount,
                             'line_tax' => $lineTax,
-                            'line_total' => $lineSubtotal + $lineTax,
+                            'line_total' => $lineTotal,
                             'commission_rate_pct' => $commission['commission_rate_pct'],
                             'commission_fixed' => $commission['commission_fixed'],
                             'commission_category_id' => $commission['commission_category_id'],

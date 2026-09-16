@@ -111,7 +111,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-01 🔴 Merge the two checkout calculators so the price shown equals the price charged
+## P-01 🔴 Merge the two checkout calculators so the price shown equals the price charged --DONE
 
 **Problem**
 - Two independent calculators exist, and they have already drifted apart:

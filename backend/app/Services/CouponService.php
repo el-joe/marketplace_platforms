@@ -11,11 +11,15 @@ use App\Enums\CouponCustomerEligibility;
 use App\Enums\CouponScope;
 use App\Enums\CouponType;
 use App\Enums\OrderStatus;
+use App\Services\Checkout\CheckoutPricingEngine;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class CouponService
 {
+    public function __construct(
+        private readonly CheckoutPricingEngine $pricingEngine,
+    ) {}
     public function validate(string $code, Cart $cart, Customer $customer): Coupon
     {
         $coupon = Coupon::whereRaw('UPPER(code) = ?', [strtoupper($code)])->first();
@@ -220,6 +224,13 @@ class CouponService
         }
     }
 
+    /**
+     * @deprecated Delegates to CheckoutPricingEngine::applyCoupon() — the
+     * single source of truth for coupon discount math (enhancement.md P-01).
+     * Note: unlike the engine's percentage rounding (round()), this method
+     * historically floored the percentage discount; that behaviour is no
+     * longer preserved now that the math lives in one place.
+     */
     public function calculateDiscount(Coupon $coupon, Cart $cart): int
     {
         $items = $cart->items()->with([
@@ -227,90 +238,18 @@ class CouponService
             'adminListing.productVariant.product',
         ])->get()->all();
 
-        $applicableSubtotal = $this->resolveApplicableSubtotal($coupon, (int) $cart->subtotal, $items);
-
-        if ($applicableSubtotal <= 0) {
+        $customer = $cart->customer;
+        if (! $customer) {
             return 0;
         }
 
-        $discount = match ($coupon->type) {
-            CouponType::Percentage => (int) floor($applicableSubtotal * $coupon->value / 100),
-            CouponType::FixedAmount => (int) $coupon->value,
-            CouponType::FreeShipping => (int) $cart->estimated_shipping,
-            CouponType::Bogo => $this->cheapestQualifyingItemPrice($coupon, $items),
-        };
-
-        if ($coupon->max_discount && $discount > $coupon->max_discount) {
-            $discount = $coupon->max_discount;
+        if ($coupon->type === CouponType::FreeShipping) {
+            return (int) $cart->estimated_shipping;
         }
 
-        return max(0, min($discount, $applicableSubtotal));
-    }
+        $result = $this->pricingEngine->applyCoupon($coupon, $customer, (int) $cart->subtotal, $cart->currency, $items);
 
-    /**
-     * Sum unit_price × quantity for items matching the coupon's scope.
-     */
-    private function resolveApplicableSubtotal(Coupon $coupon, int $cartSubtotal, array $items): int
-    {
-        return match ($coupon->scope) {
-            CouponScope::Vendor => $this->sumItems($items, fn ($i) =>
-                $i->vendorListing?->vendor_id === $coupon->vendor_id),
-            CouponScope::Category => $this->sumItems($items, fn ($i) => $this->itemMatchesCategory($i, $coupon->category_id)),
-            CouponScope::Product => $this->sumItems($items, fn ($i) =>
-                $i->vendorListing?->vendor_id === $coupon->vendor_id
-                && $coupon->products()->where('products.id', $i->vendorListing?->productVariant?->product_id)->exists()),
-            default => $cartSubtotal,
-        };
-    }
-
-    private function sumItems(array $items, \Closure $matcher): int
-    {
-        $sum = 0;
-        foreach ($items as $item) {
-            if ($matcher($item)) {
-                $sum += (int) $item->unit_price * (int) $item->quantity;
-            }
-        }
-        return $sum;
-    }
-
-    /**
-     * BOGO: return the unit price of the cheapest qualifying item (free item = cheapest).
-     */
-    private function cheapestQualifyingItemPrice(Coupon $coupon, array $items): int
-    {
-        $qualifying = array_filter($items, fn ($i) => match ($coupon->scope) {
-            CouponScope::Vendor => $i->vendorListing?->vendor_id === $coupon->vendor_id,
-            CouponScope::Category => $this->itemMatchesCategory($i, $coupon->category_id),
-            CouponScope::Product => $i->vendorListing?->vendor_id === $coupon->vendor_id
-                && $coupon->products()
-                ->where('products.id', $i->vendorListing?->productVariant?->product_id)
-                ->exists(),
-            default => true,
-        });
-
-        if (empty($qualifying)) {
-            return 0;
-        }
-
-        return min(array_map(fn ($i) => (int) $i->unit_price, $qualifying));
-    }
-
-    private function itemMatchesCategory(\App\Models\CartItem $item, ?string $couponCategoryId): bool
-    {
-        if ($couponCategoryId === null) {
-            return false;
-        }
-        $categoryId = $item->vendorListing?->productVariant?->product?->category_id
-                    ?? $item->adminListing?->productVariant?->product?->category_id;
-        if ($categoryId === null) {
-            return false;
-        }
-        if ($categoryId === $couponCategoryId) {
-            return true;
-        }
-        $cat = \App\Models\Category::find($categoryId);
-        return $cat?->ancestors()->where('id', $couponCategoryId)->exists() ?? false;
+        return $result['error'] ? 0 : $result['discount'];
     }
 
     public function recordUsage(Coupon $coupon, Order $order, Customer $customer, int $discountAmount): void

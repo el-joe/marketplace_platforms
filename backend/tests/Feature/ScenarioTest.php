@@ -85,7 +85,48 @@ class ScenarioTest extends TestCase
 
     public function test_p01_checkout_calculators_merged_price_shown_equals_price_charged(): void
     {
-        $this->markTestSkipped('P-01: merge the two checkout calculators — implemented in that prompt.');
+        // P-01 implemented: the two checkout calculators were merged into
+        // App\Services\Checkout\CheckoutPricingEngine. Full coverage lives in:
+        //  - Tests\Unit\Checkout\CheckoutPricingEngineTest (coupon allocation,
+        //    D2 tax reconciliation, "single source of truth" guard);
+        //  - Tests\Feature\Checkout\CheckoutPricingReconciliationTest
+        //    (prepare vs. place-order totals match to the unit over HTTP,
+        //    across coupon/warranty/wallet-gateway/multi-line combinations,
+        //    plus the 409 price_changed path).
+        $scenario = MarketplaceScenario::make()->build();
+        $scenario->country->update(['site_code' => 'ae-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6))]);
+
+        $cart = app(\App\Services\Customer\CartService::class)
+            ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbp->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbp->getRawOriginal('price'),
+            'added_at' => now(),
+        ]);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $payload = [
+            'address_id' => $scenario->customerAddress->id,
+            'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
+        ];
+
+        $prepare = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/prepare", $payload);
+        $prepare->assertOk();
+
+        $place = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", array_merge($payload, [
+            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        ]));
+        $place->assertStatus(201);
+
+        $orderNumber = $place->json('data.order.order_number') ?? $place->json('data.order_number');
+        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+
+        $this->assertNotNull($order);
+        $this->assertSame((int) $prepare->json('data.order_summary.total'), (int) $order->total);
+        $this->assertMoneyBalanced($order);
     }
 
     public function test_p02_place_order_supports_admin_and_marketer_listing_items(): void
