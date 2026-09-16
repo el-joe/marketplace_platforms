@@ -10,9 +10,13 @@ import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "@/i18n/navigation";
 import { IPrepareCheckout } from "../types/checkout.type";
 import { getMarketerContract, getPaymentGateways } from "../api/get";
+import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
+import { ApiRequestError } from "@/src/lib/utils";
 
 export const useCheckout = () => {
   const router = useRouter();
+  const t = useTranslations("checkout");
 
   const [checkoutData, setCheckoutData] = useState<
     IPrepareCheckout | undefined
@@ -70,6 +74,9 @@ export const useCheckout = () => {
   const prepareCheckout = useMutation({
     mutationFn: createPrepareCheckoutService,
     onSuccess: (data) => setCheckoutData(data.data),
+    onError: (error) => {
+      toast.error(error?.message);
+    },
   });
 
   const placeOrder = useMutation({
@@ -106,14 +113,14 @@ export const useCheckout = () => {
     },
   });
 
-  const prepare = (addressId: number, gatewayId: string) => {
+  const prepare = (addressId: number, gatewayId?: string) => {
     prepareCheckout.mutate({
       address_id: addressId,
-      country_payment_gateway_id: gatewayId,
+      country_payment_gateway_id: gatewayId as string,
     });
   };
 
-  const handleGatewayChange = (gatewayId: string) => {
+  const handleGatewayChange = async (gatewayId: string) => {
     if (!selectedAddress) return;
     prepare(Number(selectedAddress.id), gatewayId);
   };

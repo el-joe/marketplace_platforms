@@ -715,6 +715,8 @@
     "shipment": "الشحنة",
     "getItBy": "احصل عليه بحلول",
     "payWith": "الدفع باستخدام",
+    "prepareCheckoutFailed": "حدث خطأ أثناء تجهيز طلبك. يرجى المحاولة مرة أخرى.",
+    "insufficientWalletBalance": "رصيد المحفظة غير كافٍ",
     "marketerContractTitle": "الشروط والأحكام",
     "marketerContractAccept": "أوافق",
     "marketerContractCancel": "إلغاء",
