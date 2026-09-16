@@ -1,6 +1,7 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Warranty } from "@/src/features/noon/productView/types/product-details";
 import { PlacementBanner } from "@/src/types/placement-banner";
+import { IProduct } from "@/types/product.type";
 
 export interface ICart {
   cart: Cart;
@@ -9,6 +10,7 @@ export interface ICart {
   savings_and_benefits: SavingsAndBenefits;
   wallet: Wallet;
   guest_cart_token?: string;
+  suggested_products?: IProduct[];
 }
 
 export interface Cart {

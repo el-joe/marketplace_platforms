@@ -16,6 +16,7 @@ use App\Models\WarrantyPlan;
 use App\Services\BannerService;
 use App\Services\Customer\CartService;
 use App\Services\Customer\ListingIdentifierService;
+use App\Services\Customer\SponsoredProductService;
 use App\Services\SavingsBenefitsService;
 use App\Services\WarrantyPlanService;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,7 @@ class CartController extends Controller
         private readonly SavingsBenefitsService $savingsBenefitsService,
         private readonly WarrantyPlanService $warrantyPlanService,
         private readonly \App\Services\Ads\PlacementAdService $placementAds,
+        private readonly SponsoredProductService $sponsored,
     ) {
     }
 
@@ -107,7 +109,42 @@ class CartController extends Controller
             ),
             'wallet' => $this->resolveWalletInfo($cart),
             'item_warranty_plans' => $country ? $this->buildItemWarrantyPlans($cart, $country) : [],
+            'suggested_products' => $country ? $this->resolveSuggestedProducts($cart, $country) : [],
         ]);
+    }
+
+    /**
+     * Sponsored "you might also like" items for the cart page, drawn from the
+     * categories of products already in the cart. Excludes page-1 restriction
+     * quirks by always treating the cart as page 1 (there is no pagination here).
+     */
+    private function resolveSuggestedProducts(Cart $cart, $country): array
+    {
+        $categoryIds = $cart->items
+            ->map(function ($item) {
+                $listing = $item->vendorListing ?? $item->adminListing ?? $item->marketerListing;
+
+                return $listing?->productVariant?->product?->category_id;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($categoryIds)) {
+            return [];
+        }
+
+        return $this->sponsored->inject(
+            items: [],
+            country: $country,
+            page: 1,
+            placement: 'cart_suggestions',
+            query: null,
+            categoryIds: $categoryIds,
+            attributeFilters: [],
+            slots: [1, 2, 3],
+        );
     }
 
     /**

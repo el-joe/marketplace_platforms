@@ -77,6 +77,7 @@ class CheckoutController extends Controller
         private readonly LoyaltyService $loyaltyService,
         private readonly CodValidationService $codValidationService,
         private readonly LastClickAttributionService $attributionService,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {}
 
     public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
@@ -340,6 +341,9 @@ class CheckoutController extends Controller
             'delivery_message' => $this->deliveryMessage($v),
         ])->values();
 
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
+        $checkoutBanner = $this->placementAds->resolve('checkout_banner', $country, 'logged_in', $sessionId);
+
         $attributedMarketerId = session('marketer_attribution.marketer_id');
         $marketerContractGate = null;
         if ($attributedMarketerId) {
@@ -390,6 +394,7 @@ class CheckoutController extends Controller
             ])->values(),
             'shipment_groups' => $shipmentGroupsForItems,
             'marketer_contract_gate' => $marketerContractGate,
+            'checkout_banner' => $checkoutBanner,
         ], __('common.exceptions.checkout.preview_ready'));
     }
 

@@ -12,6 +12,7 @@ import { useCheckout } from "./helpers/use-checkout";
 import { useTranslations } from "next-intl";
 import { Spinner } from "@/src/components/ui/spinner";
 import MarketerContractModal from "./marketer-contract-modal";
+import { PlacementBanner } from "@/src/components/shared/placement-banner";
 
 export default function Checkout() {
   const t = useTranslations("checkout");
@@ -63,6 +64,14 @@ export default function Checkout() {
     <div className="bg-gray-4">
       <div className="container py-8">
         <div className="max-w-304 mx-auto">
+          {checkoutData?.checkout_banner && (
+            <div className="mb-4 px-4 lg:px-0">
+              <PlacementBanner
+                banner={checkoutData.checkout_banner}
+                variant="checkout"
+              />
+            </div>
+          )}
           {isPreparingCheckout && (
             <div className="fixed inset-0 bg-black/35 z-10">
               <Spinner className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-22 text-white" />

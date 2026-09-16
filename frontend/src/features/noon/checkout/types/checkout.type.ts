@@ -1,3 +1,5 @@
+import { PlacementBanner } from "@/src/types/placement-banner";
+
 // response
 // export interface IPrepareCheckout {
 //   order_summary: OrderSummary;
@@ -132,6 +134,7 @@ export interface IPrepareCheckout {
   delivery_instructions: DeliveryInstruction[];
   shipment_groups: ShipmentGroup[];
   marketer_contract_gate: MarketerContractGate | null;
+  checkout_banner: PlacementBanner | null;
 }
 
 export interface MarketerContractGate {

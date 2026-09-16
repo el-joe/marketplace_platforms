@@ -3,6 +3,7 @@ import CouponInputCard from "@/src/features/noon/cart/coupon-input-card";
 import CartItems from "@/src/features/noon/cart/cart-items";
 import OrderSummary from "@/src/features/noon/cart/order-summary";
 import RecommendedSection from "@/src/features/noon/cart/recommended-section";
+import SuggestedProductsSection from "@/src/features/noon/cart/suggested-products-section";
 import SavingsAdnBenefitsCard from "@/src/features/noon/cart/savings-and-benefits-card";
 import EmptyState from "./empty-state";
 import TopBannerSlides from "./top-banner-slides";
@@ -31,6 +32,7 @@ export default function Cart() {
               <div className="flex flex-col gap-8 flex-1 max-w-full">
                 <CartItems />
                 <RecommendedSection />
+                <SuggestedProductsSection />
               </div>
               <div className="flex flex-col gap-8 flex-1">
                 <OrderSummary />

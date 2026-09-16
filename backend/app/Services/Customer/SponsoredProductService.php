@@ -29,6 +29,7 @@ class SponsoredProductService
      * @param string|null $query
      * @param list<string> $categoryIds       When set, restricts sponsored items to these category IDs
      * @param array<string,list<string>> $attributeFilters  Attribute code => allowed values, mirrors ProductQueryService::applyFilters
+     * @param list<int> $slots  1-based positions to inject sponsored items at; defaults to SPONSORED_SLOTS
      * @return array
      */
     public function inject(
@@ -39,18 +40,19 @@ class SponsoredProductService
         ?string $query = null,
         array $categoryIds = [],
         array $attributeFilters = [],
+        array $slots = self::SPONSORED_SLOTS,
     ): array {
         if ($page !== 1) {
             return $items;
         }
 
-        $sponsored = $this->fetchSponsored($country, count(self::SPONSORED_SLOTS), $categoryIds, $attributeFilters);
+        $sponsored = $this->fetchSponsored($country, count($slots), $categoryIds, $attributeFilters);
 
         if ($sponsored->isEmpty()) {
             return $items;
         }
 
-        foreach (self::SPONSORED_SLOTS as $position) {
+        foreach ($slots as $position) {
             if ($sponsored->isEmpty()) {
                 break;
             }

@@ -165,9 +165,7 @@ class ProductDetailResource extends JsonResource
             'reviews'          => $this->whenLoaded('topReviews', fn() =>
                 ReviewResource::collection($this->topReviews)->resolve()
             ),
-            'related'          => $this->whenLoaded('related', fn() =>
-                ProductListResource::collection($this->related)->resolve()
-            ),
+            'related'          => $this->whenLoaded('related', fn() => $this->related),
             'is_wishlisted'    => $this->isWishlisted,
             'banner'           => $this->banner,
             'cross_sell_ad'    => $this->crossSellAd,

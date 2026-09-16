@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\ProductListRequest;
 use App\Http\Resources\Customer\ProductCardResource;
 use App\Http\Resources\Customer\ProductDetailResource;
-use App\Http\Resources\Customer\BannerResource;
 use App\Http\Responses\ApiResponse;
 use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
@@ -284,7 +283,25 @@ class ProductController extends Controller
         $product->setRelation('topReviews', $reviews);
 
         $buyBoxPrice = $listings->first()?->price;
-        $product->setRelation('related', $this->relatedProducts($product, $country, $buyBoxPrice));
+        $relatedItems = ProductListResource::collection($this->relatedProducts($product, $country, $buyBoxPrice))->resolve();
+        $relatedItems = $this->sponsored->inject(
+            items: $relatedItems,
+            country: $country,
+            page: 1,
+            placement: 'also_viewed',
+            categoryIds: [$product->category_id],
+            slots: [1, 4],
+        );
+        // inject() splices sponsored items shaped by ListingQueryService::toCardShape(),
+        // which uses different keys than ProductListResource — reshape those (tagged via
+        // '_sponsored_listing_id') to match the rest of the also-viewed list.
+        $relatedItems = array_map(
+            fn (array $item) => array_key_exists('_sponsored_listing_id', $item)
+                ? $this->sponsoredToRelatedShape($item)
+                : $item,
+            $relatedItems,
+        );
+        $product->setRelation('related', $relatedItems);
 
         $isWishlisted = false;
         if (($customerId = auth('customer')->id()) && ($buyBoxListing = $listings->first())) {
@@ -323,28 +340,57 @@ class ProductController extends Controller
             sessionId:        $sessionId,
         );
 
-        $inlineBanner1 = $this->bannerService->getActivePlacement('product_page_inline_1', $country->id, $audience, $product->id);
-        $inlineBanner2 = $this->bannerService->getActivePlacement('product_page_inline_2', $country->id, $audience, $product->id);
-
-        if ($inlineBanner1) {
-            dispatch(fn () => $inlineBanner1->increment('impressions_count'))->afterResponse();
-        }
-        if ($inlineBanner2) {
-            dispatch(fn () => $inlineBanner2->increment('impressions_count'))->afterResponse();
-        }
+        $inlineBanner1 = $this->placementAds->resolve('product_page_inline_1', $country, $audience, $sessionId, $product->id, $product->category_id);
+        $inlineBanner2 = $this->placementAds->resolve('product_page_inline_2', $country, $audience, $sessionId, $product->id, $product->category_id);
 
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;
         $resource->banner = $banner;
         $resource->crossSellAd = $crossSellAd;
-        $resource->inlineBanner1 = $inlineBanner1 ? (new BannerResource($inlineBanner1))->toArray($request) : null;
-        $resource->inlineBanner2 = $inlineBanner2 ? (new BannerResource($inlineBanner2))->toArray($request) : null;
+        $resource->inlineBanner1 = $inlineBanner1;
+        $resource->inlineBanner2 = $inlineBanner2;
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
         $resource->productAttributes = $selectedVariant
             ? $this->productAttributesShape($product->variants, $selectedVariant, $listingsByVariant)
             : [];
 
         return ApiResponse::success($resource->toArray($request));
+    }
+
+    /**
+     * Reshapes a sponsored item (ListingQueryService::toCardShape output) into the
+     * same key schema ProductListResource produces, so the "also viewed" list stays
+     * homogeneous after sponsored injection.
+     */
+    private function sponsoredToRelatedShape(array $item): array
+    {
+        return [
+            'id'                  => $item['product_id'],
+            'listing_id'          => $item['listing_id'],
+            'listing_type'        => $item['listing_type'],
+            'variant_id'          => $item['variant_id'],
+            'product_slug'        => $item['product_slug'],
+            'slug'                => $item['slug'],
+            'variant_slug'        => $item['variant_slug'],
+            'variant_name'        => $item['variant_name']['en'] ?? null,
+            'variant_image'       => $item['variant_image'],
+            'product_url'         => $item['product_url'],
+            'name'                => ['en' => $item['name_en'], 'ar' => $item['name_ar']],
+            'primary_image'       => $item['primary_image'],
+            'images'              => $item['images'],
+            'price_range'         => ['min' => $item['price'], 'max' => $item['price']],
+            'category_name'       => $item['category_name'],
+            'compare_at_price'    => $item['compare_at_price'],
+            'rating_avg'          => (float) $item['rating_avg'],
+            'rating_count'        => (int) $item['rating_count'],
+            'seller_count'        => 1,
+            'admin_listing_count' => $item['is_admin_listing'] ? 1 : 0,
+            'total_seller_count'  => 1,
+            'is_in_stock'         => true,
+            'is_sponsored'        => true,
+            'is_wishlisted'       => (bool) $item['is_wishlisted'],
+            'shipping_badge'      => $item['shipping_badge'],
+        ];
     }
 
     private function relatedProducts(Product $product, $country, ?int $buyBoxPrice): \Illuminate\Database\Eloquent\Collection

@@ -8,6 +8,7 @@ import { cn } from "@/src/lib/utils";
 
 const variantClasses = {
   cart: "lg:rounded-full",
+  checkout: "lg:rounded-full",
   product: "w-full rounded-lg",
   search: "w-full aspect-[8/1] lg:aspect-[8/1]",
   category: "w-full aspect-[8/1] lg:aspect-[8/1]",
@@ -15,7 +16,7 @@ const variantClasses = {
 
 type Props = {
   banner: PlacementBannerType | null | undefined;
-  variant: "cart" | "product" | "search" | "category";
+  variant: "cart" | "checkout" | "product" | "search" | "category";
 };
 
 export function PlacementBanner({ banner, variant }: Props) {
