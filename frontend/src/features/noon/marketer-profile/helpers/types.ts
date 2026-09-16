@@ -44,7 +44,7 @@ export interface MarketerProfileListingItem {
   product_slug: string;
   variant_id: string;
   variant_slug: string;
-  variant_name: string;
+  variant_name: { en: string; ar: string };
   sku: string;
   name_en: string;
   name_ar: string;

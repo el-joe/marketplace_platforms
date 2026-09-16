@@ -196,10 +196,13 @@ class AccountController extends Controller
 
         $path = $request->file('passport_file')->store('travel-bookings/passports', 'private');
 
-        $booking->update(['passport_file_path' => $path]);
+        $booking->update([
+            'passport_file_path' => $path,
+            'status' => \App\Enums\TravelBookingStatus::Confirmed,
+        ]);
 
         return ApiResponse::success(
-            ['passport_uploaded' => true],
+            ['passport_uploaded' => true, 'status' => $booking->status->value],
             __('common.exceptions.travel.passport_uploaded')
         );
     }

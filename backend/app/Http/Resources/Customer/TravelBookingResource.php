@@ -5,7 +5,6 @@ namespace App\Http\Resources\Customer;
 use App\Support\Bilingual;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class TravelBookingResource extends JsonResource
 {
@@ -36,9 +35,7 @@ class TravelBookingResource extends JsonResource
                 ),
                 'cover_image' => $this->when(
                     $this->package->relationLoaded('media'),
-                    fn () => optional($this->package->coverImage())->file_path
-                        ? Storage::url($this->package->coverImage()->file_path)
-                        : null
+                    fn () => $this->package->coverImage()?->url()
                 ),
             ]),
         ];

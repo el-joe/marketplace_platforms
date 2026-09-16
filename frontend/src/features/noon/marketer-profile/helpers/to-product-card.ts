@@ -26,7 +26,7 @@ export function toProductCard(
     variant_slug: item.variant_slug,
     product_url: item.product_url,
     url_param: item.url_param,
-    variant_name: { ar: item.variant_name, en: item.variant_name },
+    variant_name: item.variant_name,
     variant_image: item.primary_image ?? "",
     primary_image: item.primary_image ?? "",
     name_en: item.name_en,

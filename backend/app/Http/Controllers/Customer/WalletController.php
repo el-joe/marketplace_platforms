@@ -23,8 +23,7 @@ class WalletController extends Controller
     public function show(string $country): JsonResponse
     {
         $customer = auth('customer')->user();
-        $customer->loadMissing('country');
-        $currency = $customer->country?->currency_code;
+        $currency = $customer->resolveCurrency();
 
         if (! $currency) {
             return ApiResponse::error('Unable to determine account currency. Please update your address.', [], 422);
@@ -42,8 +41,7 @@ class WalletController extends Controller
     public function transactions(string $country): JsonResponse
     {
         $customer = auth('customer')->user();
-        $customer->loadMissing('country');
-        $currency = $customer->country?->currency_code;
+        $currency = $customer->resolveCurrency();
 
         if (! $currency) {
             return ApiResponse::error('Unable to determine account currency. Please update your address.', [], 422);
@@ -69,8 +67,7 @@ class WalletController extends Controller
         ]);
 
         $customer = auth('customer')->user();
-        $customer->loadMissing('country');
-        $currency = $customer->country?->currency_code;
+        $currency = $customer->resolveCurrency();
 
         if (! $currency) {
             return ApiResponse::error('Unable to determine account currency. Please update your address.', [], 422);

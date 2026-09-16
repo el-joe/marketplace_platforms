@@ -100,6 +100,34 @@ class Customer extends Authenticatable implements JWTSubject
         return $this->morphMany(Address::class, 'addressable');
     }
 
+    /**
+     * The customer's currency for wallet/payment purposes. Falls back, in order,
+     * to: the default (or first) address's country, then the platform's
+     * active/launched default country — mirrors Country::resolveSiteCode()'s
+     * fallback chain, so a customer is never blocked purely for lacking
+     * country/address data.
+     */
+    public function resolveCurrency(): ?string
+    {
+        $this->loadMissing('country');
+        if ($this->country?->currency_code) {
+            return $this->country->currency_code;
+        }
+
+        $address = $this->addresses()
+            ->with('country')
+            ->orderByDesc('is_default')
+            ->first();
+
+        if ($address?->country?->currency_code) {
+            return $address->country->currency_code;
+        }
+
+        return Country::where('is_active', true)
+            ->where('is_launched', true)
+            ->value('currency_code');
+    }
+
     public function receivers(): HasMany
     {
         return $this->hasMany(CustomerReceiver::class);
