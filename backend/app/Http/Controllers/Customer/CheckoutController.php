@@ -42,6 +42,7 @@ use App\Models\VendorListing;
 use App\Services\LastClickAttributionService;
 use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
+use Illuminate\Support\Facades\Log;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
 use App\Services\Customer\CodValidationService;
@@ -256,12 +257,17 @@ class CheckoutController extends Controller
 
         $couponResponse = null;
         $discountCents = 0;
+        $coupon = null;
         if (! empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', $validated['coupon_code'])->first();
             if (! $coupon) {
                 return ApiResponse::error(__('common.exceptions.checkout.invalid_coupon'), [], 422);
             }
+        } elseif ($cart->coupon) {
+            $coupon = $cart->coupon;
+        }
 
+        if ($coupon) {
             $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
             $couponResult = $this->calculationService->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
 
@@ -610,6 +616,22 @@ class CheckoutController extends Controller
             $warrantyTotalCents
         );
 
+        if ($isWallet) {
+            $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
+
+            if (! $wallet || $wallet->currency_code !== $summary['currency']) {
+                return ApiResponse::error(__('common.exceptions.checkout.wallet_currency_mismatch'), [], 422);
+            }
+
+            if ($wallet->balance < $summary['total']) {
+                return ApiResponse::error(
+                    __('common.exceptions.checkout.insufficient_wallet_balance'),
+                    ['balance' => $wallet->balance, 'required' => $summary['total']],
+                    422
+                );
+            }
+        }
+
         $attribution = session('marketer_attribution', []);
 
         try {
@@ -866,7 +888,7 @@ class CheckoutController extends Controller
                     $subOrders[] = $subOrder;
                 }
 
-                $walletAmountToUse = (int) ($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? 0);
+                $walletAmountToUse = (int) ($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $order->total : 0));
                 if ($walletAmountToUse > 0) {
                     $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
                     if (! $wallet || $wallet->currency_code !== $order->currency) {
@@ -942,6 +964,18 @@ class CheckoutController extends Controller
         if ($result['wallet_fully_paid']) {
             // Wallet covered the full order total inside the transaction above — no COD
             // collection and no external payment gateway call needed.
+        } elseif ($isWallet) {
+            // Customer selected the wallet gateway but the transaction above didn't fully
+            // capture it (e.g. balance changed between the pre-check and the row lock).
+            // Wallet is handled internally and isn't in PaymentGatewayFactory's map, so it
+            // must never fall through to initiatePayment() below.
+            Log::error('Wallet payment did not fully cover order total at settlement time', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'customer_id' => $customer->id,
+            ]);
+            $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
+            $this->releaseReservedInventory($order);
         } elseif ($isCod) {
             // Cash hasn't changed hands yet — this transaction (and order.payment_status,
             // already 'pending' from creation above) only becomes 'succeeded'/'captured' once
@@ -963,6 +997,12 @@ class CheckoutController extends Controller
             try {
                 $paymentResult = $this->paymentService->initiatePayment($order, $methodConfig, $validated['idempotency_key']);
                 if (! $paymentResult->success) {
+                    Log::error('Payment gateway declined order', [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'gateway_code' => $gatewayCode,
+                        'error' => $paymentResult->errorMessage ?? null,
+                    ]);
                     $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
                     $this->releaseReservedInventory($order);
                 } else {
@@ -972,6 +1012,12 @@ class CheckoutController extends Controller
                     }
                 }
             } catch (\Throwable $e) {
+                Log::error('Payment initiation threw an exception', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'gateway_code' => $gatewayCode,
+                    'exception' => $e->getMessage(),
+                ]);
                 $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
                 $this->releaseReservedInventory($order);
             }

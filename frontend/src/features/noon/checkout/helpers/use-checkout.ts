@@ -111,6 +111,9 @@ export const useCheckout = () => {
         router.push("/checkout/success");
       }
     },
+    onError: (error) => {
+      toast.error(error?.message);
+    },
   });
 
   const prepare = (addressId: number, gatewayId?: string) => {

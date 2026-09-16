@@ -466,6 +466,7 @@ return [
             'order_placed'               => 'Order placed successfully',
             'wallet_currency_mismatch'   => 'Your wallet currency does not match this order.',
             'wallet_exceeds_total'       => 'Wallet amount cannot exceed order total.',
+            'insufficient_wallet_balance' => 'Your wallet balance is not enough to cover this order. Please top up your wallet or choose another payment method.',
             'insufficient_stock'         => 'Insufficient stock for one or more items. Please update your cart.',
             'cod_wallet_rule'            => 'COD orders must be paid fully by wallet or not use wallet at all.',
             'coupon_no_longer_valid'     => 'Your coupon is no longer valid: :reason',
