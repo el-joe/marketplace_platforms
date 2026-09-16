@@ -1,9 +1,8 @@
 import type { ApiEnvelope, LiveStreamCard, LiveStreamDetail, StreamComment } from './types';
-
-const PUBLIC_BASE = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? '/api/public/v1';
+import { apiPublicBaseUrlGlobal } from '@/src/lib/utils';
 
 async function fetchPublic<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${PUBLIC_BASE}${path}`, {
+  const res = await fetch(`${apiPublicBaseUrlGlobal}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',

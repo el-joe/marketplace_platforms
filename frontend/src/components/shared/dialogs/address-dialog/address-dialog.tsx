@@ -30,6 +30,7 @@ import { getCookie } from "cookies-next";
 import useToggleLocale from "@/src/hooks/use-handle-locale";
 import AddressesList from "./addresses-list";
 import { useAddressFormActions } from "@/src/features/noon/profile/addresses/helpers/use-address-form-actions";
+import { useAuthContext } from "@/src/providers/auth-provider";
 type props = {
   triggerButton?: React.ReactElement<
     unknown,
@@ -43,6 +44,7 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
   const country = getCookie("country");
   const { handleChangeCountry } = useToggleLocale();
   const { saveNewAddress } = useAddressFormActions();
+  const { isLogged, setAuthDialogIsOpen } = useAuthContext();
   const {
     data: countriesData,
     isFetching,
@@ -125,17 +127,39 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
                 </InputGroupAddon>
               </InputGroup>
               {/* map button */}
-              <AddAddressModal
-                onSave={saveNewAddress}
-                trigger={
-                  <Button
-                    className={"h-12 justify-start text-blue-2! text-base!"}
-                  >
-                    <PlusIcon className="size-5 text-blue-2" />
-                    {t("addAddress")}
-                  </Button>
-                }
-              />
+              {isLogged ? (
+                <AddAddressModal
+                  onSave={saveNewAddress}
+                  trigger={
+                    <Button
+                      className={"h-12 justify-start text-blue-2! text-base!"}
+                      onClick={(e) => {
+                        if (!isLogged) {
+                          setAuthDialogIsOpen(true);
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return;
+                        }
+                      }}
+                    >
+                      <PlusIcon className="size-5 text-blue-2" />
+                      {t("addAddress")}
+                    </Button>
+                  }
+                />
+              ) : (
+                <Button
+                  className={"h-12 justify-start text-blue-2! text-base!"}
+                  onClick={() => {
+                    if (!isLogged) {
+                      setAuthDialogIsOpen(true);
+                    }
+                  }}
+                >
+                  <PlusIcon className="size-5 text-blue-2" />
+                  {t("addAddress")}
+                </Button>
+              )}
               {/* search result */}
 
               <AddressesList />

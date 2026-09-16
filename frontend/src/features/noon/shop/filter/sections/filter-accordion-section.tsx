@@ -16,7 +16,7 @@ const FilterAccordionSection = ({
   children,
 }: FilterAccordionSectionProps) => (
   <AccordionItem value={value} className="border-b-0! scrollbar-hide">
-    <AccordionTrigger>{title}</AccordionTrigger>
+    <AccordionTrigger className={"font-bold"}>{title}</AccordionTrigger>
     <AccordionContent>{children}</AccordionContent>
   </AccordionItem>
 );

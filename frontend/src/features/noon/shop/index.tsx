@@ -6,6 +6,7 @@ import { DynamicLayout } from "@/src/components/shared/page-builder";
 import { PageBuilder } from "@/src/components/shared/page-builder/types";
 import { PlacementBanner } from "@/src/components/shared/placement-banner";
 import { PlacementBanner as PlacementBannerType } from "@/src/types/placement-banner";
+import { Facets } from "@/src/features/noon/shop/types";
 
 interface Props {
   pageBuilderData: PageBuilder | null;
@@ -15,6 +16,9 @@ interface Props {
   totalCount: number;
   topBanner?: PlacementBannerType | null;
   isSearch?: boolean;
+  facets?: Facets | null;
+  hasFilters?: boolean;
+  locale: string;
 }
 
 export default async function Shop({
@@ -25,6 +29,9 @@ export default async function Shop({
   totalCount,
   topBanner,
   isSearch,
+  facets,
+  hasFilters,
+  locale,
 }: Props) {
   return (
     <>
@@ -33,7 +40,7 @@ export default async function Shop({
       ))}
 
       {topBanner && (
-        <div className="mb-4">
+        <div className="my-4">
           <PlacementBanner
             banner={topBanner}
             variant={isSearch ? "search" : "category"}
@@ -41,7 +48,13 @@ export default async function Shop({
         </div>
       )}
 
-      <ShopToolbar categoryName={categoryName} resultsCount={totalCount} />
+      <ShopToolbar
+        categoryName={categoryName}
+        resultsCount={totalCount}
+        facets={facets}
+        hasFilters={hasFilters}
+        locale={locale}
+      />
 
       <div>
         {products.length > 0 ? (

@@ -1,4 +1,5 @@
 import resolveCookie from "@/src/helpers/resolveCookie";
+import { apiPublicBaseUrlGlobal } from "@/src/lib/utils";
 
 export interface MarketerCard {
   id: string;
@@ -23,8 +24,6 @@ export interface MarketerListResult {
   };
 }
 
-const PUBLIC_BASE = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "/api/public/v1";
-
 export async function getMarketersList(
   params: { type?: string; page?: number } = {},
 ): Promise<MarketerListResult> {
@@ -35,7 +34,7 @@ export async function getMarketersList(
   const country = await resolveCookie("country");
 
   const res = await fetch(
-    `${PUBLIC_BASE}/${country}/marketers?${query.toString()}`,
+    `${apiPublicBaseUrlGlobal}/${country}/marketers?${query.toString()}`,
     {
       cache: "no-store",
       headers: { Accept: "application/json" },

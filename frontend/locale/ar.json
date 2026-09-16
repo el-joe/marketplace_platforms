@@ -494,6 +494,8 @@
     "trackingBannerPartiallyShipped": "تم شحن بعض المنتجات في طلبك، ويتم تجهيز الباقي للشحن.",
     "trackingBannerShipped": "طلبك في طريقه إليك.",
     "trackingBannerDelivered": "تم توصيل طلبك. نتمنى أن ينال إعجابك!",
+    "trackingBannerCancelled": "تم إلغاء طلبك.",
+    "trackingBannerRefunded": "تم استرداد قيمة طلبك.",
     "stepPlaced": "تم الطلب",
     "stepConfirmed": "مؤكد",
     "stepShipped": "تم الشحن",
@@ -543,6 +545,7 @@
     "orderStatusCancelled": "ملغى",
     "orderStatusRefunded": "تم الاسترداد",
     "orderStatusDisputed": "متنازع عليه",
+    "orderStatusFilterPlaceholder": "الحالة",
     "estimatedDeliveryBy": "التوصيل المتوقع: {date}",
     "qtyLabel": "الكمية: {count}",
     "discountLabel": "الخصم",
@@ -715,6 +718,8 @@
     "shipment": "الشحنة",
     "getItBy": "احصل عليه بحلول",
     "payWith": "الدفع باستخدام",
+    "prepareCheckoutFailed": "حدث خطأ أثناء تجهيز طلبك. يرجى المحاولة مرة أخرى.",
+    "insufficientWalletBalance": "رصيد المحفظة غير كافٍ",
     "marketerContractTitle": "الشروط والأحكام",
     "marketerContractAccept": "أوافق",
     "marketerContractCancel": "إلغاء",
@@ -1029,7 +1034,14 @@
   "shop": {
     "resultsFor": "النتائج لـ",
     "sortBy": "ترتيب حسب",
-    "filters": "عوامل التصفية"
+    "filters": "عوامل التصفية",
+    "close": "إغلاق",
+    "price": "السعر",
+    "from": "من",
+    "to": "إلى",
+    "go": "بحث",
+    "seeAll": "عرض الكل ({count})",
+    "seeLess": "عرض أقل"
   },
   "classified": {
     "city": "المدينة",
@@ -1107,7 +1119,11 @@
     "emptyState": "لا يوجد ماركترز نشطين بعد",
     "typeInfluencer": "مؤثر",
     "typeAffiliate": "أفيليت",
-    "salesCount": "{count} مبيعة"
+    "salesCount": "{count} مبيعة",
+    "statMarketers": "ماركترز",
+    "statCampaigns": "حملات",
+    "statSales": "مبيعات محققة",
+    "featuredBadge": "الأعلى أداءً"
   },
   "marketerProfile": {
     "pageTitleFallback": "ماركتر | نون",

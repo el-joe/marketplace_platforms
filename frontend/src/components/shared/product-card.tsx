@@ -54,6 +54,8 @@ const ProductCard = ({ productData }: Props) => {
     }
   };
 
+  console.log(productData);
+
   return (
     <div
       className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
@@ -185,7 +187,7 @@ const ProductCard = ({ productData }: Props) => {
           </h3>
           {!!productData.variant_name?.[locale] && (
             <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-full line-clamp-1 overflow-hidden">
-              {productData.variant_name[locale]}
+              {productData.variant_name?.[locale]}
             </p>
           )}
           {/* rating */}

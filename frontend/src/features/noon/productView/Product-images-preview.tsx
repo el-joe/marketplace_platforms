@@ -35,7 +35,7 @@ export default function ProductImagesPreview({ product }: Props) {
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]! overflow-hidden">
+    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]! lg:max-h-full! min-h-[440px]! overflow-hidden">
       {" "}
       {/* pagination thumbs */}
       <div className="block min-w-17">

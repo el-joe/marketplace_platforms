@@ -3,6 +3,7 @@ import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
 import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import type { GiftCardBatch } from "../../helpers/types";
+import { Link } from "@/i18n/navigation";
 
 type Props = {
   giftCard: GiftCardBatch;
@@ -11,7 +12,10 @@ type Props = {
 
 export default function GiftCardOfferCard({ giftCard, title }: Props) {
   return (
-    <Card className="flex h-[220px] flex-col gap-3 p-3 transition-shadow hover:shadow-md">
+    <Link
+      href={`/gift-cards/${giftCard.id}`}
+      className="flex h-[220px] flex-col gap-3 p-3 transition-shadow hover:shadow-md"
+    >
       <div className="relative w-full flex-1 overflow-hidden rounded-lg bg-gray-2">
         <Image
           src={giftCard.image_url}
@@ -31,6 +35,6 @@ export default function GiftCardOfferCard({ giftCard, title }: Props) {
           className="mt-1"
         />
       </div>
-    </Card>
+    </Link>
   );
 }

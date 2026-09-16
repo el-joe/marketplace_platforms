@@ -2,8 +2,8 @@ import resolveCookie from "@/src/helpers/resolveCookie";
 import { getCountriesService } from "@/src/services/countries";
 import { defineRouting } from "next-intl/routing";
 
-export const getRouting = async () => {
-  const [country = "uae", supportedCountriesData] = await Promise.all([
+export const getRouting = async (country?: string) => {
+  const [cookieCountry, supportedCountriesData] = await Promise.all([
     resolveCookie("country"),
     getCountriesService(),
   ]);
@@ -17,6 +17,6 @@ export const getRouting = async () => {
     localePrefix: "always",
 
     // Used when no locale matches
-    defaultLocale: `${country}-en`,
+    defaultLocale: `${country || cookieCountry}-en`,
   });
 };

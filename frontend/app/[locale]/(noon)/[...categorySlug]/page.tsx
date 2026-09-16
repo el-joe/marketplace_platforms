@@ -10,6 +10,7 @@ import {
   FILTER_PREFIX,
   resolveApiFilters,
 } from "@/src/helpers/resolveApiFilters";
+import MobileFiltersSheet from "@/src/features/noon/shop/filter/mobile-view";
 
 const TOTAL_PAGES = 5;
 
@@ -22,6 +23,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
   const { categorySlug } = await params;
   const sp = await searchParams;
   const locale = await getLocale();
+
   const isSearch = categorySlug?.[0] === "search" || !!sp.q;
   // The catch-all route's first segment is a bare slug (no scheme/host/query) —
   // the backend resolves it against the polymorphic `slugs` table, so the exact
@@ -36,8 +38,7 @@ export default async function ShopPage({ params, searchParams }: Props) {
   let totalCount = 0;
   let hasFilters = false;
   let topBanner: ShopResponse["data"]["top_banner"] = null;
-  let categoryName =
-    isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
+  let categoryName = isSearch && sp.q ? sp.q : formatCategoryName(categorySlug);
 
   try {
     const queryParams = new URLSearchParams();
@@ -89,10 +90,22 @@ export default async function ShopPage({ params, searchParams }: Props) {
   return (
     <main className="container flex flex-col gap-4 py-4 lg:flex-row lg:gap-6">
       {hasFilters && (
-        <aside className="w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide shrink-0">
-          <FilterSidebar facets={facets as ShopResponse["data"]["facets"]} />
+        <aside
+          className="hidden lg:block lg:w-[250px] h-[calc(100vh-100px)] sticky top-[100px] overflow-y-auto scrollbar-hide shrink-0"
+          dir={locale === "ar" ? "rtl" : "ltr"}
+        >
+          <FilterSidebar
+            facets={facets as ShopResponse["data"]["facets"]}
+            locale={locale}
+          />
         </aside>
       )}
+
+      <MobileFiltersSheet
+        facets={facets as ShopResponse["data"]["facets"]}
+        locale={locale}
+      />
+
       <div className={hasFilters ? "min-w-0 flex-1" : "w-full"}>
         <Shop
           pageBuilderData={pageBuilderData}
@@ -102,6 +115,9 @@ export default async function ShopPage({ params, searchParams }: Props) {
           totalCount={totalCount}
           topBanner={topBanner}
           isSearch={isSearch}
+          facets={facets as ShopResponse["data"]["facets"]}
+          hasFilters={hasFilters}
+          locale={locale}
         />
       </div>
     </main>

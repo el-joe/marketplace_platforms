@@ -494,6 +494,8 @@
     "trackingBannerPartiallyShipped": "Some items in your order have shipped. The rest are being prepared for dispatch.",
     "trackingBannerShipped": "Your order is on its way to you.",
     "trackingBannerDelivered": "Your order has been delivered. We hope you enjoy it!",
+    "trackingBannerCancelled": "Your order has been cancelled.",
+    "trackingBannerRefunded": "Your order has been refunded.",
     "stepPlaced": "Placed",
     "stepConfirmed": "Confirmed",
     "stepShipped": "Shipped",
@@ -543,6 +545,7 @@
     "orderStatusCancelled": "Cancelled",
     "orderStatusRefunded": "Refunded",
     "orderStatusDisputed": "Disputed",
+    "orderStatusFilterPlaceholder": "Status",
     "estimatedDeliveryBy": "Estimated delivery: {date}",
     "qtyLabel": "Qty: {count}",
     "discountLabel": "Discount",
@@ -715,6 +718,8 @@
     "shipment": "Shipment",
     "getItBy": "Get it by",
     "payWith": "Pay with",
+    "prepareCheckoutFailed": "Something went wrong while preparing your checkout. Please try again.",
+    "insufficientWalletBalance": "Insufficient wallet balance",
     "marketerContractTitle": "Terms and conditions",
     "marketerContractAccept": "I agree",
     "marketerContractCancel": "Cancel",
@@ -1029,7 +1034,14 @@
   "shop": {
     "resultsFor": "Results for",
     "sortBy": "Sort by",
-    "filters": "Filters"
+    "filters": "Filters",
+    "close": "Close",
+    "price": "Price",
+    "from": "From",
+    "to": "To",
+    "go": "Go",
+    "seeAll": "See all ({count})",
+    "seeLess": "See less"
   },
   "classified": {
     "city": "City",
@@ -1111,7 +1123,11 @@
     "emptyState": "No active marketers yet",
     "typeInfluencer": "Influencer",
     "typeAffiliate": "Affiliate",
-    "salesCount": "{count} sales"
+    "salesCount": "{count} sales",
+    "statMarketers": "Marketers",
+    "statCampaigns": "Campaigns",
+    "statSales": "Sales driven",
+    "featuredBadge": "Top performer"
   },
   "marketerProfile": {
     "pageTitleFallback": "Marketer | noon",

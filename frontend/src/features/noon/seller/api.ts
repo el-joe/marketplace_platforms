@@ -1,11 +1,10 @@
 import { ISellerProfile } from "./types";
-
-const PUBLIC_BASE = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "/api/public/v1";
+import { apiPublicBaseUrlGlobal } from "@/src/lib/utils";
 
 export class SellerNotFoundError extends Error {}
 
 export async function getSellerProfile(sellerId: string): Promise<ISellerProfile> {
-  const res = await fetch(`${PUBLIC_BASE}/sellers/${sellerId}`, {
+  const res = await fetch(`${apiPublicBaseUrlGlobal}/sellers/${sellerId}`, {
     next: { revalidate: 300 },
     headers: { Accept: "application/json" },
   });

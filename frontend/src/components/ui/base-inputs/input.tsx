@@ -25,7 +25,7 @@ function Input({
   const input = (
     <div className="relative flex-1">
       {startIcon && (
-        <div className="absolute left-2 top-1/2 -translate-y-1/2">
+        <div className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2">
           {startIcon}
         </div>
       )}
@@ -43,7 +43,7 @@ function Input({
         {...props}
       />
       {endIcon && (
-        <div className="absolute inset-e-2 top-1/2 -translate-y-1/2">
+        <div className="absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2">
           {endIcon}
         </div>
       )}

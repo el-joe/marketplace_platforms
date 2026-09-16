@@ -1,10 +1,11 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Card from "@/src/components/shared/Card";
 import { Button } from "@/src/components/ui/button";
 import OrderItemRow from "../../history/order-item-row";
 import { isInProgressStatus } from "../../helpers/to-order-status";
 import type { OrderDetail } from "../../helpers/types";
+import getLocale from "@/src/helpers/getLocale";
 
 type Props = {
   order: OrderDetail;

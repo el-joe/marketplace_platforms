@@ -96,7 +96,7 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
                   ))}
               </div>
               {/* or separator */}
-              {i !== lastI && (
+              {deliveryOptions.length > 1 && (
                 <div className="flex items-center max-w-xs gap-2 mx-auto my-3 group-[[data-last=true]]:hidden!">
                   <Separator className={"flex-1"} />
                   <span className="text-sm">{t("or")}</span>

@@ -5,6 +5,7 @@ import DeliveryAddressCard from "./components/delivery-address-card";
 import OrderSummaryLink from "./components/order-summary-link";
 import ItemSummaryCard from "./components/item-summary-card";
 import type { OrderDetail } from "../helpers/types";
+import { isNegativeStatus } from "../helpers/to-order-status";
 
 type Props = {
   order: OrderDetail;
@@ -12,6 +13,9 @@ type Props = {
 
 export default async function OrderTracking({ order }: Props) {
   const t = await getTranslations("profile");
+
+    const isNegative = isNegativeStatus(order.status);
+  
 
   return (
     <div>
@@ -25,11 +29,14 @@ export default async function OrderTracking({ order }: Props) {
       </div>
 
       <div className="mt-4">
-        <TrackingStatusCard order={order} />
+        <TrackingStatusCard order={order} isNegative={isNegative} />
       </div>
 
       <div className="mt-4">
-        <DeliveryAddressCard address={order.shipping_address} />
+        <DeliveryAddressCard
+          address={order.shipping_address}
+          isNegative={isNegative}
+        />
       </div>
 
       <div className="mt-4">

@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { PackageSearch } from "lucide-react";
 import ProductCard from "@/src/components/shared/product-card";
 import { Spinner } from "@/src/components/ui/spinner";
-import { toProductCard } from "./helpers/to-product-card";
-import type { MarketerProfileMarketer, MarketerProfileInfo, MarketerProfileListingItem } from "./helpers/types";
-import { getMarketerListings } from "./api";
+import { toProductCard } from "../helpers/to-product-card";
+import type { MarketerProfileMarketer, MarketerProfileInfo, MarketerProfileListingItem } from "../helpers/types";
+import { getMarketerListings } from "../api";
 
 interface Props {
   slug: string;
@@ -65,9 +66,11 @@ export default function MarketerListingsGrid({
 
   if (allItems.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="text-5xl mb-3">📦</div>
-        <p className="text-gray-500">{emptyLabel}</p>
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-2">
+          <PackageSearch className="h-6 w-6 text-gray" />
+        </div>
+        <p className="text-sm font-semibold text-gray">{emptyLabel}</p>
       </div>
     );
   }

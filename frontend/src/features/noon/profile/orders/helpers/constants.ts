@@ -1,4 +1,5 @@
 import { CheckIcon, Truck, ClipboardCheck, PackageIcon } from "lucide-react";
+import type { OrderStatus } from "./types";
 
 export const returnReasons = [
   { value: "changed_mind", labelKey: "reasonChangedMind" },
@@ -28,3 +29,17 @@ export const inProgressStatuses = [
   "shipped",
   "partially_delivered",
 ] as const;
+
+/** All order statuses, in display order, for the orders list status filter. */
+export const orderStatusFilterOptions: readonly OrderStatus[] = [
+  "placed",
+  "confirmed",
+  "partially_shipped",
+  "shipped",
+  "partially_delivered",
+  "delivered",
+  "completed",
+  "cancelled",
+  "refunded",
+  "disputed",
+];

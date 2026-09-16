@@ -85,6 +85,8 @@ export default function Checkout() {
                 methods={checkoutData?.available_payment_gateways}
                 selectedPaymentMethod={selectedGatewayId}
                 setPaymentMethod={handleGatewayChange}
+                total={checkoutData?.order_summary?.total ?? 0}
+                walletBalance={checkoutData?.wallet_balance ?? 0}
               />
             </div>
             {/* right col */}

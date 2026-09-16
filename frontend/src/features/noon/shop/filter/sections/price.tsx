@@ -20,7 +20,7 @@ type PriceFilterProps = {
 };
 
 const PriceFilter = ({ priceRange }: PriceFilterProps) => {
-  const t = useTranslations();
+  const t = useTranslations("shop");
   const searchParams = useSearchParams();
   const { setFilters } = useShopFilterParams();
 
@@ -35,11 +35,11 @@ const PriceFilter = ({ priceRange }: PriceFilterProps) => {
   };
 
   return (
-    <FilterAccordionSection value="price" title="Price">
+    <FilterAccordionSection value="price" title={t("price")}>
       <div className="flex items-end gap-2">
         <div className="flex flex-1 flex-col gap-1">
           <Label htmlFor="price-from" className="text-xs text-muted-foreground">
-            From
+            {t("from")}
           </Label>
           <Input
             id="price-from"
@@ -52,7 +52,7 @@ const PriceFilter = ({ priceRange }: PriceFilterProps) => {
         </div>
         <div className="flex flex-1 flex-col gap-1">
           <Label htmlFor="price-to" className="text-xs text-muted-foreground">
-            To
+            {t("to")}
           </Label>
           <Input
             id="price-to"
