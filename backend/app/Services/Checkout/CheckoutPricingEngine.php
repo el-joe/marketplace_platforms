@@ -471,25 +471,31 @@ class CheckoutPricingEngine
         }
 
         // App\Models\CartItem (or any object exposing the same shape).
-        $listing = $item->vendorListing ?? $item->adminListing ?? null;
+        //
+        // Resolved through CartLineSource rather than `$item->vendorListing`
+        // directly, so vendor/admin/campaign-marketer/independent-marketer
+        // lines are all normalized correctly (enhancement.md P-02 — P-01
+        // left this engine assuming vendor-listing-only cart items).
+        $source = $item instanceof \App\Models\CartItem ? CartLineSource::resolve($item) : null;
+        $listing = $source?->fulfilmentListing;
         $variant = $listing?->productVariant;
         $product = $variant?->product;
 
         return [
             'key' => (string) ($item->id ?? $index),
-            'vendor_id' => $item->vendorListing?->vendor_id ?? null,
+            'vendor_id' => ($source && ! $source->isAdminSeller()) ? $source->sellerParty : null,
             'category_id' => $product?->category_id,
             'product_id' => $variant?->product_id,
             'unit_price' => (int) $item->unit_price,
             'quantity' => (int) $item->quantity,
             'line_subtotal' => (int) $item->unit_price * (int) $item->quantity,
-            'shipping_type' => $item->adminListing !== null ? 'fbn' : match ($item->vendorListing?->fulfillment_model ?? null) {
+            'shipping_type' => ($source === null || $source->isAdminSeller()) ? 'fbn' : match ($source->fulfillmentModel) {
                 'fbn' => 'fbn',
                 'cross_dock' => 'fbp',
                 default => 'fbm',
             },
             'product' => $product,
-            'listing_id' => $listing?->id,
+            'listing_id' => $source?->sellable->id ?? $listing?->id,
         ];
     }
 

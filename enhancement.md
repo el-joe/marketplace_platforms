@@ -142,7 +142,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-02 🔴 Place-order crashes or refuses admin-listing and marketer-listing items
+## P-02 🔴 Place-order crashes or refuses admin-listing and marketer-listing items --DONE
 
 **Problem**
 - The pre-check handles admin listings (`Customer/CheckoutController.php:447-481`). The transaction does not. Everything inside it uses `$item->vendorListing`:

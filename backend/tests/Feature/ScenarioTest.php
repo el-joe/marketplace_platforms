@@ -131,7 +131,171 @@ class ScenarioTest extends TestCase
 
     public function test_p02_place_order_supports_admin_and_marketer_listing_items(): void
     {
-        $this->markTestSkipped('P-02: place-order must not crash/refuse admin-listing and marketer-listing items.');
+        $scenario = MarketplaceScenario::make()->build();
+        $scenario->country->update(['site_code' => 'ae-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6))]);
+
+        // A campaign sourced from an ADMIN listing (P-02 gap #1): the
+        // pre-existing resolveMarketerCartItems() only resolved campaigns
+        // whose source was a vendor listing.
+        $campaignFromAdminListing = \App\Models\MarketerCampaign::create([
+            'vendor_id' => $scenario->vendor->id,
+            'admin_listing_id' => $scenario->adminListing->id,
+            'campaign_category' => 'product',
+            'country_id' => $scenario->country->id,
+            'currency' => 'AED',
+            'commission_type' => 'fixed',
+            'max_commission_budget' => 100000,
+            'platform_commission_amount' => 5000,
+            'marketer_commission_amount' => 0,
+            'status' => 'active',
+        ]);
+
+        $adminCampaignInvitation = \App\Models\MarketerCampaignInvitation::create([
+            'campaign_id' => $campaignFromAdminListing->id,
+            'marketer_id' => $scenario->marketer->id,
+            'status' => 'accepted',
+            'responded_at' => now(),
+            'referral_code' => 'REF-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+        ]);
+
+        $adminCampaignMarketerListing = \App\Models\MarketerListing::create([
+            'marketer_id' => $scenario->marketer->id,
+            'product_variant_id' => $scenario->variants[0]->id,
+            'listing_category' => 'product',
+            'country_id' => $scenario->country->id,
+            'invitation_id' => $adminCampaignInvitation->id,
+            'price' => 95000,
+            'currency' => 'AED',
+            'status' => 'active',
+            'condition' => 'new',
+            'referral_code' => 'ML-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+        ]);
+
+        // An INDEPENDENT marketer listing (P-02 gap #2): no invitation/
+        // campaign at all — created the way Marketer/ListingController@store
+        // creates one. Falls back to the best active vendor/admin listing
+        // for the same variant as its fulfilment source.
+        $independentMarketerListing = \App\Models\MarketerListing::create([
+            'marketer_id' => $scenario->marketer->id,
+            'product_variant_id' => $scenario->variants[1]->id,
+            'listing_category' => 'product',
+            'country_id' => $scenario->country->id,
+            'invitation_id' => null,
+            'price' => 130000,
+            'currency' => 'AED',
+            'status' => 'active',
+            'condition' => 'new',
+            'referral_code' => 'ML-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+        ]);
+
+        $cart = app(\App\Services\Customer\CartService::class)
+            ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+
+        // 1) Plain admin (platform) listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'admin_listing_id' => $scenario->adminListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->adminListing->price,
+            'added_at' => now(),
+        ]);
+
+        // 2) Plain vendor listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbn->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbn->getRawOriginal('price'),
+            'added_at' => now(),
+        ]);
+
+        // 3) Campaign marketer listing sourced from an admin listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'marketer_listing_id' => $adminCampaignMarketerListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $adminCampaignMarketerListing->price,
+            'added_at' => now(),
+        ]);
+
+        // 4) Independent marketer listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'marketer_listing_id' => $independentMarketerListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $independentMarketerListing->price,
+            'added_at' => now(),
+        ]);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $payload = [
+            'address_id' => $scenario->customerAddress->id,
+            'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
+        ];
+
+        $place = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", array_merge($payload, [
+            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        ]));
+
+        $place->assertStatus(201);
+
+        $orderNumber = $place->json('data.order.order_number') ?? $place->json('data.order_number');
+        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+        $this->assertNotNull($order);
+        $this->assertMoneyBalanced($order);
+
+        $order->load('subOrders.items');
+        $items = $order->subOrders->flatMap(fn ($so) => $so->items);
+        $this->assertCount(4, $items);
+
+        // Plain admin listing item: admin_listing_id set, no vendor.
+        $adminItem = $items->firstWhere('admin_listing_id', $scenario->adminListing->id);
+        $this->assertNotNull($adminItem);
+        $this->assertNull($adminItem->vendor_listing_id);
+        $this->assertNull($adminItem->marketer_listing_id);
+        $this->assertNull($adminItem->vendor_id);
+
+        // Plain vendor listing item.
+        $vendorItem = $items->firstWhere('vendor_listing_id', $scenario->vendorListingFbn->id);
+        $this->assertNotNull($vendorItem);
+        $this->assertSame($scenario->vendor->id, $vendorItem->vendor_id);
+
+        // Campaign marketer listing sourced from the admin listing: marketer_listing_id
+        // set, fulfilment recorded against the admin listing, no vendor.
+        $adminMarketerItem = $items->firstWhere('marketer_listing_id', $adminCampaignMarketerListing->id);
+        $this->assertNotNull($adminMarketerItem);
+        $this->assertSame($scenario->adminListing->id, $adminMarketerItem->admin_listing_id);
+        $this->assertNull($adminMarketerItem->vendor_listing_id);
+        $this->assertNull($adminMarketerItem->vendor_id);
+
+        // Independent marketer listing: resolved to the best vendor listing
+        // for its variant (vendorListingFbn, the only active listing for
+        // variants[1]) as its fulfilment source.
+        $independentMarketerItem = $items->firstWhere('marketer_listing_id', $independentMarketerListing->id);
+        $this->assertNotNull($independentMarketerItem);
+        $this->assertSame($scenario->vendorListingFbn->id, $independentMarketerItem->vendor_listing_id);
+        $this->assertSame($scenario->vendor->id, $independentMarketerItem->vendor_id);
+
+        // Sub-orders: the admin-sourced lines land on a platform sub-order
+        // (seller_type='platform', vendor_id null) that is never attributed
+        // to a vendor.
+        $platformSubOrders = $order->subOrders->where('seller_type', 'platform');
+        $this->assertGreaterThanOrEqual(1, $platformSubOrders->count());
+        foreach ($platformSubOrders as $subOrder) {
+            $this->assertNull($subOrder->vendor_id);
+        }
+
+        $vendorSubOrders = $order->subOrders->where('seller_type', 'vendor');
+        $this->assertGreaterThanOrEqual(1, $vendorSubOrders->count());
+        foreach ($vendorSubOrders as $subOrder) {
+            $this->assertNotNull($subOrder->vendor_id);
+        }
+
+        // Stock reserved on the right inventory rows (P-00 assertStock).
+        // Both the plain admin-listing item and the admin-campaign marketer
+        // item fulfil from the same admin listing (qty 1 each).
+        $this->assertStock($scenario->adminListing, 30, 2);
+        $this->assertStock($scenario->vendorListingFbn, 40, 2); // fbn line + independent marketer line
     }
 
     public function test_p03_order_money_split_vendor_platform_marketer_shipping(): void

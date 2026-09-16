@@ -43,6 +43,7 @@ use App\Services\LastClickAttributionService;
 use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
 use Illuminate\Support\Facades\Log;
+use App\Services\Checkout\CartLineSource;
 use App\Services\Checkout\CheckoutPricingEngine;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
@@ -244,7 +245,18 @@ class CheckoutController extends Controller
 
         $shippingZone = $address->city?->shippingZone;
 
-        $vendorShipping = $this->resolveVendorShipping($cartItems, $totalShippingFee, $shippingZone, null);
+        // Same CartLineSource normalization as placeOrder() below, so
+        // prepare()'s shipping preview groups admin/marketer lines the same
+        // way the transaction will (enhancement.md P-02).
+        $cartLineSources = [];
+        foreach ($cartItems as $item) {
+            $source = CartLineSource::resolve($item);
+            if ($source) {
+                $cartLineSources[$item->id] = $source;
+            }
+        }
+
+        $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
 
         $codFeeCents = $isCod ? $codExtraFee : 0;
 
@@ -453,6 +465,13 @@ class CheckoutController extends Controller
             'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.brand',
             'items.marketerListing.invitation.campaign.vendorListing.productVariant.product.images',
             'items.marketerListing.invitation.campaign.vendorListing.warehouseInventories',
+            // Campaigns sourced from an admin (platform) listing (P-02).
+            'items.marketerListing.invitation.campaign.adminListing.productVariant.product.category',
+            'items.marketerListing.invitation.campaign.adminListing.productVariant.product.brand',
+            'items.marketerListing.invitation.campaign.adminListing.productVariant.product.images',
+            'items.marketerListing.invitation.campaign.adminListing.warehouseInventories',
+            // Independent marketer listings (no invitation/campaign at all).
+            'items.marketerListing.productVariant',
             'items.customAttributeValues.productCustomAttribute',
         ]);
 
@@ -460,42 +479,49 @@ class CheckoutController extends Controller
             return ApiResponse::error(__('common.exceptions.checkout.cart_empty'), [], 422);
         }
 
-        $this->resolveMarketerCartItems($cart->items);
-
+        // Resolve every cart item (vendor, admin, campaign-marketer or
+        // independent-marketer listing) to one normalized CartLineSource —
+        // enhancement.md P-02. Built once and reused through pre-check,
+        // shipping, and the placement transaction below.
+        $cartLineSources = [];
         foreach ($cart->items as $item) {
-            $isAdmin = ! is_null($item->admin_listing_id);
-            $listing = $isAdmin ? $item->adminListing : $item->vendorListing;
+            $source = CartLineSource::resolve($item);
 
-            if (! $listing) {
+            if (! $source) {
                 return ApiResponse::error(
                     __('common.exceptions.checkout.listing_not_available', ['id' => $item->id]),
                     [], 422
                 );
             }
 
+            $fulfilmentListing = $source->fulfilmentListing;
+            $isAdmin = $fulfilmentListing instanceof \App\Models\AdminListing;
+
             if ($isAdmin) {
-                if ($listing->status !== AdminListingStatus::Active) {
+                if ($fulfilmentListing->status !== AdminListingStatus::Active) {
                     return ApiResponse::error(
-                        __('common.exceptions.checkout.listing_not_available', ['id' => $listing->id]),
+                        __('common.exceptions.checkout.listing_not_available', ['id' => $fulfilmentListing->id]),
                         [], 422
                     );
                 }
             } else {
-                if ($listing->status !== VendorListingStatus::Active) {
+                if ($fulfilmentListing->status !== VendorListingStatus::Active) {
                     return ApiResponse::error(
-                        __('common.exceptions.checkout.listing_not_available', ['id' => $listing->id]),
+                        __('common.exceptions.checkout.listing_not_available', ['id' => $fulfilmentListing->id]),
                         [], 422
                     );
                 }
             }
 
-            $available = $listing->warehouseInventories->sum('quantity_available');
+            $available = $source->availableQuantity();
             if ($available < $item->quantity) {
                 return ApiResponse::error(
                     __('common.exceptions.checkout.insufficient_stock_available', ['available' => $available]),
                     [], 422
                 );
             }
+
+            $cartLineSources[$item->id] = $source;
         }
 
         $address = $customer->addresses()->find($validated['address_id']);
@@ -559,7 +585,7 @@ class CheckoutController extends Controller
         }
 
         $shippingZone   = $address->city?->shippingZone;
-        $vendorShipping = $this->resolveVendorShipping($cartItems, $totalShippingFee, $shippingZone, null);
+        $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
         $shippingFeeCents = $vendorShipping['total'];
         $codFeeCents      = $isCod ? $codExtraFee : 0;
 
@@ -698,7 +724,7 @@ class CheckoutController extends Controller
                 $warrantySelections, $cart, $couponDiscountCents,
                 $loyaltyDiscount, $loyaltyPointsToUse,
                 $gatewayCode, $isCod, $isWallet, $methodConfig,
-                $pricedLinesByItemId, $pricedSubOrdersByVendorId
+                $pricedLinesByItemId, $pricedSubOrdersByVendorId, $cartLineSources
             ) {
                 $vendorShippingMap = $vendorShipping['per_vendor'];
                 $order = Order::create([
@@ -751,47 +777,80 @@ class CheckoutController extends Controller
                     return $shippingMethodCache[$shippingMethodId];
                 };
 
-                $grouped = collect($cartItems)->groupBy(fn ($item) => $item->vendorListing->vendor_id.'|'.($item->selected_shipping_method_id ?? ''));
+                // Group by seller_party + shipping_method (+ warehouse, via
+                // the reserved inventory below) rather than
+                // `$item->vendorListing->vendor_id`, so admin-listing and
+                // marketer-listing lines group correctly instead of
+                // crashing on a null vendorListing (enhancement.md P-02).
+                // Grouped by seller_party + shipping_method only (not also
+                // warehouse): CheckoutPricingEngine's PricedSubOrder — whose
+                // tax/subtotal this transaction persists as-is per P-01 — is
+                // itself only keyed by vendor/platform, so splitting a
+                // sub-order further by warehouse here would duplicate that
+                // single priced-sub-order tax figure across multiple rows.
+                $grouped = collect($cartItems)->groupBy(
+                    fn ($item) => $cartLineSources[$item->id]->groupKey($item->selected_shipping_method_id)
+                );
                 $subOrders = [];
                 $idx = 0;
 
                 foreach ($grouped as $groupKey => $items) {
                     $idx++;
-                    $vendorId = $items->first()->vendorListing->vendor_id;
+                    $firstSource = $cartLineSources[$items->first()->id];
+                    $sellerParty = $firstSource->sellerParty;
+                    $isPlatformSubOrder = $firstSource->isAdminSeller();
+                    $vendorId = $isPlatformSubOrder ? null : $sellerParty;
                     $subOrderShippingMethodId = $items->first()->selected_shipping_method_id;
                     $subOrderShippingMethod = $resolveShippingMethod($subOrderShippingMethodId);
                     $vendorSubtotal = (int) $items->sum(fn ($i) => $i->unit_price * $i->quantity);
-                    $firstListing = $items->first()->vendorListing;
+                    $fulfillmentModel = $firstSource->fulfillmentModel;
 
-                    $vendorShippingCents = $vendorShippingMap[$vendorId]['shipping'] ?? 0;
-                    $vendorAdminSubsidyCents = $vendorShippingMap[$vendorId]['platform_subsidy'] ?? 0;
-                    $vendorContributionCents = $vendorShippingMap[$vendorId]['vendor_contribution'] ?? 0;
-                    $vendorBillableWeightGrams = $vendorShippingMap[$vendorId]['billable_weight_grams'] ?? null;
+                    $vendorShippingCents = $vendorShippingMap[$sellerParty]['shipping'] ?? 0;
+                    $vendorAdminSubsidyCents = $vendorShippingMap[$sellerParty]['platform_subsidy'] ?? 0;
+                    $vendorContributionCents = $vendorShippingMap[$sellerParty]['vendor_contribution'] ?? 0;
+                    $vendorBillableWeightGrams = $vendorShippingMap[$sellerParty]['billable_weight_grams'] ?? null;
 
                     // Sub-order tax is the engine's number, not recomputed here — it
                     // is by construction the sum of this group's line taxes
                     // (including warranty tax), so Σ sub_orders.tax == orders.tax
-                    // always holds (enhancement.md P-01 / D2).
-                    $pricedSubOrder = $pricedSubOrdersByVendorId[$vendorId] ?? null;
+                    // always holds (enhancement.md P-01 / D2). The engine groups
+                    // platform (admin-listing) lines under the 'platform' key.
+                    $pricedSubOrder = $pricedSubOrdersByVendorId[$isPlatformSubOrder ? 'platform' : $sellerParty] ?? null;
                     $vendorTax = $pricedSubOrder?->tax ?? 0;
 
                     $itemCommissions = [];
                     $reservedInventories = [];
                     $totalCommission = 0;
                     foreach ($items as $cartItem) {
-                        $commission = $this->calculationService->calculateCommission(
-                            $cartItem->vendorListing,
-                            $cartItem->quantity,
-                            $cartItem->unit_price,
-                            $country
-                        );
+                        $itemSource = $cartLineSources[$cartItem->id];
+                        $fulfilmentListing = $itemSource->fulfilmentListing;
+
+                        if ($fulfilmentListing instanceof VendorListing) {
+                            $commission = $this->calculationService->calculateCommission(
+                                $fulfilmentListing,
+                                $cartItem->quantity,
+                                $cartItem->unit_price,
+                                $country
+                            );
+                        } else {
+                            // Platform (admin-listing) sub-orders don't pay
+                            // platform commission to themselves.
+                            $commission = [
+                                'commission_rate_pct' => 0.0,
+                                'commission_fixed' => 0,
+                                'commission_amount' => 0,
+                                'commission_category_id' => null,
+                                'vendor_payout_share' => $cartItem->unit_price * $cartItem->quantity,
+                            ];
+                        }
                         $itemCommissions[$cartItem->id] = $commission;
                         $totalCommission += $commission['commission_amount'];
 
-                        $inventory = WarehouseInventory::where('vendor_listing_id', $cartItem->vendor_listing_id)
-                            ->lockForUpdate()
-                            ->orderBy('id')
-                            ->first();
+                        $inventoryQuery = $fulfilmentListing instanceof \App\Models\AdminListing
+                            ? WarehouseInventory::where('admin_listing_id', $fulfilmentListing->id)
+                            : WarehouseInventory::where('vendor_listing_id', $fulfilmentListing->id);
+
+                        $inventory = $inventoryQuery->lockForUpdate()->orderBy('id')->first();
 
                         if (! $inventory || $inventory->quantity_available < $cartItem->quantity) {
                             throw new \DomainException(
@@ -818,8 +877,10 @@ class CheckoutController extends Controller
 
                     $warehouseId = $reservedInventories[$items->first()->id]->warehouse_id;
 
-                    $vendorModel = $items->first()->vendorListing->vendor;
-                    $totalCommission = $vendorModel->applyCommissionDiscount($totalCommission);
+                    if (! $isPlatformSubOrder && $firstSource->fulfilmentListing instanceof VendorListing) {
+                        $vendorModel = $firstSource->fulfilmentListing->vendor;
+                        $totalCommission = $vendorModel?->applyCommissionDiscount($totalCommission) ?? $totalCommission;
+                    }
 
                     // Gateway fee is a platform/vendor cost derived from the selected
                     // payment gateway's configured rate; it never affects the
@@ -833,9 +894,13 @@ class CheckoutController extends Controller
                         'order_id' => $order->id,
                         'sub_order_number' => $order->order_number.'-'.str_pad((string) $idx, 2, '0', STR_PAD_LEFT),
                         'vendor_id' => $vendorId,
+                        // enhancement.md P-02 task 4: platform (admin-listing)
+                        // sub-orders carry seller_type='platform' and a null
+                        // vendor_id instead of being mis-attributed to a vendor.
+                        'seller_type' => $isPlatformSubOrder ? 'platform' : 'vendor',
                         'warehouse_id' => $warehouseId,
                         'status' => 'placed',
-                        'fulfillment_model' => $firstListing->fulfillment_model,
+                        'fulfillment_model' => $fulfillmentModel,
                         'subtotal' => $vendorSubtotal,
                         'shipping' => $vendorShippingCents,
                         'admin_subsidy_amount' => $vendorAdminSubsidyCents,
@@ -845,7 +910,7 @@ class CheckoutController extends Controller
                         'platform_commission' => $totalCommission,
                         'gateway_fee' => $gatewayFeeCents,
                         'gateway_fee_rate' => $gatewayFeeRatePct,
-                        'vendor_payout' => $vendorSubtotal - $totalCommission - $gatewayFeeCents,
+                        'vendor_payout' => $isPlatformSubOrder ? 0 : $vendorSubtotal - $totalCommission - $gatewayFeeCents,
                         'shipping_method_id' => $subOrderShippingMethodId,
                         'estimated_delivery_date' => $subOrderShippingMethod
                             ? $this->calculateEstimatedDeliveryDate($subOrderShippingMethod)
@@ -854,7 +919,8 @@ class CheckoutController extends Controller
                     ]);
 
                     foreach ($items as $cartItem) {
-                        $listing = $cartItem->vendorListing;
+                        $itemSource = $cartLineSources[$cartItem->id];
+                        $listing = $itemSource->fulfilmentListing;
                         $commission = $itemCommissions[$cartItem->id];
                         $pricedLine = $pricedLinesByItemId[$cartItem->id] ?? null;
                         $lineSubtotal = $pricedLine?->lineSubtotal ?? ($cartItem->unit_price * $cartItem->quantity);
@@ -873,9 +939,9 @@ class CheckoutController extends Controller
                         $productSnapshot = $this->buildProductSnapshot($listing);
                         $productSnapshot['shipping_method'] = $itemShippingMethodSnapshot;
 
-                        if ($cartItem->marketer_listing_id !== null) {
+                        if ($itemSource->marketerListingIdForOrderItem !== null) {
                             $productSnapshot['listing_type'] = 'marketer';
-                            $productSnapshot['marketer_listing_id'] = $cartItem->marketer_listing_id;
+                            $productSnapshot['marketer_listing_id'] = $itemSource->marketerListingIdForOrderItem;
                             $productSnapshot['referral_code'] = $cartItem->marketerListing?->referral_code;
                         }
 
@@ -883,9 +949,15 @@ class CheckoutController extends Controller
                             'order_id' => $order->id,
                             'sub_order_id' => $subOrder->id,
                             'product_variant_id' => $listing->product_variant_id,
-                            'vendor_listing_id' => $listing->id,
+                            // Correctly writes vendor_listing_id / admin_listing_id /
+                            // marketer_listing_id from the resolved CartLineSource
+                            // instead of always assuming a vendor listing
+                            // (enhancement.md P-02 tasks 1 & 3).
+                            'vendor_listing_id' => $itemSource->vendorListingIdForOrderItem,
+                            'admin_listing_id' => $itemSource->adminListingIdForOrderItem,
+                            'marketer_listing_id' => $itemSource->marketerListingIdForOrderItem,
                             'product_snapshot' => $productSnapshot,
-                            'vendor_id' => $listing->vendor_id,
+                            'vendor_id' => $isPlatformSubOrder ? null : $listing->vendor_id,
                             'sku' => $listing->productVariant->sku,
                             'quantity' => $cartItem->quantity,
                             'unit_price' => $cartItem->unit_price,
@@ -1097,7 +1169,11 @@ class CheckoutController extends Controller
         foreach ($subOrders as $subOrder) {
             dispatch(new AutoAssignShippingMethodJob($subOrder->id))->delay(now()->addHours(12));
             SubOrderPlaced::dispatch($subOrder);
-            NotifyVendorJob::dispatch($order->id, $subOrder->vendor_id);
+            // Platform (admin-listing) sub-orders have no vendor to notify
+            // (enhancement.md P-02 task 4).
+            if ($subOrder->vendor_id !== null) {
+                NotifyVendorJob::dispatch($order->id, $subOrder->vendor_id);
+            }
         }
         OrderConfirmationEmailJob::dispatch($order->id);
         FraudDetectionJob::dispatch($order->id);
@@ -1177,21 +1253,28 @@ class CheckoutController extends Controller
      */
     private function resolveVendorShipping(
         array $cartItems,
+        array $cartLineSources,
         int $baseFeeCents,
         ?ShippingZone $zone = null,
         ?ShippingMethod $method = null,
     ): array {
         $subtotalAll = max(1, (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity));
-        $grouped = collect($cartItems)->groupBy(fn ($item) => $item->vendorListing->vendor_id);
+        // Group by seller_party (vendor id, or 'platform' for admin-listing /
+        // platform-fulfilled marketer lines) rather than the raw
+        // vendorListing relation, so admin and marketer lines are grouped
+        // correctly instead of crashing on a null vendorListing (P-02).
+        $grouped = collect($cartItems)->groupBy(fn ($item) => $cartLineSources[$item->id]->sellerParty);
 
         $totalCents = 0;
         $perVendor = [];
 
         foreach ($grouped as $vendorId => $items) {
             $vendorSubtotal = (int) $items->sum(fn ($i) => $i->unit_price * $i->quantity);
-            $firstListing = $items->first()->vendorListing;
-            $isFbn = $firstListing->global_system_type === GlobalSystemType::ExpressFbn;
-            $isFbp = $firstListing->global_system_type === GlobalSystemType::MerchantFbp;
+            $firstSource = $cartLineSources[$items->first()->id];
+            $isPlatform = $firstSource->isAdminSeller();
+            $firstListing = $firstSource->fulfilmentListing;
+            $isFbn = $isPlatform || ($firstListing instanceof \App\Models\VendorListing && $firstListing->global_system_type === GlobalSystemType::ExpressFbn);
+            $isFbp = ! $isPlatform && $firstListing instanceof \App\Models\VendorListing && $firstListing->global_system_type === GlobalSystemType::MerchantFbp;
 
             $subsidyBreakdown = null;
             $vendorBaseShippingCents = 0;
@@ -1208,7 +1291,7 @@ class CheckoutController extends Controller
             $surchargeCents = 0;
             if ($isFbp) {
                 foreach ($items as $cartItem) {
-                    $warehouseId = $this->resolveCartItemWarehouseId($cartItem);
+                    $warehouseId = $this->resolveCartItemWarehouseId($cartLineSources[$cartItem->id]);
                     $surchargeCents += $this->cityShippingSurchargeService->resolveSurcharge($vendorId, $warehouseId);
                 }
             } elseif ($isFbn) {
@@ -1217,7 +1300,7 @@ class CheckoutController extends Controller
                 $vendorBaseShippingCents = (int) config('checkout.fbn_base_shipping_fee', 0);
 
                 foreach ($items as $cartItem) {
-                    $warehouseId = $this->resolveCartItemWarehouseId($cartItem);
+                    $warehouseId = $this->resolveCartItemWarehouseId($cartLineSources[$cartItem->id]);
                     $surchargeCents += $this->warehouseShippingSurchargeService->resolveSurcharge($warehouseId);
                 }
             }
@@ -1269,11 +1352,13 @@ class CheckoutController extends Controller
      * placeOrder(), so shipping previews match the warehouse that ends up
      * reserved.
      */
-    private function resolveCartItemWarehouseId($cartItem): ?string
+    private function resolveCartItemWarehouseId(CartLineSource $source): ?string
     {
-        return WarehouseInventory::where('vendor_listing_id', $cartItem->vendor_listing_id)
-            ->orderBy('id')
-            ->value('warehouse_id');
+        $listing = $source->fulfilmentListing;
+
+        return $listing instanceof \App\Models\AdminListing
+            ? WarehouseInventory::where('admin_listing_id', $listing->id)->orderBy('id')->value('warehouse_id')
+            : WarehouseInventory::where('vendor_listing_id', $listing->id)->orderBy('id')->value('warehouse_id');
     }
 
     private function releaseReservedInventory(Order $order): void
@@ -1355,7 +1440,14 @@ class CheckoutController extends Controller
         ];
     }
 
-    private function buildProductSnapshot(VendorListing $listing): array
+    /**
+     * Accepts any listing type that ends up as the fulfilling listing at
+     * checkout — vendor, admin (platform), or a marketer listing's
+     * underlying source listing (enhancement.md P-02 task 5). AdminListing
+     * has no `vendor_sku` or `global_system_type` column, so those fields
+     * degrade to null rather than erroring.
+     */
+    private function buildProductSnapshot(VendorListing|\App\Models\AdminListing $listing): array
     {
         $variant = $listing->productVariant;
         $product = $variant->product;
@@ -1365,13 +1457,13 @@ class CheckoutController extends Controller
             'listing_id' => $listing->id,
             'listing_ref' => $this->listingIdentifierService->buildListingRef($listing),
             'sku' => $variant->sku,
-            'vendor_sku' => $listing->vendor_sku,
+            'vendor_sku' => $listing->vendor_sku ?? null,
             'name_en' => $product->name_en,
             'name_ar' => $product->name_ar,
             'price' => $listing->price,
             'currency' => $listing->currency,
             'condition' => $listing->condition,
-            'global_system_type' => $listing->global_system_type?->value,
+            'global_system_type' => $listing instanceof VendorListing ? $listing->global_system_type?->value : 'express_fbn',
             'thumbnail_url' => $thumbnail,
             'brand_name' => $product->brand?->name_en,
             'category_name' => $product->category?->name_en,
