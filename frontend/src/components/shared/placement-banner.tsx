@@ -7,7 +7,7 @@ import { SponsoredLink } from "@/src/components/shared/sponsored-link";
 import { cn } from "@/src/lib/utils";
 
 const variantClasses = {
-  cart: "lg:rounded-full",
+  cart: "lg:rounded-xl h-[42px]",
   checkout: "lg:rounded-full",
   product: "w-full rounded-lg",
   search: "w-full aspect-[8/1] lg:aspect-[8/1]",
@@ -32,7 +32,9 @@ export function PlacementBanner({ banner, variant }: Props) {
     banner.mobile_image_url ||
     banner.desktop_image_url;
 
-  const title = isAr ? banner.title_ar || banner.title_en : banner.title_en || banner.title_ar;
+  const title = isAr
+    ? banner.title_ar || banner.title_en
+    : banner.title_en || banner.title_ar;
 
   return (
     <SponsoredLink
@@ -50,7 +52,7 @@ export function PlacementBanner({ banner, variant }: Props) {
           alt={title || ""}
           width={2400}
           height={400}
-          className={cn("w-full h-full object-cover", variantClasses[variant])}
+          className={cn("w-full h-full object-fill", variantClasses[variant])}
         />
       </picture>
     </SponsoredLink>

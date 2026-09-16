@@ -28,7 +28,7 @@ export default function CartItems() {
             </div>
           </div>
           <div
-            className="flex flex-col gap-0 rounded-[16px] bg-white mt-6 lg:mt-7 xl:mt-10 z-1 relative border "
+            className="flex flex-col gap-0 rounded-[16px] bg-white mt-10 z-1 relative border "
             style={{ borderColor: group.shipping_method?.badge_color_hex }}
           >
             {group.items?.map((item) => (
