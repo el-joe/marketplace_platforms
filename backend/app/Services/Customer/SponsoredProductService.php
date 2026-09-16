@@ -27,6 +27,8 @@ class SponsoredProductService
      * @param int $page
      * @param string $placement    e.g. 'search_results', 'category_top'
      * @param string|null $query
+     * @param list<string> $categoryIds       When set, restricts sponsored items to these category IDs
+     * @param array<string,list<string>> $attributeFilters  Attribute code => allowed values, mirrors ProductQueryService::applyFilters
      * @return array
      */
     public function inject(
@@ -35,12 +37,14 @@ class SponsoredProductService
         int $page,
         string $placement = 'search_results',
         ?string $query = null,
+        array $categoryIds = [],
+        array $attributeFilters = [],
     ): array {
         if ($page !== 1) {
             return $items;
         }
 
-        $sponsored = $this->fetchSponsored($country, count(self::SPONSORED_SLOTS));
+        $sponsored = $this->fetchSponsored($country, count(self::SPONSORED_SLOTS), $categoryIds, $attributeFilters);
 
         if ($sponsored->isEmpty()) {
             return $items;
@@ -188,9 +192,13 @@ class SponsoredProductService
         ];
     }
 
-    private function fetchSponsored(Country $country, int $limit): Collection
+    /**
+     * @param list<string> $categoryIds
+     * @param array<string,list<string>> $attributeFilters
+     */
+    private function fetchSponsored(Country $country, int $limit, array $categoryIds = [], array $attributeFilters = []): Collection
     {
-        return \App\Models\VendorListing::query()
+        $query = \App\Models\VendorListing::query()
             ->with([
                 'vendor:id,store_name,store_rating_avg',
                 'productVariant.images',
@@ -210,7 +218,32 @@ class SponsoredProductService
             })
             ->where('vendor_listings.status', 'active')
             ->where('vendor_listings.country_id', $country->id)
-            ->where('acp.is_active', true)
+            ->where('acp.is_active', true);
+
+        // Only show sponsored products from the category being browsed, so an
+        // empty category page never surfaces unrelated ads.
+        if (!empty($categoryIds)) {
+            $query->whereHas('productVariant.product', function ($q) use ($categoryIds) {
+                $q->whereIn('category_id', $categoryIds);
+            });
+        }
+
+        // Mirror ProductQueryService::applyFilters' attribute matching so sponsored
+        // items respect the same attribute filters as organic results.
+        foreach ($attributeFilters as $attrCode => $values) {
+            $values = (array) $values;
+
+            if (empty($values)) {
+                continue;
+            }
+
+            $query->whereHas('productVariant.variantAttributes', function ($q) use ($attrCode, $values) {
+                $q->whereHas('attribute', fn ($a) => $a->where('code', $attrCode))
+                  ->whereHas('attributeValue', fn ($v) => $v->whereIn('value_en', $values));
+            });
+        }
+
+        return $query
             ->orderByDesc('ac.quality_score')
             ->orderByDesc('ac.bid')
             ->limit($limit)

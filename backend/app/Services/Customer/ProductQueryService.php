@@ -140,6 +140,8 @@ class ProductQueryService
         Country $country,
         int $page,
         string $placement = 'category_top',
+        array $categoryIds = [],
+        array $attributeFilters = [],
     ): array {
         $wishlistIds = $this->wishlistIds();
 
@@ -151,7 +153,7 @@ class ProductQueryService
             })
             ->toArray();
 
-        $items = $this->sponsored->inject($items, $country, $page, $placement);
+        $items = $this->sponsored->inject($items, $country, $page, $placement, null, $categoryIds, $attributeFilters);
 
         return [
             'items' => $items,

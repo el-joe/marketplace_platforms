@@ -105,9 +105,18 @@ class BrowseController extends Controller
             auth('customer')->check() ? 'authenticated' : 'guest',
         );
 
+        $attributeFilters = is_array($filters['attributes'] ?? null) ? $filters['attributes'] : [];
+
         $paginator = $this->products->paginate($country, $filters, $perPage, $categoryIds);
         $facets    = $this->products->facets($country, $filters, $categoryIds);
-        $payload   = $this->products->buildProductsPayload($paginator, $country, $page, 'category_top');
+        $payload   = $this->products->buildProductsPayload(
+            $paginator,
+            $country,
+            $page,
+            'category_top',
+            $categoryIds,
+            $attributeFilters,
+        );
 
         return response()->json([
             'success' => true,

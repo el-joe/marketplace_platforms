@@ -55,9 +55,18 @@ class BrowseService
         $page        = (int) ($request->input('page', 1));
         $categoryIds = $this->categoryService->getDescendantIds($category);
 
+        $attributeFilters = is_array($filters['attributes'] ?? null) ? $filters['attributes'] : [];
+
         $paginator    = $this->productQuery->paginate($country, $filters, $perPage, $categoryIds);
         $facets       = $this->productQuery->facets($country, $filters, $categoryIds);
-        $payload      = $this->productQuery->buildProductsPayload($paginator, $country, $page, 'category_top');
+        $payload      = $this->productQuery->buildProductsPayload(
+            $paginator,
+            $country,
+            $page,
+            'category_top',
+            $categoryIds,
+            $attributeFilters,
+        );
         $pageBuilder  = $this->categoryService->resolvePageBuilder($category, $country);
 
         $audience = auth('customer')->check() ? 'logged_in' : 'guest';
