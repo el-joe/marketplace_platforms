@@ -262,6 +262,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
         Route::post('/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('toggle-featured');
         Route::post('/{category}/toggle-visible',  [CategoryController::class, 'toggleVisible'])->name('toggle-visible');
+        Route::post('/{category}/toggle-footer-visible', [CategoryController::class, 'toggleFooterVisible'])->name('toggle-footer-visible');
         Route::post('/{category}/sync-attributes', [CategoryController::class, 'syncAttributes'])->name('sync-attributes');
         Route::post('/{category}/marketer-commission', [CategoryController::class, 'updateMarketerCommission'])->name('marketer-commission.update');
         Route::post('/{category}/upload-image', [CategoryController::class, 'uploadImage'])->name('upload-image');
@@ -1075,6 +1076,15 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/', [ContentSettingsController::class, 'index'])->name('index');
         Route::get('/{group}', [ContentSettingsController::class, 'showGroup'])->name('group');
         Route::post('/update', [ContentSettingsController::class, 'update'])->name('update');
+    });
+
+    // ─── Footer Settings ──────────────────────────────────────────────────────
+    Route::prefix('footer-settings')->name('footer-settings.')->middleware('admin.permission:settings.content')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'store'])->name('store');
+        Route::put('/{footerLink}', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'update'])->name('update');
+        Route::delete('/{footerLink}', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'destroy'])->name('destroy');
+        Route::post('/{footerLink}/toggle-active', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'toggleActive'])->name('toggle-active');
     });
 
     // ─── Portal Content ───────────────────────────────────────────────────────

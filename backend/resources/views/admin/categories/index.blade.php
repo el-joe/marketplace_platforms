@@ -49,6 +49,7 @@
                             <th class="px-4 py-3">{{ __('admin.categories.default_delivery') }}</th>
                             <th class="px-4 py-3">{{ __('admin.status') }}</th>
                             <th class="px-4 py-3">{{ __('admin.categories.featured') }}</th>
+                            <th class="px-4 py-3">{{ __('admin.categories.footer') }}</th>
                             <th class="px-4 py-3 text-end"></th>
                         </tr>
                     </thead>

@@ -444,6 +444,26 @@ class CategoryController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Toggle Show in Footer (parent categories only)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function toggleFooterVisible(string $category): JsonResponse
+    {
+        $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
+
+        if ($categoryModel->parent_id !== null) {
+            return response()->json(['message' => 'Only parent categories can be toggled in the footer.'], 422);
+        }
+
+        $this->service->setShowInFooter($categoryModel, !$categoryModel->show_in_footer, auth('admin')->id());
+
+        return response()->json([
+            'success'        => true,
+            'show_in_footer' => (bool) $categoryModel->fresh()->show_in_footer,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Bulk Commission Update
     // ─────────────────────────────────────────────────────────────────────────
 

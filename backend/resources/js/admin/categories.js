@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
         initBulkCommission();
         initFeaturedToggle();
         initVisibleToggle();
+        initFooterVisibleToggle();
         initDeleteCategory();
         initSearch();
     }
@@ -283,6 +284,44 @@ function initVisibleToggle() {
             window.Toast?.success(isVisible ? t('admin.categories.made_visible') : t('admin.categories.made_hidden'));
         }).fail(function (xhr) {
             window.Toast?.error(xhr.responseJSON?.message || t('admin.categories.toggle_visible_failed'));
+        });
+    });
+}
+
+// ─── Footer visibility toggle ──────────────────────────────────────────────────
+
+function initFooterVisibleToggle() {
+    document.getElementById('categories-table')?.addEventListener('click', function (e) {
+        const btn = e.target.closest('.footer-visible-btn[data-id]');
+        if (!btn) return;
+
+        const url = btn.dataset.url;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        }).done(function (res) {
+            const showInFooter = res.show_in_footer;
+            btn.dataset.footerVisible = showInFooter ? '1' : '0';
+
+            btn.querySelector('.footer-visible-icon-on')?.classList.toggle('hidden', !showInFooter);
+            btn.querySelector('.footer-visible-icon-off')?.classList.toggle('hidden', showInFooter);
+
+            const span = btn.querySelector('span');
+            if (span) span.textContent = showInFooter ? t('admin.categories.shown_in_footer') : t('admin.categories.hidden_from_footer');
+
+            if (showInFooter) {
+                btn.classList.remove('bg-gray-100', 'text-gray-500', 'hover:bg-blue-50', 'hover:text-blue-600');
+                btn.classList.add('bg-blue-100', 'text-blue-700', 'hover:bg-red-50', 'hover:text-red-600');
+            } else {
+                btn.classList.remove('bg-blue-100', 'text-blue-700', 'hover:bg-red-50', 'hover:text-red-600');
+                btn.classList.add('bg-gray-100', 'text-gray-500', 'hover:bg-blue-50', 'hover:text-blue-600');
+            }
+
+            window.Toast?.success(showInFooter ? t('admin.categories.footer_shown') : t('admin.categories.footer_hidden'));
+        }).fail(function (xhr) {
+            window.Toast?.error(xhr.responseJSON?.message || t('admin.categories.toggle_footer_failed'));
         });
     });
 }

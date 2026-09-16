@@ -1,7 +1,12 @@
 import ProfileSidebar from "./profile-sidebar";
 import LowerFooter from "../../shared/lower-footer";
+import { getFooterData } from "@/src/services/footer";
+import getLocale from "@/src/helpers/getLocale";
 
-const ProfileLayout = ({ children }: { children: React.ReactNode }) => {
+const ProfileLayout = async ({ children }: { children: React.ReactNode }) => {
+  const locale = await getLocale();
+  const { bottom_nav_links, payment_methods } = await getFooterData();
+
   return (
     <>
       <div className="container py-6 bg-gray-100">
@@ -10,7 +15,12 @@ const ProfileLayout = ({ children }: { children: React.ReactNode }) => {
           <div>{children}</div>
         </div>
       </div>
-      <LowerFooter className="container py-4 px-10" />
+      <LowerFooter
+        className="container py-4 px-10"
+        bottomNavLinks={bottom_nav_links}
+        paymentMethods={payment_methods}
+        locale={locale}
+      />
     </>
   );
 };

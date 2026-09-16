@@ -45,6 +45,7 @@ class Category extends Model
     {
         \App\Services\Customer\CategoryService::flushCache();
         \App\Services\Customer\UnifiedCategoryService::flushCache();
+        \App\Services\FooterService::flushCache();
     }
 
 
@@ -69,6 +70,7 @@ class Category extends Model
         'is_active',
         'is_visible',
         'is_featured',
+        'show_in_footer',
         'has_filters',
         'influencer_sample_qty',
         'affiliate_sample_qty',
@@ -92,6 +94,7 @@ class Category extends Model
         'is_active' => 'boolean',
         'is_visible' => 'boolean',
         'is_featured' => 'boolean',
+        'show_in_footer' => 'boolean',
         'has_filters' => 'boolean',
         'influencer_sample_qty' => 'integer',
         'affiliate_sample_qty' => 'integer',

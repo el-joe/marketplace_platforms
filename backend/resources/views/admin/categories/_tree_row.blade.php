@@ -100,6 +100,24 @@
         </button>
     </td>
 
+    {{-- Footer visibility toggle — parent categories only --}}
+    <td class="px-4 py-2">
+        @if($category->parent_id === null)
+            <button type="button"
+                class="footer-visible-btn flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full transition-colors
+                    {{ $category->show_in_footer
+                        ? 'bg-blue-100 text-blue-700 hover:bg-red-50 hover:text-red-600'
+                        : 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}"
+                data-id="{{ $category->id }}"
+                data-footer-visible="{{ $category->show_in_footer ? '1' : '0' }}"
+                data-url="{{ route('admin.categories.toggle-footer-visible', $category->id) }}">
+                <x-heroicon name="eye" class="footer-visible-icon-on w-3.5 h-3.5 {{ $category->show_in_footer ? '' : 'hidden' }}" />
+                <x-heroicon name="eye-slash" class="footer-visible-icon-off w-3.5 h-3.5 {{ $category->show_in_footer ? 'hidden' : '' }}" />
+                <span>{{ $category->show_in_footer ? __('admin.categories.shown_in_footer') : __('admin.categories.hidden_from_footer') }}</span>
+            </button>
+        @endif
+    </td>
+
     <td class="px-4 py-2 text-end">
         <div class="flex items-center justify-end gap-1">
             <a href="{{ route('admin.categories.edit', $category->id) }}" class="btn btn-ghost btn-xs">{{ __('common.edit') }}</a>

@@ -1,48 +1,48 @@
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
+import type { FooterLink } from "@/src/services/footer";
 
 interface Props {
   className?: string;
-  paymentMethods?: string[];
+  paymentMethods?: FooterLink[];
+  bottomNavLinks?: FooterLink[];
+  locale?: "en" | "ar";
 }
 
-const navItems = [
-  { title: "Careers", href: "/" },
-  { title: "Warranty Policy", href: "/" },
-  { title: "Sell with us", href: "/" },
-  { title: "Terms of Use", href: "/" },
-  { title: "Terms of Sale", href: "/" },
-  { title: "Privacy Policy", href: "/" },
-  { title: "Consumer Rights", href: "/" },
-];
-
-const LowerFooter = async ({ paymentMethods, className }: Props) => {
+const LowerFooter = async ({
+  paymentMethods,
+  bottomNavLinks,
+  locale = "en",
+  className,
+}: Props) => {
   const t = await getTranslations("footer");
   return (
     <section className={className}>
       <div className="container flex flex-col md:flex-row justify-between gap-2 items-center">
         <p className="text-[13px] text-light">{t("rights")}</p>
         {/* pay methods */}
-        {paymentMethods && (
+        {paymentMethods && paymentMethods.length > 0 && (
           <div className="flex items-center gap-4">
-            {paymentMethods?.map((image, i) => (
-              <Image
-                src={image}
-                key={i}
-                alt=""
-                width={31}
-                height={20}
-                className=""
-              />
-            ))}
+            {paymentMethods.map((method) =>
+              method.icon ? (
+                <Image
+                  src={method.icon}
+                  key={method.id}
+                  alt={method.label[locale] ?? method.label.en ?? ""}
+                  width={31}
+                  height={20}
+                  className=""
+                />
+              ) : null,
+            )}
           </div>
         )}
 
         <div className="flex items-center justify-center gap-4 flex-wrap">
-          {navItems.map((item, i) => (
-            <Link href={item.href} key={i} className="text-sm text-light">
-              {item.title}
+          {(bottomNavLinks ?? []).map((item) => (
+            <Link href={item.url ?? "/"} key={item.id} className="text-sm text-light">
+              {item.label[locale] ?? item.label.en ?? ""}
             </Link>
           ))}
         </div>

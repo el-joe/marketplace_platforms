@@ -60,6 +60,14 @@ class CategoryService
         $this->logActivity($visible ? 'made_visible' : 'hidden', $category, $adminId);
     }
 
+    // ─── Footer Visibility Toggle ───────────────────────────────────────────────
+
+    public function setShowInFooter(Category $category, bool $show, ?string $adminId = null): void
+    {
+        $category->update(['show_in_footer' => $show]);
+        $this->logActivity($show ? 'shown_in_footer' : 'hidden_from_footer', $category, $adminId);
+    }
+
     // ─── Delete Validation ────────────────────────────────────────────────────
 
     public function canDelete(Category $category): array

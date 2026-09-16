@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Public\AdPopupController;
+use App\Http\Controllers\Api\Public\FooterController;
 use App\Http\Controllers\Api\Public\MarketerProfileController;
 use App\Http\Controllers\Api\Public\SellerController;
 use App\Http\Controllers\Api\PublicSettingsController;
@@ -40,6 +41,11 @@ Route::prefix('v1')->group(function (): void {
     // ── Public settings (consumed by Flutter apps) ──────────────────────────────
     Route::get('settings', [PublicSettingsController::class, 'index'])
         ->name('public.settings')
+        ->middleware('throttle:60,1');
+
+    // ── Public footer (categories + footer settings, cached) ────────────────────
+    Route::get('footer', [FooterController::class, 'index'])
+        ->name('public.footer')
         ->middleware('throttle:60,1');
 
     // ── Marketer public profile (country-scoped — controller reads the

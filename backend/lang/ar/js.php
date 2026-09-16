@@ -297,6 +297,11 @@ return [
             'toggle_visible_failed'    => 'فشل تحديث حالة الظهور.',
             'visible_label'            => 'مرئي',
             'hidden_label'             => 'مخفي',
+            'footer_shown'             => 'أصبحت الفئة ظاهرة في التذييل الآن.',
+            'footer_hidden'            => 'أصبحت الفئة مخفية من التذييل الآن.',
+            'toggle_footer_failed'     => 'فشل تحديث ظهور التذييل.',
+            'shown_in_footer'          => 'ضمن التذييل',
+            'hidden_from_footer'       => 'ليست ضمن التذييل',
         ],
 
         'cities' => [

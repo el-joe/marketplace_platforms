@@ -722,6 +722,13 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
+                        'label' => __('admin.nav.footer_settings'),
+                        'route' => 'admin.footer-settings.index',
+                        'icon' => 'view-columns',
+                        'permission' => 'settings.content',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.radio_channels'),
                         'route' => 'admin.radio.channels.index',
                         'icon' => 'play-circle',
