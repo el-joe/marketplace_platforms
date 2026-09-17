@@ -34,7 +34,7 @@ const MoreOffersSheet = ({
   const [open, setOpen] = useState(false);
   return (
     <Sheet open={open} onOpenChange={(e) => setOpen(e)}>
-      <SheetTrigger render={trigger}>Scrollable Content</SheetTrigger>
+      <SheetTrigger render={trigger} />
       <SheetContent initialFocus={false}>
         <SheetHeader>
           <SheetTitle>
