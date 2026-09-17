@@ -54,6 +54,7 @@ export default async function MarketerProfileBanner({
             share: t("share"),
             qrTitle: t("qrTitle"),
             qrScanHint: t("qrScanHint", { name: marketerName }),
+            qrCodeAlt: t("qrCodeAlt"),
             download: t("download"),
             close: t("close"),
           }}

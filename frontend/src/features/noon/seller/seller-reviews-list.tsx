@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   ChevronRight,
@@ -22,6 +23,7 @@ export default function SellerReviewsList({
   totalReviewsCount,
   reviews,
 }: SellerReviewsListProps) {
+  const t = useTranslations("sellerReviewsList");
   const [translatedMap, setTranslatedMap] = useState<Record<string, boolean>>(
     {},
   );
@@ -148,7 +150,7 @@ export default function SellerReviewsList({
                   className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <Flag className="w-3 h-3" />
-                  <span>Report</span>
+                  <span>{t("report")}</span>
                 </button>
               </div>
             </div>
@@ -162,7 +164,7 @@ export default function SellerReviewsList({
           variant="outline"
           className="border-[#3866df] text-[#3866df] hover:bg-[#edf2fd] rounded-lg px-6 py-2.5 text-xs sm:text-sm font-semibold flex items-center gap-1 transition-colors"
         >
-          <span>View All Reviews</span>
+          <span>{t("viewAllReviews")}</span>
           <ChevronRight className="w-4 h-4 rtl:rotate-180" />
         </Button>
       </div>

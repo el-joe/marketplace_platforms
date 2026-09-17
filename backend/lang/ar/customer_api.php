@@ -119,6 +119,9 @@ return [
         'claim_not_found'      => 'مطالبة الضمان غير موجودة.',
         'claim_closed'         => 'مطالبة الضمان هذه مغلقة ولا تقبل رسائل جديدة.',
         'message_sent'         => 'تم إرسال الرسالة.',
+        'purchase_created'          => 'تم شراء الضمان وتفعيله.',
+        'insufficient_wallet_balance' => 'رصيد المحفظة غير كافٍ لشراء هذا الضمان.',
+        'wallet_currency_mismatch'   => 'عملة محفظتك لا تطابق عملة هذا الطلب.',
     ],
 
     'wishlist' => [

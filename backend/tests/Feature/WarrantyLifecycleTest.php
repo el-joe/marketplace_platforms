@@ -324,4 +324,170 @@ class WarrantyLifecycleTest extends TestCase
         $this->assertSame($order->id, $replacement->order_id);
         $this->assertSame(0, (int) $replacement->items()->first()->unit_price);
     }
+
+    // ── Post-purchase buy flow (P-09 task 4) ─────────────────────────────────
+
+    private function deliverWithoutPlan(MarketplaceScenario $scenario): array
+    {
+        $cart = $this->cartFor($scenario);
+        CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbp->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbp->getRawOriginal('price'),
+            'added_at' => now(),
+        ]);
+
+        $order = $this->placeOrder($scenario, 'wallet');
+        $subOrder = $order->subOrders()->where('seller_type', 'vendor')->first();
+        $subOrder = $this->deliver($subOrder);
+        $item = $subOrder->items()->first();
+
+        return [$order, $subOrder, $item];
+    }
+
+    public function test_customer_can_buy_warranty_after_delivery_within_window_and_it_activates_immediately(): void
+    {
+        $scenario = $this->buildScenario();
+        [$order, $subOrder, $item] = $this->deliverWithoutPlan($scenario);
+
+        $walletBalanceBefore = $scenario->customerWallet->refresh()->balance;
+
+        $this->actingAs($scenario->customer, 'customer');
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/warranty/purchases",
+            [
+                'order_item_id' => $item->id,
+                'warranty_plan_id' => $scenario->warrantyPlanFlat->id,
+            ],
+        );
+
+        $response->assertStatus(201);
+        $response->assertJsonPath('data.status', 'active');
+
+        $purchase = WarrantyPurchase::where('order_item_id', $item->id)->first();
+        $this->assertNotNull($purchase);
+        $this->assertSame('active', $purchase->status);
+        $this->assertSame((int) $scenario->warrantyPlanFlat->price, $purchase->price_paid);
+
+        // Same coverage-date formula as SubOrderObserver: vendor has
+        // warranty_months = 12, so platform coverage starts 12 months
+        // after delivery and runs for the plan's own 12-month duration.
+        $expectedStart = $subOrder->delivered_at->copy()->addMonths(12)->toDateString();
+        $expectedEnd = $subOrder->delivered_at->copy()->addMonths(12)->addMonths(12)->toDateString();
+        $this->assertSame($expectedStart, $purchase->coverage_starts_at->toDateString());
+        $this->assertSame($expectedEnd, $purchase->coverage_ends_at->toDateString());
+
+        $this->assertSame($purchase->id, $item->refresh()->warranty_purchase_id);
+
+        $walletBalanceAfter = $scenario->customerWallet->refresh()->balance;
+        $this->assertSame($walletBalanceBefore - (int) $scenario->warrantyPlanFlat->price, $walletBalanceAfter);
+    }
+
+    public function test_buying_warranty_outside_the_window_returns_422(): void
+    {
+        $scenario = $this->buildScenario();
+        [, $subOrder, $item] = $this->deliverWithoutPlan($scenario);
+
+        $windowDays = (int) config('warranty.post_purchase_window_days', 30);
+        $subOrder->update(['delivered_at' => now()->subDays($windowDays + 5)]);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/warranty/purchases",
+            [
+                'order_item_id' => $item->id,
+                'warranty_plan_id' => $scenario->warrantyPlanFlat->id,
+            ],
+        );
+
+        $response->assertStatus(422);
+        $this->assertNull(WarrantyPurchase::where('order_item_id', $item->id)->first());
+    }
+
+    public function test_buying_warranty_for_a_non_delivered_item_returns_422(): void
+    {
+        $scenario = $this->buildScenario();
+        $cart = $this->cartFor($scenario);
+        CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbp->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbp->getRawOriginal('price'),
+            'added_at' => now(),
+        ]);
+
+        $order = $this->placeOrder($scenario, 'wallet');
+        $subOrder = $order->subOrders()->where('seller_type', 'vendor')->first();
+        // Not delivered — still in an earlier state.
+        $item = $subOrder->items()->first();
+
+        $this->actingAs($scenario->customer, 'customer');
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/warranty/purchases",
+            [
+                'order_item_id' => $item->id,
+                'warranty_plan_id' => $scenario->warrantyPlanFlat->id,
+            ],
+        );
+
+        $response->assertStatus(422);
+        $this->assertNull(WarrantyPurchase::where('order_item_id', $item->id)->first());
+    }
+
+    public function test_buying_warranty_when_one_already_pending_or_active_returns_422(): void
+    {
+        $scenario = $this->buildScenario();
+        $cart = $this->cartFor($scenario);
+        CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbp->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbp->getRawOriginal('price'),
+            'warranty_plan_id' => $scenario->warrantyPlanFlat->id,
+            'added_at' => now(),
+        ]);
+
+        $order = $this->placeOrder($scenario, 'wallet');
+        $subOrder = $order->subOrders()->where('seller_type', 'vendor')->first();
+        $this->deliver($subOrder);
+        $item = $subOrder->items()->first();
+
+        // Already has an active warranty from checkout.
+        $this->assertNotNull($item->refresh()->warranty_purchase_id);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/warranty/purchases",
+            [
+                'order_item_id' => $item->id,
+                'warranty_plan_id' => $scenario->warrantyPlanPercentage->id,
+            ],
+        );
+
+        $response->assertStatus(422);
+    }
+
+    public function test_failed_payment_does_not_create_or_activate_a_warranty_purchase(): void
+    {
+        $scenario = $this->buildScenario();
+        [, , $item] = $this->deliverWithoutPlan($scenario);
+
+        // Drain the wallet so the debit fails.
+        $scenario->customerWallet->update(['balance' => 0]);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/warranty/purchases",
+            [
+                'order_item_id' => $item->id,
+                'warranty_plan_id' => $scenario->warrantyPlanFlat->id,
+            ],
+        );
+
+        $response->assertStatus(422);
+        $this->assertNull(WarrantyPurchase::where('order_item_id', $item->id)->first());
+        $this->assertNull($item->refresh()->warranty_purchase_id);
+        $this->assertSame(0, $scenario->customerWallet->refresh()->balance);
+    }
 }

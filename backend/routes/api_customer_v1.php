@@ -585,6 +585,7 @@ use Illuminate\Support\Facades\Route;
             Route::prefix('warranty')->name('customer.api.warranty.')->group(function (): void {
                 Route::get('plans/{orderItemId}', [ApiWarrantyController::class, 'plans'])->name('plans');
                 Route::get('purchases', [ApiWarrantyController::class, 'purchases'])->name('purchases');
+                Route::post('purchases', [ApiWarrantyController::class, 'purchasesStore'])->name('purchases.store');
                 Route::get('claims', [ApiWarrantyController::class, 'claimsIndex'])->name('claims.index');
                 Route::post('claims', [ApiWarrantyController::class, 'claimsStore'])->name('claims.store');
                 Route::get('claims/{claimNumber}', [ApiWarrantyController::class, 'claimsShow'])->name('claims.show');

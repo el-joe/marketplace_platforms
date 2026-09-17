@@ -105,7 +105,8 @@
     "maximizeYourSavings": "عزّز مدخراتك",
     "bestsellersForYou": "الأكثر مبيعًا لك",
     "travelStore": "متجر السفر",
-    "viewAll": "عرض الكل"
+    "viewAll": "عرض الكل",
+    "pageUnderConstruction": "الصفحة قيد الإنشاء"
   },
   "productView": {
     "ad": "إعلان",
@@ -241,7 +242,8 @@
     "inYourCart": "في سلتك",
     "megaDeal": "صفقة ضخمة 📣",
     "freeDelivery": "توصيل مجاني",
-    "noonExpress": "نون إكسبريس"
+    "noonExpress": "نون إكسبريس",
+    "close": "إغلاق"
   },
   "profile": {
     "disputes": "النزاعات",
@@ -889,7 +891,10 @@
       "from": "ابتداءً من",
       "perPerson": "للشخص الواحد",
       "viewDetails": "عرض التفاصيل",
-      "seatsLeft": "متبقٍ"
+      "seatsLeft": "متبقٍ",
+      "onlySeatsLeft": "تبقّى {count} مقاعد فقط!",
+      "seatsAvailable": "{count} مقاعد متاحة",
+      "soldOut": "نفدت الكمية"
     },
     "pagination": {
       "ariaLabel": "صفحات قائمة الباقات"
@@ -1074,7 +1079,9 @@
     "to": "إلى",
     "go": "بحث",
     "seeAll": "عرض الكل ({count})",
-    "seeLess": "عرض أقل"
+    "seeLess": "عرض أقل",
+    "noProductsFound": "لا توجد منتجات",
+    "tryAdjustingFilters": "حاول تعديل عوامل التصفية"
   },
   "classified": {
     "city": "المدينة",
@@ -1144,7 +1151,79 @@
     "dealership": "وارد وكاله",
     "gccSpecs": "مواصفات خليجية",
     "recommendedForYou": "موصى به لك",
-    "contactViaChat": "التواصل عبر الشات"
+    "contactViaChat": "التواصل عبر الشات",
+    "addToFavorites": "إضافة إلى المفضلة",
+    "noProductsFound": "لا توجد منتجات"
+  },
+  "classifiedSidebar": {
+    "chat": "محادثة",
+    "following": "متابع",
+    "follow": "متابعة",
+    "rating": "التقييم",
+    "memberSince": "عضو منذ",
+    "viewAllListings": "عرض كل الإعلانات ({count})",
+    "generalTips": "نصائح عامة",
+    "tipPublicPlaces": "قابل البائع في مكان عام فقط",
+    "tipNoAdvancePayment": "لا تدفع أو تحول أي مبلغ مقدمًا",
+    "tipInspectProduct": "افحص المنتج قبل الشراء",
+    "sellAnything": "بيع أي شيء على OpenSooq",
+    "similarListingPrompt": "هل لديك إعلان مشابه؟",
+    "addNewListing": "إضافة إعلان جديد",
+    "wantMoreViews": "تريد المزيد من المشاهدات؟",
+    "promoteOrRepost": "روّج أو أعد نشر إعلانك",
+    "exploreMore": "المزيد"
+  },
+  "classifiedInquiry": {
+    "theLister": "المُعلِن",
+    "presetInterested": "أنا مهتم",
+    "presetLowerPrice": "هل يمكنك تخفيض السعر",
+    "presetWhereMeet": "أين يمكننا أن نلتقي",
+    "presetDelivery": "هل يوجد توصيل",
+    "presetInspectionResult": "ما هي نتيجة الفحص",
+    "askTheLister": "اسأل المُعلِن",
+    "messagePlaceholder": "رسالة...",
+    "sendMessage": "إرسال الرسالة",
+    "messageSentTo": "تم إرسال رسالتك إلى {name}!"
+  },
+  "classifiedGallery": {
+    "promotedTurbo": "إعلان مميز",
+    "mainImageAlt": "صورة السيارة المعروضة",
+    "previousImage": "الصورة السابقة",
+    "nextImage": "الصورة التالية",
+    "thumbnail1": "صورة مصغرة 1",
+    "thumbnail2": "صورة مصغرة 2",
+    "thumbnail3": "صورة مصغرة 3",
+    "showMorePhotos": "عرض المزيد من الصور",
+    "closeLightbox": "إغلاق العرض",
+    "expandedView": "عرض مكبر"
+  },
+  "sellerInfoSidebar": {
+    "sellerRating": "تقييم البائع",
+    "positiveRatings": "{pct}% تقييمات إيجابية",
+    "customers": "العملاء",
+    "productAsDescribed": "المنتج مطابق للوصف",
+    "whatDoTheseMean": "ماذا تعني هذه النسب؟",
+    "sellerSince": "بائع منذ"
+  },
+  "sellerReviewsList": {
+    "report": "إبلاغ",
+    "viewAllReviews": "عرض جميع التقييمات"
+  },
+  "helpSheet": {
+    "back": "رجوع",
+    "close": "إغلاق",
+    "chooseApplicableItems": "اختر العناصر المناسبة",
+    "inProgress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "searchItems": "بحث في العناصر",
+    "last3Months": "آخر 3 أشهر",
+    "last6Months": "آخر 6 أشهر",
+    "last12Months": "آخر 12 شهرًا",
+    "noItemsFound": "لا توجد عناصر",
+    "noItemsFoundHint": "لم نتمكن من العثور على عناصر تطابق بحثك في الفترة المحددة",
+    "needMoreHelp": "تحتاج مساعدة إضافية؟",
+    "unresolvedQueriesPrefix": "إذا كانت لديك أي استفسارات غير محلولة، يرجى التواصل مع",
+    "customerSupport": "خدمة العملاء"
   },
   "marketers": {
     "pageTitle": "الماركترز | نون",
@@ -1188,6 +1267,7 @@
     "share": "مشاركة",
     "qrTitle": "كود QR للبروفايل",
     "qrScanHint": "امسح الكود للوصول لصفحة {name}",
+    "qrCodeAlt": "رمز الاستجابة السريعة",
     "download": "تنزيل",
     "close": "إغلاق"
   },

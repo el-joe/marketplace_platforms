@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { MapPin, Mail, CircleHelp, Star } from "lucide-react";
 import { ISellerProfile } from "./types";
 
@@ -9,6 +10,7 @@ interface SellerInfoSidebarProps {
 }
 
 export default function SellerInfoSidebar({ seller }: SellerInfoSidebarProps) {
+  const t = useTranslations("sellerInfoSidebar");
   return (
     <aside className="w-full lg:w-[340px] xl:w-[380px] shrink-0 pt-16 sm:pt-18 pb-8">
       {/* Seller Store Name */}
@@ -39,7 +41,7 @@ export default function SellerInfoSidebar({ seller }: SellerInfoSidebarProps) {
           {/* Seller Rating */}
           <div className="pe-4">
             <div className="flex items-center justify-between text-xs text-gray-700 font-medium mb-1">
-              <span>Seller Rating</span>
+              <span>{t("sellerRating")}</span>
               <CircleHelp className="w-3.5 h-3.5 text-gray-400" />
             </div>
             <div className="flex items-center gap-1">
@@ -49,14 +51,14 @@ export default function SellerInfoSidebar({ seller }: SellerInfoSidebarProps) {
               <Star className="w-4 h-4 fill-[#006300] stroke-[#006300]" />
             </div>
             <p className="text-[11px] text-gray-500 mt-1">
-              {seller.positive_ratings_pct}% Positive Ratings
+              {t("positiveRatings", { pct: seller.positive_ratings_pct })}
             </p>
           </div>
 
           {/* Customers */}
           <div className="ps-4">
             <div className="text-xs text-gray-700 font-medium mb-1">
-              Customers
+              {t("customers")}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900">
               {seller.customers_count}
@@ -72,7 +74,7 @@ export default function SellerInfoSidebar({ seller }: SellerInfoSidebarProps) {
       <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs sm:text-sm font-medium text-gray-800 whitespace-nowrap">
-            Product as Described
+            {t("productAsDescribed")}
           </span>
           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -90,7 +92,7 @@ export default function SellerInfoSidebar({ seller }: SellerInfoSidebarProps) {
             type="button"
             className="flex items-center justify-between w-full hover:text-gray-700 transition-colors"
           >
-            <span>What do these mean?</span>
+            <span>{t("whatDoTheseMean")}</span>
             <CircleHelp className="w-3.5 h-3.5 text-gray-400" />
           </button>
         </div>
@@ -98,7 +100,7 @@ export default function SellerInfoSidebar({ seller }: SellerInfoSidebarProps) {
 
       {/* Seller Since Section */}
       <div className="mt-6">
-        <p className="text-xs text-gray-500">Seller Since</p>
+        <p className="text-xs text-gray-500">{t("sellerSince")}</p>
         <p className="text-sm font-bold text-gray-900 mt-0.5">
           {seller.seller_since}
         </p>

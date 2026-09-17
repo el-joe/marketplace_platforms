@@ -1,6 +1,7 @@
 "use client";
 
 import { JSXElementConstructor } from "react";
+import { useTranslations } from "next-intl";
 import { Sheet, SheetContent, SheetTrigger } from "@/src/components/ui/sheet";
 import { useHelpTree } from "../api/use-help-tree";
 import { useHelpNavigation } from "../helpers/use-help-navigation";
@@ -27,6 +28,7 @@ export default function HelpSheet({
   open,
   onOpenChange,
 }: HelpSheetProps) {
+  const t = useTranslations("helpSheet");
   const { data: root, isLoading } = useHelpTree();
   const { current, canGoBack, goInto, goBack, reset } =
     useHelpNavigation(root);
@@ -98,7 +100,7 @@ export default function HelpSheet({
                 <button
                   type="button"
                   onClick={handleClose}
-                  aria-label="Close"
+                  aria-label={t("close")}
                   className="cursor-pointer text-xl leading-none"
                 >
                   &times;

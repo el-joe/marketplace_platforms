@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\WarrantyClaimMessageRequest;
 use App\Http\Requests\Api\Customer\WarrantyClaimStoreRequest;
+use App\Http\Requests\Api\Customer\WarrantyPurchaseStoreRequest;
 use App\Http\Resources\Api\Customer\WarrantyPlanResource;
 use App\Http\Resources\Customer\WarrantyClaimMessageResource;
 use App\Http\Resources\Customer\WarrantyClaimResource;
@@ -12,13 +13,17 @@ use App\Http\Resources\Customer\WarrantyPurchaseResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Admin;
 use App\Models\Customer;
+use App\Models\CustomerWallet;
 use App\Models\OrderItem;
+use App\Models\WalletTransaction;
 use App\Models\WarrantyClaim;
 use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
+use App\Exceptions\InsufficientWalletBalanceException;
 use App\Notifications\Admin\NewWarrantyClaimNotification as AdminNewWarrantyClaimNotification;
 use App\Notifications\Vendor\NewWarrantyClaimNotification as VendorNewWarrantyClaimNotification;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
@@ -73,6 +78,108 @@ class WarrantyController extends Controller
             ->paginate(15);
 
         return ApiResponse::paginated($paginator, WarrantyPurchaseResource::class);
+    }
+
+    /**
+     * enhancement.md P-09 task 4: "buy a warranty after delivery". The
+     * request already validated ownership, delivery, the purchase window
+     * (config('warranty.post_purchase_window_days')) and that the item has
+     * no pending/active warranty. Pricing reuses WarrantyPlan::resolvePrice()
+     * (the same flat-vs-percentage calculation checkout uses via
+     * CheckoutPricingEngine::resolveWarrantySelections()). Payment is taken
+     * from the customer wallet (P-05's CustomerWallet, the same primitive
+     * checkout wallet payments use) — no warranty_purchases row is created
+     * unless the debit succeeds, so a failed payment never leaves an
+     * active-without-payment warranty. Since the item is already delivered,
+     * the purchase is activated immediately (not queued for a delivery
+     * event) using the exact same coverage-date formula as
+     * SubOrderObserver (WarrantyPurchase::coverageDatesFor()).
+     */
+    public function purchasesStore(WarrantyPurchaseStoreRequest $request): JsonResponse
+    {
+        /** @var Customer $customer */
+        $customer = auth('customer')->user();
+
+        $orderItem = OrderItem::with(['order', 'subOrder.vendor'])
+            ->findOrFail($request->validated('order_item_id'));
+
+        $plan = WarrantyPlan::findOrFail($request->validated('warranty_plan_id'));
+
+        $price = $plan->resolvePrice((int) $orderItem->unit_price);
+        $currency = $orderItem->order->currency;
+
+        $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
+
+        if (! $wallet || $wallet->currency_code !== $currency) {
+            return ApiResponse::error(__('customer_api.warranty.wallet_currency_mismatch'), [], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($wallet, $price, $orderItem, $plan, $customer, $currency, &$warrantyPurchase): void {
+                // Debit first: if the wallet has insufficient balance this
+                // throws and the transaction rolls back before any
+                // warranty_purchases row is ever created.
+                $wallet->debit($price);
+
+                $deliveredAt = $orderItem->subOrder->delivered_at;
+                $vendorWarrantyMonths = $orderItem->subOrder?->vendor?->warranty_months
+                    ? (int) $orderItem->subOrder->vendor->warranty_months
+                    : null;
+
+                $dates = WarrantyPurchase::coverageDatesFor($deliveredAt, $vendorWarrantyMonths, (int) $plan->duration_months);
+
+                $warrantyPurchase = WarrantyPurchase::create([
+                    'customer_id' => $customer->id,
+                    'order_id' => $orderItem->order_id,
+                    'order_item_id' => $orderItem->id,
+                    'warranty_plan_id' => $plan->id,
+                    'plan_snapshot' => [
+                        'name_en' => $plan->name_en,
+                        'name_ar' => $plan->name_ar,
+                        'duration_months' => $plan->duration_months,
+                        'features_en' => $plan->features_en,
+                        'features_ar' => $plan->features_ar,
+                        'price' => $plan->price,
+                        'price_type' => $plan->price_type,
+                        'price_pct' => $plan->price_pct,
+                        'currency' => $plan->currency,
+                        'resolved_price' => $price,
+                    ],
+                    'price_paid' => $price,
+                    'currency' => $currency,
+                    // Activated immediately: the item is already delivered,
+                    // so there is no future delivery event to trigger
+                    // SubOrderObserver's activation path.
+                    'status' => 'active',
+                    'coverage_starts_at' => $dates['starts']->toDateString(),
+                    'coverage_ends_at' => $dates['ends']->toDateString(),
+                ]);
+
+                $orderItem->update(['warranty_purchase_id' => $warrantyPurchase->id]);
+
+                WalletTransaction::create([
+                    'customer_id' => $customer->id,
+                    'type' => 'warranty_purchase',
+                    'direction' => 'debit',
+                    'amount' => $price,
+                    'balance_after' => $wallet->balance,
+                    'currency_code' => $currency,
+                    'reference_type' => WarrantyPurchase::class,
+                    'reference_id' => $warrantyPurchase->id,
+                    'source_type' => 'warranty_purchase',
+                    'source_id' => $warrantyPurchase->id,
+                    'description' => 'Post-purchase warranty: '.$plan->name_en,
+                ]);
+            });
+        } catch (InsufficientWalletBalanceException $e) {
+            return ApiResponse::error(__('customer_api.warranty.insufficient_wallet_balance'), [], 422);
+        }
+
+        return ApiResponse::success(
+            new WarrantyPurchaseResource($warrantyPurchase->load(['orderItem', 'plan'])),
+            __('customer_api.warranty.purchase_created'),
+            201,
+        );
     }
 
     public function claimsIndex(): JsonResponse

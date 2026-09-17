@@ -36,13 +36,13 @@ export default async function BookingSidebar({ pkg }: Props) {
               />
               <span className="text-xs text-gray">
                 {pkg.seats_remaining <= 5
-                  ? `Only ${pkg.seats_remaining} seats left!`
-                  : `${pkg.seats_remaining} seats available`}
+                  ? t("onlySeatsLeft", { count: pkg.seats_remaining })
+                  : t("seatsAvailable", { count: pkg.seats_remaining })}
               </span>
             </div>
           )}
           {pkg.seats_remaining === 0 && (
-            <p className="text-xs text-red font-semibold mt-2">Sold Out</p>
+            <p className="text-xs text-red font-semibold mt-2">{t("soldOut")}</p>
           )}
         </div>
 

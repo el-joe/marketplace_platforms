@@ -7,6 +7,7 @@ import { PageBuilder } from "@/src/components/shared/page-builder/types";
 import { PlacementBanner } from "@/src/components/shared/placement-banner";
 import { PlacementBanner as PlacementBannerType } from "@/src/types/placement-banner";
 import { Facets } from "@/src/features/noon/shop/types";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   pageBuilderData: PageBuilder | null;
@@ -33,6 +34,7 @@ export default async function Shop({
   hasFilters,
   locale,
 }: Props) {
+  const t = await getTranslations("shop");
   return (
     <>
       {pageBuilderData?.sections.map((e) => (
@@ -62,9 +64,9 @@ export default async function Shop({
         ) : (
           <div className="flex flex-col items-center gap-3 py-24 text-center">
             <p className="text-lg font-semibold text-primary">
-              No products found
+              {t("noProductsFound")}
             </p>
-            <p className="text-sm text-gray">Try adjusting your filters</p>
+            <p className="text-sm text-gray">{t("tryAdjustingFilters")}</p>
           </div>
         )}
       </div>

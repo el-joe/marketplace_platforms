@@ -105,7 +105,8 @@
     "maximizeYourSavings": "Maximize Your Savings",
     "bestsellersForYou": "bestsellers for you",
     "travelStore": "Travel store",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "pageUnderConstruction": "Page under construction"
   },
   "productView": {
     "ad": "Ad",
@@ -241,7 +242,8 @@
     "inYourCart": "In your cart",
     "megaDeal": "Mega deal 📣",
     "freeDelivery": "Free Delivery",
-    "noonExpress": "Noon Express"
+    "noonExpress": "Noon Express",
+    "close": "Close"
   },
   "profile": {
     "disputes": "Disputes",
@@ -889,7 +891,10 @@
       "from": "From",
       "perPerson": "per person",
       "viewDetails": "View Details",
-      "seatsLeft": "left"
+      "seatsLeft": "left",
+      "onlySeatsLeft": "Only {count} seats left!",
+      "seatsAvailable": "{count} seats available",
+      "soldOut": "Sold Out"
     },
     "pagination": {
       "ariaLabel": "Package listing pages"
@@ -1074,7 +1079,9 @@
     "to": "To",
     "go": "Go",
     "seeAll": "See all ({count})",
-    "seeLess": "See less"
+    "seeLess": "See less",
+    "noProductsFound": "No products found",
+    "tryAdjustingFilters": "Try adjusting your filters"
   },
   "classified": {
     "city": "City",
@@ -1144,7 +1151,79 @@
     "dealership": "Dealership",
     "gccSpecs": "GCC Specs",
     "recommendedForYou": "Recommended For You",
-    "contactViaChat": "Contact via chat"
+    "contactViaChat": "Contact via chat",
+    "addToFavorites": "Add to favorites",
+    "noProductsFound": "No products found"
+  },
+  "classifiedSidebar": {
+    "chat": "Chat",
+    "following": "Following",
+    "follow": "Follow",
+    "rating": "Rating",
+    "memberSince": "Member Since",
+    "viewAllListings": "View All Listings ({count})",
+    "generalTips": "General Tips",
+    "tipPublicPlaces": "Only meet in public places",
+    "tipNoAdvancePayment": "Never pay or transfer money in advance",
+    "tipInspectProduct": "Inspect the product before you buy it",
+    "sellAnything": "Sell Anything on OpenSooq",
+    "similarListingPrompt": "Do you have a similar Listing?",
+    "addNewListing": "Add New Listing",
+    "wantMoreViews": "Want more views?",
+    "promoteOrRepost": "Promote or Repost your listing",
+    "exploreMore": "Explore More"
+  },
+  "classifiedInquiry": {
+    "theLister": "the lister",
+    "presetInterested": "I'm interested",
+    "presetLowerPrice": "Can you lower the price",
+    "presetWhereMeet": "Where can we meet",
+    "presetDelivery": "You do delivery",
+    "presetInspectionResult": "What's the inspection result",
+    "askTheLister": "Ask the Lister",
+    "messagePlaceholder": "Message...",
+    "sendMessage": "Send Message",
+    "messageSentTo": "Your message has been sent to {name}!"
+  },
+  "classifiedGallery": {
+    "promotedTurbo": "Promoted Turbo",
+    "mainImageAlt": "Classified vehicle image",
+    "previousImage": "Previous image",
+    "nextImage": "Next image",
+    "thumbnail1": "Thumbnail 1",
+    "thumbnail2": "Thumbnail 2",
+    "thumbnail3": "Thumbnail 3",
+    "showMorePhotos": "Show More Photos",
+    "closeLightbox": "Close lightbox",
+    "expandedView": "Expanded view"
+  },
+  "sellerInfoSidebar": {
+    "sellerRating": "Seller Rating",
+    "positiveRatings": "{pct}% Positive Ratings",
+    "customers": "Customers",
+    "productAsDescribed": "Product as Described",
+    "whatDoTheseMean": "What do these mean?",
+    "sellerSince": "Seller Since"
+  },
+  "sellerReviewsList": {
+    "report": "Report",
+    "viewAllReviews": "View All Reviews"
+  },
+  "helpSheet": {
+    "back": "Back",
+    "close": "Close",
+    "chooseApplicableItems": "Choose applicable items",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "searchItems": "Search Items",
+    "last3Months": "Last 3 months",
+    "last6Months": "Last 6 months",
+    "last12Months": "Last 12 months",
+    "noItemsFound": "No items found",
+    "noItemsFoundHint": "We couldn't find any items that matched your search in the given time period",
+    "needMoreHelp": "Need more help?",
+    "unresolvedQueriesPrefix": "If you still have any unresolved queries, please reach out to our",
+    "customerSupport": "customer support"
   },
   "marketers": {
     "pageTitle": "Marketers | noon",
@@ -1188,6 +1267,7 @@
     "share": "Share",
     "qrTitle": "Profile QR Code",
     "qrScanHint": "Scan the code to access {name}'s page",
+    "qrCodeAlt": "QR Code",
     "download": "Download",
     "close": "Close"
   },

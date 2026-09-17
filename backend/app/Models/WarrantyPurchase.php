@@ -57,4 +57,34 @@ class WarrantyPurchase extends Model
     {
         return $query->where('customer_id', $customerId);
     }
+
+    /**
+     * enhancement.md P-09 task 2/4: the single source of truth for coverage
+     * dates, shared by both activation paths:
+     *  - SubOrderObserver (checkout-purchased warranty, activated when the
+     *    sub-order transitions to `delivered`);
+     *  - the post-purchase "buy after delivery" flow (task 4), which
+     *    activates immediately since the item is already delivered.
+     *
+     * `coverage_starts_at` begins after the brand/vendor warranty ends
+     * (`delivered_at + vendors.warranty_months`), or at delivery if the
+     * vendor has none. `coverage_ends_at` runs for the plan's own duration
+     * from that start date.
+     *
+     * @return array{starts: \Illuminate\Support\Carbon, ends: \Illuminate\Support\Carbon}
+     */
+    public static function coverageDatesFor(
+        \Illuminate\Support\Carbon $deliveredAt,
+        ?int $vendorWarrantyMonths,
+        int $planDurationMonths,
+    ): array {
+        $starts = $vendorWarrantyMonths
+            ? $deliveredAt->copy()->addMonths($vendorWarrantyMonths)
+            : $deliveredAt->copy();
+
+        return [
+            'starts' => $starts,
+            'ends' => $starts->copy()->addMonths($planDurationMonths),
+        ];
+    }
 }

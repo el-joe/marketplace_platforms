@@ -166,7 +166,7 @@ export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
                     ? "border-red-200 bg-red-50 text-red-500"
                     : "border-gray-300 hover:bg-gray-50 text-gray-400 hover:text-red-500"
                 }`}
-                aria-label="Add to favorites"
+                aria-label={t("addToFavorites")}
               >
                 <Heart
                   className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`}
