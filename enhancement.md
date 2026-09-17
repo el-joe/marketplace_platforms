@@ -869,7 +869,7 @@ It also loads `category_attributes` pivots and classified categories. It is cach
 
 ---
 
-## P-22 🟡 PDP, indexes, write-on-read, and a performance harness
+## P-22 🟡 PDP, indexes, write-on-read, and a performance harness --DONE (partial, see commit)
 
 **Problem**
 - The PDP (`GET {country}/l/{identifier}`, `ListingDetailController`) runs 76–83 queries, including a synchronous `UPDATE products SET view_count = view_count + 1` on every GET (5 ms, row lock contention under load; `ProductViewLogJob` already exists), plus N+1 on categories and brands (related/recommended products).

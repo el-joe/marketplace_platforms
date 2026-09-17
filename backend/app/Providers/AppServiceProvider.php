@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\View\Composers\SettingsComposer;
 use App\Http\View\Composers\TravelAgencySidebarComposer;
 use App\View\Components\Form\AsyncSelect;
@@ -129,6 +131,18 @@ class AppServiceProvider extends ServiceProvider
         // row, per-block relation loads) are fixed directly in
         // PageBuilderService below instead, and covered by query-count
         // assertions in tests/Feature/Customer/HomePageQueryCountTest.php.
+
+        // enhancement.md P-22 task 5: log any single query over 500ms in
+        // production only (a dev/test box running without the P-22 index
+        // migration, or a cold-cache aggregate, would otherwise spam this).
+        if ($this->app->isProduction()) {
+            DB::whenQueryingForLongerThan(500, function ($connection) {
+                Log::warning('Slow query detected (>500ms)', [
+                    'connection' => $connection->getName(),
+                    'query_count' => count($connection->getQueryLog()),
+                ]);
+            });
+        }
 
         Auth::provider('travel_agency_provider', function ($app, array $config) {
             return new TravelAgencyUserProvider($app['hash'], $config['model']);
