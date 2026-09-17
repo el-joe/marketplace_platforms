@@ -9,16 +9,13 @@ import ClassifiedFeatures from "./classified-features";
 import ClassifiedInquiry from "./classified-inquiry";
 import ClassifiedSidebar from "./classified-sidebar";
 import ClassifiedRecommended from "./classified-recommended";
-import { MOCK_CLASSIFIED_DETAIL } from "./mock-data";
 import { ClassifiedDetail } from "./types";
 
 interface ClassifiedViewProps {
-  initialData?: ClassifiedDetail;
+  initialData: ClassifiedDetail;
 }
 
-export default function ClassifiedView({
-  initialData = MOCK_CLASSIFIED_DETAIL,
-}: ClassifiedViewProps) {
+export default function ClassifiedView({ initialData }: ClassifiedViewProps) {
   const listing = initialData;
 
   return (

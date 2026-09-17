@@ -822,6 +822,7 @@ class ListingQueryService
             'location' => $listing->city?->name_en,
             'seller_type' => $listing->seller_type === Vendor::class ? 'vendor' : 'customer',
             'images_count' => $listing->images->count(),
+            'attributes' => $listing->attributes ?? [],
             'created_at' => $listing->created_at?->toIso8601String(),
         ];
     }

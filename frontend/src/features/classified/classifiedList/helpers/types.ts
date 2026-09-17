@@ -26,6 +26,7 @@ export interface ClassifiedItem {
   location: string;
   seller_type: string;
   images_count: number;
+  attributes: Record<string, string>;
   created_at: Date;
 }
 

@@ -1143,7 +1143,8 @@
     "gasoline": "Gasoline",
     "dealership": "Dealership",
     "gccSpecs": "GCC Specs",
-    "recommendedForYou": "Recommended For You"
+    "recommendedForYou": "Recommended For You",
+    "contactViaChat": "Contact via chat"
   },
   "marketers": {
     "pageTitle": "Marketers | noon",
