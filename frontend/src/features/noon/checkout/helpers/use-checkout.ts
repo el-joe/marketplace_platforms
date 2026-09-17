@@ -6,10 +6,11 @@ import {
 } from "../api/post";
 import { useEffect, useMemo, useState } from "react";
 import { getAddresses } from "@/src/services/address";
+import { getPaymentGateways } from "@/src/services/payment-gateways";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "@/i18n/navigation";
 import { IPrepareCheckout } from "../types/checkout.type";
-import { getMarketerContract, getPaymentGateways } from "../api/get";
+import { getMarketerContract } from "../api/get";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { ApiRequestError } from "@/src/lib/utils";
@@ -175,7 +176,7 @@ export const useCheckout = () => {
     });
   };
 
-  const defaultGatewayId = gateways.data?.data?.gateways?.[0]?.id;
+  const defaultGatewayId = gateways.data?.[0]?.id;
 
   useEffect(() => {
     if (!selectedAddress || !defaultGatewayId) return;
@@ -194,7 +195,7 @@ export const useCheckout = () => {
     addressesError: addresses.error,
     selectedAddress,
 
-    gatewaysData: gateways.data?.data,
+    gatewaysData: gateways.data,
     isGettingGateways: gateways.isPending,
     gatewaysError: gateways.error,
 

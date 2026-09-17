@@ -3,7 +3,6 @@ import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import GiftCardForm from "./components/gift-card-form";
-import { getAvailableGiftCards } from "../api/gift-cards.actions";
 import type { GiftCardBatch } from "../helpers/types";
 
 type Props = {
@@ -11,10 +10,9 @@ type Props = {
 };
 
 export default async function GiftCardView({ batch }: Props) {
-  const [t, locale, availableBatches] = await Promise.all([
+  const [t, locale] = await Promise.all([
     getTranslations("giftCards"),
     getLocale(),
-    getAvailableGiftCards(batch.currency_code),
   ]);
   const categoryLabel = locale === "ar" ? batch.title_ar : batch.title_en;
 
@@ -42,7 +40,7 @@ export default async function GiftCardView({ batch }: Props) {
 
       <div className="border-t border-border" />
 
-      <GiftCardForm batch={batch} availableBatches={availableBatches} />
+      <GiftCardForm batch={batch} />
     </div>
   );
 }

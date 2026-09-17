@@ -40,7 +40,9 @@ export default function MyGiftCardsDialog() {
       .catch((err) => {
         if (!cancelled) {
           setError(
-            err instanceof ApiRequestError ? err.message : t("myGiftCardsLoadFailed"),
+            err instanceof ApiRequestError
+              ? err.message
+              : t("myGiftCardsLoadFailed"),
           );
         }
       })
@@ -77,13 +79,13 @@ export default function MyGiftCardsDialog() {
           <p className="py-8 text-center text-sm text-red">{error}</p>
         )}
 
-        {!isLoading && !error && purchases.length === 0 && (
+        {!isLoading && !error && purchases?.length === 0 && (
           <p className="py-8 text-center text-sm text-gray">
             {t("myGiftCardsEmptyMessage")}
           </p>
         )}
 
-        {!isLoading && !error && purchases.length > 0 && (
+        {!isLoading && !error && purchases?.length > 0 && (
           <div className="flex flex-col divide-y divide-border">
             {purchases.map((purchase) => (
               <div
