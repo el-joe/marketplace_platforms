@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\DTOs\Refund\RefundScope;
 use App\Models\CartItem;
-use App\Models\CustomerWallet;
+use App\Enums\WalletOwnerType;
+use App\Models\Wallet;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
 use App\Models\Refund;
@@ -99,7 +100,7 @@ class RefundServiceTest extends TestCase
         $order = $this->placeOrder($scenario, 'stripe');
         $this->captureCardOrder($order);
 
-        $walletBefore = CustomerWallet::where('customer_id', $scenario->customer->id)->first()?->balance ?? 0;
+        $walletBefore = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first()?->balance ?? 0;
 
         $order->load('subOrders.items');
 
@@ -119,7 +120,7 @@ class RefundServiceTest extends TestCase
         $this->assertCount(1, $fake->refundCalls);
         $this->assertSame(100, $fake->refundCalls[0]['amountCents']);
 
-        $walletAfter = CustomerWallet::where('customer_id', $scenario->customer->id)->first()?->balance ?? 0;
+        $walletAfter = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first()?->balance ?? 0;
         $this->assertSame($walletBefore, $walletAfter, 'nothing must move to the wallet for a card refund');
     }
 
@@ -134,7 +135,7 @@ class RefundServiceTest extends TestCase
         $order->load('subOrders.items');
         $subOrder = $order->subOrders->first();
 
-        $walletBefore = CustomerWallet::where('customer_id', $scenario->customer->id)->first()?->balance ?? 0;
+        $walletBefore = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first()?->balance ?? 0;
         $item = $subOrder->items->first();
 
         $refund = app(RefundService::class)->refund(
@@ -149,7 +150,7 @@ class RefundServiceTest extends TestCase
         $this->assertSame('completed', $refund->status->value);
         $this->assertSame((int) $item->line_total + (int) $subOrder->shipping, (int) $refund->amount);
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($walletBefore + (int) $refund->net_refund, $wallet->balance, 'COD refund lands in the wallet');
         $this->assertNull($refund->original_transaction_id, 'COD refund never touches a gateway transaction');
     }
@@ -228,7 +229,7 @@ class RefundServiceTest extends TestCase
         $subOrder = $order->subOrders->first();
         $item = $subOrder->items->first();
 
-        $walletBefore = CustomerWallet::where('customer_id', $scenario->customer->id)->first()?->balance ?? 0;
+        $walletBefore = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first()?->balance ?? 0;
 
         $refund = app(RefundService::class)->refund(
             order: $order,
@@ -242,7 +243,7 @@ class RefundServiceTest extends TestCase
         $this->assertSame('completed', $refund->status->value);
         $this->assertSame(0, count($fake->refundCalls), 'store credit never touches the gateway');
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($walletBefore + (int) $refund->net_refund, $wallet->balance, 'wallet credited exactly once');
     }
 
@@ -255,7 +256,7 @@ class RefundServiceTest extends TestCase
         $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
         $order = $this->placeOrder($scenario, 'cod');
 
-        $walletBefore = CustomerWallet::where('customer_id', $scenario->customer->id)->first()?->balance ?? 0;
+        $walletBefore = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first()?->balance ?? 0;
 
         // A legacy refund row created outside RefundService (as
         // OrderInterventionService::processRefund does) — no liability, no
@@ -280,7 +281,7 @@ class RefundServiceTest extends TestCase
         $refund->refresh();
         $this->assertSame('completed', $refund->status->value);
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($walletBefore + (int) $refund->net_refund, $wallet->balance, 'credited exactly once, not twice');
     }
 }

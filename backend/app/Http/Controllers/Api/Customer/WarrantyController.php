@@ -11,15 +11,16 @@ use App\Http\Resources\Customer\WarrantyClaimMessageResource;
 use App\Http\Resources\Customer\WarrantyClaimResource;
 use App\Http\Resources\Customer\WarrantyPurchaseResource;
 use App\Http\Responses\ApiResponse;
+use App\Enums\WalletOwnerType;
 use App\Models\Admin;
 use App\Models\Customer;
-use App\Models\CustomerWallet;
 use App\Models\OrderItem;
+use App\Models\Wallet;
 use App\Models\WalletTransaction;
 use App\Models\WarrantyClaim;
 use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
-use App\Exceptions\InsufficientWalletBalanceException;
+use App\Exceptions\InsufficientBalanceException;
 use App\Notifications\Admin\NewWarrantyClaimNotification as AdminNewWarrantyClaimNotification;
 use App\Notifications\Vendor\NewWarrantyClaimNotification as VendorNewWarrantyClaimNotification;
 use Illuminate\Http\JsonResponse;
@@ -87,8 +88,8 @@ class WarrantyController extends Controller
      * no pending/active warranty. Pricing reuses WarrantyPlan::resolvePrice()
      * (the same flat-vs-percentage calculation checkout uses via
      * CheckoutPricingEngine::resolveWarrantySelections()). Payment is taken
-     * from the customer wallet (P-05's CustomerWallet, the same primitive
-     * checkout wallet payments use) — no warranty_purchases row is created
+     * from the customer wallet (Wallet, owner_type=customer — the same
+     * primitive checkout wallet payments use) — no warranty_purchases row is created
      * unless the debit succeeds, so a failed payment never leaves an
      * active-without-payment warranty. Since the item is already delivered,
      * the purchase is activated immediately (not queued for a delivery
@@ -108,9 +109,11 @@ class WarrantyController extends Controller
         $price = $plan->resolvePrice((int) $orderItem->unit_price);
         $currency = $orderItem->order->currency;
 
-        $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+            ->where('owner_id', $customer->id)
+            ->first();
 
-        if (! $wallet || $wallet->currency_code !== $currency) {
+        if (! $wallet || $wallet->currency !== $currency) {
             return ApiResponse::error(__('customer_api.warranty.wallet_currency_mismatch'), [], 422);
         }
 
@@ -119,7 +122,14 @@ class WarrantyController extends Controller
                 // Debit first: if the wallet has insufficient balance this
                 // throws and the transaction rolls back before any
                 // warranty_purchases row is ever created.
-                $wallet->debit($price);
+                $lockedWallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+
+                if ($lockedWallet->balance < $price) {
+                    throw new InsufficientBalanceException($price, $lockedWallet->balance, $lockedWallet->currency);
+                }
+
+                $lockedWallet->update(['balance' => $lockedWallet->balance - $price]);
+                $wallet->setAttribute('balance', $lockedWallet->balance);
 
                 $deliveredAt = $orderItem->subOrder->delivered_at;
                 $vendorWarrantyMonths = $orderItem->subOrder?->vendor?->warranty_months
@@ -158,6 +168,7 @@ class WarrantyController extends Controller
                 $orderItem->update(['warranty_purchase_id' => $warrantyPurchase->id]);
 
                 WalletTransaction::create([
+                    'wallet_id' => $wallet->id,
                     'customer_id' => $customer->id,
                     'type' => 'warranty_purchase',
                     'direction' => 'debit',
@@ -171,7 +182,7 @@ class WarrantyController extends Controller
                     'description' => 'Post-purchase warranty: '.$plan->name_en,
                 ]);
             });
-        } catch (InsufficientWalletBalanceException $e) {
+        } catch (InsufficientBalanceException $e) {
             return ApiResponse::error(__('customer_api.warranty.insufficient_wallet_balance'), [], 422);
         }
 

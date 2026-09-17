@@ -120,8 +120,8 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
 
         $card = $purchase->giftCard()->firstOrFail();
 
-        $walletBalanceBefore = \App\Models\CustomerWallet::where('customer_id', $scenario->customer->id)
-            ->where('currency_code', 'AED')
+        $walletBalanceBefore = \App\Models\Wallet::where('owner_type', \App\Enums\WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)
+            ->where('currency', 'AED')
             ->value('balance') ?? 0;
 
         // Redeem into the wallet using the freshly-minted PIN sent by email.

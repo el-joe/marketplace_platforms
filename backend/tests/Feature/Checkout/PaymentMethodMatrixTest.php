@@ -3,7 +3,8 @@
 namespace Tests\Feature\Checkout;
 
 use App\Models\CartItem;
-use App\Models\CustomerWallet;
+use App\Enums\WalletOwnerType;
+use App\Models\Wallet;
 use App\Models\IdempotencyKey;
 use App\Models\LedgerEntry;
 use App\Models\Order;
@@ -89,7 +90,7 @@ class PaymentMethodMatrixTest extends TestCase
         $this->assertSame('captured', $order->payment_status->value);
         $this->assertSame('wallet', $order->payment_method);
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($balanceBefore - $order->total, $wallet->balance);
 
         // enhancement.md P-05 task 3: a wallet-only order must still create
@@ -120,7 +121,7 @@ class PaymentMethodMatrixTest extends TestCase
         $orderNumber = $response->json('data.order.order_number') ?? $response->json('data.order_number');
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($balanceBefore - $walletAmount, $wallet->balance, 'wallet must be debited exactly once for the partial amount');
 
         // The gateway must have been asked to charge total - wallet, never the full total (double charge bug).
@@ -152,7 +153,7 @@ class PaymentMethodMatrixTest extends TestCase
         $this->assertSame('failed', $order->payment_status->value);
         $this->assertSame('cancelled', $order->status->value ?? $order->status);
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($balanceBefore, $wallet->balance, 'wallet debit must be refunded on decline');
 
         $inventory = $scenario->vendorListingFbp->warehouseInventories()->first();

@@ -12,7 +12,6 @@ use App\Models\Coupon;
 use App\Models\Country;
 use App\Models\CountryPaymentGateway;
 use App\Models\Customer;
-use App\Models\CustomerWallet;
 use App\Models\DeliveryAgent;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
@@ -27,6 +26,7 @@ use App\Models\ShippingCompany;
 use App\Models\ShippingCompanySupervisor;
 use App\Models\ShippingZone;
 use App\Models\Vendor;
+use App\Models\Wallet;
 use App\Models\VendorListing;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
@@ -83,7 +83,7 @@ class MarketplaceScenario
 
     public Customer $customer;
     public Address $customerAddress;
-    public CustomerWallet $customerWallet;
+    public Wallet $customerWallet;
 
     /** @var array<string, Coupon> keyed by "{type}_{funded_by}" */
     public array $coupons = [];
@@ -433,10 +433,11 @@ class MarketplaceScenario
             'address_type'     => 'home',
         ]);
 
-        $this->customerWallet = CustomerWallet::create([
-            'customer_id'   => $this->customer->id,
-            'balance'       => 50000,
-            'currency_code' => 'AED',
+        $this->customerWallet = Wallet::create([
+            'owner_type' => \App\Enums\WalletOwnerType::Customer,
+            'owner_id'   => $this->customer->id,
+            'balance'    => 50000,
+            'currency'   => 'AED',
         ]);
     }
 
