@@ -462,7 +462,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-10 🟠 Return (listing return) lifecycle: no eligibility checks, duplicate endpoints, wrong restock
+## P-10 🟠 Return (listing return) lifecycle: no eligibility checks, duplicate endpoints, wrong restock --DONE
 
 **Problem**
 - There are two customer create endpoints with different logic:

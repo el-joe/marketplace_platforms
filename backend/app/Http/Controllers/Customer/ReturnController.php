@@ -23,9 +23,13 @@ class ReturnController extends Controller
             return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
         }
 
-        $returnRequest = $this->returnService->store($customer, $order, $request->validated());
+        $returnRequests = $this->returnService->store($customer, $order, $request->validated());
 
-        return ApiResponse::success(new ReturnRequestResource($returnRequest), __('common.exceptions.return.submitted'), 201);
+        // enhancement.md P-10: a mixed item list is split into one
+        // ReturnRequest per sub-order. Most carts are single-sub-order, so
+        // the first request is returned as the primary resource for
+        // backward compatibility with the existing frontend contract.
+        return ApiResponse::success(new ReturnRequestResource($returnRequests->first()), __('common.exceptions.return.submitted'), 201);
     }
 
     public function index(string $country): JsonResponse

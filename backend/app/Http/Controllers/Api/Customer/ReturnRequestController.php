@@ -9,16 +9,16 @@ use App\Http\Resources\Customer\ReturnRequestMessageResource;
 use App\Http\Resources\Customer\ReturnRequestResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Customer;
-use App\Models\OrderItem;
 use App\Models\ReturnRequest;
 use App\Notifications\Vendor\ReturnRequestSubmitted;
+use App\Services\ReturnRequestService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
 
 class ReturnRequestController extends Controller
 {
+    public function __construct(private readonly ReturnRequestService $returnRequestService) {}
+
     public function index(): JsonResponse
     {
         /** @var Customer $customer */
@@ -37,38 +37,30 @@ class ReturnRequestController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $items = OrderItem::with('order')->whereIn('id', $request->validated('order_item_ids'))->get();
-        $firstItem = $items->first();
+        // enhancement.md P-10: create() enforces every eligibility rule
+        // (delivered, within window, returnable category, quantity not
+        // already returned) and splits a mixed-sub-order item list into
+        // one ReturnRequest per sub-order rather than rejecting it.
+        $returnRequests = $this->returnRequestService->create(
+            customer: $customer,
+            orderItemIds: $request->validated('order_item_ids'),
+            reason: $request->validated('reason'),
+            returnType: $request->validated('return_type'),
+            reasonDescription: $request->validated('reason_description'),
+            pickupAddressId: $request->validated('pickup_address_id'),
+        );
 
-        $returnRequest = DB::transaction(function () use ($request, $customer, $items, $firstItem) {
-            $returnRequest = ReturnRequest::create([
-                'return_number' => 'RET-'.strtoupper(Str::random(10)),
-                'order_id' => $firstItem->order_id,
-                'sub_order_id' => $firstItem->sub_order_id,
-                'customer_id' => $customer->id,
-                'vendor_id' => $firstItem->vendor_id,
-                'reason' => $request->validated('reason'),
-                'reason_description' => $request->validated('reason_description'),
-                'return_type' => $request->validated('return_type'),
-                'status' => 'requested',
-                'pickup_address_id' => $request->validated('pickup_address_id'),
-            ]);
-
-            foreach ($items as $item) {
-                $returnRequest->items()->create([
-                    'order_item_id' => $item->id,
-                    'quantity' => $item->quantity,
-                ]);
+        foreach ($returnRequests as $returnRequest) {
+            $returnRequest->loadMissing('vendor.vendorAdmins');
+            if ($returnRequest->vendor?->vendorAdmins->isNotEmpty()) {
+                Notification::send($returnRequest->vendor->vendorAdmins, new ReturnRequestSubmitted($returnRequest));
             }
+        }
 
-            return $returnRequest;
-        });
-
-        $returnRequest->vendor?->loadMissing('vendorAdmins');
-        Notification::send($returnRequest->vendor?->vendorAdmins, new ReturnRequestSubmitted($returnRequest));
+        $primary = $returnRequests->first()->load(['order', 'items.orderItem']);
 
         return ApiResponse::success(
-            new ReturnRequestResource($returnRequest->load(['order', 'items.orderItem'])),
+            new ReturnRequestResource($primary),
             __('customer_api.return_request.submitted'),
             201,
         );

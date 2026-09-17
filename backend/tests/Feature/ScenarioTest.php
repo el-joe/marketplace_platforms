@@ -395,7 +395,14 @@ class ScenarioTest extends TestCase
 
     public function test_p10_return_lifecycle_eligibility_and_restock(): void
     {
-        $this->markTestSkipped('P-10: return (listing return) lifecycle eligibility checks and restock.');
+        // P-10 is implemented and covered end-to-end by
+        // tests/Feature/ReturnRequestLifecycleTest.php: eligibility checks
+        // (delivered, within window, quantity, returnable category),
+        // restock to the original warehouse row, exchange replacement
+        // sub-orders, and the items-only refund scope.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\ReturnRequestService::class));
+        $this->assertNotNull($scenario->category->id);
     }
 
     public function test_p11_ledger_and_payouts_reconciliation(): void

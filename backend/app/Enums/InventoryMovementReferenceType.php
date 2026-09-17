@@ -12,4 +12,5 @@ enum InventoryMovementReferenceType: string
     case InboundShipment = 'inbound_shipment';
     case Transfer = 'transfer';
     case Adjustment = 'adjustment';
+    case ReturnRequest = 'return';
 }
