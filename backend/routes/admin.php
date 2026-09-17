@@ -60,6 +60,7 @@ use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseShippingSurchargeController;
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\SystemToolsController;
 use App\Http\Controllers\Admin\FinancialReportController;
 use App\Http\Controllers\Admin\ShippingMethodController;
 use App\Http\Controllers\Admin\ShippingSettingController;
@@ -1231,6 +1232,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/', [FinancialReportController::class, 'index'])->name('index');
         Route::get('/data', [FinancialReportController::class, 'data'])->name('data');
         Route::get('/export', [FinancialReportController::class, 'export'])->name('export');
+    });
+
+    // ─── System Tools (P-24: inventory reconcile report, buy-box rebuild trigger) ─
+    Route::prefix('system-tools')->name('system-tools.')->middleware('admin.permission:analytics.view')->group(function () {
+        Route::post('/inventory-reconcile', [SystemToolsController::class, 'inventoryReconcile'])->name('inventory-reconcile');
+        Route::post('/buybox-rebuild', [SystemToolsController::class, 'buyboxRebuild'])->name('buybox-rebuild');
     });
 
     Route::prefix('analytics')->name('analytics.')->middleware('admin.permission:analytics.view')->group(function () {

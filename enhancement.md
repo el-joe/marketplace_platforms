@@ -933,7 +933,7 @@ Not covered: routes with parameters (show/edit pages), POST/PUT/DELETE actions, 
 
 ---
 
-## P-24 🟠 Panel coverage: parameterised pages, actions and missing lifecycle actions
+## P-24 🟠 Panel coverage: parameterised pages, actions and missing lifecycle actions --DONE (2 gaps documented, see commit)
 
 **Goal:** extend the smoke test and close the functional gaps the lifecycles (P-01…P-16) require in each panel. First **verify** each item below (some may exist under another name), then implement what is missing.
 
