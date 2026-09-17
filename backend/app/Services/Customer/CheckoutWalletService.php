@@ -44,6 +44,13 @@ class CheckoutWalletService
                 'currency_code' => $wallet->currency_code,
                 'reference_type' => Order::class,
                 'reference_id' => $order->id,
+                // enhancement.md P-05 task 7: wallet_transactions.source_type
+                // is NOT NULL with no DB default — omitting it broke every
+                // partial wallet+card payment (and full wallet payments) in
+                // strict mode. 'order' matches what OrderController@cancel's
+                // refund lookup already expects.
+                'source_type' => 'order',
+                'source_id' => $order->id,
             ]);
 
             $order->update([
@@ -82,6 +89,8 @@ class CheckoutWalletService
                 'currency_code' => $wallet->currency_code,
                 'reference_type' => Order::class,
                 'reference_id' => $order->id,
+                'source_type' => 'order',
+                'source_id' => $order->id,
             ]);
         });
     }

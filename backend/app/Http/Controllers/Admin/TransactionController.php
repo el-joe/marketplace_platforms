@@ -199,6 +199,47 @@ class TransactionController extends Controller
         return view('admin.transactions.show', compact('transaction'));
     }
 
+    /**
+     * enhancement.md P-05 task 8: bank_transfer orders are captured
+     * "at admin confirmation" per the payment matrix — the customer wires
+     * the money outside the platform, and nothing here ever hears back
+     * from a gateway. An admin (finance) marks the transaction confirmed
+     * once the transfer is verified as received, which captures the
+     * payment and confirms the order.
+     */
+    public function confirmBankTransfer(Request $request, PaymentTransaction $transaction): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('transactions.view'), 403);
+
+        if ($transaction->gateway !== 'bank_transfer') {
+            return response()->json(['message' => 'Not a bank transfer transaction.'], 422);
+        }
+
+        if ($transaction->status->value === 'succeeded') {
+            return response()->json(['message' => 'Already confirmed.'], 422);
+        }
+
+        $order = $transaction->order;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($transaction, $order, $admin) {
+            $transaction->update([
+                'status' => 'succeeded',
+                'processed_at' => now(),
+            ]);
+
+            $order->update([
+                'payment_status' => 'captured',
+                'status' => 'confirmed',
+            ]);
+
+            (new \App\Services\LedgerService())->postOrderCapture($order, (int) $transaction->amount);
+            (new \App\Services\Checkout\CouponUsageService())->consumeForOrder($order);
+        });
+
+        return response()->json(['message' => 'Bank transfer confirmed.', 'order_number' => $order->order_number]);
+    }
+
     // ─── Refunds ──────────────────────────────────────────────────────────────
 
     public function refundIndex(): \Illuminate\View\View

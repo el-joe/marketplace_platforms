@@ -267,7 +267,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-05 🔴 Payment methods (wallet, COD, gateways, bank transfer): broken branches
+## P-05 🔴 Payment methods (wallet, COD, gateways, bank transfer): broken branches --DONE
 
 **Problem (`Customer/CheckoutController.php`, `PaymentService.php`, `Api/Customer/PaymentCallbackController.php`)**
 1. `orders.payment_method` is `enum('card','wallet','cod','bnpl','bank_transfer')`, but place-order writes the **gateway code** (`'payment_method' => $gatewayCode`, `:663`), e.g. `paytabs` or `thawani`. **Confirmed:** the dump's gateways are `wallet, bank_transfer, cod, thawani, paytabs`, and Laravel runs MySQL in strict mode (`config/database.php` `'strict' => true`). **Every card-gateway order (Thawani, PayTabs) fails on insert.** The dump has only cod, wallet and bank_transfer orders, which fits this. Map gateway `type`/`code` to the method enum.

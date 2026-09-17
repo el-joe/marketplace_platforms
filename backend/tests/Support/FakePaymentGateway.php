@@ -153,12 +153,16 @@ class FakePaymentGateway implements PaymentGatewayInterface
 
     public function handleWebhook(array $payload, array $headers): WebhookResult
     {
+        // enhancement.md P-05: resultingStatus must be one of
+        // App\Enums\PaymentTransactionStatus's backing values
+        // (pending/succeeded/failed/cancelled) — the same convention every
+        // real gateway (Stripe/Thawani/Paytabs) already follows.
         return new WebhookResult(
             signatureValid: true,
             eventType: $payload['type'] ?? 'payment.succeeded',
             gatewayTransactionId: $payload['transaction_id'] ?? null,
             orderReference: $payload['order_reference'] ?? null,
-            resultingStatus: 'captured',
+            resultingStatus: $payload['resulting_status'] ?? 'succeeded',
             parsedPayload: $payload,
         );
     }

@@ -45,9 +45,11 @@ use App\Models\WarrantyPurchase;
 use Illuminate\Support\Facades\Log;
 use App\Services\Checkout\CartLineSource;
 use App\Services\Checkout\CheckoutPricingEngine;
+use App\Services\Checkout\CheckoutRollbackService;
 use App\Services\Checkout\CouponEligibilityService;
 use App\Services\Checkout\CouponUsageService;
 use App\Services\Checkout\CouponNoLongerValidException;
+use App\Services\Payments\PaymentMethodMapper;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
 use App\Services\Customer\CodValidationService;
@@ -88,6 +90,7 @@ class CheckoutController extends Controller
         private readonly CouponEligibilityService $couponEligibilityService,
         private readonly CouponUsageService $couponUsageService,
         private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
+        private readonly CheckoutRollbackService $rollbackService = new CheckoutRollbackService(),
     ) {}
 
     /**
@@ -511,6 +514,33 @@ class CheckoutController extends Controller
         $country = $request->attributes->get('country');
         $validated = $request->validated();
 
+        // enhancement.md P-05 task 3: idempotency_keys is the single source
+        // of truth for "have we already processed this exact place-order
+        // request" — unlike the old PaymentTransaction-only check, this
+        // also catches wallet-only orders (which create no gateway
+        // transaction) being retried, returning the first response instead
+        // of double-processing (double wallet debit, duplicate order).
+        $idempotencyKey = $validated['idempotency_key'];
+        $requestHash = hash('sha256', json_encode($validated));
+
+        $existingIdempotency = \App\Models\IdempotencyKey::where('key', $idempotencyKey)->first();
+        if ($existingIdempotency) {
+            if ($existingIdempotency->request_hash !== $requestHash) {
+                return ApiResponse::error(
+                    __('common.exceptions.checkout.idempotency_key_reused', [], 'This idempotency key was already used for a different request.'),
+                    [], 409
+                );
+            }
+
+            if ($existingIdempotency->response_status !== null) {
+                return ApiResponse::success(
+                    $existingIdempotency->response_body,
+                    __('common.exceptions.checkout.order_placed'),
+                    $existingIdempotency->response_status
+                )->setStatusCode($existingIdempotency->response_status);
+            }
+        }
+
         $existingTransaction = PaymentTransaction::where('idempotency_key', $validated['idempotency_key'])->first();
         if ($existingTransaction && in_array($existingTransaction->status->value, ['pending', 'succeeded'], true)) {
             $order = Order::where('id', $existingTransaction->order_id)->first();
@@ -839,6 +869,13 @@ class CheckoutController extends Controller
 
         $attribution = session('marketer_attribution', []);
 
+        $idempotencyRecord = $existingIdempotency ?? \App\Models\IdempotencyKey::create([
+            'key' => $idempotencyKey,
+            'request_hash' => $requestHash,
+            'operation_type' => 'place_order',
+            'expires_at' => now()->addDay(),
+        ]);
+
         try {
             $result = DB::transaction(function () use (
                 $customer, $country, $address, $receiver, $validated, $coupon,
@@ -867,7 +904,14 @@ class CheckoutController extends Controller
                     'loyalty_points_used' => $loyaltyPointsToUse,
                     'coupon_id' => $coupon?->id,
                     'coupon_code_used' => $coupon?->code,
-                    'payment_method' => $gatewayCode,
+                    // enhancement.md P-05 task 2: orders.payment_method must
+                    // stay within its enum('card','wallet','cod','bnpl',
+                    // 'bank_transfer') — writing the raw gateway code here
+                    // (e.g. 'thawani', 'paytabs') failed the insert under
+                    // strict-mode MySQL for every card-gateway order. The
+                    // actual gateway is preserved in payment_gateway_code.
+                    'payment_method' => PaymentMethodMapper::toOrderPaymentMethod($gatewayCode, $methodConfig->gateway?->type),
+                    'payment_gateway_code' => $gatewayCode,
                     'payment_status' => 'pending',
                     'shipping_address_snapshot' => $this->buildAddressSnapshot($address, $receiver),
                     'customer_notes' => $validated['customer_notes'] ?? null,
@@ -1204,6 +1248,15 @@ class CheckoutController extends Controller
                         throw new \InvalidArgumentException(__('common.exceptions.checkout.wallet_exceeds_total'));
                     }
 
+                    // enhancement.md P-05 task 7: COD does not support a
+                    // partial wallet top-up — cash is collected at delivery
+                    // for the full remainder, or the customer pays the
+                    // whole order from the wallet up front. This check runs
+                    // AFTER order/sub-order/inventory rows already exist
+                    // within this DB::transaction(), but that's safe: the
+                    // whole transaction (including those inserts and the
+                    // stock reservation increments) rolls back when this
+                    // throws, so nothing is left half-committed.
                     if ($isCod && $walletAmountToUse < $order->total) {
                         throw new \InvalidArgumentException(
                             __('common.exceptions.checkout.cod_wallet_rule')
@@ -1217,7 +1270,32 @@ class CheckoutController extends Controller
                     if ($remainingToPay === 0) {
                         $order->update([
                             'payment_method' => 'wallet',
+                            'payment_gateway_code' => 'wallet',
                             'payment_status' => 'captured',
+                        ]);
+                        // enhancement.md P-05 task 3: a wallet-only order
+                        // previously created no payment_transactions row,
+                        // so a retried place-order request (same
+                        // idempotency_key) could not be detected by the
+                        // old PaymentTransaction-only dedupe check and
+                        // would debit the wallet a second time. Recording
+                        // one here — in addition to the idempotency_keys
+                        // row above — keeps both dedupe paths consistent.
+                        PaymentTransaction::create([
+                            'id' => (string) Str::uuid(),
+                            'order_id' => $order->id,
+                            'customer_id' => $customer->id,
+                            'type' => 'sale',
+                            'gateway' => 'wallet',
+                            'gateway_transaction_id' => 'WALLET-'.$order->order_number,
+                            'idempotency_key' => $validated['idempotency_key'],
+                            'amount' => $walletAmountToUse,
+                            'currency' => $order->currency,
+                            'gateway_amount' => $walletAmountToUse,
+                            'gateway_currency' => $order->currency,
+                            'exchange_rate' => 1,
+                            'status' => 'succeeded',
+                            'processed_at' => now(),
                         ]);
                         // enhancement.md P-03 task 5: ledger at capture.
                         $this->ledgerService->postOrderCapture($order, $walletAmountToUse);
@@ -1253,7 +1331,7 @@ class CheckoutController extends Controller
                     // any gateway call) — consume the reservation now rather
                     // than leaving it 'reserved' until a webhook that will
                     // never arrive for this payment method.
-                    if ($order->payment_status === 'captured') {
+                    if ($order->payment_status->value === 'captured') {
                         $this->couponUsageService->consumeForOrder($order);
                     }
                 }
@@ -1268,9 +1346,16 @@ class CheckoutController extends Controller
                     );
                 }
 
-                return ['order' => $order, 'sub_orders' => $subOrders, 'wallet_fully_paid' => $order->payment_status === 'captured'];
+                return [
+                    'order' => $order,
+                    'sub_orders' => $subOrders,
+                    'wallet_fully_paid' => $order->payment_status->value === 'captured',
+                    'wallet_amount_used' => $walletAmountToUse,
+                ];
             });
         } catch (\DomainException|InsufficientWalletBalanceException|GiftCardCurrencyMismatchException|\InvalidArgumentException $e) {
+            $idempotencyRecord->update(['response_status' => 422, 'response_body' => ['message' => $e->getMessage()]]);
+
             return ApiResponse::error($e->getMessage(), [], 422);
         }
 
@@ -1299,8 +1384,7 @@ class CheckoutController extends Controller
                 'customer_id' => $customer->id,
             ]);
             $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
-            $this->releaseReservedInventory($order);
-            $this->couponUsageService->releaseForOrder($order);
+            $this->rollbackService->rollback($order, 'Wallet did not fully cover order at settlement');
         } elseif ($isCod) {
             // Cash hasn't changed hands yet — this transaction (and order.payment_status,
             // already 'pending' from creation above) only becomes 'succeeded'/'captured' once
@@ -1319,8 +1403,13 @@ class CheckoutController extends Controller
                 'processed_at' => null,
             ]);
         } else {
+            // enhancement.md P-05 task 2 (split wallet + card): charge the
+            // gateway only for what the wallet didn't already cover —
+            // charging $order->total here double-charged the customer for
+            // the wallet portion applyWalletToOrder() already debited above.
+            $gatewayAmountCents = max(0, $order->total - (int) $result['wallet_amount_used']);
             try {
-                $paymentResult = $this->paymentService->initiatePayment($order, $methodConfig, $validated['idempotency_key']);
+                $paymentResult = $this->paymentService->initiatePayment($order, $methodConfig, $validated['idempotency_key'], $gatewayAmountCents);
                 if (! $paymentResult->success) {
                     Log::error('Payment gateway declined order', [
                         'order_id' => $order->id,
@@ -1329,8 +1418,7 @@ class CheckoutController extends Controller
                         'error' => $paymentResult->errorMessage ?? null,
                     ]);
                     $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
-                    $this->releaseReservedInventory($order);
-                    $this->couponUsageService->releaseForOrder($order);
+                    $this->rollbackService->rollback($order, 'Payment gateway declined order');
                 } else {
                     $paymentRedirectUrl = $paymentResult->redirectUrl;
                     if ($gatewayCode === 'bank_transfer') {
@@ -1345,12 +1433,21 @@ class CheckoutController extends Controller
                     'exception' => $e->getMessage(),
                 ]);
                 $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
-                $this->releaseReservedInventory($order);
-                $this->couponUsageService->releaseForOrder($order);
+                $this->rollbackService->rollback($order, 'Payment initiation threw an exception');
             }
         }
 
-        $this->cartService->clearCart($cart);
+        // enhancement.md P-05 task 4: only clear the cart once the order is
+        // placed AND the payment either captured or is legitimately still
+        // pending (COD collection, bank-transfer awaiting admin
+        // confirmation, or a redirect gateway flow the customer hasn't
+        // finished yet) — never when we just rolled the order back to
+        // 'cancelled' above, so a declined/erroring payment doesn't also
+        // cost the customer their cart.
+        $orderStatusValue = $order->status instanceof \App\Enums\OrderStatus ? $order->status->value : $order->status;
+        if ($orderStatusValue !== 'cancelled') {
+            $this->cartService->clearCart($cart);
+        }
 
         foreach ($subOrders as $subOrder) {
             dispatch(new AutoAssignShippingMethodJob($subOrder->id))->delay(now()->addHours(12));
@@ -1371,6 +1468,13 @@ class CheckoutController extends Controller
         $responseData['payment_redirect_url'] = $paymentRedirectUrl ?: null;
         $responseData['requires_redirect'] = ! empty($paymentRedirectUrl);
         $responseData['bank_transfer_details'] = $bankTransferDetails;
+
+        $idempotencyRecord->update([
+            'reference_type' => Order::class,
+            'reference_id' => $order->id,
+            'response_status' => 201,
+            'response_body' => $responseData,
+        ]);
 
         return ApiResponse::success($responseData, __('common.exceptions.checkout.order_placed'), 201);
     }

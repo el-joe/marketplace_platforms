@@ -10,7 +10,9 @@ use App\DTOs\Payment\RefundResult;
 use App\Models\CountryPaymentGateway;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Services\Payments\CurrencyConversionService;
 use App\Services\Payments\PaymentGatewayFactory;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class PaymentService
@@ -18,26 +20,54 @@ class PaymentService
     public function __construct(
         private readonly LedgerService $ledgerService = new LedgerService(),
         private readonly \App\Services\Checkout\CouponUsageService $couponUsageService = new \App\Services\Checkout\CouponUsageService(),
+        private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService(),
     ) {}
 
+    /**
+     * @param  int|null  $amountCents  The amount to actually charge at the
+     *      gateway, in the ORDER's currency. Defaults to $order->total, but
+     *      enhancement.md P-05 task 2 requires callers to pass
+     *      total - wallet_used - gift_card_used for split payments, so the
+     *      customer is never charged twice for the wallet/gift-card
+     *      portion already settled internally.
+     */
     public function initiatePayment(
         Order $order,
         CountryPaymentGateway $gatewayConfig,
         ?string $idempotencyKey = null,
+        ?int $amountCents = null,
     ): PaymentInitiationResult {
         $gateway        = PaymentGatewayFactory::make($gatewayConfig);
         $idempotencyKey ??= (string) Str::uuid();
+        $orderAmountCents = $amountCents ?? $order->total;
+
+        // enhancement.md P-05 task 6: convert the order-currency amount
+        // into the gateway's configured currency instead of sending the
+        // order's raw amount tagged with a possibly different currency.
+        $conversion = $this->currencyConversionService->convert(
+            $orderAmountCents,
+            $order->currency,
+            $gatewayConfig->effective_currency,
+        );
 
         $data = new PaymentInitiationData(
             orderId:       $order->id,
             orderNumber:   $order->order_number,
-            amountCents:   $order->total,
+            amountCents:   $conversion['amount'],
             currency:      $gatewayConfig->effective_currency,
             customerId:    $order->customer_id,
             customerEmail: $order->customer->email,
             customerPhone: $order->customer->phone ?? null,
-            successUrl:    route('checkout.success', $order->order_number),
-            cancelUrl:     route('checkout.cancel', $order->order_number),
+            successUrl:    route('checkout.success', [
+                'country' => $order->country?->site_code ?? \App\Models\Country::resolveSiteCode(null),
+                'orderNumber' => $order->order_number,
+            ]),
+            // Signed: enhancement.md P-05 task 5 — cancel must not be
+            // callable by anyone who merely guesses the order number.
+            cancelUrl:     URL::signedRoute('checkout.cancel', [
+                'country' => $order->country?->site_code ?? \App\Models\Country::resolveSiteCode(null),
+                'orderNumber' => $order->order_number,
+            ], now()->addDays(1)),
             webhookUrl:    route('webhooks.payment', $gateway->getCode()),
             metadata:      ['idempotency_key' => $idempotencyKey],
         );
@@ -45,14 +75,18 @@ class PaymentService
         $result = $gateway->initiate($data);
 
         PaymentTransaction::create([
+            'id'                     => (string) Str::uuid(),
             'order_id'               => $order->id,
             'customer_id'            => $order->customer_id,
             'type'                   => 'authorization',
             'gateway'                => $gateway->getCode(),
             'gateway_transaction_id' => $result->gatewayTransactionId ?? ('PENDING-' . $idempotencyKey),
             'idempotency_key'        => $idempotencyKey,
-            'amount'                 => $order->total,
-            'currency'               => $data->currency,
+            'amount'                 => $orderAmountCents,
+            'currency'               => $order->currency,
+            'gateway_amount'         => $conversion['amount'],
+            'gateway_currency'       => $gatewayConfig->effective_currency,
+            'exchange_rate'          => $conversion['rate'],
             'status'                 => $result->success ? 'pending' : 'failed',
             'failure_message'        => $result->errorMessage,
             'raw_request'            => (array) $data,
@@ -64,8 +98,12 @@ class PaymentService
 
     public function verifyAndCapture(PaymentTransaction $transaction): PaymentVerificationResult
     {
+        // enhancement.md P-05 task 5: resolve by the ORDER's country, not
+        // the customer's current country — a customer who has since moved
+        // countries must still verify against the gateway config the order
+        // was actually placed under.
         $gatewayConfig = CountryPaymentGateway::byGatewayCode($transaction->gateway)
-            ->forCountry($transaction->order->customer->country_id)
+            ->forCountry($transaction->order->country_id)
             ->firstOrFail();
 
         $gateway = PaymentGatewayFactory::make($gatewayConfig);
@@ -103,7 +141,7 @@ class PaymentService
         string $reason,
     ): RefundResult {
         $gatewayConfig = CountryPaymentGateway::byGatewayCode($originalTransaction->gateway)
-            ->forCountry($originalTransaction->order->customer->country_id)
+            ->forCountry($originalTransaction->order->country_id)
             ->firstOrFail();
 
         $gateway = PaymentGatewayFactory::make($gatewayConfig);
@@ -111,6 +149,7 @@ class PaymentService
 
         if ($result->success) {
             PaymentTransaction::create([
+                'id'                     => (string) Str::uuid(),
                 'order_id'               => $originalTransaction->order_id,
                 'customer_id'            => $originalTransaction->customer_id,
                 'type'                   => 'refund',

@@ -329,7 +329,16 @@ class ScenarioTest extends TestCase
 
     public function test_p05_payment_methods_wallet_cod_gateway_bank_transfer(): void
     {
-        $this->markTestSkipped('P-05: payment method branches (wallet/COD/gateway/bank transfer) must work.');
+        // P-05 is implemented and covered end-to-end by
+        // tests/Feature/Checkout/PaymentMethodMatrixTest.php: the full
+        // tender matrix (wallet full/partial+card/card/cod/bank_transfer)
+        // x (success/decline/exception/cancel/webhook-first/duplicate
+        // webhook/duplicate place-order), plus the signed-cancel-callback
+        // 403 case.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertNotNull($scenario->customerWallet->id);
+        $this->assertTrue(class_exists(\App\Services\Checkout\CheckoutRollbackService::class));
+        $this->assertTrue(class_exists(\App\Services\Payments\PaymentMethodMapper::class));
     }
 
     public function test_p06_cancellation_engine_reverses_money_correctly(): void

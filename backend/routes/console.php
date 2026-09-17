@@ -34,6 +34,9 @@ Schedule::job(new \App\Jobs\PageSchedulerJob)->everyFiveMinutes()->name('page-sc
 Schedule::job(new PublishScheduledBlogPostsJob)->everyFiveMinutes()->name('publish-scheduled-blog-posts');
 Schedule::job(new MonitorCampaignStockJob)->hourly()->name('monitor-campaign-stock');
 Schedule::job(new PaidAdSchedulerJob)->everyFiveMinutes()->withoutOverlapping()->name('paid-ad-scheduler');
+// enhancement.md P-05 task 5: roll back gateway orders stuck 'pending'
+// because the customer never returned and no webhook arrived.
+Schedule::job(new \App\Jobs\ExpirePendingPaymentsJob)->everyFiveMinutes()->withoutOverlapping()->name('expire-pending-payments');
 
 // Process vendor acquisition agent commissions for the previous month
 Schedule::job(new ProcessAcquisitionCommissionsJob)->monthlyOn(1, '02:00')->name('process-acquisition-commissions');

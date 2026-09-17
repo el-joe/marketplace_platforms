@@ -1044,6 +1044,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/refunds/{refund}/reject', [TransactionController::class, 'rejectRefund'])->name('refunds.reject');
         Route::get('/', [TransactionController::class, 'index'])->name('index');
         Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
+        Route::post('/{transaction}/confirm-bank-transfer', [TransactionController::class, 'confirmBankTransfer'])->name('confirm-bank-transfer');
     });
 
     // ─── Ledger ───────────────────────────────────────────────────────────────────
