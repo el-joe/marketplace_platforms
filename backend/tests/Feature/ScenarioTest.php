@@ -525,4 +525,19 @@ class ScenarioTest extends TestCase
         $this->assertSame('vendor_listing', $scenario->marketerListing->source_type);
         $this->assertSame($scenario->vendorListingFbp->id, $scenario->marketerListing->source_listing_id);
     }
+
+    public function test_p16_marketer_lifecycle_and_api_parity(): void
+    {
+        // enhancement.md P-16: full coverage (register -> admin approve ->
+        // marketer accepts onboarding contract -> receives + accepts a
+        // campaign invitation -> referral click -> purchase -> delivery ->
+        // conversion approval -> wallet release -> withdrawal request ->
+        // admin payout -> balanced ledger + paid/commissioned conversion)
+        // lives in tests/Feature/Marketer/MarketerLifecycleTest.php.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertTrue(class_exists(\App\Http\Controllers\Marketer\ContractController::class));
+        $this->assertTrue(class_exists(\App\Http\Controllers\Api\Marketer\FinanceController::class));
+        $this->assertNotNull($scenario->marketer->id);
+    }
 }

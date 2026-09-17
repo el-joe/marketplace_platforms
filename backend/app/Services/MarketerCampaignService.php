@@ -655,6 +655,17 @@ class MarketerCampaignService
             throw new \RuntimeException('Invitation is no longer pending.');
         }
 
+        // enhancement.md P-16: a marketer cannot access (accept into) a
+        // campaign before BOTH admin approval (global_status = active)
+        // AND accepting their current onboarding contract version.
+        $invitingMarketer = $invitation->marketer;
+        if ($invitingMarketer->global_status?->value !== 'active') {
+            throw new \RuntimeException('Marketer account is not approved.');
+        }
+        if (! $invitingMarketer->hasAcceptedContract()) {
+            throw new \RuntimeException('Marketer must accept the onboarding contract before accepting campaigns.');
+        }
+
         DB::transaction(function () use ($invitation, $marketerNote) {
             $campaign = $invitation->campaign;
             $marketer = $invitation->marketer;

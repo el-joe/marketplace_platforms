@@ -23,7 +23,7 @@ class ReferralTrackingController extends Controller
     {
         $invitation = MarketerCampaignInvitation::where('referral_code', $code)
             ->where('status', 'accepted')
-            ->with('campaign.vendorListing.productVariant.product')
+            ->with('marketerListing.productVariant.product')
             ->first();
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
@@ -43,14 +43,18 @@ class ReferralTrackingController extends Controller
 
         $this->attributionService->recordClick($code, $sessionId);
 
-        $slug = $invitation->campaign
-            ?->vendorListing
-            ?->productVariant
-            ?->product
-            ?->slug;
+        // enhancement.md P-16: redirect to the MARKETER listing this
+        // invitation created (App\Models\MarketerListing, keyed by
+        // invitation_id), never the underlying vendor/admin listing — the
+        // customer must land on and buy through the marketer's own
+        // listing so P-12 attribution (order_items.marketer_listing_id)
+        // and the marketer's price/commission apply.
+        $marketerListing = $invitation->marketerListing;
 
-        $destination = $slug
-            ? "{$frontendUrl}/products/{$slug}?ref=" . urlencode($code)
+        $slug = $marketerListing?->productVariant?->product?->slug;
+
+        $destination = $marketerListing
+            ? "{$frontendUrl}/products/{$slug}?ref=" . urlencode($code) . '&marketer_listing_id=' . urlencode($marketerListing->id)
             : $frontendUrl . '?ref=' . urlencode($code);
 
         return $request->wantsJson()

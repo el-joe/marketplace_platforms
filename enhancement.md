@@ -681,7 +681,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-16 🟠 Marketer profile and portal: end-to-end lifecycle and API parity
+## P-16 🟠 Marketer profile and portal: end-to-end lifecycle and API parity --DONE
 
 **Problem / verify list**
 - **Registration → approval → contract:** `marketers.global_status` flows (`pending` → `active` / `rejected` / `suspended`), `marketer_contracts` and `marketer_contract_acceptances`. Verify that a marketer cannot access campaigns before approval and contract acceptance.

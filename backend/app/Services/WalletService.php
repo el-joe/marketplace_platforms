@@ -98,7 +98,11 @@ class WalletService
     public function requestWithdrawal(Wallet $wallet, int $amountCents, array $bankDetails): WalletWithdrawalRequest
     {
         return DB::transaction(function () use ($wallet, $amountCents, $bankDetails) {
-            $wallet->lockForUpdate()->refresh();
+            // enhancement.md P-16: lockForUpdate() on a model instance
+            // returns a query Builder, not the model — ->refresh() on it
+            // doesn't exist. Re-fetch the locked row instead (same pattern
+            // as credit()/debit() above).
+            $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
 
             if ($wallet->balance < $amountCents) {
                 throw new InsufficientBalanceException($amountCents, $wallet->balance, $wallet->currency);

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Marketer\AuthController;
 use App\Http\Controllers\Marketer\CampaignController;
+use App\Http\Controllers\Marketer\ContractController;
 use App\Http\Controllers\Marketer\DashboardController;
 use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
@@ -120,6 +121,10 @@ Route::middleware('web')->group(function () {
             Route::patch('/{listing}/price', [ListingController::class, 'updatePrice'])->name('update-price');
             Route::delete('/{listing}', [ListingController::class, 'destroy'])->name('destroy');
         });
+
+        // enhancement.md P-16: onboarding contract acceptance gate.
+        Route::get('/contract', [ContractController::class, 'show'])->name('contract.show');
+        Route::post('/contract/accept', [ContractController::class, 'accept'])->name('contract.accept');
 
         // Finance: commissions, wallet, payout (withdrawal) requests
         Route::prefix('finance')->name('finance.')->group(function () {

@@ -4,8 +4,11 @@ use App\Http\Controllers\Api\Marketer\AdBookingController;
 use App\Http\Controllers\Api\Marketer\AdSlotController;
 use App\Http\Controllers\Api\Marketer\AuthController;
 use App\Http\Controllers\Api\Marketer\CampaignController;
+use App\Http\Controllers\Api\Marketer\ContractController;
 use App\Http\Controllers\Api\Marketer\DashboardController;
+use App\Http\Controllers\Api\Marketer\FinanceController;
 use App\Http\Controllers\Api\Marketer\InvitationController;
+use App\Http\Controllers\Api\Marketer\ListingController;
 use App\Http\Controllers\Api\Marketer\ProfileController;
 use App\Http\Controllers\Api\Marketer\ReportController;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +36,19 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/campaigns/finished',                  [CampaignController::class, 'finished']);
 
     Route::get('/reports',                             [ReportController::class, 'index']);
+
+    Route::get('/contract',          [ContractController::class, 'show']);
+    Route::post('/contract/accept',  [ContractController::class, 'accept']);
+
+    // enhancement.md P-16 task 2: API parity — listings (CRUD subset), finance/wallet/withdrawals.
+    Route::get('/listings',                             [ListingController::class, 'index']);
+    Route::post('/listings/{listing}/toggle',           [ListingController::class, 'toggleStatus']);
+    Route::post('/listings/{listing}/price',            [ListingController::class, 'updatePrice']);
+    Route::delete('/listings/{listing}',                [ListingController::class, 'destroy']);
+
+    Route::get('/finance/commissions',                  [FinanceController::class, 'commissions']);
+    Route::get('/finance/wallet',                       [FinanceController::class, 'wallet']);
+    Route::post('/finance/withdrawals',                 [FinanceController::class, 'requestWithdrawal']);
 
     // Paid ad slots (AS-07) — marketer booking of admin-managed placements/page-block slots
     Route::prefix('ad-slots')->name('marketer.api.ad-slots.')->group(function (): void {

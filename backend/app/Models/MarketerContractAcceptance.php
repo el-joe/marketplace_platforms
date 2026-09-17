@@ -15,6 +15,7 @@ class MarketerContractAcceptance extends Model
     protected $fillable = [
         'marketer_contract_version_id',
         'customer_id',
+        'marketer_id',
         'ip_address',
         'user_agent',
         'accepted_at',
@@ -33,6 +34,11 @@ class MarketerContractAcceptance extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function marketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class);
     }
 
     public function order(): BelongsTo
