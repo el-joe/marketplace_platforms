@@ -84,9 +84,6 @@ class ReturnService
             return null;
         }
 
-        $first = $customer->first_name ?? '';
-        $last  = $customer->last_name  ?? '';
-
-        return trim($first . ' ' . ($last ? strtoupper(substr($last, 0, 1)) . '.' : ''));
+        return \App\Models\Customer::maskName($customer->name ?? null);
     }
 }

@@ -59,7 +59,7 @@
     $isFinal       = in_array($return->status, [\App\Enums\ReturnRequestStatus::Completed, \App\Enums\ReturnRequestStatus::Cancelled], true);
     $hasInspection = in_array($return->status, [\App\Enums\ReturnRequestStatus::Inspecting, \App\Enums\ReturnRequestStatus::Completed, \App\Enums\ReturnRequestStatus::Cancelled], true);
     $orderMasked   = $return->order ? '****' . substr($return->order->order_number, -4) : null;
-    $customerName  = trim(($return->customer->first_name ?? '') . ' ' . (isset($return->customer->last_name) ? strtoupper(substr($return->customer->last_name, 0, 1)) . '.' : ''));
+    $customerName  = \App\Models\Customer::maskName($return->customer->name ?? null);
     [$statusCls, $statusLabel] = $statusMap[$return->status->value] ?? ['bg-gray-100 text-gray-500', $return->status->value];
 @endphp
 

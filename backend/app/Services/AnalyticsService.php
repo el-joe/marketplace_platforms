@@ -1240,9 +1240,10 @@ class AnalyticsService
                 {$countryWhere}
             ", $bindings);
 
+            $nameCol = app()->getLocale() === 'ar' ? 'fs.name_ar' : 'fs.name_en';
             $topSales = DB::select("
                 SELECT
-                    fs.title                                  AS title,
+                    {$nameCol}                                AS title,
                     fsa.currency,
                     SUM(fsa.units_sold)                      AS units_sold,
                     COALESCE(SUM(fsa.gross_revenue), 0)      AS revenue,
@@ -1252,7 +1253,7 @@ class AnalyticsService
                 {$countryJoin}
                 WHERE fsa.date >= ? AND fsa.date <= ?
                 {$countryWhere}
-                GROUP BY fs.id, fs.title, fsa.currency
+                GROUP BY fs.id, {$nameCol}, fsa.currency
                 ORDER BY revenue DESC
                 LIMIT 10
             ", $bindings);

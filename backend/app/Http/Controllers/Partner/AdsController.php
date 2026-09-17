@@ -165,8 +165,17 @@ class AdsController extends Controller
         // keeping the targeting picker relevant to what they actually sell.
         $vendorId = $this->vendorId();
 
+        $categoryIds = VendorListing::where('vendor_id', $vendorId)
+            ->where('status', VendorListingStatus::Active->value)
+            ->whereHas('productVariant.product', fn ($q) => $q->whereNotNull('category_id'))
+            ->with('productVariant.product:id,category_id')
+            ->get()
+            ->pluck('productVariant.product.category_id')
+            ->filter()
+            ->unique();
+
         $categories = Category::where('is_active', true)
-            ->whereHas('vendorListings', fn($q) => $q->where('vendor_id', $vendorId)->where('status', VendorListingStatus::Active->value))
+            ->whereIn('id', $categoryIds)
             ->orderBy('name_ar')
             ->get(['id', 'name_ar', 'name_en']);
 

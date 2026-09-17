@@ -16,7 +16,7 @@ class WarrantyClaimController extends Controller
         $vendorId = Auth::guard('vendor_api')->user()->vendor_id;
 
         $claims = WarrantyClaim::where('vendor_id', $vendorId)
-            ->with(['customer:id,first_name,last_name', 'warrantyPurchase'])
+            ->with(['customer:id,name', 'warrantyPurchase'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'),   fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
@@ -30,7 +30,7 @@ class WarrantyClaimController extends Controller
                 'status'       => $c->status,
                 'issue_type'   => $c->issue_type,
                 'description'  => $c->description,
-                'customer'     => $c->customer ? ['id' => $c->customer->id, 'name' => $c->customer->first_name . ' ' . $c->customer->last_name] : null,
+                'customer'     => $c->customer ? ['id' => $c->customer->id, 'name' => $c->customer->name] : null,
                 'created_at'   => $c->created_at?->toIso8601String(),
             ]),
             'meta' => ['current_page' => $claims->currentPage(), 'last_page' => $claims->lastPage(), 'total' => $claims->total()],
@@ -43,7 +43,7 @@ class WarrantyClaimController extends Controller
 
         $claim = WarrantyClaim::where('id', $id)
             ->where('vendor_id', $vendorId)
-            ->with(['customer:id,first_name,last_name', 'warrantyPurchase', 'messages'])
+            ->with(['customer:id,name', 'warrantyPurchase', 'messages'])
             ->firstOrFail();
 
         return ApiResponse::success([
@@ -53,7 +53,7 @@ class WarrantyClaimController extends Controller
             'issue_type'      => $claim->issue_type,
             'description'     => $claim->description,
             'resolution_notes'=> $claim->resolution_notes,
-            'customer'        => $claim->customer ? ['id' => $claim->customer->id, 'name' => $claim->customer->first_name . ' ' . $claim->customer->last_name] : null,
+            'customer'        => $claim->customer ? ['id' => $claim->customer->id, 'name' => $claim->customer->name] : null,
             'messages'        => $claim->messages->map(fn ($m) => [
                 'id'         => $m->id,
                 'body'       => $m->body,

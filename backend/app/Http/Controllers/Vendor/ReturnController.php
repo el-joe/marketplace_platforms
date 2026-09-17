@@ -24,7 +24,7 @@ class ReturnController extends Controller
         $filters = $request->validated();
 
         $query = ReturnRequest::where('vendor_id', $vendorId)
-            ->with(['order:id,order_number', 'customer:id,first_name,last_name'])
+            ->with(['order:id,order_number', 'customer:id,name'])
             ->when($filters['status'] ?? null,    fn ($q, $v) => $q->where('status', $v))
             ->when($filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($filters['date_to'] ?? null,   fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
@@ -40,7 +40,7 @@ class ReturnController extends Controller
         $return->load([
             'order:id,order_number',
             'subOrder:id,sub_order_number',
-            'customer:id,first_name,last_name',
+            'customer:id,name',
             'items.orderItem:id,product_snapshot',
             'messages' => fn ($q) => $q->visibleToVendor()->oldest()->with('attachments'),
         ]);

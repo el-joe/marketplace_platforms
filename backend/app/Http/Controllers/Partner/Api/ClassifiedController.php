@@ -74,7 +74,7 @@ class ClassifiedController extends Controller
         $listing = ClassifiedListing::where('id', $id)->where('vendor_id', $vendorId)->firstOrFail();
 
         $inquiries = ClassifiedInquiry::where('classified_listing_id', $listing->id)
-            ->with(['customer:id,first_name,last_name'])
+            ->with(['customer:id,name'])
             ->latest()->paginate(20);
 
         return ApiResponse::success([
@@ -82,7 +82,7 @@ class ClassifiedController extends Controller
                 'id'         => $i->id,
                 'message'    => $i->message,
                 'status'     => $i->status,
-                'customer'   => $i->customer ? $i->customer->first_name . ' ' . $i->customer->last_name : null,
+                'customer'   => $i->customer?->name,
                 'created_at' => $i->created_at?->toIso8601String(),
             ]),
             'meta' => ['current_page' => $inquiries->currentPage(), 'last_page' => $inquiries->lastPage()],

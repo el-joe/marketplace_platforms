@@ -164,6 +164,18 @@ class Category extends Model
         return $this->hasMany(Product::class);
     }
 
+    /**
+     * Vendor listings for this category, reached through
+     * products -> variants -> vendor_listings (no direct FK, so a plain
+     * hasMany/hasManyThrough won't reach three hops — a scoped builder does).
+     */
+    public function vendorListings(): \Illuminate\Database\Eloquent\Builder
+    {
+        return VendorListing::whereHas('productVariant.product', function ($query) {
+            $query->where('category_id', $this->id);
+        });
+    }
+
     public function files(): MorphMany
     {
         return $this->morphMany(File::class, 'model');

@@ -916,7 +916,7 @@ It also loads `category_attributes` pivots and classified categories. It is cach
 
 Not covered: routes with parameters (show/edit pages), POST/PUT/DELETE actions, and JSON APIs of the mobile apps.
 
-## P-23 🔴 Fix the confirmed panel errors
+## P-23 🔴 Fix the confirmed panel errors --DONE
 
 1. **Admin `GET /analytics/flash-sales` → 500:** `Unknown column 'fs.title'` (raw SQL in the flash-sale analytics controller/service). `flash_sales` has no `title` column; use the real name columns (`name_en`/`name_ar` or similar; check the schema) and localize.
 2. **Admin `GET /shipping-companies/fallback-rules` → 404:** route order conflict. `shipping-companies/{shippingCompany}` is declared before `fallback-rules`, so `fallback-rules` is resolved as a model ID. Move the static route above the resource route, or constrain `{shippingCompany}` with `whereUuid`.

@@ -222,4 +222,27 @@ class Customer extends Authenticatable implements JWTSubject
     {
         return $this->morphMany(DeviceToken::class, 'tokenable');
     }
+
+    /**
+     * Privacy-masked display name (e.g. "Sarah A.") derived from the single
+     * `name` column — customers only have one name field, not first/last.
+     */
+    public function maskedName(): ?string
+    {
+        return static::maskName($this->name);
+    }
+
+    public static function maskName(?string $name): ?string
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return null;
+        }
+
+        $parts = preg_split('/\s+/', $name);
+        $first = $parts[0];
+        $last  = count($parts) > 1 ? end($parts) : null;
+
+        return trim($first . ' ' . ($last ? strtoupper(substr($last, 0, 1)) . '.' : ''));
+    }
 }

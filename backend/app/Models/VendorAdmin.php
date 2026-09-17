@@ -55,6 +55,23 @@ class VendorAdmin extends Authenticatable implements JWTSubject
         return $this->belongsTo(Vendor::class);
     }
 
+    /**
+     * VendorAdmin has no direct country column — it belongs to a Vendor,
+     * which has the country. Convenience accessor used where callers used
+     * to (incorrectly) call ->country directly on the admin.
+     */
+    public function country(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
+    {
+        return $this->hasOneThrough(
+            Country::class,
+            Vendor::class,
+            'id',        // Vendor.id
+            'id',        // Country.id
+            'vendor_id', // VendorAdmin.vendor_id
+            'country_id' // Vendor.country_id
+        );
+    }
+
     // ── Role helpers ──────────────────────────────────────────────────────────
 
     public function isManager(): bool
