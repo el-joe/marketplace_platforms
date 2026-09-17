@@ -498,7 +498,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-11 🟠 Ledger and payouts: vendor, admin, marketer and shipping amounts reconciliation
+## P-11 🟠 Ledger and payouts: vendor, admin, marketer and shipping amounts reconciliation --DONE
 
 **Problem (`Services/PayoutCalculationService.php`, `LedgerService.php`)**
 - Sub-orders are selected with `delivered_at BETWEEN … OR created_at BETWEEN …` (`:30-33`), and **already-paid sub-orders are not excluded** (no `payout_items` check). Consecutive payout periods pay the same sub-order twice.

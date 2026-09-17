@@ -4,12 +4,25 @@ namespace App\Services;
 
 use App\Models\Currency;
 use App\Models\DeliveryAgentPayout;
-use App\Models\MarketerPayout;
+use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\PaidAdBooking;
+use App\Models\Refund;
 use App\Models\SubOrder;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+
+// NOTE (enhancement.md P-11): App\Models\MarketerPayout, referenced by the
+// pre-existing marketerPayoutsByCountry() method below, does not exist in
+// this codebase — enhancement.md P-12 ("marketer attribution and
+// commission never reach the order") has not been implemented yet:
+// orders has no marketer_id/marketer_campaign_id column, so no order is
+// ever attributed to a marketer conversion, and no payout run for
+// marketers can be built on top of real data. marketerPayoutsByCountry()
+// is left as-is (out of scope for this prompt) but will throw a
+// class-not-found error if called until P-12 lands and a MarketerPayout
+// model/table is introduced. Do not call it from the new reconciliation
+// methods added below.
 
 /**
  * Currency-safe financial aggregations.
@@ -307,5 +320,119 @@ class FinancialReportService
             ->orderByDesc('admin_absorbed')
             ->limit($limit)
             ->get();
+    }
+
+    // ── enhancement.md P-11 task 4 ──────────────────────────────────────────
+    //
+    // Ledger account_types that represent money the PLATFORM retains
+    // (as opposed to seller_payable, tax_payable, gateway_fee and
+    // marketer_commission_payable, which are pass-through/liability
+    // accounts owed to someone else). This is the same set
+    // LedgerService::postOrderCapture() credits directly to the platform.
+
+    private const PLATFORM_NET_ACCOUNT_TYPES = ['platform_commission', 'shipping_revenue', 'warranty_revenue'];
+
+    /**
+     * The platform's net retained revenue for a period/currency, computed
+     * DIRECTLY from ledger_entries — not re-derived from sub_orders/orders.
+     * This is deliberate: it is the reconciliation anchor. Any report
+     * figure that claims to be "the platform's net" must equal this by
+     * construction, because the ledger (not a parallel recomputation) is
+     * the single source of truth for money already posted. Includes both
+     * original order_capture postings and any reversal/refund postings in
+     * the window, so a refunded or cancelled order correctly nets out.
+     */
+    public function platformNetForPeriod(Carbon $from, Carbon $to, ?string $currency = null): int
+    {
+        return (int) LedgerEntry::query()
+            ->whereIn('account_type', self::PLATFORM_NET_ACCOUNT_TYPES)
+            ->whereBetween('created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
+            ->when($currency, fn ($q) => $q->where('currency', $currency))
+            ->selectRaw('COALESCE(SUM(credit), 0) - COALESCE(SUM(debit), 0) as net')
+            ->value('net');
+    }
+
+    /**
+     * Full financial summary for a period/currency: platform commission,
+     * shipping revenue, COD fees, warranty revenue, platform-funded coupon
+     * cost, admin-absorbed shipping subsidy, gateway fees, platform-owned
+     * marketer commissions, platform-liable refunds, and net.
+     *
+     * Every component except `net` is read from the persisted P-03 fields
+     * on sub_orders/orders (the same fields LedgerService posts from), for
+     * a per-country/per-currency breakdown that the ledger's flat
+     * transaction log doesn't offer directly. `net` itself is always taken
+     * from platformNetForPeriod() (the ledger) rather than computed by
+     * summing the other lines here, so the two can never drift apart —
+     * this is the property the acceptance criteria calls "reconciles
+     * against the ledger totals".
+     *
+     * NOTE on shipping_revenue: gateway_fee and marketer_commission here
+     * are the FULL amounts across all sub-orders in the period (both
+     * vendor and platform groups), because that mirrors exactly what
+     * LedgerService::postOrderCapture() itself subtracts to compute the
+     * shipping_revenue residual. This is shown for transparency into how
+     * that account was arrived at, not as "the platform's own gateway
+     * cost" (which would be gateway_fee only on admin-listing sub-orders).
+     */
+    public function summaryForPeriod(Carbon $from, Carbon $to, ?string $currency = null): array
+    {
+        $subOrderTotals = SubOrder::query()
+            ->join('orders', 'orders.id', '=', 'sub_orders.order_id')
+            ->whereBetween('orders.placed_at', [$from->startOfDay(), $to->copy()->endOfDay()])
+            ->when($currency, fn ($q) => $q->where('orders.currency', $currency))
+            ->selectRaw('
+                COALESCE(SUM(sub_orders.platform_commission), 0)     AS platform_commission,
+                COALESCE(SUM(sub_orders.platform_coupon_cost), 0)    AS coupon_cost_platform,
+                COALESCE(SUM(sub_orders.admin_subsidy_amount), 0)    AS shipping_subsidy,
+                COALESCE(SUM(sub_orders.gateway_fee), 0)             AS gateway_fees,
+                COALESCE(SUM(CASE WHEN sub_orders.marketer_commission_owner = \'platform\' THEN sub_orders.marketer_commission ELSE 0 END), 0) AS marketer_commission_platform
+            ')
+            ->first();
+
+        $orderTotals = Order::query()
+            ->whereBetween('placed_at', [$from->startOfDay(), $to->copy()->endOfDay()])
+            ->when($currency, fn ($q) => $q->where('currency', $currency))
+            ->selectRaw('
+                COALESCE(SUM(cod_fee), 0)        AS cod_fees,
+                COALESCE(SUM(warranty_total), 0) AS warranty_revenue
+            ')
+            ->first();
+
+        $refundsPlatformLiable = (int) Refund::query()
+            ->where('vendor_charged_back', false)
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
+            ->when($currency, fn ($q) => $q->where('currency', $currency))
+            ->sum('amount');
+
+        // shipping_revenue is not persisted anywhere — it is always the
+        // capture-time residual (amount_captured - seller_payable - tax -
+        // everything else). Since we want the exact figure the ledger
+        // posted (not a recomputation from possibly-since-reversed
+        // sub_orders), read it straight from the ledger for this window.
+        $shippingRevenue = (int) LedgerEntry::query()
+            ->where('account_type', 'shipping_revenue')
+            ->whereBetween('created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
+            ->when($currency, fn ($q) => $q->where('currency', $currency))
+            ->selectRaw('COALESCE(SUM(credit), 0) - COALESCE(SUM(debit), 0) as net')
+            ->value('net');
+
+        return [
+            'period_start'                  => $from->toDateString(),
+            'period_end'                    => $to->toDateString(),
+            'currency'                      => $currency,
+            'platform_commission'          => (int) $subOrderTotals->platform_commission,
+            'shipping_revenue'              => $shippingRevenue,
+            'cod_fees'                       => (int) $orderTotals->cod_fees,
+            'warranty_revenue'               => (int) $orderTotals->warranty_revenue,
+            'coupon_cost_platform'          => (int) $subOrderTotals->coupon_cost_platform,
+            'shipping_subsidy'               => (int) $subOrderTotals->shipping_subsidy,
+            'gateway_fees'                   => (int) $subOrderTotals->gateway_fees,
+            'marketer_commission_platform'  => (int) $subOrderTotals->marketer_commission_platform,
+            'refunds_platform_liable'        => $refundsPlatformLiable,
+            // The reconciliation anchor — always ledger-sourced (see docblock).
+            'net'                            => $this->platformNetForPeriod($from, $to, $currency),
+        ];
     }
 }

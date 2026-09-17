@@ -118,9 +118,15 @@ class LedgerService
         $taxPayable = (int) $order->tax;
         $sellerPayableTotal = array_sum($sellerPayableByVendor);
 
+        // enhancement.md P-11: warranty premium revenue is broken out of the
+        // shipping_revenue residual into its own account_type. orders.warranty_total
+        // is the exact amount CheckoutPricingEngine charged the customer for
+        // platform warranty plans on this order (P-09 decision D3).
+        $warrantyRevenue = (int) $order->warranty_total;
+
         // Residual: whatever's left of the captured amount once every other
         // account has taken its share. See the docblock above.
-        $shippingRevenue = $amountCapturedCents - $sellerPayableTotal - $platformCommission - $taxPayable - $gatewayFee - $marketerCommissionPayable;
+        $shippingRevenue = $amountCapturedCents - $sellerPayableTotal - $platformCommission - $taxPayable - $gatewayFee - $marketerCommissionPayable - $warrantyRevenue;
 
         $entries = [[
             'account_type' => 'customer_payment',
@@ -156,6 +162,7 @@ class LedgerService
             ['tax_payable', $taxPayable],
             ['gateway_fee', $gatewayFee],
             ['marketer_commission_payable', $marketerCommissionPayable],
+            ['warranty_revenue', $warrantyRevenue],
             ['shipping_revenue', $shippingRevenue],
         ] as [$accountType, $amount]) {
             if ($amount === 0) {

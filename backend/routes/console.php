@@ -110,3 +110,24 @@ Schedule::command('promotion:apply-penalties')
     ->monthlyOn(1, '01:00')
     ->withoutOverlapping()
     ->runInBackground();
+
+// enhancement.md P-11 task 3: GenerateVendorPayoutsJob existed but was never
+// scheduled. One entry per vendors.payout_schedule cadence, each computing
+// the period that cadence implies and dispatching the job filtered to only
+// vendors on that schedule — see GenerateVendorPayoutsJob's $scheduleFilter.
+// PayoutCalculationService/GenerateVendorPayoutsJob's own payout_items /
+// Payout-exists guards make this idempotent if a run is retried.
+Schedule::call(function () {
+    $end = now();
+    GenerateVendorPayoutsJob::dispatch($end->copy()->subDays(7), $end->copy(), 'weekly');
+})->weeklyOn(1, '02:00')->name('generate-vendor-payouts-weekly');
+
+Schedule::call(function () {
+    $end = now();
+    GenerateVendorPayoutsJob::dispatch($end->copy()->subDays(14), $end->copy(), 'biweekly');
+})->cron('0 2 1,15 * *')->name('generate-vendor-payouts-biweekly');
+
+Schedule::call(function () {
+    $end = now();
+    GenerateVendorPayoutsJob::dispatch($end->copy()->subMonth(), $end->copy(), 'monthly');
+})->monthlyOn(1, '02:00')->name('generate-vendor-payouts-monthly');

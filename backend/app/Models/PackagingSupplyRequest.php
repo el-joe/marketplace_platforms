@@ -25,6 +25,7 @@ class PackagingSupplyRequest extends Model
         'approved_at',
         'shipped_at',
         'delivered_at',
+        'fee_deducted_at',
     ];
 
     protected function casts(): array
@@ -35,6 +36,7 @@ class PackagingSupplyRequest extends Model
             'approved_at'        => 'datetime',
             'shipped_at'         => 'datetime',
             'delivered_at'       => 'datetime',
+            'fee_deducted_at'    => 'datetime',
             'status'           => PackagingSupplyRequestStatus::class,
         ];
     }
