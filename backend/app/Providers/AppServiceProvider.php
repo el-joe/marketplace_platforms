@@ -150,6 +150,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
         Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
         Event::listen(SubOrderDelivered::class, CaptureCodOnDelivery::class);
+        // enhancement.md P-09 task 2: warranty activation on delivery is
+        // implemented in SubOrderObserver::updating() (fires on the same
+        // status write that produces SubOrderDelivered, before this event's
+        // listeners run) rather than as a second listener here — see that
+        // observer for the D3 coverage-start rule.
 
         \Illuminate\Support\Facades\Notification::extend('push', function ($app) {
             return $app->make(VendorPushChannel::class);

@@ -49,13 +49,22 @@ class SubOrderObserver
             return;
         }
 
-        DB::transaction(function () use ($warrantyPurchases): void {
+        // enhancement.md P-09 task 2 / D3: coverage starts the day the
+        // brand/vendor warranty ends (delivered_at + vendors.warranty_months),
+        // or at delivery if the vendor has none — not `today()`.
+        $deliveredAt = now();
+        $vendorWarrantyMonths = $subOrder->vendor?->warranty_months;
+        $coverageStartsAt = $vendorWarrantyMonths
+            ? $deliveredAt->copy()->addMonths((int) $vendorWarrantyMonths)
+            : $deliveredAt->copy();
+
+        DB::transaction(function () use ($warrantyPurchases, $coverageStartsAt): void {
             foreach ($warrantyPurchases as $warrantyPurchase) {
-                $durationMonths = $warrantyPurchase->plan_snapshot['duration_months'] ?? 0;
+                $durationMonths = (int) ($warrantyPurchase->plan_snapshot['duration_months'] ?? 0);
 
                 $warrantyPurchase->update([
-                    'coverage_starts_at' => today(),
-                    'coverage_ends_at' => today()->addMonths($durationMonths),
+                    'coverage_starts_at' => $coverageStartsAt->toDateString(),
+                    'coverage_ends_at' => $coverageStartsAt->copy()->addMonths($durationMonths)->toDateString(),
                     'status' => 'active',
                 ]);
             }

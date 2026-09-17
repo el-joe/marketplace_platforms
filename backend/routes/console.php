@@ -37,6 +37,8 @@ Schedule::job(new PaidAdSchedulerJob)->everyFiveMinutes()->withoutOverlapping()-
 // enhancement.md P-05 task 5: roll back gateway orders stuck 'pending'
 // because the customer never returned and no webhook arrived.
 Schedule::job(new \App\Jobs\ExpirePendingPaymentsJob)->everyFiveMinutes()->withoutOverlapping()->name('expire-pending-payments');
+// enhancement.md P-09 task 3: active -> expired past coverage_ends_at.
+Schedule::job(new \App\Jobs\ExpireWarrantyPurchasesJob)->dailyAt('03:00')->name('expire-warranty-purchases');
 
 // Process vendor acquisition agent commissions for the previous month
 Schedule::job(new ProcessAcquisitionCommissionsJob)->monthlyOn(1, '02:00')->name('process-acquisition-commissions');

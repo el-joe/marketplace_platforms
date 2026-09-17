@@ -327,7 +327,7 @@ class CheckoutController extends Controller
 
         $warrantyResult = $this->pricingEngine->resolveWarrantySelections(
             $cartItems,
-            $validated['warranty_selections'] ?? [],
+            $this->buildWarrantySelectionsInput($cartItems, $validated['warranty_selections'] ?? []),
             $country,
             $cart->currency,
         );
@@ -692,7 +692,7 @@ class CheckoutController extends Controller
 
         $warrantyResult = $this->pricingEngine->resolveWarrantySelections(
             $cartItems,
-            $validated['warranty_selections'] ?? [],
+            $this->buildWarrantySelectionsInput($cartItems, $validated['warranty_selections'] ?? []),
             $country,
             $cart->currency,
         );
@@ -1530,6 +1530,51 @@ class CheckoutController extends Controller
                 $item->setRelation('vendorListing', $sourceListing);
             }
         }
+    }
+
+    /**
+     * enhancement.md P-09 task 1: `cart_items.warranty_plan_id` is the single
+     * source of truth for warranty selection. Any `warranty_selections`
+     * passed on the checkout request is an override on top of the cart's
+     * defaults, and — because it is an override, not a parallel input — it
+     * also writes back onto the cart item so the two never diverge again.
+     *
+     * @param  iterable<\App\Models\CartItem>  $cartItems
+     * @param  array<int|string, mixed>  $overrideSelections
+     * @return array<string, array{warranty_plan_id: ?string}>
+     */
+    private function buildWarrantySelectionsInput(iterable $cartItems, array $overrideSelections): array
+    {
+        $itemsById = collect($cartItems)->keyBy('id');
+
+        $selections = [];
+        foreach ($itemsById as $item) {
+            if ($item->warranty_plan_id) {
+                $selections[$item->id] = ['warranty_plan_id' => $item->warranty_plan_id];
+            }
+        }
+
+        foreach ($overrideSelections as $key => $selection) {
+            $planId = is_array($selection) ? ($selection['warranty_plan_id'] ?? null) : $selection;
+            $cartItemId = is_array($selection) && isset($selection['listing_id']) ? null : (string) $key;
+
+            if ($cartItemId !== null) {
+                /** @var \App\Models\CartItem|null $cartItem */
+                $cartItem = $itemsById->get($cartItemId);
+                $cartItem?->update(['warranty_plan_id' => $planId]);
+            }
+
+            if ($planId === null) {
+                if ($cartItemId !== null) {
+                    unset($selections[$cartItemId]);
+                }
+                continue;
+            }
+
+            $selections[$key] = $selection;
+        }
+
+        return $selections;
     }
 
     /**

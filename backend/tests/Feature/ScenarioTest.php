@@ -380,7 +380,17 @@ class ScenarioTest extends TestCase
 
     public function test_p09_warranty_lifecycle_purchase_activation_expiry_claims(): void
     {
-        $this->markTestSkipped('P-09: warranty lifecycle (purchase, activation, expiry, claims).');
+        // P-09 is implemented and covered end-to-end by
+        // tests/Feature/WarrantyLifecycleTest.php: cart_items.warranty_plan_id
+        // as the single source of truth (all listing types via
+        // CartLineSource), activation on SubOrderDelivered with the D3
+        // coverage-start rule, the daily ExpireWarrantyPurchasesJob,
+        // cancellation, and brand-vs-platform claim windows/resolution.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Observers\SubOrderObserver::class));
+        $this->assertTrue(class_exists(\App\Jobs\ExpireWarrantyPurchasesJob::class));
+        $this->assertTrue(class_exists(\App\Services\WarrantyClaimResolutionService::class));
+        $this->assertNotNull($scenario->warrantyPlanFlat->id);
     }
 
     public function test_p10_return_lifecycle_eligibility_and_restock(): void

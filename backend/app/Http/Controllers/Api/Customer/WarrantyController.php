@@ -93,30 +93,54 @@ class WarrantyController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $orderItem = OrderItem::with(['order', 'subOrder', 'productVariant', 'warrantyPurchase'])
+        $orderItem = OrderItem::with(['order', 'subOrder.vendor', 'productVariant', 'warrantyPurchase'])
             ->findOrFail($request->validated('order_item_id'));
 
         $productId = $orderItem->productVariant?->product_id
             ?? $orderItem->product_snapshot['product_id'] ?? null;
 
-        $listingType = $orderItem->vendor_listing_id !== null
-            ? WarrantyClaim::LISTING_TYPE_VENDOR
-            : WarrantyClaim::LISTING_TYPE_ADMIN;
+        $listingType = match (true) {
+            $orderItem->vendor_listing_id !== null => WarrantyClaim::LISTING_TYPE_VENDOR,
+            $orderItem->marketer_listing_id !== null => WarrantyClaim::LISTING_TYPE_MARKETER,
+            default => WarrantyClaim::LISTING_TYPE_ADMIN,
+        };
+
+        $warrantyPurchase = $orderItem->warrantyPurchase;
+        $hasActivePlatformWarranty = $warrantyPurchase
+            && $warrantyPurchase->status === 'active'
+            && $warrantyPurchase->coverage_ends_at
+            && $warrantyPurchase->coverage_ends_at->gte(today());
+
+        $deliveredAt = $orderItem->subOrder?->delivered_at
+            ?? $orderItem->order->completed_at
+            ?? $orderItem->order->placed_at;
+
+        $vendorWarrantyMonths = $orderItem->subOrder?->vendor?->warranty_months;
+        $brandWindowEnds = $vendorWarrantyMonths && $deliveredAt
+            ? $deliveredAt->copy()->addMonths((int) $vendorWarrantyMonths)
+            : null;
+
+        // enhancement.md P-09: a claim without a platform warranty falls
+        // back to the brand window, and never crashes reading
+        // coverage_ends_at off a null warrantyPurchase.
+        $warrantyExpiresAt = $hasActivePlatformWarranty
+            ? $warrantyPurchase->coverage_ends_at
+            : $brandWindowEnds;
 
         $claim = WarrantyClaim::create([
             'claim_number' => 'WC-'.strtoupper(Str::random(8)),
             'customer_id' => $customer->id,
             'order_item_id' => $orderItem->id,
+            'warranty_purchase_id' => $hasActivePlatformWarranty ? $warrantyPurchase->id : null,
             'product_id' => $productId,
             'vendor_id' => $orderItem->vendor_id,
             'listing_type' => $listingType,
+            'claim_type' => $hasActivePlatformWarranty ? WarrantyClaim::CLAIM_TYPE_PLATFORM : WarrantyClaim::CLAIM_TYPE_BRAND,
             'issue_type' => $request->validated('issue_type'),
             'issue_description' => $request->validated('issue_description'),
-            'purchase_date' => ($orderItem->subOrder?->delivered_at
-                ?? $orderItem->order->completed_at
-                ?? $orderItem->order->placed_at)?->toDateString(),
-            'warranty_expires_at' => $orderItem->warrantyPurchase->coverage_ends_at,
-            'covered_by_platform_warranty' => $orderItem->warrantyPurchase !== null,
+            'purchase_date' => $deliveredAt?->toDateString(),
+            'warranty_expires_at' => $warrantyExpiresAt,
+            'covered_by_platform_warranty' => $hasActivePlatformWarranty,
             'status' => WarrantyClaim::STATUS_SUBMITTED,
         ]);
 
@@ -135,10 +159,12 @@ class WarrantyController extends Controller
             Notification::send($claim->vendor?->vendorAdmins, new VendorNewWarrantyClaimNotification($claim));
         }
 
-        Notification::send(
-            Admin::permission('warranty_claims.manage')->get(),
-            new AdminNewWarrantyClaimNotification($claim),
-        );
+        if (\Spatie\Permission\Models\Permission::where('name', 'warranty_claims.manage')->where('guard_name', 'admin')->exists()) {
+            Notification::send(
+                Admin::permission('warranty_claims.manage')->get(),
+                new AdminNewWarrantyClaimNotification($claim),
+            );
+        }
 
         return ApiResponse::success(
             new WarrantyClaimResource($claim->load(['product', 'vendor'])),

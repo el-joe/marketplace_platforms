@@ -412,7 +412,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-09 🔴 Warranty lifecycle: purchase, activation, expiry and claims are incomplete
+## P-09 🔴 Warranty lifecycle: purchase, activation, expiry and claims are incomplete --DONE
 
 **Problem**
 - **Warranties are never activated.** `Jobs/ActivateWarrantyPurchaseJob.php` exists, but the file itself says `// TODO: Dispatch this job…` and nothing dispatches it. Every `warranty_purchases` row stays `pending`, and `WarrantyController@purchases` filters `->active()`, so customers never see their warranties.

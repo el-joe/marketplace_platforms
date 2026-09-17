@@ -34,7 +34,7 @@ class WarrantyClaimStoreRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $customer = auth('customer')->user();
 
-            $orderItem = OrderItem::with(['order', 'warrantyPurchase'])
+            $orderItem = OrderItem::with(['order', 'warrantyPurchase', 'subOrder.vendor'])
                 ->find($this->input('order_item_id'));
 
             if (! $orderItem || ! $orderItem->order || $orderItem->order->customer_id !== $customer->id) {
@@ -43,16 +43,34 @@ class WarrantyClaimStoreRequest extends FormRequest
                 return;
             }
 
-            $warrantyPurchase = $orderItem->warrantyPurchase;
+            $deliveredAt = $orderItem->subOrder?->delivered_at;
 
-            if (! $warrantyPurchase || $warrantyPurchase->status !== 'active') {
-                $validator->errors()->add('order_item_id', 'This item is not covered by an active warranty.');
+            if (! $deliveredAt) {
+                $validator->errors()->add('order_item_id', 'This item has not been delivered yet.');
 
                 return;
             }
 
-            if (! $warrantyPurchase->coverage_ends_at || $warrantyPurchase->coverage_ends_at->lt(today())) {
-                $validator->errors()->add('order_item_id', 'The warranty coverage for this item has expired.');
+            $warrantyPurchase = $orderItem->warrantyPurchase;
+
+            // enhancement.md P-09 task 5: a claim can be covered by the
+            // platform warranty (an active warranty_purchases row within its
+            // own coverage window) or, absent one, by the brand/vendor
+            // warranty window (delivered_at + vendors.warranty_months). Only
+            // reject when NEITHER window covers today.
+            $withinPlatformWindow = $warrantyPurchase
+                && $warrantyPurchase->status === 'active'
+                && $warrantyPurchase->coverage_ends_at
+                && $warrantyPurchase->coverage_ends_at->gte(today());
+
+            $vendorWarrantyMonths = $orderItem->subOrder?->vendor?->warranty_months;
+            $brandWindowEnds = $vendorWarrantyMonths
+                ? $deliveredAt->copy()->addMonths((int) $vendorWarrantyMonths)
+                : null;
+            $withinBrandWindow = $brandWindowEnds && $brandWindowEnds->gte(today());
+
+            if (! $withinPlatformWindow && ! $withinBrandWindow) {
+                $validator->errors()->add('order_item_id', 'This item is outside every warranty window (platform and brand).');
 
                 return;
             }
