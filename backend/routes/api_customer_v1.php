@@ -180,6 +180,11 @@ use Illuminate\Support\Facades\Route;
             Route::get('browse', [CategoryController::class, 'browse'])->name('browse');
         });
 
+        // ── Help center (public) ────────────────────────────────────────────
+        Route::prefix('help-center')->name('customer.help-center.')->group(function (): void {
+            Route::get('tree', [\App\Http\Controllers\Customer\HelpCenterController::class, 'tree'])->name('tree');
+        });
+
         // ── Page Renderer (public) ────────────────────────────────────────────
         Route::get('pages/{type}', [PageController::class, 'show'])->name('customer.pages.show');
 
