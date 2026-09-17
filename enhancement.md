@@ -1048,7 +1048,7 @@ Not covered: routes with parameters (show/edit pages), POST/PUT/DELETE actions, 
 
 ---
 
-## P-26 🟠 Remove static and mock sections from frontend pages; make them API-driven
+## P-26 🟠 Remove static and mock sections from frontend pages; make them API-driven --DONE
 
 **Findings**
 
