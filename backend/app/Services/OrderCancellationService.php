@@ -7,7 +7,6 @@ use App\Enums\CancelActor;
 use App\Enums\InventoryMovementType;
 use App\Models\InventoryMovement;
 use App\Models\LedgerEntry;
-use App\Models\MarketerCampaignConversion;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
@@ -85,6 +84,7 @@ class OrderCancellationService
         private readonly LedgerService $ledgerService = new LedgerService(),
         private readonly PaymentService $paymentService = new PaymentService(),
         private readonly RefundService $refundService = new RefundService(),
+        private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService(),
     ) {}
 
     /**
@@ -304,21 +304,12 @@ class OrderCancellationService
      */
     private function voidMarketerConversions(Collection $items): void
     {
-        $itemIds = $items->pluck('id')->all();
-
-        $conversions = MarketerCampaignConversion::whereIn('order_item_id', $itemIds)->get();
-
-        foreach ($conversions as $conversion) {
-            if ($conversion->commissioned && $conversion->paid_at) {
-                Log::info('OrderCancellationService: cancelled item had an already-paid marketer conversion; not clawed back.', [
-                    'conversion_id' => $conversion->id,
-                ]);
-
-                continue;
-            }
-
-            $conversion->update(['commissioned' => false, 'paid_at' => null]);
-        }
+        // enhancement.md P-12 task 3: reverse (not just un-flag) any
+        // pending/approved conversion earned on a now-cancelled item,
+        // clawing back whatever was already credited to the marketer's
+        // wallet. A conversion already 'paid' (in a settled payout) is left
+        // alone — see MarketerConversionReversalService's class doc.
+        $this->marketerConversionReversalService->reverseForOrderItemIds($items->pluck('id')->all());
     }
 
     private function markItemsAndSubOrdersCancelled(Order $order, Collection $items, string $reason, CancelActor $actor): void

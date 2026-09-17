@@ -10,6 +10,7 @@ use App\Models\PaymentTransaction;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Services\Customer\CheckoutWalletService;
+use App\Services\MarketerConversionReversalService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -94,6 +95,7 @@ class RefundService
         private readonly PaymentService $paymentService = new PaymentService(),
         private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService(),
         private readonly LedgerService $ledgerService = new LedgerService(),
+        private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService(),
     ) {}
 
     /**
@@ -180,6 +182,16 @@ class RefundService
             $refund->refresh();
 
             $this->settle($refund, $order, $resolvedDestination, $originalTransaction, $reverseLedger);
+
+            // enhancement.md P-12 task 3: an item-scoped refund is a return
+            // — reverse any marketer conversion earned on the returned
+            // items. Shipping-only and raw-amount refunds (used by
+            // OrderCancellationService, which already reverses conversions
+            // itself before calling this) don't carry item ids here.
+            if ($scope->kind === RefundScope::KIND_ITEMS) {
+                $returnedItemIds = array_keys(array_filter($scope->itemQuantities, fn ($qty) => $qty > 0));
+                $this->marketerConversionReversalService->reverseForOrderItemIds($returnedItemIds);
+            }
 
             return $refund->fresh();
         });

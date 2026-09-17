@@ -40,6 +40,12 @@ Schedule::job(new \App\Jobs\ExpirePendingPaymentsJob)->everyFiveMinutes()->witho
 // enhancement.md P-09 task 3: active -> expired past coverage_ends_at.
 Schedule::job(new \App\Jobs\ExpireWarrantyPurchasesJob)->dailyAt('03:00')->name('expire-warranty-purchases');
 
+// enhancement.md P-12 task 3: pending -> approved (credits marketer wallet
+// pending_balance) once delivered + return window passed, then pending_balance
+// -> balance once the payout-clearing window has also passed.
+Schedule::job(new \App\Jobs\ApproveMarketerConversionsJob)->dailyAt('03:15')->name('approve-marketer-conversions');
+Schedule::job(new \App\Jobs\ReleaseMarketerPendingCommissionJob)->dailyAt('03:30')->name('release-marketer-pending-commission');
+
 // Process vendor acquisition agent commissions for the previous month
 Schedule::job(new ProcessAcquisitionCommissionsJob)->monthlyOn(1, '02:00')->name('process-acquisition-commissions');
 

@@ -534,7 +534,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-12 🔴 Marketer attribution and commission never reach the order
+## P-12 🔴 Marketer attribution and commission never reach the order --DONE
 
 **Problem**
 - `Order::create([... 'marketer_id' => $attribution['marketer_id'] ?? null, 'marketer_campaign_id' => ...])` (`CheckoutController.php:671-672`) writes columns that **do not exist** on `orders`, and they are not in `$fillable`, so they are silently dropped.

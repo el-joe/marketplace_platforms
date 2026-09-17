@@ -30,6 +30,7 @@ class OrderItem extends Model
         'vendor_listing_id',
         'admin_listing_id',
         'marketer_listing_id',
+        'marketer_campaign_invitation_id',
         'product_snapshot',
         'vendor_id',
         'sku',
@@ -87,6 +88,16 @@ class OrderItem extends Model
     public function marketerListing(): BelongsTo
     {
         return $this->belongsTo(MarketerListing::class, 'marketer_listing_id');
+    }
+
+    public function marketerCampaignInvitation(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaignInvitation::class, 'marketer_campaign_invitation_id');
+    }
+
+    public function marketerConversion(): HasOne
+    {
+        return $this->hasOne(MarketerCampaignConversion::class, 'order_item_id');
     }
 
     public function vendor(): BelongsTo

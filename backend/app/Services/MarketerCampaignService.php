@@ -11,6 +11,7 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCampaignTieredRule;
 use App\Models\Marketer;
+use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Admin\NewCampaignPendingNotification;
@@ -181,9 +182,26 @@ class MarketerCampaignService
     /**
      * Admin approves a campaign. Invitations were already dispatched at creation time —
      * this just activates the campaign so conversions can be tracked.
+     *
+     * enhancement.md P-12 task 4: a campaign cannot go 'active' with 0
+     * commission on both sides (the bug that made every conversion earn
+     * nothing) — the admin must set marketer_commission_amount (and,
+     * for a fixed/last_click campaign, platform_commission_amount) to a
+     * positive value before approving, except for 'tiered' campaigns whose
+     * commission comes from their tiered_rules instead.
      */
     public function approveCampaign(MarketerCampaign $campaign, Admin $admin): void
     {
+        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
+            throw new \RuntimeException(
+                'Cannot approve a campaign with a zero marketer commission amount. Set it first.'
+            );
+        }
+
+        if ($campaign->commission_type === 'tiered' && $campaign->tieredRules()->count() === 0) {
+            throw new \RuntimeException('Cannot approve a tiered campaign with no tiered rules.');
+        }
+
         DB::transaction(function () use ($campaign, $admin) {
             $campaign->update([
                 'status'                => 'active',
@@ -214,6 +232,17 @@ class MarketerCampaignService
 
     /**
      * Auto-approve a campaign (called by job after the configured timeout).
+     *
+     * enhancement.md P-12 task 4: auto-approval must never activate a
+     * campaign with a 0 commission — the bug that made every conversion
+     * earn nothing. Since nobody set marketer_commission_amount manually
+     * (that's exactly why this is auto-approving instead of an admin
+     * click), pull a default rate from marketer_category_commissions /
+     * MarketerCommissionCountrySetting for the promoted item's category +
+     * the campaign's country. If neither has a default, the campaign
+     * stays 'pending_admin' (auto_approve_at is pushed back so the job
+     * doesn't immediately retry it every run) and admins are notified to
+     * set one manually.
      */
     public function autoApproveCampaign(string $campaignId): void
     {
@@ -226,18 +255,79 @@ class MarketerCampaignService
             return;
         }
 
+        if ($campaign->commission_type !== 'tiered') {
+            $defaults = $this->resolveDefaultCommission($campaign);
+
+            if ($defaults === null) {
+                $campaign->update(['auto_approve_at' => now()->addDays(3)]);
+
+                Admin::query()->get()->each(
+                    fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign))
+                );
+
+                return;
+            }
+
+            $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
+            $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
+        } elseif ($campaign->tieredRules()->count() === 0) {
+            // No tiers configured — nothing to auto-approve into.
+            $campaign->update(['auto_approve_at' => now()->addDays(3)]);
+
+            return;
+        }
+
         DB::transaction(function () use ($campaign) {
-            $campaign->update([
-                'status'        => 'auto_approved',
-                'auto_approved' => true,
-                'reviewed_at'   => now(),
-            ]);
+            $campaign->status = 'auto_approved';
+            $campaign->auto_approved = true;
+            $campaign->reviewed_at = now();
+            $campaign->save();
 
             // Invitations and samples were already dispatched at campaign creation time.
-            // Commissions are taken from category/country settings at conversion time.
 
             $campaign->vendor->vendorAdmins->each(fn ($va) => $va->notify(new CampaignAutoApprovedNotification($campaign)));
         });
+    }
+
+    /**
+     * @return array{marketer_commission_amount: int, platform_commission_amount: int}|null
+     */
+    private function resolveDefaultCommission(MarketerCampaign $campaign): ?array
+    {
+        $category = $campaign->vendorListing?->productVariant?->product?->category
+            ?? $campaign->adminListing?->productVariant?->product?->category;
+
+        if (! $category) {
+            return null;
+        }
+
+        $categoryRate = \App\Models\MarketerCategoryCommission::where('category_id', $category->id)
+            ->whereNull('marketer_id')
+            ->first();
+
+        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
+            ->where('category_id', $category->id)
+            ->first();
+
+        $marketerCommission = 0;
+        if ($countrySetting) {
+            // Both marketer types default to the affiliate rate here — the
+            // campaign is shared across whichever marketers accept the
+            // invitation, and per-marketer-type differences are already
+            // applied per-conversion in LastClickAttributionService.
+            $marketerCommission = (int) $countrySetting->affiliate_commission_amount;
+        }
+
+        if ($marketerCommission <= 0) {
+            return null;
+        }
+
+        $platformCommission = $categoryRate ? (int) round($marketerCommission * ((float) $categoryRate->commission_rate / 100)) : 0;
+
+        return [
+            'marketer_commission_amount' => $marketerCommission,
+            'platform_commission_amount' => $platformCommission,
+        ];
     }
 
     /**

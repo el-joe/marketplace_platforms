@@ -867,8 +867,6 @@ class CheckoutController extends Controller
             }
         }
 
-        $attribution = session('marketer_attribution', []);
-
         $idempotencyRecord = $existingIdempotency ?? \App\Models\IdempotencyKey::create([
             'key' => $idempotencyKey,
             'request_hash' => $requestHash,
@@ -879,7 +877,7 @@ class CheckoutController extends Controller
         try {
             $result = DB::transaction(function () use (
                 $customer, $country, $address, $receiver, $validated, $coupon,
-                $cartItems, $summary, $attribution, $vendorShipping, $moneySplitByGroup,
+                $cartItems, $summary, $vendorShipping, $moneySplitByGroup,
                 $warrantySelections, $cart, $couponDiscountCents,
                 $loyaltyDiscount, $loyaltyPointsToUse,
                 $gatewayCode, $isCod, $isWallet, $methodConfig,
@@ -919,8 +917,12 @@ class CheckoutController extends Controller
                     'ip_address' => request()->ip() ?? '0.0.0.0',
                     'user_agent' => request()->userAgent(),
                     'placed_at' => now(),
-                    'marketer_id' => $attribution['marketer_id'] ?? null,
-                    'marketer_campaign_id' => $attribution['campaign_id'] ?? null,
+                    // enhancement.md P-12: 'marketer_id'/'marketer_campaign_id'
+                    // do not exist on `orders` and were silently dropped by
+                    // Order::create() — removed. Attribution is now resolved
+                    // per order item (order_items.marketer_listing_id /
+                    // marketer_campaign_invitation_id) below, after this
+                    // transaction, by LastClickAttributionService.
                     'marketer_contract_acceptance_id' => $validated['contract_acceptance_id'] ?? null,
                 ]);
 

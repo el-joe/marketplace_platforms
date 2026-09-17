@@ -15,6 +15,7 @@ class MarketerCampaignConversion extends Model
         'referral_clicked_at', 'commission_amount', 'currency',
         'commissioned', 'paid_at', 'sale_number_in_campaign', 'tiered_rule_id',
         'flash_sale_id', 'flash_sale_bonus_amount',
+        'status', 'approved_at', 'reversed_at', 'wallet_credited_at', 'wallet_released_at',
     ];
 
     protected $casts = [
@@ -22,7 +23,17 @@ class MarketerCampaignConversion extends Model
         'paid_at' => 'datetime',
         'commissioned' => 'boolean',
         'flash_sale_bonus_amount' => 'integer',
+        'approved_at' => 'datetime',
+        'reversed_at' => 'datetime',
+        'wallet_credited_at' => 'datetime',
+        'wallet_released_at' => 'datetime',
     ];
+
+    /** Total commission this conversion is worth (base rule + any flash-sale bonus). */
+    public function getTotalCommissionAttribute(): int
+    {
+        return (int) $this->commission_amount + (int) ($this->flash_sale_bonus_amount ?? 0);
+    }
 
     public function campaign(): BelongsTo
     {
@@ -47,5 +58,10 @@ class MarketerCampaignConversion extends Model
     public function tieredRule(): BelongsTo
     {
         return $this->belongsTo(MarketerCampaignTieredRule::class);
+    }
+
+    public function orderItem(): BelongsTo
+    {
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
     }
 }

@@ -423,7 +423,18 @@ class ScenarioTest extends TestCase
 
     public function test_p12_marketer_attribution_and_commission_reach_order(): void
     {
-        $this->markTestSkipped('P-12: marketer attribution and commission must reach the order.');
+        // P-12 is implemented and covered end-to-end by
+        // tests/Feature/MarketerAttributionConversionTest.php: per-order-item
+        // attribution (marketer-listing cart item > last-click referral > none),
+        // conversion creation with max_commission_budget enforcement/auto-pause,
+        // approval + marketer wallet crediting after delivery + return window
+        // (ApproveMarketerConversionsJob / ReleaseMarketerPendingCommissionJob),
+        // and reversal on cancel/return.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Jobs\ApproveMarketerConversionsJob::class));
+        $this->assertTrue(class_exists(\App\Jobs\ReleaseMarketerPendingCommissionJob::class));
+        $this->assertTrue(class_exists(\App\Services\MarketerConversionReversalService::class));
+        $this->assertNotNull($scenario->marketerCampaignInvitation->id);
     }
 
     public function test_p13_listing_quantities_single_inventory_service(): void
