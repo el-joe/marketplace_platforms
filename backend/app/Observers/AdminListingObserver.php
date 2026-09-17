@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\AdminListing;
 use App\Services\CachedListingResolver;
+use App\Services\Marketer\MarketerListingAvailabilityService;
 use App\Services\Shared\PageCacheService;
 
 class AdminListingObserver
@@ -11,6 +12,7 @@ class AdminListingObserver
     public function __construct(
         private readonly CachedListingResolver $cachedListingResolver,
         private readonly PageCacheService $pageCache,
+        private readonly MarketerListingAvailabilityService $marketerAvailability,
     ) {
     }
 
@@ -27,6 +29,11 @@ class AdminListingObserver
                                    'express_badge_label_en', 'express_badge_label_ar'])) {
             $this->cachedListingResolver->bustAdminListing($listing);
             $this->pageCache->bustAdminListing($listing);
+        }
+
+        // enhancement.md P-15 task 4.
+        if ($listing->wasChanged(['status', 'price'])) {
+            $this->marketerAvailability->syncAllForSource('admin_listing', $listing->id);
         }
     }
 

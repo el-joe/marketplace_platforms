@@ -661,7 +661,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-15 🔴 Marketer listings must always resolve to a sellable source (stock, fulfilment, price)
+## P-15 🔴 Marketer listings must always resolve to a sellable source (stock, fulfilment, price) --DONE
 
 **Problem**
 - `marketer_listings` stores only `product_variant_id`, `price` and `invitation_id`.

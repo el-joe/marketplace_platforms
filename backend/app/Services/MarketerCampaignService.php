@@ -730,22 +730,33 @@ class MarketerCampaignService
         $sourceCurrency  = $campaign->currency;
         $sourceCondition = 'new';
         $variantId       = null;
+        $sourceType      = null;
+        $sourceListingId = null;
 
         if ($campaign->vendor_listing_id) {
             $source          = VendorListing::find($campaign->vendor_listing_id);
             $sourcePrice     = $source?->price;
             $sourceCondition = $source?->condition ?? 'new';
             $variantId       = $source?->product_variant_id;
+            $sourceType      = 'vendor_listing';
+            $sourceListingId = $source?->id;
         } elseif ($campaign->admin_listing_id) {
-            $source      = \App\Models\AdminListing::find($campaign->admin_listing_id);
-            $sourcePrice = $source?->price;
-            $variantId   = $source?->product_variant_id;
+            $source          = \App\Models\AdminListing::find($campaign->admin_listing_id);
+            $sourcePrice     = $source?->price;
+            $variantId       = $source?->product_variant_id;
+            $sourceType      = 'admin_listing';
+            $sourceListingId = $source?->id;
         }
 
         if (!$variantId || !$sourcePrice) {
             return; // Can't create listing without product/price
         }
 
+        // enhancement.md P-15: campaign-linked marketer listings resolve
+        // their source explicitly (vendor_listing_id / admin_listing_id),
+        // same as independent listings — CartLineSource and the
+        // availability observers no longer need to walk
+        // invitation->campaign->listing at checkout/sync time.
         \App\Models\MarketerListing::firstOrCreate(
             ['invitation_id' => $invitation->id],
             [
@@ -753,6 +764,8 @@ class MarketerCampaignService
                 'product_variant_id' => $variantId,
                 'country_id'         => $campaign->country_id,
                 'listing_category'   => 'product',
+                'source_type'        => $sourceType,
+                'source_listing_id'  => $sourceListingId,
                 'price'              => $sourcePrice,
                 'currency'           => $sourceCurrency,
                 'condition'          => $sourceCondition,

@@ -168,7 +168,9 @@ class ScenarioTest extends TestCase
             'listing_category' => 'product',
             'country_id' => $scenario->country->id,
             'invitation_id' => $adminCampaignInvitation->id,
-            'price' => 95000,
+            'source_type' => 'admin_listing',
+            'source_listing_id' => $scenario->adminListing->id,
+            'price' => (int) $scenario->adminListing->getRawOriginal('price'),
             'currency' => 'AED',
             'status' => 'active',
             'condition' => 'new',
@@ -177,15 +179,17 @@ class ScenarioTest extends TestCase
 
         // An INDEPENDENT marketer listing (P-02 gap #2): no invitation/
         // campaign at all — created the way Marketer/ListingController@store
-        // creates one. Falls back to the best active vendor/admin listing
-        // for the same variant as its fulfilment source.
+        // creates one (enhancement.md P-15: source is resolved and bound
+        // explicitly at creation time, not re-derived at checkout).
         $independentMarketerListing = \App\Models\MarketerListing::create([
             'marketer_id' => $scenario->marketer->id,
             'product_variant_id' => $scenario->variants[1]->id,
             'listing_category' => 'product',
             'country_id' => $scenario->country->id,
             'invitation_id' => null,
-            'price' => 130000,
+            'source_type' => 'vendor_listing',
+            'source_listing_id' => $scenario->vendorListingFbn->id,
+            'price' => (int) $scenario->vendorListingFbn->getRawOriginal('price'),
             'currency' => 'AED',
             'status' => 'active',
             'condition' => 'new',
@@ -505,5 +509,20 @@ class ScenarioTest extends TestCase
         $this->assertSame($scenario->vendor->id, $campaign->owner_id);
         $this->assertSame('pending_admin', $campaign->status);
         $this->assertSame(0, $campaign->invitations()->count());
+    }
+
+    public function test_p15_marketer_listings_resolve_to_a_sellable_source(): void
+    {
+        // enhancement.md P-15: full coverage (source_type/source_listing_id
+        // resolution for both independent and campaign-linked listings,
+        // price-bound validation, and the vendor/admin listing observers +
+        // ListingStockChanged listener that pause/unpause a marketer
+        // listing in sync with its source) lives in
+        // tests/Feature/MarketerListingSourceTest.php.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertTrue(class_exists(\App\Services\Marketer\MarketerListingAvailabilityService::class));
+        $this->assertSame('vendor_listing', $scenario->marketerListing->source_type);
+        $this->assertSame($scenario->vendorListingFbp->id, $scenario->marketerListing->source_listing_id);
     }
 }

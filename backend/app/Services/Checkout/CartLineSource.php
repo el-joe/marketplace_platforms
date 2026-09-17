@@ -17,10 +17,9 @@ use Illuminate\Support\Collection;
  * - `sellable`: the listing the customer actually bought (vendor, admin or
  *   marketer listing). This is what gets recorded on the order item.
  * - `fulfilmentListing`: the listing that owns the warehouse stock — the
- *   vendor or admin listing. For a marketer listing this is the campaign's
- *   source listing (or, for an independent marketer listing with no
- *   campaign, the best active listing found for the same product variant —
- *   see resolveIndependentMarketerFulfilment()).
+ *   vendor or admin listing. For a marketer listing this is always its
+ *   explicit `source_type`/`source_listing_id` (enhancement.md P-15),
+ *   whether the marketer listing is campaign-linked or independent.
  * - `sellerParty`: the vendor's id, or the literal string 'platform' for
  *   admin-listing / platform-sourced fulfilment.
  */
@@ -99,17 +98,23 @@ class CartLineSource
                 return null;
             }
 
-            $campaign = $marketerListing->invitation?->campaign;
-            $sourceVendorListing = $campaign?->vendor_listing_id ? $campaign->vendorListing : null;
-            $sourceAdminListing = $campaign?->admin_listing_id ? $campaign->adminListing : null;
-
-            if (! $sourceVendorListing && ! $sourceAdminListing) {
-                // Independent marketer listing (no campaign at all) — resolve
-                // the best active listing for the same product variant to
-                // fulfil from, since a marketer listing never carries its
-                // own warehouse stock.
-                [$sourceVendorListing, $sourceAdminListing] = self::resolveIndependentMarketerFulfilment($marketerListing);
-            }
+            // enhancement.md P-15 task 5: source_listing_id is resolved
+            // explicitly at listing-creation time (both for campaign-linked
+            // and independent marketer listings — see
+            // MarketerCampaignService::createProductListing() and
+            // Marketer\ListingController@store), and kept in sync by the
+            // vendor/admin listing observers. Checkout just reads it — it
+            // no longer re-derives a fulfilment listing via the campaign
+            // chain or a "best active listing" fallback at cart-resolve
+            // time (that runtime fallback let a listing be added to cart
+            // and then fail at checkout if the picked seller went out of
+            // stock in between; see enhancement.md P-15).
+            $sourceVendorListing = $marketerListing->source_type === 'vendor_listing'
+                ? VendorListing::find($marketerListing->source_listing_id)
+                : null;
+            $sourceAdminListing = $marketerListing->source_type === 'admin_listing'
+                ? AdminListing::find($marketerListing->source_listing_id)
+                : null;
 
             if ($sourceVendorListing) {
                 return new self(
@@ -151,32 +156,6 @@ class CartLineSource
         }
 
         return null;
-    }
-
-    /**
-     * @return array{0: ?VendorListing, 1: ?AdminListing}
-     */
-    private static function resolveIndependentMarketerFulfilment(\App\Models\MarketerListing $marketerListing): array
-    {
-        $vendorListing = VendorListing::query()
-            ->where('product_variant_id', $marketerListing->product_variant_id)
-            ->where('country_id', $marketerListing->country_id)
-            ->where('status', \App\Enums\VendorListingStatus::Active)
-            ->orderBy('price')
-            ->first();
-
-        if ($vendorListing) {
-            return [$vendorListing, null];
-        }
-
-        $adminListing = AdminListing::query()
-            ->where('product_variant_id', $marketerListing->product_variant_id)
-            ->where('country_id', $marketerListing->country_id)
-            ->active()
-            ->orderBy('price')
-            ->first();
-
-        return [null, $adminListing];
     }
 
     public function isAdminSeller(): bool

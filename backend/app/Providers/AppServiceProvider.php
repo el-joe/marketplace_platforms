@@ -158,6 +158,12 @@ class AppServiceProvider extends ServiceProvider
         // sourced from a listing as soon as its stock changes, instead of
         // only on MonitorCampaignStockJob's hourly sweep.
         Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\PauseCampaignsOnLowStock::class);
+        // enhancement.md P-15 task 4: hide/unhide a marketer listing the
+        // moment ITS source's stock crosses zero, independent of the
+        // parent campaign's own pause/resume above. Registered after
+        // SyncListingStockStatus so the source listing's status column is
+        // already up to date when this runs.
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncMarketerListingAvailabilityOnStock::class);
         // enhancement.md P-09 task 2: warranty activation on delivery is
         // implemented in SubOrderObserver::updating() (fires on the same
         // status write that produces SubOrderDelivered, before this event's
