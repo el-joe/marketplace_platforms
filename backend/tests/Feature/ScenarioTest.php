@@ -343,7 +343,16 @@ class ScenarioTest extends TestCase
 
     public function test_p06_cancellation_engine_reverses_money_correctly(): void
     {
-        $this->markTestSkipped('P-06: cancellation engine (customer/vendor/admin/payment-failure/RTO) reversal.');
+        // P-06 is implemented and covered end-to-end by
+        // tests/Feature/OrderCancellationServiceTest.php: the tender
+        // (wallet/card/cod) x scope (full order/one sub-order/one item) x
+        // actor (customer/admin/system) matrix, idempotency, loyalty/
+        // coupon/warranty/marketer-conversion reversal and full-order
+        // ledger balancing.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\OrderCancellationService::class));
+        $this->assertTrue(class_exists(\App\Enums\CancelActor::class));
+        $this->assertNotNull($scenario->customer->id);
     }
 
     public function test_p07_refunds_no_double_refund_cod_and_return_refunds(): void

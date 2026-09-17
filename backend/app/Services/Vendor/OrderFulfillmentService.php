@@ -2,12 +2,14 @@
 
 namespace App\Services\Vendor;
 
+use App\Enums\CancelActor;
 use App\Jobs\CustomerShippedNotificationJob;
 use App\Models\InventoryMovement;
 use App\Models\OrderStatusHistory;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
+use App\Services\OrderCancellationService;
 use Illuminate\Support\Facades\DB;
 
 class OrderFulfillmentService
@@ -56,33 +58,19 @@ class OrderFulfillmentService
         return $subOrder->fresh();
     }
 
+    /**
+     * enhancement.md P-06: delegates to OrderCancellationService so a
+     * vendor cancel goes through the same stock-release/refund/coupon/
+     * loyalty/warranty/marketer/ledger reversal as every other cancel
+     * path, instead of this service's own inventory-only implementation.
+     */
     public function cancel(SubOrder $subOrder, string $reason): SubOrder
     {
         if (! in_array($subOrder->status->value, self::CANCELLABLE_STATUSES)) {
             abort(422, "Order cannot be cancelled from status '{$subOrder->status->value}'.");
         }
 
-        DB::transaction(function () use ($subOrder, $reason) {
-            $previousStatus = $subOrder->status->value;
-
-            $subOrder->update([
-                'status'              => 'cancelled',
-                'cancellation_reason' => $reason,
-                'cancelled_at'        => now(),
-            ]);
-
-            OrderStatusHistory::create([
-                'sub_order_id' => $subOrder->id,
-                'from_status'  => $previousStatus,
-                'to_status'    => 'cancelled',
-                'reason'       => $reason,
-            ]);
-
-            // Release any previously reserved inventory
-            if ($subOrder->warehouse_id) {
-                $this->releaseInventory($subOrder);
-            }
-        });
+        app(OrderCancellationService::class)->cancel($subOrder, CancelActor::Vendor, $reason);
 
         return $subOrder->fresh();
     }

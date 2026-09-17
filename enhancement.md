@@ -313,7 +313,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-06 🔴 Cancellation engine: customer, vendor, admin, payment failure and RTO cancellations do not reverse money correctly
+## P-06 🔴 Cancellation engine: customer, vendor, admin, payment failure and RTO cancellations do not reverse money correctly --DONE
 
 **Problem**
 - `Api/Customer/OrderController@cancel` (`:117-214`):

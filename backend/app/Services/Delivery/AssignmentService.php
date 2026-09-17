@@ -2,10 +2,12 @@
 
 namespace App\Services\Delivery;
 
+use App\Enums\CancelActor;
 use App\Enums\DeliveryAgentEarningStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentTransactionStatus;
 use App\Enums\SubOrderStatus;
+use App\Services\OrderCancellationService;
 use App\Jobs\CustomerDeliveredNotificationJob;
 use App\Jobs\NotifyCustomerFailedDeliveryJob;
 use App\Jobs\NotifyOperationsTeamJob;
@@ -359,15 +361,19 @@ class AssignmentService
                 $this->rtoService->createReturnAssignment($assignment);
             }
 
-            // Customer refused a COD order = implicit cancellation; no cash changed hands.
+            // Customer refused a COD order = implicit cancellation; no cash
+            // changed hands. enhancement.md P-06: only the FAILED sub-order
+            // is cancelled here (via OrderCancellationService), not the
+            // whole order — a multi-vendor order with one RTO'd sub-order
+            // must leave the other sub-orders alone. The order-level status
+            // only rolls up to 'cancelled' if this was the last non-cancelled
+            // sub-order (handled inside OrderCancellationService).
             if ($isCodRefused) {
-                $order->update([
-                    'status'       => OrderStatus::Cancelled,
-                    'cancelled_at' => now(),
-                    // payment_status stays 'pending' — nothing was collected.
-                ]);
-
-                $assignment->subOrder->update(['status' => SubOrderStatus::Cancelled]);
+                app(OrderCancellationService::class)->cancel(
+                    $assignment->subOrder,
+                    CancelActor::System,
+                    'RTO: customer refused COD delivery',
+                );
 
                 PaymentTransaction::where('order_id', $order->id)
                     ->where('gateway', 'cod')
