@@ -383,10 +383,24 @@ class AdBookingService
         });
     }
 
-    public function markOfflinePaid(PaidAdBooking $b, Admin $admin, ?string $note): void
+    public function markOfflinePaid(PaidAdBooking $b, Admin $admin, ?string $note, string $proofFilePath): void
     {
-        DB::transaction(function () use ($b, $admin, $note) {
+        DB::transaction(function () use ($b, $admin, $note, $proofFilePath) {
             $b = PaidAdBooking::whereKey($b->id)->lockForUpdate()->firstOrFail();
+
+            if ($b->payment_method !== PaidAdPaymentMethod::Offline) {
+                throw new DomainException(__('ads.errors.payment_method_not_allowed'));
+            }
+
+            if ($b->payment_status === PaidAdPaymentStatus::Paid) {
+                throw new DomainException(__('ads.errors.transition_not_allowed', [
+                    'from' => $b->payment_status->value, 'to' => 'paid',
+                ]));
+            }
+
+            if ($proofFilePath === '') {
+                throw new DomainException(__('ads.errors.proof_required'));
+            }
 
             PaidAdCharge::create([
                 'paid_ad_booking_id' => $b->id,
@@ -408,6 +422,8 @@ class AdBookingService
                 'payment_status' => PaidAdPaymentStatus::Paid->value,
                 'paid_at' => now(),
                 'total_charged' => $b->quoted_amount,
+                'offline_proof_file_path' => $proofFilePath,
+                'offline_proof_uploaded_at' => now(),
             ]);
 
             $this->activateOrSchedule($b->fresh());

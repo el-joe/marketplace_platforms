@@ -1006,6 +1006,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{paidAdBooking}', [PaidAdBookingController::class, 'show'])->name('show');
         Route::post('/{paidAdBooking}/approve', [PaidAdBookingController::class, 'approve'])->name('approve');
         Route::post('/{paidAdBooking}/reject', [PaidAdBookingController::class, 'reject'])->name('reject');
+        Route::post('/{paidAdBooking}/mark-offline-paid', [PaidAdBookingController::class, 'markOfflinePaid'])->name('mark-offline-paid');
+        Route::post('/{paidAdBooking}/reject-offline-payment', [PaidAdBookingController::class, 'rejectOfflinePayment'])->name('reject-offline-payment');
     });
 
     // ─── Vendor Applications Queue ────────────────────────────────────────────────

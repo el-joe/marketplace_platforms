@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\PaidAdBookingStatus;
+use App\Enums\PaidAdPaymentMethod;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Ads\MarkOfflinePaidRequest;
 use App\Models\PaidAdBooking;
 use App\Models\PaidAdCreative;
 use App\Services\Ads\AdBookingService;
@@ -177,6 +179,52 @@ class PaidAdBookingController extends Controller
         }
 
         return response()->json(['message' => 'Booking rejected.']);
+    }
+
+    // ─── Mark Offline Paid ──────────────────────────────────────────────────────
+
+    public function markOfflinePaid(MarkOfflinePaidRequest $request, PaidAdBooking $paidAdBooking): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('ad_bookings.review'), 403);
+
+        if ($paidAdBooking->payment_method !== PaidAdPaymentMethod::Offline) {
+            return response()->json(['message' => 'This booking is not settled offline.'], 422);
+        }
+
+        $path = $request->file('file')->store("paid-ad-bookings/{$paidAdBooking->id}/payment-proofs", 'public');
+
+        try {
+            $this->bookingService->markOfflinePaid($paidAdBooking, $admin, $request->input('note'), $path);
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['message' => 'Booking marked as paid.']);
+    }
+
+    // ─── Reject Offline Payment ─────────────────────────────────────────────────
+
+    public function rejectOfflinePayment(Request $request, PaidAdBooking $paidAdBooking): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('ad_bookings.review'), 403);
+
+        $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        if ($paidAdBooking->payment_method !== PaidAdPaymentMethod::Offline) {
+            return response()->json(['message' => 'This booking is not settled offline.'], 422);
+        }
+
+        try {
+            $this->bookingService->cancel($paidAdBooking, 'admin', $request->input('reason'), $admin);
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['message' => 'Offline payment rejected; booking cancelled.']);
     }
 
     // ─── Review Creative ──────────────────────────────────────────────────────

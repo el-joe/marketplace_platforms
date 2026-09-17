@@ -21,6 +21,7 @@ return [
         'destination_invalid' => 'الوجهة المحددة غير صالحة.',
         'cancel_not_allowed' => 'لا يمكن إلغاء هذا الحجز في حالته الحالية.',
         'transition_not_allowed' => 'لا يمكن نقل هذا الحجز من :from إلى :to.',
+        'proof_required' => 'يلزم إرفاق ملف إثبات الدفع لتحديد هذا الحجز كمدفوع.',
     ],
     'booking_status' => [
         'draft' => 'مسودة',

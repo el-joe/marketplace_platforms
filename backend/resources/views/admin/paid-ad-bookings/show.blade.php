@@ -107,6 +107,53 @@
                 </dl>
             </x-card>
 
+            {{-- ─── Offline Payment ────────────────────────────────────────────────── --}}
+            @if($paidAdBooking->payment_method?->value === 'offline')
+                <x-card title="{{ __('admin.paid_ad_bookings.offline_payment') }}">
+                    @if($paidAdBooking->payment_status?->value === 'paid')
+                        <div class="text-sm text-gray-700 space-y-2">
+                            <p class="text-green-700 font-medium">{{ __('admin.paid_ad_bookings.offline_payment_confirmed') }}</p>
+                            @if($paidAdBooking->offline_proof_file_path)
+                                <p>
+                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($paidAdBooking->offline_proof_file_path) }}" target="_blank" class="text-primary-600 hover:underline">
+                                        {{ __('admin.paid_ad_bookings.view_proof') }}
+                                    </a>
+                                </p>
+                            @endif
+                            @if($paidAdBooking->offline_proof_uploaded_at)
+                                <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($paidAdBooking->offline_proof_uploaded_at)->format('d M Y H:i') }}</p>
+                            @endif
+                        </div>
+                    @elseif($paidAdBooking->status->value === 'approved')
+                        <p class="text-sm text-gray-500 mb-4">{{ __('admin.paid_ad_bookings.offline_payment_pending') }}</p>
+
+                        <form action="{{ route('admin.paid-ad-bookings.mark-offline-paid', $paidAdBooking->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3 mb-6">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.paid_ad_bookings.proof_file') }}</label>
+                                <input type="file" name="file" accept=".jpg,.jpeg,.png,.pdf" required class="block w-full text-sm border border-gray-200 rounded-lg p-2">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.paid_ad_bookings.proof_note') }}</label>
+                                <textarea name="note" rows="2" maxlength="2000" class="block w-full text-sm border border-gray-200 rounded-lg p-2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm">{{ __('admin.paid_ad_bookings.mark_offline_paid_btn') }}</button>
+                        </form>
+
+                        <form action="{{ route('admin.paid-ad-bookings.reject-offline-payment', $paidAdBooking->id) }}" method="POST" class="space-y-3">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.paid_ad_bookings.reject_reason') }}</label>
+                                <textarea name="reason" rows="2" maxlength="1000" required class="block w-full text-sm border border-gray-200 rounded-lg p-2"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-danger btn-sm">{{ __('admin.paid_ad_bookings.reject_offline_payment_btn') }}</button>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-400">{{ __('admin.paid_ad_bookings.offline_payment_not_yet') }}</p>
+                    @endif
+                </x-card>
+            @endif
+
             {{-- ─── Creatives ──────────────────────────────────────────────────────── --}}
             <x-card title="{{ __('admin.paid_ad_bookings.ad_creatives') }}">
                 @if($paidAdBooking->creatives->isEmpty())
