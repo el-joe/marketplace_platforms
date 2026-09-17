@@ -19,6 +19,21 @@ export const acceptMarketerContract = (marketerId: string, versionId: string) =>
     },
   );
 
+export const uploadBankTransferProofService = (
+  orderNumber: string,
+  file: File,
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return fetchInstance<{ data: { proof_uploaded_at: string } }>(
+    `/orders/${orderNumber}/bank-transfer-proof`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+};
+
 export const createPrepareCheckoutService = (orderPayload: {
   address_id: number;
   country_payment_gateway_id: string;

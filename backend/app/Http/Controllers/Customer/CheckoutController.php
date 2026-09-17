@@ -500,8 +500,8 @@ class CheckoutController extends Controller
             'wallet' => $walletInfo,
             'loyalty' => $this->loyaltyService->previewInfo($customer, $orderCurrency),
             'delivery_instructions' => collect(DeliveryInstruction::cases())->map(fn (DeliveryInstruction $case) => [
-                'value' => $case->value,
-                'label' => $case->label(),
+                'key' => $case->value,
+                'value' => $case->labelBilingual(),
             ])->values(),
             'shipment_groups' => $shipmentGroupsForItems,
             'marketer_contract_gate' => $marketerContractGate,

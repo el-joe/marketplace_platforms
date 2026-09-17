@@ -111,7 +111,20 @@ function initTransactionsIndex() {
 // ─── Transactions Show ────────────────────────────────────────────────────────
 
 function initTransactionsShow() {
-    // Nothing extra needed — Alpine handles collapsible JSON, copy handled globally
+    const btn = document.getElementById('js-confirm-bank-transfer');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+        if (!confirm(btn.dataset.confirmMessage || 'Confirm this bank transfer?')) return;
+        btn.disabled = true;
+        try {
+            await postJson(btn.dataset.url);
+            window.location.reload();
+        } catch (err) {
+            window.Toast?.error(err?.message || 'Failed to confirm bank transfer.');
+            btn.disabled = false;
+        }
+    });
 }
 
 // ─── Refunds Page ─────────────────────────────────────────────────────────────

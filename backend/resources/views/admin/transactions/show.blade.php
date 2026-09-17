@@ -150,6 +150,45 @@
                 </dl>
             </x-card>
 
+            {{-- ─── Bank Transfer Proof ─────────────────────────────────────────── --}}
+            @if($transaction->gateway === 'bank_transfer')
+                <x-card title="{{ __('admin.transactions.bank_transfer_proof') }}">
+                    @if($transaction->proof_file_path)
+                        <div class="space-y-3">
+                            <p class="text-xs text-gray-500">
+                                {{ __('admin.transactions.proof_uploaded_at') }}:
+                                {{ $transaction->proof_uploaded_at?->format('M d, Y H:i:s') }}
+                            </p>
+                            @if(str_ends_with($transaction->proof_file_path, '.pdf'))
+                                <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($transaction->proof_file_path) }}"
+                                   target="_blank" class="btn btn-secondary btn-sm">
+                                    {{ __('admin.transactions.view_proof') }}
+                                </a>
+                            @else
+                                <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($transaction->proof_file_path) }}" target="_blank">
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($transaction->proof_file_path) }}"
+                                         alt="{{ __('admin.transactions.bank_transfer_proof') }}"
+                                         class="max-w-xs rounded border border-gray-200">
+                                </a>
+                            @endif
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-400">{{ __('admin.transactions.no_proof_uploaded') }}</p>
+                    @endif
+
+                    @if($transaction->status->value !== 'succeeded')
+                        <button
+                            type="button"
+                            id="js-confirm-bank-transfer"
+                            data-url="{{ route('admin.transactions.confirm-bank-transfer', $transaction) }}"
+                            data-confirm-message="{{ __('admin.transactions.confirm_bank_transfer_prompt') }}"
+                            class="btn btn-primary btn-sm mt-4">
+                            {{ __('admin.transactions.confirm_bank_transfer') }}
+                        </button>
+                    @endif
+                </x-card>
+            @endif
+
             {{-- ─── Raw Request ─────────────────────────────────────────────────── --}}
             @if($transaction->raw_request)
                 <x-card>

@@ -20,6 +20,7 @@ class PaymentTransaction extends Model
             'raw_request' => 'array',
             'raw_response' => 'array',
             'processed_at' => 'datetime',
+            'proof_uploaded_at' => 'datetime',
             'status' => PaymentTransactionStatus::class,
             'type' => PaymentTransactionType::class,
         ];
@@ -44,6 +45,8 @@ class PaymentTransaction extends Model
         'failure_message',
         'raw_request',
         'raw_response',
+        'proof_file_path',
+        'proof_uploaded_at',
         'processed_at',
     ];
 

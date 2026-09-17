@@ -454,6 +454,7 @@ use Illuminate\Support\Facades\Route;
                 Route::post('{order_number}/returns', [ReturnController::class, 'store'])->name('returns.store');
                 Route::post('{order_number}/disputes', [DisputeController::class, 'store'])->name('disputes.store');
                 Route::post('{order_number}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+                Route::post('{order_number}/bank-transfer-proof', [OrderController::class, 'uploadBankTransferProof'])->name('bank-transfer-proof.upload');
             });
 
             // Sub-order tracking

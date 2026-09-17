@@ -800,7 +800,22 @@
     "easyReturnsTitle": "إرجاع سهل وبدون تعقيد",
     "easyReturnsDesc": "سياسة إرجاع لمدة 15 يومًا على المنتجات المؤهلة",
     "supportTitle": "دعم عملاء على مدار الساعة",
-    "supportDesc": "نحن هنا لمساعدتك في أي وقت تحتاج فيه إلينا"
+    "supportDesc": "نحن هنا لمساعدتك في أي وقت تحتاج فيه إلينا",
+    "bankTransferTitle": "أكمل عملية التحويل البنكي",
+    "bankTransferInstructions": "قم بتحويل إجمالي الطلب إلى الحساب أدناه، ثم ارفع إيصال الدفع حتى نتمكن من تأكيده.",
+    "bankName": "اسم البنك",
+    "accountName": "اسم الحساب",
+    "accountNumber": "رقم الحساب",
+    "iban": "رقم الآيبان",
+    "swift": "رمز السويفت",
+    "reference": "المرجع",
+    "uploadProof": "رفع إثبات الدفع",
+    "uploadProofDesc": "الصيغ المقبولة: JPG، PNG، PDF — بحد أقصى 10 ميجابايت.",
+    "chooseFile": "اختر ملفًا",
+    "submitProof": "إرسال الإثبات",
+    "uploadingProof": "جارٍ الرفع...",
+    "proofUploaded": "تم رفع الإثبات بنجاح. سنقوم بتأكيد دفعتك قريبًا.",
+    "proofUploadFailed": "فشل رفع الإثبات. يرجى المحاولة مرة أخرى."
   },
   "openSooq": {
     "header": {
