@@ -17,7 +17,7 @@ export default function RecommendedSection() {
     return <Skeleton className="h-20" />;
   }
   return (
-    <div className="rounded-[16px] bg-white max-w-110 lg:max-w-145 xl:max-w-180 hidden md:block px-4 pb-4">
+    <div className="rounded-[16px] bg-white hidden lg:block px-4 pb-4">
       <h2 className="text-light flex-1 font-bold text-lg md:text-xl xl:text-2xl my-4">
         {locale === "ar"
           ? data?.data?.sections[0]?.title_ar

@@ -11,9 +11,9 @@ import SectionTitle from "./section-title";
 import useLocale from "@/src/hooks/use-locale";
 
 const heights = {
-  small: "min-h-[80px] max-h-[140px]",
-  medium: "min-h-[140px] max-h-[200px]",
-  large: "min-h-[200px] max-h-[280px]",
+  small: "min-h-[80px] max-h-[240px]",
+  medium: "min-h-[140px] max-h-[300px]",
+  large: "min-h-[200px] max-h-[480px]",
 } as const;
 
 const rounded = {
@@ -29,7 +29,10 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
     <div>
       {(data?.config?.title_en || data?.config?.title_ar) && (
         <SectionTitle
-          title={{ en: data?.config?.title_en ?? "", ar: data?.config?.title_ar ?? "" }}
+          title={{
+            en: data?.config?.title_en ?? "",
+            ar: data?.config?.title_ar ?? "",
+          }}
         />
       )}
       <Swiper
@@ -64,7 +67,11 @@ export const ImagesSlider = ({ data }: { data: Block }) => {
                 )}
               >
                 <Image
-                  src={i.image_url?.[locale] || i.image_url?.en || "/images/no-image-available-icon.jpg"}
+                  src={
+                    i.image_url?.[locale] ||
+                    i.image_url?.en ||
+                    "/images/no-image-available-icon.jpg"
+                  }
                   alt="category"
                   width={2400}
                   height={400}

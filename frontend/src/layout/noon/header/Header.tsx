@@ -147,7 +147,7 @@ const Header = () => {
                   <DropdownMenuItem className={"py-3 px-4"}>
                     <div className="size-9 rounded-full bg-[#101628]! flex items-center justify-center text-sm text-white font-semibold shrink-0 whitespace-nowrap uppercase py-3 px-4">
                       {splittedName && splittedName.length > 0 ? (
-                        `${splittedName[0][0]}${splittedName[1][0]}`
+                        `${splittedName?.[0]?.[0]} ${splittedName?.[1]?.[0] || ""}`
                       ) : (
                         <UserCircleIcon className="size-6" />
                       )}

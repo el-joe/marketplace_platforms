@@ -43,7 +43,7 @@ export default function CouponInputCard() {
               <X className="size-6" />
             </Button>
           </div>
-          <p className="text-sm text-gray mt-2 md:max-w-[360px] lg:max-w-[404px]">
+          <p className="text-sm text-gray mt-2 w-full">
             {cart?.cart?.coupon?.description}
           </p>
         </div>
@@ -68,7 +68,9 @@ export default function CouponInputCard() {
               </Button>
             }
           />
-          <FieldError className="mt-2">{applyCouponErr?.message}</FieldError>
+          <FieldError className="mt-2 w-full overflow-hidden">
+            {applyCouponErr?.message}
+          </FieldError>
         </>
       )}
       <div className="my-3 border-t border-border border-dashed -mx-4" />

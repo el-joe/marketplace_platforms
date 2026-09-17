@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
 import { Button } from "../ui/button";
 import {
+  CarIcon,
   ChevronLeft,
   ChevronRight,
   ChevronRightIcon,
@@ -23,6 +24,7 @@ import AddToCartButton from "./add-to-cart-button";
 import { useTranslations } from "next-intl";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { AdBadge } from "./ad-badge";
+import AnimatedBadge from "./animated-badge";
 
 type Props = {
   productData: Product | IProduct;
@@ -53,8 +55,6 @@ const ProductCard = ({ productData }: Props) => {
       swiper.slideTo(0);
     }
   };
-
-  console.log(productData);
 
   return (
     <div
@@ -180,9 +180,9 @@ const ProductCard = ({ productData }: Props) => {
       {/* card body (title, rate, price, bottom badge) */}
       {/* <Link href={`/products/${productData.id}`}> */}
       <Link href={`/products/${productData.url_param}`} className="flex-1">
-        <div className="flex flex-col gap-2 justify-start p-1 lg:p-2.5 h-full">
+        <div className="flex flex-col justify-start p-1 lg:p-2.5 h-full">
           {/* title */}
-          <h3 className="text-[10px] font-medium md:text-xs lg:text-sm line-clamp-3">
+          <h3 className="text-[10px] font-semibold md:text-xs lg:text-base line-clamp-3 mb-1">
             {locale === "ar" ? productData.name_ar : productData.name_en}
           </h3>
           {!!productData.variant_name?.[locale] && (
@@ -192,7 +192,7 @@ const ProductCard = ({ productData }: Props) => {
           )}
           {/* rating */}
           {productData.rating_avg && (
-            <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5">
+            <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5 mb-1">
               <StarIcon className="size-2 md:size-3 text-green fill-green" />
               <p className="font-semibold text-[8px] md:text-xs ">
                 {productData.rating_avg}
@@ -206,6 +206,15 @@ const ProductCard = ({ productData }: Props) => {
             currentPrice={productData.price}
             currency={productData.currency}
             size="sm"
+          />
+          <AnimatedBadge
+            size="sm"
+            badges={[
+              { label: "hello world", icon: CarIcon, iconColor: "red" },
+              { label: "hello world2", icon: CarIcon, iconColor: "green" },
+              { label: "hello world3", icon: CarIcon, iconColor: "blue" },
+            ]}
+            containerClasses="mb-1"
           />
           {/* bottom badge */}
           {!!productData.shipping_badge && (

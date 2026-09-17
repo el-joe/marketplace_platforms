@@ -17,7 +17,9 @@ export default function CheckoutButton() {
   return (
     <>
       <Button
-        className={"bg-blue w-full text-white h-15 rounded-[16px] text-xl"}
+        className={
+          "bg-blue w-full text-white h-15 rounded-[16px] text-xl z-40 md:z-0 fixed md:relative bottom-16 md:bottom-0 left-1/2 -translate-x-1/2"
+        }
         disabled={loading}
         onClick={() =>
           protectedWithAuth(async () => {
@@ -37,6 +39,7 @@ export default function CheckoutButton() {
       <LocationDialog
         open={locationDialogOpen}
         onClose={() => setLocationDialogOpen(false)}
+        triggerButton={<button className="hidden" />}
       />
     </>
   );

@@ -28,20 +28,24 @@ export default function Cart() {
         ) : (
           <>
             <TopBannerSlides />
-            <div className="flex gap-4 lg:gap-8 flex-wrap px-4 lg:px-0">
-              <div className="flex flex-col gap-8 flex-1 max-w-full">
+            <div className="flex gap-4 flex-col md:flex-row lg:gap-8 flex-wrap px-4 lg:px-0 w-full">
+              <div className="flex flex-col gap-8 flex-1s md:w-[440px] lg:w-[calc(100%-(428px+32px))]">
                 <CartItems />
                 <RecommendedSection />
                 <SuggestedProductsSection />
               </div>
-              <div className="flex flex-col gap-8 flex-1">
-                <OrderSummary />
+              <div className="flex flex-col gap-8 flex-1 md:min-w-[260px] lg:w-[428px] lg:min-w-[428px]">
+                <div className="order-3 md:-order-1">
+                  <OrderSummary />
+                </div>
                 {/* checkout button */}
                 <CheckoutButton />
                 {/* coupon input box */}
                 <CouponInputCard />
                 {/* savings and benefits */}
-                <SavingsAdnBenefitsCard />
+                <div className="-order-1 md:order-3">
+                  <SavingsAdnBenefitsCard />
+                </div>
               </div>
             </div>
           </>

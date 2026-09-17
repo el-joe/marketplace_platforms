@@ -40,7 +40,7 @@ export default function ProductImagesPreview({ product }: Props) {
       {/* pagination thumbs */}
       <div className="block min-w-17">
         <Swiper
-          className="p-2! productSwiperThumbs h-full"
+          className="p-2! productSwiperThumbs h-full max-h-[550px]!"
           onSwiper={setThumbsSwiper}
           spaceBetween={"9px"}
           slidesPerView={"auto"}
@@ -134,6 +134,7 @@ export default function ProductImagesPreview({ product }: Props) {
               swiper.params.navigation.nextEl = nextRef.current;
             }
           }}
+          spaceBetween={2}
           slidesPerView={1}
           thumbs={{
             swiper: thumbsSwiper,

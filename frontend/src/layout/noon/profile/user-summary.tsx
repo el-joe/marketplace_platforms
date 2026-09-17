@@ -7,9 +7,7 @@ import useLocale from "@/src/hooks/use-locale";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/src/hooks/use-auth";
 
-type Props = {};
-
-export default function UserSummary({}: Props) {
+export default function UserSummary() {
   const t = useTranslations("profile");
 
   const { profile } = useAuth();
@@ -22,8 +20,8 @@ export default function UserSummary({}: Props) {
     <Card className="p-4">
       <div className="flex items-center gap-3">
         <div className="size-12 rounded-full bg-light flex items-center justify-center text-white font-semibold shrink-0 uppercase">
-          {splitUserName?.[0][0]}
-          {splitUserName?.[1][0]}
+          {splitUserName?.[0]?.[0]}
+          {splitUserName?.[1]?.[0]}
         </div>
         <div>
           <p className="font-bold">
