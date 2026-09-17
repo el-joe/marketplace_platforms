@@ -11,7 +11,11 @@ use App\View\Components\Form\PriceInput;
 use App\View\Components\Form\RichEditor;
 use App\View\Components\Form\Select;
 use App\Events\SubOrderPlaced;
+use App\Events\SubOrderShipped;
+use App\Events\SubOrderDelivered;
 use App\Listeners\InvalidateVendorDashboardCache;
+use App\Listeners\NotifyCustomerOnShipment;
+use App\Listeners\CaptureCodOnDelivery;
 use App\Services\GiftCardService;
 use App\Services\AppContextService;
 use App\Services\Shared\PageBuilderService;
@@ -144,6 +148,8 @@ class AppServiceProvider extends ServiceProvider
         Coupon::observe(CouponObserver::class);
 
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
+        Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
+        Event::listen(SubOrderDelivered::class, CaptureCodOnDelivery::class);
 
         \Illuminate\Support\Facades\Notification::extend('push', function ($app) {
             return $app->make(VendorPushChannel::class);

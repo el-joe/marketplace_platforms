@@ -377,7 +377,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-08 🟠 Order and sub-order status state machine, delivery and COD capture
+## P-08 🟠 Order and sub-order status state machine, delivery and COD capture --DONE
 
 **Problem**
 - There are two different "deliver" implementations:

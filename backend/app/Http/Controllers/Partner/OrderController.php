@@ -30,6 +30,11 @@ class OrderController extends Controller
     use HasDataTable;
     use HasExport;
 
+    public function __construct(
+        private readonly \App\Services\OrderStateMachine $stateMachine = new \App\Services\OrderStateMachine(),
+    ) {
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
@@ -293,9 +298,8 @@ class OrderController extends Controller
 
         // try {
             DB::transaction(function () use ($request, $subOrder, $vendorId) {
-                $fromStatus = $subOrder->status->value;
-
-                // 1. Update sub_order
+                // 1. Update sub_order (tracking/ETA fields not covered by the
+                // state machine's generic status/timestamp update).
                 $method = $subOrder->shippingMethod;
                 $timezone = $subOrder->warehouse?->country?->timezone ?? 'Asia/Dubai';
 
@@ -304,11 +308,26 @@ class OrderController extends Controller
                     : now()->addDays(5)->toDateString();
 
                 $subOrder->update([
-                    'status' => 'shipped',
                     'tracking_number' => $request->input('tracking_number'),
                     'estimated_delivery_date' => $estimatedDelivery,
-                    'shipped_at' => now(),
                 ]);
+
+                // enhancement.md P-08: go through OrderStateMachine so the
+                // transition is validated, order_items.fulfillment_status
+                // and orders.status roll up, order_status_histories is
+                // written and SubOrderShipped fires (customer notification).
+                $this->stateMachine->transition(
+                    $subOrder,
+                    'shipped',
+                    \App\Enums\CancelActor::Vendor,
+                    [
+                        'vendor_id' => $vendorId,
+                        'vendor_admin' => Auth::guard('vendor')->user()->id,
+                        'tracking_number' => $request->input('tracking_number'),
+                        'carrier_id' => $subOrder->carrier_id,
+                        'action' => 'shipped',
+                    ],
+                );
 
                 // 2. Create shipment record — batch-load variant weights to avoid N+1
                 $variantIds = $subOrder->items->pluck('product_variant_id');
@@ -370,23 +389,10 @@ class OrderController extends Controller
                     ]);
                 }
 
-                // 4. Status history
-                OrderStatusHistory::create([
-                    'order_id' => $subOrder->order_id,
-                    'sub_order_id' => $subOrder->id,
-                    'from_status' => $fromStatus,
-                    'to_status' => 'shipped',
-                    'changed_by_admin_id' => null,
-                    'metadata' => json_encode([
-                        'vendor_id' => $vendorId,
-                        'vendor_admin' => Auth::guard('vendor')->user()->id,
-                        'tracking_number' => $request->input('tracking_number'),
-                        'carrier_id' => $subOrder->carrier_id,
-                        'action' => 'shipped',
-                    ]),
-                ]);
-
-                // 5. TODO: Dispatch OrderShipped notification to customer
+                // 4. Status history is now written by OrderStateMachine::transition()
+                // above. 5. Customer notification is dispatched by the
+                // NotifyCustomerOnShipment listener on the SubOrderShipped
+                // event that transition() fires (no more TODO).
                 Log::info('SubOrder shipped by vendor', [
                     'sub_order' => $subOrder->sub_order_number,
                     'vendor_id' => $vendorId,
@@ -560,33 +566,21 @@ class OrderController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($subOrder) {
-                $fromStatus = $subOrder->status->value;
-                $subOrder->update([
-                    'status' => 'delivered',
-                    'delivered_at' => now(),
-                ]);
-
-                foreach ($subOrder->items as $item) {
-                    $item->update([
-                        'fulfillment_status' => 'delivered',
-                        'return_eligible_until' => now()->addDays(14),
-                    ]);
-                }
-
-                OrderStatusHistory::create([
-                    'order_id' => $subOrder->order_id,
-                    'sub_order_id' => $subOrder->id,
-                    'from_status' => $fromStatus,
-                    'to_status' => 'delivered',
-                    'changed_by_admin_id' => null,
-                    'metadata' => json_encode([
-                        'vendor_id' => $this->vendorId(),
-                        'vendor_admin' => Auth::guard('vendor')->user()->id,
-                        'action' => 'marked_delivered',
-                    ]),
-                ]);
-            });
+            // enhancement.md P-08: through OrderStateMachine so status/item
+            // fulfillment/order rollup/history/event are consistent with
+            // every other delivery path, and return_eligible_until is read
+            // from categories.return_window_days (via the CaptureCodOnDelivery
+            // listener) instead of the old hardcoded 14 days here.
+            $this->stateMachine->transition(
+                $subOrder,
+                'delivered',
+                \App\Enums\CancelActor::Vendor,
+                [
+                    'vendor_id' => $this->vendorId(),
+                    'vendor_admin' => Auth::guard('vendor')->user()->id,
+                    'action' => 'marked_delivered',
+                ],
+            );
         } catch (\Throwable $e) {
             Log::error('Mark delivered failed', ['error' => $e->getMessage(), 'sub_order' => $subOrderNumber]);
             return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء التحديث.'], 500);

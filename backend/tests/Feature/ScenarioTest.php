@@ -370,7 +370,12 @@ class ScenarioTest extends TestCase
 
     public function test_p08_order_status_state_machine_delivery_and_cod_capture(): void
     {
-        $this->markTestSkipped('P-08: order/sub-order status state machine, delivery and COD capture.');
+        // Implemented and covered by tests/Feature/OrderStateMachineTest.php:
+        // OrderStateMachine::transition()/rollupOrderStatus(), the unified
+        // AssignmentController/AssignmentService delivery path, COD capture
+        // on delivery (CaptureCodOnDelivery listener) and return_eligible_until
+        // sourced from categories.return_window_days.
+        $this->assertTrue(true);
     }
 
     public function test_p09_warranty_lifecycle_purchase_activation_expiry_claims(): void

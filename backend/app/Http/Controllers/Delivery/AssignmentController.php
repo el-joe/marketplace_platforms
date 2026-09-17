@@ -27,8 +27,7 @@ class AssignmentController extends Controller
 
     public function __construct(
         private readonly FileService $fileService,
-        private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
-        private readonly \App\Services\Checkout\CouponUsageService $couponUsageService = new \App\Services\Checkout\CouponUsageService(),
+        private readonly \App\Services\Delivery\AssignmentService $assignmentService,
     ) {
     }
 
@@ -115,24 +114,24 @@ class AssignmentController extends Controller
         return view('delivery.assignments.show', compact('assignment'));
     }
 
-    /** Agent accepts the assignment (assigned → accepted). */
+    /** Agent accepts the assignment (assigned → accepted). enhancement.md P-08: delegates to AssignmentService (same code path as the mobile app API). */
     public function accept(DeliveryAssignment $assignment): JsonResponse
     {
         $this->authorizeAssignment($assignment);
 
-        if ($assignment->status !== DeliveryAssignment::STATUS_ASSIGNED) {
+        /** @var DeliveryAgent $agent */
+        $agent = Auth::guard('delivery')->user();
+
+        try {
+            $this->assignmentService->accept($assignment, $agent);
+        } catch (\DomainException|\RuntimeException $e) {
             return response()->json(['message' => __('delivery.messages.assignments.cannot_accept_state')], 422);
         }
-
-        $assignment->update([
-            'status' => DeliveryAssignment::STATUS_ACCEPTED,
-            'accepted_at' => now(),
-        ]);
 
         return response()->json(['success' => true, 'message' => __('delivery.messages.assignments.accepted')]);
     }
 
-    /** Agent marks item as picked up (accepted → picked_up). */
+    /** Agent marks item as picked up (accepted → picked_up). enhancement.md P-08: delegates to AssignmentService. */
     public function pickedUp(Request $request, DeliveryAssignment $assignment): JsonResponse
     {
         $this->authorizeAssignment($assignment);
@@ -146,30 +145,25 @@ class AssignmentController extends Controller
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
-        $assignment->update([
-            'status' => DeliveryAssignment::STATUS_PICKED_UP,
-            'picked_up_at' => now(),
-            'pickup_latitude' => $validated['latitude'] ?? null,
-            'pickup_longitude' => $validated['longitude'] ?? null,
-        ]);
-
-        // Update shipment status
-        if ($assignment->shipment) {
-            $assignment->shipment->update([
-                'status' => 'picked_up',
-                'picked_up_at' => now(),
-            ]);
-        }
-
-        // Transition sub-order status
-        if ($assignment->subOrder) {
-            $assignment->subOrder->update(['status' => 'out_for_delivery']);
-        }
+        $this->assignmentService->pickup(
+            $assignment,
+            (float) ($validated['latitude'] ?? 0),
+            (float) ($validated['longitude'] ?? 0),
+        );
 
         return response()->json(['success' => true, 'message' => __('delivery.messages.assignments.marked_picked_up')]);
     }
 
-    /** Agent delivers — validates OTP, stores proof, updates all related records. */
+    /**
+     * Agent delivers — validates OTP, stores proof, updates all related records.
+     *
+     * enhancement.md P-08: this used to reimplement delivery independently of
+     * the mobile app API (Services\Delivery\AssignmentService::deliver),
+     * which meant COD was captured here but NOT on the mobile path, and
+     * neither path updated order_items.fulfillment_status/orders.status
+     * through validated transitions. Both panels now call the same
+     * AssignmentService::deliver(), so the resulting DB state is identical.
+     */
     public function deliver(Request $request, DeliveryAssignment $assignment): JsonResponse
     {
         $this->authorizeAssignment($assignment);
@@ -211,127 +205,39 @@ class AssignmentController extends Controller
             ], 422);
         }
 
-        // COD amount validation — expected = order total (which includes cod_fee)
-        if ($isCod && $order) {
-            $expectedCents = (int) $order->total;
-            $collectedCents = (int) $validated['cod_amount_collected'];
-            $diffCents = abs($collectedCents - $expectedCents);
-            $diffPct = $expectedCents > 0 ? ($diffCents / $expectedCents) : 0;
+        $agent = Auth::guard('delivery')->user();
 
-            if ($diffCents > 5 && $diffPct > 0.05) {
-                // More than 5% discrepancy — require a note
-                if (empty($validated['discrepancy_note'])) {
-                    $expectedFormatted = number_format($expectedCents, 2);
-                    $collectedFormatted = number_format($collectedCents, 2);
-                    return response()->json([
-                        'message' => __('delivery.messages.assignments.cod_amount_mismatch', [
-                            'collected' => $collectedFormatted,
-                            'expected' => $expectedFormatted,
-                        ]),
-                        'requires_discrepancy_note' => true,
-                        'expected' => $expectedCents,
-                        'collected' => $collectedCents,
-                    ], 422);
-                }
-            }
+        try {
+            $this->assignmentService->deliver(
+                $assignment,
+                $agent,
+                $validated['otp_code'],
+                $request->file('proof_image'),
+                isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+                isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+                isset($validated['cod_amount_collected']) ? (int) $validated['cod_amount_collected'] : null,
+                $validated['discrepancy_note'] ?? null,
+            );
+        } catch (\DomainException $e) {
+            return match ($e->getMessage()) {
+                'cod_amount_required' => response()->json(['message' => __('delivery.messages.assignments.cod_amount_mismatch', ['collected' => 0, 'expected' => 0])], 422),
+                'discrepancy_note_required' => response()->json([
+                    'message' => __('delivery.messages.assignments.cod_amount_mismatch', [
+                        'collected' => (string) ($validated['cod_amount_collected'] ?? 0),
+                        'expected' => (string) ($order?->total ?? 0),
+                    ]),
+                    'requires_discrepancy_note' => true,
+                ], 422),
+                default => response()->json(['message' => $e->getMessage()], 422),
+            };
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => __('delivery.messages.assignments.invalid_otp_remaining', ['remaining' => 0])], 422);
         }
-
-        DB::transaction(function () use ($assignment, $validated, $request, $order, $isCod) {
-            $proofFileId = null;
-
-            if ($request->hasFile('proof_image')) {
-                $file = $this->fileService->store(
-                    $request->file('proof_image'),
-                    DeliveryAssignment::class,
-                    $assignment->id,
-                    'delivery_proof'
-                );
-                $proofFileId = $file->id;
-            }
-
-            $assignmentData = [
-                'status'             => DeliveryAssignment::STATUS_DELIVERED,
-                'delivered_at'       => now(),
-                'otp_verified'       => true,
-                'proof_file_id'      => $proofFileId,
-                'delivery_latitude'  => $validated['latitude'] ?? null,
-                'delivery_longitude' => $validated['longitude'] ?? null,
-            ];
-
-            if ($isCod && isset($validated['cod_amount_collected'])) {
-                $assignmentData['cod_amount_collected'] = (int) $validated['cod_amount_collected'];
-            }
-
-            $assignment->update($assignmentData);
-
-            if ($assignment->shipment) {
-                $assignment->shipment->update([
-                    'status'       => 'delivered',
-                    'delivered_at' => now(),
-                ]);
-            }
-
-            if ($assignment->subOrder) {
-                $assignment->subOrder->update([
-                    'status'       => 'delivered',
-                    'delivered_at' => now(),
-                ]);
-            }
-
-            // Virtual capture for COD — cash physically changed hands
-            if ($isCod && $order) {
-                $order->update(['payment_status' => 'captured']);
-
-                PaymentTransaction::where('order_id', $order->id)
-                    ->where('gateway', 'cod')
-                    ->where('status', 'pending')
-                    ->update(['status' => 'succeeded', 'processed_at' => now()]);
-
-                // enhancement.md P-03 task 5: ledger at capture.
-                $this->ledgerService->postOrderCapture($order, (int) $order->total);
-                // enhancement.md P-04 task 2: COD coupon usage is consumed on
-                // delivery collection, not at placement.
-                $this->couponUsageService->consumeForOrder($order);
-            }
-
-            $assignment->agent?->increment('total_deliveries');
-
-            $agent = Auth::guard('delivery')->user();
-            $agent->loadMissing('country', 'zone');
-            $currency = $agent->country?->currency_code
-                ?? $agent->zone?->country?->currency_code
-                ?? $order?->currency
-                ?? 'AED';
-
-            DeliveryAgentEarning::create([
-                'agent_id'                => $agent->id,
-                'delivery_assignment_id'  => $assignment->id,
-                'order_id'                => $assignment->subOrder?->order_id,
-                'earning_type'            => 'base_fee',
-                'amount'                  => $agent->per_delivery_fee ?? 0,
-                'currency'                => $currency,
-                'status'                  => DeliveryAgentEarningStatus::Pending,
-            ]);
-
-            // COD handling bonus — the agent earns the cod_fee the customer paid
-            if ($isCod && $order && $order->cod_fee > 0) {
-                DeliveryAgentEarning::create([
-                    'agent_id'                => $agent->id,
-                    'delivery_assignment_id'  => $assignment->id,
-                    'order_id'                => $assignment->subOrder?->order_id,
-                    'earning_type'            => 'cod_handling',
-                    'amount'            => (int) $order->cod_fee,
-                    'currency'                => $currency,
-                    'status'                  => DeliveryAgentEarningStatus::Pending,
-                    'notes'                   => $validated['discrepancy_note'] ?? null,
-                ]);
-            }
-        });
 
         return response()->json(['success' => true, 'message' => __('delivery.messages.assignments.delivery_confirmed')]);
     }
 
-    /** Agent marks delivery as failed. */
+    /** Agent marks delivery as failed. enhancement.md P-08: delegates to AssignmentService (RTO logic included). */
     public function fail(Request $request, DeliveryAssignment $assignment): JsonResponse
     {
         $this->authorizeAssignment($assignment);
@@ -350,16 +256,21 @@ class AssignmentController extends Controller
             'failure_notes' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'customer_rejection_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $assignment->update([
-            'status' => DeliveryAssignment::STATUS_FAILED,
-            'failed_at' => now(),
-            'failure_reason' => $validated['failure_reason'],
-            'failure_notes' => $validated['failure_notes'] ?? null,
-            'delivery_latitude' => $validated['latitude'] ?? null,
-            'delivery_longitude' => $validated['longitude'] ?? null,
-        ]);
+        try {
+            $this->assignmentService->fail(
+                $assignment,
+                $validated['failure_reason'],
+                $validated['failure_notes'] ?? null,
+                (float) ($validated['latitude'] ?? 0),
+                (float) ($validated['longitude'] ?? 0),
+                $validated['customer_rejection_reason'] ?? null,
+            );
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['success' => true, 'message' => __('delivery.messages.assignments.marked_failed')]);
     }
