@@ -15,9 +15,11 @@ import {
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import { useCartContext } from "@/src/providers/cart-provider";
 import useLocale from "@/src/hooks/use-locale";
 import { useAuthContext } from "@/src/providers/auth-provider";
+import { getAddresses } from "@/src/services/address";
 import SideCategoriesList from "./SideCategoriesList";
 import Logo from "@/src/components/shared/Logo";
 import AddressDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
@@ -81,6 +83,19 @@ const Header = () => {
 
   const splittedName = profile?.name?.split(" ");
 
+  const { data: addresses } = useQuery({
+    queryKey: ["addresses"],
+    queryFn: getAddresses,
+    enabled: isLogged,
+  });
+  const defaultAddress =
+    addresses?.find((address) => address.is_default) ?? addresses?.[0];
+  const deliveryCityName = defaultAddress?.city
+    ? locale === "ar"
+      ? defaultAddress.city.name_ar
+      : defaultAddress.city.name_en
+    : null;
+
   const { cart } = useCartContext();
   return (
     <header className="md:fixed top-0 inset-x-0 z-20 bg-white">
@@ -102,7 +117,7 @@ const Header = () => {
                 title={t("locationButtonLabel")}
               >
                 <MapPinIcon className="me-1" />
-                {t("other")} .<span className="font-thin"> Dubai</span>
+                {t("other")} .<span className="font-thin"> {deliveryCityName ?? t("locationButtonLabel")}</span>
                 <ChevronDownIcon />
               </Button>
             }
@@ -269,7 +284,7 @@ const Header = () => {
                 title={t("locationButtonLabel")}
               >
                 <MapPinIcon className="me-1" />
-                {t("other")} .<span className="font-thin"> Dubai</span>
+                {t("other")} .<span className="font-thin"> {deliveryCityName ?? t("locationButtonLabel")}</span>
                 <ChevronDownIcon />
               </Button>
             }

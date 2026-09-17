@@ -21,7 +21,7 @@ class AddressController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $addresses = $customer->addresses()->orderByDesc('is_default')->get();
+        $addresses = $customer->addresses()->with('city')->orderByDesc('is_default')->get();
 
         return ApiResponse::success(
             AddressResource::collection($addresses),
