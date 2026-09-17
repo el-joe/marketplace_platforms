@@ -10,8 +10,9 @@ use App\Http\Requests\Customer\UpdateCartItemRequest;
 use App\Http\Resources\Customer\CartItemResource;
 use App\Http\Resources\Customer\CartResource;
 use App\Http\Responses\ApiResponse;
+use App\Enums\WalletOwnerType;
 use App\Models\Cart;
-use App\Models\CustomerWallet;
+use App\Models\Wallet;
 use App\Models\WarrantyPlan;
 use App\Services\BannerService;
 use App\Services\Customer\CartService;
@@ -194,8 +195,9 @@ class CartController extends Controller
         $useWallet = $request->boolean('use_wallet');
 
         if ($useWallet) {
-            $wallet = CustomerWallet::where('customer_id', $customer->id)
-                ->where('currency_code', $cart->currency)
+            $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+                ->where('owner_id', $customer->id)
+                ->where('currency', $cart->currency)
                 ->first();
 
             $walletAmount = min($wallet?->balance ?? 0, (int) $cart->estimated_total);
@@ -229,9 +231,12 @@ class CartController extends Controller
 
         $customerCurrency = $customer->country?->currency_code;
 
-        $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+            ->where('owner_id', $customer->id)
+            ->where('currency', $cart->currency)
+            ->first();
         $walletBalance = $wallet?->balance ?? 0;
-        $walletCurrency = $wallet?->currency_code ?? $customerCurrency;
+        $walletCurrency = $wallet?->currency ?? $customerCurrency;
 
         $walletApplicable = $walletBalance > 0 && $walletCurrency === $cart->currency;
 

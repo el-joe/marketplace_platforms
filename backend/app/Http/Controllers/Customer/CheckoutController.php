@@ -27,7 +27,8 @@ use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\CustomerReceiver;
 use App\Models\MarketerContract;
-use App\Models\CustomerWallet;
+use App\Enums\WalletOwnerType;
+use App\Models\Wallet;
 use App\Exceptions\GiftCardCurrencyMismatchException;
 use App\Exceptions\InsufficientWalletBalanceException;
 use App\Models\InventoryMovement;
@@ -432,15 +433,18 @@ class CheckoutController extends Controller
 
         $shipmentGroupsForItems = $this->cartService->buildShippingGroups($cart, $country->id);
 
-        $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
         $orderCurrency = $cart->currency ?? $customer->country?->currency_code;
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+            ->where('owner_id', $customer->id)
+            ->where('currency', $orderCurrency)
+            ->first();
         $walletBalance = $wallet->balance ?? 0;
-        $walletCurrency = $wallet->currency_code ?? $orderCurrency;
-        $walletApplicable = $wallet !== null && $wallet->currency_code === $orderCurrency && $wallet->balance > 0;
+        $walletCurrency = $wallet->currency ?? $orderCurrency;
+        $walletApplicable = $wallet !== null && $wallet->currency === $orderCurrency && $wallet->balance > 0;
 
         $walletInfo = [
             'balance' => $wallet?->balance ?? 0,
-            'currency_code' => $wallet?->currency_code ?? $orderCurrency,
+            'currency_code' => $wallet?->currency ?? $orderCurrency,
             'applicable' => $walletApplicable,
         ];
 
@@ -853,9 +857,12 @@ class CheckoutController extends Controller
         $moneySplitByGroup = $moneySplit['sub_orders'];
 
         if ($isWallet) {
-            $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
+            $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+                ->where('owner_id', $customer->id)
+                ->where('currency', $summary['currency'])
+                ->first();
 
-            if (! $wallet || $wallet->currency_code !== $summary['currency']) {
+            if (! $wallet || $wallet->currency !== $summary['currency']) {
                 return ApiResponse::error(__('common.exceptions.checkout.wallet_currency_mismatch'), [], 422);
             }
 
@@ -1245,8 +1252,11 @@ class CheckoutController extends Controller
 
                 $walletAmountToUse = (int) ($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $order->total : 0));
                 if ($walletAmountToUse > 0) {
-                    $wallet = CustomerWallet::where('customer_id', $customer->id)->first();
-                    if (! $wallet || $wallet->currency_code !== $order->currency) {
+                    $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+                        ->where('owner_id', $customer->id)
+                        ->where('currency', $order->currency)
+                        ->first();
+                    if (! $wallet || $wallet->currency !== $order->currency) {
                         throw new GiftCardCurrencyMismatchException(
                             __('common.exceptions.checkout.wallet_currency_mismatch')
                         );
