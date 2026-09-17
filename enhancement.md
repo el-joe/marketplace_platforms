@@ -823,7 +823,7 @@ These timings are small **only because the dataset is tiny**. Query count grows 
 
 ---
 
-## P-20 🟠 Home / page builder: remove the N+1 and cache correctly
+## P-20 🟠 Home / page builder: remove the N+1 and cache correctly --DONE
 
 **Problem:** `GET {country}/home` runs 304 queries (`files` ×114, `categories` ×43, `brands` ×42) through `Customer/HomeController`, `Customer/PageRendererService.php` and `Shared/PageBuilderService.php`.
 - Block hydrators load relations per block (`hydrateAdImages`, `hydrateImageSlider`, category pills, brand strips, product rows at `:447`, `blockProducts.productVariant.product.images` at `:86`).

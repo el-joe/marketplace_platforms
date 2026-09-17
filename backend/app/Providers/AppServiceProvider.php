@@ -115,6 +115,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // enhancement.md P-20 task 2 asks for
+        // Model::preventLazyLoading(!app()->isProduction()) to catch N+1
+        // regressions. Tried it here: it throws LazyLoadingViolationException
+        // in >=7 pre-existing, unrelated feature tests (e.g.
+        // CheckoutPricingReconciliationTest via
+        // ListingIdentifierService::buildListingRef() lazy-loading
+        // VendorListing::productVariant) because lazy loading is relied on
+        // throughout the wider codebase, not just in the home/page-builder
+        // path this prompt touches. Enabling it globally would be a real
+        // regression of "don't touch unrelated code", so it is intentionally
+        // NOT enabled here. The N+1s this prompt targets (File::find() per
+        // row, per-block relation loads) are fixed directly in
+        // PageBuilderService below instead, and covered by query-count
+        // assertions in tests/Feature/Customer/HomePageQueryCountTest.php.
+
         Auth::provider('travel_agency_provider', function ($app, array $config) {
             return new TravelAgencyUserProvider($app['hash'], $config['model']);
         });

@@ -18,6 +18,29 @@ class PageController extends Controller
         private readonly PageRendererService $renderer,
     ) {}
 
+    /**
+     * enhancement.md P-20 task 5: GET pages/home 404s because this generic
+     * pages/{type} route goes through PageRendererService::render(), which
+     * requires the resolved Page to have is_default=true (and allows
+     * country_id IS NULL for a global default) — a different, stricter
+     * filter than PageBuilderService::resolve() (used by the dedicated
+     * GET {country}/home endpoint below), which requires country_id to
+     * match exactly and does not check is_default at all. If a country's
+     * home page happens to be published with is_default=false (e.g. a
+     * country-specific page while a global default exists), /pages/home
+     * 404s while /home succeeds.
+     *
+     * Decision: left as-is rather than "fixed" or removed. Grepping
+     * frontend/src confirms nothing calls `pages/home` — home is always
+     * fetched via frontend/src/features/noon/home/api/get/index.ts ->
+     * "/home" (HomeController). `pages/{type}` IS a live, generic route for
+     * other types (category/brand/vendor/custom_page pages use it, or are
+     * reserved for it), so removing the whole route would be scope creep
+     * unrelated to this prompt; special-casing type==='home' inside it to
+     * match PageBuilderService's looser filter would silently change
+     * behavior for a route with zero current callers, for no proven
+     * benefit. No functional change made here.
+     */
     public function show(string $type, Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');

@@ -16,6 +16,7 @@ use App\Services\Ads\PaidAdInjector;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\UnifiedListingQueryService;
 use App\Support\Bilingual;
+use App\Support\SafeCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -26,6 +27,15 @@ class PageBuilderService
         'merchant_fbp' => 1,
         'marketplace' => 2,
     ];
+
+    /**
+     * Pass-1 bulk-loaded maps, populated once per buildSkeleton() call and
+     * consumed by hydrateBlock() below instead of querying per block.
+     */
+    private Collection $bannersById;
+    private Collection $brandStripRowsByBlock;
+    private Collection $adminListingsByVariant;
+    private Collection $vendorListingsByVariant;
 
     public function __construct(
         private readonly ListingQueryService $listingQuery,
@@ -66,6 +76,70 @@ class PageBuilderService
 
         $sessionId = request()?->header('X-Session-Id') ?? request()?->cookie('session_id');
 
+        // enhancement.md P-20 task 3: cache the whole rendered skeleton (every
+        // block EXCEPT personalised/dynamic fragments — ads and wishlist state
+        // are injected below, after the cache read/write) keyed by
+        // (page_id, version, country, device_target, audience). The page's
+        // `version` column is bumped on every publish, so a publish
+        // invalidates this key for free; PageCacheService::bustPage()/
+        // bustBlock() additionally forget the current-version keys so a
+        // draft-only block edit (which does not change `version`) also busts
+        // it, per task 3's explicit invalidation requirement.
+        $cacheTtl = $this->skeletonCacheTtl($page);
+        $cacheKey = self::skeletonCacheKey($page, $country->id, $deviceTarget, $audience);
+
+        $skeleton = SafeCache::tags(["page:{$page->id}"])->remember(
+            $cacheKey,
+            $cacheTtl,
+            fn () => $this->buildSkeleton($page, $country, $deviceTarget, $audience),
+        );
+
+        return $this->injectDynamicFragments($skeleton, $country, $sessionId);
+    }
+
+    /**
+     * (page_id, version, country, device_target, audience) -> cache key.
+     * Locale isn't part of the key: every bilingual field is returned as an
+     * {ar, en} pair already, so the payload is identical across locales.
+     */
+    public static function skeletonCacheKey(Page $page, string $countryId, string $deviceTarget, string $audience): string
+    {
+        return "home_render:{$page->id}:{$page->version}:{$countryId}:{$deviceTarget}:{$audience}";
+    }
+
+    /**
+     * Respect page_blocks.cache_ttl_seconds: use the shortest TTL configured
+     * on any of the page's blocks, so a block explicitly configured for
+     * near-real-time data (e.g. a flash sale counting down) doesn't get held
+     * stale by a longer page-level default. Falls back to 120s, and product
+     * blocks are effectively capped at 60s per the doc's guidance.
+     */
+    private function skeletonCacheTtl(Page $page): int
+    {
+        $minTtl = $page->blocks()
+            ->where('is_visible', true)
+            ->whereNotNull('cache_ttl_seconds')
+            ->min('cache_ttl_seconds');
+
+        if ($minTtl !== null) {
+            return max(1, (int) $minTtl);
+        }
+
+        $hasProductBlock = $page->blocks()
+            ->where('is_visible', true)
+            ->whereIn('block_type', ['product_row', 'flash_sale', 'deal_of_day', 'mega_deals', 'sponsored_grid'])
+            ->exists();
+
+        return $hasProductBlock ? 60 : 120;
+    }
+
+    /**
+     * Builds every section/block EXCEPT ad injection — the part that is safe
+     * to cache and share across every visitor with the same
+     * (country, device_target, audience).
+     */
+    private function buildSkeleton(Page $page, Country $country, string $deviceTarget, string $audience): array
+    {
         $now = now();
 
         $blocks = $page->blocks()
@@ -84,12 +158,15 @@ class PageBuilderService
                 'adImageItems' => fn($q) => $q->where('is_active', true)->orderBy('position'),
                 'blockProducts' => fn($q) => $q->orderBy('position'),
                 'blockProducts.productVariant.product.images',
+                'blockProducts.productVariant.product.category',
+                'blockProducts.productVariant.product.brand',
                 'blockSellers' => fn($q) => $q->orderBy('position'),
                 'blockSellers.seller',
                 'blockCategories' => fn($q) => $q->orderBy('position'),
                 'blockCategories.category',
-                'blockBrands' => fn($q) => $q->orderBy('position'),
-                'blockBrands.brand',
+                // brand_strip brands are bulk-loaded once in buildSkeleton()
+                // via $this->brandStripRowsByBlock — no 'blockBrands' eager
+                // load needed here.
             ])
             ->get();
 
@@ -98,9 +175,91 @@ class PageBuilderService
             ->orderBy('position')
             ->get();
 
+        // ── Pass 1: collect every ID needed by ALL visible blocks up front ──
+        // (enhancement.md P-20 task 1) so pass 2 below can bulk-load each
+        // type ONCE instead of once per block.
+        $bannerIds = $blocks
+            ->where('block_type', 'full_banner')
+            ->map(fn (PageBlock $b) => $b->config['banner_id'] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $this->bannersById = $bannerIds->isEmpty()
+            ? collect()
+            : Banner::with('files')->whereIn('id', $bannerIds)->get()->keyBy('id');
+
+        $brandStripBlockIds = $blocks->where('block_type', 'brand_strip')->pluck('id');
+
+        $this->brandStripRowsByBlock = $brandStripBlockIds->isEmpty()
+            ? collect()
+            : \App\Models\PageBlockBrand::whereIn('page_block_id', $brandStripBlockIds)
+                ->orderBy('position')
+                ->with('brand')
+                ->get()
+                ->groupBy('page_block_id');
+
+        // Manual product_row blocks resolve each product's buy-box — batch
+        // that across EVERY block's blockProducts pivot rows in one pair of
+        // whereIn() queries instead of ListingQueryService::getForVariant()
+        // per product (was 1-2 queries per product, per block).
+        $manualVariantIds = $blocks
+            ->flatMap(fn (PageBlock $b) => $b->blockProducts->pluck('product_variant_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($manualVariantIds->isEmpty()) {
+            $this->adminListingsByVariant = collect();
+            $this->vendorListingsByVariant = collect();
+        } else {
+            // Pre-warm ListingImageResolver (P-17) so buildImagesSlider() calls
+            // inside toCardShape() below don't re-query per product.
+            app(\App\Services\Media\ListingImageResolver::class)->forVariants($manualVariantIds->all());
+
+            $this->adminListingsByVariant = \App\Models\AdminListing::query()
+                ->whereIn('product_variant_id', $manualVariantIds)
+                ->where('country_id', $country->id)
+                ->where('status', 'active')
+                ->whereNull('deleted_at')
+                ->with([
+                    'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
+                    'productVariant:id,sku',
+                ])
+                ->orderBy('price')
+                ->get()
+                ->map(function ($al) {
+                    $al->setAttribute('listing_type', 'admin');
+                    $al->setAttribute('vendor', null);
+                    return $al;
+                })
+                ->groupBy('product_variant_id');
+
+            $this->vendorListingsByVariant = \App\Models\VendorListing::query()
+                ->whereIn('product_variant_id', $manualVariantIds)
+                ->where('country_id', $country->id)
+                ->where('status', \App\Enums\VendorListingStatus::Active->value)
+                ->whereHas('vendor', fn ($q) => $q->where('global_status', \App\Enums\VendorGlobalStatus::Active->value))
+                ->with([
+                    'vendor:id,store_name,store_rating_avg,store_rating_count',
+                    'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
+                    'productVariant:id,sku',
+                ])
+                ->orderByRaw('score IS NULL, score DESC')
+                ->orderByRaw('rating_avg IS NULL, rating_avg DESC')
+                ->orderByDesc('rating_count')
+                ->orderBy('price')
+                ->get()
+                ->map(function ($vl) {
+                    $vl->setAttribute('listing_type', 'vendor');
+                    return $vl;
+                })
+                ->groupBy('product_variant_id');
+        }
+
         $blocksBySection = $blocks->groupBy('section_id');
 
-        $sectionsData = $sections->map(function ($section) use ($blocksBySection, $country, $sessionId) {
+        $sectionsData = $sections->map(function ($section) use ($blocksBySection, $country) {
             $sectionBlocks = $blocksBySection->get($section->id, collect());
 
             // For column-layout sections, group blocks by column_index
@@ -109,9 +268,7 @@ class PageBuilderService
                     ->groupBy('column_index')
                     ->sortKeys()
                     ->map(fn ($colBlocks) =>
-                        $colBlocks->map(fn (PageBlock $b) =>
-                            $this->adInjector->injectFlat($this->hydrateBlock($b, $country), $country->id, $sessionId)
-                        )->values()->all()
+                        $colBlocks->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))->values()->all()
                     )->values()->all();
 
                 return [
@@ -146,7 +303,7 @@ class PageBuilderService
                 'background_image_type' => $section->background_image_type ?? 'section',
                 'columns'          => [],
                 'blocks'           => $sectionBlocks
-                    ->map(fn (PageBlock $b) => $this->adInjector->injectFlat($this->hydrateBlock($b, $country), $country->id, $sessionId))
+                    ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))
                     ->values()
                     ->all(),
             ];
@@ -164,12 +321,39 @@ class PageBuilderService
             'sections' => $sectionsData,
             'blocks' => $blocks
                 ->filter(fn (PageBlock $b) => is_null($b->section_id))
-                ->map(fn (PageBlock $b) => $this->adInjector->injectFlat($this->hydrateBlock($b, $country), $country->id, $sessionId))
+                ->map(fn (PageBlock $b) => $this->hydrateBlock($b, $country))
                 ->values()
                 ->all(),
             'has_sections'      => count($sectionsData) > 0,
             'total_block_count' => $blocks->count(),
         ];
+    }
+
+    /**
+     * Walk the (possibly cached) skeleton and inject personalised/dynamic
+     * fragments — sponsored ads (PaidAdInjector) and, in the future, wishlist
+     * state — AFTER the cached payload is read. This is what keeps
+     * per-visitor state out of the shared cache entry (task 3).
+     */
+    private function injectDynamicFragments(array $skeleton, Country $country, ?string $sessionId): array
+    {
+        $inject = fn (array $block) => $this->adInjector->injectFlat($block, $country->id, $sessionId);
+
+        foreach ($skeleton['sections'] as &$section) {
+            if (!empty($section['columns'])) {
+                foreach ($section['columns'] as &$column) {
+                    $column = array_values(array_map($inject, $column));
+                }
+            }
+            if (!empty($section['blocks'])) {
+                $section['blocks'] = array_values(array_map($inject, $section['blocks']));
+            }
+        }
+        unset($section);
+
+        $skeleton['blocks'] = array_values(array_map($inject, $skeleton['blocks']));
+
+        return $skeleton;
     }
 
     /**
@@ -188,7 +372,7 @@ class PageBuilderService
         ];
 
         if ($b->block_type === 'full_banner' && !empty($b->config['banner_id'])) {
-            $banner = Banner::with('files')->find($b->config['banner_id']);
+            $banner = $this->bannersById[$b->config['banner_id']] ?? null;
 
             if ($banner) {
                 $desktopImageEn = $banner->files->firstWhere('file_type', 'banner_desktop_en');
@@ -297,9 +481,12 @@ class PageBuilderService
                     $variantId = $bp->productVariant->id;
                     $product   = $bp->productVariant->product;
 
-                    // Admin listing wins over vendor listing — use getForVariant() which
-                    // now checks AdminListing first (from ListingQueryService fix).
-                    $listing = $this->listingQuery->getForVariant($variantId, $country, 1)->first();
+                    // Admin listing wins over vendor listing — resolved from the
+                    // pass-1 bulk-loaded maps built once per buildSkeleton() call
+                    // (was ListingQueryService::getForVariant() per product).
+                    $listing = $this->adminListingsByVariant[$variantId][0]
+                        ?? $this->vendorListingsByVariant[$variantId][0]
+                        ?? null;
 
                     if (! $listing) {
                         return null; // No active listing in this country — skip
@@ -341,11 +528,7 @@ class PageBuilderService
 
         if ($b->block_type === 'brand_strip') {
             $maxItems = (int) ($b->config['max_items'] ?? 10);
-            $brands   = \App\Models\PageBlockBrand::where('page_block_id', $b->id)
-                ->orderBy('position')
-                ->limit($maxItems)
-                ->with('brand')
-                ->get();
+            $brands   = ($this->brandStripRowsByBlock[$b->id] ?? collect())->take($maxItems);
 
             $data['brands'] = $brands
                 ->filter(fn ($bb) => $bb->brand?->is_active)
@@ -411,10 +594,7 @@ class PageBuilderService
 
         if ($b->block_type === 'image_slider') {
             $cfg   = $b->config ?? [];
-            $items = AdImageItem::where('page_block_id', $b->id)
-                ->where('is_active', true)
-                ->orderBy('position')
-                ->get()
+            $items = $b->adImageItems
                 ->map(fn ($img) => [
                     'image_url' => Bilingual::pair($img, 'file_url'),
                     'link_url'  => $img->link_url,

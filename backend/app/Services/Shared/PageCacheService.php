@@ -32,6 +32,10 @@ class PageCacheService
             Country::where('is_active', true)->pluck('id')
                 ->each(fn ($cid) => Cache::forget("page_block:{$block->id}:{$cid}"));
         }
+
+        if ($block->page) {
+            $this->bustSkeleton($block->page);
+        }
     }
 
     // ── All blocks on a page ──────────────────────────────────────────────────
@@ -52,6 +56,38 @@ class PageCacheService
 
         if ($page->page_type !== 'home' && $page->reference_id && $countryId) {
             Cache::forget("browse_page_blocks:{$page->page_type}:{$countryId}:{$page->reference_id}");
+        }
+
+        $this->bustSkeleton($page);
+    }
+
+    /**
+     * enhancement.md P-20 task 3: bust PageBuilderService's per-
+     * (page_id, version, country, device_target, audience) skeleton cache.
+     * Uses the `page:{id}` cache tag when the store supports tags (redis/
+     * memcached); on the 'database' driver (no tagging) it falls back to
+     * enumerating the small, finite (device_target x audience) grid for the
+     * page's own version — draft edits are pre-publish and don't bump
+     * `version`, so this explicit forget is what invalidates them (a
+     * publish bumps `version`, which invalidates for free via the cache key
+     * itself).
+     */
+    private function bustSkeleton(Page $page): void
+    {
+        if (Cache::getStore() instanceof \Illuminate\Cache\TaggableStore) {
+            Cache::tags(["page:{$page->id}"])->flush();
+            return;
+        }
+
+        foreach (['all', 'desktop', 'mobile', 'app'] as $deviceTarget) {
+            foreach (['guest', 'authenticated'] as $audience) {
+                Cache::forget(\App\Services\Shared\PageBuilderService::skeletonCacheKey(
+                    $page,
+                    (string) $page->country_id,
+                    $deviceTarget,
+                    $audience,
+                ));
+            }
         }
     }
 
