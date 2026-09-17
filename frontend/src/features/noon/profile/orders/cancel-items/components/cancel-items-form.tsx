@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import Image from "next/image";
 import { InfoIcon } from "lucide-react";
 import Card from "@/src/components/shared/Card";

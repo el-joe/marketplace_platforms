@@ -16,6 +16,12 @@
     "cart": "عربة التسوق",
     "cartLinkLabel": "عربة التسوق",
     "searchPlaceholder": "ابحث عن شيء ما",
+    "clearInputAria": "مسح الحقل",
+    "removeItemAria": "إزالة العنصر",
+    "noImageAlt": "لا توجد صورة",
+    "pressEnterLabel": "اضغط",
+    "enterKeyLabel": "Enter",
+    "orClickToSearchHint": "أو اضغط أعلاه للبحث عن \"{query}\"",
     "recentlySearched": "اخر شيء تم البحث عنه",
     "trendingSearches": "عمليات البحث الشائعة",
     "clearAll": "مسح الكل",
@@ -654,6 +660,7 @@
     "loading": "جارٍ التحميل..."
   },
   "cart": {
+    "freeShipping": "شحن مجاني",
     "getItBy": "احصل عليه بحلول",
     "orderIn": "اطلب خلال",
     "additionalServices": "الخدمات الإضافية",
@@ -889,6 +896,8 @@
     },
     "packageDetails": {
       "premiumBadge": "رحلة استكشافية مميزة",
+      "breadcrumbHome": "الرئيسية",
+      "breadcrumbTravel": "رحلات",
       "previousSlide": "الشريحة السابقة",
       "nextSlide": "الشريحة التالية",
       "guidelinesTitle": "إرشادات السفر",
@@ -1092,11 +1101,15 @@
     "filters": "فلترة",
     "moreOptions": "خيارات بحث اخرى",
     "country": "مصر",
+    "home": "الرئيسية",
+    "classifieds": "المصنفات",
     "pageTitle": "المركبات وقطع الغيار وإكسسوارات السيارات للبيع في مصر",
+    "globalPageTitle": "بيع وشراء أي شيء ({count})",
     "sortRelevant": "الأكثر تطابقا",
     "sortNewest": "الأحدث أولاً",
     "sortPriceAsc": "السعر: من الأقل للأعلى",
     "sortPriceDesc": "السعر: من الأعلى للأقل",
+    "for": "لـ {type}",
     "reset": "حذف الخيارات",
     "viewMore": "شاهد المزيد",
     "viewLess": "عرض أقل",
@@ -1129,7 +1142,8 @@
     "used": "مستعمل",
     "gasoline": "بنزين",
     "dealership": "وارد وكاله",
-    "gccSpecs": "مواصفات خليجية"
+    "gccSpecs": "مواصفات خليجية",
+    "recommendedForYou": "موصى به لك"
   },
   "marketers": {
     "pageTitle": "الماركترز | نون",
@@ -1152,6 +1166,7 @@
   "marketerProfile": {
     "pageTitleFallback": "ماركتر | نون",
     "pageDescriptionFallback": "تسوّق منتجات مختارة من هذا الماركتر على نون",
+    "brandName": "نون",
     "selectedProducts": "المنتجات المختارة",
     "productsCount": "{count} منتج",
     "emptyProducts": "لا توجد منتجات مضافة بعد",
@@ -1174,5 +1189,31 @@
     "qrScanHint": "امسح الكود للوصول لصفحة {name}",
     "download": "تنزيل",
     "close": "إغلاق"
+  },
+  "liveStreams": {
+    "pageTitle": "البث المباشر",
+    "pageSubtitle": "شاهد البث المباشر والقادم والسابق",
+    "liveNow": "مباشر الآن",
+    "upcoming": "قادم",
+    "pastStreams": "بث سابق",
+    "statusLive": "مباشر",
+    "statusScheduled": "مجدول",
+    "statusEnded": "انتهى",
+    "endedOn": "انتهى {date}",
+    "emptyTitle": "لا يوجد بث حتى الآن",
+    "emptyBody": "تابعنا قريبًا لبث مباشر جديد",
+    "notFound": "البث غير موجود",
+    "noCommentsYet": "لا توجد تعليقات بعد. كن أول من يعلق!",
+    "streamEnded": "انتهى البث",
+    "startingSoon": "البث سيبدأ قريبًا",
+    "hasEnded": "انتهى البث",
+    "watching": "يشاهدون",
+    "likes": "إعجاب",
+    "totalViewers": "إجمالي المشاهدين",
+    "liveChat": "دردشة مباشرة",
+    "comments": "تعليقات",
+    "guestNamePlaceholder": "اسمك (اختياري)",
+    "commentPlaceholder": "اكتب شيئًا…",
+    "send": "إرسال"
   }
 }

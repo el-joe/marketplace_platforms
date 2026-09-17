@@ -16,6 +16,12 @@
     "cart": "Cart",
     "cartLinkLabel": "Cart",
     "searchPlaceholder": "What are you looking for?",
+    "clearInputAria": "Clear input",
+    "removeItemAria": "Remove item",
+    "noImageAlt": "No image available",
+    "pressEnterLabel": "Press",
+    "enterKeyLabel": "Enter",
+    "orClickToSearchHint": "or click above to search for \"{query}\"",
     "recentlySearched": "Recently searched",
     "trendingSearches": "Trending searches",
     "clearAll": "Clear all",
@@ -654,6 +660,7 @@
     "loading": "Loading..."
   },
   "cart": {
+    "freeShipping": "Free shipping",
     "getItBy": "Get it by",
     "orderIn": "Order in",
     "additionalServices": "Additional Services",
@@ -889,6 +896,8 @@
     },
     "packageDetails": {
       "premiumBadge": "Premium Expedition",
+      "breadcrumbHome": "Home",
+      "breadcrumbTravel": "Travel",
       "previousSlide": "Previous slide",
       "nextSlide": "Next slide",
       "guidelinesTitle": "Travel Guidelines",
@@ -1091,6 +1100,7 @@
     "above2m": "Above 2,000,000",
     "filters": "Filters",
     "moreOptions": "More Options",
+    "country": "Egypt",
     "home": "Home",
     "classifieds": "Classifieds",
     "pageTitle": "{category} for Sale ({count})",
@@ -1156,6 +1166,7 @@
   "marketerProfile": {
     "pageTitleFallback": "Marketer | noon",
     "pageDescriptionFallback": "Shop curated products from this marketer on noon",
+    "brandName": "noon",
     "selectedProducts": "Selected Products",
     "productsCount": "{count} products",
     "emptyProducts": "No products added yet",
@@ -1178,5 +1189,31 @@
     "qrScanHint": "Scan the code to access {name}'s page",
     "download": "Download",
     "close": "Close"
+  },
+  "liveStreams": {
+    "pageTitle": "Live Streams",
+    "pageSubtitle": "Watch live, upcoming, and past broadcasts",
+    "liveNow": "Live Now",
+    "upcoming": "Upcoming",
+    "pastStreams": "Past Streams",
+    "statusLive": "LIVE",
+    "statusScheduled": "Scheduled",
+    "statusEnded": "Ended",
+    "endedOn": "Ended {date}",
+    "emptyTitle": "No streams yet",
+    "emptyBody": "Check back soon for upcoming live broadcasts",
+    "notFound": "Stream not found",
+    "noCommentsYet": "No comments yet. Be the first!",
+    "streamEnded": "Stream Ended",
+    "startingSoon": "Stream starting soon",
+    "hasEnded": "Stream has ended",
+    "watching": "watching",
+    "likes": "likes",
+    "totalViewers": "total viewers",
+    "liveChat": "Live Chat",
+    "comments": "Comments",
+    "guestNamePlaceholder": "Your name (optional)",
+    "commentPlaceholder": "Say something…",
+    "send": "Send"
   }
 }

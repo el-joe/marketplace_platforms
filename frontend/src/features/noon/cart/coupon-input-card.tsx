@@ -7,7 +7,8 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import React, { useState } from "react";
 import CouponsListModal from "./coupons-list-modal";
 import { useCartContext } from "@/src/providers/cart-provider";

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";

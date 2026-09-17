@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { format } from "date-fns";
 import { CalendarIcon, UsersIcon } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";

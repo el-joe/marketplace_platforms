@@ -155,7 +155,7 @@ export default function CartItem({
             {isFreeShipping && (
               <p className="text-gray text-xs flex gap-1">
                 <TruckIcon size={"16px"} />
-                <span>Free shipping</span>
+                <span>{t("freeShipping")}</span>
               </p>
             )}
             {item.vendor.store_name && (

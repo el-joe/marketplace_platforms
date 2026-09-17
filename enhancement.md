@@ -985,7 +985,7 @@ Not covered: routes with parameters (show/edit pages), POST/PUT/DELETE actions, 
 
 # PHASE H — FRONTEND i18n & DYNAMIC CONTENT (request items 4 & 5)
 
-## P-25 🟠 Every frontend page translated (ar/en) and using `useLocale` from `@/src/hooks/use-locale`
+## P-25 🟠 Every frontend page translated (ar/en) and using `useLocale` from `@/src/hooks/use-locale` --DONE (partial, see commit)
 
 **Findings**
 1. **11 files import `useLocale` directly from `next-intl`** instead of `import useLocale from "@/src/hooks/use-locale";`:
