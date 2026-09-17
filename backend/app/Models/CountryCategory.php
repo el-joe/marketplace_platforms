@@ -35,6 +35,15 @@ class CountryCategory extends Model
         'commission_fbn_fixed'=> 'integer',
     ];
 
+    protected static function booted(): void
+    {
+        // enhancement.md P-21 task 5: a country_categories change (a
+        // category being made available/unavailable for a country) must
+        // invalidate the nav/browse category caches, which are per-country.
+        static::saved(fn () => \App\Services\Customer\CategoryService::flushCache());
+        static::deleted(fn () => \App\Services\Customer\CategoryService::flushCache());
+    }
+
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);

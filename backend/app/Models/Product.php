@@ -68,6 +68,20 @@ class Product extends Model
         'status' => ProductStatus::class,
     ];
 
+    protected static function booted(): void
+    {
+        // enhancement.md P-21 task 5: a product moving categories (or being
+        // created/deleted) changes the per-category product/brand counts
+        // rolled up from product_country_buybox, so the nav/browse category
+        // caches must be invalidated.
+        static::saved(function (self $product) {
+            if ($product->wasRecentlyCreated || $product->isDirty('category_id') || $product->isDirty('brand_id')) {
+                \App\Services\Customer\CategoryService::flushCache();
+            }
+        });
+        static::deleted(fn () => \App\Services\Customer\CategoryService::flushCache());
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

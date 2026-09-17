@@ -848,7 +848,7 @@ These timings are small **only because the dataset is tiny**. Query count grows 
 
 ---
 
-## P-21 🟠 Categories list and tree: 861 queries
+## P-21 🟠 Categories list and tree: 861 queries --DONE
 
 **Problem:** `GET {country}/categories` (`Api/Customer/CategoryController` → `UnifiedCategoryService`/`CategoryService`, `CategoryTreeResource`, `BrowseCategoryResource`) runs, per category:
 - a `files` lookup (×328);

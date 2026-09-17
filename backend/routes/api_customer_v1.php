@@ -172,11 +172,12 @@ use Illuminate\Support\Facades\Route;
                 'id' => $category->id,
             ], 301);
         }
-        )->name('customer.categories.show.legacy');
+        )->name('customer.categories.show.legacy')->where('slug', '^(?!browse$).+');
 
         // ── Categories (public) ───────────────────────────────────────────────
         Route::prefix('categories')->name('customer.categories.')->group(function (): void {
             Route::get('/', [CategoryController::class, 'index'])->name('index');
+            Route::get('browse', [CategoryController::class, 'browse'])->name('browse');
         });
 
         // ── Page Renderer (public) ────────────────────────────────────────────
