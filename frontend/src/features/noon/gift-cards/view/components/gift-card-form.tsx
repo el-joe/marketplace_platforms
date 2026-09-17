@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import toast from "react-hot-toast";
 import Card from "@/src/components/shared/Card";
 import { useGiftCardActions } from "../../helpers/use-gift-card-actions";
 import { getPaymentOptions } from "../../api/gift-cards.actions";
@@ -11,6 +12,7 @@ import AmountSelector from "./amount-selector";
 import QuantitySelector from "./quantity-selector";
 import ReceiverForm from "./receiver-form";
 import PaymentMethodSelector from "./payment-method-selector";
+import OfflinePaymentProofCard from "./offline-payment-proof-card";
 import PriceSummary from "./price-summary";
 import type { GiftCardBatch, PaymentOption } from "../../helpers/types";
 import { useAuthContext } from "@/src/providers/auth-provider";
@@ -49,7 +51,13 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
   );
   const [selectedGatewayId, setSelectedGatewayId] = useState("");
 
+  const [offlineProofFile, setOfflineProofFile] = useState<File | null>(null);
+  const [offlineProofNote, setOfflineProofNote] = useState("");
+
   const selectedImage = images[selectedThemeIndex] ?? images[0];
+
+  const selectedGateway = paymentOptions.find((o) => o.id === selectedGatewayId);
+  const isOfflinePaymentMethod = selectedGateway?.type === "offline";
 
   const totalAmount = amount * quantity;
   const canSubmit =
@@ -57,6 +65,7 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
     receiverName.trim() !== "" &&
     receiverEmail.trim() !== "" &&
     selectedGatewayId !== "" &&
+    (!isOfflinePaymentMethod || !!offlineProofFile) &&
     !isSubmitting;
 
   useEffect(() => {
@@ -120,16 +129,26 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
     availableBatches.find((b) => Number(b.amount) === amount)?.id ?? batch.id;
 
   const handleSubmit = () => {
+    if (isOfflinePaymentMethod && !offlineProofFile) {
+      toast.error(t("fileRequiredError"));
+      return;
+    }
+
     protectedWithAuth(async () => {
       setIsSubmitting(true);
       try {
-        await purchaseGiftCards({
-          gift_card_batch_id: selectedBatchId,
-          country_payment_gateway_id: selectedGatewayId,
-          quantity,
-          recipient_name: receiverName,
-          recipient_email: receiverEmail,
-        });
+        await purchaseGiftCards(
+          {
+            gift_card_batch_id: selectedBatchId,
+            country_payment_gateway_id: selectedGatewayId,
+            quantity,
+            recipient_name: receiverName,
+            recipient_email: receiverEmail,
+          },
+          isOfflinePaymentMethod
+            ? { file: offlineProofFile, note: offlineProofNote }
+            : undefined,
+        );
       } catch {
         // Toasted in the hook — keep the form as-is so the user can retry.
       } finally {
@@ -173,6 +192,15 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
             onSelect={setSelectedGatewayId}
             error={paymentOptionsError ?? undefined}
           />
+
+          {isOfflinePaymentMethod && (
+            <OfflinePaymentProofCard
+              file={offlineProofFile}
+              setFile={setOfflineProofFile}
+              note={offlineProofNote}
+              setNote={setOfflineProofNote}
+            />
+          )}
 
           <PriceSummary
             quantity={quantity}

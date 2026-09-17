@@ -73,12 +73,20 @@ class CustomerGiftCardStoreController extends Controller
             return ApiResponse::error($e->getMessage(), $e->errors());
         }
 
-        foreach ($result['purchases'] as $purchase) {
-            SendGiftCardDeliveryJob::dispatch($purchase->id);
+        // Only dispatch delivery immediately when payment was actually
+        // captured synchronously (wallet). Offline gateways (bank transfer,
+        // etc.) and redirect gateways (thawani, paytabs) stay 'pending' —
+        // GiftCardPurchaseService::dispatchPendingDeliveries() fires once an
+        // admin approves the offline payment or the gateway webhook confirms.
+        if ($result['order']->payment_status?->value === 'captured') {
+            foreach ($result['purchases'] as $purchase) {
+                SendGiftCardDeliveryJob::dispatch($purchase->id);
+            }
         }
 
         return ApiResponse::success([
             'order_id' => $result['order']->id,
+            'order_number' => $result['order']->order_number,
             'purchases' => GiftCardPurchaseResource::collection(collect($result['purchases'])),
         ], __('customer_api.gift_card_store.purchased'), 201);
     }

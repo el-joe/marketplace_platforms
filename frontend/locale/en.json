@@ -662,7 +662,14 @@
     "myGiftCardsEmptyMessage": "You haven't purchased any gift cards yet.",
     "giftCardPurchasedOnLabel": "Purchased",
     "giftCardPendingDelivery": "Pending delivery",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "offlinePaymentUploadTitle": "Upload payment proof",
+    "offlinePaymentUploadDesc": "Please attach a copy of your invoice/payment receipt. This is required to purchase a gift card with this payment method.",
+    "chooseFile": "Choose file",
+    "note": "Note",
+    "notePlaceholder": "Add any additional details about your payment",
+    "fileRequiredError": "Please attach a payment proof file to continue.",
+    "proofUploadFailedFallback": "Your gift card order was placed, but we couldn't upload your payment proof. Please try again from your order history."
   },
   "cart": {
     "freeShipping": "Free shipping",

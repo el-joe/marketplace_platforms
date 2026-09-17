@@ -91,6 +91,13 @@ class WebhookController extends Controller
                         // enhancement.md P-03 task 5: ledger at capture.
                         $this->ledgerService->postOrderCapture($order, (int) $transaction->amount);
                         $this->couponUsageService->consumeForOrder($order);
+
+                        // Gift-card purchase orders paid via a redirect
+                        // gateway (thawani/paytabs) only capture here, once
+                        // the webhook confirms — release the gift card
+                        // code(s) now. No-op for regular (non-gift-card)
+                        // orders, which have no GiftCardPurchase rows.
+                        (new \App\Services\GiftCardPurchaseService())->dispatchPendingDeliveries($order->fresh());
                     } elseif (!$alreadyTerminal && in_array($result->resultingStatus, ['failed', 'cancelled', 'declined'], true)) {
                         $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
                         $this->rollbackService->rollback($order, 'Payment gateway webhook reported failure');

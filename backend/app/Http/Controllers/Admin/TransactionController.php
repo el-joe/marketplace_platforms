@@ -243,6 +243,12 @@ class TransactionController extends Controller
             (new \App\Services\Checkout\CouponUsageService())->consumeForOrder($order);
         });
 
+        // Gift-card purchase orders don't fulfill/ship — instead, approving
+        // their offline payment is what releases the (still-undelivered)
+        // gift card code(s) to the recipient. Regular orders have no
+        // matching GiftCardPurchase rows, so this is a no-op for them.
+        (new \App\Services\GiftCardPurchaseService())->dispatchPendingDeliveries($order->fresh());
+
         return response()->json(['message' => 'Bank transfer confirmed.', 'order_number' => $order->order_number]);
     }
 
