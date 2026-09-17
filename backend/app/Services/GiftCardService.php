@@ -27,14 +27,19 @@ class GiftCardService
         $batch = null;
         $plainPins = [];
 
-        DB::transaction(function () use ($data, $admin, &$batch, &$plainPins) {
+        // Storefront FAQ copy promises "valid for 1 year" — default to that
+        // window when an admin leaves expires_at blank, so cards actually
+        // honor the claim instead of never expiring.
+        $expiresAt = $data['expires_at'] ?? now()->addYear()->toDateString();
+
+        DB::transaction(function () use ($data, $admin, $expiresAt, &$batch, &$plainPins) {
             $batch = GiftCardBatch::create([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'amount' => $data['amount'],
                 'currency_code' => $data['currency_code'],
                 'quantity' => $data['quantity'],
-                'expires_at' => $data['expires_at'] ?? null,
+                'expires_at' => $expiresAt,
                 'created_by_admin_id' => $admin->id,
             ]);
 
@@ -57,7 +62,7 @@ class GiftCardService
                     'remaining_balance' => $data['amount'],
                     'currency_code' => $data['currency_code'],
                     'status' => ($data['activate_immediately'] ?? false) ? 'active' : 'inactive',
-                    'expires_at' => $data['expires_at'] ?? null,
+                    'expires_at' => $expiresAt,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

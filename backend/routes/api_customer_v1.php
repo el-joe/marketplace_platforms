@@ -38,6 +38,7 @@ use App\Http\Controllers\Customer\SearchController;
 use App\Http\Controllers\Customer\SupportTicketController;
 use App\Http\Controllers\Customer\AccountController;
 use App\Http\Controllers\Api\Customer\CustomerGiftCardStoreController;
+use App\Http\Controllers\Api\Customer\PageContentController;
 use App\Http\Controllers\Api\Customer\QrCodeController;
 use App\Http\Controllers\Api\Customer\NotificationController;
 use App\Http\Controllers\Api\Customer\OrderController as ApiOrderController;
@@ -264,10 +265,6 @@ use Illuminate\Support\Facades\Route;
             Route::post('reset-password', [AuthController::class, 'resetPassword'])
                 ->middleware('throttle:5,1')
                 ->name('reset-password');
-
-            // Email verification — token from email link, no auth guard needed
-            Route::post('verify-email', [AuthController::class, 'verifyEmail'])
-                ->name('verify-email');
         });
 
         // ── Gift Card Storefront (browse & purchase gift cards) ──
@@ -284,6 +281,11 @@ use Illuminate\Support\Facades\Route;
             // Single batch lookup for the storefront detail/purchase page (public, no auth required).
             // Registered last so it doesn't shadow the static routes above.
             Route::get('{batchId}', [CustomerGiftCardStoreController::class, 'show'])->name('show');
+        });
+
+        // ── Page content (public, admin-managed banners & FAQs for storefront pages) ──
+        Route::prefix('page-content')->name('customer.api.page-content.')->group(function (): void {
+            Route::get('gift-cards', [PageContentController::class, 'giftCards'])->name('gift-cards');
         });
 
         // ── Marketer Contracts (view + accept before checkout) ──
@@ -321,9 +323,6 @@ use Illuminate\Support\Facades\Route;
             Route::prefix('auth')->name('customer.auth.')->group(function (): void {
                 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
                 Route::get('me', [AuthController::class, 'me'])->name('me');
-                Route::post('resend-verification', [AuthController::class, 'resendVerification'])
-                    ->middleware('throttle:3,1')
-                    ->name('resend-verification');
             });
 
             // Payment transaction history (read-only)

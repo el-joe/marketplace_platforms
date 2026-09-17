@@ -3,6 +3,8 @@ import type {
   ApiEnvelope,
   GiftCardBatch,
   GiftCardPurchasesResponse,
+  GiftCardsPageContent,
+  PaymentOptionsResponse,
   PurchaseGiftCardPayload,
 } from "../helpers/types";
 
@@ -48,6 +50,44 @@ export async function getMyGiftCardPurchases(
     `/gift-card-store/my-purchases?page=${page}`,
   );
   return envelope.data;
+}
+
+/**
+ * Feature-only: GET /checkout/payment-options — active payment gateways for the
+ * customer's country. Shared with regular checkout; reused as-is here since it has
+ * no cart/checkout-session dependency (just country + optional order_total).
+ */
+export async function getPaymentOptions(
+  orderTotal?: number,
+): Promise<PaymentOptionsResponse> {
+  const query = orderTotal ? `?order_total=${orderTotal}` : "";
+  const envelope = await fetchInstance<ApiEnvelope<PaymentOptionsResponse>>(
+    `/checkout/payment-options${query}`,
+  );
+  return envelope.data;
+}
+
+/**
+ * Shared/public: GET /page-content/gift-cards — admin-managed banners
+ * (`gift_cards_hero` / `gift_cards_redeem` placements) and FAQs (context
+ * `gift_cards`) backing the gift cards landing page. Never throws on
+ * transport/API failure — the landing page falls back to its hardcoded
+ * default banners and hides the FAQ section rather than breaking the page.
+ */
+export async function getGiftCardsPageContent(): Promise<GiftCardsPageContent> {
+  const empty: GiftCardsPageContent = {
+    banners: { gift_cards_hero: null, gift_cards_redeem: null },
+    faqs: [],
+  };
+
+  try {
+    const envelope = await fetchInstance<ApiEnvelope<GiftCardsPageContent>>(
+      "/page-content/gift-cards",
+    );
+    return envelope.data ?? empty;
+  } catch {
+    return empty;
+  }
 }
 
 /** Feature-only: POST /gift-card-store/purchase — purchases a gift card batch for a recipient. */

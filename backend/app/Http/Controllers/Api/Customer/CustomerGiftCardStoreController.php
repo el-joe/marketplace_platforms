@@ -7,7 +7,7 @@ use App\Http\Requests\Api\Customer\PurchaseGiftCardRequest;
 use App\Http\Resources\Api\Customer\GiftCardBatchResource;
 use App\Http\Resources\Api\Customer\GiftCardPurchaseResource;
 use App\Http\Responses\ApiResponse;
-use App\Jobs\SendGiftCardNotificationJob;
+use App\Jobs\SendGiftCardDeliveryJob;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
 use App\Services\GiftCardPurchaseService;
@@ -73,8 +73,8 @@ class CustomerGiftCardStoreController extends Controller
             return ApiResponse::error($e->getMessage(), $e->errors());
         }
 
-        foreach ($result['cards'] as $card) {
-            SendGiftCardNotificationJob::dispatch($card->id);
+        foreach ($result['purchases'] as $purchase) {
+            SendGiftCardDeliveryJob::dispatch($purchase->id);
         }
 
         return ApiResponse::success([
@@ -108,7 +108,7 @@ class CustomerGiftCardStoreController extends Controller
             return ApiResponse::error(__('customer_api.gift_card_store.max_resend_reached'), [], 422);
         }
 
-        SendGiftCardNotificationJob::dispatch($purchase->gift_card_id);
+        SendGiftCardDeliveryJob::dispatch($purchase->id);
 
         return ApiResponse::success(null, __('customer_api.gift_card_store.delivery_email_resent'));
     }

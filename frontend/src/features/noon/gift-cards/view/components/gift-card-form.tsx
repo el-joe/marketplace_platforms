@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Card from "@/src/components/shared/Card";
 import { useGiftCardActions } from "../../helpers/use-gift-card-actions";
+import { getPaymentOptions } from "../../api/gift-cards.actions";
 import SelectedThemePreview from "./selected-theme-preview";
 import ThemeSelector from "./theme-selector";
 import AmountSelector from "./amount-selector";
 import QuantitySelector from "./quantity-selector";
 import ReceiverForm from "./receiver-form";
+import PaymentMethodSelector from "./payment-method-selector";
 import PriceSummary from "./price-summary";
-import type { GiftCardBatch } from "../../helpers/types";
+import type { GiftCardBatch, PaymentOption } from "../../helpers/types";
 import { useAuthContext } from "@/src/providers/auth-provider";
 
 type Props = {
@@ -40,6 +42,13 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
   const [receiverEmail, setReceiverEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [paymentOptions, setPaymentOptions] = useState<PaymentOption[]>([]);
+  const [isLoadingPaymentOptions, setIsLoadingPaymentOptions] = useState(true);
+  const [paymentOptionsError, setPaymentOptionsError] = useState<string | null>(
+    null,
+  );
+  const [selectedGatewayId, setSelectedGatewayId] = useState("");
+
   const selectedImage = images[selectedThemeIndex] ?? images[0];
 
   const totalAmount = amount * quantity;
@@ -47,7 +56,47 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
     totalAmount > 0 &&
     receiverName.trim() !== "" &&
     receiverEmail.trim() !== "" &&
+    selectedGatewayId !== "" &&
     !isSubmitting;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setIsLoadingPaymentOptions(true);
+    setPaymentOptionsError(null);
+
+    getPaymentOptions(totalAmount)
+      .then(({ payment_options }) => {
+        if (cancelled) return;
+        setPaymentOptions(payment_options);
+
+        const available = payment_options.find((option) => option.is_available);
+        if (available) {
+          setSelectedGatewayId((current) =>
+            payment_options.some((o) => o.id === current && o.is_available)
+              ? current
+              : available.id,
+          );
+        } else {
+          setSelectedGatewayId("");
+        }
+
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPaymentOptions([]);
+        setSelectedGatewayId("");
+        setPaymentOptionsError(t("noPaymentMethodsAvailable"));
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPaymentOptions(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalAmount]);
 
   const handleBuyingForMyselfChange = (value: boolean) => {
     setBuyingForMyself(value);
@@ -65,11 +114,9 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
     protectedWithAuth(async () => {
       setIsSubmitting(true);
       try {
-        // TODO: country_payment_gateway_id — the form has no payment-method
-        // selector yet. This will fail validation until one is added.
         await purchaseGiftCards({
           gift_card_batch_id: selectedBatchId,
-          country_payment_gateway_id: "",
+          country_payment_gateway_id: selectedGatewayId,
           quantity,
           recipient_name: receiverName,
           recipient_email: receiverEmail,
@@ -108,6 +155,14 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
             onReceiverNameChange={setReceiverName}
             receiverEmail={receiverEmail}
             onReceiverEmailChange={setReceiverEmail}
+          />
+
+          <PaymentMethodSelector
+            isLoading={isLoadingPaymentOptions}
+            options={paymentOptions}
+            selectedId={selectedGatewayId}
+            onSelect={setSelectedGatewayId}
+            error={paymentOptionsError ?? undefined}
           />
 
           <PriceSummary

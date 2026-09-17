@@ -21,7 +21,7 @@ class Faq extends Model
     use HasUuids;
     use SoftDeletes;
 
-    public const CONTEXTS = ['seller', 'product_ads', 'display_ads'];
+    public const CONTEXTS = ['seller', 'product_ads', 'display_ads', 'gift_cards'];
 
     protected $fillable = [
         'context',

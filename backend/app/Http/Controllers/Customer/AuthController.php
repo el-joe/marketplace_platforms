@@ -8,12 +8,10 @@ use App\Http\Requests\Customer\Auth\LoginRequest;
 use App\Http\Requests\Customer\Auth\RefreshTokenRequest;
 use App\Http\Requests\Customer\Auth\RegisterRequest;
 use App\Http\Requests\Customer\Auth\ResetPasswordRequest;
-use App\Http\Requests\Customer\Auth\VerifyEmailRequest;
 use App\Enums\CustomerStatus;
 use App\Enums\DeviceTokenPlatform;
 use App\Http\Resources\Customer\CustomerResource;
 use App\Http\Responses\ApiResponse;
-use App\Jobs\SendVerificationEmailJob;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerOtpToken;
@@ -56,8 +54,6 @@ class AuthController extends Controller
 
             return $customer;
         });
-
-        SendVerificationEmailJob::dispatch($customer);
 
         $tokens = $this->issueTokenPair($customer);
 
@@ -163,39 +159,6 @@ class AuthController extends Controller
             new CustomerResource(auth('customer')->user()),
             __('common.exceptions.auth.profile_retrieved')
         );
-    }
-
-    // ── Email Verification ────────────────────────────────────────────────────
-
-    public function verifyEmail(VerifyEmailRequest $request): JsonResponse
-    {
-        $otp = CustomerOtpToken::where('token', $request->token)
-            ->where('type', 'email_verification')
-            ->whereNull('used_at')
-            ->first();
-
-        if (!$otp || !$otp->isValid()) {
-            return ApiResponse::error(__('common.exceptions.auth.invalid_verification_token'), [], 422);
-        }
-
-        $otp->update(['used_at' => now()]);
-        $otp->customer->update(['email_verified_at' => now()]);
-
-        return ApiResponse::success(null, __('common.exceptions.auth.email_verified'));
-    }
-
-    public function resendVerification(Request $request): JsonResponse
-    {
-        /** @var Customer $customer */
-        $customer = auth('customer')->user();
-
-        if ($customer->email_verified_at !== null) {
-            return ApiResponse::error(__('common.exceptions.auth.email_already_verified'), [], 422);
-        }
-
-        SendVerificationEmailJob::dispatch($customer);
-
-        return ApiResponse::success(null, __('common.exceptions.auth.verification_email_sent'));
     }
 
     // ── Forgot Password ───────────────────────────────────────────────────────

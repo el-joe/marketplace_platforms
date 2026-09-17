@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderStatus;
+use App\Mail\GiftCardDeliveryMail;
 use App\Models\Customer;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
@@ -10,6 +13,8 @@ use App\Models\Order;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -76,7 +81,11 @@ class GiftCardPurchaseService
                 'order_number' => $this->generateOrderNumber(),
                 'customer_id' => $buyer->id,
                 'country_id' => $buyer->country_id,
-                'status' => 'completed',
+                // Payment is not actually captured/verified here (see purchase() note
+                // below) — the order must not be marked as a finished/completed order
+                // until payment is confirmed. 'placed' matches the initial status used
+                // by the regular checkout flow before payment capture.
+                'status' => OrderStatus::Placed->value,
                 'currency' => $batch->currency_code,
                 'subtotal' => $totalAmount,
                 'discount' => 0,
@@ -87,7 +96,9 @@ class GiftCardPurchaseService
                 'total' => $totalAmount,
                 'wallet_amount_used' => 0,
                 'payment_method' => $gatewayCode,
-                'payment_status' => 'pending',
+                // Honest until a gateway/webhook or admin confirms the charge —
+                // no real payment capture happens in this flow yet (see class docblock).
+                'payment_status' => OrderPaymentStatus::Pending->value,
                 'placed_at' => now(),
                 'shipping_address_snapshot' => [],
                 'ip_address' => request()->ip(),
@@ -131,23 +142,35 @@ class GiftCardPurchaseService
     }
 
     /**
-     * Called by the delivery job after payment has been confirmed for the purchase's order.
+     * Delivers (or re-delivers, on resend) a purchased card to its recipient.
+     *
+     * The original batch PIN is hashed-only and never recoverable (see
+     * GiftCardService::generateBatch), so every delivery — including resends —
+     * mints a brand-new plain PIN, hashes it into the card, and emails the
+     * plaintext immediately. Nothing plaintext is ever persisted.
      */
     public function deliverCard(GiftCardPurchase $purchase): void
     {
-        DB::transaction(function () use ($purchase) {
+        $plainPin = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+
+        DB::transaction(function () use ($purchase, $plainPin) {
+            $card = GiftCard::where('id', $purchase->gift_card_id)->lockForUpdate()->first();
+
+            if ($card) {
+                $card->pin_hash = Hash::make($plainPin);
+                $card->delivery_sent_at = now();
+                $card->save();
+            }
+
             $purchase->delivery_status = 'sent';
             $purchase->delivered_at = now();
             $purchase->increment('delivery_attempts');
             $purchase->save();
-
-            $purchase->giftCard()->update(['delivery_sent_at' => now()]);
         });
 
-        // Dispatch: Mail::to($purchase->recipient_email)->send(new GiftCardDeliveryMail($purchase))
-        // The plain PIN is not stored after batch generation. For purchased cards, either
-        // re-generate/re-hash the PIN at purchase time and cache the plain value briefly
-        // for delivery, or send code-only delivery and require PIN reset before redemption.
+        $purchase->refresh()->load(['giftCard', 'batch', 'buyer']);
+
+        Mail::to($purchase->recipient_email)->send(new GiftCardDeliveryMail($purchase, $plainPin));
     }
 
     public function getPurchaseHistory(Customer $customer): LengthAwarePaginator
