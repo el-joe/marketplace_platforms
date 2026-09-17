@@ -15,6 +15,8 @@ class WishlistResource extends JsonResource
         $listing = $this->vendorListing;
         $variant = $listing?->productVariant;
         $product = $variant?->product;
+        $images = $variant ? app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id) : [];
+        $thumbnail = $images[0]->url ?? null;
 
         return [
             'id'              => $this->id,
@@ -31,7 +33,9 @@ class WishlistResource extends JsonResource
                 'id'        => $product->id,
                 'name'      => Bilingual::pair($product, 'name'),
                 'slug'      => $product->slug,
-                'thumbnail' => $product->images?->first()?->url ?? null,
+                'thumbnail' => $thumbnail,
+                'image'     => $thumbnail ? ['url' => $thumbnail, 'alt' => $images[0]->alt] : null,
+                'images'    => array_map(fn ($i) => $i->toArray(), $images),
             ] : null,
             'vendor'          => $listing?->vendor ? [
                 'id'         => $listing->vendor->id,

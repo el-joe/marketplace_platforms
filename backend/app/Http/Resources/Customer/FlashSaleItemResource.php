@@ -20,8 +20,10 @@ class FlashSaleItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         $listing = $this->vendorListing;
-        $product = $listing?->productVariant?->product;
-        $image = $product?->images?->firstWhere('is_primary', true) ?? $product?->images?->first();
+        $variant = $listing?->productVariant;
+        $product = $variant?->product;
+        $images = $variant ? app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id) : [];
+        $imageUrl = $images[0]->url ?? null;
 
         return [
             'id' => $this->id,
@@ -29,7 +31,7 @@ class FlashSaleItemResource extends JsonResource
                 'id' => $product?->id,
                 'name' => $product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null],
                 'slug' => $product?->slug,
-                'image' => $image?->url,
+                'image' => $imageUrl,
             ],
             'flash_price' => (int) $this->flash_price,
             'original_price' => (int) $this->original_price,

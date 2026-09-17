@@ -99,6 +99,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GiftCardService::class);
         $this->app->singleton(AppContextService::class, fn () => new AppContextService());
         $this->app->singleton(\App\Services\Customer\LoyaltyService::class);
+        $this->app->singleton(\App\Services\Media\ListingImageResolver::class);
 
         // Replace Laravel's built-in DatabaseChannel with our custom one that
         // writes to the platform's non-standard notifications table schema
@@ -146,6 +147,7 @@ class AppServiceProvider extends ServiceProvider
         WarrantyPurchase::observe(WarrantyPurchaseObserver::class);
         SubOrder::observe(SubOrderObserver::class);
         Coupon::observe(CouponObserver::class);
+        \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
 
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
         Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);

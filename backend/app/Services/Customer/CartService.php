@@ -15,6 +15,7 @@ use App\Models\Customer;
 use App\Models\CountryShippingSetting;
 use App\Models\VendorListing;
 use App\Services\AppContextService;
+use App\Services\Media\ListingImageResolver;
 use App\Services\ShippingMethodResolverService;
 
 class CartService
@@ -41,6 +42,7 @@ class CartService
         private readonly CheckoutCalculationService $calculationService,
         private readonly AppContextService $appContextService,
         private readonly ShippingMethodResolverService $shippingMethodResolver,
+        private readonly ListingImageResolver $imageResolver,
     ) {
     }
 
@@ -579,7 +581,19 @@ class CartService
 
         $groups = $items->groupBy('selected_shipping_method_id');
 
-        return $groups->map(function ($groupItems) use ($countryId) {
+        $variantIds = $items->map(function (CartItem $item) {
+            $isMarketer = (bool) $item->marketer_listing_id;
+            $isVendor   = !$isMarketer && (bool) $item->vendor_listing_id;
+            $listing    = $isMarketer
+                ? $item->marketerListing
+                : ($isVendor ? $item->vendorListing : $item->adminListing);
+
+            return $listing?->productVariant?->id;
+        })->filter()->unique()->values();
+
+        $imagesByVariant = $this->imageResolver->forVariants($variantIds);
+
+        return $groups->map(function ($groupItems) use ($countryId, $imagesByVariant) {
             $method = $groupItems->first()->selectedShippingMethod;
 
             $groupSubtotal = $groupItems->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
@@ -607,7 +621,7 @@ class CartService
                 'is_free_shipping' => $isFreeShipping,
                 'group_subtotal' => $groupSubtotal,
                 'items_count' => $groupItems->count(),
-                'items' => $groupItems->map(function (CartItem $item) use ($method) {
+                'items' => $groupItems->map(function (CartItem $item) use ($method, $imagesByVariant) {
                     $isMarketer = (bool) $item->marketer_listing_id;
                     $isVendor   = !$isMarketer && (bool) $item->vendor_listing_id;
                     $listing    = $isMarketer
@@ -616,14 +630,9 @@ class CartService
                     $listingType = $isMarketer ? 'marketer' : ($isVendor ? 'vendor' : 'admin');
                     $variant = $listing?->productVariant;
                     $product = $variant?->product;
-                    // Try variant-specific image first; fall back to product-level (variant-agnostic) image.
-                    $variantImage  = $variant?->images?->firstWhere('is_primary', true)
-                        ?? $variant?->images?->first();
-                    $productImage  = $product?->images
-                        ?->whereNull('product_variant_id')
-                        ->sortBy('position')
-                        ->first();
-                    $primaryImage  = $variantImage ?? $productImage;
+                    // ListingImageResolver applies the variant-first / product-fallback rule.
+                    $images = $variant ? ($imagesByVariant[$variant->id] ?? []) : [];
+                    $primaryImageUrl = $images[0]->url ?? null;
 
                     return [
                         'id' => $item->id,
@@ -635,7 +644,9 @@ class CartService
                         'product_name_ar' => $product?->name_ar,
                         'max_order_quantity' => $listing?->max_order_quantity,
                         'variant_name' => ($variant && $product) ? $variant->setRelation('product', $product)->displayName() : $variant?->variant_name,
-                        'primary_image' => $primaryImage?->path,
+                        'primary_image' => $primaryImageUrl,
+                        'image' => $primaryImageUrl ? ['url' => $primaryImageUrl, 'alt' => $images[0]->alt ?? ['ar' => null, 'en' => null]] : null,
+                        'images' => array_map(fn ($i) => $i->toArray(), $images),
                         'listing_id' => $isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id),
                         'listing_type' => $listingType,
                         'vendor' => $isVendor ? [

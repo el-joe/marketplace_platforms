@@ -708,7 +708,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 Data reality in the dump: 137 images. 116 are product-level, 9 are variant-level (only **3 of 106 variants** have their own images), and **12 rows have both `product_id` and `product_variant_id` NULL** (orphans). The fallback is therefore used for most listings today, and it must work.
 
-## P-17 🔴 Backend: one image resolver, applied to every API
+## P-17 🔴 Backend: one image resolver, applied to every API --DONE
 
 **Problem (evidence)**
 

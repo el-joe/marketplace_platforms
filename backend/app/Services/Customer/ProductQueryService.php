@@ -17,6 +17,7 @@ class ProductQueryService
 {
     public function __construct(
         private readonly SponsoredProductService $sponsored,
+        private readonly \App\Services\Media\ListingImageResolver $imageResolver,
     ) {
     }
 
@@ -145,10 +146,17 @@ class ProductQueryService
     ): array {
         $wishlistIds = $this->wishlistIds();
 
+        // Batched, not per-item: two queries total for every buy-box variant
+        // on this page (ListingImageResolver — enhancement.md P-17 task 4),
+        // instead of the removed correlated per-row image subqueries.
+        $variantIds = collect($paginator->items())->pluck('buy_box_variant_id')->filter()->unique()->values();
+        $imagesByVariant = $this->imageResolver->forVariants($variantIds);
+
         $items = ProductListResource::collection($paginator->load('images'))
-            ->map(function (ProductListResource $r) use ($wishlistIds) {
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
+                $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
                 return $r->toArray(request());
             })
             ->toArray();
@@ -187,19 +195,12 @@ class ProductQueryService
             ." WHERE pv_b.product_id = products.id AND vl_b.country_id = ? AND vl_b.status = ? AND vl_b.deleted_at IS NULL"
             ." ORDER BY FIELD(vl_b.global_system_type,'express_fbn','merchant_fbp','marketplace'), vl_b.price ASC LIMIT 1)";
 
-        $vlImage = fn(string $col) =>
-            '(SELECT pi.'.$col.' FROM vendor_listings vl_b'
-            .' JOIN product_variants pv_b ON pv_b.id = vl_b.product_variant_id'
-            .' JOIN product_images pi ON pi.product_variant_id = pv_b.id'
-            ." WHERE pv_b.product_id = products.id AND vl_b.country_id = ? AND vl_b.status = ? AND vl_b.deleted_at IS NULL"
-            ." ORDER BY FIELD(vl_b.global_system_type,'express_fbn','merchant_fbp','marketplace'), vl_b.price ASC, pi.position ASC LIMIT 1)";
-
-        $alImage = fn(string $col) =>
-            '(SELECT pi.'.$col.' FROM admin_listings al_b'
-            .' JOIN product_variants pv_b ON pv_b.id = al_b.product_variant_id'
-            .' JOIN product_images pi ON pi.product_variant_id = pv_b.id'
-            ." WHERE pv_b.product_id = products.id AND al_b.country_id = ? AND al_b.status = 'active' AND al_b.deleted_at IS NULL"
-            .' ORDER BY al_b.price ASC, pi.position ASC LIMIT 1)';
+        // NOTE: image resolution is NOT done with correlated subqueries here.
+        // A JOIN on product_images (variant-scoped only) can never express the
+        // variant-first/product-fallback rule and silently drops rows for
+        // variants without their own images. buildProductsPayload() resolves
+        // buy_box_variant_id -> images via ListingImageResolver in two batched
+        // queries after pagination instead (enhancement.md P-17 task 4).
 
         // ── Category default shipping method (fallback when a listing has no
         // primary_shipping_method_id cached — e.g. ListingShippingResolver never
@@ -270,16 +271,6 @@ class ProductQueryService
             // ── buy_box_variant_id ────────────────────────────────────────────
             ->selectRaw(
                 'COALESCE('.$al('pv_b.id').', '.$vl('pv_b.id').', '.$ml('pv_b.id').') as buy_box_variant_id',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_image_path ────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$alImage('path').', '.$vlImage('path').', '.$mlImage('path').') as buy_box_variant_image_path',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_image_disk ────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$alImage('disk').', '.$vlImage('disk').', '.$mlImage('disk').') as buy_box_variant_image_disk',
                 [$country->id, $country->id, 'active', $country->id],
             )
             // ── admin_listing_count (for UI badges) ───────────────────────────

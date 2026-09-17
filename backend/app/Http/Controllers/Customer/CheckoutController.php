@@ -1764,7 +1764,9 @@ class CheckoutController extends Controller
     {
         $variant = $listing->productVariant;
         $product = $variant->product;
-        $thumbnail = $product->images->firstWhere('is_primary', true)?->url ?? $product->images->first()?->url;
+
+        $images = app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id);
+        $thumbnail = $images[0]->url ?? null;
 
         return [
             'listing_id' => $listing->id,
@@ -1778,6 +1780,10 @@ class CheckoutController extends Controller
             'condition' => $listing->condition,
             'global_system_type' => $listing instanceof VendorListing ? $listing->global_system_type?->value : 'express_fbn',
             'thumbnail_url' => $thumbnail,
+            'primary_image_url' => $thumbnail,
+            'image' => $thumbnail ? ['url' => $thumbnail, 'alt' => $images[0]->alt] : null,
+            'images' => array_map(fn ($i) => $i->toArray(), $images),
+            'variant_id' => $variant->id,
             'brand_name' => $product->brand?->name_en,
             'category_name' => $product->category?->name_en,
         ];

@@ -19,6 +19,7 @@ class SearchService
         private readonly ProductQueryService $productQuery,
         private readonly ListingQueryService $listings,
         private readonly UnifiedCategoryService $unifiedCategories,
+        private readonly \App\Services\Media\ListingImageResolver $imageResolver,
     ) {
     }
 
@@ -39,9 +40,9 @@ class SearchService
         $builder = $this->listings->baseSearchQuery($country, $query)
             ->with([
                 'vendor:id,store_name,store_rating_avg',
+                // Images are resolved in bulk below via ListingImageResolver
+                // (variant-first / product-fallback rule), not eager-loaded here.
                 'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
-                'productVariant.images' => fn ($q) => $q->orderBy('position')->limit(1),
-                'productVariant.product.images' => fn ($q) => $q->orderBy('position')->limit(1),
                 'productVariant.product.category:id,name_en,name_ar,slug',
                 'productVariant.product.customAttributes',
                 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
@@ -64,6 +65,12 @@ class SearchService
 
         $wishlistIds = $this->listings->wishlistListingIds($customerId ?? auth('customer')->id());
 
+        // Pre-warm the resolver's memo/cache for every variant on this page
+        // so toCardShape()'s per-listing gallery() calls below don't re-query.
+        $this->imageResolver->forVariants(
+            collect($paginator->items())->pluck('productVariant.id')->filter()->unique()->values()
+        );
+
         $items = [];
         foreach ($paginator as $listing) {
             $product = $listing->productVariant->product;
@@ -79,6 +86,9 @@ class SearchService
 
         // Prepend admin listings (platform stock always surfaces first).
         $adminListings = $this->adminListingSearch($country, $query, 4);
+        $this->imageResolver->forVariants(
+            $adminListings->pluck('productVariant.id')->filter()->unique()->values()
+        );
 
         $adminItems = $adminListings->map(function (AdminListing $al) use ($country, $wishlistIds) {
             $product = $al->productVariant->product;
@@ -208,6 +218,7 @@ class SearchService
             ->select([
                 'vl.id as listing_id',
                 'p.id as product_id',
+                'pv.id as variant_id',
                 'p.slug',
                 'p.name_en',
                 'p.name_ar',
@@ -218,17 +229,13 @@ class SearchService
             ->limit(10)
             ->get();
 
-        $productIds = $rows->pluck('product_id')->unique()->values()->all();
-        $images = \Illuminate\Support\Facades\DB::table('product_images')
-            ->whereIn('product_id', $productIds)
-            ->orderByRaw('product_variant_id IS NOT NULL DESC')
-            ->orderBy('position')
-            ->get(['product_id', 'path', 'disk'])
-            ->unique('product_id')
-            ->keyBy('product_id');
+        // The suggested LISTING's own variant, never "any variant of the product"
+        // (enhancement.md P-17 — a card must never show another variant's image).
+        $variantIds = $rows->pluck('variant_id')->unique()->values();
+        $imagesByVariant = $this->imageResolver->forVariants($variantIds);
 
-        $productSuggestions = $rows->map(function ($row) use ($images) {
-            $image = $images->get($row->product_id);
+        $productSuggestions = $rows->map(function ($row) use ($imagesByVariant) {
+            $primaryImage = $imagesByVariant[$row->variant_id][0]->url ?? null;
 
             $isAr = app()->getLocale() === 'ar';
             $productName = $isAr ? $row->name_ar : $row->name_en;
@@ -241,7 +248,7 @@ class SearchService
                 'name' => trim(collect([$productName, $variantDetail])->filter()->implode(' ')),
                 'vendor' => $row->store_name,
                 'type' => 'product',
-                'primary_image' => $image ? \Illuminate\Support\Facades\Storage::disk($image->disk)->url($image->path) : null,
+                'primary_image' => $primaryImage,
             ];
         });
 

@@ -71,6 +71,7 @@ class ListingController extends Controller
                 ->whereIn('product_variant_id', $variantIds)
                 ->where('country_id', $country->id)
                 ->where('status', 'active')
+                ->whereHas('productVariant.product')
                 ->with([
                     'marketer:id,name,marketer_type',
                     'productVariant.images',
@@ -232,6 +233,10 @@ class ListingController extends Controller
             ->select('admin_listings.*')
             ->where('admin_listings.country_id', $country->id)
             ->where('admin_listings.status', AdminListingStatus::Active->value)
+            // A listing whose variant or product was soft-deleted after the
+            // listing was created must never surface (was a 500 on
+            // `GET {country}/catalog-listings` — enhancement.md P-17 task 7).
+            ->whereHas('productVariant.product')
             ->with([
                 'productVariant.images',
                 'productVariant.product.images',
@@ -263,6 +268,9 @@ class ListingController extends Controller
             ->where('country_id', $country->id)
             ->where('status', VendorListingStatus::Active->value)
             ->whereNull('deleted_at')
+            // See buildAdminQuery() for why this guard exists (soft-deleted
+            // variant/product must never surface — was a 500).
+            ->whereHas('productVariant.product')
             ->with([
                 'productVariant.images',
                 'productVariant.product.images',
@@ -311,6 +319,7 @@ class ListingController extends Controller
     {
         $query = AdminListing::where('country_id', $country->id)
             ->where('status', AdminListingStatus::Active->value)
+            ->whereHas('productVariant.product')
             ->with([
                 'productVariant.images',
                 'productVariant.product.images',

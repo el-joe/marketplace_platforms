@@ -465,6 +465,10 @@ class PageRendererService
 
         $variantIds = $blockProducts->pluck('product_variant_id')->filter()->all();
 
+        // Pre-warm the resolver so toMixedCardShape()'s per-item gallery()
+        // calls below don't re-query per product (ListingImageResolver).
+        app(\App\Services\Media\ListingImageResolver::class)->forVariants($variantIds);
+
         // ── Resolve buy-box per variant: admin first, vendor fallback ─────────
         $adminByVariant = \App\Models\AdminListing::query()
             ->whereIn('product_variant_id', $variantIds)
@@ -576,6 +580,10 @@ class PageRendererService
             ->limit($maxProducts)
             ->get();
 
+        app(\App\Services\Media\ListingImageResolver::class)->forVariants(
+            $submissions->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
+        );
+
         return $submissions
             ->filter(fn ($s) =>
                 $s->vendorListing
@@ -662,6 +670,10 @@ class PageRendererService
             ->limit($maxItems)
             ->get();
 
+        app(\App\Services\Media\ListingImageResolver::class)->forVariants(
+            $submissions->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
+        );
+
         $items = $submissions
             ->filter(fn($s) => $s->vendorListing)
             ->map(function (FlashSaleSubmission $s) use ($flashSale) {
@@ -729,7 +741,10 @@ class PageRendererService
             return null;
         }
 
-        $image = $product->images->firstWhere('is_primary', true) ?? $product->images->first();
+        $variantId = $listing->productVariant?->id;
+        $imageUrl = $variantId
+            ? app(\App\Services\Media\ListingImageResolver::class)->primary($variantId)
+            : null;
         $comparePrice = (int) ($listing->compare_at_price ?? 0);
         $discountPct = $comparePrice > 0
             ? round((($comparePrice - $listing->price) / $comparePrice) * 100, 2)
@@ -739,7 +754,7 @@ class PageRendererService
             'title' => $cfg['title'] ?? null,
             'product' => [
                 'name' => Bilingual::pair($product, 'name'),
-                'image' => $image?->url,
+                'image' => $imageUrl,
                 'price' => (int) $listing->price,
                 'compare_at_price' => $listing->compare_at_price !== null ? (int) $listing->compare_at_price : null,
                 'discount_pct' => $discountPct,
