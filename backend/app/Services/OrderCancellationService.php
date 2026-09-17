@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTOs\Refund\RefundScope;
 use App\Enums\CancelActor;
 use App\Enums\InventoryMovementType;
 use App\Models\InventoryMovement;
@@ -11,7 +12,6 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\PaymentTransaction;
-use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
@@ -84,6 +84,7 @@ class OrderCancellationService
         private readonly LoyaltyService $loyaltyService = new LoyaltyService(),
         private readonly LedgerService $ledgerService = new LedgerService(),
         private readonly PaymentService $paymentService = new PaymentService(),
+        private readonly RefundService $refundService = new RefundService(),
     ) {}
 
     /**
@@ -416,38 +417,30 @@ class OrderCancellationService
             return;
         }
 
-        // enhancement.md P-06 task 1: minimal-correct refund handling ahead
-        // of P-07's generalized RefundService. We deliberately do NOT
-        // dispatch Jobs\RefundProcessingJob here — as of this prompt it
-        // ALSO unconditionally credits the wallet on top of the gateway
-        // refund (the exact double-refund bug P-07 is scoped to fix), which
-        // would double-refund the card portion computed above. Instead we
-        // create the refunds row and call the gateway directly through
-        // PaymentService::refund(), synchronously, inside this transaction.
-        $refund = Refund::create([
-            'order_id' => $order->id,
-            'sub_order_id' => null,
-            'original_transaction_id' => $originalTransaction->id,
-            'amount' => $cardPortion,
-            'currency' => $order->currency,
-            'reason' => 'customer_request',
-            'reason_notes' => $reason,
-            'refund_type' => $cardPortion >= $order->total ? 'full' : 'partial',
-            'initiated_by_customer_id' => $actor === CancelActor::Customer ? $order->customer_id : $order->customer_id,
-            'vendor_charged_back' => false,
-            'status' => 'processing',
-        ]);
-
+        // enhancement.md P-07 task 5: route through the single RefundService
+        // instead of calling PaymentService::refund() directly (P-06's
+        // stopgap, kept only long enough to avoid P-07's now-fixed
+        // double-refund bug in RefundProcessingJob). $reverseLedger: false
+        // because this cancellation, being a full-order cancel (only path
+        // that reaches here with a non-zero $cardPortion — COD/uncaptured
+        // orders return earlier above), posts its own full
+        // reverseOrderCapture() right after this via reverseLedgerIfCaptured().
         try {
-            $result = $this->paymentService->refund($originalTransaction, $cardPortion, 'customer_request');
-
-            $refund->update(['status' => $result->success ? 'completed' : 'failed']);
+            $this->refundService->refund(
+                order: $order,
+                scope: RefundScope::amount($cardPortion),
+                reason: 'customer_request',
+                liability: 'customer',
+                destination: 'original',
+                initiatedBy: ['type' => $actor->value === 'customer' ? 'customer' : $actor->value, 'id' => $actor === CancelActor::Customer ? $order->customer_id : null],
+                reasonNotes: $reason,
+                reverseLedger: false,
+            );
 
             $newPayStatus = ($cardPortion + $walletPortion) >= $order->total ? 'refunded' : 'partially_refunded';
             $order->update(['payment_status' => $newPayStatus]);
         } catch (\Throwable $e) {
-            $refund->update(['status' => 'failed']);
-            Log::error('OrderCancellationService: gateway refund failed.', [
+            Log::error('OrderCancellationService: refund via RefundService failed.', [
                 'order_id' => $order->id,
                 'exception' => $e->getMessage(),
             ]);

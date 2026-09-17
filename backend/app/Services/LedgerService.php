@@ -213,4 +213,92 @@ class LedgerService
 
         return $groupId;
     }
+
+    /**
+     * enhancement.md P-07: reverse a FRACTION of a previously-posted
+     * capture group, for a partial refund that doesn't cancel the whole
+     * order (reverseOrderCapture() would over-reverse in that case).
+     *
+     * Approach (documented in RefundService's class docblock): scale every
+     * entry of the original order_capture group by
+     * ($refundAmountCents / originally-captured amount), round each entry,
+     * and post the scaled mirror (debit/credit swapped) under a new group
+     * id tagged 'refund_reversal'. Rounding is corrected on the largest
+     * entry so the posted group still balances exactly.
+     *
+     * Idempotency is the caller's responsibility (RefundService checks by
+     * $referenceId before calling this).
+     *
+     * @return string the new transaction group id
+     */
+    public function reversePartialCapture(Order $order, int $refundAmountCents, string $referenceId, string $reason = 'Partial refund'): string
+    {
+        $original = LedgerEntry::where('transaction_group_id', $order->id)
+            ->where('reference_type', 'order_capture')
+            ->get();
+
+        if ($original->isEmpty()) {
+            throw new \RuntimeException("No order_capture ledger entries found for order {$order->id} to reverse.");
+        }
+
+        $capturedTotal = (int) $original->firstWhere('account_type', 'customer_payment')?->debit;
+
+        if ($capturedTotal <= 0) {
+            throw new \RuntimeException("Order {$order->id}'s capture group has no positive customer_payment debit to scale from.");
+        }
+
+        $fraction = min(1.0, $refundAmountCents / $capturedTotal);
+
+        $scaled = $original->map(function (LedgerEntry $e) use ($fraction) {
+            return [
+                'account_type' => $e->account_type,
+                'account_holder_type' => $e->account_holder_type,
+                'account_holder_id' => $e->account_holder_id,
+                'debit' => (int) round(((int) $e->credit) * $fraction),
+                'credit' => (int) round(((int) $e->debit) * $fraction),
+                'currency' => $e->currency,
+            ];
+        })->all();
+
+        // Rounding correction: force the group to balance exactly by
+        // adjusting the entry with the largest magnitude.
+        $totalDebit = array_sum(array_column($scaled, 'debit'));
+        $totalCredit = array_sum(array_column($scaled, 'credit'));
+        $diff = $totalDebit - $totalCredit;
+
+        if ($diff !== 0) {
+            $largestIdx = 0;
+            $largestAbs = -1;
+            foreach ($scaled as $i => $row) {
+                $magnitude = max($row['debit'], $row['credit']);
+                if ($magnitude > $largestAbs) {
+                    $largestAbs = $magnitude;
+                    $largestIdx = $i;
+                }
+            }
+
+            if ($scaled[$largestIdx]['credit'] > 0) {
+                $scaled[$largestIdx]['credit'] += $diff;
+            } else {
+                $scaled[$largestIdx]['debit'] -= $diff;
+            }
+        }
+
+        $groupId = $this->newGroupId();
+        $entries = array_map(function (array $row) use ($order, $reason, $referenceId) {
+            $row['reference_type'] = 'refund_reversal';
+            $row['reference_id'] = $referenceId;
+            $row['description'] = "{$reason}: partial reversal of order {$order->order_number}";
+
+            return $row;
+        }, $scaled);
+
+        // Drop zero-amount rows (a scaled-down account that rounds to 0
+        // shouldn't post a no-op ledger entry).
+        $entries = array_values(array_filter($entries, fn (array $row) => $row['debit'] !== 0 || $row['credit'] !== 0));
+
+        $this->record($groupId, $entries);
+
+        return $groupId;
+    }
 }

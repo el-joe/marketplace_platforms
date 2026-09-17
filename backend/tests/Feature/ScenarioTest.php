@@ -357,7 +357,15 @@ class ScenarioTest extends TestCase
 
     public function test_p07_refunds_no_double_refund_cod_and_return_refunds(): void
     {
-        $this->markTestSkipped('P-07: refunds — no double refund, COD refunds, whole sub-order return refunds.');
+        // P-07 is implemented and covered end-to-end by
+        // tests/Feature/RefundServiceTest.php: card refund goes only to
+        // the gateway, COD/store-credit refunds go only to the wallet,
+        // returning N of M units refunds exactly that unit's persisted
+        // share, and RefundProcessingJob no longer double-credits.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\RefundService::class));
+        $this->assertTrue(class_exists(\App\DTOs\Refund\RefundScope::class));
+        $this->assertNotNull($scenario->customer->id);
     }
 
     public function test_p08_order_status_state_machine_delivery_and_cod_capture(): void

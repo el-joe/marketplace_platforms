@@ -368,6 +368,18 @@ class ReturnController extends Controller
         }
     }
 
+    /**
+     * enhancement.md P-07 task 4: was refunding the FULL sub-order instead
+     * of just the returned items/quantities, hardcoded the reason to
+     * 'wrong_item' regardless of what the customer/inspector actually
+     * recorded, and double-credited the wallet for store_credit returns
+     * (once here explicitly, once more via the old RefundProcessingJob's
+     * unconditional wallet credit). Now delegates to RefundService with
+     * the return request's own items/quantities, its actual reason, and
+     * its inspected liability — RefundService itself picks exactly one
+     * destination (wallet for store_credit, gateway for card, wallet for
+     * COD), so there is no second wallet credit to layer on top.
+     */
     private function processReturnRefund(ReturnRequest $returnRequest, $admin): void
     {
         $order = $returnRequest->order()->first();
@@ -375,33 +387,31 @@ class ReturnController extends Controller
             return;
         }
 
-        $refund = $this->interventionService->processRefund(
-            $order,
-            'full',
-            null,
-            'wrong_item',
-            'Return request ' . $returnRequest->return_number . ' inspected — refund issued.',
-            $returnRequest->sub_order_id,
-            false,
-            (string) $admin->id
+        $returnRequest->loadMissing('items');
+
+        $itemQuantities = $returnRequest->items
+            ->mapWithKeys(fn ($item) => [$item->order_item_id => (int) $item->quantity])
+            ->all();
+
+        if (empty($itemQuantities)) {
+            return;
+        }
+
+        $liability = $returnRequest->liability?->value ?? \App\Enums\ReturnRequestLiability::Customer->value;
+        $destination = $returnRequest->return_type === ReturnRequestType::StoreCredit ? 'wallet' : 'original';
+
+        $refund = app(\App\Services\RefundService::class)->refund(
+            order: $order,
+            scope: \App\DTOs\Refund\RefundScope::items($returnRequest->sub_order_id, $itemQuantities),
+            reason: $returnRequest->reason?->value ?? 'other',
+            liability: $liability,
+            destination: $destination,
+            initiatedBy: ['type' => 'admin', 'id' => (string) $admin->id],
+            approvedByAdminId: (string) $admin->id,
+            reasonNotes: 'Return request ' . $returnRequest->return_number . ' inspected — refund issued.',
         );
 
-        $returnRequest->update(['refund_id' => $refund->id]);
-
-        if ($returnRequest->return_type === ReturnRequestType::StoreCredit && $returnRequest->status === ReturnRequestStatus::Completed) {
-            $customer = $returnRequest->customer()->first();
-
-            $completedRefund = \App\Models\Refund::where('order_id', $returnRequest->order_id)
-                ->where('status', 'completed')
-                ->latest()
-                ->first();
-
-            $creditAmount = $completedRefund?->net_refund ?? 0;
-
-            if ($customer && $order && $creditAmount > 0) {
-                app(\App\Services\Customer\CheckoutWalletService::class)->refundToWallet($customer, $order, $creditAmount);
-            }
-        }
+        $returnRequest->update(['refund_id' => $refund->id, 'refund_amount' => $refund->amount]);
     }
 
     private function restockInventory(ReturnRequest $returnRequest, $admin): void
