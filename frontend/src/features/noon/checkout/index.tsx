@@ -77,9 +77,9 @@ export default function Checkout() {
               <Spinner className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-22 text-white" />
             </div>
           )}
-          <div className="flex gap-4 lg:gap-8 flex-wrap px-4 items-start">
+          <div className="flex gap-4 lg:gap-8 flex-wrap px-4s items-start">
             {/* left col */}
-            <div className="flex flex-col gap-5 flex-1">
+            <div className="flex flex-col gap-5 flex-1 max-w-full md:max-w-2/3">
               <AddressCard addressId={checkoutData?.address?.id} />
               <div className="flex gap-5 flex-wrap">
                 <OrderReceiverCard />

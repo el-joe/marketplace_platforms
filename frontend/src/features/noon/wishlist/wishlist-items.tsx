@@ -1,9 +1,9 @@
 "use client";
 import { products } from "@/public/dummyData";
 import { Button } from "@/src/components/ui/button";
-import { EllipsisIcon, Share2Icon } from "lucide-react";
+import { CheckIcon, EllipsisIcon, Share2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ItemCard from "./item-card";
 import EmptyState from "./empty-state";
 import { useQueryState } from "nuqs";
@@ -14,10 +14,28 @@ import { IWishlist } from "@/types";
 
 export default function WishlistItems() {
   const t = useTranslations("wishlist");
+  const [copied, setCopied] = useState(false);
   const [selectedGroupId] = useQueryState("wishlistCode");
   const { getWishlistGroup, wishlistGroup, isLoadingGroup, isLoadingGroups } =
     useWishlistContext();
   const isLoading = isLoadingGroup || isLoadingGroups;
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: wishlistGroup?.group?.name,
+          text: `${wishlistGroup?.group?.name} - ${wishlistGroup?.group?.items_count}`,
+          url: window.location.href,
+        });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
   useEffect(() => {
     if (!!selectedGroupId && wishlistGroup?.group.id !== selectedGroupId) {
       getWishlistGroup(selectedGroupId as string);
@@ -46,26 +64,37 @@ export default function WishlistItems() {
               <p className="bg-blue-2 rounded-2xl px-2 py-0.5 text-white text-xs">
                 {t("default")}
               </p>
-            )}{" "}
-            <Button
-              variant={"outline"}
-              className={"ms-auto rounded-2xl px-4 text-base text-gray"}
-            >
-              <Share2Icon />
-              <span className="hidden md:inline">{t("share")}</span>
-            </Button>
-            <WishlistOptionsMenu
-              group={wishlistGroup as IWishlist}
-              trigger={
+            )}
+            {selectedGroupId && (
+              <>
                 <Button
                   variant={"outline"}
-                  className={"rounded-2xl px-4 text-base text-gray"}
+                  className={"ms-auto rounded-2xl px-4 text-base text-gray"}
+                  onClick={handleShare}
                 >
-                  <EllipsisIcon />
-                  <span className="hidden md:inline">{t("more")}</span>
+                  {copied ? (
+                    <CheckIcon className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Share2Icon className="w-4 h-4 text-gray-600" />
+                  )}
+                  <span className="hidden md:inline">
+                    {copied ? "Link Copied!" : "Share"}
+                  </span>
                 </Button>
-              }
-            />
+                <WishlistOptionsMenu
+                  group={wishlistGroup as IWishlist}
+                  trigger={
+                    <Button
+                      variant={"outline"}
+                      className={"rounded-2xl px-4 text-base text-gray"}
+                    >
+                      <EllipsisIcon />
+                      <span className="hidden md:inline">{t("more")}</span>
+                    </Button>
+                  }
+                />
+              </>
+            )}
           </>
         )}
       </div>

@@ -5,13 +5,14 @@ import { Button } from "@/src/components/ui/button";
 import useLocale from "@/src/hooks/use-locale";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { ShippingGroupItem, ShippingMethod } from "@/types/cart.type";
-import { StoreIcon, Trash2Icon, TruckIcon, XIcon } from "lucide-react";
+import { CarIcon, StoreIcon, Trash2Icon, TruckIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import CouponDetailsModal from "./coupon-details-modal";
 import { getImageURL } from "@/src/helpers/get-image-url";
+import AnimatedBadge from "@/src/components/shared/animated-badge";
 
 type Props = {
   item: ShippingGroupItem;
@@ -107,7 +108,7 @@ export default function CartItem({
             </Button>
           </div>
           {/* variants */}
-          <p className="text-xs bg-gray-2 border border-border py-0.5 px-1 rounded-md w-fit line-clamp-1 overflow-auto">
+          <p className="text-xs bg-gray-2 border border-border py-0.5 px-1 rounded-md w-fit line-clamp-1">
             {item.variant_name}
           </p>
           {/* small screen price */}
@@ -118,16 +119,19 @@ export default function CartItem({
             className="lg:hidden"
           />
           {/* delivery date */}
-          <p
-            className={`text-sm rounded-md p-1 w-fit text-light`}
-            style={{
-              background: `linear-gradient(90deg,${shippingMethod?.badge_color_hex}33 0%,var(--color-white) 90%)`,
-            }}
-          >
-            {locale === "ar"
-              ? shippingMethod?.delivery_label_ar
-              : shippingMethod?.delivery_label_en}
-          </p>
+          {shippingMethod?.delivery_label_ar ||
+            (shippingMethod?.delivery_label_en && (
+              <p
+                className={`text-sm rounded-md p-1 w-fit text-light`}
+                style={{
+                  background: `linear-gradient(90deg,${shippingMethod?.badge_color_hex}33 0%,var(--color-white) 90%)`,
+                }}
+              >
+                {locale === "ar"
+                  ? shippingMethod?.delivery_label_ar
+                  : shippingMethod?.delivery_label_en}
+              </p>
+            ))}
           <p className="text-sm text-gray">
             {t("orderIn")}
             18 hrs 12 mins (dummy data)
@@ -149,6 +153,14 @@ export default function CartItem({
                 </SwiperSlide>
               ))}
           </Swiper>
+          <AnimatedBadge
+            badges={[
+              { icon: CarIcon, label: "Free shipping", iconColor: "red" },
+              { icon: CarIcon, label: "Free shipping2", iconColor: "green" },
+              { icon: CarIcon, label: "Free shipping3", iconColor: "blue" },
+            ]}
+            size="sm"
+          />
           {/* features */}
           <div className="flex gap-2 flex-wrap">
             {isFreeShipping && (
