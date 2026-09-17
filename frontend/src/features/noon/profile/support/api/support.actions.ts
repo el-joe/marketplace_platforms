@@ -53,10 +53,10 @@ export async function sendTicketMessage(
 }
 
 export async function getDisputes(): Promise<DisputeDetails[]> {
-  const { data } = await axiosInstance.get<{ data: DisputeDetails[] }>(
-    "/disputes",
-  );
-  return data.data;
+  const { data } = await axiosInstance.get<{
+    data: { items: DisputeDetails[] };
+  }>("/disputes");
+  return data.data.items;
 }
 
 export async function getDisputeById(
