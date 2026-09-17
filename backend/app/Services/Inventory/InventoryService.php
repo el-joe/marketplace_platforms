@@ -321,6 +321,17 @@ class InventoryService
         ]);
     }
 
+    /**
+     * enhancement.md P-14: available stock for a listing (vendor or admin),
+     * used by campaign creation/monitoring to check against
+     * min_stock_for_campaign without duplicating the warehouse_inventories
+     * sum in every caller.
+     */
+    public function availableStock(VendorListing|AdminListing $listing): int
+    {
+        return (int) $listing->warehouseInventories()->sum('quantity_available');
+    }
+
     private function fireStockChanged(VendorListing|AdminListing $listing): void
     {
         event(new ListingStockChanged(

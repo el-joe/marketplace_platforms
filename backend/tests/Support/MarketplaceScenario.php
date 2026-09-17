@@ -371,6 +371,8 @@ class MarketplaceScenario
 
         $this->marketerCampaign = MarketerCampaign::create([
             'vendor_id'                    => $this->vendor->id,
+            'owner_type'                   => 'vendor',
+            'owner_id'                     => $this->vendor->id,
             'vendor_listing_id'            => $this->vendorListingFbp->id,
             'campaign_category'            => 'product',
             'country_id'                   => $this->country->id,

@@ -930,15 +930,18 @@ class ListingController extends Controller
 
         if ($request->boolean('campaign_enabled')) {
             try {
-                $this->marketerCampaignService->createCampaign($vendor, array_merge($request->only([
-                    'commission_type', 'max_commission_budget',
-                ]), [
-                    'vendor_listing_id'   => $listing->id,
-                    'country_id'          => $listing->country_id,
-                    'currency'            => $listing->currency,
-                    'marketer_ids' => $request->input('marketer_ids', []),
-                    'tiered_rules'        => $request->input('tiered_rules', []),
-                ]));
+                $this->marketerCampaignService->createCampaign(
+                    \App\Support\Marketer\CampaignOwner::vendor($vendor),
+                    \App\Support\Marketer\CampaignSource::vendorListing($listing->id),
+                    array_merge($request->only([
+                        'commission_type', 'max_commission_budget',
+                    ]), [
+                        'country_id'   => $listing->country_id,
+                        'currency'     => $listing->currency,
+                        'marketer_ids' => $request->input('marketer_ids', []),
+                        'tiered_rules' => $request->input('tiered_rules', []),
+                    ])
+                );
 
                 $message .= ' تم إنشاء حملة الماركتر بنجاح.';
             } catch (\Throwable $e) {
@@ -1095,15 +1098,18 @@ class ListingController extends Controller
 
         if ($request->boolean('campaign_enabled')) {
             try {
-                $this->marketerCampaignService->createCampaign($this->vendor(), array_merge($request->only([
-                    'commission_type', 'max_commission_budget',
-                ]), [
-                    'vendor_listing_id'   => $listing->id,
-                    'country_id'          => $listing->country_id,
-                    'currency'            => $listing->currency,
-                    'marketer_ids' => $request->input('marketer_ids', []),
-                    'tiered_rules'        => $request->input('tiered_rules', []),
-                ]));
+                $this->marketerCampaignService->createCampaign(
+                    \App\Support\Marketer\CampaignOwner::vendor($this->vendor()),
+                    \App\Support\Marketer\CampaignSource::vendorListing($listing->id),
+                    array_merge($request->only([
+                        'commission_type', 'max_commission_budget',
+                    ]), [
+                        'country_id'   => $listing->country_id,
+                        'currency'     => $listing->currency,
+                        'marketer_ids' => $request->input('marketer_ids', []),
+                        'tiered_rules' => $request->input('tiered_rules', []),
+                    ])
+                );
 
                 $successMessage .= ' تم إنشاء حملة الماركتر بنجاح.';
             } catch (\Throwable $e) {

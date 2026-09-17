@@ -630,7 +630,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 # PHASE D — MARKETER (request item 3)
 
-## P-14 🟠 Campaign sources: campaigns cannot be created from admin or marketer listings
+## P-14 🟠 Campaign sources: campaigns cannot be created from admin or marketer listings --DONE
 
 **Problem**
 - `marketer_campaigns.vendor_id` is `NOT NULL`, and `MarketerCampaignService::createCampaign(Vendor $vendor, …)` is the only creation path.

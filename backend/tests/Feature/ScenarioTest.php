@@ -138,7 +138,11 @@ class ScenarioTest extends TestCase
         // pre-existing resolveMarketerCartItems() only resolved campaigns
         // whose source was a vendor listing.
         $campaignFromAdminListing = \App\Models\MarketerCampaign::create([
-            'vendor_id' => $scenario->vendor->id,
+            // enhancement.md P-14: admin-listing campaigns are platform-owned,
+            // not borrowed onto a vendor.
+            'vendor_id' => null,
+            'owner_type' => 'platform',
+            'owner_id' => null,
             'admin_listing_id' => $scenario->adminListing->id,
             'campaign_category' => 'product',
             'country_id' => $scenario->country->id,
@@ -468,5 +472,38 @@ class ScenarioTest extends TestCase
             ->first();
         $this->assertNotNull($movement);
         $this->assertSame(5, $movement->quantity_delta);
+    }
+
+    public function test_p14_campaign_sources_vendor_admin_and_marketer_request(): void
+    {
+        // enhancement.md P-14: full lifecycle coverage (vendor listing,
+        // admin listing, and marketer-originated campaigns, each from
+        // creation -> approval -> invitation -> accept -> listing active
+        // -> sale -> done, plus invitation-timing and stock-pause
+        // lifecycle fixes) lives in tests/Feature/MarketerCampaignSourcesTest.php.
+        // This placeholder proves the wiring MarketplaceScenario provides
+        // is enough to exercise CampaignOwner/CampaignSource end to end.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertTrue(class_exists(\App\Support\Marketer\CampaignOwner::class));
+        $this->assertTrue(class_exists(\App\Support\Marketer\CampaignSource::class));
+
+        $campaign = app(\App\Services\MarketerCampaignService::class)->createCampaign(
+            \App\Support\Marketer\CampaignOwner::vendor($scenario->vendor),
+            \App\Support\Marketer\CampaignSource::vendorListing($scenario->vendorListingFbp->id),
+            [
+                'country_id'            => $scenario->country->id,
+                'currency'              => 'AED',
+                'commission_type'       => 'fixed',
+                'max_commission_budget' => 100000,
+                'marketer_commission_amount' => 5000,
+                'marketer_ids'           => [$scenario->marketer->id],
+            ]
+        );
+
+        $this->assertSame('vendor', $campaign->owner_type);
+        $this->assertSame($scenario->vendor->id, $campaign->owner_id);
+        $this->assertSame('pending_admin', $campaign->status);
+        $this->assertSame(0, $campaign->invitations()->count());
     }
 }

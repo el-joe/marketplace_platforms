@@ -13,7 +13,8 @@ class MarketerCampaign extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'vendor_id', 'vendor_listing_id', 'admin_listing_id',
+        'vendor_id', 'owner_type', 'owner_id', 'requested_by_marketer_id',
+        'vendor_listing_id', 'admin_listing_id',
         'travel_package_id', 'classified_listing_id', 'campaign_category',
         'country_id', 'currency', 'commission_type',
         'max_commission_budget', 'commission_budget_spent', 'platform_commission_amount', 'marketer_commission_amount',
@@ -35,6 +36,11 @@ class MarketerCampaign extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function requestedByMarketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class, 'requested_by_marketer_id');
     }
 
     public function vendorListing(): BelongsTo

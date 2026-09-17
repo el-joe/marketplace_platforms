@@ -154,6 +154,10 @@ class AppServiceProvider extends ServiceProvider
         // stock (active <-> out_of_stock) after any InventoryService
         // mutation.
         Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncListingStockStatus::class);
+        // enhancement.md P-14 task 4: pause/resume/complete campaigns
+        // sourced from a listing as soon as its stock changes, instead of
+        // only on MonitorCampaignStockJob's hourly sweep.
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\PauseCampaignsOnLowStock::class);
         // enhancement.md P-09 task 2: warranty activation on delivery is
         // implemented in SubOrderObserver::updating() (fires on the same
         // status write that produces SubOrderDelivered, before this event's

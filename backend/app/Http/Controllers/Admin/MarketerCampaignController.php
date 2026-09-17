@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaign;
 use App\Services\MarketerCampaignService;
+use App\Support\Marketer\CampaignOwner;
+use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
@@ -177,8 +179,12 @@ class MarketerCampaignController extends Controller
         abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
 
         $data = $request->validate([
-            'vendor_id'              => 'required|uuid|exists:vendors,id',
+            // enhancement.md P-14 task 2: admin can now create a platform
+            // (admin-listing) campaign without choosing a vendor —
+            // vendor_id is only required when admin_listing_id is absent.
+            'vendor_id'              => 'required_without:admin_listing_id|nullable|uuid|exists:vendors,id',
             'vendor_listing_id'      => 'nullable|uuid|exists:vendor_listings,id',
+            'admin_listing_id'       => 'nullable|uuid|exists:admin_listings,id',
             'marketer_ids'           => 'required|array|min:1',
             'marketer_ids.*'         => 'uuid|exists:marketers,id',
             'country_id'             => 'required|uuid|exists:countries,id',
@@ -189,10 +195,17 @@ class MarketerCampaignController extends Controller
             'notes'                  => 'nullable|string|max:1000',
         ]);
 
-        $vendor = \App\Models\Vendor::findOrFail($data['vendor_id']);
-
         try {
-            $campaign = $this->service->createCampaign($vendor, $data);
+            if (!empty($data['admin_listing_id'])) {
+                $owner  = CampaignOwner::platform();
+                $source = CampaignSource::adminListing($data['admin_listing_id']);
+            } else {
+                $vendor = \App\Models\Vendor::findOrFail($data['vendor_id']);
+                $owner  = CampaignOwner::vendor($vendor);
+                $source = CampaignSource::vendorListing($data['vendor_listing_id']);
+            }
+
+            $campaign = $this->service->createCampaign($owner, $source, $data);
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -214,7 +227,7 @@ class MarketerCampaignController extends Controller
         $listings = \App\Models\VendorListing::with('productVariant.product')
             ->where('vendor_id', $request->vendor_id)
             ->where('status', 'active')
-            ->where('fulfillment_model', 'fbn') // createCampaign() only accepts FBN listings
+            ->whereIn('fulfillment_model', (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']))
             ->when($request->filled('search'), fn ($q) =>
                 $q->whereHas('productVariant.product', fn ($q2) =>
                     $q2->where('name_en', 'like', "%{$request->search}%")
