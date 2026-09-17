@@ -17,6 +17,7 @@ class PaymentService
 {
     public function __construct(
         private readonly LedgerService $ledgerService = new LedgerService(),
+        private readonly \App\Services\Checkout\CouponUsageService $couponUsageService = new \App\Services\Checkout\CouponUsageService(),
     ) {}
 
     public function initiatePayment(
@@ -87,6 +88,10 @@ class PaymentService
             // 'order_capture' reference_type guard), only the amount this
             // gateway transaction actually settled.
             $this->ledgerService->postOrderCapture($transaction->order, (int) $transaction->amount);
+            $this->couponUsageService->consumeForOrder($transaction->order);
+        } elseif (in_array($result->status, ['failed', 'cancelled', 'declined'], true)) {
+            $transaction->order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
+            $this->couponUsageService->releaseForOrder($transaction->order);
         }
 
         return $result;

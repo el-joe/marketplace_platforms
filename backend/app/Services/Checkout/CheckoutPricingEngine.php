@@ -55,13 +55,22 @@ class CheckoutPricingEngine
      * App\Services\CheckoutCalculationService::resolveCartItems().
      *
      * @param  array<int, mixed>  $items
-     * @return array{discount: int, error: ?string, type: ?string, allocations: array<string, int>}
+     * @return array{discount: int, error: ?string, type: ?string, allocations: array<string, int>, free_shipping_seller_parties: array<int, string>, max_discount: ?int, funded_by: ?string}
      */
-    public function applyCoupon(Coupon $coupon, Customer $customer, int $subtotalCents, string $currency, array $items): array
-    {
-        $error = $this->validateCouponEligibility($coupon, $customer, $subtotalCents, $currency, $items);
+    public function applyCoupon(
+        Coupon $coupon,
+        Customer $customer,
+        int $subtotalCents,
+        string $currency,
+        array $items,
+        ?string $countryId = null,
+        bool $stackedWithOtherDiscount = false,
+    ): array {
+        $empty = ['discount' => 0, 'error' => null, 'type' => null, 'allocations' => [], 'free_shipping_seller_parties' => [], 'max_discount' => $coupon->max_discount, 'funded_by' => $coupon->funded_by];
+
+        $error = $this->validateCouponEligibility($coupon, $customer, $subtotalCents, $currency, $items, $countryId, $stackedWithOtherDiscount);
         if ($error !== null) {
-            return ['discount' => 0, 'error' => $error, 'type' => null, 'allocations' => []];
+            return array_merge($empty, ['error' => $error]);
         }
 
         $lines = $this->normalizeAll($items);
@@ -69,8 +78,13 @@ class CheckoutPricingEngine
         $applicableSubtotal = array_sum(array_map(fn (array $l) => $l['line_subtotal'], $applicableLines));
 
         if ($applicableSubtotal <= 0) {
-            return ['discount' => 0, 'error' => 'Coupon does not apply to any items in your cart.', 'type' => null, 'allocations' => []];
+            return array_merge($empty, ['error' => __('common.exceptions.checkout.coupon.no_applicable_items')]);
         }
+
+        $inScopeSellerParties = array_values(array_unique(array_map(
+            fn (array $l) => $l['vendor_id'] ?? 'platform',
+            $applicableLines
+        )));
 
         $type = $coupon->type instanceof CouponType ? $coupon->type->value : (string) $coupon->type;
 
@@ -85,18 +99,24 @@ class CheckoutPricingEngine
             $discount = $cheapest ? (int) $cheapest['unit_price'] : 0;
             $discount = min($discount, $applicableSubtotal);
 
-            return [
+            return array_merge($empty, [
                 'discount' => $discount,
-                'error' => null,
                 'type' => $type,
                 'allocations' => $cheapest ? [$cheapest['key'] => $discount] : [],
-            ];
+            ]);
+        }
+
+        if ($type === 'free_shipping') {
+            return array_merge($empty, [
+                'discount' => 0,
+                'type' => $type,
+                'free_shipping_seller_parties' => $inScopeSellerParties,
+            ]);
         }
 
         $discount = match ($type) {
             'percentage' => (int) round($applicableSubtotal * ((float) $coupon->value / 100)),
             'fixed_amount' => (int) round((float) $coupon->value),
-            'free_shipping' => 0,
             default => 0,
         };
 
@@ -113,7 +133,7 @@ class CheckoutPricingEngine
 
         $allocations = $this->allocateProRata($discount, $weights);
 
-        return ['discount' => $discount, 'error' => null, 'type' => $type, 'allocations' => $allocations];
+        return array_merge($empty, ['discount' => $discount, 'type' => $type, 'allocations' => $allocations]);
     }
 
     /**
@@ -695,56 +715,98 @@ class CheckoutPricingEngine
 
     // ── Coupon eligibility (non-money) ──────────────────────────────────
 
-    private function validateCouponEligibility(Coupon $coupon, Customer $customer, int $subtotalCents, string $currency, array $items): ?string
-    {
+    private function validateCouponEligibility(
+        Coupon $coupon,
+        Customer $customer,
+        int $subtotalCents,
+        string $currency,
+        array $items,
+        ?string $countryId = null,
+        bool $stackedWithOtherDiscount = false,
+    ): ?string {
         if (! $coupon->is_active) {
-            return 'Coupon is not active.';
+            return __('common.exceptions.checkout.coupon.not_active');
         }
 
         $now = Carbon::now();
         if (($coupon->valid_from && $now->lt($coupon->valid_from))
             || ($coupon->valid_until && $now->gt($coupon->valid_until))) {
-            return 'Coupon is not valid at this time.';
+            return __('common.exceptions.checkout.coupon.not_valid_now');
+        }
+
+        if ($countryId !== null && $coupon->country_ids !== null && ! in_array($countryId, $coupon->country_ids, true)) {
+            return __('common.exceptions.checkout.coupon.country_not_eligible');
         }
 
         if ($coupon->currency !== null && $coupon->currency !== $currency) {
-            return 'Coupon currency does not match order currency.';
+            return __('common.exceptions.checkout.coupon.currency_mismatch');
         }
 
         if ($coupon->min_order_amount !== null && $subtotalCents < $coupon->min_order_amount) {
-            return 'Order does not meet the minimum amount for this coupon.';
+            return __('common.exceptions.checkout.coupon.min_order_not_reached');
+        }
+
+        if ($stackedWithOtherDiscount && ! $coupon->is_stackable) {
+            return __('common.exceptions.checkout.coupon.not_stackable');
+        }
+
+        $eligibility = $coupon->customer_eligibility instanceof \App\Enums\CouponCustomerEligibility
+            ? $coupon->customer_eligibility->value
+            : (string) $coupon->customer_eligibility;
+
+        if ($eligibility === 'new_customers') {
+            $hasCompletedOrder = \App\Models\Order::where('customer_id', $customer->id)
+                ->where('status', \App\Enums\OrderStatus::Completed)
+                ->exists();
+            if ($hasCompletedOrder) {
+                return __('common.exceptions.checkout.coupon.new_customers_only');
+            }
+        }
+
+        if ($eligibility === 'specific_users' || $eligibility === 'specific_segment') {
+            // No separate customer-segment table exists yet; specific_segment
+            // is approximated by the same eligible_customer_ids membership
+            // list as specific_users (both are "only these customers").
+            $eligibleIds = $coupon->eligible_customer_ids ?? [];
+            if (! in_array($customer->id, $eligibleIds, true)) {
+                return __('common.exceptions.checkout.coupon.not_eligible');
+            }
         }
 
         if ($coupon->usage_limit_total !== null && $coupon->times_used >= $coupon->usage_limit_total) {
-            return 'Coupon usage limit reached.';
+            return __('common.exceptions.checkout.coupon.usage_limit_reached');
         }
 
         if ($coupon->usage_limit_per_customer !== null) {
-            $used = CouponUsage::where('coupon_id', $coupon->id)->where('customer_id', $customer->id)->count();
+            $used = CouponUsage::where('coupon_id', $coupon->id)
+                ->where('customer_id', $customer->id)
+                ->whereIn('status', [CouponUsage::STATUS_RESERVED, CouponUsage::STATUS_CONSUMED])
+                ->count();
             if ($used >= $coupon->usage_limit_per_customer) {
-                return 'You have already used this coupon the maximum number of times.';
+                return __('common.exceptions.checkout.coupon.per_customer_limit_reached');
             }
         }
 
         if ($coupon->max_orders_per_customer_per_month !== null) {
             $usedThisMonth = CouponUsage::where('coupon_id', $coupon->id)
                 ->where('customer_id', $customer->id)
+                ->whereIn('status', [CouponUsage::STATUS_RESERVED, CouponUsage::STATUS_CONSUMED])
                 ->where('used_at', '>=', $now->copy()->startOfMonth())
                 ->count();
             if ($usedThisMonth >= $coupon->max_orders_per_customer_per_month) {
-                return 'Monthly usage limit for this coupon has been reached.';
+                return __('common.exceptions.checkout.coupon.monthly_limit_reached');
             }
         }
 
-        if (property_exists($coupon, 'shipping_type_restriction') || $coupon->shipping_type_restriction !== null) {
-            if ($coupon->shipping_type_restriction !== null
-                && $coupon->shipping_type_restriction !== \App\Enums\CouponShippingTypeRestriction::All) {
-                $lines = $this->normalizeAll($items);
-                $mismatched = collect($lines)->contains(fn (array $l) => $l['shipping_type'] !== $coupon->shipping_type_restriction->value);
+        if ($coupon->shipping_type_restriction !== null
+            && $coupon->shipping_type_restriction !== \App\Enums\CouponShippingTypeRestriction::All) {
+            $lines = $this->normalizeAll($items);
+            $mismatched = collect($lines)->contains(fn (array $l) => $l['shipping_type'] !== $coupon->shipping_type_restriction->value);
 
-                if ($mismatched) {
-                    return 'This coupon is only valid for '.strtoupper($coupon->shipping_type_restriction->value).' shipping orders.';
-                }
+            if ($mismatched) {
+                return __('common.exceptions.checkout.coupon.shipping_type_restricted', [
+                    'type' => strtoupper($coupon->shipping_type_restriction->value),
+                ]);
             }
         }
 

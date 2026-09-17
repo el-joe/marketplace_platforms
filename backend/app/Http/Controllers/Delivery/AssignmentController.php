@@ -28,6 +28,7 @@ class AssignmentController extends Controller
     public function __construct(
         private readonly FileService $fileService,
         private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
+        private readonly \App\Services\Checkout\CouponUsageService $couponUsageService = new \App\Services\Checkout\CouponUsageService(),
     ) {
     }
 
@@ -288,6 +289,9 @@ class AssignmentController extends Controller
 
                 // enhancement.md P-03 task 5: ledger at capture.
                 $this->ledgerService->postOrderCapture($order, (int) $order->total);
+                // enhancement.md P-04 task 2: COD coupon usage is consumed on
+                // delivery collection, not at placement.
+                $this->couponUsageService->consumeForOrder($order);
             }
 
             $assignment->agent?->increment('total_deliveries');

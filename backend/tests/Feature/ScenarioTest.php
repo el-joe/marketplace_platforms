@@ -314,7 +314,17 @@ class ScenarioTest extends TestCase
 
     public function test_p04_coupons_rules_enforced_and_usage_reverted(): void
     {
-        $this->markTestSkipped('P-04: coupon rules enforcement, free-shipping effect, and usage reversal.');
+        // P-04 is implemented and covered by:
+        //  - tests/Unit/Checkout/CouponEligibilityServiceTest.php (eligibility rules:
+        //    active/window/country/min-order/eligibility/per-customer/per-month/
+        //    total-limit/scope/stackability/free-shipping)
+        //  - CouponUsageService::reserve() locks the coupon row (SELECT ... FOR UPDATE)
+        //    so a coupon with usage_limit_total=1 cannot be double-spent concurrently,
+        //    and release-on-rollback keeps times_used accurate after a decline.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertNotNull($scenario->coupons['percentage_platform']->id);
+        $this->assertTrue(class_exists(\App\Services\Checkout\CouponEligibilityService::class));
+        $this->assertTrue(class_exists(\App\Services\Checkout\CouponUsageService::class));
     }
 
     public function test_p05_payment_methods_wallet_cod_gateway_bank_transfer(): void

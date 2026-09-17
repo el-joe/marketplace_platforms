@@ -45,6 +45,9 @@ use App\Models\WarrantyPurchase;
 use Illuminate\Support\Facades\Log;
 use App\Services\Checkout\CartLineSource;
 use App\Services\Checkout\CheckoutPricingEngine;
+use App\Services\Checkout\CouponEligibilityService;
+use App\Services\Checkout\CouponUsageService;
+use App\Services\Checkout\CouponNoLongerValidException;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
 use App\Services\Customer\CodValidationService;
@@ -82,8 +85,66 @@ class CheckoutController extends Controller
         private readonly LastClickAttributionService $attributionService,
         private readonly \App\Services\Ads\PlacementAdService $placementAds,
         private readonly CheckoutPricingEngine $pricingEngine,
+        private readonly CouponEligibilityService $couponEligibilityService,
+        private readonly CouponUsageService $couponUsageService,
         private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
     ) {}
+
+    /**
+     * Zero the shipping of every seller-party group in scope for a
+     * free_shipping coupon (capped by coupon.max_discount), mutating
+     * $vendorShipping in place (enhancement.md P-04 task 1). Returns the
+     * total amount of shipping actually discounted, which callers persist
+     * as the "coupon discount" shown/charged for shipping (funded per
+     * coupon.funded_by — same vendor_coupon_cost/platform_coupon_cost split
+     * P-03 already computes for the merchandise discount).
+     */
+    private function applyFreeShippingDiscount(?Coupon $coupon, array $couponResult, array &$vendorShipping): int
+    {
+        if (! $coupon) {
+            return 0;
+        }
+
+        $type = $coupon->type instanceof \App\Enums\CouponType ? $coupon->type->value : (string) $coupon->type;
+        if ($type !== 'free_shipping') {
+            return 0;
+        }
+
+        $sellerParties = $couponResult['free_shipping_seller_parties'] ?? [];
+        if (empty($sellerParties)) {
+            return 0;
+        }
+
+        $eligibleShipping = 0;
+        foreach ($sellerParties as $sp) {
+            $eligibleShipping += (int) ($vendorShipping['per_vendor'][$sp]['shipping'] ?? 0);
+        }
+
+        $shippingDiscount = $coupon->max_discount !== null
+            ? min($eligibleShipping, (int) $coupon->max_discount)
+            : $eligibleShipping;
+
+        if ($shippingDiscount <= 0) {
+            return 0;
+        }
+
+        $remaining = $shippingDiscount;
+        foreach ($sellerParties as $sp) {
+            if ($remaining <= 0) {
+                break;
+            }
+            $current = (int) ($vendorShipping['per_vendor'][$sp]['shipping'] ?? 0);
+            $reduce = min($current, $remaining);
+            if ($reduce > 0) {
+                $vendorShipping['per_vendor'][$sp]['shipping'] = $current - $reduce;
+                $remaining -= $reduce;
+            }
+        }
+
+        $vendorShipping['total'] = max(0, (int) $vendorShipping['total'] - $shippingDiscount);
+
+        return $shippingDiscount;
+    }
 
     public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
     {
@@ -282,9 +343,13 @@ class CheckoutController extends Controller
         }
 
         $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+        $hasAffiliatePromo = (bool) $cart->affiliate_promo_code_id;
+        $freeShippingDiscountCents = 0;
 
         if ($coupon) {
-            $couponResult = $this->pricingEngine->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
+            $couponResult = $this->couponEligibilityService->evaluate(
+                $coupon, $customer, $subtotal, $cart->currency, $cartItems, $country->id, $hasAffiliatePromo
+            );
 
             if ($couponResult['error']) {
                 return ApiResponse::error($couponResult['error'], [], 422);
@@ -292,14 +357,19 @@ class CheckoutController extends Controller
 
             $discountCents = $couponResult['discount'];
             $discountAllocations = $couponResult['allocations'];
+            $freeShippingDiscountCents = $this->applyFreeShippingDiscount($coupon, $couponResult, $vendorShipping);
             $couponResponse = [
                 'code' => $coupon->code,
                 'type' => $coupon->type,
                 'discount' => $discountCents,
+                'shipping_discount' => $freeShippingDiscountCents,
             ];
         }
 
-        if ($cart->affiliate_promo_code_id) {
+        // is_stackable=false blocks the affiliate promo code from stacking
+        // on top of the coupon (enhancement.md P-04 — this was previously
+        // stacked unconditionally).
+        if ($cart->affiliate_promo_code_id && (! $coupon || $coupon->is_stackable)) {
             $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
             if ($affiliatePromoCode) {
                 $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotal, $cart->currency);
@@ -598,17 +668,21 @@ class CheckoutController extends Controller
         );
 
         $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+        $hasAffiliatePromo = (bool) $cart->affiliate_promo_code_id;
 
         $coupon = null;
         $discountCents = 0;
         $discountAllocations = [];
+        $freeShippingDiscountCents = 0;
         if (! empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', $validated['coupon_code'])->first();
             if (! $coupon) {
                 return ApiResponse::error(__('common.exceptions.checkout.invalid_coupon'), [], 422);
             }
 
-            $couponResult = $this->pricingEngine->applyCoupon($coupon, $customer, $subtotal, $cart->currency, $cartItems);
+            $couponResult = $this->couponEligibilityService->evaluate(
+                $coupon, $customer, $subtotal, $cart->currency, $cartItems, $country->id, $hasAffiliatePromo
+            );
 
             if ($couponResult['error']) {
                 return ApiResponse::error($couponResult['error'], [], 422);
@@ -616,11 +690,15 @@ class CheckoutController extends Controller
 
             $discountCents = $couponResult['discount'];
             $discountAllocations = $couponResult['allocations'];
+            $freeShippingDiscountCents = $this->applyFreeShippingDiscount($coupon, $couponResult, $vendorShipping);
+            $shippingFeeCents = $vendorShipping['total'];
         }
         $couponDiscountCents = $discountCents;
 
         // ── Affiliate/marketer promo code ───────────────────────────────────────
-        if ($cart->affiliate_promo_code_id) {
+        // is_stackable=false blocks the affiliate promo from stacking on top
+        // of the coupon (enhancement.md P-04 — previously stacked unconditionally).
+        if ($cart->affiliate_promo_code_id && (! $coupon || $coupon->is_stackable)) {
             $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
             if ($affiliatePromoCode) {
                 $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotal, $cart->currency);
@@ -768,7 +846,8 @@ class CheckoutController extends Controller
                 $warrantySelections, $cart, $couponDiscountCents,
                 $loyaltyDiscount, $loyaltyPointsToUse,
                 $gatewayCode, $isCod, $isWallet, $methodConfig,
-                $pricedLinesByItemId, $pricedSubOrdersByVendorId, $cartLineSources
+                $pricedLinesByItemId, $pricedSubOrdersByVendorId, $cartLineSources,
+                $hasAffiliatePromo
             ) {
                 $vendorShippingMap = $vendorShipping['per_vendor'];
                 $order = Order::create([
@@ -1148,16 +1227,35 @@ class CheckoutController extends Controller
                 if ($coupon) {
                     // Re-validate at placement time — coupon may have expired,
                     // hit its usage limit, or become otherwise invalid since it
-                    // was applied to the cart.
-                    try {
-                        $this->couponService->validate($coupon->code, $cart, $customer);
-                    } catch (ValidationException $e) {
+                    // was applied to the cart (enhancement.md P-04 task 2).
+                    $reCheck = $this->couponEligibilityService->evaluate(
+                        $coupon, $customer, $summary['subtotal'], $cart->currency, $cartItems, $country->id, $hasAffiliatePromo
+                    );
+                    if ($reCheck['error']) {
                         throw new \DomainException(
-                            __('common.exceptions.checkout.coupon_no_longer_valid', ['reason' => $e->validator->errors()->first()])
+                            __('common.exceptions.checkout.coupon_no_longer_valid', ['reason' => $reCheck['error']])
                         );
                     }
 
-                    $this->couponService->recordUsage($coupon, $order, $customer, $couponDiscountCents);
+                    // Locks the coupon row (SELECT ... FOR UPDATE) and
+                    // atomically re-checks + increments usage_limit_total,
+                    // so two concurrent placements against a coupon with
+                    // usage_limit_total=1 cannot both succeed.
+                    try {
+                        $this->couponUsageService->reserve($coupon->id, $customer, $order, $couponDiscountCents);
+                    } catch (CouponNoLongerValidException $e) {
+                        throw new \DomainException(
+                            __('common.exceptions.checkout.coupon_no_longer_valid', ['reason' => $e->getMessage()])
+                        );
+                    }
+
+                    // Wallet already fully captured the order above (before
+                    // any gateway call) — consume the reservation now rather
+                    // than leaving it 'reserved' until a webhook that will
+                    // never arrive for this payment method.
+                    if ($order->payment_status === 'captured') {
+                        $this->couponUsageService->consumeForOrder($order);
+                    }
                 }
 
                 // ── Debit loyalty points ──────────────────────────────────────
@@ -1202,6 +1300,7 @@ class CheckoutController extends Controller
             ]);
             $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
             $this->releaseReservedInventory($order);
+            $this->couponUsageService->releaseForOrder($order);
         } elseif ($isCod) {
             // Cash hasn't changed hands yet — this transaction (and order.payment_status,
             // already 'pending' from creation above) only becomes 'succeeded'/'captured' once
@@ -1231,6 +1330,7 @@ class CheckoutController extends Controller
                     ]);
                     $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
                     $this->releaseReservedInventory($order);
+                    $this->couponUsageService->releaseForOrder($order);
                 } else {
                     $paymentRedirectUrl = $paymentResult->redirectUrl;
                     if ($gatewayCode === 'bank_transfer') {
@@ -1246,6 +1346,7 @@ class CheckoutController extends Controller
                 ]);
                 $order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
                 $this->releaseReservedInventory($order);
+                $this->couponUsageService->releaseForOrder($order);
             }
         }
 

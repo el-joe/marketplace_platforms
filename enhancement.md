@@ -233,7 +233,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 ---
 
-## P-04 🟠 Coupons: rules not enforced, free-shipping does nothing, usage never reverted
+## P-04 🟠 Coupons: rules not enforced, free-shipping does nothing, usage never reverted --DONE
 
 **Problem (`Services/Customer/CheckoutCalculationService.php:177-257`, `CouponService.php:318`)**
 - A `free_shipping` coupon returns `discount = 0` (`:243`) and never zeroes shipping, so it has **no effect**.
