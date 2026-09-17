@@ -19,7 +19,7 @@ const MobileNav = () => {
   const { setAuthDialogIsOpen, isLogged } = useAuthContext();
   const { cart } = useCartContext();
   return (
-    <nav className="fixed bottom-0 inset-x-0 px-2 md:hidden z-10 flex items-center justify-between shadow-xl bg-white h-15 flex-wrap overflow-auto">
+    <nav className="fixed bottom-0 inset-x-0 px-3 md:hidden z-10 flex items-center justify-between shadow-xl bg-white h-15 flex-wrap overflow-auto">
       <NavButton Icon={HomeIcon} text={t("home")} href="/" />
       <NavButton
         Icon={LayoutGridIcon}
