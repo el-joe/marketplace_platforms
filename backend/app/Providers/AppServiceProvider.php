@@ -148,6 +148,7 @@ class AppServiceProvider extends ServiceProvider
         SubOrder::observe(SubOrderObserver::class);
         Coupon::observe(CouponObserver::class);
         \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
+        \App\Models\MarketerListing::observe(\App\Observers\MarketerListingObserver::class);
 
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
         Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
@@ -166,6 +167,11 @@ class AppServiceProvider extends ServiceProvider
         // SyncListingStockStatus so the source listing's status column is
         // already up to date when this runs.
         Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncMarketerListingAvailabilityOnStock::class);
+        // enhancement.md P-19 task 2: total_stock in product_country_buybox
+        // must follow every stock mutation, not only the ones that flip a
+        // listing's status (SyncListingStockStatus above only writes on a
+        // status change).
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\RebuildBuyBoxOnStockChange::class);
         // enhancement.md P-09 task 2: warranty activation on delivery is
         // implemented in SubOrderObserver::updating() (fires on the same
         // status write that produces SubOrderDelivered, before this event's

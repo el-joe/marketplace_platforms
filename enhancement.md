@@ -797,7 +797,7 @@ Data reality in the dump: 137 images. 116 are product-level, 9 are variant-level
 
 These timings are small **only because the dataset is tiny**. Query count grows linearly with blocks, categories and products, and the aggregate query grows with listings × inventory rows. At 50k products and 100 blocks these endpoints will exceed 500 ms by a large margin.
 
-## P-19 🔴 Rewrite the category products / search / listing query (`ProductQueryService::baseQuery`)
+## P-19 🔴 Rewrite the category products / search / listing query (`ProductQueryService::baseQuery`) --DONE
 
 **Problem (`app/Services/Customer/ProductQueryService.php:170-420`)**
 - About 20 `selectRaw` expressions, each a `COALESCE` of 3 correlated subqueries (admin / vendor / marketer), so **around 60 correlated subqueries per product row**. They are evaluated over the whole grouped set before `LIMIT`, because of `GROUP BY products.id` and sorting.

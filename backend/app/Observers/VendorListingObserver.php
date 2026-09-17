@@ -3,8 +3,10 @@
 namespace App\Observers;
 
 use App\Jobs\RecomputeListingShippingMethodsJob;
+use App\Models\Country;
 use App\Models\VendorListing;
 use App\Services\CachedListingResolver;
+use App\Services\Customer\BuyBoxRebuildService;
 use App\Services\Marketer\MarketerListingAvailabilityService;
 use App\Services\Shared\PageCacheService;
 
@@ -14,6 +16,7 @@ class VendorListingObserver
         private readonly CachedListingResolver $cachedListingResolver,
         private readonly PageCacheService $pageCache,
         private readonly MarketerListingAvailabilityService $marketerAvailability,
+        private readonly BuyBoxRebuildService $buyBoxRebuilder,
     ) {
     }
 
@@ -24,6 +27,7 @@ class VendorListingObserver
         ));
 
         $this->cachedListingResolver->bustVendorListing($listing);
+        $this->rebuildBuyBox($listing);
     }
 
     public function updated(VendorListing $listing): void
@@ -46,11 +50,29 @@ class VendorListingObserver
         if ($listing->wasChanged(['status', 'price'])) {
             $this->marketerAvailability->syncAllForSource('vendor_listing', $listing->id);
         }
+
+        // enhancement.md P-19 task 2: buy-box winner/aggregates depend on
+        // every one of these columns.
+        if ($listing->wasChanged(['status', 'price', 'compare_at_price', 'score', 'rating_avg',
+                                   'rating_count', 'fulfillment_model', 'primary_shipping_method_id'])) {
+            $this->rebuildBuyBox($listing);
+        }
     }
 
     public function deleted(VendorListing $listing): void
     {
         $this->cachedListingResolver->bustVendorListing($listing);
         $this->pageCache->bustVendorListing($listing);
+        $this->rebuildBuyBox($listing);
+    }
+
+    private function rebuildBuyBox(VendorListing $listing): void
+    {
+        $productId = $listing->productVariant?->product_id;
+        $country = $productId ? Country::find($listing->country_id) : null;
+
+        if ($productId && $country) {
+            $this->buyBoxRebuilder->rebuildProducts([$productId], $country);
+        }
     }
 }
