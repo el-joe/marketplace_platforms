@@ -19,6 +19,8 @@ import { ChevronLeft, ChevronRight, StarIcon, StoreIcon } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
 import { OtherSeller, ProductCustomAttribute } from "./types/product-details";
 import CartButton from "./cart-button";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 const MoreOffersSheet = ({
   trigger,
@@ -41,7 +43,7 @@ const MoreOffersSheet = ({
           <SheetDescription>
             <div className="flex gap-2">
               <Image
-                src={productData?.product?.images[0].url}
+                src={getImageURL(getListingImage(productData?.product))}
                 alt={productData?.product?.name[locale] as string}
                 width={60}
                 height={80}

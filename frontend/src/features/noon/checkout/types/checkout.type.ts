@@ -1,4 +1,5 @@
 import { PlacementBanner } from "@/src/types/placement-banner";
+import { ImageDTO } from "@/src/types/media";
 
 // response
 // export interface IPrepareCheckout {
@@ -219,6 +220,9 @@ export interface Item {
   product_name_ar: string;
   max_order_quantity: null | number;
   variant_name: string;
+  image?: ImageDTO | null;
+  images?: ImageDTO[];
+  // TODO: remove legacy alias fallback once backend drops primary_image/thumbnail/variant_image aliases (see enhancement.md P-17)
   primary_image: null | string;
   listing_id: string;
   listing_type: string;

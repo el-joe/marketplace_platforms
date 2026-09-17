@@ -5,6 +5,8 @@ import { Product } from "@/types/globals";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import AddToCartButton from "@/src/components/shared/add-to-cart-button";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 const MegaDealsCard = ({ data }: { data: Product }) => {
   const locale = useLocale();
@@ -17,8 +19,8 @@ const MegaDealsCard = ({ data }: { data: Product }) => {
         </div>
         {/* image */}
         <Image
-          src={data?.thumbnail || "/images/no-image-available-icon.jpg"}
-          alt={data?.name_en}
+          src={getImageURL(getListingImage(data))}
+          alt={(locale === "ar" ? data?.name_ar : data?.name_en) ?? ""}
           width={900}
           height={600}
           className="h-46 lg:h-18 xl:h-22 2xl:h-40 object-contain"

@@ -5,6 +5,8 @@ import { Product } from "@/types/globals";
 import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import AddToCartButton from "@/src/components/shared/add-to-cart-button";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 const SpotlightCard = ({ data }: { data: Product }) => {
   const locale = useLocale();
@@ -30,11 +32,7 @@ const SpotlightCard = ({ data }: { data: Product }) => {
         />
         {/* image */}
         <Image
-          src={
-            data?.primary_image ||
-            data?.thumbnail ||
-            "/images/no-image-available-icon.jpg"
-          }
+          src={getImageURL(getListingImage(data))}
           alt={locale === "ar" ? data.name_ar : data?.name_en}
           width={400}
           height={700}

@@ -7,6 +7,7 @@ import { Navigation } from "swiper/modules";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInstance } from "@/src/lib/utils";
 import { IProduct } from "@/types";
+import { getListingImage } from "@/src/types/media";
 
 type props = {
   title: string;
@@ -36,7 +37,7 @@ const CarouselProducts = ({ title, showViewAllButton, items: providedItems }: pr
       product.slug &&
       product.product_url &&
       product.price > 0 &&
-      (product.thumbnail || product.primary_image),
+      !!getListingImage(product),
   );
 
   if (items.length === 0) return null;

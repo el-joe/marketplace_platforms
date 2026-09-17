@@ -6,6 +6,8 @@ import Price from "./Price";
 import useLocale from "@/src/hooks/use-locale";
 import type { Product } from "@/types/globals";
 import { AdBadge } from "./ad-badge";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 type Props = {
   productData: Product;
@@ -19,7 +21,7 @@ const SpecialProductCard = ({ productData }: Props) => {
       ? productData.category_name?.ar
       : productData.category_name?.en;
 
-  const imageUrl = productData.primary_image || productData.thumbnail;
+  const imageUrl = getListingImage(productData);
 
   const hasCompareAtPrice =
     !!productData.compare_at_price &&
@@ -40,7 +42,7 @@ const SpecialProductCard = ({ productData }: Props) => {
 
         {imageUrl ? (
           <Image
-            src={imageUrl || "/images/no-image-available-icon.jpg"}
+            src={getImageURL(imageUrl)}
             alt={locale === "ar" ? productData.name_ar : productData.name_en}
             fill
             className="object-contain p-3 group-hover:scale-105 transition-transform duration-300"

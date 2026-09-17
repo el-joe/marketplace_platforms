@@ -754,7 +754,7 @@ Data reality in the dump: 137 images. 116 are product-level, 9 are variant-level
 
 ---
 
-## P-18 🔴 Frontend: consume the resolved image in every product card, PDP, cart, checkout and search
+## P-18 🔴 Frontend: consume the resolved image in every product card, PDP, cart, checkout and search --DONE
 
 **Problem**
 - `src/features/noon/cart/cart-item.tsx:64` and `src/features/noon/checkout/items-list.tsx:58` read `item.primary_image`, which today is a raw path. `getImageURL` (`src/helpers/get-image-url.ts`) returns the placeholder for any relative path that does not start with `/storage/`, **so cart and checkout images never show.**

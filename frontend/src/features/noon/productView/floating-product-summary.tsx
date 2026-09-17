@@ -5,6 +5,8 @@ import Image from "next/image";
 import useLocale from "@/src/hooks/use-locale";
 import Price from "@/src/components/shared/Price";
 import CartButton from "./cart-button";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 type Props = {
   product: IProductDetails;
@@ -24,20 +26,22 @@ export default function FloatingProductSummary({ product }: Props) {
     window.addEventListener("scroll", () => handleShow());
     return window.removeEventListener("scroll", () => handleShow());
   }, []);
-  console.log(product);
-  
   return (
     <div
       ref={containerRef}
       className={`hidden fixed -bottom-28 bg-white shadow-lg rounded-3xl px-6 py-3 inset-s-1/2 ${locale === "ar" ? "translate-x-1/2" : "-translate-x-1/2"} z-50 lg:flex items-center gap-4 max-w-[100vw] transition-all duration-500`}
     >
       <Image
-        src={
-          (
-            product.product.images.find((e) => e.is_primary) ||
-            product.product.images[0]
-          )?.url
-        }
+        src={getImageURL(
+          getListingImage({
+            images: product.product.images.length
+              ? [
+                  product.product.images.find((e) => e.is_primary) ||
+                    product.product.images[0],
+                ]
+              : [],
+          }),
+        )}
         alt={product.product.name.en as string}
         width={60}
         height={60}

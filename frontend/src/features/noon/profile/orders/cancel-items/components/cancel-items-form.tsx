@@ -12,6 +12,8 @@ import { Button } from "@/src/components/ui/button";
 import { returnReasons } from "../../helpers/constants";
 import { useCancelActions } from "../helpers/use-cancel-actions";
 import type { OrderDetailItem, ReturnReason } from "../../helpers/types";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 type Props = {
   orderNumber: string;
@@ -49,7 +51,11 @@ export default function CancelItemsForm({ orderNumber, items }: Props) {
           return (
             <div key={item.id} className="flex items-start gap-4 py-4 first:pt-0">
               <Image
-                src={item.thumbnail ?? "/images/profile/orders-icon.svg"}
+                src={
+                  getListingImage(item)
+                    ? getImageURL(getListingImage(item))
+                    : "/images/profile/orders-icon.svg"
+                }
                 alt={name}
                 width={72}
                 height={72}

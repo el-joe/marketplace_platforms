@@ -4,6 +4,7 @@ import useLocale from "@/src/hooks/use-locale";
 import { cn } from "@/src/lib/utils";
 import Image from "next/image";
 import { useRouter } from "@/i18n/navigation";
+import { getImageURL } from "@/src/helpers/get-image-url";
 
 type Props = {
   variantsData: IProductDetails["product_attributes"];
@@ -68,9 +69,7 @@ function VariantCard({
       >
         <Image
           className="h-26!"
-          src={
-            variantData?.variant_image || "/images/no-image-available-icon.jpg"
-          }
+          src={getImageURL(variantData?.variant_image)}
           alt="color image"
           width={80}
           height={160}

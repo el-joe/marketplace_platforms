@@ -14,6 +14,8 @@ import Image from "next/image";
 import { ISearchSuggestionsData } from "./types/search.type";
 import { getSearchSuggestionsService } from "./api/get";
 import { cn } from "@/src/lib/utils";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 const SearchField = () => {
   // const locale = useLocale();
@@ -314,10 +316,7 @@ const SearchField = () => {
                             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
                           >
                             <Image
-                              src={
-                                product.primary_image ||
-                                "/images/no-image-available-icon.jpg"
-                              }
+                              src={getImageURL(getListingImage(product))}
                               alt={product.name}
                               width={50}
                               height={60}

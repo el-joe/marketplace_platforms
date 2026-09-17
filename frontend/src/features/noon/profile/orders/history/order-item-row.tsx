@@ -5,6 +5,8 @@ import { Link } from "@/i18n/navigation";
 import { ShieldCheck } from "lucide-react";
 import type { OrderDetailItem } from "../helpers/types";
 import type { ReactNode } from "react";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 type Props = {
   item: OrderDetailItem;
@@ -26,7 +28,11 @@ export default async function OrderItemRow({
       {leading}
 
       <Image
-        src={item.thumbnail ?? "/images/profile/orders-icon.svg"}
+        src={
+          getListingImage(item)
+            ? getImageURL(getListingImage(item))
+            : "/images/profile/orders-icon.svg"
+        }
         alt={name}
         width={72}
         height={72}
