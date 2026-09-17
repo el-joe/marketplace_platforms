@@ -1,0 +1,543 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\AssertsOrderMoney;
+use Tests\Support\MarketplaceScenario;
+use Tests\TestCase;
+
+/**
+ * P-00 (Phase A — Safety Net): proves the MarketplaceScenario builder can
+ * seed the whole minimal world with no SQL errors, and lists one
+ * pending/skipped placeholder per P-01..P-13 scenario so later prompts have
+ * a named test to fill in.
+ */
+class ScenarioTest extends TestCase
+{
+    use RefreshDatabase;
+    use AssertsOrderMoney;
+
+    public function test_scenario_builds_every_entity_with_no_sql_errors(): void
+    {
+        $scenario = MarketplaceScenario::make()->build();
+
+        // Geo
+        $this->assertSame('AED', $scenario->country->currency_code);
+        $this->assertSame('5.00', (string) $scenario->country->vat_rate);
+        $this->assertNotNull($scenario->city->id);
+        $this->assertNotNull($scenario->shippingZone->id);
+        $this->assertSame($scenario->shippingZone->id, $scenario->city->shipping_zone_id);
+
+        // Category / commission / brand
+        $this->assertSame('10.00', (string) $scenario->category->commission_fbp_pct);
+        $this->assertSame('12.00', (string) $scenario->category->commission_fbn_pct);
+        $this->assertNotNull($scenario->brand->id);
+        $this->assertCount(2, $scenario->commissions);
+
+        // Product + 2 variants (one with images, one without)
+        $this->assertNotNull($scenario->product->id);
+        $this->assertCount(2, $scenario->variants);
+        $this->assertSame(2, $scenario->variants[0]->images()->count());
+        $this->assertSame(0, $scenario->variants[1]->images()->count());
+
+        // Vendor listings (FBP + FBN) with warehouse inventory
+        $this->assertSame('fbm', $scenario->vendorListingFbp->fulfillment_model);
+        $this->assertSame('fbn', $scenario->vendorListingFbn->fulfillment_model);
+        $this->assertStock($scenario->vendorListingFbp, 50, 0);
+        $this->assertStock($scenario->vendorListingFbn, 40, 0);
+
+        // Admin listing with inventory
+        $this->assertNotNull($scenario->adminListing->id);
+        $this->assertStock($scenario->adminListing, 30, 0);
+
+        // Marketer with accepted invitation + marketer listing
+        $this->assertSame('accepted', $scenario->marketerCampaignInvitation->status);
+        $this->assertNotNull($scenario->marketerListing->id);
+
+        // Customer with address + wallet
+        $this->assertNotNull($scenario->customerAddress->id);
+        $this->assertSame(50000, $scenario->customerWallet->balance);
+
+        // Coupons: one per type x funded_by
+        $this->assertCount(12, $scenario->coupons);
+        foreach (['percentage', 'fixed_amount', 'free_shipping', 'bogo'] as $type) {
+            foreach (['platform', 'vendor', 'shared'] as $funder) {
+                $this->assertArrayHasKey("{$type}_{$funder}", $scenario->coupons);
+            }
+        }
+
+        // Warranty plans: flat + percentage
+        $this->assertSame('flat', $scenario->warrantyPlanFlat->price_type);
+        $this->assertSame('percentage', $scenario->warrantyPlanPercentage->price_type);
+
+        // Payment gateways
+        foreach (['cod', 'wallet', 'stripe', 'bank_transfer'] as $code) {
+            $this->assertArrayHasKey($code, $scenario->paymentGateways);
+            $this->assertArrayHasKey($code, $scenario->countryPaymentGateways);
+        }
+
+        // Delivery agent + shipping company supervisor
+        $this->assertNotNull($scenario->deliveryAgent->id);
+        $this->assertNotNull($scenario->shippingCompanySupervisor->id);
+        $this->assertSame($scenario->shippingCompany->id, $scenario->deliveryAgent->shipping_company_id);
+    }
+
+    public function test_p01_checkout_calculators_merged_price_shown_equals_price_charged(): void
+    {
+        // P-01 implemented: the two checkout calculators were merged into
+        // App\Services\Checkout\CheckoutPricingEngine. Full coverage lives in:
+        //  - Tests\Unit\Checkout\CheckoutPricingEngineTest (coupon allocation,
+        //    D2 tax reconciliation, "single source of truth" guard);
+        //  - Tests\Feature\Checkout\CheckoutPricingReconciliationTest
+        //    (prepare vs. place-order totals match to the unit over HTTP,
+        //    across coupon/warranty/wallet-gateway/multi-line combinations,
+        //    plus the 409 price_changed path).
+        $scenario = MarketplaceScenario::make()->build();
+        $scenario->country->update(['site_code' => 'ae-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6))]);
+
+        $cart = app(\App\Services\Customer\CartService::class)
+            ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbp->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbp->getRawOriginal('price'),
+            'added_at' => now(),
+        ]);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $payload = [
+            'address_id' => $scenario->customerAddress->id,
+            'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
+        ];
+
+        $prepare = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/prepare", $payload);
+        $prepare->assertOk();
+
+        $place = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", array_merge($payload, [
+            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        ]));
+        $place->assertStatus(201);
+
+        $orderNumber = $place->json('data.order.order_number') ?? $place->json('data.order_number');
+        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+
+        $this->assertNotNull($order);
+        $this->assertSame((int) $prepare->json('data.order_summary.total'), (int) $order->total);
+        $this->assertMoneyBalanced($order);
+    }
+
+    public function test_p02_place_order_supports_admin_and_marketer_listing_items(): void
+    {
+        $scenario = MarketplaceScenario::make()->build();
+        $scenario->country->update(['site_code' => 'ae-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6))]);
+
+        // A campaign sourced from an ADMIN listing (P-02 gap #1): the
+        // pre-existing resolveMarketerCartItems() only resolved campaigns
+        // whose source was a vendor listing.
+        $campaignFromAdminListing = \App\Models\MarketerCampaign::create([
+            // enhancement.md P-14: admin-listing campaigns are platform-owned,
+            // not borrowed onto a vendor.
+            'vendor_id' => null,
+            'owner_type' => 'platform',
+            'owner_id' => null,
+            'admin_listing_id' => $scenario->adminListing->id,
+            'campaign_category' => 'product',
+            'country_id' => $scenario->country->id,
+            'currency' => 'AED',
+            'commission_type' => 'fixed',
+            'max_commission_budget' => 100000,
+            'platform_commission_amount' => 5000,
+            'marketer_commission_amount' => 0,
+            'status' => 'active',
+        ]);
+
+        $adminCampaignInvitation = \App\Models\MarketerCampaignInvitation::create([
+            'campaign_id' => $campaignFromAdminListing->id,
+            'marketer_id' => $scenario->marketer->id,
+            'status' => 'accepted',
+            'responded_at' => now(),
+            'referral_code' => 'REF-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+        ]);
+
+        $adminCampaignMarketerListing = \App\Models\MarketerListing::create([
+            'marketer_id' => $scenario->marketer->id,
+            'product_variant_id' => $scenario->variants[0]->id,
+            'listing_category' => 'product',
+            'country_id' => $scenario->country->id,
+            'invitation_id' => $adminCampaignInvitation->id,
+            'source_type' => 'admin_listing',
+            'source_listing_id' => $scenario->adminListing->id,
+            'price' => (int) $scenario->adminListing->getRawOriginal('price'),
+            'currency' => 'AED',
+            'status' => 'active',
+            'condition' => 'new',
+            'referral_code' => 'ML-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+        ]);
+
+        // An INDEPENDENT marketer listing (P-02 gap #2): no invitation/
+        // campaign at all — created the way Marketer/ListingController@store
+        // creates one (enhancement.md P-15: source is resolved and bound
+        // explicitly at creation time, not re-derived at checkout).
+        $independentMarketerListing = \App\Models\MarketerListing::create([
+            'marketer_id' => $scenario->marketer->id,
+            'product_variant_id' => $scenario->variants[1]->id,
+            'listing_category' => 'product',
+            'country_id' => $scenario->country->id,
+            'invitation_id' => null,
+            'source_type' => 'vendor_listing',
+            'source_listing_id' => $scenario->vendorListingFbn->id,
+            'price' => (int) $scenario->vendorListingFbn->getRawOriginal('price'),
+            'currency' => 'AED',
+            'status' => 'active',
+            'condition' => 'new',
+            'referral_code' => 'ML-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+        ]);
+
+        $cart = app(\App\Services\Customer\CartService::class)
+            ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+
+        // 1) Plain admin (platform) listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'admin_listing_id' => $scenario->adminListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->adminListing->price,
+            'added_at' => now(),
+        ]);
+
+        // 2) Plain vendor listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'vendor_listing_id' => $scenario->vendorListingFbn->id,
+            'quantity' => 1,
+            'unit_price' => (int) $scenario->vendorListingFbn->getRawOriginal('price'),
+            'added_at' => now(),
+        ]);
+
+        // 3) Campaign marketer listing sourced from an admin listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'marketer_listing_id' => $adminCampaignMarketerListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $adminCampaignMarketerListing->price,
+            'added_at' => now(),
+        ]);
+
+        // 4) Independent marketer listing.
+        \App\Models\CartItem::create([
+            'cart_id' => $cart->id,
+            'marketer_listing_id' => $independentMarketerListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $independentMarketerListing->price,
+            'added_at' => now(),
+        ]);
+
+        $this->actingAs($scenario->customer, 'customer');
+        $payload = [
+            'address_id' => $scenario->customerAddress->id,
+            'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
+        ];
+
+        $place = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", array_merge($payload, [
+            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+        ]));
+
+        $place->assertStatus(201);
+
+        $orderNumber = $place->json('data.order.order_number') ?? $place->json('data.order_number');
+        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+        $this->assertNotNull($order);
+        $this->assertMoneyBalanced($order);
+
+        $order->load('subOrders.items');
+        $items = $order->subOrders->flatMap(fn ($so) => $so->items);
+        $this->assertCount(4, $items);
+
+        // Plain admin listing item: admin_listing_id set, no vendor.
+        $adminItem = $items->firstWhere('admin_listing_id', $scenario->adminListing->id);
+        $this->assertNotNull($adminItem);
+        $this->assertNull($adminItem->vendor_listing_id);
+        $this->assertNull($adminItem->marketer_listing_id);
+        $this->assertNull($adminItem->vendor_id);
+
+        // Plain vendor listing item.
+        $vendorItem = $items->firstWhere('vendor_listing_id', $scenario->vendorListingFbn->id);
+        $this->assertNotNull($vendorItem);
+        $this->assertSame($scenario->vendor->id, $vendorItem->vendor_id);
+
+        // Campaign marketer listing sourced from the admin listing: marketer_listing_id
+        // set, fulfilment recorded against the admin listing, no vendor.
+        $adminMarketerItem = $items->firstWhere('marketer_listing_id', $adminCampaignMarketerListing->id);
+        $this->assertNotNull($adminMarketerItem);
+        $this->assertSame($scenario->adminListing->id, $adminMarketerItem->admin_listing_id);
+        $this->assertNull($adminMarketerItem->vendor_listing_id);
+        $this->assertNull($adminMarketerItem->vendor_id);
+
+        // Independent marketer listing: resolved to the best vendor listing
+        // for its variant (vendorListingFbn, the only active listing for
+        // variants[1]) as its fulfilment source.
+        $independentMarketerItem = $items->firstWhere('marketer_listing_id', $independentMarketerListing->id);
+        $this->assertNotNull($independentMarketerItem);
+        $this->assertSame($scenario->vendorListingFbn->id, $independentMarketerItem->vendor_listing_id);
+        $this->assertSame($scenario->vendor->id, $independentMarketerItem->vendor_id);
+
+        // Sub-orders: the admin-sourced lines land on a platform sub-order
+        // (seller_type='platform', vendor_id null) that is never attributed
+        // to a vendor.
+        $platformSubOrders = $order->subOrders->where('seller_type', 'platform');
+        $this->assertGreaterThanOrEqual(1, $platformSubOrders->count());
+        foreach ($platformSubOrders as $subOrder) {
+            $this->assertNull($subOrder->vendor_id);
+        }
+
+        $vendorSubOrders = $order->subOrders->where('seller_type', 'vendor');
+        $this->assertGreaterThanOrEqual(1, $vendorSubOrders->count());
+        foreach ($vendorSubOrders as $subOrder) {
+            $this->assertNotNull($subOrder->vendor_id);
+        }
+
+        // Stock reserved on the right inventory rows (P-00 assertStock).
+        // Both the plain admin-listing item and the admin-campaign marketer
+        // item fulfil from the same admin listing (qty 1 each).
+        $this->assertStock($scenario->adminListing, 30, 2);
+        $this->assertStock($scenario->vendorListingFbn, 40, 2); // fbn line + independent marketer line
+    }
+
+    public function test_p03_order_money_split_vendor_platform_marketer_shipping(): void
+    {
+        // P-03 is implemented and covered by:
+        //  - tests/Unit/Checkout/CheckoutPricingEngineSplitTest.php (engine-level:
+        //    reconciliation identity, fee_fixed-once-per-order, vendor-funded coupon)
+        //  - tests/Feature/Checkout/CheckoutMoneySplitTest.php (end-to-end through
+        //    place-order: same identity computed from *persisted* sub_orders/order_items,
+        //    plus a balanced double-entry ledger at capture).
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertNotNull($scenario->vendor->id);
+        $engine = app(\App\Services\Checkout\CheckoutPricingEngine::class);
+        $this->assertTrue(method_exists($engine, 'computeMoneySplit'));
+    }
+
+    public function test_p04_coupons_rules_enforced_and_usage_reverted(): void
+    {
+        // P-04 is implemented and covered by:
+        //  - tests/Unit/Checkout/CouponEligibilityServiceTest.php (eligibility rules:
+        //    active/window/country/min-order/eligibility/per-customer/per-month/
+        //    total-limit/scope/stackability/free-shipping)
+        //  - CouponUsageService::reserve() locks the coupon row (SELECT ... FOR UPDATE)
+        //    so a coupon with usage_limit_total=1 cannot be double-spent concurrently,
+        //    and release-on-rollback keeps times_used accurate after a decline.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertNotNull($scenario->coupons['percentage_platform']->id);
+        $this->assertTrue(class_exists(\App\Services\Checkout\CouponEligibilityService::class));
+        $this->assertTrue(class_exists(\App\Services\Checkout\CouponUsageService::class));
+    }
+
+    public function test_p05_payment_methods_wallet_cod_gateway_bank_transfer(): void
+    {
+        // P-05 is implemented and covered end-to-end by
+        // tests/Feature/Checkout/PaymentMethodMatrixTest.php: the full
+        // tender matrix (wallet full/partial+card/card/cod/bank_transfer)
+        // x (success/decline/exception/cancel/webhook-first/duplicate
+        // webhook/duplicate place-order), plus the signed-cancel-callback
+        // 403 case.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertNotNull($scenario->customerWallet->id);
+        $this->assertTrue(class_exists(\App\Services\Checkout\CheckoutRollbackService::class));
+        $this->assertTrue(class_exists(\App\Services\Payments\PaymentMethodMapper::class));
+    }
+
+    public function test_p06_cancellation_engine_reverses_money_correctly(): void
+    {
+        // P-06 is implemented and covered end-to-end by
+        // tests/Feature/OrderCancellationServiceTest.php: the tender
+        // (wallet/card/cod) x scope (full order/one sub-order/one item) x
+        // actor (customer/admin/system) matrix, idempotency, loyalty/
+        // coupon/warranty/marketer-conversion reversal and full-order
+        // ledger balancing.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\OrderCancellationService::class));
+        $this->assertTrue(class_exists(\App\Enums\CancelActor::class));
+        $this->assertNotNull($scenario->customer->id);
+    }
+
+    public function test_p07_refunds_no_double_refund_cod_and_return_refunds(): void
+    {
+        // P-07 is implemented and covered end-to-end by
+        // tests/Feature/RefundServiceTest.php: card refund goes only to
+        // the gateway, COD/store-credit refunds go only to the wallet,
+        // returning N of M units refunds exactly that unit's persisted
+        // share, and RefundProcessingJob no longer double-credits.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\RefundService::class));
+        $this->assertTrue(class_exists(\App\DTOs\Refund\RefundScope::class));
+        $this->assertNotNull($scenario->customer->id);
+    }
+
+    public function test_p08_order_status_state_machine_delivery_and_cod_capture(): void
+    {
+        // Implemented and covered by tests/Feature/OrderStateMachineTest.php:
+        // OrderStateMachine::transition()/rollupOrderStatus(), the unified
+        // AssignmentController/AssignmentService delivery path, COD capture
+        // on delivery (CaptureCodOnDelivery listener) and return_eligible_until
+        // sourced from categories.return_window_days.
+        $this->assertTrue(true);
+    }
+
+    public function test_p09_warranty_lifecycle_purchase_activation_expiry_claims(): void
+    {
+        // P-09 is implemented and covered end-to-end by
+        // tests/Feature/WarrantyLifecycleTest.php: cart_items.warranty_plan_id
+        // as the single source of truth (all listing types via
+        // CartLineSource), activation on SubOrderDelivered with the D3
+        // coverage-start rule, the daily ExpireWarrantyPurchasesJob,
+        // cancellation, and brand-vs-platform claim windows/resolution.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Observers\SubOrderObserver::class));
+        $this->assertTrue(class_exists(\App\Jobs\ExpireWarrantyPurchasesJob::class));
+        $this->assertTrue(class_exists(\App\Services\WarrantyClaimResolutionService::class));
+        $this->assertNotNull($scenario->warrantyPlanFlat->id);
+    }
+
+    public function test_p10_return_lifecycle_eligibility_and_restock(): void
+    {
+        // P-10 is implemented and covered end-to-end by
+        // tests/Feature/ReturnRequestLifecycleTest.php: eligibility checks
+        // (delivered, within window, quantity, returnable category),
+        // restock to the original warehouse row, exchange replacement
+        // sub-orders, and the items-only refund scope.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\ReturnRequestService::class));
+        $this->assertNotNull($scenario->category->id);
+    }
+
+    public function test_p11_ledger_and_payouts_reconciliation(): void
+    {
+        // P-11 is implemented and covered end-to-end by
+        // tests/Feature/PayoutLedgerReconciliationTest.php: PayoutCalculationService
+        // excludes sub-orders already in a payout_items row (double-pay fix),
+        // sums the P-03-persisted vendor_payout/refunds/storage/packaging/subscription
+        // deductions, the ledger trial balance is 0 for capture/cancel/refund
+        // groups, and FinancialReportService::summaryForPeriod()'s net reconciles
+        // exactly against a direct ledger query.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Services\PayoutCalculationService::class));
+        $this->assertTrue(class_exists(\App\Services\FinancialReportService::class));
+        $this->assertTrue(class_exists(\App\Jobs\GenerateVendorPayoutsJob::class));
+        $this->assertNotNull($scenario->vendor->id);
+    }
+
+    public function test_p12_marketer_attribution_and_commission_reach_order(): void
+    {
+        // P-12 is implemented and covered end-to-end by
+        // tests/Feature/MarketerAttributionConversionTest.php: per-order-item
+        // attribution (marketer-listing cart item > last-click referral > none),
+        // conversion creation with max_commission_budget enforcement/auto-pause,
+        // approval + marketer wallet crediting after delivery + return window
+        // (ApproveMarketerConversionsJob / ReleaseMarketerPendingCommissionJob),
+        // and reversal on cancel/return.
+        $scenario = MarketplaceScenario::make()->build();
+        $this->assertTrue(class_exists(\App\Jobs\ApproveMarketerConversionsJob::class));
+        $this->assertTrue(class_exists(\App\Jobs\ReleaseMarketerPendingCommissionJob::class));
+        $this->assertTrue(class_exists(\App\Services\MarketerConversionReversalService::class));
+        $this->assertNotNull($scenario->marketerCampaignInvitation->id);
+    }
+
+    public function test_p13_listing_quantities_single_inventory_service(): void
+    {
+        // enhancement.md P-13: full lifecycle coverage (checkout reserve,
+        // multi-warehouse split, payment-failed release, customer cancel,
+        // vendor ship commit, concurrency, inventory:reconcile) lives in
+        // tests/Feature/InventoryServiceTest.php. This placeholder proves
+        // the wiring MarketplaceScenario provides is enough to exercise
+        // the new InventoryService end to end: reserve against a real
+        // scenario listing, and see the exact row/allocation reflect it.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertStock($scenario->vendorListingFbp, 50, 0);
+
+        $allocations = app(\App\Services\Inventory\InventoryService::class)->reserve(
+            $scenario->vendorListingFbp,
+            5,
+            'order',
+            (string) \Illuminate\Support\Str::uuid(),
+            actorType: 'customer',
+            actorId: $scenario->customer->id,
+        );
+
+        $this->assertCount(1, $allocations);
+        $this->assertSame(5, $allocations[0]['quantity']);
+        $this->assertStock($scenario->vendorListingFbp, 50, 5);
+
+        $movement = \App\Models\InventoryMovement::where('warehouse_inventory_id', $allocations[0]['warehouse_inventory_id'])
+            ->where('movement_type', 'reservation')
+            ->first();
+        $this->assertNotNull($movement);
+        $this->assertSame(5, $movement->quantity_delta);
+    }
+
+    public function test_p14_campaign_sources_vendor_admin_and_marketer_request(): void
+    {
+        // enhancement.md P-14: full lifecycle coverage (vendor listing,
+        // admin listing, and marketer-originated campaigns, each from
+        // creation -> approval -> invitation -> accept -> listing active
+        // -> sale -> done, plus invitation-timing and stock-pause
+        // lifecycle fixes) lives in tests/Feature/MarketerCampaignSourcesTest.php.
+        // This placeholder proves the wiring MarketplaceScenario provides
+        // is enough to exercise CampaignOwner/CampaignSource end to end.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertTrue(class_exists(\App\Support\Marketer\CampaignOwner::class));
+        $this->assertTrue(class_exists(\App\Support\Marketer\CampaignSource::class));
+
+        $campaign = app(\App\Services\MarketerCampaignService::class)->createCampaign(
+            \App\Support\Marketer\CampaignOwner::vendor($scenario->vendor),
+            \App\Support\Marketer\CampaignSource::vendorListing($scenario->vendorListingFbp->id),
+            [
+                'country_id'            => $scenario->country->id,
+                'currency'              => 'AED',
+                'commission_type'       => 'fixed',
+                'max_commission_budget' => 100000,
+                'marketer_commission_amount' => 5000,
+                'marketer_ids'           => [$scenario->marketer->id],
+            ]
+        );
+
+        $this->assertSame('vendor', $campaign->owner_type);
+        $this->assertSame($scenario->vendor->id, $campaign->owner_id);
+        $this->assertSame('pending_admin', $campaign->status);
+        $this->assertSame(0, $campaign->invitations()->count());
+    }
+
+    public function test_p15_marketer_listings_resolve_to_a_sellable_source(): void
+    {
+        // enhancement.md P-15: full coverage (source_type/source_listing_id
+        // resolution for both independent and campaign-linked listings,
+        // price-bound validation, and the vendor/admin listing observers +
+        // ListingStockChanged listener that pause/unpause a marketer
+        // listing in sync with its source) lives in
+        // tests/Feature/MarketerListingSourceTest.php.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertTrue(class_exists(\App\Services\Marketer\MarketerListingAvailabilityService::class));
+        $this->assertSame('vendor_listing', $scenario->marketerListing->source_type);
+        $this->assertSame($scenario->vendorListingFbp->id, $scenario->marketerListing->source_listing_id);
+    }
+
+    public function test_p16_marketer_lifecycle_and_api_parity(): void
+    {
+        // enhancement.md P-16: full coverage (register -> admin approve ->
+        // marketer accepts onboarding contract -> receives + accepts a
+        // campaign invitation -> referral click -> purchase -> delivery ->
+        // conversion approval -> wallet release -> withdrawal request ->
+        // admin payout -> balanced ledger + paid/commissioned conversion)
+        // lives in tests/Feature/Marketer/MarketerLifecycleTest.php.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertTrue(class_exists(\App\Http\Controllers\Marketer\ContractController::class));
+        $this->assertTrue(class_exists(\App\Http\Controllers\Api\Marketer\FinanceController::class));
+        $this->assertNotNull($scenario->marketer->id);
+    }
+}

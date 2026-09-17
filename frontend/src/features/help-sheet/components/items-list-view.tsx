@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDownIcon, PackageXIcon, SearchIcon } from "lucide-react";
 import { Input } from "@/src/components/ui/base-inputs/input";
 import {
@@ -18,12 +19,6 @@ interface ItemsListViewProps {
   onClose: () => void;
 }
 
-const DURATION_OPTIONS = [
-  "Last 3 months",
-  "Last 6 months",
-  "Last 12 months",
-] as const;
-
 type StatusTab = HelpListItem["status"];
 
 export default function ItemsListView({
@@ -31,6 +26,12 @@ export default function ItemsListView({
   onBack,
   onClose,
 }: ItemsListViewProps) {
+  const t = useTranslations("helpSheet");
+  const DURATION_OPTIONS = [
+    t("last3Months"),
+    t("last6Months"),
+    t("last12Months"),
+  ];
   const [statusTab, setStatusTab] = useState<StatusTab>("in-progress");
   const [duration, setDuration] = useState<string>(DURATION_OPTIONS[0]);
   const [search, setSearch] = useState("");
@@ -45,7 +46,7 @@ export default function ItemsListView({
   return (
     <div className="flex h-full flex-col">
       <HelpSheetHeader
-        title="Choose applicable items"
+        title={t("chooseApplicableItems")}
         showBack
         onBack={onBack}
         onClose={onClose}
@@ -63,7 +64,7 @@ export default function ItemsListView({
                 : "bg-gray-3 text-light")
             }
           >
-            In progress
+            {t("inProgress")}
           </button>
           <button
             type="button"
@@ -75,7 +76,7 @@ export default function ItemsListView({
                 : "bg-gray-3 text-light")
             }
           >
-            Completed
+            {t("completed")}
           </button>
         </div>
 
@@ -83,7 +84,7 @@ export default function ItemsListView({
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search Items"
+            placeholder={t("searchItems")}
             startIcon={<SearchIcon className="size-4 text-gray" />}
             className="h-11 rounded-xl bg-white"
           />
@@ -120,10 +121,9 @@ export default function ItemsListView({
               <PackageXIcon className="size-9 text-gray" />
             </span>
             <div>
-              <p className="font-bold text-light">No items found</p>
+              <p className="font-bold text-light">{t("noItemsFound")}</p>
               <p className="mt-1 text-sm text-gray">
-                We couldn&apos;t find any items that matched your search in
-                the given time period
+                {t("noItemsFoundHint")}
               </p>
             </div>
           </div>

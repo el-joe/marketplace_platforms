@@ -29,7 +29,7 @@ class ReturnController extends Controller
         $vendor = Auth::guard('vendor')->user();
 
         $returns = $this->buildReturnsQuery($request)
-            ->with(['order:id,order_number', 'subOrder:id,sub_order_number', 'customer:id,first_name,last_name'])
+            ->with(['order:id,order_number', 'subOrder:id,sub_order_number', 'customer:id,name'])
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -101,7 +101,7 @@ class ReturnController extends Controller
             ->with([
                 'order:id,order_number',
                 'subOrder:id,sub_order_number',
-                'customer:id,first_name,last_name',
+                'customer:id,name',
                 'items.orderItem:id,product_snapshot',
                 'messages' => fn ($q) => $q->where('is_internal_note', false)->oldest()->with('attachments'),
             ])

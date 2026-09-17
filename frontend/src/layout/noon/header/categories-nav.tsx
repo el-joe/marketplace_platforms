@@ -12,6 +12,8 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { ICategoryNavTree } from "./types";
 import { Type } from "./types/category-nav-tree.type";
 import { getCategoriesTreeService } from "./api/get";
+import enMessages from "../../../../locale/en.json";
+import arMessages from "../../../../locale/ar.json";
 
 // ─── href helpers (unchanged) ─────────────────────────────────────────────────
 
@@ -63,7 +65,11 @@ function subCategoryHref(
  */
 function buildNavTree(
   nodes: ICategoryNavTree[],
-  labels: { openSouq: string; travel: string; marketers: string },
+  labels: {
+    openSouq: { ar: string; en: string };
+    travel: { ar: string; en: string };
+    marketers: { ar: string; en: string };
+  },
 ): ICategoryNavTree[] {
   const productNodes = nodes.filter((n) => n.type === Type.Product);
   const classifiedNodes = nodes.filter((n) => n.type === Type.ClassiFied);
@@ -75,7 +81,7 @@ function buildNavTree(
     result.push({
       id: "virtual-open-souq",
       type: Type.ClassiFied,
-      name: { ar: "المتجر المفتوح", en: labels.openSouq },
+      name: labels.openSouq,
       slug: "open-sooq",
       parent_id: null,
       children: classifiedNodes,
@@ -86,7 +92,7 @@ function buildNavTree(
     result.push({
       id: "virtual-travel",
       type: Type.Travel,
-      name: { ar: "السفر", en: labels.travel },
+      name: labels.travel,
       slug: "travel",
       parent_id: null,
       children: travelNodes,
@@ -96,7 +102,7 @@ function buildNavTree(
   result.push({
     id: "virtual-marketers",
     type: Type.Product,
-    name: { ar: "الماركترز", en: labels.marketers },
+    name: labels.marketers,
     slug: "marketers",
     parent_id: null,
     children: [],
@@ -122,12 +128,21 @@ const CategoriesNav = () => {
     () =>
       data
         ? buildNavTree(data, {
-            openSouq: t("openSouq"),
-            travel: t("travel"),
-            marketers: t("marketers"),
+            openSouq: {
+              en: enMessages.header.categoriesNav.openSouq,
+              ar: arMessages.header.categoriesNav.openSouq,
+            },
+            travel: {
+              en: enMessages.header.categoriesNav.travel,
+              ar: arMessages.header.categoriesNav.travel,
+            },
+            marketers: {
+              en: enMessages.header.categoriesNav.marketers,
+              ar: arMessages.header.categoriesNav.marketers,
+            },
           })
         : [],
-    [data, t],
+    [data],
   );
 
   return (

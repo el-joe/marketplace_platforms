@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -67,6 +68,20 @@ class Product extends Model
         'status' => ProductStatus::class,
     ];
 
+    protected static function booted(): void
+    {
+        // enhancement.md P-21 task 5: a product moving categories (or being
+        // created/deleted) changes the per-category product/brand counts
+        // rolled up from product_country_buybox, so the nav/browse category
+        // caches must be invalidated.
+        static::saved(function (self $product) {
+            if ($product->wasRecentlyCreated || $product->isDirty('category_id') || $product->isDirty('brand_id')) {
+                \App\Services\Customer\CategoryService::flushCache();
+            }
+        });
+        static::deleted(fn () => \App\Services\Customer\CategoryService::flushCache());
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
@@ -92,16 +107,37 @@ class Product extends Model
         return $this->hasMany(ProductCustomAttribute::class)->orderBy('sort_order');
     }
 
+    /**
+     * Product-level (variant-agnostic) images only. Rows that carry a
+     * product_variant_id belong to a specific variant, not "the product" —
+     * see ListingImageResolver, the single place that applies the
+     * variant-first/product-fallback rule for anything customer-facing.
+     */
     public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->whereNull('product_variant_id')->orderBy('position');
+    }
+
+    /**
+     * Unscoped: every image row for this product, including variant-specific
+     * ones. Only for the admin editor (managing the full image set), never
+     * for anything that decides what a listing/variant shows to a customer.
+     */
+    public function allImages(): HasMany
     {
         return $this->hasMany(ProductImage::class)->orderBy('position');
     }
 
-    public function primaryImage(): HasMany
+    public function primaryImage(): HasOne
     {
-        return $this->hasMany(ProductImage::class)
-            ->where('is_primary', true)
-            ->orderBy('position');
+        return $this->hasOne(ProductImage::class)
+            ->whereNull('product_variant_id')
+            ->ofMany([
+                'is_primary' => 'max',
+                'position' => 'min',
+            ], function ($query) {
+                $query->whereNull('product_variant_id');
+            });
     }
 
     public function countrySettings(): HasMany

@@ -2,14 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\ReturnRequestLiability;
 use App\Enums\ReturnRequestStatus;
-use App\Enums\ReturnRequestType;
 use App\Http\Controllers\Controller;
-use App\Models\InventoryMovement;
 use App\Models\ReturnRequest;
 use App\Models\Vendor;
-use App\Models\WarehouseInventory;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\Customer\ReturnApprovedNotification;
 use App\Notifications\Customer\ReturnRejectedNotification;
@@ -17,11 +13,11 @@ use App\Notifications\Customer\ReturnStatusChangedNotification;
 use App\Notifications\Vendor\ReturnApprovedForVendorNotification;
 use App\Notifications\Vendor\ReturnInspectedNotification;
 use App\Services\OrderInterventionService;
+use App\Services\ReturnRequestService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
@@ -30,8 +26,10 @@ class ReturnController extends Controller
     use HasDataTable;
     use HasExport;
 
-    public function __construct(private readonly OrderInterventionService $interventionService)
-    {
+    public function __construct(
+        private readonly OrderInterventionService $interventionService,
+        private readonly ReturnRequestService $returnRequestService,
+    ) {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -200,12 +198,7 @@ class ReturnController extends Controller
             return response()->json(['message' => __('admin.returns_section.approve_invalid_state')], 422);
         }
 
-        DB::transaction(function () use ($returnRequest, $admin) {
-            $returnRequest->update([
-                'status' => ReturnRequestStatus::Approved->value,
-                'reviewed_by_admin_id' => $admin->id,
-            ]);
-        });
+        $this->returnRequestService->approve($returnRequest, (string) $admin->id);
 
         $returnRequest->refresh()->loadMissing(['customer', 'vendor.vendorAdmins']);
         $returnRequest->customer?->notify(new ReturnApprovedNotification($returnRequest));
@@ -237,10 +230,7 @@ class ReturnController extends Controller
             'scheduled_date' => 'nullable|date',
         ]);
 
-        $returnRequest->update([
-            'status' => ReturnRequestStatus::AwaitingPickup->value,
-            'pickup_scheduled_at' => $data['scheduled_date'] ?? null,
-        ]);
+        $this->returnRequestService->schedulePickup($returnRequest, $data['scheduled_date'] ?? null);
 
         $returnRequest->loadMissing('customer');
         $returnRequest->customer?->notify(new ReturnStatusChangedNotification($returnRequest));
@@ -264,10 +254,7 @@ class ReturnController extends Controller
             return response()->json(['message' => __('admin.returns_section.mark_received_invalid_state')], 422);
         }
 
-        $returnRequest->update([
-            'status' => ReturnRequestStatus::Received->value,
-            'received_at_warehouse_at' => now(),
-        ]);
+        $this->returnRequestService->markReceived($returnRequest);
 
         return response()->json([
             'message' => __('admin.returns_section.received_message'),
@@ -291,16 +278,33 @@ class ReturnController extends Controller
         $data = $request->validate([
             'inspection_outcome' => 'required|in:good,damaged_by_customer,damaged_in_transit',
             'inspection_notes' => 'nullable|string|max:5000',
+            // Optional per-item overrides: item_decisions[order_item_id] = ['condition' => ..., 'restock_decision' => ...]
+            'item_decisions' => 'nullable|array',
         ]);
 
         try {
-            DB::transaction(function () use ($returnRequest, $data, $admin) {
-                match ($data['inspection_outcome']) {
-                    'good' => $this->handleGoodInspection($returnRequest, $data, $admin),
-                    'damaged_by_customer' => $this->handleDamagedByCustomerInspection($returnRequest, $data),
-                    'damaged_in_transit' => $this->handleDamagedInTransitInspection($returnRequest, $data, $admin),
-                };
-            });
+            $this->returnRequestService->inspect(
+                returnRequest: $returnRequest,
+                outcome: $data['inspection_outcome'],
+                itemDecisions: $data['item_decisions'] ?? [],
+                notes: $data['inspection_notes'] ?? null,
+                actorId: (string) $admin->id,
+            );
+
+            if ($data['inspection_outcome'] === 'damaged_in_transit' && $returnRequest->sub_order_id) {
+                $shipment = \App\Models\Shipment::where('sub_order_id', $returnRequest->sub_order_id)->first();
+
+                if ($shipment) {
+                    \App\Models\CarrierClaim::create([
+                        'claim_number' => 'CLM-' . strtoupper(uniqid()),
+                        'shipment_id' => $shipment->id,
+                        'claim_type' => 'damaged',
+                        'description' => 'Item found damaged in transit during return inspection for ' . $returnRequest->return_number,
+                        'claimed_amount' => $returnRequest->refresh()->refund_amount ?? 0,
+                        'status' => 'submitted',
+                    ]);
+                }
+            }
         } catch (\Throwable $e) {
             Log::error('Return inspection failed', ['return_request_id' => $returnRequest->id, 'error' => $e->getMessage()]);
 
@@ -316,120 +320,6 @@ class ReturnController extends Controller
             'message' => __('admin.returns_section.inspected_message'),
             'status' => $returnRequest->status->value,
         ]);
-    }
-
-    private function handleGoodInspection(ReturnRequest $returnRequest, array $data, $admin): void
-    {
-        $returnRequest->update([
-            'status' => ReturnRequestStatus::Completed->value,
-            'inspection_result' => 'good',
-            'inspection_notes' => $data['inspection_notes'] ?? null,
-            'liability' => ReturnRequestLiability::Platform->value,
-        ]);
-
-        $this->processReturnRefund($returnRequest, $admin);
-        $this->restockInventory($returnRequest, $admin);
-    }
-
-    private function handleDamagedByCustomerInspection(ReturnRequest $returnRequest, array $data): void
-    {
-        $returnRequest->update([
-            'status' => ReturnRequestStatus::Inspecting->value,
-            'inspection_result' => 'damaged',
-            'inspection_notes' => $data['inspection_notes'] ?? null,
-            'liability' => ReturnRequestLiability::Customer->value,
-        ]);
-    }
-
-    private function handleDamagedInTransitInspection(ReturnRequest $returnRequest, array $data, $admin): void
-    {
-        $returnRequest->update([
-            'status' => ReturnRequestStatus::Completed->value,
-            'inspection_result' => 'damaged',
-            'inspection_notes' => $data['inspection_notes'] ?? null,
-            'liability' => ReturnRequestLiability::Carrier->value,
-        ]);
-
-        $this->processReturnRefund($returnRequest, $admin);
-
-        $shipment = $returnRequest->sub_order_id
-            ? \App\Models\Shipment::where('sub_order_id', $returnRequest->sub_order_id)->first()
-            : null;
-
-        if ($shipment) {
-            \App\Models\CarrierClaim::create([
-                'claim_number' => 'CLM-' . strtoupper(uniqid()),
-                'shipment_id' => $shipment->id,
-                'claim_type' => 'damaged',
-                'description' => 'Item found damaged in transit during return inspection for ' . $returnRequest->return_number,
-                'claimed_amount' => $returnRequest->refund_amount ?? 0,
-                'status' => 'submitted',
-            ]);
-        }
-    }
-
-    private function processReturnRefund(ReturnRequest $returnRequest, $admin): void
-    {
-        $order = $returnRequest->order()->first();
-        if (!$order) {
-            return;
-        }
-
-        $refund = $this->interventionService->processRefund(
-            $order,
-            'full',
-            null,
-            'wrong_item',
-            'Return request ' . $returnRequest->return_number . ' inspected — refund issued.',
-            $returnRequest->sub_order_id,
-            false,
-            (string) $admin->id
-        );
-
-        $returnRequest->update(['refund_id' => $refund->id]);
-
-        if ($returnRequest->return_type === ReturnRequestType::StoreCredit && $returnRequest->status === ReturnRequestStatus::Completed) {
-            $customer = $returnRequest->customer()->first();
-
-            $completedRefund = \App\Models\Refund::where('order_id', $returnRequest->order_id)
-                ->where('status', 'completed')
-                ->latest()
-                ->first();
-
-            $creditAmount = $completedRefund?->net_refund ?? 0;
-
-            if ($customer && $order && $creditAmount > 0) {
-                app(\App\Services\Customer\CheckoutWalletService::class)->refundToWallet($customer, $order, $creditAmount);
-            }
-        }
-    }
-
-    private function restockInventory(ReturnRequest $returnRequest, $admin): void
-    {
-        foreach ($returnRequest->items as $item) {
-            $vendorListingId = $item->orderItem?->vendor_listing_id;
-            if (!$vendorListingId) {
-                continue;
-            }
-
-            $inventory = WarehouseInventory::where('vendor_listing_id', $vendorListingId)->first();
-            if (!$inventory) {
-                continue;
-            }
-
-            $inventory->increment('quantity_on_hand', $item->quantity);
-
-            InventoryMovement::create([
-                'warehouse_inventory_id' => $inventory->id,
-                'movement_type' => 'return',
-                'quantity_delta' => $item->quantity,
-                'quantity_after' => $inventory->fresh()->quantity_on_hand,
-                'reference_type' => 'adjustment',
-                'reference_id' => $returnRequest->id,
-                'reason' => 'Return request ' . $returnRequest->return_number . ' — good condition restock',
-                'created_by_user_id' => $admin->id,
-            ]);
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -449,11 +339,7 @@ class ReturnController extends Controller
             'rejection_reason' => 'required|string|max:2000',
         ]);
 
-        $returnRequest->update([
-            'status' => ReturnRequestStatus::Rejected->value,
-            'rejection_reason' => $data['rejection_reason'],
-            'reviewed_by_admin_id' => $admin->id,
-        ]);
+        $this->returnRequestService->reject($returnRequest, (string) $admin->id, $data['rejection_reason']);
 
         $returnRequest->loadMissing('customer');
         $returnRequest->customer?->notify(new ReturnRejectedNotification($returnRequest));

@@ -746,7 +746,7 @@ class ListingController extends Controller
             'product_variant_id' => ['nullable', 'required_without:product_id', 'uuid', 'exists:product_variants,id'],
             'product_id' => ['nullable', 'required_without:product_variant_id', 'uuid', 'exists:products,id'],
             'country_id' => ['required', 'exists:countries,id'],
-            'price' => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
+            'price' => ['required', 'integer', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
@@ -873,7 +873,7 @@ class ListingController extends Controller
                 'vendor_id' => $vendorId,
                 'product_variant_id' => $resolvedVariantId,
                 'country_id' => $request->country_id,
-                'price' => round((float) $request->price, 2),
+                'price' => (int) round((float) $request->price),
                 'currency' => $currency,
                 'condition' => $request->condition,
                 'fulfillment_model' => $request->fulfillment_model,
@@ -930,15 +930,18 @@ class ListingController extends Controller
 
         if ($request->boolean('campaign_enabled')) {
             try {
-                $this->marketerCampaignService->createCampaign($vendor, array_merge($request->only([
-                    'commission_type', 'max_commission_budget',
-                ]), [
-                    'vendor_listing_id'   => $listing->id,
-                    'country_id'          => $listing->country_id,
-                    'currency'            => $listing->currency,
-                    'marketer_ids' => $request->input('marketer_ids', []),
-                    'tiered_rules'        => $request->input('tiered_rules', []),
-                ]));
+                $this->marketerCampaignService->createCampaign(
+                    \App\Support\Marketer\CampaignOwner::vendor($vendor),
+                    \App\Support\Marketer\CampaignSource::vendorListing($listing->id),
+                    array_merge($request->only([
+                        'commission_type', 'max_commission_budget',
+                    ]), [
+                        'country_id'   => $listing->country_id,
+                        'currency'     => $listing->currency,
+                        'marketer_ids' => $request->input('marketer_ids', []),
+                        'tiered_rules' => $request->input('tiered_rules', []),
+                    ])
+                );
 
                 $message .= ' تم إنشاء حملة الماركتر بنجاح.';
             } catch (\Throwable $e) {
@@ -1024,7 +1027,7 @@ class ListingController extends Controller
         }
 
         $validated = $request->validate([
-            'price' => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
+            'price' => ['required', 'integer', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
@@ -1069,7 +1072,7 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($listing, $validated, $request, $weightClass) {
             $listing->update([
-                'price' => round((float) $validated['price'], 2),
+                'price' => (int) round((float) $validated['price']),
                 'condition' => $validated['condition'],
                 'fulfillment_model' => $validated['fulfillment_model'],
                 'vendor_sku' => $validated['vendor_sku'] ?? null,
@@ -1095,15 +1098,18 @@ class ListingController extends Controller
 
         if ($request->boolean('campaign_enabled')) {
             try {
-                $this->marketerCampaignService->createCampaign($this->vendor(), array_merge($request->only([
-                    'commission_type', 'max_commission_budget',
-                ]), [
-                    'vendor_listing_id'   => $listing->id,
-                    'country_id'          => $listing->country_id,
-                    'currency'            => $listing->currency,
-                    'marketer_ids' => $request->input('marketer_ids', []),
-                    'tiered_rules'        => $request->input('tiered_rules', []),
-                ]));
+                $this->marketerCampaignService->createCampaign(
+                    \App\Support\Marketer\CampaignOwner::vendor($this->vendor()),
+                    \App\Support\Marketer\CampaignSource::vendorListing($listing->id),
+                    array_merge($request->only([
+                        'commission_type', 'max_commission_budget',
+                    ]), [
+                        'country_id'   => $listing->country_id,
+                        'currency'     => $listing->currency,
+                        'marketer_ids' => $request->input('marketer_ids', []),
+                        'tiered_rules' => $request->input('tiered_rules', []),
+                    ])
+                );
 
                 $successMessage .= ' تم إنشاء حملة الماركتر بنجاح.';
             } catch (\Throwable $e) {
@@ -1149,11 +1155,11 @@ class ListingController extends Controller
         $this->authoriseListing($listing);
 
         $request->validate([
-            'price' => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
+            'price' => ['required', 'integer', 'min:1', 'max:999999999'],
         ]);
 
         $listing->update([
-            'price' => round((float) $request->price, 2),
+            'price' => (int) round((float) $request->price),
         ]);
 
         return response()->json([

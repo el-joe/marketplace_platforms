@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CalendarIcon, UsersIcon, SunIcon, MoonIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/src/components/ui/button";
 import Card from "@/src/components/shared/Card";
@@ -13,6 +14,7 @@ type Props = {
 
 export default function TravelPackageCard({ pkg }: Props) {
   const t = useTranslations("flights.packageCard");
+  const locale = useLocale();
 
   const formattedDate = new Date(pkg.departure_date).toLocaleDateString(
     "en-US",
@@ -28,7 +30,7 @@ export default function TravelPackageCard({ pkg }: Props) {
       <div className="relative h-52">
         <Image
           src={pkg.thumbnail || "/images/no-image-available-icon.jpg"}
-          alt={pkg.title_en}
+          alt={locale === "ar" ? pkg.title_ar : pkg.title_en}
           fill
           sizes="(max-width: 768px) 100vw, 400px"
           className="object-cover"

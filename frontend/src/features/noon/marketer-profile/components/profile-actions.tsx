@@ -8,6 +8,7 @@ interface Labels {
   share: string;
   qrTitle: string;
   qrScanHint: string;
+  qrCodeAlt: string;
   download: string;
   close: string;
 }
@@ -68,7 +69,7 @@ export default function ProfileActions({ profileUrl, qrCodeUrl, marketerName, la
             <h3 className="mb-3 text-lg font-bold text-primary">{labels.qrTitle}</h3>
             <Image
               src={qrCodeUrl}
-              alt="QR Code"
+              alt={labels.qrCodeAlt}
               width={200}
               height={200}
               className="mx-auto rounded-xl"

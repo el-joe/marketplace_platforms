@@ -275,11 +275,15 @@ class CheckoutController extends Controller
         $variant = $listing->productVariant;
         $product = $variant?->product;
 
+        $images = $variant ? app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id) : [];
+
         return [
             'name_en' => $product?->name_en,
             'name_ar' => $product?->name_ar,
             'sku' => $variant?->sku,
-            'images' => $product?->images?->pluck('url')->values()->all() ?? [],
+            'variant_id' => $variant?->id,
+            'image' => isset($images[0]) ? ['url' => $images[0]->url, 'alt' => $images[0]->alt] : null,
+            'images' => array_map(fn ($i) => $i->toArray(), $images),
         ];
     }
 

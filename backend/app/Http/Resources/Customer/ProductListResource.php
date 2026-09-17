@@ -14,21 +14,12 @@ class ProductListResource extends JsonResource
             'en' => $this->name_override_en ?? $this->name_en,
         ];
 
-        $variantImage = $this->buy_box_variant_image_path
-            ? \Storage::disk($this->buy_box_variant_image_disk)->url($this->buy_box_variant_image_path)
-            : null;
-
-        $imagesSlider = $this->whenLoaded('images', function () {
-            return $this->images
-                ->map(fn ($img) => [
-                    'id'         => $img->id,
-                    'url'        => \Storage::disk($img->disk ?? 'public')->url($img->path),
-                    'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                    'is_primary' => (bool) $img->is_primary,
-                    'position'   => (int) $img->position,
-                    'variant_id' => $img->product_variant_id,
-                ])->values()->all();
-        }, []);
+        // resolved_images is set by ProductQueryService::buildProductsPayload()
+        // via ListingImageResolver (variant-first, product-fallback rule —
+        // never both, never another variant's images).
+        $resolvedImages = $this->resolved_images ?? [];
+        $imagesSlider = array_map(fn ($img) => $img->toArray(), $resolvedImages);
+        $variantImage = $imagesSlider[0]['url'] ?? null;
 
         // listing_type is now driven by the actual buy-box winner ('admin' or 'vendor')
         $listingType = $this->buy_box_listing_type ?? 'vendor';
@@ -56,10 +47,8 @@ class ProductListResource extends JsonResource
             'variant_image'       => $variantImage,
             'product_url'         => $productUrl,
             'name'                => $name,
-            'primary_image'       => $variantImage ?? $this->whenLoaded('images', function () {
-                $primary = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
-                return $primary ? \Storage::disk($primary->disk)->url($primary->path) : null;
-            }),
+            'primary_image'       => $variantImage,
+            'image'               => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
             'images'              => $imagesSlider,
             'price_range'         => [
                 'min' => $this->min_price,

@@ -16,6 +16,12 @@
     "cart": "Cart",
     "cartLinkLabel": "Cart",
     "searchPlaceholder": "What are you looking for?",
+    "clearInputAria": "Clear input",
+    "removeItemAria": "Remove item",
+    "noImageAlt": "No image available",
+    "pressEnterLabel": "Press",
+    "enterKeyLabel": "Enter",
+    "orClickToSearchHint": "or click above to search for \"{query}\"",
     "recentlySearched": "Recently searched",
     "trendingSearches": "Trending searches",
     "clearAll": "Clear all",
@@ -99,7 +105,8 @@
     "maximizeYourSavings": "Maximize Your Savings",
     "bestsellersForYou": "bestsellers for you",
     "travelStore": "Travel store",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "pageUnderConstruction": "Page under construction"
   },
   "productView": {
     "ad": "Ad",
@@ -235,7 +242,8 @@
     "inYourCart": "In your cart",
     "megaDeal": "Mega deal 📣",
     "freeDelivery": "Free Delivery",
-    "noonExpress": "Noon Express"
+    "noonExpress": "Noon Express",
+    "close": "Close"
   },
   "profile": {
     "disputes": "Disputes",
@@ -654,6 +662,7 @@
     "loading": "Loading..."
   },
   "cart": {
+    "freeShipping": "Free shipping",
     "getItBy": "Get it by",
     "orderIn": "Order in",
     "additionalServices": "Additional Services",
@@ -707,6 +716,7 @@
     "deleting": "Deleting",
     "areYouSureYouWantToDeleteThisWishlist": "Are you sure you want to delete this wishlist",
     "deleteWishlist": "Delete wishlist",
+    "addedToWishlist": "added to \"{name}\" wishlist",
     "addToCart": "Add to cart",
     "moveToAnotherWishlist": "Move to another wishlist",
     "moveToWishlist": "Move to wishlist",
@@ -790,7 +800,22 @@
     "easyReturnsTitle": "Hassle-Free Returns",
     "easyReturnsDesc": "15-day return policy on eligible items",
     "supportTitle": "24/7 Customer Support",
-    "supportDesc": "We're here to help anytime you need"
+    "supportDesc": "We're here to help anytime you need",
+    "bankTransferTitle": "Complete Your Bank Transfer",
+    "bankTransferInstructions": "Transfer the order total to the account below, then upload your payment receipt so we can confirm it.",
+    "bankName": "Bank Name",
+    "accountName": "Account Name",
+    "accountNumber": "Account Number",
+    "iban": "IBAN",
+    "swift": "SWIFT/BIC",
+    "reference": "Reference",
+    "uploadProof": "Upload Payment Proof",
+    "uploadProofDesc": "Accepted formats: JPG, PNG, PDF — max 10MB.",
+    "chooseFile": "Choose File",
+    "submitProof": "Submit Proof",
+    "uploadingProof": "Uploading...",
+    "proofUploaded": "Proof uploaded successfully. We'll confirm your payment shortly.",
+    "proofUploadFailed": "Failed to upload proof. Please try again."
   },
   "openSooq": {
     "header": {
@@ -882,13 +907,18 @@
       "from": "From",
       "perPerson": "per person",
       "viewDetails": "View Details",
-      "seatsLeft": "left"
+      "seatsLeft": "left",
+      "onlySeatsLeft": "Only {count} seats left!",
+      "seatsAvailable": "{count} seats available",
+      "soldOut": "Sold Out"
     },
     "pagination": {
       "ariaLabel": "Package listing pages"
     },
     "packageDetails": {
       "premiumBadge": "Premium Expedition",
+      "breadcrumbHome": "Home",
+      "breadcrumbTravel": "Travel",
       "previousSlide": "Previous slide",
       "nextSlide": "Next slide",
       "guidelinesTitle": "Travel Guidelines",
@@ -1065,7 +1095,9 @@
     "to": "To",
     "go": "Go",
     "seeAll": "See all ({count})",
-    "seeLess": "See less"
+    "seeLess": "See less",
+    "noProductsFound": "No products found",
+    "tryAdjustingFilters": "Try adjusting your filters"
   },
   "classified": {
     "city": "City",
@@ -1091,6 +1123,7 @@
     "above2m": "Above 2,000,000",
     "filters": "Filters",
     "moreOptions": "More Options",
+    "country": "Egypt",
     "home": "Home",
     "classifieds": "Classifieds",
     "pageTitle": "{category} for Sale ({count})",
@@ -1133,7 +1166,94 @@
     "gasoline": "Gasoline",
     "dealership": "Dealership",
     "gccSpecs": "GCC Specs",
-    "recommendedForYou": "Recommended For You"
+    "recommendedForYou": "Recommended For You",
+    "contactViaChat": "Contact via chat",
+    "addToFavorites": "Add to favorites",
+    "noProductsFound": "No products found"
+  },
+  "classifiedSidebar": {
+    "chat": "Chat",
+    "following": "Following",
+    "follow": "Follow",
+    "rating": "Rating",
+    "memberSince": "Member Since",
+    "viewAllListings": "View All Listings ({count})",
+    "generalTips": "General Tips",
+    "tipPublicPlaces": "Only meet in public places",
+    "tipNoAdvancePayment": "Never pay or transfer money in advance",
+    "tipInspectProduct": "Inspect the product before you buy it",
+    "sellAnything": "Sell Anything on OpenSooq",
+    "similarListingPrompt": "Do you have a similar Listing?",
+    "addNewListing": "Add New Listing",
+    "wantMoreViews": "Want more views?",
+    "promoteOrRepost": "Promote or Repost your listing",
+    "exploreMore": "Explore More"
+  },
+  "classifiedInquiry": {
+    "theLister": "the lister",
+    "presetInterested": "I'm interested",
+    "presetLowerPrice": "Can you lower the price",
+    "presetWhereMeet": "Where can we meet",
+    "presetDelivery": "You do delivery",
+    "presetInspectionResult": "What's the inspection result",
+    "askTheLister": "Ask the Lister",
+    "messagePlaceholder": "Message...",
+    "sendMessage": "Send Message",
+    "messageSentTo": "Your message has been sent to {name}!"
+  },
+  "classifiedGallery": {
+    "promotedTurbo": "Promoted Turbo",
+    "mainImageAlt": "Classified vehicle image",
+    "previousImage": "Previous image",
+    "nextImage": "Next image",
+    "thumbnail1": "Thumbnail 1",
+    "thumbnail2": "Thumbnail 2",
+    "thumbnail3": "Thumbnail 3",
+    "showMorePhotos": "Show More Photos",
+    "closeLightbox": "Close lightbox",
+    "expandedView": "Expanded view"
+  },
+  "sellerInfoSidebar": {
+    "sellerRating": "Seller Rating",
+    "positiveRatings": "{pct}% Positive Ratings",
+    "customers": "Customers",
+    "productAsDescribed": "Product as Described",
+    "whatDoTheseMean": "What do these mean?",
+    "sellerSince": "Seller Since"
+  },
+  "sellerReviewsList": {
+    "report": "Report",
+    "viewAllReviews": "View All Reviews",
+    "ratingsAndReviewsSummary": "There are {ratings} ratings and {reviews} reviews for this seller",
+    "showOriginalReviews": "Show original reviews",
+    "translateAllReviews": "Translate all reviews",
+    "verifiedPurchase": "Verified Purchase"
+  },
+  "dialog": {
+    "close": "Close"
+  },
+  "common": {
+    "loading": "Loading"
+  },
+  "pageBuilder": {
+    "announcement": "Announcement",
+    "logo": "Logo"
+  },
+  "helpSheet": {
+    "back": "Back",
+    "close": "Close",
+    "chooseApplicableItems": "Choose applicable items",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "searchItems": "Search Items",
+    "last3Months": "Last 3 months",
+    "last6Months": "Last 6 months",
+    "last12Months": "Last 12 months",
+    "noItemsFound": "No items found",
+    "noItemsFoundHint": "We couldn't find any items that matched your search in the given time period",
+    "needMoreHelp": "Need more help?",
+    "unresolvedQueriesPrefix": "If you still have any unresolved queries, please reach out to our",
+    "customerSupport": "customer support"
   },
   "marketers": {
     "pageTitle": "Marketers | noon",
@@ -1156,6 +1276,7 @@
   "marketerProfile": {
     "pageTitleFallback": "Marketer | noon",
     "pageDescriptionFallback": "Shop curated products from this marketer on noon",
+    "brandName": "noon",
     "selectedProducts": "Selected Products",
     "productsCount": "{count} products",
     "emptyProducts": "No products added yet",
@@ -1176,7 +1297,34 @@
     "share": "Share",
     "qrTitle": "Profile QR Code",
     "qrScanHint": "Scan the code to access {name}'s page",
+    "qrCodeAlt": "QR Code",
     "download": "Download",
     "close": "Close"
+  },
+  "liveStreams": {
+    "pageTitle": "Live Streams",
+    "pageSubtitle": "Watch live, upcoming, and past broadcasts",
+    "liveNow": "Live Now",
+    "upcoming": "Upcoming",
+    "pastStreams": "Past Streams",
+    "statusLive": "LIVE",
+    "statusScheduled": "Scheduled",
+    "statusEnded": "Ended",
+    "endedOn": "Ended {date}",
+    "emptyTitle": "No streams yet",
+    "emptyBody": "Check back soon for upcoming live broadcasts",
+    "notFound": "Stream not found",
+    "noCommentsYet": "No comments yet. Be the first!",
+    "streamEnded": "Stream Ended",
+    "startingSoon": "Stream starting soon",
+    "hasEnded": "Stream has ended",
+    "watching": "watching",
+    "likes": "likes",
+    "totalViewers": "total viewers",
+    "liveChat": "Live Chat",
+    "comments": "Comments",
+    "guestNamePlaceholder": "Your name (optional)",
+    "commentPlaceholder": "Say something…",
+    "send": "Send"
   }
 }

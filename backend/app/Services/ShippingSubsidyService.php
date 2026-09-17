@@ -6,6 +6,7 @@ use App\Models\PlatformShippingSubsidy;
 use App\Models\ShippingMethod;
 use App\Models\ShippingRate;
 use App\Models\ShippingZone;
+use App\Services\Checkout\CartLineSource;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -51,7 +52,10 @@ class ShippingSubsidyService
         }
 
         $billable = $vendorCartItems->sum(function ($item) {
-            $listing = $item->vendorListing;
+            // Resolved via CartLineSource, not `$item->vendorListing`, so a
+            // campaign-marketer cart item (whose vendor_listing_id column is
+            // null) still uses its fulfilment listing's weight (P-02).
+            $listing = CartLineSource::resolve($item)?->fulfilmentListing ?? $item->vendorListing;
             $perUnit = $this->weightService->billableWeightGrams(
                 (int) ($listing->declared_weight_grams ?? $listing->productVariant?->weight_grams ?? 0),
                 $listing->declared_length_cm !== null ? (float) $listing->declared_length_cm : null,
@@ -99,7 +103,8 @@ class ShippingSubsidyService
 
         $customerWouldPay = max(0, $rawFee - $subsidyCap);
 
-        $vendorCoversDelivery = (bool) $vendorCartItems->first()->vendorListing->vendor_covers_delivery;
+        $firstListing = CartLineSource::resolve($vendorCartItems->first())?->fulfilmentListing ?? $vendorCartItems->first()->vendorListing;
+        $vendorCoversDelivery = (bool) $firstListing->vendor_covers_delivery;
         $vendorContribution = 0;
         if ($vendorCoversDelivery && $customerWouldPay > 0) {
             $vendorContribution = $customerWouldPay;

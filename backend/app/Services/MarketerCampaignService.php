@@ -11,6 +11,7 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCampaignTieredRule;
 use App\Models\Marketer;
+use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Admin\NewCampaignPendingNotification;
@@ -24,6 +25,8 @@ use App\Notifications\Vendor\CampaignDoneNotification;
 use App\Notifications\Vendor\CampaignPendingAdminNotification;
 use App\Notifications\Vendor\CampaignRejectedNotification;
 use App\Notifications\Vendor\MarketerReplacedNotification as VendorMarketerReplacedNotification;
+use App\Support\Marketer\CampaignOwner;
+use App\Support\Marketer\CampaignSource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -75,25 +78,73 @@ class MarketerCampaignService
         });
     }
 
-    public function createCampaign(Vendor $vendor, array $data): MarketerCampaign
+    /**
+     * enhancement.md P-14 task 2: the single campaign-creation path, for
+     * vendor listings, admin (platform) listings, travel packages and
+     * classified listings alike — replaces the old
+     * createCampaign(Vendor $vendor, array $data) which could only ever
+     * create a vendor-owned, FBN-only, product campaign.
+     *
+     * Fulfilment model: previously hardcoded to 'fbn' for vendor listings.
+     * Now controlled by the `marketer_campaign_allowed_fulfilment_models`
+     * setting (default ['fbn','fbm']) so FBP vendor listings can run
+     * campaigns too, per product-owner confirmation in enhancement.md P-14.
+     *
+     * Invitation timing (P-14 task 4): invitations are NO LONGER dispatched
+     * here. They are dispatched only once the campaign is approved (or
+     * auto-approved with a non-zero commission, per P-12) — see
+     * approveCampaign()/autoApproveCampaign() below. This closes the
+     * "accept then get rejected" window: a marketer could previously
+     * accept an invitation and get a live referral link for a campaign
+     * that was later rejected.
+     */
+    public function createCampaign(CampaignOwner $owner, CampaignSource $source, array $data): MarketerCampaign
     {
-        return DB::transaction(function () use ($vendor, $data) {
-            $category = null;
+        $source->validate();
 
-            if (!empty($data['vendor_listing_id'])) {
-                $listing = VendorListing::where('id', $data['vendor_listing_id'])
-                    ->where('vendor_id', $vendor->id)
-                    ->where('fulfillment_model', 'fbn') // Must be FBN
-                    ->firstOrFail();
+        return DB::transaction(function () use ($owner, $source, $data) {
+            $category = null;
+            $listing  = null;
+
+            if ($source->isVendorListing()) {
+                if (!$owner->isVendor() && !$owner->isMarketer()) {
+                    throw new \RuntimeException('A vendor-listing campaign source must be owned by a vendor (or requested by a marketer).');
+                }
+
+                $listing = $owner->isVendor()
+                    ? VendorListing::where('id', $source->vendorListingId)->where('vendor_id', $owner->id)->firstOrFail()
+                    : VendorListing::where('id', $source->vendorListingId)->firstOrFail();
+
+                $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+                if (!in_array($listing->fulfillment_model, $allowedModels, true)) {
+                    throw new \RuntimeException("Campaigns are not allowed for {$listing->fulfillment_model} listings.");
+                }
 
                 $category = $listing->productVariant?->product?->category;
 
-                $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
-                $availableStock = (int) $listing->warehouseInventories()->sum('quantity_available');
+                $minStock       = (int) ($category?->min_stock_for_campaign ?? 10);
+                $availableStock = app(\App\Services\Inventory\InventoryService::class)->availableStock($listing);
+                if ($availableStock < $minStock) {
+                    throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units required to start a campaign.");
+                }
+            } elseif ($source->isAdminListing()) {
+                if (!$owner->isPlatform() && !$owner->isMarketer()) {
+                    throw new \RuntimeException('An admin-listing campaign source must be platform-owned (or requested by a marketer).');
+                }
+
+                $listing = \App\Models\AdminListing::where('id', $source->adminListingId)->firstOrFail();
+
+                $category = $listing->productVariant?->product?->category;
+
+                $minStock       = (int) ($category?->min_stock_for_campaign ?? 10);
+                $availableStock = app(\App\Services\Inventory\InventoryService::class)->availableStock($listing);
                 if ($availableStock < $minStock) {
                     throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units required to start a campaign.");
                 }
             }
+            // Travel/classified sources: no stock/fulfilment check yet — see
+            // CampaignSource docblock. They are schema-ready but unreachable
+            // through any controller in this prompt.
 
             $marketerVendors = Marketer::whereIn('id', $data['marketer_ids'] ?? [])
                 ->where('global_status', 'active')
@@ -116,24 +167,34 @@ class MarketerCampaignService
 
             $autoApproveHours = (int) setting('marketer_campaign_auto_approve_hours', 36);
 
+            $status = $owner->isMarketer() ? 'marketer_requested' : 'pending_admin';
+
             $campaign = MarketerCampaign::create([
-                'vendor_id'                        => $vendor->id,
-                'vendor_listing_id'                => $data['vendor_listing_id'] ?? null,
-                'admin_listing_id'         => $data['admin_listing_id'] ?? null,
-                'country_id'                       => $data['country_id'],
-                'currency'                         => $data['currency'],
-                'commission_type'                  => $data['commission_type'],
-                'max_commission_budget'            => $data['max_commission_budget'],
-                'platform_commission_amount'       => 0, // set by admin later
-                'marketer_commission_amount'       => 0, // set by admin later
-                'status'                           => 'pending_admin',
-                'auto_approve_at'                  => now()->addHours($autoApproveHours),
-                'auto_approved'                    => false,
-                'platform_sample_qty_snapshot'     => $platformSampleQty,
-                'per_marketer_sample_qty_snapshot' => $perMarketerSampleQty,
-                'requested_marketer_vendor_ids'    => $marketerVendors->pluck('id')->values()->all(), // now Marketer UUIDs
-                'title'                            => $data['title'] ?? null,
-                'notes'                            => $data['notes'] ?? null,
+                'vendor_id'                        => $owner->isVendor() ? $owner->id : null,
+                'owner_type'                        => $owner->isMarketer() ? 'marketer' : $owner->type,
+                'owner_id'                          => $owner->id,
+                'requested_by_marketer_id'          => $owner->isMarketer() ? $owner->id : null,
+                'vendor_listing_id'                 => $source->vendorListingId,
+                'admin_listing_id'                  => $source->adminListingId,
+                'travel_package_id'                 => $source->travelPackageId,
+                'classified_listing_id'             => $source->classifiedListingId,
+                'campaign_category'                 => $source->category,
+                'country_id'                        => $data['country_id'],
+                'currency'                           => $data['currency'],
+                'commission_type'                   => $data['commission_type'],
+                'max_commission_budget'             => $data['max_commission_budget'],
+                'platform_commission_amount'        => $data['platform_commission_amount'] ?? 0,
+                'marketer_commission_amount'        => $data['marketer_commission_amount'] ?? 0,
+                'status'                             => $status,
+                'auto_approve_at'                    => $owner->isMarketer() ? null : now()->addHours($autoApproveHours),
+                'auto_approved'                      => false,
+                'platform_sample_qty_snapshot'       => $platformSampleQty,
+                'per_marketer_sample_qty_snapshot'   => $perMarketerSampleQty,
+                'requested_marketer_vendor_ids'      => $owner->isMarketer()
+                    ? [$owner->id]
+                    : $marketerVendors->pluck('id')->values()->all(),
+                'title'                               => $data['title'] ?? null,
+                'notes'                               => $data['notes'] ?? null,
             ]);
 
             if ($data['commission_type'] === 'tiered' && !empty($data['tiered_rules'])) {
@@ -148,11 +209,12 @@ class MarketerCampaignService
                 }
             }
 
-            if (isset($listing)) {
+            if ($listing) {
                 $listing->update(['campaign_enabled' => true]);
             }
 
-            // Create platform samples immediately
+            // Create platform samples immediately — samples are for the
+            // campaign's promotional lifecycle, independent of admin review.
             if ($platformSampleQty > 0) {
                 MarketerCampaignSample::create([
                     'campaign_id'   => $campaign->id,
@@ -163,13 +225,26 @@ class MarketerCampaignService
                 ]);
             }
 
-            // Dispatch invitations immediately — do not wait for admin approval
-            foreach ($marketerVendors as $marketer) {
-                $this->dispatchInvitation($campaign, $marketer->id);
+            if ($owner->isMarketer()) {
+                // Marketer-originated request: notify the real owner
+                // (vendor or admin) to review — no invitations exist yet,
+                // there's nothing to dispatch until they approve.
+                if ($listing instanceof VendorListing) {
+                    $listing->vendor->vendorAdmins->each(fn ($va) => $va->notify(new CampaignPendingAdminNotification($campaign)));
+                } else {
+                    Admin::query()->get()->each(fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign)));
+                }
+
+                return $campaign;
             }
 
+            // Vendor/admin-originated campaigns still go through admin
+            // review (or auto-approve) — invitations are dispatched only
+            // once that review passes (see approveCampaign()/autoApproveCampaign()).
             Admin::query()->get()->each(fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign)));
-            $vendor->vendorAdmins->each(fn ($va) => $va->notify(new CampaignPendingAdminNotification($campaign)));
+            if ($owner->isVendor()) {
+                $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignPendingAdminNotification($campaign)));
+            }
 
             ProcessCampaignAutoApproveJob::dispatch($campaign->id)
                 ->delay(now()->addHours($autoApproveHours));
@@ -179,11 +254,77 @@ class MarketerCampaignService
     }
 
     /**
+     * enhancement.md P-14 task 3: a marketer proposes to promote a listing
+     * (vendor or admin). Thin wrapper over createCampaign() with the
+     * marketer as owner — the real owner (vendor or admin) reviews it via
+     * approveMarketerRequest()/rejectCampaign().
+     */
+    public function requestCampaign(Marketer $marketer, CampaignSource $source, array $data): MarketerCampaign
+    {
+        $data['marketer_ids'] = [$marketer->id];
+
+        return $this->createCampaign(CampaignOwner::marketer($marketer), $source, $data);
+    }
+
+    /**
+     * enhancement.md P-14 task 3: the listing owner (vendor or admin)
+     * approves a marketer-originated request — sets commission, flips
+     * ownership to the real owner, activates the campaign, and
+     * auto-accepts the requesting marketer's invitation (they already
+     * asked to promote it; there is no one left to "invite").
+     */
+    public function approveMarketerRequest(MarketerCampaign $campaign, array $commission): void
+    {
+        if ($campaign->status !== 'marketer_requested') {
+            throw new \RuntimeException('Only a marketer_requested campaign can be approved this way.');
+        }
+
+        DB::transaction(function () use ($campaign, $commission) {
+            $ownerType = $campaign->admin_listing_id ? 'platform' : 'vendor';
+            $ownerId   = $ownerType === 'vendor' ? $campaign->vendorListing?->vendor_id : null;
+
+            $campaign->update([
+                'owner_type'                  => $ownerType,
+                'owner_id'                    => $ownerId,
+                'vendor_id'                   => $ownerId,
+                'marketer_commission_amount'  => $commission['marketer_commission_amount'] ?? $campaign->marketer_commission_amount,
+                'platform_commission_amount'  => $commission['platform_commission_amount'] ?? $campaign->platform_commission_amount,
+                'status'                      => 'active',
+                'reviewed_at'                 => now(),
+            ]);
+
+            if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
+                throw new \RuntimeException('Cannot approve a marketer request with a zero commission. Set it first.');
+            }
+
+            $invitation = $this->dispatchInvitation($campaign, $campaign->requested_by_marketer_id);
+            $this->acceptInvitation($invitation->fresh());
+        });
+    }
+
+    /**
      * Admin approves a campaign. Invitations were already dispatched at creation time —
      * this just activates the campaign so conversions can be tracked.
+     *
+     * enhancement.md P-12 task 4: a campaign cannot go 'active' with 0
+     * commission on both sides (the bug that made every conversion earn
+     * nothing) — the admin must set marketer_commission_amount (and,
+     * for a fixed/last_click campaign, platform_commission_amount) to a
+     * positive value before approving, except for 'tiered' campaigns whose
+     * commission comes from their tiered_rules instead.
      */
     public function approveCampaign(MarketerCampaign $campaign, Admin $admin): void
     {
+        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
+            throw new \RuntimeException(
+                'Cannot approve a campaign with a zero marketer commission amount. Set it first.'
+            );
+        }
+
+        if ($campaign->commission_type === 'tiered' && $campaign->tieredRules()->count() === 0) {
+            throw new \RuntimeException('Cannot approve a tiered campaign with no tiered rules.');
+        }
+
         DB::transaction(function () use ($campaign, $admin) {
             $campaign->update([
                 'status'                => 'active',
@@ -191,7 +332,13 @@ class MarketerCampaignService
                 'reviewed_at'           => now(),
             ]);
 
-            $campaign->vendor->vendorAdmins->each(
+            // enhancement.md P-14 task 4: invitations are dispatched only
+            // now, after admin approval — not at creation time.
+            foreach ((array) ($campaign->requested_marketer_vendor_ids ?? []) as $marketerId) {
+                $this->dispatchInvitation($campaign, $marketerId);
+            }
+
+            $campaign->vendor?->vendorAdmins?->each(
                 fn ($va) => $va->notify(new CampaignApprovedNotification($campaign, $campaign->invitations()->count()))
             );
         });
@@ -199,21 +346,108 @@ class MarketerCampaignService
 
     /**
      * Admin rejects a campaign.
+     *
+     * enhancement.md P-14 task 4: rejection cancels any pending invitations
+     * and pauses/archives whatever marketer listings already exist for
+     * this campaign (there should not be any yet, since invitations are
+     * no longer dispatched before approval — but this guards against a
+     * campaign rejected after having been active/auto_approved before).
      */
     public function rejectCampaign(MarketerCampaign $campaign, Admin $admin, string $reason): void
     {
-        $campaign->update([
-            'status'               => 'rejected',
-            'reviewed_by_admin_id' => $admin->id,
-            'reviewed_at'          => now(),
-            'rejection_reason'     => $reason,
-        ]);
+        DB::transaction(function () use ($campaign, $admin, $reason) {
+            $campaign->update([
+                'status'               => 'rejected',
+                'reviewed_by_admin_id' => $admin->id,
+                'reviewed_at'          => now(),
+                'rejection_reason'     => $reason,
+            ]);
 
-        $campaign->vendor->vendorAdmins->each(fn ($va) => $va->notify(new CampaignRejectedNotification($campaign)));
+            $this->cancelPendingInvitationsAndArchiveListings($campaign);
+
+            $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignRejectedNotification($campaign)));
+        });
+    }
+
+    /**
+     * enhancement.md P-14 task 4: cancel a campaign (vendor/admin self-
+     * service cancel, distinct from admin rejection) — same cleanup as
+     * rejection.
+     */
+    public function cancelCampaign(MarketerCampaign $campaign): void
+    {
+        DB::transaction(function () use ($campaign) {
+            $campaign->update(['status' => 'cancelled']);
+            $this->cancelPendingInvitationsAndArchiveListings($campaign);
+        });
+    }
+
+    /**
+     * enhancement.md P-14 task 4: shared cleanup for reject/cancel/done —
+     * pending invitations are cancelled (so they can no longer be accepted)
+     * and any marketer listing already created from this campaign's
+     * invitations is archived so it stops appearing as purchasable.
+     */
+    private function cancelPendingInvitationsAndArchiveListings(MarketerCampaign $campaign): void
+    {
+        $campaign->invitations()->where('status', 'pending')->get()->each(function ($invitation) {
+            $invitation->update(['status' => 'cancelled', 'responded_at' => now()]);
+        });
+
+        \App\Models\MarketerListing::whereIn(
+            'invitation_id',
+            $campaign->invitations()->pluck('id')
+        )->where('status', '!=', 'archived')->get()->each(
+            fn ($listing) => $listing->update(['status' => 'archived'])
+        );
+    }
+
+    /**
+     * enhancement.md P-14 task 4: pauses a campaign (and its marketer
+     * listings) without cancelling invitations — used when stock drops
+     * below min_stock_for_campaign but is not yet zero. Resumes it once
+     * stock recovers. See MonitorCampaignStockJob.
+     */
+    public function pauseCampaignForLowStock(MarketerCampaign $campaign): void
+    {
+        DB::transaction(function () use ($campaign) {
+            $campaign->update(['status' => 'paused']);
+
+            \App\Models\MarketerListing::whereIn('invitation_id', $campaign->invitations()->pluck('id'))
+                ->where('status', 'active')
+                ->update(['status' => 'paused']);
+        });
+    }
+
+    /**
+     * enhancement.md P-14 task 4: resumes a campaign paused by
+     * pauseCampaignForLowStock() once stock recovers above
+     * min_stock_for_campaign.
+     */
+    public function resumeCampaignAfterRestock(MarketerCampaign $campaign): void
+    {
+        DB::transaction(function () use ($campaign) {
+            $campaign->update(['status' => $campaign->auto_approved ? 'auto_approved' : 'active']);
+
+            \App\Models\MarketerListing::whereIn('invitation_id', $campaign->invitations()->pluck('id'))
+                ->where('status', 'paused')
+                ->update(['status' => 'active']);
+        });
     }
 
     /**
      * Auto-approve a campaign (called by job after the configured timeout).
+     *
+     * enhancement.md P-12 task 4: auto-approval must never activate a
+     * campaign with a 0 commission — the bug that made every conversion
+     * earn nothing. Since nobody set marketer_commission_amount manually
+     * (that's exactly why this is auto-approving instead of an admin
+     * click), pull a default rate from marketer_category_commissions /
+     * MarketerCommissionCountrySetting for the promoted item's category +
+     * the campaign's country. If neither has a default, the campaign
+     * stays 'pending_admin' (auto_approve_at is pushed back so the job
+     * doesn't immediately retry it every run) and admins are notified to
+     * set one manually.
      */
     public function autoApproveCampaign(string $campaignId): void
     {
@@ -226,18 +460,83 @@ class MarketerCampaignService
             return;
         }
 
+        if ($campaign->commission_type !== 'tiered') {
+            $defaults = $this->resolveDefaultCommission($campaign);
+
+            if ($defaults === null) {
+                $campaign->update(['auto_approve_at' => now()->addDays(3)]);
+
+                Admin::query()->get()->each(
+                    fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign))
+                );
+
+                return;
+            }
+
+            $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
+            $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
+        } elseif ($campaign->tieredRules()->count() === 0) {
+            // No tiers configured — nothing to auto-approve into.
+            $campaign->update(['auto_approve_at' => now()->addDays(3)]);
+
+            return;
+        }
+
         DB::transaction(function () use ($campaign) {
-            $campaign->update([
-                'status'        => 'auto_approved',
-                'auto_approved' => true,
-                'reviewed_at'   => now(),
-            ]);
+            $campaign->status = 'auto_approved';
+            $campaign->auto_approved = true;
+            $campaign->reviewed_at = now();
+            $campaign->save();
 
-            // Invitations and samples were already dispatched at campaign creation time.
-            // Commissions are taken from category/country settings at conversion time.
+            // enhancement.md P-14 task 4: invitations are dispatched only
+            // now, after auto-approval — not at creation time.
+            foreach ((array) ($campaign->requested_marketer_vendor_ids ?? []) as $marketerId) {
+                $this->dispatchInvitation($campaign, $marketerId);
+            }
 
-            $campaign->vendor->vendorAdmins->each(fn ($va) => $va->notify(new CampaignAutoApprovedNotification($campaign)));
+            $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignAutoApprovedNotification($campaign)));
         });
+    }
+
+    /**
+     * @return array{marketer_commission_amount: int, platform_commission_amount: int}|null
+     */
+    private function resolveDefaultCommission(MarketerCampaign $campaign): ?array
+    {
+        $category = $campaign->vendorListing?->productVariant?->product?->category
+            ?? $campaign->adminListing?->productVariant?->product?->category;
+
+        if (! $category) {
+            return null;
+        }
+
+        $categoryRate = \App\Models\MarketerCategoryCommission::where('category_id', $category->id)
+            ->whereNull('marketer_id')
+            ->first();
+
+        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
+            ->where('category_id', $category->id)
+            ->first();
+
+        $marketerCommission = 0;
+        if ($countrySetting) {
+            // Both marketer types default to the affiliate rate here — the
+            // campaign is shared across whichever marketers accept the
+            // invitation, and per-marketer-type differences are already
+            // applied per-conversion in LastClickAttributionService.
+            $marketerCommission = (int) $countrySetting->affiliate_commission_amount;
+        }
+
+        if ($marketerCommission <= 0) {
+            return null;
+        }
+
+        $platformCommission = $categoryRate ? (int) round($marketerCommission * ((float) $categoryRate->commission_rate / 100)) : 0;
+
+        return [
+            'marketer_commission_amount' => $marketerCommission,
+            'platform_commission_amount' => $platformCommission,
+        ];
     }
 
     /**
@@ -356,6 +655,17 @@ class MarketerCampaignService
             throw new \RuntimeException('Invitation is no longer pending.');
         }
 
+        // enhancement.md P-16: a marketer cannot access (accept into) a
+        // campaign before BOTH admin approval (global_status = active)
+        // AND accepting their current onboarding contract version.
+        $invitingMarketer = $invitation->marketer;
+        if ($invitingMarketer->global_status?->value !== 'active') {
+            throw new \RuntimeException('Marketer account is not approved.');
+        }
+        if (! $invitingMarketer->hasAcceptedContract()) {
+            throw new \RuntimeException('Marketer must accept the onboarding contract before accepting campaigns.');
+        }
+
         DB::transaction(function () use ($invitation, $marketerNote) {
             $campaign = $invitation->campaign;
             $marketer = $invitation->marketer;
@@ -402,7 +712,7 @@ class MarketerCampaignService
                 ]);
             }
 
-            $campaign->vendor->vendorAdmins->each(
+            $campaign->vendor?->vendorAdmins?->each(
                 fn ($va) => $va->notify(new CampaignInvitationAcceptedNotification($invitation))
             );
 
@@ -431,22 +741,33 @@ class MarketerCampaignService
         $sourceCurrency  = $campaign->currency;
         $sourceCondition = 'new';
         $variantId       = null;
+        $sourceType      = null;
+        $sourceListingId = null;
 
         if ($campaign->vendor_listing_id) {
             $source          = VendorListing::find($campaign->vendor_listing_id);
             $sourcePrice     = $source?->price;
             $sourceCondition = $source?->condition ?? 'new';
             $variantId       = $source?->product_variant_id;
+            $sourceType      = 'vendor_listing';
+            $sourceListingId = $source?->id;
         } elseif ($campaign->admin_listing_id) {
-            $source      = \App\Models\AdminListing::find($campaign->admin_listing_id);
-            $sourcePrice = $source?->price;
-            $variantId   = $source?->product_variant_id;
+            $source          = \App\Models\AdminListing::find($campaign->admin_listing_id);
+            $sourcePrice     = $source?->price;
+            $variantId       = $source?->product_variant_id;
+            $sourceType      = 'admin_listing';
+            $sourceListingId = $source?->id;
         }
 
         if (!$variantId || !$sourcePrice) {
             return; // Can't create listing without product/price
         }
 
+        // enhancement.md P-15: campaign-linked marketer listings resolve
+        // their source explicitly (vendor_listing_id / admin_listing_id),
+        // same as independent listings — CartLineSource and the
+        // availability observers no longer need to walk
+        // invitation->campaign->listing at checkout/sync time.
         \App\Models\MarketerListing::firstOrCreate(
             ['invitation_id' => $invitation->id],
             [
@@ -454,6 +775,8 @@ class MarketerCampaignService
                 'product_variant_id' => $variantId,
                 'country_id'         => $campaign->country_id,
                 'listing_category'   => 'product',
+                'source_type'        => $sourceType,
+                'source_listing_id'  => $sourceListingId,
                 'price'              => $sourcePrice,
                 'currency'           => $sourceCurrency,
                 'condition'          => $sourceCondition,
@@ -571,7 +894,7 @@ class MarketerCampaignService
             ->orderBy('accepted_count', 'desc')
             ->first();
 
-        $campaign->vendor->vendorAdmins->each(
+        $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation))
         );
 
@@ -582,7 +905,7 @@ class MarketerCampaignService
         $newInvitation = $this->dispatchInvitation($campaign, $replacement->id);
         $newInvitation->update(['replaced_invitation_id' => $oldInvitation->id]);
 
-        $campaign->vendor->vendorAdmins->each(
+        $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new VendorMarketerReplacedNotification($campaign, $oldMarketer, $replacement))
         );
     }
@@ -592,12 +915,17 @@ class MarketerCampaignService
      */
     public function markCampaignDone(MarketerCampaign $campaign): void
     {
-        $campaign->update(['status' => 'done']);
+        DB::transaction(function () use ($campaign) {
+            $campaign->update(['status' => 'done']);
+            // enhancement.md P-14 task 4: done cancels pending invitations
+            // and archives marketer listings, same as reject/cancel.
+            $this->cancelPendingInvitationsAndArchiveListings($campaign);
+        });
 
         $totalConversions       = (int) $campaign->conversions()->count();
         $totalCommissionEarned  = (float) $campaign->conversions()->sum('commission_amount');
 
-        $campaign->vendor->vendorAdmins->each(
+        $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new CampaignDoneNotification($campaign, $totalConversions, $totalCommissionEarned))
         );
 
@@ -609,6 +937,45 @@ class MarketerCampaignService
                     (float) $inv->total_commission_earned
                 ))
             ));
+    }
+
+    /**
+     * enhancement.md P-14 task 4: resolve a campaign's source stock and
+     * react — 0 stock marks the campaign done (matches the pre-existing
+     * MonitorCampaignStockJob behaviour), below min_stock_for_campaign
+     * pauses it, at/above min_stock_for_campaign resumes a stock-paused
+     * one. Used both by the ListingStockChanged listener (immediate) and
+     * MonitorCampaignStockJob's scheduled sweep (safety net).
+     */
+    public function checkStockAndUpdateStatus(MarketerCampaign $campaign): void
+    {
+        $listing = $campaign->vendor_listing_id
+            ? $campaign->vendorListing
+            : ($campaign->admin_listing_id ? $campaign->adminListing : null);
+
+        if (! $listing) {
+            return; // travel/classified sources have no stock concept yet.
+        }
+
+        $category = $listing->productVariant?->product?->category;
+        $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
+        $stock    = app(\App\Services\Inventory\InventoryService::class)->availableStock($listing);
+
+        if ($stock <= 0) {
+            if (in_array($campaign->status, ['active', 'auto_approved', 'paused'], true)) {
+                $this->markCampaignDone($campaign);
+            }
+            return;
+        }
+
+        if ($stock < $minStock && in_array($campaign->status, ['active', 'auto_approved'], true)) {
+            $this->pauseCampaignForLowStock($campaign);
+            return;
+        }
+
+        if ($stock >= $minStock && $campaign->status === 'paused') {
+            $this->resumeCampaignAfterRestock($campaign);
+        }
     }
 
     /**

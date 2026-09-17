@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 class WishlistController extends Controller
 {
     private const LISTING_EAGER_LOADS = [
-        'vendorListing.productVariant.product.images',
+        'vendorListing.productVariant',
         'vendorListing.vendor:id,store_name',
         'vendorListing.primaryShippingMethod',
     ];
@@ -23,6 +23,12 @@ class WishlistController extends Controller
             ->with(self::LISTING_EAGER_LOADS)
             ->latest('added_at')
             ->paginate(20);
+
+        // Two batched image queries for the whole page (ListingImageResolver),
+        // not one per row.
+        app(\App\Services\Media\ListingImageResolver::class)->forVariants(
+            collect($items->items())->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
+        );
 
         return ApiResponse::paginated($items, WishlistResource::class);
     }

@@ -2,10 +2,13 @@
 
 namespace App\Services\Delivery;
 
+use App\Enums\CancelActor;
 use App\Enums\DeliveryAgentEarningStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentTransactionStatus;
 use App\Enums\SubOrderStatus;
+use App\Services\OrderCancellationService;
+use App\Services\OrderStateMachine;
 use App\Jobs\CustomerDeliveredNotificationJob;
 use App\Jobs\NotifyCustomerFailedDeliveryJob;
 use App\Jobs\NotifyOperationsTeamJob;
@@ -33,6 +36,7 @@ class AssignmentService
         private readonly OtpVerificationService  $otpService,
         private readonly ProofOfDeliveryService  $proofService,
         private readonly RtoService              $rtoService,
+        private readonly OrderStateMachine        $stateMachine = new OrderStateMachine(),
     ) {}
 
     // ── accept ────────────────────────────────────────────────────────────────
@@ -141,9 +145,9 @@ class AssignmentService
         DeliveryAssignment $assignment,
         DeliveryAgent      $agent,
         string             $otpCode,
-        UploadedFile       $proofImage,
-        float              $latitude,
-        float              $longitude,
+        ?UploadedFile      $proofImage,
+        ?float             $latitude,
+        ?float             $longitude,
         ?int               $codAmountCollectedCents,
         ?string            $discrepancyNote = null,
     ): void {
@@ -169,7 +173,7 @@ class AssignmentService
             throw new \DomainException('cod_amount_required');
         }
 
-        $proofFileId = $this->proofService->store($assignment, $proofImage);
+        $proofFileId = $proofImage ? $this->proofService->store($assignment, $proofImage) : null;
 
         // Detect COD shortfall before entering the transaction.
         $codDiscrepancyCents = 0;
@@ -215,10 +219,19 @@ class AssignmentService
                 ]);
             }
 
-            $assignment->subOrder->update([
-                'status'       => 'delivered',
-                'delivered_at' => now(),
-            ]);
+            // enhancement.md P-08: go through the single state-machine
+            // transition so status validation, order_status_histories,
+            // order_items.fulfillment_status, the order rollup, and the
+            // SubOrderDelivered event (which the CaptureCodOnDelivery
+            // listener uses to capture COD and set return_eligible_until)
+            // are identical to the web delivery panel path.
+            $this->stateMachine->transition(
+                $assignment->subOrder,
+                'delivered',
+                CancelActor::System,
+                ['source' => 'mobile_delivery_app', 'agent_id' => $agent->id],
+            );
+            $assignment->subOrder->refresh();
 
             // Agent earns in their own country's currency, not the customer's payment currency.
             // (An agent in Egypt always earns EGP even if the customer paid in AED.)
@@ -255,10 +268,9 @@ class AssignmentService
                 }
             }
 
-            // Start return window on order items.
-            $assignment->subOrder->items()
-                ->whereNull('return_eligible_until')
-                ->update(['return_eligible_until' => now()->addDays(14)->toDateString()]);
+            // Return window on order items is now set by CaptureCodOnDelivery
+            // (listening on SubOrderDelivered, fired by the transition()
+            // call above) — reads categories.return_window_days.
 
             $todayShift = DeliveryAgentShift::where('agent_id', $agent->id)
                 ->where('status', DeliveryAgentShiftStatus::Active)
@@ -359,15 +371,19 @@ class AssignmentService
                 $this->rtoService->createReturnAssignment($assignment);
             }
 
-            // Customer refused a COD order = implicit cancellation; no cash changed hands.
+            // Customer refused a COD order = implicit cancellation; no cash
+            // changed hands. enhancement.md P-06: only the FAILED sub-order
+            // is cancelled here (via OrderCancellationService), not the
+            // whole order — a multi-vendor order with one RTO'd sub-order
+            // must leave the other sub-orders alone. The order-level status
+            // only rolls up to 'cancelled' if this was the last non-cancelled
+            // sub-order (handled inside OrderCancellationService).
             if ($isCodRefused) {
-                $order->update([
-                    'status'       => OrderStatus::Cancelled,
-                    'cancelled_at' => now(),
-                    // payment_status stays 'pending' — nothing was collected.
-                ]);
-
-                $assignment->subOrder->update(['status' => SubOrderStatus::Cancelled]);
+                app(OrderCancellationService::class)->cancel(
+                    $assignment->subOrder,
+                    CancelActor::System,
+                    'RTO: customer refused COD delivery',
+                );
 
                 PaymentTransaction::where('order_id', $order->id)
                     ->where('gateway', 'cod')

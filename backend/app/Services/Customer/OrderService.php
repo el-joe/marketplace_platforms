@@ -5,11 +5,16 @@ namespace App\Services\Customer;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\SubOrder;
+use App\Services\Checkout\CouponUsageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class OrderService
 {
     private const PRE_SHIPMENT_STATUSES = ['placed', 'confirmed'];
+
+    public function __construct(
+        private readonly CouponUsageService $couponUsageService = new CouponUsageService(),
+    ) {}
 
     public function listForCustomer(Customer $customer, array $filters): LengthAwarePaginator
     {
@@ -75,6 +80,11 @@ class OrderService
             'to_status' => 'cancelled',
             'reason' => $reason,
         ]);
+
+        // enhancement.md P-04 task 2: release any reserved/consumed coupon
+        // usage on customer cancellation, wired here (rather than blocked
+        // on P-06's not-yet-built cancellation engine) so it works today.
+        $this->couponUsageService->releaseForOrder($order);
     }
 
     public function trackSubOrder(Customer $customer, string $subOrderId): ?SubOrder

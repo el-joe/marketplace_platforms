@@ -76,6 +76,8 @@ class Category extends Model
         'affiliate_sample_qty',
         'platform_sample_qty',
         'min_stock_for_campaign',
+        'return_window_days',
+        'is_returnable',
         'seo_title_ar',
         'seo_title_en',
         'seo_description_ar',
@@ -96,6 +98,7 @@ class Category extends Model
         'is_featured' => 'boolean',
         'show_in_footer' => 'boolean',
         'has_filters' => 'boolean',
+        'is_returnable' => 'boolean',
         'influencer_sample_qty' => 'integer',
         'affiliate_sample_qty' => 'integer',
         'platform_sample_qty' => 'integer',
@@ -159,6 +162,18 @@ class Category extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Vendor listings for this category, reached through
+     * products -> variants -> vendor_listings (no direct FK, so a plain
+     * hasMany/hasManyThrough won't reach three hops — a scoped builder does).
+     */
+    public function vendorListings(): \Illuminate\Database\Eloquent\Builder
+    {
+        return VendorListing::whereHas('productVariant.product', function ($query) {
+            $query->where('category_id', $this->id);
+        });
     }
 
     public function files(): MorphMany

@@ -10,6 +10,7 @@ use App\Models\WarrantyClaimMessage;
 use App\Notifications\Customer\WarrantyClaimResolvedNotification;
 use App\Notifications\Customer\WarrantyClaimStatusChanged;
 use App\Services\WalletService;
+use App\Services\WarrantyClaimResolutionService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
@@ -260,8 +261,12 @@ class WarrantyClaimController extends Controller
                 'status' => WarrantyClaim::STATUS_RESOLVED,
             ]);
 
+            $resolutionService = app(WarrantyClaimResolutionService::class);
+
             if ($data['resolution'] === WarrantyClaim::RESOLUTION_REFUND) {
-                $this->issueRefund($claim, $admin->id);
+                $resolutionService->refund($claim, $admin->id);
+            } elseif ($data['resolution'] === WarrantyClaim::RESOLUTION_REPLACE) {
+                $resolutionService->replace($claim);
             }
 
             WarrantyClaimMessage::create([

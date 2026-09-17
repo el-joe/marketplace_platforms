@@ -195,7 +195,63 @@ class WalletController extends Controller
         /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
         $this->walletService->approveWithdrawal($withdrawal, $admin);
+
+        // enhancement.md P-16: paying out a marketer's withdrawal is the
+        // final step of the commission lifecycle — record the balanced
+        // double-entry ledger posting (mirrors PayoutController::approve's
+        // vendor seller_payable <-> platform_revenue pattern) and mark
+        // every conversion this payout covers as paid/commissioned so
+        // they are never paid out twice.
+        $owner = $withdrawal->wallet->owner;
+        if ($owner instanceof \App\Models\Marketer) {
+            $this->settleMarketerWithdrawalLedgerAndConversions($withdrawal, $owner);
+        }
+
         return back()->with('success', 'Withdrawal approved.');
+    }
+
+    private function settleMarketerWithdrawalLedgerAndConversions(WalletWithdrawalRequest $withdrawal, \App\Models\Marketer $marketer): void
+    {
+        $ledger = app(\App\Services\LedgerService::class);
+        $groupId = $ledger->newGroupId();
+
+        $ledger->record($groupId, [
+            [
+                'account_type'        => 'marketer_payable',
+                'account_holder_type' => 'marketer',
+                'account_holder_id'   => $marketer->id,
+                'debit'               => $withdrawal->amount,
+                'credit'              => 0,
+                'currency'            => $withdrawal->currency,
+                'reference_type'      => 'withdrawal',
+                'reference_id'        => (string) $withdrawal->id,
+                'description'         => "Marketer withdrawal approved: {$withdrawal->id}",
+            ],
+            [
+                'account_type'        => 'platform_revenue',
+                'account_holder_type' => null,
+                'account_holder_id'   => null,
+                'debit'               => 0,
+                'credit'              => $withdrawal->amount,
+                'currency'            => $withdrawal->currency,
+                'reference_type'      => 'withdrawal',
+                'reference_id'        => (string) $withdrawal->id,
+                'description'         => "Marketer withdrawal approved: {$withdrawal->id}",
+            ],
+        ]);
+
+        $invitationIds = \App\Models\MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
+
+        $conversionIds = \App\Models\MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
+            ->where('status', 'approved')
+            ->whereNotNull('wallet_released_at')
+            ->where('commissioned', false)
+            ->pluck('id')
+            ->all();
+
+        if ($conversionIds) {
+            app(\App\Services\MarketerCampaignService::class)->markConversionsPaid($conversionIds, (string) $withdrawal->id);
+        }
     }
 
     public function rejectWithdrawal(Request $request, WalletWithdrawalRequest $withdrawal)

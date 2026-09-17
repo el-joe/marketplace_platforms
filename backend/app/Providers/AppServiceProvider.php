@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\View\Composers\SettingsComposer;
 use App\Http\View\Composers\TravelAgencySidebarComposer;
 use App\View\Components\Form\AsyncSelect;
@@ -11,7 +13,11 @@ use App\View\Components\Form\PriceInput;
 use App\View\Components\Form\RichEditor;
 use App\View\Components\Form\Select;
 use App\Events\SubOrderPlaced;
+use App\Events\SubOrderShipped;
+use App\Events\SubOrderDelivered;
 use App\Listeners\InvalidateVendorDashboardCache;
+use App\Listeners\NotifyCustomerOnShipment;
+use App\Listeners\CaptureCodOnDelivery;
 use App\Services\GiftCardService;
 use App\Services\AppContextService;
 use App\Services\Shared\PageBuilderService;
@@ -95,6 +101,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GiftCardService::class);
         $this->app->singleton(AppContextService::class, fn () => new AppContextService());
         $this->app->singleton(\App\Services\Customer\LoyaltyService::class);
+        $this->app->singleton(\App\Services\Media\ListingImageResolver::class);
 
         // Replace Laravel's built-in DatabaseChannel with our custom one that
         // writes to the platform's non-standard notifications table schema
@@ -110,6 +117,33 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // enhancement.md P-20 task 2 asks for
+        // Model::preventLazyLoading(!app()->isProduction()) to catch N+1
+        // regressions. Tried it here: it throws LazyLoadingViolationException
+        // in >=7 pre-existing, unrelated feature tests (e.g.
+        // CheckoutPricingReconciliationTest via
+        // ListingIdentifierService::buildListingRef() lazy-loading
+        // VendorListing::productVariant) because lazy loading is relied on
+        // throughout the wider codebase, not just in the home/page-builder
+        // path this prompt touches. Enabling it globally would be a real
+        // regression of "don't touch unrelated code", so it is intentionally
+        // NOT enabled here. The N+1s this prompt targets (File::find() per
+        // row, per-block relation loads) are fixed directly in
+        // PageBuilderService below instead, and covered by query-count
+        // assertions in tests/Feature/Customer/HomePageQueryCountTest.php.
+
+        // enhancement.md P-22 task 5: log any single query over 500ms in
+        // production only (a dev/test box running without the P-22 index
+        // migration, or a cold-cache aggregate, would otherwise spam this).
+        if ($this->app->isProduction()) {
+            DB::whenQueryingForLongerThan(500, function ($connection) {
+                Log::warning('Slow query detected (>500ms)', [
+                    'connection' => $connection->getName(),
+                    'query_count' => count($connection->getQueryLog()),
+                ]);
+            });
+        }
+
         Auth::provider('travel_agency_provider', function ($app, array $config) {
             return new TravelAgencyUserProvider($app['hash'], $config['model']);
         });
@@ -142,8 +176,36 @@ class AppServiceProvider extends ServiceProvider
         WarrantyPurchase::observe(WarrantyPurchaseObserver::class);
         SubOrder::observe(SubOrderObserver::class);
         Coupon::observe(CouponObserver::class);
+        \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
+        \App\Models\MarketerListing::observe(\App\Observers\MarketerListingObserver::class);
 
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
+        Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
+        Event::listen(SubOrderDelivered::class, CaptureCodOnDelivery::class);
+        // enhancement.md P-13 task 4: keep listing.status in sync with
+        // stock (active <-> out_of_stock) after any InventoryService
+        // mutation.
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncListingStockStatus::class);
+        // enhancement.md P-14 task 4: pause/resume/complete campaigns
+        // sourced from a listing as soon as its stock changes, instead of
+        // only on MonitorCampaignStockJob's hourly sweep.
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\PauseCampaignsOnLowStock::class);
+        // enhancement.md P-15 task 4: hide/unhide a marketer listing the
+        // moment ITS source's stock crosses zero, independent of the
+        // parent campaign's own pause/resume above. Registered after
+        // SyncListingStockStatus so the source listing's status column is
+        // already up to date when this runs.
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncMarketerListingAvailabilityOnStock::class);
+        // enhancement.md P-19 task 2: total_stock in product_country_buybox
+        // must follow every stock mutation, not only the ones that flip a
+        // listing's status (SyncListingStockStatus above only writes on a
+        // status change).
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\RebuildBuyBoxOnStockChange::class);
+        // enhancement.md P-09 task 2: warranty activation on delivery is
+        // implemented in SubOrderObserver::updating() (fires on the same
+        // status write that produces SubOrderDelivered, before this event's
+        // listeners run) rather than as a second listener here — see that
+        // observer for the D3 coverage-start rule.
 
         \Illuminate\Support\Facades\Notification::extend('push', function ($app) {
             return $app->make(VendorPushChannel::class);

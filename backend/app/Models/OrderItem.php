@@ -29,6 +29,8 @@ class OrderItem extends Model
         'product_variant_id',
         'vendor_listing_id',
         'admin_listing_id',
+        'marketer_listing_id',
+        'marketer_campaign_invitation_id',
         'product_snapshot',
         'vendor_id',
         'sku',
@@ -43,6 +45,9 @@ class OrderItem extends Model
         'commission_fixed',
         'commission_amount',
         'commission_category_id',
+        'vendor_coupon_cost',
+        'marketer_commission',
+        'platform_commission_after_discount',
         'fulfillment_status',
         'return_eligible_until',
         'warranty_purchase_id',
@@ -80,6 +85,21 @@ class OrderItem extends Model
         return $this->belongsTo(AdminListing::class, 'admin_listing_id');
     }
 
+    public function marketerListing(): BelongsTo
+    {
+        return $this->belongsTo(MarketerListing::class, 'marketer_listing_id');
+    }
+
+    public function marketerCampaignInvitation(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaignInvitation::class, 'marketer_campaign_invitation_id');
+    }
+
+    public function marketerConversion(): HasOne
+    {
+        return $this->hasOne(MarketerCampaignConversion::class, 'order_item_id');
+    }
+
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
@@ -103,6 +123,15 @@ class OrderItem extends Model
     public function customAttributeValues(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(OrderItemCustomAttributeValue::class);
+    }
+
+    /**
+     * enhancement.md P-13: the exact warehouse_inventory row(s) this
+     * item's stock was reserved from.
+     */
+    public function allocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderItemAllocation::class);
     }
 
 }

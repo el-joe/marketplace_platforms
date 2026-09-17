@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Rocket, Camera, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ClassifiedImage } from "./types";
@@ -12,10 +13,12 @@ interface ClassifiedGalleryProps {
 
 export default function ClassifiedGallery({
   images,
-  promotedBadge = "Promoted Turbo",
+  promotedBadge,
 }: ClassifiedGalleryProps) {
+  const t = useTranslations("classifiedGallery");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const badge = promotedBadge ?? t("promotedTurbo");
 
   const mainImage = images[selectedIndex] || images[0];
 
@@ -40,7 +43,7 @@ export default function ClassifiedGallery({
         >
           <Image
             src={mainImage.url}
-            alt={mainImage.alt || "Classified vehicle image"}
+            alt={mainImage.alt || t("mainImageAlt")}
             fill
             priority
             className="object-cover transition-transform duration-300 group-hover:scale-102"
@@ -52,7 +55,7 @@ export default function ClassifiedGallery({
             {promotedBadge && (
               <div className="bg-white/95 text-slate-800 text-xs font-semibold px-2.5 py-1 rounded shadow flex items-center gap-1.5 backdrop-blur-xs">
                 <Rocket className="w-3.5 h-3.5 text-red-500 fill-red-500" />
-                <span>{promotedBadge}</span>
+                <span>{badge}</span>
               </div>
             )}
             <div className="bg-black/70 text-white text-xs font-medium px-2.5 py-1 rounded shadow flex items-center gap-1.5 backdrop-blur-xs">
@@ -67,14 +70,14 @@ export default function ClassifiedGallery({
               <button
                 onClick={handlePrev}
                 className="pointer-events-auto w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
-                aria-label="Previous image"
+                aria-label={t("previousImage")}
               >
                 <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
               </button>
               <button
                 onClick={handleNext}
                 className="pointer-events-auto w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/75 transition-colors"
-                aria-label="Next image"
+                aria-label={t("nextImage")}
               >
                 <ChevronRight className="w-5 h-5 rtl:rotate-180" />
               </button>
@@ -96,7 +99,7 @@ export default function ClassifiedGallery({
             >
               <Image
                 src={images[1].url}
-                alt={images[1].alt || "Thumbnail 1"}
+                alt={images[1].alt || t("thumbnail1")}
                 fill
                 className="object-cover"
                 sizes="300px"
@@ -116,7 +119,7 @@ export default function ClassifiedGallery({
             >
               <Image
                 src={images[2].url}
-                alt={images[2].alt || "Thumbnail 2"}
+                alt={images[2].alt || t("thumbnail2")}
                 fill
                 className="object-cover"
                 sizes="300px"
@@ -132,7 +135,7 @@ export default function ClassifiedGallery({
             >
               <Image
                 src={images[3].url}
-                alt={images[3].alt || "Thumbnail 3"}
+                alt={images[3].alt || t("thumbnail3")}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform"
                 sizes="300px"
@@ -140,7 +143,7 @@ export default function ClassifiedGallery({
               {/* Overlay with Show More Photos */}
               <div className="absolute inset-0 bg-black/60 hover:bg-black/50 transition-colors flex items-center justify-center text-center p-2">
                 <span className="text-white font-semibold text-sm sm:text-base tracking-wide drop-shadow">
-                  Show More Photos
+                  {t("showMorePhotos")}
                 </span>
               </div>
             </div>
@@ -176,7 +179,7 @@ export default function ClassifiedGallery({
           <button
             onClick={() => setIsLightboxOpen(false)}
             className="absolute top-4 end-4 text-white hover:text-gray-300 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            aria-label="Close lightbox"
+            aria-label={t("closeLightbox")}
           >
             <X className="w-6 h-6" />
           </button>
@@ -184,7 +187,7 @@ export default function ClassifiedGallery({
           <div className="relative w-full max-w-5xl h-[70vh] flex items-center justify-center">
             <Image
               src={images[selectedIndex]?.url || mainImage.url}
-              alt="Expanded view"
+              alt={t("expandedView")}
               fill
               className="object-contain"
             />
@@ -192,14 +195,14 @@ export default function ClassifiedGallery({
             <button
               onClick={handlePrev}
               className="absolute start-2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
-              aria-label="Previous image"
+              aria-label={t("previousImage")}
             >
               <ChevronLeft className="w-6 h-6 rtl:rotate-180" />
             </button>
             <button
               onClick={handleNext}
               className="absolute end-2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
-              aria-label="Next image"
+              aria-label={t("nextImage")}
             >
               <ChevronRight className="w-6 h-6 rtl:rotate-180" />
             </button>

@@ -408,6 +408,8 @@ return [
             'cannot_cancel'      => 'This order cannot be cancelled in its current status.',
             'cancelled'          => 'Order cancelled successfully.',
             'suborder_not_found' => 'Sub-order not found.',
+            'not_bank_transfer'  => 'This order was not placed with bank transfer.',
+            'proof_uploaded'     => 'Payment proof uploaded successfully.',
         ],
 
         'page' => [
@@ -482,6 +484,21 @@ return [
             'addon_group_single_choice'  => 'Only one option may be selected for ":name".',
             'order_notes_not_supported'  => 'This seller does not accept order notes for this item.',
             'insufficient_stock_available' => 'Insufficient stock for one or more items. Only :available unit(s) available.',
+            'coupon' => [
+                'not_active' => 'This coupon is no longer active.',
+                'not_valid_now' => 'This coupon is not valid at this time.',
+                'country_not_eligible' => 'This coupon is not valid in your country.',
+                'currency_mismatch' => 'This coupon is not valid for your currency.',
+                'min_order_not_reached' => 'Your order does not meet the minimum amount for this coupon.',
+                'not_stackable' => 'This coupon cannot be combined with another discount.',
+                'new_customers_only' => 'This coupon is for new customers only.',
+                'not_eligible' => 'You are not eligible for this coupon.',
+                'usage_limit_reached' => 'This coupon has reached its usage limit.',
+                'per_customer_limit_reached' => 'You have already used this coupon the maximum number of times.',
+                'monthly_limit_reached' => 'You have reached your monthly limit for this coupon.',
+                'shipping_type_restricted' => 'This coupon is only valid for :type shipping orders.',
+                'no_applicable_items' => 'This coupon does not apply to any items in your cart.',
+            ],
         ],
 
         'app_config' => [

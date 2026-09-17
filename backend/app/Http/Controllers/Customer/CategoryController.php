@@ -15,14 +15,31 @@ class CategoryController extends Controller
 
     /**
      * GET /categories
-     * Full nested tree for nav/menu. Cached 10 min per country.
+     * Lightweight nav tree for the storefront header. Cached 10 min per
+     * (country, locale). See enhancement.md P-21: this is the CHEAP payload
+     * (no filterable attributes, capped brand list) — /categories/browse
+     * below carries the heavy per-category detail.
      */
-    public function index(Request $request,$country): JsonResponse
+    public function index(Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
         return response()->json([
             'success' => true,
-            'data'    => $this->categories->getTree($country),
+            'data'    => $this->categories->getNavTree($country),
+        ]);
+    }
+
+    /**
+     * GET /categories/browse
+     * Heavy browse payload: full product category tree with brand lists,
+     * product counts and filterable attributes. enhancement.md P-21 task 6.
+     */
+    public function browse(Request $request, $country): JsonResponse
+    {
+        $country = $request->attributes->get('country');
+        return response()->json([
+            'success' => true,
+            'data'    => $this->categories->getBrowseTree($country),
         ]);
     }
 }

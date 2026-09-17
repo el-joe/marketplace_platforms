@@ -24,9 +24,14 @@ class VendorListing extends Model
             'status' => VendorListingStatus::class,
             'global_system_type' => GlobalSystemType::class,
             'vendor_covers_delivery' => 'boolean',
-            'price' => 'decimal:2',
-            'compare_at_price' => 'decimal:2',
-            'cost_price' => 'decimal:2',
+            // enhancement.md P-03 task 4: price/compare_at_price/cost_price were
+            // DECIMAL(12,2), the only money columns in the schema that weren't
+            // BIGINT base-currency units — silently truncated when cast to int
+            // elsewhere. Migrated to BIGINT; money here is a whole base-currency
+            // amount like every other price column, never *100/100.
+            'price' => 'integer',
+            'compare_at_price' => 'integer',
+            'cost_price' => 'integer',
             'declared_weight_grams' => 'integer',
             'declared_length_cm' => 'decimal:2',
             'declared_width_cm' => 'decimal:2',

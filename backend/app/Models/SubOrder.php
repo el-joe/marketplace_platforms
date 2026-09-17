@@ -81,6 +81,10 @@ class SubOrder extends Model
         'order_id',
         'sub_order_number',
         'vendor_id',
+        // 'vendor' or 'platform' — see enhancement.md P-02 task 4 / the
+        // migration 2026_09_17_000200 for why vendor_id was made nullable
+        // instead of seeding a synthetic "platform vendor" row.
+        'seller_type',
         'warehouse_id',
         'status',
         'fulfillment_model',
@@ -95,6 +99,11 @@ class SubOrder extends Model
         'subsidy_ledgered',
         'tax',
         'platform_commission',
+        'vendor_coupon_cost',
+        'platform_coupon_cost',
+        'marketer_commission',
+        'marketer_commission_owner',
+        'warranty_revenue',
         'gateway_fee',
         'gateway_fee_rate',
         'vendor_payout',

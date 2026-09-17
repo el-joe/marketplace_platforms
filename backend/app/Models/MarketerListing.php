@@ -37,6 +37,9 @@ class MarketerListing extends Model
         'listing_category',
         'country_id',
         'invitation_id',
+        'source_type',
+        'source_listing_id',
+        'paused_reason',
         'price',
         'compare_at_price',
         'currency',
@@ -95,6 +98,16 @@ class MarketerListing extends Model
     public function classifiedListing(): BelongsTo
     {
         return $this->belongsTo(ClassifiedListing::class, 'classified_listing_id');
+    }
+
+    public function sourceVendorListing(): BelongsTo
+    {
+        return $this->belongsTo(VendorListing::class, 'source_listing_id');
+    }
+
+    public function sourceAdminListing(): BelongsTo
+    {
+        return $this->belongsTo(AdminListing::class, 'source_listing_id');
     }
 
     // ── Scopes ─────────────────────────────────────────────────────────────

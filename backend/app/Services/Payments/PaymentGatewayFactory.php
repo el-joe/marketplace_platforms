@@ -17,8 +17,26 @@ class PaymentGatewayFactory
         // 'wallet'     => WalletGateway::class, // handled internally
     ];
 
+    /**
+     * Test-only seam: enhancement.md P-00's Tests\Support\FakePaymentGateway
+     * is scripted to return success/decline/exception outcomes without
+     * hitting a real gateway. Feature tests call
+     * PaymentGatewayFactory::fake($fake) to make every make() call return it
+     * regardless of gateway code — never set outside tests.
+     */
+    private static ?PaymentGatewayInterface $fake = null;
+
+    public static function fake(?PaymentGatewayInterface $gateway): void
+    {
+        self::$fake = $gateway;
+    }
+
     public static function make(CountryPaymentGateway $config): PaymentGatewayInterface
     {
+        if (self::$fake !== null) {
+            return self::$fake;
+        }
+
         $code = $config->gateway?->code;
 
         if (!$code || !isset(self::$map[$code])) {

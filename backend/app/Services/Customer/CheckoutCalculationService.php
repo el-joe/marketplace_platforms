@@ -14,10 +14,19 @@ use App\Models\Order;
 use App\Models\ShippingRate;
 use App\Models\VendorListing;
 use App\Models\WarrantyPlan;
+use App\Services\Checkout\CheckoutPricingEngine;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @deprecated The coupon-discount and warranty-selection math previously
+ * duplicated here now lives in App\Services\Checkout\CheckoutPricingEngine
+ * (enhancement.md P-01). The methods below are thin delegates kept for
+ * backward compatibility with callers that have not been migrated yet
+ * (e.g. App\Services\Customer\CartService). Shipping and commission
+ * calculation are unaffected and remain here.
+ */
 class CheckoutCalculationService
 {
     /**
@@ -103,9 +112,13 @@ class CheckoutCalculationService
         ];
     }
 
+    public function __construct(
+        private readonly CheckoutPricingEngine $pricingEngine,
+    ) {}
+
     public function calculateTax(int $taxableAmountCents, Country $country): int
     {
-        return (int) round($taxableAmountCents * ((float) $country->vat_rate / 100));
+        return $this->pricingEngine->calculateTax($taxableAmountCents, $country);
     }
 
     public function calculateCommission(
@@ -172,6 +185,9 @@ class CheckoutCalculationService
     }
 
     /**
+     * @deprecated Delegates to CheckoutPricingEngine::applyCoupon() — the
+     * single source of truth for coupon discount math (enhancement.md P-01).
+     *
      * @param  array<\App\Models\CartItem>  $cartItems
      */
     public function applyCoupon(
@@ -181,73 +197,7 @@ class CheckoutCalculationService
         string $currency,
         array $cartItems,
     ): array {
-        if (! $coupon->is_active) {
-            return ['discount' => 0, 'error' => 'Coupon is not active'];
-        }
-
-        $now = Carbon::now();
-        if (($coupon->valid_from && $now->lt($coupon->valid_from))
-            || ($coupon->valid_until && $now->gt($coupon->valid_until))) {
-            return ['discount' => 0, 'error' => 'Coupon is not valid at this time'];
-        }
-
-        if ($coupon->currency !== null && $coupon->currency !== $currency) {
-            return ['discount' => 0, 'error' => 'Coupon currency does not match'];
-        }
-
-        if ($coupon->min_order_amount !== null && $subtotalCents < $coupon->min_order_amount) {
-            return ['discount' => 0, 'error' => 'Order does not meet minimum amount for this coupon'];
-        }
-
-        if ($coupon->usage_limit_total !== null && $coupon->times_used >= $coupon->usage_limit_total) {
-            return ['discount' => 0, 'error' => 'Coupon usage limit reached'];
-        }
-
-        if ($coupon->usage_limit_per_customer !== null) {
-            $customerUsageCount = CouponUsage::where('coupon_id', $coupon->id)
-                ->where('customer_id', $customer->id)
-                ->count();
-
-            if ($customerUsageCount >= $coupon->usage_limit_per_customer) {
-                return ['discount' => 0, 'error' => 'You have already used this coupon the maximum number of times'];
-            }
-        }
-
-        if ($coupon->shipping_type_restriction !== \App\Enums\CouponShippingTypeRestriction::All) {
-            $mismatched = collect($cartItems)->contains(
-                fn ($item) => $this->resolveItemShippingType($item) !== $coupon->shipping_type_restriction->value
-            );
-
-            if ($mismatched) {
-                return ['discount' => 0, 'error' => 'This coupon is only valid for '.strtoupper($coupon->shipping_type_restriction->value).' shipping orders'];
-            }
-        }
-
-        $applicableSubtotal = $this->resolveApplicableSubtotal($coupon, $subtotalCents, $cartItems);
-
-        if ($applicableSubtotal <= 0) {
-            return ['discount' => 0, 'error' => 'Coupon does not apply to any items in your cart'];
-        }
-
-        $discount = match ($coupon->type) {
-            \App\Enums\CouponType::Percentage => (int) round($applicableSubtotal * ((float) $coupon->value / 100)),
-            \App\Enums\CouponType::FixedAmount => (int) round((float) $coupon->value),
-            \App\Enums\CouponType::FreeShipping => 0,
-            \App\Enums\CouponType::Bogo => $this->cheapestQualifyingItemPrice($coupon, $cartItems),
-            default => 0,
-        };
-
-        if ($coupon->max_discount !== null && $discount > $coupon->max_discount) {
-            $discount = $coupon->max_discount;
-        }
-
-        $discount = min($discount, $applicableSubtotal);
-
-        return [
-            'discount' => $discount,
-            'error' => null,
-            'type' => $coupon->type?->value,
-        ];
+        return $this->pricingEngine->applyCoupon($coupon, $customer, $subtotalCents, $currency, $cartItems);
     }
 
     /**
@@ -296,100 +246,11 @@ class CheckoutCalculationService
         return ['discount' => $discount, 'error' => null];
     }
 
-    private function resolveItemShippingType(\App\Models\CartItem $item): string
-    {
-        if ($item->adminListing !== null) {
-            return 'fbn';
-        }
-
-        return match ($item->vendorListing?->fulfillment_model) {
-            'fbn' => 'fbn',
-            'cross_dock' => 'fbp',
-            default => 'fbm',
-        };
-    }
-
     /**
-     * @param  array<\App\Models\CartItem>  $cartItems
+     * @deprecated Kept only as a legacy-shape summary (no per-line detail).
+     * New code should call CheckoutPricingEngine::priceCart() directly to
+     * get a PricedCart with reconciled per-line/sub-order/order figures.
      */
-    private function resolveApplicableSubtotal(Coupon $coupon, int $subtotalCents, array $cartItems): int
-    {
-        return match ($coupon->scope) {
-            \App\Enums\CouponScope::Vendor => $this->sumItems($cartItems, fn ($item) => $item->vendorListing?->vendor_id === $coupon->vendor_id),
-            \App\Enums\CouponScope::Category => $this->sumItems($cartItems, function ($item) use ($coupon) {
-                $categoryId = $item->vendorListing?->productVariant?->product?->category_id;
-
-                return $categoryId !== null && $this->categoryMatches($categoryId, $coupon->category_id);
-            }),
-            \App\Enums\CouponScope::Product => $this->sumItems($cartItems, function ($item) use ($coupon) {
-                $productId = $item->vendorListing?->productVariant?->product_id;
-                $vendorId = $item->vendorListing?->vendor_id;
-
-                return $productId !== null
-                    && $vendorId === $coupon->vendor_id
-                    && $coupon->products()->where('products.id', $productId)->exists();
-            }),
-            default => $subtotalCents,
-        };
-    }
-
-    /**
-     * @param  array<\App\Models\CartItem>  $cartItems
-     */
-    private function sumItems(array $cartItems, \Closure $matcher): int
-    {
-        $sum = 0;
-        foreach ($cartItems as $item) {
-            if ($matcher($item)) {
-                $sum += $item->unit_price * $item->quantity;
-            }
-        }
-
-        return $sum;
-    }
-
-    private function categoryMatches(string $itemCategoryId, ?string $couponCategoryId): bool
-    {
-        if ($couponCategoryId === null) {
-            return false;
-        }
-
-        if ($itemCategoryId === $couponCategoryId) {
-            return true;
-        }
-
-        $category = \App\Models\Category::find($itemCategoryId);
-
-        return $category !== null
-            && $category->ancestors()->where('id', $couponCategoryId)->exists();
-    }
-
-    /**
-     * @param  array<\App\Models\CartItem>  $cartItems
-     */
-    private function cheapestQualifyingItemPrice(Coupon $coupon, array $cartItems): int
-    {
-        $applicableItems = array_filter($cartItems, function ($item) use ($coupon) {
-            return match ($coupon->scope) {
-                \App\Enums\CouponScope::Vendor => $item->vendorListing?->vendor_id === $coupon->vendor_id,
-                \App\Enums\CouponScope::Category => ($categoryId = $item->vendorListing?->productVariant?->product?->category_id) !== null
-                    && $this->categoryMatches($categoryId, $coupon->category_id),
-                \App\Enums\CouponScope::Product => ($productId = $item->vendorListing?->productVariant?->product_id) !== null
-                    && $item->vendorListing?->vendor_id === $coupon->vendor_id
-                    && $coupon->products()->where('products.id', $productId)->exists(),
-                default => true,
-            };
-        });
-
-        if (empty($applicableItems)) {
-            return 0;
-        }
-
-        $prices = array_map(fn ($item) => (int) $item->unit_price, $applicableItems);
-
-        return min($prices);
-    }
-
     public function buildOrderSummary(
         array $cartItems,
         int $shippingFeeCents,
@@ -422,7 +283,9 @@ class CheckoutCalculationService
     }
 
     /**
-     * Validate and price the customer's per-item warranty plan selections.
+     * @deprecated Delegates to CheckoutPricingEngine::resolveWarrantySelections()
+     * — the single source of truth for warranty selection resolution
+     * (enhancement.md P-01).
      *
      * @param  array<\App\Models\CartItem>  $cartItems
      * @param  array<int, array{listing_id: string, warranty_plan_id: string}>  $warrantySelections
@@ -435,60 +298,6 @@ class CheckoutCalculationService
         string $currency,
         WarrantyPlanService $warrantyPlanService,
     ): array {
-        $selections = [];
-        $total = 0;
-
-        foreach ($warrantySelections as $selection) {
-            $listingId = $selection['listing_id'];
-            $warrantyPlanId = $selection['warranty_plan_id'];
-
-            $cartItem = collect($cartItems)->first(fn ($item) => $item->vendor_listing_id === $listingId);
-            if (! $cartItem) {
-                throw ValidationException::withMessages([
-                    'warranty_selections' => "No cart item found for listing {$listingId}.",
-                ]);
-            }
-
-            $plan = WarrantyPlan::active()->find($warrantyPlanId);
-            if (! $plan) {
-                throw ValidationException::withMessages([
-                    'warranty_selections' => "Warranty plan {$warrantyPlanId} is not available.",
-                ]);
-            }
-
-            $product = $cartItem->vendorListing->productVariant->product;
-            $applicablePlanIds = collect($warrantyPlanService->getPlansForProduct($product, $country->id, $currency, (int) $cartItem->unit_price))
-                ->pluck('id')
-                ->all();
-
-            if (! in_array($plan->id, $applicablePlanIds, true)) {
-                throw ValidationException::withMessages([
-                    'warranty_selections' => "Warranty plan {$warrantyPlanId} is not applicable to this product.",
-                ]);
-            }
-
-            if ($plan->country_ids !== null && ! in_array($country->id, $plan->country_ids, true)) {
-                throw ValidationException::withMessages([
-                    'warranty_selections' => "Warranty plan {$warrantyPlanId} is not available in your country.",
-                ]);
-            }
-
-            if ($plan->currency !== $currency) {
-                throw ValidationException::withMessages([
-                    'warranty_selections' => "Warranty plan {$warrantyPlanId} currency does not match order currency.",
-                ]);
-            }
-
-            $resolvedPrice = $plan->resolvePrice((int) $cartItem->unit_price);
-
-            $selections[$cartItem->id] = [
-                'plan' => $plan,
-                'price' => $resolvedPrice,
-            ];
-
-            $total += $resolvedPrice;
-        }
-
-        return ['selections' => $selections, 'total' => $total];
+        return $this->pricingEngine->resolveWarrantySelections($cartItems, $warrantySelections, $country, $currency);
     }
 }

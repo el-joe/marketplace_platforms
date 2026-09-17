@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\ReturnRequestItemCondition;
 use App\Enums\ReturnRequestItemRestockDecision;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReturnRequestItem extends Model
 {
+    use HasUuids;
+
     protected function casts(): array
     {
         return [

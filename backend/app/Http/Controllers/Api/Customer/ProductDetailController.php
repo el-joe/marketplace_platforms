@@ -18,6 +18,7 @@ use App\Models\VendorListing;
 use App\Services\AppContextService;
 use App\Services\BannerService;
 use App\Services\Customer\ListingQueryService;
+use App\Services\Media\ListingImageResolver;
 use App\Services\ShippingMethodResolverService;
 use App\Services\VariantResolutionService;
 use Illuminate\Http\JsonResponse;
@@ -543,31 +544,8 @@ class ProductDetailController extends Controller
 
     private function buildImages(Product $product, ProductVariant $variant): array
     {
-        $variantImages = ProductImage::where('product_variant_id', $variant->id)
-            ->orderBy('position')
-            ->get()
-            ->map(fn (ProductImage $img) => [
-                'id'         => $img->id,
-                'url'        => $img->url,
-                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_primary' => (bool) $img->is_primary,
-                'position'   => (int) $img->position,
-                'variant_id' => $img->product_variant_id,
-            ])->values()->all();
+        $images = app(ListingImageResolver::class)->gallery($variant->id);
 
-        $productImages = ProductImage::where('product_id', $product->id)
-            ->whereNull('product_variant_id')
-            ->orderBy('position')
-            ->get()
-            ->map(fn (ProductImage $img) => [
-                'id'         => $img->id,
-                'url'        => $img->url,
-                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_primary' => (bool) $img->is_primary,
-                'position'   => (int) $img->position,
-                'variant_id' => null,
-            ])->values()->all();
-
-        return array_values(array_merge($variantImages, $productImages));
+        return array_map(fn ($img) => $img->toArray(), $images);
     }
 }

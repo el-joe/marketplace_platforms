@@ -1,21 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
+import useLocale from '@/src/hooks/use-locale';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getStreams } from './api';
 import type { LiveStreamCard, StreamStatus } from './types';
 
-const STATUS_CONFIG: Record<StreamStatus, { label: string; badge: string }> = {
-  live:      { label: 'LIVE',      badge: 'bg-red-600 text-white' },
-  scheduled: { label: 'Scheduled', badge: 'bg-yellow-100 text-yellow-800' },
-  ended:     { label: 'Ended',     badge: 'bg-gray-100 text-gray-600' },
-};
-
-function StreamCard({ stream, locale }: { stream: LiveStreamCard; locale: string }) {
+function StreamCard({
+  stream,
+  locale,
+  t,
+}: {
+  stream: LiveStreamCard;
+  locale: string;
+  t: ReturnType<typeof useTranslations>;
+}) {
   const title = stream.title[locale as 'en' | 'ar'] || stream.title.en;
-  const cfg   = STATUS_CONFIG[stream.status];
+  const STATUS_CONFIG: Record<StreamStatus, { label: string; badge: string }> = {
+    live:      { label: t('statusLive'),      badge: 'bg-red-600 text-white' },
+    scheduled: { label: t('statusScheduled'), badge: 'bg-yellow-100 text-yellow-800' },
+    ended:     { label: t('statusEnded'),     badge: 'bg-gray-100 text-gray-600' },
+  };
+  const cfg = STATUS_CONFIG[stream.status];
 
   return (
     <Link
@@ -57,7 +65,7 @@ function StreamCard({ stream, locale }: { stream: LiveStreamCard; locale: string
             <span>🗓 {new Date(stream.scheduled_at).toLocaleString()}</span>
           )}
           {stream.ended_at && stream.status === 'ended' && (
-            <span>Ended {new Date(stream.ended_at).toLocaleDateString()}</span>
+            <span>{t('endedOn', { date: new Date(stream.ended_at).toLocaleDateString() })}</span>
           )}
         </div>
       </div>
@@ -67,6 +75,7 @@ function StreamCard({ stream, locale }: { stream: LiveStreamCard; locale: string
 
 export default function StreamsListFeature() {
   const locale  = useLocale();
+  const t = useTranslations('liveStreams');
   const [streams, setStreams] = useState<LiveStreamCard[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,35 +100,35 @@ export default function StreamsListFeature() {
   return (
     <div className="container py-8 space-y-10">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Live Streams</h1>
-        <p className="text-gray-500 mt-1 text-sm">Watch live, upcoming, and past broadcasts</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('pageTitle')}</h1>
+        <p className="text-gray-500 mt-1 text-sm">{t('pageSubtitle')}</p>
       </div>
 
       {live.length > 0 && (
         <section>
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" /> Live Now
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" /> {t('liveNow')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {live.map(s => <StreamCard key={s.id} stream={s} locale={locale} />)}
+            {live.map(s => <StreamCard key={s.id} stream={s} locale={locale} t={t} />)}
           </div>
         </section>
       )}
 
       {scheduled.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">🗓 Upcoming</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">🗓 {t('upcoming')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {scheduled.map(s => <StreamCard key={s.id} stream={s} locale={locale} />)}
+            {scheduled.map(s => <StreamCard key={s.id} stream={s} locale={locale} t={t} />)}
           </div>
         </section>
       )}
 
       {ended.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">📼 Past Streams</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">📼 {t('pastStreams')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {ended.map(s => <StreamCard key={s.id} stream={s} locale={locale} />)}
+            {ended.map(s => <StreamCard key={s.id} stream={s} locale={locale} t={t} />)}
           </div>
         </section>
       )}
@@ -127,8 +136,8 @@ export default function StreamsListFeature() {
       {streams.length === 0 && (
         <div className="text-center py-24 text-gray-400">
           <div className="text-6xl mb-4">📹</div>
-          <p className="text-lg font-medium">No streams yet</p>
-          <p className="text-sm mt-1">Check back soon for upcoming live broadcasts</p>
+          <p className="text-lg font-medium">{t('emptyTitle')}</p>
+          <p className="text-sm mt-1">{t('emptyBody')}</p>
         </div>
       )}
     </div>

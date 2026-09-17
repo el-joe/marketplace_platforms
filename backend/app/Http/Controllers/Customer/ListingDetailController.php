@@ -650,20 +650,20 @@ class ListingDetailController extends Controller
 
         $items = collect([$this->fbtItemShape($listing, $product, $country)]);
 
-        foreach ($relatedProducts as $relatedProduct) {
-            $relatedListing = VendorListing::query()
-                ->whereHas('productVariant', fn($q) => $q->where('product_id', $relatedProduct->id))
-                ->where('country_id', $country->id)
-                ->where('status', VendorListingStatus::Active)
-                ->orderBy('price')
-                ->with('productVariant')
-                ->first();
+        if ($relatedProducts->isNotEmpty()) {
+            // Bulk-resolved buy box instead of one VendorListing query per
+            // related product (P-19 read model via UnifiedListingQueryService).
+            $buyBox = $this->unifiedQuery->getBuyBoxForProducts($relatedProducts, $country);
 
-            if (!$relatedListing) {
-                continue;
+            foreach ($relatedProducts as $relatedProduct) {
+                $relatedListing = $buyBox[$relatedProduct->id] ?? null;
+
+                if (!$relatedListing) {
+                    continue;
+                }
+
+                $items->push($this->fbtItemShape($relatedListing, $relatedProduct, $country));
             }
-
-            $items->push($this->fbtItemShape($relatedListing, $relatedProduct, $country));
         }
 
         return [
@@ -679,40 +679,15 @@ class ListingDetailController extends Controller
         $candidates = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'active')
-            // ->whereHas(
-            //     'countrySettings',
-            //     fn($q) => $q->where('country_id', $country->id)->where('is_available', true)
-            // )
-            ->with(['images', 'variants', 'customAttributes'])
+            ->with(['variants', 'images', 'customAttributes'])
             ->orderByRating()
             ->limit(8)
             ->get();
 
-        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
-
-        $items = [];
-        foreach ($candidates as $candidate) {
-            $relatedListing = VendorListing::query()
-                ->whereHas('productVariant', fn($q) => $q->where('product_id', $candidate->id))
-                ->where('country_id', $country->id)
-                ->where('status', VendorListingStatus::Active)
-                ->orderBy('price')
-                ->with(['productVariant', 'vendor:id,store_name,store_rating_avg', 'primaryShippingMethod'])
-                ->first();
-
-            if (!$relatedListing) {
-                continue;
-            }
-
-            $items[] = $this->listings->toCardShape(
-                listing: $relatedListing,
-                product: $candidate,
-                country: $country,
-                isWishlisted: in_array($relatedListing->id, $wishlistIds),
-            );
-        }
-
-        return $items;
+        // Bulk-resolved via the same P-19 read model + ListingImageResolver
+        // pipeline as moreFromBrand/previouslyBrowsed/topPicks, instead of one
+        // VendorListing query per candidate product.
+        return $this->productsToBuyBoxCards($candidates, $country);
     }
 
     /**

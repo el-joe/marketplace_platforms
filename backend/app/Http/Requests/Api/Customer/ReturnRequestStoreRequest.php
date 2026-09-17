@@ -4,10 +4,8 @@ namespace App\Http\Requests\Api\Customer;
 
 use App\Enums\ReturnRequestReason;
 use App\Enums\ReturnRequestType;
-use App\Models\OrderItem;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
 class ReturnRequestStoreRequest extends FormRequest
 {
@@ -28,49 +26,9 @@ class ReturnRequestStoreRequest extends FormRequest
         ];
     }
 
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator): void {
-            $customer = auth('customer')->user();
-            $itemIds = $this->input('order_item_ids', []);
-
-            if (! is_array($itemIds) || $itemIds === []) {
-                return;
-            }
-
-            $items = OrderItem::with('order')->whereIn('id', $itemIds)->get();
-
-            if ($items->count() !== count($itemIds)) {
-                $validator->errors()->add('order_item_ids', 'One or more order items are invalid.');
-
-                return;
-            }
-
-            foreach ($items as $item) {
-                if (! $item->order || $item->order->customer_id !== $customer->id) {
-                    $validator->errors()->add('order_item_ids', 'One or more order items do not belong to you.');
-
-                    return;
-                }
-
-                if ($item->fulfillment_status?->value !== 'delivered') {
-                    $validator->errors()->add('order_item_ids', 'Only delivered items can be returned.');
-
-                    return;
-                }
-
-                if (! $item->return_eligible_until || $item->return_eligible_until->lt(today())) {
-                    $validator->errors()->add('order_item_ids', 'The return window for one or more items has expired.');
-
-                    return;
-                }
-            }
-
-            $subOrderIds = $items->pluck('sub_order_id')->unique();
-
-            if ($subOrderIds->count() > 1) {
-                $validator->errors()->add('order_item_ids', 'All items must belong to the same sub-order.');
-            }
-        });
-    }
+    // enhancement.md P-10: field-shape validation only. Ownership,
+    // delivered/window/category/quantity eligibility, and splitting a
+    // mixed-sub-order item list are all enforced once, in
+    // App\Services\ReturnRequestService::create(), which is now the
+    // single source of truth shared by both customer create endpoints.
 }

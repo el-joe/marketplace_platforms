@@ -17,6 +17,17 @@ trait EnumHelpers
         return trans($this->langGroup() . '.' . $this->value);
     }
 
+    /** @return array{ar: string, en: string} */
+    public function labelBilingual(): array
+    {
+        $key = $this->langGroup() . '.' . $this->value;
+
+        return [
+            'ar' => trans($key, [], 'ar'),
+            'en' => trans($key, [], 'en'),
+        ];
+    }
+
     public static function options(): array
     {
         return collect(self::cases())

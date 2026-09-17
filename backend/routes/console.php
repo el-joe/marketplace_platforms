@@ -34,6 +34,17 @@ Schedule::job(new \App\Jobs\PageSchedulerJob)->everyFiveMinutes()->name('page-sc
 Schedule::job(new PublishScheduledBlogPostsJob)->everyFiveMinutes()->name('publish-scheduled-blog-posts');
 Schedule::job(new MonitorCampaignStockJob)->hourly()->name('monitor-campaign-stock');
 Schedule::job(new PaidAdSchedulerJob)->everyFiveMinutes()->withoutOverlapping()->name('paid-ad-scheduler');
+// enhancement.md P-05 task 5: roll back gateway orders stuck 'pending'
+// because the customer never returned and no webhook arrived.
+Schedule::job(new \App\Jobs\ExpirePendingPaymentsJob)->everyFiveMinutes()->withoutOverlapping()->name('expire-pending-payments');
+// enhancement.md P-09 task 3: active -> expired past coverage_ends_at.
+Schedule::job(new \App\Jobs\ExpireWarrantyPurchasesJob)->dailyAt('03:00')->name('expire-warranty-purchases');
+
+// enhancement.md P-12 task 3: pending -> approved (credits marketer wallet
+// pending_balance) once delivered + return window passed, then pending_balance
+// -> balance once the payout-clearing window has also passed.
+Schedule::job(new \App\Jobs\ApproveMarketerConversionsJob)->dailyAt('03:15')->name('approve-marketer-conversions');
+Schedule::job(new \App\Jobs\ReleaseMarketerPendingCommissionJob)->dailyAt('03:30')->name('release-marketer-pending-commission');
 
 // Process vendor acquisition agent commissions for the previous month
 Schedule::job(new ProcessAcquisitionCommissionsJob)->monthlyOn(1, '02:00')->name('process-acquisition-commissions');
@@ -105,3 +116,24 @@ Schedule::command('promotion:apply-penalties')
     ->monthlyOn(1, '01:00')
     ->withoutOverlapping()
     ->runInBackground();
+
+// enhancement.md P-11 task 3: GenerateVendorPayoutsJob existed but was never
+// scheduled. One entry per vendors.payout_schedule cadence, each computing
+// the period that cadence implies and dispatching the job filtered to only
+// vendors on that schedule — see GenerateVendorPayoutsJob's $scheduleFilter.
+// PayoutCalculationService/GenerateVendorPayoutsJob's own payout_items /
+// Payout-exists guards make this idempotent if a run is retried.
+Schedule::call(function () {
+    $end = now();
+    GenerateVendorPayoutsJob::dispatch($end->copy()->subDays(7), $end->copy(), 'weekly');
+})->weeklyOn(1, '02:00')->name('generate-vendor-payouts-weekly');
+
+Schedule::call(function () {
+    $end = now();
+    GenerateVendorPayoutsJob::dispatch($end->copy()->subDays(14), $end->copy(), 'biweekly');
+})->cron('0 2 1,15 * *')->name('generate-vendor-payouts-biweekly');
+
+Schedule::call(function () {
+    $end = now();
+    GenerateVendorPayoutsJob::dispatch($end->copy()->subMonth(), $end->copy(), 'monthly');
+})->monthlyOn(1, '02:00')->name('generate-vendor-payouts-monthly');

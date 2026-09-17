@@ -10,12 +10,17 @@ class CouponUsage extends Model
 {
     use HasUuids;
 
+    public const STATUS_RESERVED = 'reserved';
+    public const STATUS_CONSUMED = 'consumed';
+    public const STATUS_RELEASED = 'released';
+
     protected $fillable = [
         'coupon_id',
         'customer_id',
         'order_id',
         'discount_amount',
         'used_at',
+        'status',
     ];
 
     protected $casts = [

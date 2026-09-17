@@ -22,7 +22,7 @@ export default function SavingsAdnBenefitsCard() {
             <div className="flex justify-between items-center">
               <Image
                 src={e?.logo_url || "/images/no-image-available-icon.jpg"}
-                alt={e?.label_en}
+                alt={(locale === "ar" ? e?.label_ar : e?.label_en) ?? e?.label_en}
                 width={54}
                 height={44}
                 className="w-10 aspect-video"
@@ -33,7 +33,10 @@ export default function SavingsAdnBenefitsCard() {
                 <ChevronRight size={"16px"} />
               )}
             </div>
-            <p className="text-xs mt-2">{e?.display_name_en}</p>
+            <p className="text-xs mt-2">
+              {(locale === "ar" ? e?.display_name_ar : e?.display_name_en) ??
+                e?.display_name_en}
+            </p>
           </div>
         ))}
       </div>
@@ -46,7 +49,7 @@ export default function SavingsAdnBenefitsCard() {
         >
           <Image
             src={c?.card_image_url || "/images/no-image-available-icon.jpg"}
-            alt={c?.card_name_en}
+            alt={(locale === "ar" ? c?.card_name_ar : c?.card_name_en) ?? c?.card_name_en}
             width={50}
             height={40}
             className="w-14 aspect-video h-9"

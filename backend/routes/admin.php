@@ -60,6 +60,7 @@ use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseShippingSurchargeController;
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\SystemToolsController;
 use App\Http\Controllers\Admin\FinancialReportController;
 use App\Http\Controllers\Admin\ShippingMethodController;
 use App\Http\Controllers\Admin\ShippingSettingController;
@@ -1044,6 +1045,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/refunds/{refund}/reject', [TransactionController::class, 'rejectRefund'])->name('refunds.reject');
         Route::get('/', [TransactionController::class, 'index'])->name('index');
         Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
+        Route::post('/{transaction}/confirm-bank-transfer', [TransactionController::class, 'confirmBankTransfer'])->name('confirm-bank-transfer');
     });
 
     // ─── Ledger ───────────────────────────────────────────────────────────────────
@@ -1230,6 +1232,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/', [FinancialReportController::class, 'index'])->name('index');
         Route::get('/data', [FinancialReportController::class, 'data'])->name('data');
         Route::get('/export', [FinancialReportController::class, 'export'])->name('export');
+    });
+
+    // ─── System Tools (P-24: inventory reconcile report, buy-box rebuild trigger) ─
+    Route::prefix('system-tools')->name('system-tools.')->middleware('admin.permission:analytics.view')->group(function () {
+        Route::post('/inventory-reconcile', [SystemToolsController::class, 'inventoryReconcile'])->name('inventory-reconcile');
+        Route::post('/buybox-rebuild', [SystemToolsController::class, 'buyboxRebuild'])->name('buybox-rebuild');
     });
 
     Route::prefix('analytics')->name('analytics.')->middleware('admin.permission:analytics.view')->group(function () {
@@ -1628,15 +1636,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->name('store')
             ->middleware('admin.permission:settings.edit');
 
-        Route::get('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'show'])->name('show');
-        Route::put('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'update'])
-            ->name('update')
-            ->middleware('admin.permission:settings.edit');
-        Route::delete('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroy'])
-            ->name('destroy')
-            ->middleware('admin.permission:settings.edit');
-        Route::post('/{shippingCompany}/approve', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'approve'])->name('approve');
-        Route::post('/{shippingCompany}/suspend', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'suspend'])->name('suspend');
+        Route::get('/fallback-rules', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'fallbackRules'])->name('fallback-rules.index');
+        Route::post('/fallback-rules', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'storeFallbackRule'])->name('fallback-rules.store');
+        Route::delete('/fallback-rules/{rule}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroyFallbackRule'])->name('fallback-rules.destroy');
+
         Route::post('/supervisors/{supervisor}/toggle-notifications', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'toggleSupervisorNotifications'])->name('supervisors.toggle-notifications');
 
         Route::post('/supervisors', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'storeSupervisor'])
@@ -1654,9 +1657,16 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/supervisors/{supervisor}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroySupervisor'])
             ->name('supervisors.destroy')
             ->middleware('admin.permission:settings.edit');
-        Route::get('/fallback-rules', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'fallbackRules'])->name('fallback-rules.index');
-        Route::post('/fallback-rules', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'storeFallbackRule'])->name('fallback-rules.store');
-        Route::delete('/fallback-rules/{rule}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroyFallbackRule'])->name('fallback-rules.destroy');
+
+        Route::get('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'show'])->name('show');
+        Route::put('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'update'])
+            ->name('update')
+            ->middleware('admin.permission:settings.edit');
+        Route::delete('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('admin.permission:settings.edit');
+        Route::post('/{shippingCompany}/approve', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'approve'])->name('approve');
+        Route::post('/{shippingCompany}/suspend', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'suspend'])->name('suspend');
     });
 
     // ─── Wallets ──────────────────────────────────────────────────────────────
@@ -1835,6 +1845,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         // Panels
         Route::get('/panels/admin', [\App\Http\Controllers\Admin\DocsController::class, 'adminPanel'])->name('panels.admin');
         Route::get('/panels/partner', [\App\Http\Controllers\Admin\DocsController::class, 'partnerPanel'])->name('panels.partner');
+        Route::get('/panels/marketer', [\App\Http\Controllers\Admin\DocsController::class, 'marketerPanel'])->name('panels.marketer');
         Route::get('/panels/travel', [\App\Http\Controllers\Admin\DocsController::class, 'travelPanel'])->name('panels.travel');
         Route::get('/panels/delivery', [\App\Http\Controllers\Admin\DocsController::class, 'deliveryPanel'])->name('panels.delivery');
         Route::get('/panels/carrier', [\App\Http\Controllers\Admin\DocsController::class, 'carrierPanel'])->name('panels.carrier');
@@ -1848,6 +1859,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/features/banners', [\App\Http\Controllers\Admin\DocsController::class, 'banners'])->name('features.banners');
         Route::get('/features/ad-campaigns', [\App\Http\Controllers\Admin\DocsController::class, 'adCampaigns'])->name('features.ad-campaigns');
         Route::get('/features/vendor-campaigns', [\App\Http\Controllers\Admin\DocsController::class, 'vendorCampaigns'])->name('features.vendor-campaigns');
+        Route::get('/features/marketer-campaigns', [\App\Http\Controllers\Admin\DocsController::class, 'marketerCampaigns'])->name('features.marketer-campaigns');
+        Route::get('/features/influencer-deals', [\App\Http\Controllers\Admin\DocsController::class, 'influencerDeals'])->name('features.influencer-deals');
+        Route::get('/features/secret-promotions', [\App\Http\Controllers\Admin\DocsController::class, 'secretPromotions'])->name('features.secret-promotions');
+        Route::get('/features/affiliate-codes', [\App\Http\Controllers\Admin\DocsController::class, 'affiliateCodes'])->name('features.affiliate-codes');
         Route::get('/features/flash-sales', [\App\Http\Controllers\Admin\DocsController::class, 'flashSales'])->name('features.flash-sales');
         Route::get('/features/finance', [\App\Http\Controllers\Admin\DocsController::class, 'finance'])->name('features.finance');
         Route::get('/features/subsidy', [\App\Http\Controllers\Admin\DocsController::class, 'subsidy'])->name('features.subsidy');

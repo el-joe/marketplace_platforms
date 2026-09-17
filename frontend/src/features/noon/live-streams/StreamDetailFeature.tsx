@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
+import useLocale from '@/src/hooks/use-locale';
 import Image from 'next/image';
 import { getStream, postComment, postLike, postSignal } from './api';
 import type { LiveStreamDetail, StreamComment } from './types';
@@ -51,6 +52,7 @@ function getGuestToken(): string {
 
 export default function StreamDetailFeature({ streamId }: { streamId: string }) {
   const locale      = useLocale() as 'en' | 'ar';
+  const t           = useTranslations('liveStreams');
   const [stream, setStream]       = useState<LiveStreamDetail | null>(null);
   const [loading, setLoading]     = useState(true);
   const [comments, setComments]   = useState<StreamComment[]>([]);
@@ -176,7 +178,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
 
   if (!stream) return (
     <div className="container py-24 text-center text-gray-400">
-      <p className="text-xl font-medium">Stream not found</p>
+      <p className="text-xl font-medium">{t('notFound')}</p>
     </div>
   );
 
@@ -190,17 +192,17 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
         <h1 className="text-xl font-bold text-gray-900 flex-1">{title}</h1>
         {stream.status === 'live' && (
           <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {t('statusLive')}
           </span>
         )}
         {stream.status === 'scheduled' && (
           <span className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">
-            Scheduled {stream.scheduled_at ? new Date(stream.scheduled_at).toLocaleString() : ''}
+            {t('statusScheduled')} {stream.scheduled_at ? new Date(stream.scheduled_at).toLocaleString() : ''}
           </span>
         )}
         {stream.status === 'ended' && (
           <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">
-            Stream Ended
+            {t('streamEnded')}
           </span>
         )}
       </div>
@@ -224,7 +226,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                 <span className="text-6xl">📹</span>
                 <p className="text-sm">
-                  {stream.status === 'scheduled' ? 'Stream starting soon' : 'Stream has ended'}
+                  {stream.status === 'scheduled' ? t('startingSoon') : t('hasEnded')}
                 </p>
               </div>
             )}
@@ -232,7 +234,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
             {stream.status === 'live' && (
               <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                 <span className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full">
-                  👁 {stream.total_viewers.toLocaleString()} watching
+                  👁 {stream.total_viewers.toLocaleString()} {t('watching')}
                 </span>
                 <button
                   onClick={handleLike}
@@ -246,8 +248,8 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
 
           {stream.status !== 'live' && (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-500">❤️ {likesCount.toLocaleString()} likes</span>
-              <span className="text-sm text-gray-500">👁 {stream.total_viewers.toLocaleString()} total viewers</span>
+              <span className="text-sm text-gray-500">❤️ {likesCount.toLocaleString()} {t('likes')}</span>
+              <span className="text-sm text-gray-500">👁 {stream.total_viewers.toLocaleString()} {t('totalViewers')}</span>
             </div>
           )}
 
@@ -266,7 +268,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
           style={{ height: '520px' }}
         >
           <div className="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800 text-sm">
-            💬 {stream.status === 'live' ? 'Live Chat' : 'Comments'} ({comments.length})
+            💬 {stream.status === 'live' ? t('liveChat') : t('comments')} ({comments.length})
           </div>
 
           <div ref={commentsRef} className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -282,7 +284,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
               </div>
             ))}
             {comments.length === 0 && (
-              <p className="text-xs text-gray-400 text-center mt-8">No comments yet. Be the first!</p>
+              <p className="text-xs text-gray-400 text-center mt-8">{t('noCommentsYet')}</p>
             )}
           </div>
 
@@ -290,7 +292,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
             <div className="border-t border-gray-100 p-3 space-y-2">
               <input
                 type="text"
-                placeholder="Your name (optional)"
+                placeholder={t('guestNamePlaceholder')}
                 value={guestName}
                 onChange={e => setGuestName(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary-400"
@@ -298,7 +300,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Say something…"
+                  placeholder={t('commentPlaceholder')}
                   value={commentBody}
                   onChange={e => setCommentBody(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleComment()}
@@ -309,7 +311,7 @@ export default function StreamDetailFeature({ streamId }: { streamId: string }) 
                   disabled={submitting}
                   className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 disabled:opacity-50"
                 >
-                  Send
+                  {t('send')}
                 </button>
               </div>
             </div>

@@ -16,6 +16,7 @@ use App\Models\ShippingMethod;
 use App\Models\ShippingRate;
 use App\Models\VendorListing;
 use App\Models\WarrantyPlan;
+use App\Services\Media\ListingImageResolver;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,11 @@ class CartItemEnrichmentService
         'same_day' => 1,
         'standard' => 2,
     ];
+
+    public function __construct(
+        private readonly ListingImageResolver $imageResolver,
+    ) {
+    }
 
     /**
      * @param Collection<int, \App\Models\CartItem> $cartItems
@@ -70,6 +76,14 @@ class CartItemEnrichmentService
             ->filter()
             ->unique()
             ->values();
+
+        $variantIds = $vendorListings->merge($adminListings)
+            ->map(fn ($listing) => $listing->productVariant?->id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $imagesByVariant = $this->imageResolver->forVariants($variantIds);
 
         $vendorIds = $vendorListings->pluck('vendor_id')->filter()->unique()->values();
 
@@ -180,6 +194,7 @@ class CartItemEnrichmentService
             $rootCategoryIdByCategoryId,
             $warrantyPlansByRootCategory,
             $timezone,
+            $imagesByVariant,
         ) {
             $isAdminListing = !empty($item->admin_listing_id);
             $listing = $isAdminListing
@@ -207,6 +222,7 @@ class CartItemEnrichmentService
                 $rootCategoryIdByCategoryId,
                 $warrantyPlansByRootCategory,
                 $timezone,
+                $imagesByVariant,
             );
         })->values()->all();
     }
@@ -344,6 +360,7 @@ class CartItemEnrichmentService
         array $rootCategoryIdByCategoryId,
         Collection $warrantyPlansByRootCategory,
         string $timezone,
+        array $imagesByVariant = [],
     ): array {
         $variant = $listing->productVariant;
         $product = $variant?->product;
@@ -427,7 +444,12 @@ class CartItemEnrichmentService
                     'sku' => $variant->sku,
                     'name_en' => $product?->name_en,
                     'name_ar' => $product?->name_ar,
-                    'primary_image_url' => $this->primaryImageUrl($variant),
+                    'primary_image_url' => $variant ? (($imagesByVariant[$variant->id][0] ?? null)?->url) : null,
+                    'image' => $variant && ($imagesByVariant[$variant->id][0] ?? null) ? [
+                        'url' => $imagesByVariant[$variant->id][0]->url,
+                        'alt' => $imagesByVariant[$variant->id][0]->alt,
+                    ] : null,
+                    'images' => $variant ? array_map(fn ($i) => $i->toArray(), $imagesByVariant[$variant->id] ?? []) : [],
                     'attributes' => $variant->attributeValues->map(fn ($value) => [
                         'attribute_en' => $value->attribute?->name_en,
                         'value_en' => $value->value_en,
@@ -839,10 +861,4 @@ class CartItemEnrichmentService
         }
     }
 
-    private function primaryImageUrl($variant): ?string
-    {
-        $image = $variant->images->firstWhere('is_primary', true) ?? $variant->images->first();
-
-        return $image?->url;
-    }
 }

@@ -10,29 +10,37 @@ import AmountSelector from "./amount-selector";
 import QuantitySelector from "./quantity-selector";
 import ReceiverForm from "./receiver-form";
 import PriceSummary from "./price-summary";
-import type { GiftCardCategory } from "../../data";
-import { giftCardAmounts } from "../../data";
+import type { GiftCardBatch } from "../../helpers/types";
 import { useAuthContext } from "@/src/providers/auth-provider";
 
 type Props = {
-  category: GiftCardCategory;
+  batch: GiftCardBatch;
+  /** Every batch currently sold in this currency — each is a selectable denomination. */
+  availableBatches: GiftCardBatch[];
 };
 
-export default function GiftCardForm({ category }: Props) {
+export default function GiftCardForm({ batch, availableBatches }: Props) {
   const t = useTranslations("giftCards");
   const { profile: customer, protectedWithAuth } = useAuthContext();
   const { purchaseGiftCards } = useGiftCardActions();
 
+  const amounts = Array.from(
+    new Set(availableBatches.map((b) => Number(b.amount))),
+  ).sort((a, b) => a - b);
+
+  // The batch has a single design image; the theme selector still gets an
+  // array (it renders a carousel), so it's shown as a one-slide carousel.
+  const images = [batch.image_url];
+
   const [selectedThemeIndex, setSelectedThemeIndex] = useState(0);
-  const [amount, setAmount] = useState<number>(giftCardAmounts[0]);
+  const [amount, setAmount] = useState<number>(Number(batch.amount));
   const [quantity, setQuantity] = useState(1);
   const [buyingForMyself, setBuyingForMyself] = useState(false);
   const [receiverName, setReceiverName] = useState("");
   const [receiverEmail, setReceiverEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const selectedImage =
-    category.images[selectedThemeIndex] ?? category.images[0];
+  const selectedImage = images[selectedThemeIndex] ?? images[0];
 
   const totalAmount = amount * quantity;
   const canSubmit =
@@ -47,18 +55,20 @@ export default function GiftCardForm({ category }: Props) {
     setReceiverEmail(value ? (customer?.email ?? "") : "");
   };
 
+  // The amount selector switches between sibling batches (same theme/currency,
+  // different denomination); fall back to the originally opened batch if the
+  // selected amount has no match (e.g. it just sold out).
+  const selectedBatchId =
+    availableBatches.find((b) => Number(b.amount) === amount)?.id ?? batch.id;
+
   const handleSubmit = () => {
     protectedWithAuth(async () => {
       setIsSubmitting(true);
       try {
-        // TODO: batch selection — the form has no batch_id or gateway_id yet.
-        // This will fail validation until it's connected to the batch catalog.
-        console.warn(
-          "[GiftCardForm] Purchase not yet wired to batch selection. " +
-            "gift_card_batch_id and country_payment_gateway_id are required.",
-        );
+        // TODO: country_payment_gateway_id — the form has no payment-method
+        // selector yet. This will fail validation until one is added.
         await purchaseGiftCards({
-          gift_card_batch_id: "",
+          gift_card_batch_id: selectedBatchId,
           country_payment_gateway_id: "",
           quantity,
           recipient_name: receiverName,
@@ -82,12 +92,12 @@ export default function GiftCardForm({ category }: Props) {
         <h2 className="font-bold text-lg mb-3">{t("giftCardDetails")}</h2>
         <Card className="flex flex-col gap-6">
           <ThemeSelector
-            images={category.images}
+            images={images}
             selectedIndex={selectedThemeIndex}
             onSelect={setSelectedThemeIndex}
           />
 
-          <AmountSelector amount={amount} onSelect={setAmount} />
+          <AmountSelector amount={amount} amounts={amounts} onSelect={setAmount} />
 
           <QuantitySelector quantity={quantity} onChange={setQuantity} />
 

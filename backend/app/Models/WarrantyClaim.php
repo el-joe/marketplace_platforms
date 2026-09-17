@@ -19,6 +19,10 @@ class WarrantyClaim extends Model
 
     public const LISTING_TYPE_VENDOR = 'vendor_listing';
     public const LISTING_TYPE_ADMIN = 'admin_listing';
+    public const LISTING_TYPE_MARKETER = 'marketer_listing';
+
+    public const CLAIM_TYPE_BRAND = 'brand';
+    public const CLAIM_TYPE_PLATFORM = 'platform';
 
     public const ISSUE_TYPE_DEFECTIVE = 'defective';
     public const ISSUE_TYPE_NOT_WORKING = 'not_working';
@@ -48,9 +52,11 @@ class WarrantyClaim extends Model
         'claim_number',
         'customer_id',
         'order_item_id',
+        'warranty_purchase_id',
         'product_id',
         'vendor_id',
         'listing_type',
+        'claim_type',
         'issue_type',
         'issue_description',
         'purchase_date',
@@ -73,6 +79,11 @@ class WarrantyClaim extends Model
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    public function warrantyPurchase(): BelongsTo
+    {
+        return $this->belongsTo(WarrantyPurchase::class);
     }
 
     public function product(): BelongsTo

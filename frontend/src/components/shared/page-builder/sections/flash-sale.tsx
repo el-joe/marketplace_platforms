@@ -13,6 +13,8 @@ import { Block } from "../types";
 import { Product } from "@/types/globals";
 import SectionTitle from "./section-title";
 import { chunks } from "../helpers/chunks-arr";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 export const FlashSale = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.products || [], 2);
@@ -71,7 +73,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             {p?.category_name?.[locale]}
           </div>
           <Image
-            src={p?.thumbnail || "/images/no-image-available-icon.jpg"}
+            src={getImageURL(getListingImage(p))}
             alt={locale === "ar" ? p.name_ar : p.name_en}
             width={140}
             height={110}

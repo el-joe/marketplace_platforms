@@ -16,17 +16,24 @@ use App\Models\ShippingRate;
 use App\Models\VendorListing;
 use App\Models\Wallet;
 use App\Models\WarrantyPlan;
+use App\Services\Checkout\CheckoutPricingEngine;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /**
  * All monetary values are BIGINT base-currency units. Never / 100 or * 100.
+ *
+ * @deprecated Coupon-discount math and warranty-selection resolution now
+ * live in App\Services\Checkout\CheckoutPricingEngine (enhancement.md
+ * P-01). The methods below delegate to it. Shipping calculation and cart
+ * resolution are unaffected and remain here.
  */
 class CheckoutCalculationService
 {
     public function __construct(
         private readonly ShippingCalculationService $shippingCalculationService,
         private readonly ExceptionalZoneService $exceptionalZoneService,
+        private readonly CheckoutPricingEngine $pricingEngine,
     ) {}
 
     /**
@@ -100,7 +107,7 @@ class CheckoutCalculationService
         $warrantyTotal = $warrantyResult['total'];
 
         $taxable = max(0, $subtotal - $discount);
-        $tax = (int) round($taxable * ((float) $country->vat_rate / 100));
+        $tax = $this->pricingEngine->calculateTax($taxable, $country) + $this->pricingEngine->calculateTax($warrantyTotal, $country);
 
         $preDeductionTotal = max(0, $subtotal - $discount + $shippingTotal + $codFee + $tax + $warrantyTotal);
 
@@ -361,153 +368,23 @@ class CheckoutCalculationService
         return (int) ($rate->cod_extra_fee ?? 0);
     }
 
+    /**
+     * @deprecated Delegates to CheckoutPricingEngine::applyCoupon() — the
+     * single source of truth for coupon discount math (enhancement.md P-01).
+     */
     public function applyCoupon(Coupon $coupon, Customer $customer, int $subtotalCents, string $currency, array $items): array
     {
-        if (! $coupon->is_active) {
-            return ['discount' => 0, 'error' => 'Coupon is not active.'];
-        }
-
-        $now = Carbon::now();
-        if (($coupon->valid_from && $now->lt($coupon->valid_from))
-            || ($coupon->valid_until && $now->gt($coupon->valid_until))) {
-            return ['discount' => 0, 'error' => 'Coupon is not valid at this time.'];
-        }
-
-        if ($coupon->currency !== null && $coupon->currency !== $currency) {
-            return ['discount' => 0, 'error' => 'Coupon currency does not match order currency.'];
-        }
-
-        if ($coupon->min_order_amount !== null && $subtotalCents < $coupon->min_order_amount) {
-            return ['discount' => 0, 'error' => 'Order does not meet the minimum amount for this coupon.'];
-        }
-
-        if ($coupon->usage_limit_total !== null && $coupon->times_used >= $coupon->usage_limit_total) {
-            return ['discount' => 0, 'error' => 'Coupon usage limit reached.'];
-        }
-
-        if ($coupon->usage_limit_per_customer !== null) {
-            $used = CouponUsage::where('coupon_id', $coupon->id)->where('customer_id', $customer->id)->count();
-            if ($used >= $coupon->usage_limit_per_customer) {
-                return ['discount' => 0, 'error' => 'You have already used this coupon the maximum number of times.'];
-            }
-        }
-
-        if ($coupon->max_orders_per_customer_per_month !== null) {
-            $usedThisMonth = CouponUsage::where('coupon_id', $coupon->id)
-                ->where('customer_id', $customer->id)
-                ->where('used_at', '>=', $now->copy()->startOfMonth())
-                ->count();
-            if ($usedThisMonth >= $coupon->max_orders_per_customer_per_month) {
-                return ['discount' => 0, 'error' => 'Monthly usage limit for this coupon has been reached.'];
-            }
-        }
-
-        $applicableSubtotal = $this->resolveApplicableSubtotal($coupon, $subtotalCents, $items);
-        if ($applicableSubtotal <= 0) {
-            return ['discount' => 0, 'error' => 'Coupon does not apply to any items in your cart.'];
-        }
-
-        $discount = match ($coupon->type?->value) {
-            'percentage' => (int) round($applicableSubtotal * ((float) $coupon->value / 100)),
-            'fixed_amount' => (int) round((float) $coupon->value),
-            'free_shipping' => 0,
-            'bogo' => $this->cheapestQualifyingItemPrice($coupon, $items),
-            default => 0,
-        };
-
-        if ($coupon->max_discount !== null && $discount > $coupon->max_discount) {
-            $discount = $coupon->max_discount;
-        }
-
-        $discount = min($discount, $applicableSubtotal);
-
-        return ['discount' => $discount, 'error' => null];
-    }
-
-    private function resolveApplicableSubtotal(Coupon $coupon, int $subtotalCents, array $items): int
-    {
-        return match ($coupon->scope?->value) {
-            'vendor' => $this->sumItems($items, fn ($i) => $i['vendor_id'] === $coupon->vendor_id),
-            'category' => $this->sumItems($items, function ($i) use ($coupon) {
-                $categoryId = $i['listing']->productVariant?->product?->category_id ?? null;
-
-                return $categoryId !== null && $categoryId === $coupon->category_id;
-            }),
-            'product' => $this->sumItems($items, function ($i) use ($coupon) {
-                $productId = $i['listing']->productVariant?->product_id ?? null;
-
-                return $productId !== null && $coupon->products()->where('products.id', $productId)->exists();
-            }),
-            default => $subtotalCents,
-        };
-    }
-
-    private function sumItems(array $items, \Closure $matcher): int
-    {
-        $sum = 0;
-        foreach ($items as $item) {
-            if ($matcher($item)) {
-                $sum += $item['unit_price'] * $item['quantity'];
-            }
-        }
-
-        return $sum;
-    }
-
-    private function cheapestQualifyingItemPrice(Coupon $coupon, array $items): int
-    {
-        $applicable = array_filter($items, function ($i) use ($coupon) {
-            return match ($coupon->scope?->value) {
-                'vendor' => $i['vendor_id'] === $coupon->vendor_id,
-                'category' => ($i['listing']->productVariant?->product?->category_id ?? null) === $coupon->category_id,
-                'product' => $coupon->products()->where('products.id', $i['listing']->productVariant?->product_id)->exists(),
-                default => true,
-            };
-        });
-
-        if (empty($applicable)) {
-            return 0;
-        }
-
-        return min(array_map(fn ($i) => (int) $i['unit_price'], $applicable));
+        return $this->pricingEngine->applyCoupon($coupon, $customer, $subtotalCents, $currency, $items);
     }
 
     /**
+     * @deprecated Delegates to CheckoutPricingEngine::resolveWarrantySelections().
+     *
      * @param  array<int, array>  $warrantySelections  [cart_item_index => warranty_plan_id]
      * @return array{selections: array<int, array{plan: WarrantyPlan, price: int}>, total: int}
      */
     public function resolveWarrantySelections(array $items, array $warrantySelections, Country $country, string $currency): array
     {
-        $selections = [];
-        $total = 0;
-
-        foreach ($warrantySelections as $itemIndex => $planId) {
-            if (! isset($items[$itemIndex])) {
-                throw ValidationException::withMessages(["warranty_selections.$itemIndex" => 'No cart item found for this selection.']);
-            }
-
-            $plan = WarrantyPlan::active()->find($planId);
-            if (! $plan) {
-                throw ValidationException::withMessages(["warranty_selections.$itemIndex" => 'Warranty plan is not available.']);
-            }
-
-            $categoryId = $items[$itemIndex]['listing']->productVariant?->product?->category_id ?? null;
-            if ($plan->category_id !== null && $plan->category_id !== $categoryId) {
-                throw ValidationException::withMessages(["warranty_selections.$itemIndex" => 'Warranty plan is not applicable to this product.']);
-            }
-
-            if ($plan->country_ids !== null && ! in_array($country->id, $plan->country_ids, true)) {
-                throw ValidationException::withMessages(["warranty_selections.$itemIndex" => 'Warranty plan is not available in your country.']);
-            }
-
-            if ($plan->currency !== $currency) {
-                throw ValidationException::withMessages(["warranty_selections.$itemIndex" => 'Warranty plan currency does not match order currency.']);
-            }
-
-            $selections[$itemIndex] = ['plan' => $plan, 'price' => (int) $plan->price];
-            $total += (int) $plan->price;
-        }
-
-        return ['selections' => $selections, 'total' => $total];
+        return $this->pricingEngine->resolveWarrantySelections($items, $warrantySelections, $country, $currency);
     }
 }

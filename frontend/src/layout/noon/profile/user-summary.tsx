@@ -2,7 +2,8 @@
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import Card from "@/src/components/shared/Card";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/src/hooks/use-auth";
 

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import CouponDetailsModal from "./coupon-details-modal";
 import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
 
 type Props = {
@@ -62,7 +63,7 @@ export default function CartItem({
         <div className="relative w-21 md:w-24 lg:w-28 xl:w-32 h-fit">
           <div className="rounded-[16px] w-full h-fit max-h-48 overflow-hidden">
             <Image
-              src={getImageURL(item.primary_image as string)}
+              src={getImageURL(getListingImage(item))}
               alt={
                 locale === "ar" ? item.product_name_ar : item.product_name_en
               }
@@ -166,7 +167,7 @@ export default function CartItem({
             {isFreeShipping && (
               <p className="text-gray text-xs flex gap-1">
                 <TruckIcon size={"16px"} />
-                <span>Free shipping</span>
+                <span>{t("freeShipping")}</span>
               </p>
             )}
             {item.vendor.store_name && (

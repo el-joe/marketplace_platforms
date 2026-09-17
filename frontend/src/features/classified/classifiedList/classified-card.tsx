@@ -20,17 +20,6 @@ import Price from "@/src/components/shared/Price";
 import { ClassifiedItem } from "./helpers/types";
 import { Separator } from "@/src/components/ui/separator";
 import { Link } from "@/i18n/navigation";
-const specs = [
-  { label: "2026" },
-  { label: "Kia" },
-  { label: "Sportage" },
-  { label: "EX" },
-  { label: "New" },
-  { label: "2 km" },
-  { label: "Gasoline" },
-  { label: "Dealership" },
-  { label: "Dummy data" },
-];
 
 interface ClassifiedCardProps {
   listing: ClassifiedItem;
@@ -42,7 +31,20 @@ export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [phoneRevealed, setPhoneRevealed] = useState(false);
 
-  const displayPhone = "0111111111 (dummy data)";
+  // Real listing attributes (e.g. year/make/model/condition/mileage/fuel_type)
+  // come from the classified_listings.attributes JSON column via the card
+  // shape returned by ListingQueryService::toClassifiedCardShape. Render
+  // whichever attributes the listing actually has instead of a fixed mock
+  // set — different classified categories have different attribute sets.
+  const specs = Object.values(listing.attributes ?? {}).map((label) => ({
+    label,
+  }));
+
+  // TODO(P-26 gap): the classified detail/card API does not expose a
+  // seller phone number (privacy — buyers contact sellers via the inquiry/
+  // chat flow instead). There is no "reveal phone" endpoint yet, so this
+  // card cannot show a real number. Fall back to the chat/inquiry CTA only.
+  const displayPhone = t("contactViaChat");
 
   const title = locale === "ar" ? listing?.title_ar : listing.title_en;
   const timeAgo = listing.created_at;
@@ -68,7 +70,7 @@ export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
           {true && (
             <div className="absolute top-2.5 start-2.5 bg-[#0066cc]/90 text-white text-[11px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
               <CheckCircle2 className="w-3 h-3 text-white" />
-              <span>{t("verifiedUser")} (dummy data)</span>
+              <span>{t("verifiedUser")}</span>
             </div>
           )}
 
@@ -164,7 +166,7 @@ export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
                     ? "border-red-200 bg-red-50 text-red-500"
                     : "border-gray-300 hover:bg-gray-50 text-gray-400 hover:text-red-500"
                 }`}
-                aria-label="Add to favorites"
+                aria-label={t("addToFavorites")}
               >
                 <Heart
                   className={`w-4 h-4 ${isFavorite ? "fill-red-500" : ""}`}

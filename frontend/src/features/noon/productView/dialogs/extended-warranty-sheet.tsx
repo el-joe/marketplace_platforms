@@ -93,7 +93,7 @@ export default function ExtendedWarrantySheet({
               <button
                 type="button"
                 className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
-                aria-label="Close"
+                aria-label={t("close")}
               >
                 <X className="w-5 h-5" />
               </button>

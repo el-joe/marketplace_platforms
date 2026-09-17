@@ -2,7 +2,7 @@ import { Accordion } from "@/src/components/ui/accordion";
 import { Facets } from "@/src/features/noon/shop/types";
 import FacetFilter from "./sections/facet-filter";
 import PriceFilter from "./sections/price";
-import { useLocale } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 
 type FilterSidebarProps = {
   facets?: Facets | null;

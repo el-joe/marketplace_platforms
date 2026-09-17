@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { RecommendedClassifiedItem } from "./types";
 
 interface ClassifiedRecommendedProps {
@@ -13,6 +14,7 @@ interface ClassifiedRecommendedProps {
 export default function ClassifiedRecommended({
   items,
 }: ClassifiedRecommendedProps) {
+  const t = useTranslations("classified");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
@@ -27,7 +29,7 @@ export default function ClassifiedRecommended({
   return (
     <section className="w-full mt-10 pt-6 border-t border-gray-200">
       <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-        Recommended For You
+        {t("recommendedForYou")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -61,7 +63,7 @@ export default function ClassifiedRecommended({
                   <button
                     onClick={(e) => toggleFavorite(item.id, e)}
                     className="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-                    aria-label="Add to favorites"
+                    aria-label={t("addToFavorites")}
                   >
                     <Heart
                       className={`w-4 h-4 ${

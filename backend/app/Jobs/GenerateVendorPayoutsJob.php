@@ -2,12 +2,19 @@
 
 namespace App\Jobs;
 
+use App\Enums\FbnStorageFeeStatus;
+use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\Admin;
+use App\Models\FbnDailyOverageFee;
+use App\Models\FbnStorageFee;
+use App\Models\PackagingSupplyRequest;
 use App\Models\PaidAdCharge;
 use App\Models\Payout;
 use App\Models\PayoutItem;
+use App\Models\SubOrder;
 use App\Models\Vendor;
 use App\Models\VendorBankAccount;
+use App\Models\VendorSubscriptionInvoice;
 use App\Notifications\Admin\PayoutBatchReadyForApproval;
 use App\Services\PayoutCalculationService;
 use Carbon\Carbon;
@@ -29,10 +36,17 @@ class GenerateVendorPayoutsJob implements ShouldQueue
      *
      * @param  \Carbon\Carbon  $periodStart  Start of the payout period (inclusive)
      * @param  \Carbon\Carbon  $periodEnd    End of the payout period (inclusive)
+     * @param  string|null  $scheduleFilter  When set (enhancement.md P-11 task 3), only
+     *   run for vendors whose `payout_schedule` matches this value ('weekly',
+     *   'biweekly', 'monthly'), so routes/console.php can dispatch one run per
+     *   cadence with the right period for that cadence. Null (default) processes
+     *   every active vendor regardless of schedule, preserving prior behaviour
+     *   for manual/on-demand runs.
      */
     public function __construct(
         private readonly Carbon $periodStart,
-        private readonly Carbon $periodEnd
+        private readonly Carbon $periodEnd,
+        private readonly ?string $scheduleFilter = null
     ) {
     }
 
@@ -40,7 +54,8 @@ class GenerateVendorPayoutsJob implements ShouldQueue
     {
         $generated = 0;
 
-        Vendor::where('status', 'active')
+        Vendor::where('global_status', \App\Enums\VendorGlobalStatus::Active)
+            ->when($this->scheduleFilter !== null, fn ($q) => $q->where('payout_schedule', $this->scheduleFilter))
             ->whereHas('bankAccounts', fn($q) => $q->where('is_primary', true)
                 ->where('verification_status', 'verified'))
             ->chunkById(50, function ($vendors) use ($calculationService, &$generated) {
@@ -107,6 +122,39 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 'bank_account_id'      => $primaryAccount->id,
                                 'payout_method'        => 'bank_transfer',
                             ]);
+
+                            // enhancement.md P-11: one payout_items row per sub-order
+                            // paid, so the NEXT payout run's whereDoesntHave('payoutItems')
+                            // guard in PayoutCalculationService can exclude it — this is
+                            // the double-pay fix.
+                            $subOrders = SubOrder::whereIn('id', $calc['sub_order_ids'] ?? [])->get();
+                            foreach ($subOrders as $subOrder) {
+                                PayoutItem::create([
+                                    'payout_id'    => $payout->id,
+                                    'item_type'    => 'sub_order',
+                                    'sub_order_id' => $subOrder->id,
+                                    'gross'        => (int) $subOrder->subtotal,
+                                    'commission'   => (int) $subOrder->platform_commission,
+                                    'net'          => (int) $subOrder->vendor_payout,
+                                ]);
+                            }
+
+                            if (! empty($calc['storage_fee_ids'])) {
+                                FbnStorageFee::whereIn('id', $calc['storage_fee_ids'])
+                                    ->update(['status' => FbnStorageFeeStatus::Invoiced]);
+                            }
+                            if (! empty($calc['overage_fee_ids'])) {
+                                FbnDailyOverageFee::whereIn('id', $calc['overage_fee_ids'])
+                                    ->update(['status' => FbnStorageFeeStatus::Invoiced]);
+                            }
+                            if (! empty($calc['packaging_request_ids'])) {
+                                PackagingSupplyRequest::whereIn('id', $calc['packaging_request_ids'])
+                                    ->update(['fee_deducted_at' => now()]);
+                            }
+                            if (! empty($calc['subscription_invoice_ids'])) {
+                                VendorSubscriptionInvoice::whereIn('id', $calc['subscription_invoice_ids'])
+                                    ->update(['status' => VendorSubscriptionInvoiceStatus::Paid, 'paid_at' => now()]);
+                            }
 
                             foreach ($calc['promotion_fee_requests'] ?? [] as $request) {
                                 $listing = $request->vendorListing ?? $request->adminListing;

@@ -16,6 +16,11 @@ class AddressResource extends JsonResource
             'recipient_phone' => $this->recipient_phone,
             'country_id' => $this->country_id,
             'city_id' => $this->city_id,
+            'city' => $this->whenLoaded('city', fn () => [
+                'id' => $this->city->id,
+                'name_ar' => $this->city->name_ar,
+                'name_en' => $this->city->name_en,
+            ]),
             'area' => $this->area,
             'street_address' => $this->street_address,
             'building' => $this->building,

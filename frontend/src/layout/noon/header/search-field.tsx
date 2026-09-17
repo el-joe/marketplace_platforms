@@ -14,6 +14,8 @@ import Image from "next/image";
 import { ISearchSuggestionsData } from "./types/search.type";
 import { getSearchSuggestionsService } from "./api/get";
 import { cn } from "@/src/lib/utils";
+import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 const SearchField = () => {
   // const locale = useLocale();
@@ -185,7 +187,7 @@ const SearchField = () => {
                 inputRef.current?.focus();
               }}
               className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted/80 cursor-pointer me-1"
-              aria-label="Clear input"
+              aria-label={t("clearInputAria")}
             >
               <XIcon className="size-4" />
             </button>
@@ -217,7 +219,7 @@ const SearchField = () => {
                         <span className="bg-muted/60 w-8">
                           <Image
                             src={"/images/no-image-available-icon.jpg"}
-                            alt="Oops"
+                            alt={t("noImageAlt")}
                             width={50}
                             height={40}
                             className="min-w-8 h-14"
@@ -232,7 +234,7 @@ const SearchField = () => {
                             removeSearch(item);
                           }}
                           className="p-1 text-muted-foreground cursor-pointer"
-                          aria-label="Remove item"
+                          aria-label={t("removeItemAria")}
                         >
                           <XIcon className="size-5" />
                         </button>
@@ -263,7 +265,7 @@ const SearchField = () => {
                             removeSearch(item);
                           }}
                           className="p-1 text-muted-foreground cursor-pointer"
-                          aria-label="Remove item"
+                          aria-label={t("removeItemAria")}
                         >
                           <XIcon className="size-5" />
                         </button>
@@ -314,10 +316,7 @@ const SearchField = () => {
                             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-muted/60 text-start text-sm text-foreground transition-colors cursor-pointer"
                           >
                             <Image
-                              src={
-                                product.primary_image ||
-                                "/images/no-image-available-icon.jpg"
-                              }
+                              src={getImageURL(getListingImage(product))}
                               alt={product.name}
                               width={50}
                               height={60}
@@ -425,8 +424,8 @@ const SearchField = () => {
               ) : (
                 !isLoading && (
                   <div className="px-4 py-3 text-xs text-muted-foreground">
-                    Press <span className="font-semibold">Enter</span> or click
-                    above to search for &ldquo;{query}&rdquo;
+                    {t("pressEnterLabel")} <span className="font-semibold">{t("enterKeyLabel")}</span>{" "}
+                    {t("orClickToSearchHint", { query })}
                   </div>
                 )
               )}

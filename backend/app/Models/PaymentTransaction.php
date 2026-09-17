@@ -20,6 +20,7 @@ class PaymentTransaction extends Model
             'raw_request' => 'array',
             'raw_response' => 'array',
             'processed_at' => 'datetime',
+            'proof_uploaded_at' => 'datetime',
             'status' => PaymentTransactionStatus::class,
             'type' => PaymentTransactionType::class,
         ];
@@ -35,12 +36,17 @@ class PaymentTransaction extends Model
         'idempotency_key',
         'amount',
         'currency',
+        'gateway_amount',
+        'gateway_currency',
+        'exchange_rate',
         'gateway_fee',
         'status',
         'failure_code',
         'failure_message',
         'raw_request',
         'raw_response',
+        'proof_file_path',
+        'proof_uploaded_at',
         'processed_at',
     ];
 

@@ -130,6 +130,27 @@ class LoyaltyService
         ]);
     }
 
+    /**
+     * enhancement.md P-05 task 4: reverse debitPointsForOrder() when an
+     * order's payment fails or is rolled back. Credits the points back to
+     * the customer; leaves the historical loyalty_discount/points_used
+     * figures on the (now cancelled) order as-is for audit purposes.
+     */
+    public function creditPointsBackForOrder(Order $order): void
+    {
+        if ((float) $order->loyalty_points_used <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($order) {
+            $customer = Customer::where('id', $order->customer_id)->lockForUpdate()->first();
+
+            if ($customer) {
+                $customer->increment('loyalty_points', $order->loyalty_points_used);
+            }
+        });
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     public function isEnabled(): bool

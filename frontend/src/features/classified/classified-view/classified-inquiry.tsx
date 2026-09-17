@@ -1,25 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Send, CheckCircle } from "lucide-react";
 
 interface ClassifiedInquiryProps {
   sellerName?: string;
 }
 
-const PRESET_QUESTIONS = [
-  "I'm interested",
-  "Can you lower the price",
-  "Where can we meet",
-  "You do delivery",
-  "What's the inspection result",
-];
-
 export default function ClassifiedInquiry({
-  sellerName = "the lister",
+  sellerName,
 }: ClassifiedInquiryProps) {
+  const t = useTranslations("classifiedInquiry");
   const [message, setMessage] = useState("");
   const [isSent, setIsSent] = useState(false);
+  const displaySellerName = sellerName || t("theLister");
+
+  const PRESET_QUESTIONS = [
+    t("presetInterested"),
+    t("presetLowerPrice"),
+    t("presetWhereMeet"),
+    t("presetDelivery"),
+    t("presetInspectionResult"),
+  ];
 
   const handleChipClick = (text: string) => {
     setMessage(text);
@@ -39,7 +42,7 @@ export default function ClassifiedInquiry({
   return (
     <div className="w-full mt-6 pt-5 border-t border-gray-100">
       <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3">
-        Ask the Lister
+        {t("askTheLister")}
       </h2>
 
       {/* Preset question pills */}
@@ -63,7 +66,7 @@ export default function ClassifiedInquiry({
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Message..."
+            placeholder={t("messagePlaceholder")}
             className="w-full text-xs sm:text-sm px-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400"
           />
         </div>
@@ -77,7 +80,7 @@ export default function ClassifiedInquiry({
               : "bg-gray-400 text-white cursor-not-allowed"
           }`}
         >
-          <span>Send Message</span>
+          <span>{t("sendMessage")}</span>
           <Send className="w-3.5 h-3.5" />
         </button>
       </form>
@@ -86,7 +89,7 @@ export default function ClassifiedInquiry({
       {isSent && (
         <div className="mt-2.5 flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded-lg animate-in fade-in">
           <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>Your message has been sent to {sellerName}!</span>
+          <span>{t("messageSentTo", { name: displaySellerName })}</span>
         </div>
       )}
     </div>

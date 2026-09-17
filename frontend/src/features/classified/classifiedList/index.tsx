@@ -10,6 +10,7 @@ import {
 } from "./api/get";
 import getSelectedCategoryTree from "./helpers/get-selected-categories-tree";
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
 type ClassifiedsListProps = {
   categoryId?: string;
@@ -18,6 +19,7 @@ type ClassifiedsListProps = {
 export default async function ClassifiedsList({
   categoryId,
 }: ClassifiedsListProps) {
+  const t = await getTranslations("classified");
   const { data } = await getClassifiedsService({
     category: categoryId || "all",
   });
@@ -67,7 +69,7 @@ export default async function ClassifiedsList({
             {data?.listings?.meta?.total === 0 && (
               <Image
                 src="/images/no_products.jpg"
-                alt="No products found"
+                alt={t("noProductsFound")}
                 width={400}
                 height={400}
                 className="mx-auto mt-10"

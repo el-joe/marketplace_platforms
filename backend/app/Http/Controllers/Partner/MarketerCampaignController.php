@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaign;
 use App\Models\VendorListing;
 use App\Services\MarketerCampaignService;
+use App\Support\Marketer\CampaignOwner;
+use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,7 +41,8 @@ class MarketerCampaignController extends Controller
     public function create(VendorListing $vendorListing)
     {
         abort_unless($vendorListing->vendor_id === $this->vendorId(), 403);
-        abort_unless($vendorListing->fulfillment_model === 'fbn', 403, 'حملات الماركتر متاحة فقط لقوائم FBN.');
+        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+        abort_unless(in_array($vendorListing->fulfillment_model, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
 
         $existing = MarketerCampaign::where('vendor_listing_id', $vendorListing->id)
             ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
@@ -78,20 +81,24 @@ class MarketerCampaignController extends Controller
             ->where('vendor_id', $vendor->id)
             ->firstOrFail();
 
-        abort_unless($listing->fulfillment_model === 'fbn', 403, 'حملات الماركتر متاحة فقط لقوائم FBN.');
+        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+        abort_unless(in_array($listing->fulfillment_model, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
         abort_if($this->hasActiveCampaign($listing->id), 403, 'هذه القائمة لديها حملة نشطة أو قيد المراجعة بالفعل.');
 
         try {
-            $this->marketerCampaignService->createCampaign($vendor, array_merge(
-                $request->only(['commission_type', 'max_commission_budget']),
-                [
-                    'vendor_listing_id' => $listing->id,
-                    'country_id'        => $listing->country_id,
-                    'currency'          => $listing->currency,
-                    'marketer_ids'      => $request->input('marketer_ids', []),
-                    'tiered_rules'      => $request->input('tiered_rules', []),
-                ]
-            ));
+            $this->marketerCampaignService->createCampaign(
+                CampaignOwner::vendor($vendor),
+                CampaignSource::vendorListing($listing->id),
+                array_merge(
+                    $request->only(['commission_type', 'max_commission_budget']),
+                    [
+                        'country_id'   => $listing->country_id,
+                        'currency'     => $listing->currency,
+                        'marketer_ids' => $request->input('marketer_ids', []),
+                        'tiered_rules' => $request->input('tiered_rules', []),
+                    ]
+                )
+            );
         } catch (\Throwable $e) {
             return back()->withInput()->with('error', 'تعذر إنشاء حملة الماركتر: ' . $e->getMessage());
         }
@@ -220,7 +227,7 @@ class MarketerCampaignController extends Controller
         abort_unless($marketerCampaign->vendor_id === $this->vendorId(), 403);
         abort_unless($marketerCampaign->status === 'pending_admin', 403);
 
-        $marketerCampaign->update(['status' => 'cancelled']);
+        $this->marketerCampaignService->cancelCampaign($marketerCampaign);
 
         return back()->with('success', __('partner.marketer_campaigns_my.cancel_success'));
     }

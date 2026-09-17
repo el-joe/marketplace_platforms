@@ -40,7 +40,7 @@
         {{-- Marketer Payouts --}}
         <section>
             <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/finance.marketer_payouts.heading') }}</h2>
-            <p class="text-gray-600"><a href="{{ route('admin.marketers.payouts.index') }}" class="text-primary-600 hover:underline">admin/marketer-payouts</a>: <strong>{{ __('docs/features/finance.marketer_payouts.flow') }}</strong>, {{ __('docs/features/finance.marketer_payouts.p1') }} <code>marketer_conversions</code> {{ __('docs/features/finance.marketer_payouts.p2') }}</p>
+            <p class="text-gray-600"><a href="{{ route('admin.marketer-campaigns.index') }}" class="text-primary-600 hover:underline">admin/marketer-campaigns</a>: <strong>{{ __('docs/features/finance.marketer_payouts.flow') }}</strong>, {{ __('docs/features/finance.marketer_payouts.p1') }} <code>marketer_conversions</code> {{ __('docs/features/finance.marketer_payouts.p2') }}</p>
         </section>
 
         {{-- Ledger --}}

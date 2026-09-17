@@ -21,7 +21,7 @@ class ReturnController extends Controller
         $vendorId = Auth::guard('vendor_api')->user()->vendor_id;
 
         $query = ReturnRequest::where('vendor_id', $vendorId)
-            ->with(['order:id,order_number', 'customer:id,first_name,last_name'])
+            ->with(['order:id,order_number', 'customer:id,name'])
             ->when($request->filled('status'),    fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'),   fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
@@ -39,7 +39,7 @@ class ReturnController extends Controller
             ->with([
                 'order:id,order_number',
                 'subOrder:id,sub_order_number',
-                'customer:id,first_name,last_name',
+                'customer:id,name',
                 'items.orderItem:id,product_snapshot',
                 'messages' => fn ($q) => $q->visibleToVendor()->oldest()->with('attachments'),
             ])

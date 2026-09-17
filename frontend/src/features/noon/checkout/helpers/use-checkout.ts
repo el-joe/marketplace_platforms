@@ -73,6 +73,7 @@ export const useCheckout = () => {
 
   const prepareCheckout = useMutation({
     mutationFn: createPrepareCheckoutService,
+    onMutate: () => toast.dismiss(),
     onSuccess: (data) => setCheckoutData(data.data),
     onError: (error) => {
       toast.error(error?.message);
@@ -81,6 +82,7 @@ export const useCheckout = () => {
 
   const placeOrder = useMutation({
     mutationFn: placeOrderService,
+    onMutate: () => toast.dismiss(),
     onSuccess: (data) => {
       const order = data?.data;
       const orderNumber = order?.order_number;

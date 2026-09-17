@@ -172,11 +172,17 @@ use Illuminate\Support\Facades\Route;
                 'id' => $category->id,
             ], 301);
         }
-        )->name('customer.categories.show.legacy');
+        )->name('customer.categories.show.legacy')->where('slug', '^(?!browse$).+');
 
         // ── Categories (public) ───────────────────────────────────────────────
         Route::prefix('categories')->name('customer.categories.')->group(function (): void {
             Route::get('/', [CategoryController::class, 'index'])->name('index');
+            Route::get('browse', [CategoryController::class, 'browse'])->name('browse');
+        });
+
+        // ── Help center (public) ────────────────────────────────────────────
+        Route::prefix('help-center')->name('customer.help-center.')->group(function (): void {
+            Route::get('tree', [\App\Http\Controllers\Customer\HelpCenterController::class, 'tree'])->name('tree');
         });
 
         // ── Page Renderer (public) ────────────────────────────────────────────
@@ -274,6 +280,10 @@ use Illuminate\Support\Facades\Route;
                 Route::get('my-purchases', [CustomerGiftCardStoreController::class, 'myPurchases'])->name('my-purchases');
                 Route::post('resend/{purchase}', [CustomerGiftCardStoreController::class, 'resend'])->name('resend');
             });
+
+            // Single batch lookup for the storefront detail/purchase page (public, no auth required).
+            // Registered last so it doesn't shadow the static routes above.
+            Route::get('{batchId}', [CustomerGiftCardStoreController::class, 'show'])->name('show');
         });
 
         // ── Marketer Contracts (view + accept before checkout) ──
@@ -444,6 +454,7 @@ use Illuminate\Support\Facades\Route;
                 Route::post('{order_number}/returns', [ReturnController::class, 'store'])->name('returns.store');
                 Route::post('{order_number}/disputes', [DisputeController::class, 'store'])->name('disputes.store');
                 Route::post('{order_number}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+                Route::post('{order_number}/bank-transfer-proof', [OrderController::class, 'uploadBankTransferProof'])->name('bank-transfer-proof.upload');
             });
 
             // Sub-order tracking
@@ -575,6 +586,7 @@ use Illuminate\Support\Facades\Route;
             Route::prefix('warranty')->name('customer.api.warranty.')->group(function (): void {
                 Route::get('plans/{orderItemId}', [ApiWarrantyController::class, 'plans'])->name('plans');
                 Route::get('purchases', [ApiWarrantyController::class, 'purchases'])->name('purchases');
+                Route::post('purchases', [ApiWarrantyController::class, 'purchasesStore'])->name('purchases.store');
                 Route::get('claims', [ApiWarrantyController::class, 'claimsIndex'])->name('claims.index');
                 Route::post('claims', [ApiWarrantyController::class, 'claimsStore'])->name('claims.store');
                 Route::get('claims/{claimNumber}', [ApiWarrantyController::class, 'claimsShow'])->name('claims.show');

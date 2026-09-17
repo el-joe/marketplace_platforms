@@ -3,14 +3,14 @@
 import { useTranslations } from "next-intl";
 import { cn } from "@/src/lib/utils";
 import { getCurrencySymbol } from "@/src/helpers/get-currency-symbol";
-import { giftCardAmounts } from "../../data";
 
 type Props = {
   amount: number;
+  amounts: number[];
   onSelect: (amount: number) => void;
 };
 
-export default function AmountSelector({ amount, onSelect }: Props) {
+export default function AmountSelector({ amount, amounts, onSelect }: Props) {
   const t = useTranslations("giftCards");
 
   return (
@@ -19,7 +19,7 @@ export default function AmountSelector({ amount, onSelect }: Props) {
         {t("selectAmount")} ({getCurrencySymbol("AED")})
       </p>
       <div className="flex items-center gap-2 flex-wrap text-light">
-        {giftCardAmounts.map((value) => (
+        {amounts.map((value) => (
           <button
             key={value}
             type="button"

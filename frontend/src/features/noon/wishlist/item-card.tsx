@@ -59,7 +59,11 @@ export default function ItemCard({ item }: Props) {
               <SwiperSlide key={image.url}>
                 <Image
                   src={image.url}
-                  alt={item.listing.product.name_en}
+                  alt={
+                    locale === "ar"
+                      ? item.listing?.product.name_ar
+                      : item.listing.product.name_en
+                  }
                   width={500}
                   height={600}
                   className="max-h-full"

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { ChevronLeft, XIcon } from "lucide-react";
 import type { HelpNode } from "../types";
 
@@ -12,13 +13,14 @@ export default function FaqDetailView({
   onBack,
   onClose,
 }: FaqDetailViewProps) {
+  const t = useTranslations("helpSheet");
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-2 p-6 pb-4">
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back"
+          aria-label={t("back")}
           className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/60"
         >
           <ChevronLeft className="size-5" />
@@ -29,7 +31,7 @@ export default function FaqDetailView({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("close")}
           className="flex size-8 shrink-0 cursor-pointer items-center justify-center"
         >
           <XIcon className="size-5" />
@@ -45,10 +47,10 @@ export default function FaqDetailView({
         </div>
 
         <div className="mt-6 text-center">
-          <p className="font-bold text-light">Need more help?</p>
+          <p className="font-bold text-light">{t("needMoreHelp")}</p>
           <p className="mt-1 text-sm text-gray">
-            If you still have any unresolved queries, please reach out to our{" "}
-            <span className="font-semibold text-light">customer support</span>
+            {t("unresolvedQueriesPrefix")}{" "}
+            <span className="font-semibold text-light">{t("customerSupport")}</span>
           </p>
         </div>
       </div>

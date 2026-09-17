@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\MarketerListing;
 use App\Models\ProductVariant;
+use App\Services\Marketer\MarketerListingAvailabilityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,7 +94,7 @@ class ListingController extends Controller
     /**
      * Store an independent listing.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, MarketerListingAvailabilityService $availability): RedirectResponse
     {
         $marketer = $this->marketer();
 
@@ -122,10 +123,31 @@ class ListingController extends Controller
             return back()->withErrors(['product_variant_id' => 'لديك قائمة لهذا المنتج في هذه الدولة بالفعل.']);
         }
 
+        // enhancement.md P-15 task 2: an independent marketer listing must
+        // bind to an existing active source listing (vendor or admin) for
+        // the same variant + country at creation time. Without one it is
+        // not purchasable, so we refuse to create it rather than create a
+        // hidden/broken listing.
+        $resolved = $availability->resolveBestSource($request->product_variant_id, $request->country_id);
+
+        if (! $resolved) {
+            return back()->withErrors(['product_variant_id' => 'لا يوجد بائع نشط لهذا المنتج في هذه الدولة حاليًا.']);
+        }
+
+        [$sourceType, $sourceListing] = $resolved;
+
+        if (! $availability->isPriceInBounds((int) $request->price, (int) $sourceListing->getRawOriginal('price'))) {
+            [$min, $max] = $availability->priceBounds((int) $sourceListing->getRawOriginal('price'));
+
+            return back()->withErrors(['price' => "يجب أن يكون السعر بين {$min} و {$max}."]);
+        }
+
         MarketerListing::create([
             'marketer_id'        => $marketer->id,
             'product_variant_id' => $request->product_variant_id,
             'country_id'         => $request->country_id,
+            'source_type'        => $sourceType,
+            'source_listing_id'  => $sourceListing->id,
             'price'              => (int) $request->price,
             'compare_at_price'   => $request->compare_at_price ? (int) $request->compare_at_price : null,
             'currency'           => $country->currency_code,
@@ -146,7 +168,8 @@ class ListingController extends Controller
         abort_unless($listing->marketer_id === $marketer->id, 403);
 
         $listing->update([
-            'status' => $listing->status === 'active' ? 'paused' : 'active',
+            'status'        => $listing->status === 'active' ? 'paused' : 'active',
+            'paused_reason' => $listing->status === 'active' ? 'manual' : null,
         ]);
 
         return back()->with('success', 'تم تحديث حالة القائمة.');
@@ -155,7 +178,7 @@ class ListingController extends Controller
     /**
      * Update listing price.
      */
-    public function updatePrice(Request $request, MarketerListing $listing): RedirectResponse
+    public function updatePrice(Request $request, MarketerListing $listing, MarketerListingAvailabilityService $availability): RedirectResponse
     {
         $marketer = $this->marketer();
         abort_unless($listing->marketer_id === $marketer->id, 403);
@@ -164,6 +187,13 @@ class ListingController extends Controller
             'price'            => ['required', 'integer', 'min:1'],
             'compare_at_price' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        $source = $availability->loadSource($listing);
+        if ($source && ! $availability->isPriceInBounds((int) $request->price, (int) $source->getRawOriginal('price'))) {
+            [$min, $max] = $availability->priceBounds((int) $source->getRawOriginal('price'));
+
+            return back()->withErrors(['price' => "يجب أن يكون السعر بين {$min} و {$max}."]);
+        }
 
         $listing->update([
             'price'            => (int) $request->price,

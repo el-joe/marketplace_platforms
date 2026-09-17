@@ -93,6 +93,36 @@ class Marketer extends Model
         return $this->hasMany(MarketerCategoryCommission::class);
     }
 
+    public function contract(): HasOne
+    {
+        return $this->hasOne(MarketerContract::class, 'marketer_id');
+    }
+
+    public function contractAcceptances(): HasMany
+    {
+        return $this->hasMany(MarketerContractAcceptance::class, 'marketer_id');
+    }
+
+    /**
+     * enhancement.md P-16: a marketer must both be approved
+     * (global_status = active) AND have accepted the CURRENT active
+     * version of their onboarding contract before they can accept a
+     * campaign invitation. If no contract has been set up for them at
+     * all, there is nothing to accept, so they are not blocked by it.
+     */
+    public function hasAcceptedContract(): bool
+    {
+        $contract = $this->contract()->with('activeVersion')->first();
+
+        if (! $contract || ! $contract->activeVersion) {
+            return true;
+        }
+
+        return MarketerContractAcceptance::where('marketer_id', $this->id)
+            ->where('marketer_contract_version_id', $contract->activeVersion->id)
+            ->exists();
+    }
+
     // ── Type helpers ───────────────────────────────────────────────────────
 
     public function isInfluencer(): bool

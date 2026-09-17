@@ -17,34 +17,22 @@ class MarketerListingResource extends JsonResource
     {
         $listing = $this->resource;
         $variant = $listing->productVariant;
-        $product = $variant->product;
-        $primaryImage = $variant->images->firstWhere('is_primary', true)
-            ?? $variant->images->first()
-            ?? $product->images->firstWhere('is_primary', true)
-            ?? $product->images->first();
+        $product = $variant?->product;
 
-        $variantImagesSlider = $variant->images
-            ->map(fn ($img) => [
-                'id'         => $img->id,
-                'url'        => $img->url,
-                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_primary' => (bool) $img->is_primary,
-                'position'   => (int) $img->position,
-                'variant_id' => $img->product_variant_id,
-            ])->values()->all();
-
-        $productImagesSlider = $product->images
-            ->filter(fn ($img) => $img->product_variant_id === null)
-            ->map(fn ($img) => [
-                'id'         => $img->id,
-                'url'        => $img->url,
-                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_primary' => (bool) $img->is_primary,
-                'position'   => (int) $img->position,
+        if (!$variant || !$product) {
+            return [
+                'listing_id' => $listing->id,
+                'listing_type' => 'marketer',
                 'variant_id' => null,
-            ])->values()->all();
+                'primary_image' => null,
+                'images' => [],
+                'product' => null,
+            ];
+        }
 
-        $imagesSlider = array_values(array_merge($variantImagesSlider, $productImagesSlider));
+        $images = app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id);
+        $imagesSlider = array_map(fn ($img) => $img->toArray(), $images);
+        $primaryImageUrl = $images[0]->url ?? null;
 
         $url_param = $variant->id . '--' . $listing->id;
         $url = route('customer.listing.show', [$this->country->site_code, $url_param]);
@@ -59,7 +47,8 @@ class MarketerListingResource extends JsonResource
             'variant_name' => $variant->setRelation('product', $product)->displayName(),
             'product_url' => $url,
             'url_param' => $url_param,
-            'primary_image' => $primaryImage?->url,
+            'primary_image' => $primaryImageUrl,
+            'image' => $primaryImageUrl ? ['url' => $primaryImageUrl, 'alt' => $images[0]->alt] : null,
             'images' => $imagesSlider,
             'price' => (int) $listing->price,
             'compare_at_price' => $listing->compare_at_price !== null ? (int) $listing->compare_at_price : null,

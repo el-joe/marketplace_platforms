@@ -8,6 +8,7 @@ use App\Http\Resources\Api\Customer\GiftCardBatchResource;
 use App\Http\Resources\Api\Customer\GiftCardPurchaseResource;
 use App\Http\Responses\ApiResponse;
 use App\Jobs\SendGiftCardNotificationJob;
+use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
 use App\Services\GiftCardPurchaseService;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,36 @@ class CustomerGiftCardStoreController extends Controller
         $batches = $this->giftCardPurchaseService->getAvailableBatches($data['currency_code']);
 
         return ApiResponse::success(GiftCardBatchResource::collection($batches));
+    }
+
+    /**
+     * Single-batch lookup backing the storefront detail/purchase page
+     * (e.g. `/gift-cards/{id}` on the frontend).
+     */
+    public function show(Request $request): JsonResponse
+    {
+        // Note: deliberately reads the {batchId} segment via $request->route()
+        // rather than a second method parameter. This route sits under
+        // .../v1/{country}/gift-card-store/{batchId}, and Laravel's controller
+        // dependency resolver (ResolvesRouteDependencies::spliceIntoParameters)
+        // splices type-hinted dependencies into the route-parameters array by
+        // *position*, discarding string keys in the process — with two scalar
+        // route segments ({country}, {batchId}) ahead of a single scalar method
+        // parameter, that shifts $country's value into what would have been
+        // $batchId. Reading it off the request avoids the misbinding entirely.
+        $batchId = (string) $request->route('batchId');
+
+        $data = $request->validate([
+            'currency_code' => ['required', 'string'],
+        ]);
+
+        $batch = GiftCardBatch::find($batchId);
+
+        if (! $batch || $batch->currency_code !== $data['currency_code'] || ! $batch->is_purchasable) {
+            return ApiResponse::error(__('customer_api.gift_card_store.purchase_not_found'), [], 404);
+        }
+
+        return ApiResponse::success(new GiftCardBatchResource($batch));
     }
 
     public function purchase(PurchaseGiftCardRequest $request): JsonResponse

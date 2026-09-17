@@ -49,13 +49,25 @@ class SubOrderObserver
             return;
         }
 
-        DB::transaction(function () use ($warrantyPurchases): void {
+        // enhancement.md P-09 task 2 / D3: coverage starts the day the
+        // brand/vendor warranty ends (delivered_at + vendors.warranty_months),
+        // or at delivery if the vendor has none — not `today()`. The actual
+        // date math lives in WarrantyPurchase::coverageDatesFor() so this
+        // checkout-triggered activation and the post-purchase "buy after
+        // delivery" flow (task 4) never drift apart.
+        $deliveredAt = now();
+        $vendorWarrantyMonths = $subOrder->vendor?->warranty_months
+            ? (int) $subOrder->vendor->warranty_months
+            : null;
+
+        DB::transaction(function () use ($warrantyPurchases, $deliveredAt, $vendorWarrantyMonths): void {
             foreach ($warrantyPurchases as $warrantyPurchase) {
-                $durationMonths = $warrantyPurchase->plan_snapshot['duration_months'] ?? 0;
+                $durationMonths = (int) ($warrantyPurchase->plan_snapshot['duration_months'] ?? 0);
+                $dates = WarrantyPurchase::coverageDatesFor($deliveredAt, $vendorWarrantyMonths, $durationMonths);
 
                 $warrantyPurchase->update([
-                    'coverage_starts_at' => today(),
-                    'coverage_ends_at' => today()->addMonths($durationMonths),
+                    'coverage_starts_at' => $dates['starts']->toDateString(),
+                    'coverage_ends_at' => $dates['ends']->toDateString(),
                     'status' => 'active',
                 ]);
             }

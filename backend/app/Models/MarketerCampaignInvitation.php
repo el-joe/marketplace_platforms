@@ -46,6 +46,11 @@ class MarketerCampaignInvitation extends Model
         return $this->belongsTo(self::class, 'replaced_invitation_id');
     }
 
+    public function marketerListing(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(MarketerListing::class, 'invitation_id');
+    }
+
     public function conversions(): HasMany
     {
         return $this->hasMany(MarketerCampaignConversion::class, 'invitation_id');

@@ -1,4 +1,5 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+import getLocale from "@/src/helpers/getLocale";
 import Image from "next/image";
 import { BuildingIcon, TagIcon } from "lucide-react";
 import Card from "@/src/components/shared/Card";
@@ -23,8 +24,8 @@ export default async function PackageDetails({ pkg }: Props) {
   const description = pkg.description[localeKey] ?? pkg.description.en ?? "";
 
   const breadcrumbs = [
-    { label: locale === "ar" ? "الرئيسية" : "Home", href: "/" },
-    { label: locale === "ar" ? "رحلات" : "Travel", href: "/travel" },
+    { label: t("breadcrumbHome"), href: "/" },
+    { label: t("breadcrumbTravel"), href: "/travel" },
     { label: title, href: "" },
   ];
 

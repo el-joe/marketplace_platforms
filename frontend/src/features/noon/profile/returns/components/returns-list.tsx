@@ -6,6 +6,7 @@ import {
   isNegativeReturnStatus,
 } from "../helpers/to-return-status";
 import type { ReturnListItem } from "../../orders/helpers/types";
+import getLocale from "@/src/helpers/getLocale";
 
 type Props = {
   returns: ReturnListItem[];
@@ -13,6 +14,7 @@ type Props = {
 
 export default async function ReturnsList({ returns }: Props) {
   const t = await getTranslations("profile");
+  const locale = await getLocale();
 
   return (
     <Card className="mt-6 p-6">
@@ -28,6 +30,9 @@ export default async function ReturnsList({ returns }: Props) {
               items={returnRequest.items.map((line) => ({
                 id: line.order_item_id,
                 label:
+                  (locale === "ar"
+                    ? line.product_snapshot.name_ar
+                    : line.product_snapshot.name_en) ??
                   line.product_snapshot.name_en ??
                   line.product_snapshot.sku ??
                   line.order_item_id,

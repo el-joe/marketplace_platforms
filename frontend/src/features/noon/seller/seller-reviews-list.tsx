@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   CheckCircle2,
   ChevronRight,
@@ -22,6 +23,7 @@ export default function SellerReviewsList({
   totalReviewsCount,
   reviews,
 }: SellerReviewsListProps) {
+  const t = useTranslations("sellerReviewsList");
   const [translatedMap, setTranslatedMap] = useState<Record<string, boolean>>(
     {},
   );
@@ -52,8 +54,10 @@ export default function SellerReviewsList({
       {/* Subheader: Ratings & Reviews summary text + Translate button */}
       <div className="border-t border-gray-200 pt-4 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-gray-500 font-normal">
-          There are {totalRatingsCount.toLocaleString()} ratings and{" "}
-          {totalReviewsCount.toLocaleString()} reviews for this seller
+          {t("ratingsAndReviewsSummary", {
+            ratings: totalRatingsCount.toLocaleString(),
+            reviews: totalReviewsCount.toLocaleString(),
+          })}
         </p>
 
         {hasAnyTranslation && (
@@ -65,7 +69,7 @@ export default function SellerReviewsList({
           >
             <Languages className="w-3.5 h-3.5" />
             <span>
-              {allTranslated ? "Show original reviews" : "Translate all reviews"}
+              {allTranslated ? t("showOriginalReviews") : t("translateAllReviews")}
             </span>
           </Button>
         )}
@@ -96,7 +100,7 @@ export default function SellerReviewsList({
                     {review.is_verified_purchase && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-700">
                         <CheckCircle2 className="w-3 h-3 text-gray-800" />
-                        Verified Purchase
+                        {t("verifiedPurchase")}
                       </span>
                     )}
                   </div>
@@ -148,7 +152,7 @@ export default function SellerReviewsList({
                   className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <Flag className="w-3 h-3" />
-                  <span>Report</span>
+                  <span>{t("report")}</span>
                 </button>
               </div>
             </div>
@@ -162,7 +166,7 @@ export default function SellerReviewsList({
           variant="outline"
           className="border-[#3866df] text-[#3866df] hover:bg-[#edf2fd] rounded-lg px-6 py-2.5 text-xs sm:text-sm font-semibold flex items-center gap-1 transition-colors"
         >
-          <span>View All Reviews</span>
+          <span>{t("viewAllReviews")}</span>
           <ChevronRight className="w-4 h-4 rtl:rotate-180" />
         </Button>
       </div>

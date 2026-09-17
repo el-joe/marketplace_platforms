@@ -9,6 +9,7 @@ export type Address = {
   recipient_phone: string;
   country_id: string;
   city_id: string;
+  city?: { id: string; name_ar: string; name_en: string } | null;
   area: string | null;
   street_address: string;
   building: string | null;

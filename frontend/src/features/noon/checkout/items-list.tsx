@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useLocale from "@/src/hooks/use-locale";
 import { getImageURL } from "@/src/helpers/get-image-url";
+import { getListingImage } from "@/src/types/media";
 
 export default function ItemsList({
   shipment_groups,
@@ -55,7 +56,7 @@ const Shipment = ({
               <div className="relative w-21 md:w-24 lg:w-28 xl:w-32 h-fit">
                 <div className="rounded-[16px] w-full h-fit max-h-48 overflow-hidden">
                   <Image
-                    src={getImageURL(item.primary_image as string)}
+                    src={getImageURL(getListingImage(item))}
                     alt={
                       locale === "ar"
                         ? item.product_name_ar

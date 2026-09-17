@@ -26,7 +26,7 @@ class ProductBrowseCategoryResource extends JsonResource
                 'name'    => Bilingual::pair($this->parent, 'name'),
                 'slug'    => $this->parent->slug,
             ] : null,
-            'attributes' => $this->attributes()->where('is_filterable', true)->with('values')->get()
+            'attributes' => $this->resource->attributes()->where('is_filterable', true)->with('values')->get()
                 ->map(fn ($attribute) => [
                     'id'          => $attribute->id,
                     'code'        => $attribute->code,

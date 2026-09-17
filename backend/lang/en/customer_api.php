@@ -132,6 +132,9 @@ return [
         'claim_not_found'      => 'Warranty claim not found.',
         'claim_closed'         => 'This warranty claim is closed and no longer accepts messages.',
         'message_sent'         => 'Message sent.',
+        'purchase_created'          => 'Warranty purchased and activated.',
+        'insufficient_wallet_balance' => 'Insufficient wallet balance to purchase this warranty.',
+        'wallet_currency_mismatch'   => 'Your wallet currency does not match this order.',
     ],
 
     'wishlist' => [

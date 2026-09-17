@@ -26,6 +26,11 @@ use Illuminate\Support\Facades\DB;
 
 class ListingQueryService
 {
+    public function __construct(
+        private readonly \App\Services\Media\ListingImageResolver $imageResolver,
+    ) {
+    }
+
     /**
      * Base listing query for a category (+ descendants) grid: active listings,
      * active vendor, active product within the given category IDs.
@@ -421,8 +426,8 @@ class ListingQueryService
         bool $isSponsored = false,
     ): array {
         $variant = $listing->productVariant;
-        $variantImage = $this->ensureHttps($variant->images->first()?->url ?? $product->images->first()?->url ?? null);
         $imagesSlider = $this->buildImagesSlider($variant, $product);
+        $variantImage = $imagesSlider[0]['url'] ?? null;
 
         $url = route('customer.listing.show', [$country->site_code, $variant->id .'--' . $listing->id]);
         $url_param = $variant->id .'--' . $listing->id;
@@ -444,10 +449,11 @@ class ListingQueryService
             'variant_name' => $this->customerVariantNamePair($variant, $product),
             'variant_image' => $variantImage,
             'primary_image' => $variantImage,
+            'image' => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
             'images' => $imagesSlider,
             'name_en' => $product->name_en,
             'name_ar' => $product->name_ar,
-            'thumbnail' => $this->ensureHttps($product->images->first()?->url ?? null),
+            'thumbnail' => $variantImage,
             'category_name' => [
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
@@ -519,33 +525,13 @@ class ListingQueryService
     }
 
     /**
-     * Builds the ordered image slider array for a variant/product pair:
-     * variant-specific images first, then product-level images (no variant FK).
+     * Builds the ordered image array for a variant: its own images, or, only
+     * when it has none, the product's variant-agnostic fallback images.
+     * Never both (ListingImageResolver — enhancement.md P-17).
      */
     private function buildImagesSlider($variant, Product $product): array
     {
-        $variantImages = $variant->images
-            ->map(fn ($img) => [
-                'id'         => $img->id,
-                'url'        => $this->ensureHttps($img->url),
-                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_primary' => (bool) $img->is_primary,
-                'position'   => (int) $img->position,
-                'variant_id' => $img->product_variant_id,
-            ])->values()->all();
-
-        $productImages = $product->images
-            ->filter(fn ($img) => $img->product_variant_id === null)
-            ->map(fn ($img) => [
-                'id'         => $img->id,
-                'url'        => $this->ensureHttps($img->url),
-                'alt'        => ['ar' => $img->alt_text_ar, 'en' => $img->alt_text_en],
-                'is_primary' => (bool) $img->is_primary,
-                'position'   => (int) $img->position,
-                'variant_id' => null,
-            ])->values()->all();
-
-        return array_values(array_merge($variantImages, $productImages));
+        return array_map(fn ($img) => $img->toArray(), $this->imageResolver->gallery($variant->id));
     }
 
     /**
@@ -559,8 +545,8 @@ class ListingQueryService
         bool $isWishlisted = false,
     ): array {
         $variant = $listing->productVariant;
-        $variantImage = $this->ensureHttps($variant->images->first()?->url ?? $product->images->first()?->url ?? null);
         $imagesSlider = $this->buildImagesSlider($variant, $product);
+        $variantImage = $imagesSlider[0]['url'] ?? null;
 
         return [
             'listing_id'       => $listing->id,
@@ -577,6 +563,7 @@ class ListingQueryService
             'variant_name'     => $this->customerVariantNamePair($variant, $product),
             'variant_image'    => $variantImage,
             'primary_image'    => $variantImage,
+            'image'            => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
             'images'           => $imagesSlider,
             'product_url'      => "/products/p-{$listing->id}",
             'url_param'        => "p-{$listing->id}",
@@ -646,8 +633,8 @@ class ListingQueryService
         bool $isWishlisted = false,
     ): array {
         $variant      = $listing->productVariant;
-        $variantImage = $this->ensureHttps($variant->images->first()?->url ?? $product->images->first()?->url ?? null);
         $imagesSlider = $this->buildImagesSlider($variant, $product);
+        $variantImage = $imagesSlider[0]['url'] ?? null;
         $marketer     = $listing->marketer;
         $profile      = $marketer?->marketerProfile;
 
@@ -670,10 +657,11 @@ class ListingQueryService
             'variant_name'      => $this->customerVariantNamePair($variant, $product),
             'variant_image'     => $variantImage,
             'primary_image'     => $variantImage,
+            'image'             => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
             'images'            => $imagesSlider,
             'name_en'           => $product->name_en,
             'name_ar'           => $product->name_ar,
-            'thumbnail'         => $this->ensureHttps($product->images->first()?->url ?? null),
+            'thumbnail'         => $variantImage,
             'category_name'     => [
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
@@ -834,6 +822,7 @@ class ListingQueryService
             'location' => $listing->city?->name_en,
             'seller_type' => $listing->seller_type === Vendor::class ? 'vendor' : 'customer',
             'images_count' => $listing->images->count(),
+            'attributes' => $listing->attributes ?? [],
             'created_at' => $listing->created_at?->toIso8601String(),
         ];
     }

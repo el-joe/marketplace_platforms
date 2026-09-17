@@ -1,3 +1,5 @@
+import type { ImageDTO } from "@/src/types/media";
+
 export type ApiEnvelope<T> = {
   success: boolean;
   message?: string;
@@ -121,6 +123,9 @@ export type OrderDetailItem = {
   listing_ref: string;
   name_en: string;
   name_ar: string;
+  image?: ImageDTO | null;
+  images?: ImageDTO[];
+  // TODO: remove legacy alias fallback once backend drops primary_image/thumbnail/variant_image aliases (see enhancement.md P-17)
   thumbnail: string | null;
   quantity: number;
   unit_price: number;

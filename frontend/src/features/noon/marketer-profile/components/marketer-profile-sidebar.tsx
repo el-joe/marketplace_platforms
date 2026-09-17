@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { MapPin, ShoppingBag, TrendingUp } from "lucide-react";
 import { MarketerProfileInfo, MarketerProfileMarketer } from "../helpers/types";
+import getLocale from "@/src/helpers/getLocale";
 
 interface Props {
   marketer: MarketerProfileMarketer;
@@ -21,6 +22,7 @@ export default async function MarketerProfileSidebar({
   profile,
 }: Props) {
   const t = await getTranslations("marketerProfile");
+  const locale = await getLocale();
 
   return (
     <aside className="w-full lg:w-72 shrink-0 space-y-6">
@@ -45,7 +47,9 @@ export default async function MarketerProfileSidebar({
         <div className="space-y-1.5">
           <h3 className="text-sm font-bold text-primary">{t("bio")}</h3>
           <p className="text-sm leading-relaxed text-light">
-            {profile.bio_ar ?? profile.bio_en}
+            {(locale === "ar" ? profile.bio_ar : profile.bio_en) ??
+              profile.bio_ar ??
+              profile.bio_en}
           </p>
         </div>
       )}

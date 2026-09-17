@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\Order\OrderCancelRequest;
 use App\Http\Requests\Customer\Order\OrderListRequest;
+use App\Http\Requests\Customer\Order\UploadBankTransferProofRequest;
 use App\Http\Resources\Customer\OrderResource;
 use App\Http\Responses\ApiResponse;
+use App\Services\Customer\BankTransferProofService;
 use App\Services\Customer\OrderService;
 use App\Services\Customer\OrderTrackingService;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +18,7 @@ class OrderController extends Controller
     public function __construct(
         private readonly OrderService $orderService,
         private readonly OrderTrackingService $orderTrackingService,
+        private readonly BankTransferProofService $bankTransferProofService,
     ) {}
 
     public function index(OrderListRequest $request, string $country): JsonResponse
@@ -54,6 +57,26 @@ class OrderController extends Controller
         $this->orderService->cancel($order, $request->validated('reason'));
 
         return ApiResponse::success(null, __('common.exceptions.order.cancelled'));
+    }
+
+    public function uploadBankTransferProof(UploadBankTransferProofRequest $request, string $country, string $orderNumber): JsonResponse
+    {
+        $customer = auth('customer')->user();
+        $order = $this->orderService->findForCustomer($customer, $orderNumber);
+
+        if (!$order) {
+            return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
+        }
+
+        if ($order->payment_method !== 'bank_transfer') {
+            return ApiResponse::error(__('common.exceptions.order.not_bank_transfer'), [], 422);
+        }
+
+        $transaction = $this->bankTransferProofService->upload($order, $request->file('file'));
+
+        return ApiResponse::success([
+            'proof_uploaded_at' => $transaction->proof_uploaded_at,
+        ], __('common.exceptions.order.proof_uploaded'));
     }
 
     public function trackSubOrder(string $country, string $subOrderId): JsonResponse

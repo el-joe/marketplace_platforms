@@ -16,7 +16,8 @@ import {
   isCancellableStatus,
 } from "../helpers/to-booking-status";
 import type { TravelBookingDetail } from "../helpers/types";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import useLocale from "@/src/hooks/use-locale";
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (

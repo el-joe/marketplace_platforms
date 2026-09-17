@@ -89,6 +89,8 @@ class GiftCardPurchaseService
                 'payment_method' => $gatewayCode,
                 'payment_status' => 'pending',
                 'placed_at' => now(),
+                'shipping_address_snapshot' => [],
+                'ip_address' => request()->ip(),
             ]);
 
             $isGift = ! empty($data['recipient_email']) && $data['recipient_email'] !== $buyer->email;

@@ -4,6 +4,7 @@ import { Block } from "../types";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import useLocale from "@/src/hooks/use-locale";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { SponsoredLink } from "@/src/components/shared/sponsored-link";
@@ -14,6 +15,7 @@ type Props = {
 
 export default function HeroSlider({ data }: Props) {
   const locale = useLocale();
+  const t = useTranslations("pageBuilder");
 
   if (data?.config?.is_announcement) {
     const slide = data?.slides?.[0];
@@ -30,7 +32,7 @@ export default function HeroSlider({ data }: Props) {
       <div className="relative w-full h-12 md:h-14">
         <Image
           src={imageUrl || "/images/no-image-available-icon.jpg"}
-          alt="Announcement"
+          alt={t("announcement")}
           fill
           className="object-cover object-center"
           sizes="100vw"

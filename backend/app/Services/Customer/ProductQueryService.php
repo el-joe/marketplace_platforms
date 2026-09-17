@@ -3,20 +3,36 @@
 namespace App\Services\Customer;
 
 use App\Http\Resources\Customer\ProductListResource;
-use App\Models\AdminListing;
 use App\Models\Attribute;
 use App\Models\Country;
-use App\Models\Product;
-use App\Models\Wishlist;
 use App\Models\WishlistItem;
 use App\Support\Bilingual;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * enhancement.md P-19: rewritten to a two-phase query against the
+ * `product_country_buybox` read model (maintained by BuyBoxRebuildService)
+ * instead of ~20 selectRaw COALESCE-of-3-correlated-subqueries expressions
+ * evaluated over the whole grouped product set before LIMIT.
+ *
+ * Phase 1 (idQuery/applyFilters/applySort): a lean query against the
+ * indexed buy-box table returns product_id + the row's own pre-aggregated
+ * columns for exactly one page of results (LIMIT applied before any
+ * per-row hydration work).
+ *
+ * Phase 2 (buildProductsPayload): batch-loads everything the response
+ * needs for that page only — shipping badge + category name + buy-box
+ * variant slug/name are pulled in via LEFT JOINs on the already-limited
+ * phase-1 result (cheap, because it is at most $perPage rows), and images
+ * come from ListingImageResolver (P-17).
+ */
 class ProductQueryService
 {
     public function __construct(
         private readonly SponsoredProductService $sponsored,
+        private readonly \App\Services\Media\ListingImageResolver $imageResolver,
     ) {
     }
 
@@ -39,13 +55,30 @@ class ProductQueryService
         $builder = $this->baseQuery($country);
 
         if ($categoryIds !== null) {
-            $builder->whereIn('products.category_id', $categoryIds);
+            $builder->whereIn('bb.category_id', $categoryIds);
         }
 
         $builder = $this->applyFilters($builder, $filters, $categoryIds);
         $builder = $this->applySort($builder, $filters['sort'] ?? 'relevance');
 
-        return $builder->paginate($perPage);
+        $page = Paginator::resolveCurrentPage();
+        $total = (clone $builder)->distinct()->count('bb.product_id');
+
+        $rows = (clone $builder)
+            ->select($this->rowColumns())
+            ->forPage($page, $perPage)
+            ->get();
+
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $rows,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'query' => request()->query(),
+            ],
+        );
     }
 
     /**
@@ -63,13 +96,13 @@ class ProductQueryService
         $base = $this->baseQuery($country);
 
         if ($categoryIds !== null) {
-            $base->whereIn('products.category_id', $categoryIds);
+            $base->whereIn('bb.category_id', $categoryIds);
         }
 
         $base = $this->applyFilters($base, $filters, $categoryIds);
 
         $priceRange = (clone $base)
-            ->selectRaw('MIN(vl.price) as low, MAX(vl.price) as high')
+            ->selectRaw('MIN(bb.min_price) as low, MAX(bb.max_price) as high')
             ->first();
 
         return [
@@ -84,6 +117,9 @@ class ProductQueryService
     /**
      * Filterable attributes for the given categories, with per-value product counts
      * scoped to the already-filtered product set in $base.
+     * One query for the candidate product ids, one for the attributes (+ their
+     * values, eager-loaded), one grouped query for every attribute's value
+     * counts at once — never one query per attribute.
      *
      * @param  list<string>  $categoryIds
      */
@@ -93,7 +129,7 @@ class ProductQueryService
             return [];
         }
 
-        $productIds = (clone $base)->pluck('products.id');
+        $productIds = (clone $base)->distinct()->pluck('bb.product_id');
 
         if ($productIds->isEmpty()) {
             return [];
@@ -106,14 +142,21 @@ class ProductQueryService
             ->orderBy('sort_order')
             ->get();
 
-        return $attributes->map(function (Attribute $attribute) use ($productIds) {
-            $counts = DB::table('product_variant_attributes as pva')
-                ->join('product_variants as pv', 'pv.id', '=', 'pva.product_variant_id')
-                ->whereIn('pv.product_id', $productIds)
-                ->where('pva.attribute_id', $attribute->id)
-                ->selectRaw('pva.attribute_value_id, COUNT(DISTINCT pv.product_id) as cnt')
-                ->groupBy('pva.attribute_value_id')
-                ->pluck('cnt', 'attribute_value_id');
+        if ($attributes->isEmpty()) {
+            return [];
+        }
+
+        $counts = DB::table('product_variant_attributes as pva')
+            ->join('product_variants as pv', 'pv.id', '=', 'pva.product_variant_id')
+            ->whereIn('pv.product_id', $productIds)
+            ->whereIn('pva.attribute_id', $attributes->pluck('id'))
+            ->selectRaw('pva.attribute_id, pva.attribute_value_id, COUNT(DISTINCT pv.product_id) as cnt')
+            ->groupBy('pva.attribute_id', 'pva.attribute_value_id')
+            ->get()
+            ->groupBy('attribute_id');
+
+        return $attributes->map(function (Attribute $attribute) use ($counts) {
+            $attrCounts = ($counts->get($attribute->id) ?? collect())->pluck('cnt', 'attribute_value_id');
 
             return [
                 'id'     => $attribute->id,
@@ -125,7 +168,7 @@ class ProductQueryService
                     'id'        => $value->id,
                     'value'     => Bilingual::pair($value, 'value'),
                     'color_hex' => $value->color_hex,
-                    'count'     => (int) ($counts[$value->id] ?? 0),
+                    'count'     => (int) ($attrCounts[$value->id] ?? 0),
                 ])->values()->all(),
             ];
         })->values()->all();
@@ -145,10 +188,19 @@ class ProductQueryService
     ): array {
         $wishlistIds = $this->wishlistIds();
 
-        $items = ProductListResource::collection($paginator->load('images'))
-            ->map(function (ProductListResource $r) use ($wishlistIds) {
+        $rows = collect($paginator->items());
+
+        // Batched, not per-item: two queries total for every buy-box variant
+        // on this page (ListingImageResolver — enhancement.md P-17 task 4),
+        // instead of the removed correlated per-row image subqueries.
+        $variantIds = $rows->pluck('buy_box_variant_id')->filter()->unique()->values();
+        $imagesByVariant = $this->imageResolver->forVariants($variantIds);
+
+        $items = ProductListResource::collection($rows)
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
+                $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
                 return $r->toArray(request());
             })
             ->toArray();
@@ -168,219 +220,57 @@ class ProductQueryService
 
     // ─── Query building ───────────────────────────────────────────────────────
 
+    /**
+     * Phase 1: the lean, indexed query — buy-box read model joined only to
+     * `products` (to exclude products that went inactive/were soft-deleted
+     * since the last buy-box rebuild; the buy-box row itself is otherwise
+     * only refreshed by the observers/listener wired to it). No listing
+     * tables, no correlated subqueries, no aggregation.
+     */
     public function baseQuery(Country $country)
     {
-        // ── Admin listing correlated subquery helpers ──────────────────────────
-        // admin_listings always win the buy-box when present (platform stock).
-        $al = fn(string $col) =>
-            '(SELECT '.$col.' FROM admin_listings al_b'
-            .' JOIN product_variants pv_b ON pv_b.id = al_b.product_variant_id'
-            .' LEFT JOIN shipping_methods sm_b ON sm_b.id = al_b.primary_shipping_method_id'
-            ." WHERE pv_b.product_id = products.id AND al_b.country_id = ? AND al_b.status = 'active' AND al_b.deleted_at IS NULL"
-            .' ORDER BY al_b.price ASC LIMIT 1)';
+        return DB::table('product_country_buybox as bb')
+            ->join('products as p', 'p.id', '=', 'bb.product_id')
+            ->where('bb.country_id', $country->id)
+            ->where('p.status', 'active')
+            ->whereNull('p.deleted_at');
+    }
 
-        // ── Vendor listing correlated subquery helpers ─────────────────────────
-        $vl = fn(string $col) =>
-            '(SELECT '.$col.' FROM vendor_listings vl_b'
-            .' JOIN product_variants pv_b ON pv_b.id = vl_b.product_variant_id'
-            .' LEFT JOIN shipping_methods sm_b ON sm_b.id = vl_b.primary_shipping_method_id'
-            ." WHERE pv_b.product_id = products.id AND vl_b.country_id = ? AND vl_b.status = ? AND vl_b.deleted_at IS NULL"
-            ." ORDER BY FIELD(vl_b.global_system_type,'express_fbn','merchant_fbp','marketplace'), vl_b.price ASC LIMIT 1)";
-
-        $vlImage = fn(string $col) =>
-            '(SELECT pi.'.$col.' FROM vendor_listings vl_b'
-            .' JOIN product_variants pv_b ON pv_b.id = vl_b.product_variant_id'
-            .' JOIN product_images pi ON pi.product_variant_id = pv_b.id'
-            ." WHERE pv_b.product_id = products.id AND vl_b.country_id = ? AND vl_b.status = ? AND vl_b.deleted_at IS NULL"
-            ." ORDER BY FIELD(vl_b.global_system_type,'express_fbn','merchant_fbp','marketplace'), vl_b.price ASC, pi.position ASC LIMIT 1)";
-
-        $alImage = fn(string $col) =>
-            '(SELECT pi.'.$col.' FROM admin_listings al_b'
-            .' JOIN product_variants pv_b ON pv_b.id = al_b.product_variant_id'
-            .' JOIN product_images pi ON pi.product_variant_id = pv_b.id'
-            ." WHERE pv_b.product_id = products.id AND al_b.country_id = ? AND al_b.status = 'active' AND al_b.deleted_at IS NULL"
-            .' ORDER BY al_b.price ASC, pi.position ASC LIMIT 1)';
-
-        // ── Category default shipping method (fallback when a listing has no
-        // primary_shipping_method_id cached — e.g. ListingShippingResolver never
-        // ran for it) ────────────────────────────────────────────────────────
-        $catDefault = fn(string $col) =>
-            '(SELECT sm_d.'.$col.' FROM category_shipping_methods csm_d'
-            .' JOIN shipping_methods sm_d ON sm_d.id = csm_d.shipping_method_id'
-            .' WHERE csm_d.category_id = products.category_id AND csm_d.is_default = 1'
-            .' LIMIT 1)';
-
-        // ── Marketer listing correlated subquery helpers (lowest priority) ─────
-        // Marketer listings have no shipping method of their own — shipping comes
-        // from the campaign's source listing, so they're excluded from buy_box_shipping_*.
-        $ml = fn(string $col) =>
-            '(SELECT '.$col.' FROM marketer_listings ml_b'
-            .' JOIN product_variants pv_b ON pv_b.id = ml_b.product_variant_id'
-            .' JOIN marketers mk_b ON mk_b.id = ml_b.marketer_id AND mk_b.global_status = \'active\''
-            ." WHERE pv_b.product_id = products.id AND ml_b.country_id = ? AND ml_b.status = 'active' AND ml_b.deleted_at IS NULL AND ml_b.listing_category = 'product'"
-            .' ORDER BY ml_b.price ASC LIMIT 1)';
-
-        $mlImage = fn(string $col) =>
-            '(SELECT pi.'.$col.' FROM marketer_listings ml_b'
-            .' JOIN product_variants pv_b ON pv_b.id = ml_b.product_variant_id'
-            .' JOIN marketers mk_b ON mk_b.id = ml_b.marketer_id AND mk_b.global_status = \'active\''
-            .' JOIN product_images pi ON pi.product_variant_id = pv_b.id'
-            ." WHERE pv_b.product_id = products.id AND ml_b.country_id = ? AND ml_b.status = 'active' AND ml_b.deleted_at IS NULL AND ml_b.listing_category = 'product'"
-            .' ORDER BY ml_b.price ASC, pi.position ASC LIMIT 1)';
-
-        return Product::query()
-            ->select(
-                'products.*',
-                'pcs.name_override_en',
-                'pcs.name_override_ar',
-                DB::raw('MIN(vl.price) as min_price'),
-                DB::raw('MAX(vl.price) as max_price'),
-                DB::raw('COUNT(DISTINCT vl.id) as active_seller_count'),
-                DB::raw('COALESCE(SUM(wi.quantity_available), 0) as total_stock'),
-                DB::raw('COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0) as rating_avg'),
-                DB::raw('COALESCE(SUM(vl.rating_count), 0) as rating_count'),
-            )
-            // ── buy_box_listing_id: admin wins, else vendor, else marketer ─────
-            ->selectRaw(
-                'COALESCE('.$al('al_b.id').', '.$vl('vl_b.id').', '.$ml('ml_b.id').') as buy_box_listing_id',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_listing_type: 'admin' | 'vendor' | 'marketer' ─────────
-            ->selectRaw(
-                'CASE WHEN '.$al('al_b.id').' IS NOT NULL THEN \'admin\''
-                .' WHEN '.$vl('vl_b.id').' IS NOT NULL THEN \'vendor\''
-                .' ELSE \'marketer\' END as buy_box_listing_type',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_variant_slug ───────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('pv_b.slug').', '.$vl('pv_b.slug').', '.$ml('pv_b.slug').') as buy_box_variant_slug',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_name ───────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('pv_b.variant_name').', '.$vl('pv_b.variant_name').', '.$ml('pv_b.variant_name').') as buy_box_variant_name',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_name_ar ─────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('pv_b.variant_name_ar').', '.$vl('pv_b.variant_name_ar').', '.$ml('pv_b.variant_name_ar').') as buy_box_variant_name_ar',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_id ────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('pv_b.id').', '.$vl('pv_b.id').', '.$ml('pv_b.id').') as buy_box_variant_id',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_image_path ────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$alImage('path').', '.$vlImage('path').', '.$mlImage('path').') as buy_box_variant_image_path',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_variant_image_disk ────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$alImage('disk').', '.$vlImage('disk').', '.$mlImage('disk').') as buy_box_variant_image_disk',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── admin_listing_count (for UI badges) ───────────────────────────
-            ->selectRaw(
-                '(SELECT COUNT(*) FROM admin_listings al_c'
-                .' JOIN product_variants pv_c ON pv_c.id = al_c.product_variant_id'
-                ." WHERE pv_c.product_id = products.id AND al_c.country_id = ? AND al_c.status = 'active' AND al_c.deleted_at IS NULL)"
-                .' as admin_listing_count',
-                [$country->id],
-            )
-            // ── buy_box_compare_at_price ───────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('al_b.compare_at_price').', '.$vl('vl_b.compare_at_price').', '.$ml('ml_b.compare_at_price').') as buy_box_compare_at_price',
-                [$country->id, $country->id, 'active', $country->id],
-            )
-            // ── buy_box_shipping_label_en ──────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.badge_label_en').', '.$vl('sm_b.badge_label_en').', '.$catDefault('badge_label_en').') as buy_box_shipping_label_en',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_label_ar ──────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.badge_label_ar').', '.$vl('sm_b.badge_label_ar').', '.$catDefault('badge_label_ar').') as buy_box_shipping_label_ar',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_color_hex ─────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.badge_color_hex').', '.$vl('sm_b.badge_color_hex').', '.$catDefault('badge_color_hex').') as buy_box_shipping_color_hex',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_text_color_hex ───────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.badge_text_color_hex').', '.$vl('sm_b.badge_text_color_hex').', '.$catDefault('badge_text_color_hex').') as buy_box_shipping_text_color_hex',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_days_min ──────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.min_delivery_days').', '.$vl('sm_b.min_delivery_days').', '.$catDefault('min_delivery_days').') as buy_box_shipping_days_min',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_days_max ──────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.max_delivery_days').', '.$vl('sm_b.max_delivery_days').', '.$catDefault('max_delivery_days').') as buy_box_shipping_days_max',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_is_express ────────────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.is_express_type').', '.$vl('sm_b.is_express_type').', '.$catDefault('is_express_type').') as buy_box_shipping_is_express',
-                [$country->id, $country->id, 'active'],
-            )
-            // ── buy_box_shipping_badge_image_path ──────────────────────────────────────
-            ->selectRaw(
-                'COALESCE('.$al('sm_b.badge_image_path').', '.$vl('sm_b.badge_image_path').', '.$catDefault('badge_image_path').') as buy_box_shipping_badge_image_path',
-                [$country->id, $country->id, 'active'],
-            )
-            ->addSelect('cat.name_en as category_name_en', 'cat.name_ar as category_name_ar')
-            ->leftJoin('categories as cat', 'cat.id', '=', 'products.category_id')
-            ->leftJoin('product_country_settings as pcs', function ($j) use ($country) {
-                $j->on('pcs.product_id', '=', 'products.id')
-                    ->where('pcs.country_id', $country->id)
-                    ->where('pcs.is_available', true);
-            })
-            // Include products that have an admin or marketer listing even without country settings
-            ->where(function ($q) use ($country) {
-                $q->whereNotNull('pcs.product_id')
-                  ->orWhereExists(function ($sub) use ($country) {
-                      $sub->select(DB::raw(1))
-                          ->from('admin_listings as al_check')
-                          ->join('product_variants as pv_check', 'pv_check.id', '=', 'al_check.product_variant_id')
-                          ->whereColumn('pv_check.product_id', 'products.id')
-                          ->where('al_check.country_id', $country->id)
-                          ->where('al_check.status', 'active')
-                          ->whereNull('al_check.deleted_at');
-                  })
-                  ->orWhereExists(function ($sub) use ($country) {
-                      $sub->select(DB::raw(1))
-                          ->from('marketer_listings as ml_check')
-                          ->join('product_variants as pv_check2', 'pv_check2.id', '=', 'ml_check.product_variant_id')
-                          ->join('marketers as mk_check', 'mk_check.id', '=', 'ml_check.marketer_id')
-                          ->whereColumn('pv_check2.product_id', 'products.id')
-                          ->where('ml_check.country_id', $country->id)
-                          ->where('ml_check.status', 'active')
-                          ->where('ml_check.listing_category', 'product')
-                          ->where('mk_check.global_status', 'active')
-                          ->whereNull('ml_check.deleted_at');
-                  });
-            })
-            ->leftJoin('product_variants as pv', function ($j) {
-                $j->on('pv.product_id', '=', 'products.id')
-                    ->where('pv.is_active', true)
-                    ->whereNull('pv.deleted_at');
-            })
-            ->leftJoin('vendor_listings as vl', function ($j) use ($country) {
-                $j->on('vl.product_variant_id', '=', 'pv.id')
-                    ->where('vl.country_id', $country->id)
-                    ->where('vl.status', 'active')
-                    ->whereNull('vl.deleted_at');
-            })
-            ->leftJoin('warehouse_inventories as wi', 'wi.vendor_listing_id', '=', 'vl.id')
-            ->where('products.status', 'active')
-            ->groupBy('products.id', 'pcs.name_override_en', 'pcs.name_override_ar', 'cat.name_en', 'cat.name_ar');
+    /**
+     * The full column set for a page of results, joined on the already
+     * page-limited candidate set so these joins run against at most
+     * $perPage rows — never against the whole filtered/grouped set like
+     * the old correlated subqueries did.
+     */
+    private function rowColumns(): array
+    {
+        return [
+            'bb.product_id as id',
+            'p.name_en', 'p.name_ar', 'p.slug', 'p.is_featured', 'p.published_at',
+            'pcs.name_override_en', 'pcs.name_override_ar',
+            'bb.min_price', 'bb.max_price',
+            'bb.seller_count as active_seller_count',
+            'bb.admin_listing_count',
+            'bb.total_stock',
+            'bb.rating_avg', 'bb.rating_count',
+            'bb.listing_id as buy_box_listing_id',
+            'bb.listing_type as buy_box_listing_type',
+            'bb.variant_id as buy_box_variant_id',
+            'bb.compare_at_price as buy_box_compare_at_price',
+            'pv.slug as buy_box_variant_slug',
+            'pv.variant_name as buy_box_variant_name',
+            'pv.variant_name_ar as buy_box_variant_name_ar',
+            'cat.name_en as category_name_en',
+            'cat.name_ar as category_name_ar',
+            'sm.badge_label_en as buy_box_shipping_label_en',
+            'sm.badge_label_ar as buy_box_shipping_label_ar',
+            'sm.badge_color_hex as buy_box_shipping_color_hex',
+            'sm.badge_text_color_hex as buy_box_shipping_text_color_hex',
+            'sm.min_delivery_days as buy_box_shipping_days_min',
+            'sm.max_delivery_days as buy_box_shipping_days_max',
+            'sm.badge_image_path as buy_box_shipping_badge_image_path',
+            'bb.is_express as buy_box_shipping_is_express',
+        ];
     }
 
     /**
@@ -390,30 +280,48 @@ class ProductQueryService
      */
     public function applyFilters($builder, array $filters, ?array $categoryIds = null)
     {
+        $builder->leftJoin('categories as cat', 'cat.id', '=', 'bb.category_id')
+            ->leftJoin('product_country_settings as pcs', function ($j) {
+                $j->on('pcs.product_id', '=', 'bb.product_id')
+                    ->on('pcs.country_id', '=', 'bb.country_id')
+                    ->where('pcs.is_available', true);
+            })
+            ->leftJoin('product_variants as pv', 'pv.id', '=', 'bb.variant_id')
+            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id');
+
         if (!empty($filters['category'])) {
             $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
-            $builder->whereIn('products.category_id', $categoryIds);
+            $builder->whereIn('bb.category_id', $categoryIds);
         }
         if (!empty($filters['brand'])) {
-            $builder->where('products.brand_id', $filters['brand']);
+            $builder->where('bb.brand_id', $filters['brand']);
         }
         if (!empty($filters['price_min'])) {
-            $builder->havingRaw('MIN(vl.price) >= ?', [(int) $filters['price_min']]);
+            $builder->where('bb.min_price', '>=', (int) $filters['price_min']);
         }
         if (!empty($filters['price_max'])) {
-            $builder->havingRaw('MAX(vl.price) <= ?', [(int) $filters['price_max']]);
+            $builder->where('bb.max_price', '<=', (int) $filters['price_max']);
         }
         if (!empty($filters['rating_min'])) {
-            $builder->havingRaw('COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0) >= ?', [$filters['rating_min']]);
+            $builder->where('bb.rating_avg', '>=', $filters['rating_min']);
         }
         if (!empty($filters['condition'])) {
-            $builder->where('vl.condition', $filters['condition']);
+            // Aggregates (min/max price, rating, stock) never depend on this
+            // filter (enhancement.md P-19: fixing that dependency was the point) —
+            // it only narrows which products qualify, via the winning listing's
+            // own condition when the winner is a vendor listing.
+            $builder->whereExists(function ($sub) use ($filters) {
+                $sub->select(DB::raw(1))
+                    ->from('vendor_listings as vl_cond')
+                    ->whereColumn('vl_cond.id', 'bb.listing_id')
+                    ->where('vl_cond.condition', $filters['condition']);
+            });
         }
         if (!empty($filters['fulfillment_model'])) {
-            $builder->where('vl.fulfillment_model', $filters['fulfillment_model']);
+            $builder->where('bb.fulfillment_model', $filters['fulfillment_model']);
         }
         if (empty($filters['include_oos'])) {
-            $builder->havingRaw('COALESCE(SUM(wi.quantity_available), 0) > 0');
+            $builder->where('bb.total_stock', '>', 0);
         }
         if (!empty($filters['attributes']) && is_array($filters['attributes'])) {
             foreach ($filters['attributes'] as $attrCode => $values) {
@@ -421,9 +329,10 @@ class ProductQueryService
                 $builder->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))
                         ->from('product_variant_attributes as pva')
+                        ->join('product_variants as pv_attr', 'pv_attr.id', '=', 'pva.product_variant_id')
                         ->join('attributes as a', 'a.id', '=', 'pva.attribute_id')
                         ->join('attribute_values as av', 'av.id', '=', 'pva.attribute_value_id')
-                        ->whereColumn('pva.product_variant_id', 'pv.id')
+                        ->whereColumn('pv_attr.product_id', 'bb.product_id')
                         ->where('a.code', $attrCode)
                         ->whereIn('av.value_en', $values);
                 });
@@ -436,13 +345,13 @@ class ProductQueryService
     public function applySort($builder, string $sort)
     {
         return match ($sort) {
-            'price_asc' => $builder->orderByRaw('MIN(vl.price) ASC'),
-            'price_desc' => $builder->orderByRaw('MAX(vl.price) DESC'),
-            'rating' => $builder->orderByRaw('COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0) desc'),
-            'newest' => $builder->orderBy('products.published_at', 'desc'),
-            'best_selling' => $builder->orderBy('products.total_sold', 'desc'),
-            default => $builder->orderBy('products.is_featured', 'desc')
-                ->orderByRaw('COALESCE(SUM(vl.rating_avg * vl.rating_count) / NULLIF(SUM(vl.rating_count), 0), 0) desc'),
+            'price_asc' => $builder->orderBy('bb.min_price', 'asc'),
+            'price_desc' => $builder->orderBy('bb.max_price', 'desc'),
+            'rating' => $builder->orderBy('bb.rating_avg', 'desc'),
+            'newest' => $builder->orderBy('p.published_at', 'desc'),
+            'best_selling' => $builder->orderBy('bb.total_sold', 'desc'),
+            default => $builder->orderBy('p.is_featured', 'desc')
+                ->orderBy('bb.rating_avg', 'desc'),
         };
     }
 

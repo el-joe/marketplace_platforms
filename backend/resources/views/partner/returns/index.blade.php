@@ -136,7 +136,7 @@
                         @php
                             [$statusCls, $statusLabel] = $statusMap[$ret->status->value] ?? ['bg-gray-100 text-gray-500', $ret->status->value];
                             $orderMasked = $ret->order ? '****' . substr($ret->order->order_number, -4) : '—';
-                            $customerName = trim(($ret->customer->first_name ?? '') . ' ' . (isset($ret->customer->last_name) ? strtoupper(substr($ret->customer->last_name, 0, 1)) . '.' : ''));
+                            $customerName = \App\Models\Customer::maskName($ret->customer->name ?? null);
                         @endphp
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="py-3 px-5">

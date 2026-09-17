@@ -3,6 +3,7 @@
 import { IPlaceOrderResponse } from "../types/place-order.type";
 import SuccessHeader from "./success-header";
 import RedirectAlert from "./redirect-alert";
+import BankTransferCard from "./bank-transfer-card";
 import ShipmentsList from "./shipments-list";
 import OrderSummaryCard from "./order-summary-card";
 import TrustFeatures from "./trust-features";
@@ -43,6 +44,12 @@ export default function CheckoutSuccess({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Shipment & Sub-order Details (8 cols) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
+              {order.bank_transfer_details && (
+                <BankTransferCard
+                  orderNumber={order.order_number}
+                  details={order.bank_transfer_details}
+                />
+              )}
               <ShipmentsList
                 subOrders={order.sub_orders}
                 currency={order.currency}

@@ -9,18 +9,12 @@ use App\Http\Resources\Api\Customer\OrderListItemResource;
 use App\Http\Resources\Api\Customer\OrderTrackingResource;
 use App\Http\Resources\Api\Customer\SubOrderDetailResource;
 use App\Http\Responses\ApiResponse;
+use App\Enums\CancelActor;
 use App\Models\Customer;
-use App\Models\GiftCard;
-use App\Models\GiftCardTransaction;
 use App\Models\Order;
-use App\Models\OrderStatusHistory;
-use App\Models\SubOrder;
-use App\Models\Wallet;
-use App\Models\WalletTransaction;
-use App\Models\WarehouseInventory;
+use App\Services\OrderCancellationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -114,6 +108,19 @@ class OrderController extends Controller
         return ApiResponse::success((new OrderTrackingResource($order))->toArray($request), __('customer_api.order.tracking_retrieved'));
     }
 
+    /**
+     * enhancement.md P-06: delegates to OrderCancellationService — the
+     * single cancellation engine that correctly reverses wallet, card,
+     * loyalty, coupon, stock, warranty and marketer state (the previous
+     * inline implementation here looked up the wallet refund by a
+     * wallet/source_type combination checkout never actually writes, never
+     * refunded captured card orders, and released stock on the wrong
+     * inventory row).
+     *
+     * Supports partial cancellation: pass `order_item_ids` (array of
+     * order_items.id) to cancel only those items, or `sub_order_id` to
+     * cancel one sub-order. With neither, the whole order is cancelled.
+     */
     public function cancel(Request $request, string $orderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
@@ -123,90 +130,40 @@ class OrderController extends Controller
             return ApiResponse::error(__('customer_api.order.not_found'), [], 404);
         }
 
-        if (! in_array($order->status?->value, self::CANCELLABLE_ORDER_STATUSES, true)) {
-            return ApiResponse::error(__('customer_api.order.cannot_cancel_status'), [], 422);
+        $order->loadMissing('subOrders.items');
+
+        $scope = $order;
+
+        if ($request->filled('order_item_ids')) {
+            $itemIds = (array) $request->input('order_item_ids');
+            $scope = $order->items()->whereIn('id', $itemIds)->get();
+
+            if ($scope->isEmpty()) {
+                return ApiResponse::error(__('customer_api.order.not_found'), [], 404);
+            }
+        } elseif ($request->filled('sub_order_id')) {
+            $subOrder = $order->subOrders->firstWhere('id', $request->input('sub_order_id'));
+
+            if (! $subOrder) {
+                return ApiResponse::error(__('customer_api.order.sub_order_not_found'), [], 404);
+            }
+
+            $scope = $subOrder;
+        } else {
+            if (! in_array($order->status?->value, self::CANCELLABLE_ORDER_STATUSES, true)) {
+                return ApiResponse::error(__('customer_api.order.cannot_cancel_status'), [], 422);
+            }
         }
 
-        $order = DB::transaction(function () use ($order, $customer) {
-            $previousStatus = $order->status?->value;
-
-            $order->update([
-                'status' => 'cancelled',
-                'cancelled_at' => now(),
-            ]);
-
-            $order->subOrders()->get()->each(function (SubOrder $subOrder) {
-                $subOrder->update(['status' => 'cancelled']);
-
-                foreach ($subOrder->items as $item) {
-                    if ($item->vendor_listing_id) {
-                        WarehouseInventory::where('vendor_listing_id', $item->vendor_listing_id)
-                            ->lockForUpdate()
-                            ->orderBy('id')
-                            ->first()
-                            ?->decrement('quantity_reserved', $item->quantity);
-                    }
-                }
-            });
-
-            $walletTxn = WalletTransaction::whereHas(
-                'wallet',
-                fn ($q) => $q->where('owner_type', 'customer')->where('owner_id', $customer->id)
-            )
-                ->where('source_type', 'order')
-                ->where('source_id', $order->id)
-                ->where('type', 'debit')
-                ->first();
-
-            if ($walletTxn) {
-                $wallet = Wallet::where('id', $walletTxn->wallet_id)->lockForUpdate()->first();
-                $wallet->increment('balance', $walletTxn->amount);
-                $wallet->refresh();
-
-                WalletTransaction::create([
-                    'wallet_id' => $wallet->id,
-                    'type' => 'credit',
-                    'amount' => $walletTxn->amount,
-                    'balance_after' => $wallet->getRawOriginal('balance'),
-                    'source_type' => 'order',
-                    'source_id' => $order->id,
-                    'description' => 'Refund for cancelled order '.$order->order_number,
-                    'created_at' => now(),
-                ]);
-            }
-
-            $giftCardTxn = GiftCardTransaction::where('order_id', $order->id)
-                ->where('type', 'redemption')
-                ->first();
-
-            if ($giftCardTxn) {
-                $giftCard = GiftCard::where('id', $giftCardTxn->gift_card_id)->lockForUpdate()->first();
-                $giftCard->increment('balance', $giftCardTxn->amount);
-                $giftCard->refresh();
-
-                if ($giftCard->getRawOriginal('balance') > 0 && $giftCard->status !== 'active') {
-                    $giftCard->update(['status' => 'active']);
-                }
-
-                GiftCardTransaction::create([
-                    'gift_card_id' => $giftCard->id,
-                    'order_id' => $order->id,
-                    'amount' => $giftCardTxn->amount,
-                    'balance_after' => $giftCard->getRawOriginal('balance'),
-                    'type' => 'refund',
-                    'performed_by_customer_id' => $customer->id,
-                ]);
-            }
-
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'from_status' => $previousStatus,
-                'to_status' => 'cancelled',
-                'reason' => 'Cancelled by customer',
-            ]);
-
-            return $order->fresh();
-        });
+        try {
+            $order = app(OrderCancellationService::class)->cancel(
+                $scope,
+                CancelActor::Customer,
+                $request->input('reason', 'Cancelled by customer'),
+            );
+        } catch (\DomainException $e) {
+            return ApiResponse::error(__('customer_api.order.cannot_cancel_status'), [], 422);
+        }
 
         $order->load(['subOrders.items', 'statusHistories']);
 

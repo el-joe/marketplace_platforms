@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { ChevronLeft, XIcon } from "lucide-react";
 
 interface HelpSheetHeaderProps {
@@ -19,6 +20,7 @@ export default function HelpSheetHeader({
   onClose,
   centered = false,
 }: HelpSheetHeaderProps) {
+  const t = useTranslations("helpSheet");
   return (
     <div className="flex items-start justify-between gap-2 p-6 pb-4">
       <div className={centered ? "flex-1 text-center" : undefined}>
@@ -26,7 +28,7 @@ export default function HelpSheetHeader({
           <button
             type="button"
             onClick={onBack}
-            aria-label="Back"
+            aria-label={t("back")}
             className={
               "mb-3 flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/60" +
               (centered ? " absolute" : "")
@@ -46,7 +48,7 @@ export default function HelpSheetHeader({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t("close")}
         className="flex size-8 shrink-0 cursor-pointer items-center justify-center"
       >
         <XIcon className="size-5" />

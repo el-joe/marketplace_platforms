@@ -14,20 +14,23 @@ class MonitorCampaignStockJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * enhancement.md P-14 task 4: scheduled safety-net sweep. The
+     * ListingStockChanged listener (PauseCampaignsOnLowStock) already
+     * reacts immediately to every stock mutation; this hourly sweep
+     * (routes/console.php) catches anything that listener might have
+     * missed, and now also covers admin-listing (platform) campaigns and
+     * the below-min_stock_for_campaign "pause" case, not just the
+     * zero-stock "done" case.
+     */
     public function handle(MarketerCampaignService $service): void
     {
-        MarketerCampaign::whereIn('status', ['active', 'auto_approved'])
-            ->with(['vendorListing.warehouseInventories'])
+        MarketerCampaign::whereIn('status', ['active', 'auto_approved', 'paused'])
+            ->where(function ($q) {
+                $q->whereNotNull('vendor_listing_id')->orWhereNotNull('admin_listing_id');
+            })
+            ->with(['vendorListing.warehouseInventories', 'adminListing.warehouseInventories'])
             ->get()
-            ->each(function (MarketerCampaign $campaign) use ($service) {
-                $outOfStock = false;
-                if ($campaign->vendor_listing_id && $campaign->vendorListing) {
-                    $stock = (int) $campaign->vendorListing->warehouseInventories->sum('quantity_available');
-                    $outOfStock = $stock <= 0;
-                }
-                if ($outOfStock) {
-                    $service->markCampaignDone($campaign);
-                }
-            });
+            ->each(fn (MarketerCampaign $campaign) => $service->checkStockAndUpdateStatus($campaign));
     }
 }

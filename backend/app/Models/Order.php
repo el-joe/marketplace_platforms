@@ -51,6 +51,7 @@ class Order extends Model
         'coupon_id',
         'coupon_code_used',
         'payment_method',
+        'payment_gateway_code',
         'payment_status',
         'shipping_address_snapshot',
         'billing_address_snapshot',

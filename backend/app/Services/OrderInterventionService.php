@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CancelActor;
 use App\Enums\PaymentTransactionType;
 use App\Models\Admin;
 use App\Models\Dispute;
@@ -210,43 +211,24 @@ class OrderInterventionService
             );
         }
 
-        DB::transaction(function () use ($order, $reason, $adminId) {
-            foreach ($order->subOrders as $subOrder) {
-                if (in_array($subOrder->status->value, ['cancelled', 'refunded'], true)) {
-                    continue;
-                }
-
-                $old = $subOrder->status->value;
-                $subOrder->update([
-                    'status' => 'cancelled',
-                    'cancelled_at' => now(),
-                    'cancellation_reason' => $reason,
-                ]);
-
-                OrderStatusHistory::create([
-                    'order_id' => $order->id,
-                    'sub_order_id' => $subOrder->id,
-                    'from_status' => $old,
-                    'to_status' => 'cancelled',
-                    'changed_by_admin_id' => $adminId,
-                    'reason' => '[Force Cancel] ' . $reason,
-                ]);
-
-                Notification::send($subOrder->vendor->vendorAdmins, new OrderCancelledByAdmin($subOrder, $reason));
+        // enhancement.md P-06: delegate the actual money/stock reversal to
+        // OrderCancellationService (one call per sub-order still in a
+        // non-terminal state) instead of this service's own status-only
+        // implementation, which never touched wallet/card refunds, coupon
+        // usage, loyalty points, warranty purchases or marketer
+        // conversions.
+        foreach ($order->subOrders as $subOrder) {
+            if (in_array($subOrder->status->value, ['cancelled', 'refunded'], true)) {
+                continue;
             }
 
-            $originalStatus = $order->status->value;
-            $order->update(['status' => 'cancelled', 'cancelled_at' => now()]);
-
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'sub_order_id' => null,
-                'from_status' => $originalStatus,
-                'to_status' => 'cancelled',
-                'changed_by_admin_id' => $adminId,
-                'reason' => '[Force Cancel] ' . $reason,
-            ]);
-        });
+            app(OrderCancellationService::class)->cancel(
+                $subOrder,
+                CancelActor::Admin,
+                "[Force Cancel] {$reason}",
+                $force,
+            );
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -267,24 +249,28 @@ class OrderInterventionService
         string $adminId
     ): Refund {
         return DB::transaction(function () use ($order, $items, $reason, $adminId) {
+            $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+
             foreach ($items as $item) {
                 $item->update(['fulfillment_status' => 'cancelled']);
 
-                $inventory = WarehouseInventory::where('vendor_listing_id', $item->vendor_listing_id)->first();
+                // enhancement.md P-13 task 3 / bug row "Admin intervention
+                // restock": these items were never shipped, so their stock
+                // is still held as `reserved`, not sold-out `on_hand`.
+                // Incrementing on_hand here (the old code) double-counted
+                // stock that was never decremented in the first place.
+                // Release the exact reserved allocation instead; if any
+                // allocation was already committed (shipped then force-
+                // cancelled), restock that row's on_hand.
+                $reservedAllocations = $item->allocations()->where('status', 'reserved')->get();
+                $committedAllocations = $item->allocations()->where('status', 'committed')->get();
 
-                if ($inventory) {
-                    $inventory->increment('quantity_on_hand', $item->quantity);
+                if ($reservedAllocations->isNotEmpty()) {
+                    $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] ' . $reason);
+                }
 
-                    InventoryMovement::create([
-                        'warehouse_inventory_id' => $inventory->id,
-                        'movement_type' => 'return',
-                        'quantity_delta' => $item->quantity,
-                        'quantity_after' => $inventory->fresh()->quantity_on_hand,
-                        'reference_type' => 'order',
-                        'reference_id' => $order->id,
-                        'reason' => '[Partial Cancel] ' . $reason,
-                        'created_by_user_id' => $adminId,
-                    ]);
+                foreach ($committedAllocations as $allocation) {
+                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] ' . $reason, allocation: $allocation);
                 }
             }
 

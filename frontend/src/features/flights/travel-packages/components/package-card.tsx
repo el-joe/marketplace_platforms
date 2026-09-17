@@ -31,7 +31,7 @@ export default function TravelPackageCard({ pkg }: Props) {
       <div className="relative h-52">
         <Image
           src={pkg.thumbnail}
-          alt={pkg.title_en}
+          alt={locale === "ar" ? pkg.title_ar : pkg.title_en}
           fill
           sizes="(max-width: 768px) 100vw, 400px"
           className="object-cover"

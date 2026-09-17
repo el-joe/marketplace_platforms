@@ -9,10 +9,7 @@ class ReturnRequestListResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $customer = $this->customer;
-        $first    = $customer?->first_name ?? '';
-        $last     = $customer?->last_name  ?? '';
-        $masked   = trim($first . ' ' . ($last ? strtoupper(substr($last, 0, 1)) . '.' : ''));
+        $masked = \App\Models\Customer::maskName($this->customer?->name);
 
         return [
             'return_number'       => $this->return_number,

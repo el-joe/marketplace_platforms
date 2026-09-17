@@ -2,6 +2,7 @@ import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Warranty } from "@/src/features/noon/productView/types/product-details";
 import { PlacementBanner } from "@/src/types/placement-banner";
 import { IProduct } from "@/types/product.type";
+import { ImageDTO } from "@/src/types/media";
 
 export interface ICart {
   cart: Cart;
@@ -169,6 +170,9 @@ export interface ShippingGroupItem {
   product_name_en: string;
   product_name_ar: string;
   variant_name: string;
+  image?: ImageDTO | null;
+  images?: ImageDTO[];
+  // TODO: remove legacy alias fallback once backend drops primary_image/thumbnail/variant_image aliases (see enhancement.md P-17)
   primary_image: string | null;
   listing_id: string;
   listing_type: string;

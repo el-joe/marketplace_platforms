@@ -25,6 +25,8 @@ class Refund extends Model
         'reason_notes',
         'refund_type',
         'initiated_by_customer_id',
+        'initiated_by_type',
+        'initiated_by_id',
         'approved_by_admin_id',
         'vendor_charged_back',
         'status',
