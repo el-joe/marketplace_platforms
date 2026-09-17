@@ -12,6 +12,7 @@ class UploadBankTransferProofRequest extends FormRequest
     {
         return [
             'file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'],
+            'note' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

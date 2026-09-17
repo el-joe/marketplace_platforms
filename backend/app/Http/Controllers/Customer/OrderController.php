@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Services\Customer\BankTransferProofService;
 use App\Services\Customer\OrderService;
 use App\Services\Customer\OrderTrackingService;
+use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Http\JsonResponse;
 
 class OrderController extends Controller
@@ -68,11 +69,11 @@ class OrderController extends Controller
             return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
         }
 
-        if ($order->payment_method !== 'bank_transfer') {
+        if (!$order->payment_gateway_code || !PaymentGatewayFactory::isOffline($order->payment_gateway_code)) {
             return ApiResponse::error(__('common.exceptions.order.not_bank_transfer'), [], 422);
         }
 
-        $transaction = $this->bankTransferProofService->upload($order, $request->file('file'));
+        $transaction = $this->bankTransferProofService->upload($order, $request->file('file'), $request->validated('note'));
 
         return ApiResponse::success([
             'proof_uploaded_at' => $transaction->proof_uploaded_at,

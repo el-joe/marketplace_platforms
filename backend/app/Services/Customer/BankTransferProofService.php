@@ -8,10 +8,10 @@ use Illuminate\Http\UploadedFile;
 
 class BankTransferProofService
 {
-    public function upload(Order $order, UploadedFile $file): PaymentTransaction
+    public function upload(Order $order, UploadedFile $file, ?string $note = null): PaymentTransaction
     {
         $transaction = $order->transactions()
-            ->where('gateway', 'bank_transfer')
+            ->where('gateway', $order->payment_gateway_code)
             ->latest('created_at')
             ->firstOrFail();
 
@@ -20,6 +20,7 @@ class BankTransferProofService
         $transaction->update([
             'proof_file_path' => $path,
             'proof_uploaded_at' => now(),
+            'note' => $note,
         ]);
 
         return $transaction->fresh();

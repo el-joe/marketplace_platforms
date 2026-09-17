@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Services\Checkout\CheckoutRollbackService;
+use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,7 +18,8 @@ use Illuminate\Support\Facades\Log;
  * tab, the gateway never fired, etc. — would otherwise sit 'pending'
  * forever, holding stock/coupon/wallet/loyalty reservations hostage.
  * Rolls them back via CheckoutRollbackService once they've been pending
- * longer than the threshold. COD and bank_transfer orders are exempt:
+ * longer than the threshold. COD, wallet, and any offline-type gateway
+ * (PaymentGatewayFactory::isOffline(), e.g. bank_transfer) are exempt:
  * they are expected to sit pending until delivery / admin confirmation.
  */
 class ExpirePendingPaymentsJob implements ShouldQueue
@@ -31,11 +33,15 @@ class ExpirePendingPaymentsJob implements ShouldQueue
         $cutoff = now()->subMinutes($this->thresholdMinutes);
 
         Order::where('payment_status', 'pending')
-            ->whereNotIn('payment_gateway_code', ['cod', 'bank_transfer', 'wallet'])
+            ->whereNotIn('payment_gateway_code', ['cod', 'wallet'])
             ->where('placed_at', '<', $cutoff)
             ->where('status', '!=', 'cancelled')
             ->chunkById(100, function ($orders) use ($rollbackService) {
                 foreach ($orders as $order) {
+                    if ($order->payment_gateway_code && PaymentGatewayFactory::isOffline($order->payment_gateway_code)) {
+                        continue;
+                    }
+
                     $order->update(['payment_status' => 'failed', 'status' => 'cancelled', 'cancelled_at' => now()]);
                     $rollbackService->rollback($order, 'Pending payment expired');
 
