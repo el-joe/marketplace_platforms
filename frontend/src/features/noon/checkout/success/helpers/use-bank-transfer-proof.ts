@@ -7,9 +7,11 @@ import { uploadBankTransferProofService } from "../../api/post";
 export const useBankTransferProof = (orderNumber: string) => {
   const t = useTranslations("checkoutSuccess");
   const [file, setFile] = useState<File | null>(null);
+  const [note, setNote] = useState("");
 
   const uploadProof = useMutation({
-    mutationFn: () => uploadBankTransferProofService(orderNumber, file as File),
+    mutationFn: () =>
+      uploadBankTransferProofService(orderNumber, file as File, note),
     onSuccess: () => {
       toast.success(t("proofUploaded"));
       setFile(null);
@@ -22,6 +24,8 @@ export const useBankTransferProof = (orderNumber: string) => {
   return {
     file,
     setFile,
+    note,
+    setNote,
     submitProof: () => file && uploadProof.mutate(),
     isUploading: uploadProof.isPending,
     isUploaded: uploadProof.isSuccess,

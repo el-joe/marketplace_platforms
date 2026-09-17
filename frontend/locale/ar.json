@@ -761,7 +761,16 @@
     "marketerContractAccept": "أوافق",
     "marketerContractCancel": "إلغاء",
     "marketerContractRequiredNotice": "يرجى قراءة الشروط والموافقة عليها قبل إتمام طلبك.",
-    "marketerContractDownload": "عرض ملف PDF"
+    "marketerContractDownload": "عرض ملف PDF",
+    "offlinePaymentUploadTitle": "رفع إثبات الدفع",
+    "offlinePaymentUploadDesc": "يرجى إرفاق نسخة من الفاتورة/إيصال الدفع. هذا مطلوب لإتمام الطلب بهذه الطريقة.",
+    "chooseFile": "اختر ملف",
+    "note": "ملاحظة (اختياري)",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول عملية الدفع",
+    "fileRequiredError": "يرجى إرفاق ملف إثبات الدفع للمتابعة.",
+    "placingOrder": "جاري تقديم الطلب...",
+    "uploadingProof": "جاري رفع الإثبات...",
+    "proofUploadFailedFallback": "تم تقديم طلبك، لكن تعذر رفع إثبات الدفع. يرجى رفعه من صفحة تأكيد الطلب."
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!",
@@ -818,7 +827,9 @@
     "submitProof": "إرسال الإثبات",
     "uploadingProof": "جارٍ الرفع...",
     "proofUploaded": "تم رفع الإثبات بنجاح. سنقوم بتأكيد دفعتك قريبًا.",
-    "proofUploadFailed": "فشل رفع الإثبات. يرجى المحاولة مرة أخرى."
+    "proofUploadFailed": "فشل رفع الإثبات. يرجى المحاولة مرة أخرى.",
+    "note": "ملاحظة (اختياري)",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول عملية الدفع"
   },
   "openSooq": {
     "header": {

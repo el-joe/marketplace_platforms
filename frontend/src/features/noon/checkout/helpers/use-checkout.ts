@@ -3,6 +3,7 @@ import {
   acceptMarketerContract,
   createPrepareCheckoutService,
   placeOrderService,
+  uploadBankTransferProofService,
 } from "../api/post";
 import { useEffect, useMemo, useState } from "react";
 import { getAddresses } from "@/src/services/address";
@@ -31,6 +32,11 @@ export const useCheckout = () => {
     string | null
   >(null);
 
+  const [offlineProofFile, setOfflineProofFile] = useState<File | null>(null);
+  const [offlineProofNote, setOfflineProofNote] = useState("");
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [proofUploadFailed, setProofUploadFailed] = useState(false);
+
   const gateways = useQuery({
     queryKey: ["payment-gateways"],
     queryFn: getPaymentGateways,
@@ -44,13 +50,15 @@ export const useCheckout = () => {
     () => addresses.data?.find((a) => a.is_default) ?? addresses.data?.[0],
     [addresses.data],
   );
-  const selectedGatewayId = useMemo(
+  const selectedGateway = useMemo(
     () =>
       checkoutData?.available_payment_gateways.find(
         (g) => g.gateway_code === checkoutData?.gateway_code,
-      )?.id,
+      ),
     [checkoutData?.available_payment_gateways, checkoutData?.gateway_code],
   );
+  const selectedGatewayId = selectedGateway?.id;
+  const isOfflinePaymentMethod = selectedGateway?.type === "offline";
 
   const contractGate = checkoutData?.marketer_contract_gate;
   const contractRequired = !!contractGate?.is_required && !contractAcceptanceId;
@@ -83,7 +91,7 @@ export const useCheckout = () => {
   const placeOrder = useMutation({
     mutationFn: placeOrderService,
     onMutate: () => toast.dismiss(),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const order = data?.data;
       const orderNumber = order?.order_number;
       if (typeof window !== "undefined" && order) {
@@ -103,6 +111,26 @@ export const useCheckout = () => {
           console.error("Failed to clear warranty selections:", e);
         }
       }
+
+      if (isOfflinePaymentMethod && offlineProofFile && orderNumber) {
+        setIsUploadingProof(true);
+        try {
+          await uploadBankTransferProofService(
+            orderNumber,
+            offlineProofFile,
+            offlineProofNote,
+          );
+        } catch (e) {
+          // Non-fatal: order is already placed. Let the customer retry from
+          // the success page (bank-transfer-card.tsx fallback).
+          console.error("Failed to upload payment proof:", e);
+          setProofUploadFailed(true);
+          toast.error(t("proofUploadFailedFallback"));
+        } finally {
+          setIsUploadingProof(false);
+        }
+      }
+
       if (order?.requires_redirect && order?.payment_redirect_url) {
         window.location.href = order.payment_redirect_url;
         return;
@@ -137,6 +165,13 @@ export const useCheckout = () => {
       setIsContractModalOpen(true);
       return;
     }
+
+    if (isOfflinePaymentMethod && !offlineProofFile) {
+      toast.error(t("fileRequiredError"));
+      return;
+    }
+
+    setProofUploadFailed(false);
 
     const warrantySelections: {
       listing_id: string;
@@ -204,8 +239,17 @@ export const useCheckout = () => {
     selectedGatewayId,
 
     createOrder,
-    isCreatingOrder: placeOrder.isPending,
+    isCreatingOrder: placeOrder.isPending || isUploadingProof,
     createOrderError: placeOrder.error,
+    isPlacingOrder: placeOrder.isPending,
+    isUploadingProof,
+    proofUploadFailed,
+
+    isOfflinePaymentMethod,
+    offlineProofFile,
+    setOfflineProofFile,
+    offlineProofNote,
+    setOfflineProofNote,
 
     selectedInstruction,
     setSelectedInstruction,

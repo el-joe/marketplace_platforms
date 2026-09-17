@@ -4,6 +4,7 @@ import AddressCard from "@/src/features/noon/checkout/address-card";
 import DeliveryInstructionsCard from "@/src/features/noon/checkout/delivery-instructions-card";
 import ItemsList from "@/src/features/noon/checkout/items-list";
 import PaymentMethodsCard from "@/src/features/noon/checkout/payment-methods-card";
+import OfflinePaymentProofCard from "@/src/features/noon/checkout/offline-payment-proof-card";
 import PaymentSummary from "@/src/features/noon/checkout/payment-summary";
 import OrderReceiverCard from "@/src/features/noon/checkout/order-receiver-card";
 import LocationDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
@@ -33,6 +34,13 @@ export default function Checkout() {
     closeContractModal,
     acceptContract,
     isAcceptingContract,
+    isOfflinePaymentMethod,
+    offlineProofFile,
+    setOfflineProofFile,
+    offlineProofNote,
+    setOfflineProofNote,
+    isPlacingOrder,
+    isUploadingProof,
   } = useCheckout();
   if (
     (isPreparingCheckout && !checkoutData) ||
@@ -97,6 +105,14 @@ export default function Checkout() {
                 total={checkoutData?.order_summary?.total ?? 0}
                 walletBalance={checkoutData?.wallet_balance ?? 0}
               />
+              {isOfflinePaymentMethod && (
+                <OfflinePaymentProofCard
+                  file={offlineProofFile}
+                  setFile={setOfflineProofFile}
+                  note={offlineProofNote}
+                  setNote={setOfflineProofNote}
+                />
+              )}
             </div>
             {/* right col */}
             <div className="flex flex-col gap-8 flex-1 md:flex-[.5] sticky top-28">
@@ -119,11 +135,18 @@ export default function Checkout() {
                 className={
                   "bg-blue text-white h-15 w-full rounded-[16px] text-xl"
                 }
-                disabled={isCreatingOrder}
+                disabled={
+                  isCreatingOrder ||
+                  (isOfflinePaymentMethod && !offlineProofFile)
+                }
                 onClick={createOrder}
               >
                 {isCreatingOrder && <Spinner />}
-                {t("placeOrder")}
+                {isPlacingOrder
+                  ? t("placingOrder")
+                  : isUploadingProof
+                    ? t("uploadingProof")
+                    : t("placeOrder")}
               </Button>
             </div>
           </div>

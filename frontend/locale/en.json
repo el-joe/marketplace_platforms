@@ -761,7 +761,16 @@
     "marketerContractAccept": "I agree",
     "marketerContractCancel": "Cancel",
     "marketerContractRequiredNotice": "Please read and accept the terms before placing your order.",
-    "marketerContractDownload": "View PDF"
+    "marketerContractDownload": "View PDF",
+    "offlinePaymentUploadTitle": "Upload payment proof",
+    "offlinePaymentUploadDesc": "Please attach a copy of your invoice/payment receipt. This is required to place your order with this payment method.",
+    "chooseFile": "Choose file",
+    "note": "Note (optional)",
+    "notePlaceholder": "Add any additional details about your payment",
+    "fileRequiredError": "Please attach a payment proof file to continue.",
+    "placingOrder": "Placing order...",
+    "uploadingProof": "Uploading proof...",
+    "proofUploadFailedFallback": "Your order was placed, but we couldn't upload your payment proof. Please upload it from the order confirmation page."
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "Order Placed Successfully!",
@@ -818,7 +827,9 @@
     "submitProof": "Submit Proof",
     "uploadingProof": "Uploading...",
     "proofUploaded": "Proof uploaded successfully. We'll confirm your payment shortly.",
-    "proofUploadFailed": "Failed to upload proof. Please try again."
+    "proofUploadFailed": "Failed to upload proof. Please try again.",
+    "note": "Note (optional)",
+    "notePlaceholder": "Add any additional details about your payment"
   },
   "openSooq": {
     "header": {
