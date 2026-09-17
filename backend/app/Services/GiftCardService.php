@@ -4,10 +4,10 @@ namespace App\Services;
 
 use App\Models\Admin;
 use App\Models\Customer;
-use App\Models\CustomerWallet;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardTransaction;
+use App\Models\Wallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -123,9 +123,9 @@ class GiftCardService
 
             $amountToCredit = $card->remaining_balance;
 
-            $wallet = CustomerWallet::lockForUpdate()->firstOrCreate(
-                ['customer_id' => $customer->id, 'currency_code' => $card->currency_code],
-                ['balance' => 0]
+            $wallet = Wallet::lockForUpdate()->firstOrCreate(
+                ['owner_type' => 'customer', 'owner_id' => $customer->id, 'currency' => $card->currency_code],
+                ['balance' => 0, 'pending_balance' => 0]
             );
 
             $newBalance = $wallet->balance + $amountToCredit;
@@ -149,7 +149,7 @@ class GiftCardService
 
             DB::table('wallet_transactions')->insert([
                 'id' => (string) Str::uuid(),
-                'wallet_id' => null,
+                'wallet_id' => $wallet->id,
                 'customer_id' => $customer->id,
                 'type' => 'gift_card_redemption',
                 'direction' => 'credit',
