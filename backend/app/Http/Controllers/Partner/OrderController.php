@@ -353,40 +353,29 @@ class OrderController extends Controller
                     Notification::send($supervisors, new NewUnassignedShipmentArrived($shipment));
                 }
 
-                // 3. Inventory movements + decrement
+                // enhancement.md P-13 task 3: this was a second,
+                // unlocked, clamp-with-max(0) implementation of the same
+                // ship-time inventory decrement as
+                // OrderFulfillmentService::decrementInventory(). Deleted
+                // in favour of the one InventoryService path, committing
+                // the exact order_item_allocations rows this item was
+                // reserved from.
+                $inventoryService = app(\App\Services\Inventory\InventoryService::class);
                 foreach ($subOrder->items as $item) {
-                    $vendorListing = VendorListing::where('product_variant_id', $item->product_variant_id)
-                        ->where('vendor_id', $vendorId)
-                        ->first();
+                    $allocations = $item->allocations()->where('status', 'reserved')->get();
 
-                    if (!$vendorListing)
+                    if ($allocations->isEmpty()) {
                         continue;
+                    }
 
-                    $inventory = WarehouseInventory::where('vendor_listing_id', $vendorListing->id)
-                        ->where('warehouse_id', $subOrder->warehouse_id)
-                        ->first();
-
-                    if (!$inventory)
-                        continue;
-
-                    $newOnHand = max(0, $inventory->quantity_on_hand - $item->quantity);
-                    $newReserved = max(0, $inventory->quantity_reserved - $item->quantity);
-
-                    $inventory->update([
-                        'quantity_on_hand' => $newOnHand,
-                        'quantity_reserved' => $newReserved,
-                    ]);
-
-                    InventoryMovement::create([
-                        'warehouse_inventory_id' => $inventory->id,
-                        'movement_type' => InventoryMovementType::Outbound->value,
-                        'quantity_delta' => -$item->quantity,
-                        'quantity_after' => $newOnHand,
-                        'reference_type' => InventoryMovementReferenceType::Order->value,
-                        'reference_id' => $subOrder->id,
-                        'reason' => 'order_shipped',
-                        'created_by_user_id' => Auth::guard('vendor')->user()->id,
-                    ]);
+                    $inventoryService->commit(
+                        $allocations,
+                        'sub_order',
+                        $subOrder->id,
+                        actorType: 'vendor',
+                        actorId: Auth::guard('vendor')->user()->id,
+                        reason: 'order_shipped',
+                    );
                 }
 
                 // 4. Status history is now written by OrderStateMachine::transition()

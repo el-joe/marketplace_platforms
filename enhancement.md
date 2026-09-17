@@ -568,7 +568,7 @@ cart (add/update/remove, warranty selection, coupon, wallet toggle)
 
 # PHASE C — INVENTORY (request item 2)
 
-## P-13 🔴 Listing quantities: one inventory service for every increment and decrement
+## P-13 🔴 Listing quantities: one inventory service for every increment and decrement --DONE
 
 **Problem — there are at least 7 independent stock-mutation paths, and they disagree:**
 

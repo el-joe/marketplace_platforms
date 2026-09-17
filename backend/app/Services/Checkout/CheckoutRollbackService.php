@@ -42,43 +42,25 @@ class CheckoutRollbackService
 
     public function releaseReservedInventory(Order $order, string $reason = 'Checkout rollback'): void
     {
-        $order->loadMissing('subOrders.items');
+        $order->loadMissing('subOrders.items.allocations');
 
         DB::transaction(function () use ($order, $reason) {
+            $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+
             foreach ($order->subOrders as $subOrder) {
                 foreach ($subOrder->items as $item) {
-                    $query = $item->vendor_listing_id
-                        ? WarehouseInventory::where('vendor_listing_id', $item->vendor_listing_id)
-                        : ($item->admin_listing_id
-                            ? WarehouseInventory::where('admin_listing_id', $item->admin_listing_id)
-                            : null);
+                    // enhancement.md P-13: release the EXACT row(s) this
+                    // item was reserved from (order_item_allocations),
+                    // rather than re-deriving a row from listing +
+                    // sub_order.warehouse_id — the previous approach broke
+                    // for a listing split across more than one warehouse.
+                    $openAllocations = $item->allocations->where('status', 'reserved');
 
-                    if (! $query) {
+                    if ($openAllocations->isEmpty()) {
                         continue;
                     }
 
-                    $inventory = $query->where('warehouse_id', $subOrder->warehouse_id)
-                        ->lockForUpdate()
-                        ->first();
-
-                    if (! $inventory || $inventory->quantity_reserved <= 0) {
-                        continue;
-                    }
-
-                    $decrementBy = min($item->quantity, $inventory->quantity_reserved);
-                    $inventory->decrement('quantity_reserved', $decrementBy);
-                    $inventory->refresh();
-
-                    InventoryMovement::create([
-                        'warehouse_inventory_id' => $inventory->id,
-                        'movement_type' => InventoryMovementType::Release->value,
-                        'quantity_delta' => -$decrementBy,
-                        'quantity_after' => $inventory->quantity_on_hand,
-                        'reference_type' => 'order',
-                        'reference_id' => $order->id,
-                        'reason' => $reason,
-                        'created_by_user_id' => $order->customer_id,
-                    ]);
+                    $inventoryService->release($openAllocations, 'order', $order->id, actorType: 'customer', actorId: $order->customer_id, reason: $reason);
                 }
             }
         });

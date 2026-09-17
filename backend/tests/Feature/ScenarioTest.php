@@ -439,6 +439,34 @@ class ScenarioTest extends TestCase
 
     public function test_p13_listing_quantities_single_inventory_service(): void
     {
-        $this->markTestSkipped('P-13: one inventory service for every stock increment/decrement.');
+        // enhancement.md P-13: full lifecycle coverage (checkout reserve,
+        // multi-warehouse split, payment-failed release, customer cancel,
+        // vendor ship commit, concurrency, inventory:reconcile) lives in
+        // tests/Feature/InventoryServiceTest.php. This placeholder proves
+        // the wiring MarketplaceScenario provides is enough to exercise
+        // the new InventoryService end to end: reserve against a real
+        // scenario listing, and see the exact row/allocation reflect it.
+        $scenario = MarketplaceScenario::make()->build();
+
+        $this->assertStock($scenario->vendorListingFbp, 50, 0);
+
+        $allocations = app(\App\Services\Inventory\InventoryService::class)->reserve(
+            $scenario->vendorListingFbp,
+            5,
+            'order',
+            (string) \Illuminate\Support\Str::uuid(),
+            actorType: 'customer',
+            actorId: $scenario->customer->id,
+        );
+
+        $this->assertCount(1, $allocations);
+        $this->assertSame(5, $allocations[0]['quantity']);
+        $this->assertStock($scenario->vendorListingFbp, 50, 5);
+
+        $movement = \App\Models\InventoryMovement::where('warehouse_inventory_id', $allocations[0]['warehouse_inventory_id'])
+            ->where('movement_type', 'reservation')
+            ->first();
+        $this->assertNotNull($movement);
+        $this->assertSame(5, $movement->quantity_delta);
     }
 }

@@ -125,4 +125,13 @@ class OrderItem extends Model
         return $this->hasMany(OrderItemCustomAttributeValue::class);
     }
 
+    /**
+     * enhancement.md P-13: the exact warehouse_inventory row(s) this
+     * item's stock was reserved from.
+     */
+    public function allocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderItemAllocation::class);
+    }
+
 }

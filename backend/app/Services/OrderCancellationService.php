@@ -219,64 +219,36 @@ class OrderCancellationService
         }
     }
 
+    /**
+     * enhancement.md P-13: consolidated onto InventoryService, operating
+     * on the exact order_item_allocations rows (never "first row of the
+     * listing" / "the sub-order's warehouse_id" — the sub-order's items
+     * can now be reserved across more than one warehouse row).
+     */
     private function releaseStock(Order $order, Collection $items, string $reason): void
     {
-        $itemsBySubOrder = $items->groupBy('sub_order_id');
+        $items->loadMissing('allocations');
+        $inventoryService = app(\App\Services\Inventory\InventoryService::class);
 
-        foreach ($itemsBySubOrder as $subOrderId => $subOrderItems) {
-            $subOrder = $order->subOrders->firstWhere('id', $subOrderId);
-            if (! $subOrder || ! $subOrder->warehouse_id) {
-                continue;
+        foreach ($items as $item) {
+            $subOrder = $order->subOrders->firstWhere('id', $item->sub_order_id);
+            $status = $subOrder?->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder?->status;
+            // Cancellation is blocked past 'packed' for non-force actors,
+            // but a force-cancel after shipment must restock on_hand, not
+            // just release the reservation.
+            $wasShipped = in_array($status, ['shipped', 'out_for_delivery', 'delivered'], true);
+
+            $reservedAllocations = $item->allocations->where('status', 'reserved');
+            $committedAllocations = $item->allocations->where('status', 'committed');
+
+            if ($reservedAllocations->isNotEmpty()) {
+                $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'customer', actorId: $order->customer_id, reason: $reason);
             }
 
-            foreach ($subOrderItems as $item) {
-                $query = $item->vendor_listing_id
-                    ? WarehouseInventory::where('vendor_listing_id', $item->vendor_listing_id)
-                    : ($item->admin_listing_id
-                        ? WarehouseInventory::where('admin_listing_id', $item->admin_listing_id)
-                        : null);
-
-                if (! $query) {
-                    continue;
+            if ($wasShipped && $committedAllocations->isNotEmpty()) {
+                foreach ($committedAllocations as $allocation) {
+                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'customer', actorId: $order->customer_id, reason: $reason, allocation: $allocation);
                 }
-
-                // Exact reserved/committed row: the sub-order's own warehouse,
-                // never "first row of the listing" (enhancement.md P-06 bug).
-                $inventory = $query->where('warehouse_id', $subOrder->warehouse_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if (! $inventory) {
-                    continue;
-                }
-
-                $releaseQty = min((int) $item->quantity, (int) $inventory->quantity_reserved);
-                if ($releaseQty > 0) {
-                    $inventory->decrement('quantity_reserved', $releaseQty);
-                }
-
-                // If the sub-order had already shipped-equivalent on_hand
-                // decrement (shouldn't happen — cancellation is blocked past
-                // 'packed' for non-force actors), restock on_hand too so a
-                // force-cancelled-after-shipped scope doesn't lose stock.
-                $status = $subOrder->status instanceof \BackedEnum ? $subOrder->status->value : $subOrder->status;
-                $restockOnHand = in_array($status, ['shipped', 'out_for_delivery', 'delivered'], true);
-                if ($restockOnHand) {
-                    $inventory->increment('quantity_on_hand', (int) $item->quantity);
-                }
-
-                $inventory->refresh();
-
-                InventoryMovement::create([
-                    'warehouse_inventory_id' => $inventory->id,
-                    'movement_type' => InventoryMovementType::Release->value,
-                    'quantity_delta' => -$releaseQty,
-                    'quantity_after' => $inventory->quantity_on_hand,
-                    'reference_type' => 'order',
-                    'reference_id' => $order->id,
-                    'reason' => $reason,
-                    'created_by_user_id' => $order->customer_id,
-                ]);
             }
         }
     }

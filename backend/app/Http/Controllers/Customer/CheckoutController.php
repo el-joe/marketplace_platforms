@@ -91,6 +91,7 @@ class CheckoutController extends Controller
         private readonly CouponUsageService $couponUsageService,
         private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
         private readonly CheckoutRollbackService $rollbackService = new CheckoutRollbackService(),
+        private readonly \App\Services\Inventory\InventoryService $inventoryService = new \App\Services\Inventory\InventoryService(),
     ) {}
 
     /**
@@ -1043,36 +1044,28 @@ class CheckoutController extends Controller
                         $commission['platform_commission_after_discount'] = $lineSplit['platform_commission_after_discount'] ?? 0;
                         $itemCommissions[$cartItem->id] = $commission;
 
-                        $inventoryQuery = $fulfilmentListing instanceof \App\Models\AdminListing
-                            ? WarehouseInventory::where('admin_listing_id', $fulfilmentListing->id)
-                            : WarehouseInventory::where('vendor_listing_id', $fulfilmentListing->id);
+                        // enhancement.md P-13 task 1/3: reserve through the
+                        // single InventoryService instead of locking only
+                        // the listing's first warehouse row. reserve()
+                        // locks every candidate row for this listing, picks
+                        // by most-available-first, and splits across rows
+                        // when one row cannot cover the whole quantity —
+                        // works for vendor AND admin listings.
+                        $allocations = $this->inventoryService->reserve(
+                            $fulfilmentListing,
+                            (int) $cartItem->quantity,
+                            'order',
+                            $order->id,
+                            actorType: 'customer',
+                            actorId: $customer->id,
+                            reason: 'Checkout reservation',
+                        );
 
-                        $inventory = $inventoryQuery->lockForUpdate()->orderBy('id')->first();
-
-                        if (! $inventory || $inventory->quantity_available < $cartItem->quantity) {
-                            throw new \DomainException(
-                                __('common.exceptions.checkout.insufficient_stock')
-                            );
-                        }
-
-                        $inventory->increment('quantity_reserved', $cartItem->quantity);
-                        $inventory->refresh();
-
-                        InventoryMovement::create([
-                            'warehouse_inventory_id' => $inventory->id,
-                            'movement_type' => 'reservation',
-                            'quantity_delta' => $cartItem->quantity,
-                            'quantity_after' => $inventory->quantity_on_hand,
-                            'reference_type' => 'order',
-                            'reference_id' => $order->id,
-                            'reason' => 'Checkout reservation',
-                            'created_by_user_id' => $customer->id,
-                        ]);
-
-                        $reservedInventories[$cartItem->id] = $inventory;
+                        $reservedInventories[$cartItem->id] = $allocations;
                     }
 
-                    $warehouseId = $reservedInventories[$items->first()->id]->warehouse_id;
+                    $firstAllocation = $reservedInventories[$items->first()->id][0];
+                    $warehouseId = WarehouseInventory::where('id', $firstAllocation['warehouse_inventory_id'])->value('warehouse_id');
 
                     // Gateway fee rate, stored for audit/recalculation
                     // transparency (unchanged meaning) — the actual fee
@@ -1183,6 +1176,19 @@ class CheckoutController extends Controller
                             'fulfillment_status' => 'pending',
                             'return_eligible_until' => null,
                         ]);
+
+                        // enhancement.md P-13 task 2: persist exactly which
+                        // warehouse_inventory row(s) were reserved for this
+                        // order_item, so release/commit/return never have
+                        // to re-derive the row from listing + warehouse_id.
+                        foreach ($reservedInventories[$cartItem->id] as $allocation) {
+                            \App\Models\OrderItemAllocation::create([
+                                'order_item_id' => $orderItem->id,
+                                'warehouse_inventory_id' => $allocation['warehouse_inventory_id'],
+                                'quantity' => $allocation['quantity'],
+                                'status' => 'reserved',
+                            ]);
+                        }
 
                         // Snapshot any customer-entered custom attribute values from the
                         // cart item onto the order item. Snapshotting label/unit here
@@ -1693,43 +1699,13 @@ class CheckoutController extends Controller
     {
         $listing = $source->fulfilmentListing;
 
-        return $listing instanceof \App\Models\AdminListing
-            ? WarehouseInventory::where('admin_listing_id', $listing->id)->orderBy('id')->value('warehouse_id')
-            : WarehouseInventory::where('vendor_listing_id', $listing->id)->orderBy('id')->value('warehouse_id');
-    }
+        $column = $listing instanceof \App\Models\AdminListing ? 'admin_listing_id' : 'vendor_listing_id';
 
-    private function releaseReservedInventory(Order $order): void
-    {
-        $order->loadMissing('subOrders.items');
-
-        DB::transaction(function () use ($order) {
-            foreach ($order->subOrders as $subOrder) {
-                foreach ($subOrder->items as $item) {
-                    $inventory = WarehouseInventory::where('vendor_listing_id', $item->vendor_listing_id)
-                        ->where('warehouse_id', $subOrder->warehouse_id)
-                        ->lockForUpdate()
-                        ->first();
-
-                    if (! $inventory) {
-                        continue;
-                    }
-
-                    $inventory->decrement('quantity_reserved', $item->quantity);
-                    $inventory->refresh();
-
-                    InventoryMovement::create([
-                        'warehouse_inventory_id' => $inventory->id,
-                        'movement_type' => InventoryMovementType::Release->value,
-                        'quantity_delta' => -$item->quantity,
-                        'quantity_after' => $inventory->quantity_on_hand,
-                        'reference_type' => 'order',
-                        'reference_id' => $order->id,
-                        'reason' => 'Payment failed',
-                        'created_by_user_id' => $order->customer_id,
-                    ]);
-                }
-            }
-        });
+        // Mirrors InventoryService::reserve()'s most-available-first
+        // selection (enhancement.md P-13), not "first row by id".
+        return WarehouseInventory::where($column, $listing->id)
+            ->orderByRaw('(quantity_on_hand - quantity_reserved) DESC')
+            ->value('warehouse_id');
     }
 
     private function generateOrderNumber(): string

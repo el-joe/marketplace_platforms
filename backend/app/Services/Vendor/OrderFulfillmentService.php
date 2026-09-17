@@ -75,76 +75,33 @@ class OrderFulfillmentService
         return $subOrder->fresh();
     }
 
+    /**
+     * enhancement.md P-13 task 1/3: commit through InventoryService using
+     * the exact order_item_allocations rows this item was reserved from
+     * (never re-derived by vendor_id + product_variant_id, which breaks
+     * when a vendor lists the same variant in more than one listing/
+     * country) — on_hand and reserved now drop together, so reserved
+     * stock can never leak.
+     */
     private function decrementInventory(SubOrder $subOrder): void
     {
+        $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+
         foreach ($subOrder->items as $item) {
-            $listing = VendorListing::where('vendor_id', $subOrder->vendor_id)
-                ->where('product_variant_id', $item->product_variant_id)
-                ->first();
+            $allocations = $item->allocations()->where('status', 'reserved')->get();
 
-            if (! $listing) {
+            if ($allocations->isEmpty()) {
                 continue;
             }
 
-            $inventory = WarehouseInventory::where('vendor_listing_id', $listing->id)
-                ->where('warehouse_id', $subOrder->warehouse_id)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $inventory) {
-                continue;
-            }
-
-            $before = $inventory->quantity_on_hand;
-            $inventory->decrement('quantity_on_hand', $item->quantity);
-
-            InventoryMovement::create([
-                'warehouse_inventory_id' => $inventory->id,
-                'movement_type'          => 'outbound',
-                'quantity_delta'         => -$item->quantity,
-                'quantity_after'         => $before - $item->quantity,
-                'reference_type'         => 'order',
-                'reference_id'           => $subOrder->id,
-                'reason'                 => "Shipped — sub_order {$subOrder->sub_order_number}",
-                'created_by_user_id'     => null, // vendor-initiated; no users.id mapping
-            ]);
-        }
-    }
-
-    private function releaseInventory(SubOrder $subOrder): void
-    {
-        foreach ($subOrder->items as $item) {
-            $listing = VendorListing::where('vendor_id', $subOrder->vendor_id)
-                ->where('product_variant_id', $item->product_variant_id)
-                ->first();
-
-            if (! $listing) {
-                continue;
-            }
-
-            $inventory = WarehouseInventory::where('vendor_listing_id', $listing->id)
-                ->where('warehouse_id', $subOrder->warehouse_id)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $inventory) {
-                continue;
-            }
-
-            $before = $inventory->quantity_on_hand;
-            // Restore reservation that was held when order was placed
-            $inventory->decrement('quantity_reserved', $item->quantity);
-
-            InventoryMovement::create([
-                'warehouse_inventory_id' => $inventory->id,
-                'movement_type'          => 'release',
-                'quantity_delta'         => $item->quantity,
-                'quantity_after'         => $before,
-                'reference_type'         => 'order',
-                'reference_id'           => $subOrder->id,
-                'reason'                 => "Cancelled — sub_order {$subOrder->sub_order_number}",
-                'created_by_user_id'     => null,
-            ]);
+            $inventoryService->commit(
+                $allocations,
+                'sub_order',
+                $subOrder->id,
+                actorType: 'vendor',
+                actorId: $subOrder->vendor_id,
+                reason: "Shipped — sub_order {$subOrder->sub_order_number}",
+            );
         }
     }
 }

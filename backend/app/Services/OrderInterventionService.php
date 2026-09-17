@@ -249,24 +249,28 @@ class OrderInterventionService
         string $adminId
     ): Refund {
         return DB::transaction(function () use ($order, $items, $reason, $adminId) {
+            $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+
             foreach ($items as $item) {
                 $item->update(['fulfillment_status' => 'cancelled']);
 
-                $inventory = WarehouseInventory::where('vendor_listing_id', $item->vendor_listing_id)->first();
+                // enhancement.md P-13 task 3 / bug row "Admin intervention
+                // restock": these items were never shipped, so their stock
+                // is still held as `reserved`, not sold-out `on_hand`.
+                // Incrementing on_hand here (the old code) double-counted
+                // stock that was never decremented in the first place.
+                // Release the exact reserved allocation instead; if any
+                // allocation was already committed (shipped then force-
+                // cancelled), restock that row's on_hand.
+                $reservedAllocations = $item->allocations()->where('status', 'reserved')->get();
+                $committedAllocations = $item->allocations()->where('status', 'committed')->get();
 
-                if ($inventory) {
-                    $inventory->increment('quantity_on_hand', $item->quantity);
+                if ($reservedAllocations->isNotEmpty()) {
+                    $inventoryService->release($reservedAllocations, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] ' . $reason);
+                }
 
-                    InventoryMovement::create([
-                        'warehouse_inventory_id' => $inventory->id,
-                        'movement_type' => 'return',
-                        'quantity_delta' => $item->quantity,
-                        'quantity_after' => $inventory->fresh()->quantity_on_hand,
-                        'reference_type' => 'order',
-                        'reference_id' => $order->id,
-                        'reason' => '[Partial Cancel] ' . $reason,
-                        'created_by_user_id' => $adminId,
-                    ]);
+                foreach ($committedAllocations as $allocation) {
+                    $inventoryService->restock($allocation->warehouse_inventory_id, (int) $allocation->quantity, 'order', $order->id, actorType: 'admin', actorId: $adminId, reason: '[Partial Cancel] ' . $reason, allocation: $allocation);
                 }
             }
 

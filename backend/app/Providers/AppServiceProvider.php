@@ -150,6 +150,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
         Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
         Event::listen(SubOrderDelivered::class, CaptureCodOnDelivery::class);
+        // enhancement.md P-13 task 4: keep listing.status in sync with
+        // stock (active <-> out_of_stock) after any InventoryService
+        // mutation.
+        Event::listen(\App\Events\ListingStockChanged::class, \App\Listeners\SyncListingStockStatus::class);
         // enhancement.md P-09 task 2: warranty activation on delivery is
         // implemented in SubOrderObserver::updating() (fires on the same
         // status write that produces SubOrderDelivered, before this event's
