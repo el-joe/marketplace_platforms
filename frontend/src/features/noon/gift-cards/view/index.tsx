@@ -3,16 +3,20 @@ import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import GiftCardForm from "./components/gift-card-form";
-import type { GiftCardCategory } from "../data";
+import { getAvailableGiftCards } from "../api/gift-cards.actions";
+import type { GiftCardBatch } from "../helpers/types";
 
 type Props = {
-  category: GiftCardCategory;
+  batch: GiftCardBatch;
 };
 
-export default async function GiftCardView({ category }: Props) {
-  const t = await getTranslations("giftCards");
-  const locale = await getLocale();
-  const categoryLabel = t(category.labelKey);
+export default async function GiftCardView({ batch }: Props) {
+  const [t, locale, availableBatches] = await Promise.all([
+    getTranslations("giftCards"),
+    getLocale(),
+    getAvailableGiftCards(batch.currency_code),
+  ]);
+  const categoryLabel = locale === "ar" ? batch.title_ar : batch.title_en;
 
   const breadCrumbList = [
     { label: t("home"), href: "/" },
@@ -38,7 +42,7 @@ export default async function GiftCardView({ category }: Props) {
 
       <div className="border-t border-border" />
 
-      <GiftCardForm category={category} />
+      <GiftCardForm batch={batch} availableBatches={availableBatches} />
     </div>
   );
 }

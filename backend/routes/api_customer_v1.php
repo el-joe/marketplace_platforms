@@ -280,6 +280,10 @@ use Illuminate\Support\Facades\Route;
                 Route::get('my-purchases', [CustomerGiftCardStoreController::class, 'myPurchases'])->name('my-purchases');
                 Route::post('resend/{purchase}', [CustomerGiftCardStoreController::class, 'resend'])->name('resend');
             });
+
+            // Single batch lookup for the storefront detail/purchase page (public, no auth required).
+            // Registered last so it doesn't shadow the static routes above.
+            Route::get('{batchId}', [CustomerGiftCardStoreController::class, 'show'])->name('show');
         });
 
         // ── Marketer Contracts (view + accept before checkout) ──

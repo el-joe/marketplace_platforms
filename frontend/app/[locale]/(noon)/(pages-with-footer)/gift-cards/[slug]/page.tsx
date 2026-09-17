@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getGiftCardCategory } from "@/src/features/noon/gift-cards/data";
+import { getGiftCardBatch } from "@/src/features/noon/gift-cards/api/gift-cards.actions";
 import GiftCardView from "@/src/features/noon/gift-cards/view";
 
 type Props = {
@@ -8,11 +8,13 @@ type Props = {
 
 export default async function GiftCardViewPage({ params }: Props) {
   const { slug } = await params;
-  const category = getGiftCardCategory(slug);
+  // `slug` is the gift-card batch id (see gift-card-offer-card.tsx's
+  // `/gift-cards/${giftCard.id}` link).
+  const batch = await getGiftCardBatch(slug, "AED");
 
-  if (!category) {
+  if (!batch) {
     notFound();
   }
 
-  return <GiftCardView category={category} />;
+  return <GiftCardView batch={batch} />;
 }
