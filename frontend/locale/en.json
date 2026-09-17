@@ -716,6 +716,7 @@
     "deleting": "Deleting",
     "areYouSureYouWantToDeleteThisWishlist": "Are you sure you want to delete this wishlist",
     "deleteWishlist": "Delete wishlist",
+    "addedToWishlist": "added to \"{name}\" wishlist",
     "addToCart": "Add to cart",
     "moveToAnotherWishlist": "Move to another wishlist",
     "moveToWishlist": "Move to wishlist",
@@ -1207,7 +1208,21 @@
   },
   "sellerReviewsList": {
     "report": "Report",
-    "viewAllReviews": "View All Reviews"
+    "viewAllReviews": "View All Reviews",
+    "ratingsAndReviewsSummary": "There are {ratings} ratings and {reviews} reviews for this seller",
+    "showOriginalReviews": "Show original reviews",
+    "translateAllReviews": "Translate all reviews",
+    "verifiedPurchase": "Verified Purchase"
+  },
+  "dialog": {
+    "close": "Close"
+  },
+  "common": {
+    "loading": "Loading"
+  },
+  "pageBuilder": {
+    "announcement": "Announcement",
+    "logo": "Logo"
   },
   "helpSheet": {
     "back": "Back",

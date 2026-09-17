@@ -28,7 +28,7 @@ const SectionTitle = ({ title, showVewAllButton, viewAllUrl }: Props) => {
       </h2>
       {showVewAllButton && viewAllUrl && (
         <Link href={viewAllUrl}>
-          <Button variant={"outline"}>View All</Button>
+          <Button variant={"outline"}>{t("viewAll")}</Button>
         </Link>
       )}
     </div>

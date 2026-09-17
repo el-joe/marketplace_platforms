@@ -44,7 +44,9 @@ class RecalculateBestSellerRankingsJob implements ShouldQueue
             $this->recalculateForCountry($country, $categories);
         }
 
-        Cache::tags('bestseller')->flush();
+        if (Cache::supportsTags()) {
+            Cache::tags('bestseller')->flush();
+        }
 
         Log::info('RecalculateBestSellerRankingsJob: done');
     }

@@ -29,7 +29,7 @@ export default function ClassifiedRecommended({
   return (
     <section className="w-full mt-10 pt-6 border-t border-gray-200">
       <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
-        Recommended For You
+        {t("recommendedForYou")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

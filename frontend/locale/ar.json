@@ -716,6 +716,7 @@
     "deleting": "جارٍ الحذف",
     "areYouSureYouWantToDeleteThisWishlist": "هل أنت متأكد من رغبتك في حذف قائمة المفضلة هذه",
     "deleteWishlist": "حذف قائمة المفضلة",
+    "addedToWishlist": "تمت الإضافة إلى قائمة \"{name}\"",
     "addToCart": "أضف إلى السلة",
     "moveToAnotherWishlist": "نقل إلى قائمة مفضلة أخرى",
     "moveToWishlist": "نقل إلى قائمة المفضلة",
@@ -1207,7 +1208,21 @@
   },
   "sellerReviewsList": {
     "report": "إبلاغ",
-    "viewAllReviews": "عرض جميع التقييمات"
+    "viewAllReviews": "عرض جميع التقييمات",
+    "ratingsAndReviewsSummary": "يوجد {ratings} تقييم و {reviews} مراجعة لهذا البائع",
+    "showOriginalReviews": "عرض المراجعات الأصلية",
+    "translateAllReviews": "ترجمة جميع المراجعات",
+    "verifiedPurchase": "عملية شراء موثقة"
+  },
+  "dialog": {
+    "close": "إغلاق"
+  },
+  "common": {
+    "loading": "جارٍ التحميل"
+  },
+  "pageBuilder": {
+    "announcement": "إعلان",
+    "logo": "الشعار"
   },
   "helpSheet": {
     "back": "رجوع",

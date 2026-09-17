@@ -261,7 +261,7 @@ const Header = () => {
             Icon={() => (
               <Image
                 src="/images/Cart_Header_icon.svg"
-                alt="Cart"
+                alt={t("cart")}
                 width={24}
                 height={24}
               />
