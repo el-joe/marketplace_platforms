@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Api\Customer;
 
+use App\Models\CountryPaymentGateway;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class PurchaseGiftCardRequest extends FormRequest
 {
@@ -21,5 +23,32 @@ class PurchaseGiftCardRequest extends FormRequest
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'gift_message' => ['nullable', 'string', 'max:500'],
         ];
+    }
+
+    /**
+     * Gift cards are digital and delivered by email — Cash on Delivery has no
+     * physical delivery to attach a COD payment to, so it's rejected here even
+     * though the frontend selector also filters it out of the options list.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $gatewayId = $this->input('country_payment_gateway_id');
+
+            if (! $gatewayId) {
+                return;
+            }
+
+            $isCod = CountryPaymentGateway::where('id', $gatewayId)
+                ->whereHas('gateway', fn ($q) => $q->where('code', 'cod'))
+                ->exists();
+
+            if ($isCod) {
+                $validator->errors()->add(
+                    'country_payment_gateway_id',
+                    'Cash on Delivery is not available for gift card purchases.',
+                );
+            }
+        });
     }
 }

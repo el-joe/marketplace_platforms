@@ -68,12 +68,21 @@ export default function GiftCardForm({ batch, availableBatches }: Props) {
     getPaymentOptions(totalAmount)
       .then(({ payment_options }) => {
         if (cancelled) return;
-        setPaymentOptions(payment_options);
+        // Gift cards are digital and delivered by email — Cash on Delivery
+        // has no physical delivery to attach a COD payment to.
+        const payment_options_excl_cod = payment_options.filter(
+          (option) => option.gateway_code !== "cod",
+        );
+        setPaymentOptions(payment_options_excl_cod);
 
-        const available = payment_options.find((option) => option.is_available);
+        const available = payment_options_excl_cod.find(
+          (option) => option.is_available,
+        );
         if (available) {
           setSelectedGatewayId((current) =>
-            payment_options.some((o) => o.id === current && o.is_available)
+            payment_options_excl_cod.some(
+              (o) => o.id === current && o.is_available,
+            )
               ? current
               : available.id,
           );

@@ -77,7 +77,9 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
 
         $this->actingAs($scenario->customer, 'customer');
 
-        $gateway = $scenario->countryPaymentGateways[array_key_first($scenario->countryPaymentGateways)];
+        // COD is not a valid gift-card payment method (nothing to physically
+        // deliver), so pick a non-COD gateway explicitly rather than the first one.
+        $gateway = $scenario->countryPaymentGateways['wallet'];
 
         $response = $this->postJson(
             "/api/customer/v1/{$scenario->country->site_code}/gift-card-store/purchase",
@@ -143,6 +145,30 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
 
         $secondAttempt->assertStatus(422);
         $secondAttempt->assertJsonPath('success', false);
+    }
+
+    public function test_cannot_purchase_gift_card_with_cash_on_delivery(): void
+    {
+        $scenario = $this->buildScenario();
+        $batch = $this->makeBatch();
+        $this->makeActiveCard($batch);
+
+        $this->actingAs($scenario->customer, 'customer');
+
+        $codGateway = $scenario->countryPaymentGateways['cod'];
+
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/gift-card-store/purchase",
+            [
+                'gift_card_batch_id' => $batch->id,
+                'quantity' => 1,
+                'country_payment_gateway_id' => $codGateway->id,
+            ]
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['country_payment_gateway_id']);
+        $this->assertSame(0, GiftCardPurchase::count());
     }
 
     public function test_generate_batch_defaults_expiry_to_one_year_when_blank(): void
