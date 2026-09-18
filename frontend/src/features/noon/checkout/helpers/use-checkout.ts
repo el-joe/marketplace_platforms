@@ -24,9 +24,10 @@ export const useCheckout = () => {
     IPrepareCheckout | undefined
   >(undefined);
 
-  const [selectedInstruction, setSelectedInstruction] = useState<string | null>(
-    null,
-  );
+  const [selectedInstruction, setSelectedInstruction] = useState<Record<
+    string,
+    string
+  > | null>(null);
 
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [contractAcceptanceId, setContractAcceptanceId] = useState<
@@ -200,7 +201,11 @@ export const useCheckout = () => {
       address_id: Number(selectedAddress.id),
       country_payment_gateway_id: selectedGatewayId,
       idempotency_key: uuidv4(),
-      delivery_instruction: selectedInstruction ?? undefined,
+      delivery_instruction: !!selectedInstruction
+        ? Object.entries(selectedInstruction)
+            .map(([key, val]) => val)
+            .join(", ")
+        : undefined,
       coupon_code: checkoutData?.coupon?.code ?? null,
       wallet_amount_to_use: checkoutData?.wallet_applicable
         ? checkoutData.wallet_balance > 0

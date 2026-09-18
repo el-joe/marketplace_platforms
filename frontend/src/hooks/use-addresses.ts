@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 export const useAddresses = () => {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(() =>
-    JSON.parse(localStorage.getItem("selectedAddress") as string),
+    JSON.parse(localStorage.getItem("as") as string),
   );
   const { data: addressesData, isLoading } = useQuery({
     queryKey: ["addresses"],

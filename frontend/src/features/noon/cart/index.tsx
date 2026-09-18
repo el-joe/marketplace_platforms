@@ -2,7 +2,6 @@
 import CouponInputCard from "@/src/features/noon/cart/coupon-input-card";
 import CartItems from "@/src/features/noon/cart/cart-items";
 import OrderSummary from "@/src/features/noon/cart/order-summary";
-import RecommendedSection from "@/src/features/noon/cart/recommended-section";
 import SuggestedProductsSection from "@/src/features/noon/cart/suggested-products-section";
 import SavingsAdnBenefitsCard from "@/src/features/noon/cart/savings-and-benefits-card";
 import EmptyState from "./empty-state";
@@ -31,7 +30,6 @@ export default function Cart() {
             <div className="flex gap-4 flex-col md:flex-row lg:gap-8 flex-wrap px-4 lg:px-0 w-full">
               <div className="flex flex-col gap-8 flex-1s md:w-[440px] lg:w-[calc(100%-(428px+32px))]">
                 <CartItems />
-                <RecommendedSection />
                 <SuggestedProductsSection />
               </div>
               <div className="flex flex-col gap-8 flex-1 md:min-w-[260px] lg:w-[428px] lg:min-w-[428px]">

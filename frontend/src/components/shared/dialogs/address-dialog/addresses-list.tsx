@@ -7,7 +7,11 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAuthContext } from "@/src/providers/auth-provider";
 import AddressCard from "./Address-card";
 
-export default function AddressesList() {
+export default function AddressesList({
+  handleCloseDialog,
+}: {
+  handleCloseDialog?: () => void;
+}) {
   const t = useTranslations("header.locationDialog");
   const { isLogged } = useAuthContext();
   const { data, isLoading } = useQuery({
@@ -43,7 +47,12 @@ export default function AddressesList() {
         <>
           <p className="mb-3 text-light uppercase">{t("savedAddresses")}</p>
           {data?.map((address) => (
-            <AddressCard key={address.id} address={address} className="mb-2" />
+            <AddressCard
+              key={address.id}
+              address={address}
+              className="mb-2"
+              handleCloseDialog={handleCloseDialog}
+            />
           ))}
         </>
       )}

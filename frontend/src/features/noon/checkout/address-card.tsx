@@ -44,7 +44,9 @@ export default function AddressCard({
         triggerButton={
           <Button
             variant={"ghost"}
-            className={"bg-transparent text-blue-2 text-base ms-auto"}
+            className={
+              "bg-transparent text-blue-2 text-base ms-auto font-semibold"
+            }
           >
             {t("editAddress")}
           </Button>

@@ -25,7 +25,9 @@ export default function OrderReceiverCard() {
         </div>
         <Button
           variant={"ghost"}
-          className={"bg-transparent text-blue-2 text-sm ms-auto"}
+          className={
+            "bg-transparent text-blue-2 text-base font-semibold ms-auto"
+          }
         >
           {t("changeReceiver")}
         </Button>

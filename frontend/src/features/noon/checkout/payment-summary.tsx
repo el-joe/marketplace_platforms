@@ -26,7 +26,7 @@ export default function PaymentSummary({
       </div>
       {/* subtotal */}
       <div className="flex justify-between mb-3">
-        <p className=" text-gray">{t("subtotal")}</p>
+        <p className=" text-light">{t("subtotal")}</p>
         <Price
           currentPrice={checkoutSummary.subtotal}
           size="xs"
@@ -36,7 +36,7 @@ export default function PaymentSummary({
       {/* discount */}
       {checkoutSummary.discount > 0 && (
         <div className="flex justify-between mb-3">
-          <p className=" text-gray">{t("discount")}</p>
+          <p className=" text-light">{t("discount")}</p>
           <p className="text-green-600">
             -
             <Price
@@ -50,7 +50,7 @@ export default function PaymentSummary({
       )}
       {/* shipping fee */}
       <div className="flex justify-between mb-3">
-        <p className=" text-gray">{t("shippingFee")}</p>
+        <p className=" text-light">{t("shippingFee")}</p>
         {checkoutSummary.shipping > 0 ? (
           <Price
             currentPrice={checkoutSummary.shipping}
@@ -58,13 +58,13 @@ export default function PaymentSummary({
             currency={currency}
           />
         ) : (
-          <p className="text-gray">{t("free")}</p>
+          <p className="text-light">{t("free")}</p>
         )}
       </div>
       {/* cod fee */}
       {checkoutSummary.cod_fee > 0 && (
         <div className="flex justify-between mb-3">
-          <p className=" text-gray">{t("codFee")}</p>
+          <p className=" text-light">{t("codFee")}</p>
           <Price
             currentPrice={checkoutSummary.cod_fee}
             size="xs"
@@ -116,7 +116,11 @@ export default function PaymentSummary({
       {/* tax */}
       <div className="flex justify-between pb-4 border-b border-border border-dashed mb-4">
         <p className=" text-gray">{t("tax")}</p>
-        <Price currentPrice={checkoutSummary.tax} size="xs" currency={currency} />
+        <Price
+          currentPrice={checkoutSummary.tax}
+          size="xs"
+          currency={currency}
+        />
       </div>
       {/* wallet deduction */}
       {walletDeduction > 0 && (

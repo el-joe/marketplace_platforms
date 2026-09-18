@@ -60,7 +60,10 @@ function VariantCard({
       <div
         className={cn(
           `p-3 rounded-md border border-border cursor-pointer transition-all hover:border-black`,
-          true ? "hover:border-black" : "opacity-35 line-through",
+          !variantData.disabled
+            ? "hover:border-black"
+            : "opacity-35 line-through",
+          variantData.selected && "border-black",
         )}
         onClick={() => {
           if (!variantData.disabled)

@@ -706,7 +706,7 @@
     "couponCopied": "Coupon Copied",
     "availableOffers": "Available offers",
     "couponOffers": "Coupon offers",
-    "suggestedProducts": "You might also like"
+    "suggestedProducts": "Recommended for you"
   },
   "wishlist": {
     "wishlist": "Wishlist",
@@ -744,7 +744,7 @@
   "checkout": {
     "deliverTo": "deliver to",
     "editAddress": "Edit address",
-    "whoWillReceiveThisOrder": "How will receive this order",
+    "whoWillReceiveThisOrder": "who will receive this order",
     "changeReceiver": "Change receiver",
     "deliveryInstructions": "Delivery instructions",
     "getItemsTogether": "Get items together",

@@ -148,7 +148,7 @@ export default function ProductImagesPreview({ product }: Props) {
                 alt=""
                 width={600}
                 height={850}
-                zoomLevel={1.7}
+                zoomLevel={1.9}
               />
             </SwiperSlide>
           ))}

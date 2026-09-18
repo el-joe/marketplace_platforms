@@ -5,6 +5,7 @@ import { CircleQuestionMarkIcon, DoorOpenIcon, TreesIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { IPrepareCheckout } from "./types/checkout.type";
 import useLocale from "@/src/hooks/use-locale";
+import { Dispatch, SetStateAction } from "react";
 
 export default function DeliveryInstructionsCard({
   instructions,
@@ -12,8 +13,8 @@ export default function DeliveryInstructionsCard({
   onSelect,
 }: {
   instructions: IPrepareCheckout["delivery_instructions"];
-  selectedInstruction: string | null;
-  onSelect: (value: string | null) => void;
+  selectedInstruction: Record<string, string> | null;
+  onSelect: Dispatch<SetStateAction<Record<string, string> | null>>;
 }) {
   const t = useTranslations("checkout");
   const locale = useLocale();
@@ -41,8 +42,20 @@ export default function DeliveryInstructionsCard({
             )}
             <p className="text-gray text-sm">{s.value[locale]}</p>
             <Checkbox
-              checked={selectedInstruction === s.key}
-              onCheckedChange={(checked) => onSelect(checked ? s.key : null)}
+              checked={
+                !!Object.entries(selectedInstruction ?? {})?.find(
+                  ([key]) => key === s.key,
+                )
+              }
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  return onSelect((p) => ({ ...p, [s.key]: s.value.en }));
+                }
+                onSelect((p) => {
+                  delete p?.[s.key];
+                  return { ...p };
+                });
+              }}
             />
           </FieldLabel>
         ))}

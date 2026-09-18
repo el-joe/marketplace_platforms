@@ -15,7 +15,7 @@ import {
 import { useTranslations } from "next-intl";
 import Dropdown from "@/src/components/shared/Dropdown";
 import { Button } from "@/src/components/ui/button";
-import { JSXElementConstructor } from "react";
+import { JSXElementConstructor, useState } from "react";
 import { ChevronDownIcon, PlusIcon, SearchIcon } from "lucide-react";
 import Image from "next/image";
 import {
@@ -40,21 +40,22 @@ type props = {
   onClose?: () => void;
 };
 const AddressDialog = ({ triggerButton, open, onClose }: props) => {
+  const [isOpen, setIsOpen] = useState<boolean>(open ?? false);
   const t = useTranslations("header.locationDialog");
   const country = getCookie("country");
   const { handleChangeCountry } = useToggleLocale();
   const { saveNewAddress } = useAddressFormActions();
   const { isLogged, setAuthDialogIsOpen } = useAuthContext();
-  const {
-    data: countriesData,
-    isFetching,
-    isError,
-  } = useQuery({
+  const { data: countriesData } = useQuery({
     queryKey: ["countries"],
     queryFn: getCountriesService,
   });
+  const handleOpenState = (state: boolean) => {
+    setIsOpen(state);
+    onClose?.();
+  };
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger render={triggerButton} />
       <DialogContent
         className={
@@ -162,7 +163,11 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
               )}
               {/* search result */}
 
-              <AddressesList />
+              <AddressesList
+                handleCloseDialog={() => {
+                  handleOpenState(false);
+                }}
+              />
             </div>
           </TabsContent>
           {/* pickup point tap */}
