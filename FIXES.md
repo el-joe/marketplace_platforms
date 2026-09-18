@@ -79,21 +79,24 @@ _None identified beyond the locale keys needed for FIX-H1 (loyalty discount labe
 ---
 
 ## Execution Summary
-_Diagnosis only in this pass — no fixes implemented yet per instructions. To be filled in during the execution pass:_
 
 | Fix ID | Status | Files changed | Notes |
 |--------|--------|---------------|-------|
-| FIX-H1 | Not started | — | Minimal frontend-only change |
-| FIX-H2 | Not started | — | Needs ORDER BY design decision (boost vs. explicit sort precedence) |
-| FIX-H3 | Not started | — | New frontend component + mount point |
-| FIX-M1 | Not started | — | Frontend filter UI + param plumbing only; backend already works |
-| FIX-M2 | DONE, no action needed | — | Sizes already rendered in both `show.blade.php` views (partner:397-444, admin:605-654) |
-| FIX-S1 | Blocked | — | Needs product-owner answer; see QUESTION-1.md when written |
+| FIX-H1 | ✅ DONE (`c0693f9`) | `payment-summary.tsx`, `checkout.type.ts`, `locale/en.json`, `locale/ar.json` | Loyalty discount line item now rendered when > 0 |
+| FIX-H2 | ✅ DONE (`20d6c83`) | `backend/app/Services/Customer/ProductQueryService.php` | Boost via `orderByRaw` CASE on ad tier, default-sort only; explicit customer sorts unaffected |
+| FIX-H3 | ✅ DONE (`2cc4e83`) | `features/noon/ads/{serious-featured-popup.tsx,api.ts,types.ts}`, `(noon)/layout.tsx`, locale files | Once-per-session popup via existing Sheet component |
+| FIX-M1 | ✅ DONE (`d362ce8`) | `travel-packages.actions.ts`, `helpers/types.ts`, `travel-packages/index.tsx`, new `travel-filters.tsx`, `build-destination-options.ts` | Country/city/date filters wired to existing working backend endpoint; destination options derived client-side (no dedicated facets endpoint exists) |
+| FIX-M2 | ✅ DONE, no action needed (`d5c9d63`) | — (verification only) | Sizes already rendered in both `show.blade.php` views (partner:397-444, admin:605-654) |
+| FIX-S1 | ⏳ SKIP — blocked | `QUESTION-1.md` (`6b06dcf`) | Needs product-owner definition of "international product" before any code/migration |
 
 ## Migrations needed (run on server)
-- None required for FIX-H1, FIX-H3, FIX-M1 (all additive UI/query work on existing schema).
-- FIX-H2 may need a lightweight index on `vendor_ad_subscriptions(vendor_listing_id, status, ends_at)` if one doesn't already exist — to be confirmed during implementation.
-- FIX-S1 will need a migration once the "international product" definition is decided (new column or derivation logic).
+- None required — FIX-H2's join relies on the existing composite index on `vendor_ad_subscriptions(vendor_listing_id, status, ends_at)` from its original creation migration; no new migration was needed.
+- FIX-S1 will need a migration once the "international product" definition is decided (new column or derivation logic) — not yet written.
 
 ## Questions requiring product owner input
-- FIX-S1: definition of "international product" for COD exemption purposes (see above). To be written as `QUESTION-1.md` in the execution pass.
+- FIX-S1: definition of "international product" for COD exemption purposes. See `QUESTION-1.md`.
+
+## Follow-up items noted but out of scope (not implemented)
+- `SponsoredProductService::fetchSponsored()`'s `ac.ends_at` OR-precedence bug (found during FIX-G verification, pre-existing, not one of items A–J) — worth a separate look.
+- FIX-H2: a subscription tied to a since-deactivated `ad_packages` row still boosts (`ap.is_active` not checked) — confirm with product if that's intended.
+- FIX-H2: no `distinct()` guard on the paginated fetch if a vendor listing somehow has overlapping active subscriptions — theoretical edge case, not DB-enforced unique.
