@@ -98,6 +98,21 @@ export default function PaymentSummary({
           </p>
         </div>
       )}
+      {/* loyalty discount */}
+      {checkoutSummary.loyalty_discount > 0 && (
+        <div className="flex justify-between mb-3">
+          <p className=" text-gray">{t("loyaltyDiscount")}</p>
+          <p className="text-green-600">
+            -
+            <Price
+              currentPrice={checkoutSummary.loyalty_discount}
+              size="xs"
+              currency={currency}
+              className="inline text-green-600"
+            />
+          </p>
+        </div>
+      )}
       {/* tax */}
       <div className="flex justify-between pb-4 border-b border-border border-dashed mb-4">
         <p className=" text-gray">{t("tax")}</p>

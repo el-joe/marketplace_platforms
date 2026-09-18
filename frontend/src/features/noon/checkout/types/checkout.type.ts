@@ -198,6 +198,7 @@ export interface OrderSummary {
   tax: number;
   warranty_total: number;
   gift_card_applied: number;
+  loyalty_discount: number;
   total: number;
   currency: string;
 }
