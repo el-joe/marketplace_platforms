@@ -6,12 +6,13 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
 import { Button } from "../ui/button";
 import {
-  CarIcon,
   ChevronLeft,
   ChevronRight,
   ChevronRightIcon,
   HeartIcon,
+  icons,
   StarIcon,
+  TagIcon,
 } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
@@ -207,15 +208,17 @@ const ProductCard = ({ productData }: Props) => {
             currency={productData.currency}
             size="sm"
           />
-          <AnimatedBadge
-            size="sm"
-            badges={[
-              { label: "hello world", icon: CarIcon, iconColor: "red" },
-              { label: "hello world2", icon: CarIcon, iconColor: "green" },
-              { label: "hello world3", icon: CarIcon, iconColor: "blue" },
-            ]}
-            containerClasses="mb-1"
-          />
+          {!!productData.promo_badges?.length && (
+            <AnimatedBadge
+              size="sm"
+              badges={productData.promo_badges.map((badge) => ({
+                label: badge.label?.[locale] ?? badge.label?.en ?? "",
+                icon: icons[badge.icon_key as keyof typeof icons] ?? TagIcon,
+                iconColor: badge.color_hex,
+              }))}
+              containerClasses="mb-1"
+            />
+          )}
           {/* bottom badge */}
           {!!productData.shipping_badge && (
             <div
