@@ -43,6 +43,19 @@ class WarrantyPurchase extends Model
         return $this->belongsTo(WarrantyPlan::class, 'warranty_plan_id');
     }
 
+    /**
+     * FIX-6: the live product being covered (mirrors WarrantyClaim::product(),
+     * which also belongsTo Product directly). Backed by `product_id`, set at
+     * purchase time from orderItem->productVariant->product and backfilled
+     * for pre-existing rows, so the purchases API can show current
+     * name/image/slug/price even if orderItem->product_snapshot is stale or
+     * incomplete.
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active');

@@ -1223,6 +1223,10 @@ class CheckoutController extends Controller
                                 'customer_id' => $customer->id,
                                 'order_id' => $order->id,
                                 'order_item_id' => $orderItem->id,
+                                // FIX-6: real link to the product being covered, resolved
+                                // live from the listing's variant rather than relying
+                                // solely on the order_item's product_snapshot JSON.
+                                'product_id' => $listing->productVariant->product_id,
                                 'warranty_plan_id' => $plan->id,
                                 'plan_snapshot' => [
                                     'name_en' => $plan->name_en,
