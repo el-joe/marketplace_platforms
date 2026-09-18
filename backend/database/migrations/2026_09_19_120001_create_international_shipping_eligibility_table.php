@@ -30,10 +30,11 @@ return new class extends Migration
 
             $table->foreign('vendor_listing_id')->references('id')->on('vendor_listings')->cascadeOnDelete();
             $table->foreign('admin_listing_id')->references('id')->on('admin_listings')->cascadeOnDelete();
-            $table->foreign('destination_country_id')->references('id')->on('countries')->restrictOnDelete();
+            $table->foreign('destination_country_id', 'intl_shipping_elig_dest_country_fk')
+                ->references('id')->on('countries')->restrictOnDelete();
 
-            $table->index(['vendor_listing_id', 'destination_country_id']);
-            $table->index(['admin_listing_id', 'destination_country_id']);
+            $table->index(['vendor_listing_id', 'destination_country_id'], 'intl_shipping_elig_vendor_dest_idx');
+            $table->index(['admin_listing_id', 'destination_country_id'], 'intl_shipping_elig_admin_dest_idx');
         });
     }
 
