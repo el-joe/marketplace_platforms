@@ -645,6 +645,9 @@
     "selectATheme": "Select a theme",
     "selectAmount": "Select amount",
     "selectQuantity": "Select quantity",
+    "selectPaymentMethod": "Select payment method",
+    "loadingPaymentMethods": "Loading payment methods...",
+    "noPaymentMethodsAvailable": "No payment methods are available right now. Please try again later.",
     "buyingForMyself": "Buying for myself",
     "receiversName": "Receiver's name",
     "receiversEmail": "Receiver's email",
@@ -659,7 +662,14 @@
     "myGiftCardsEmptyMessage": "You haven't purchased any gift cards yet.",
     "giftCardPurchasedOnLabel": "Purchased",
     "giftCardPendingDelivery": "Pending delivery",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "offlinePaymentUploadTitle": "Upload payment proof",
+    "offlinePaymentUploadDesc": "Please attach a copy of your invoice/payment receipt. This is required to purchase a gift card with this payment method.",
+    "chooseFile": "Choose file",
+    "note": "Note",
+    "notePlaceholder": "Add any additional details about your payment",
+    "fileRequiredError": "Please attach a payment proof file to continue.",
+    "proofUploadFailedFallback": "Your gift card order was placed, but we couldn't upload your payment proof. Please try again from your order history."
   },
   "cart": {
     "freeShipping": "Free shipping",
@@ -758,7 +768,16 @@
     "marketerContractAccept": "I agree",
     "marketerContractCancel": "Cancel",
     "marketerContractRequiredNotice": "Please read and accept the terms before placing your order.",
-    "marketerContractDownload": "View PDF"
+    "marketerContractDownload": "View PDF",
+    "offlinePaymentUploadTitle": "Upload payment proof",
+    "offlinePaymentUploadDesc": "Please attach a copy of your invoice/payment receipt. This is required to place your order with this payment method.",
+    "chooseFile": "Choose file",
+    "note": "Note (optional)",
+    "notePlaceholder": "Add any additional details about your payment",
+    "fileRequiredError": "Please attach a payment proof file to continue.",
+    "placingOrder": "Placing order...",
+    "uploadingProof": "Uploading proof...",
+    "proofUploadFailedFallback": "Your order was placed, but we couldn't upload your payment proof. Please upload it from the order confirmation page."
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "Order Placed Successfully!",
@@ -800,7 +819,24 @@
     "easyReturnsTitle": "Hassle-Free Returns",
     "easyReturnsDesc": "15-day return policy on eligible items",
     "supportTitle": "24/7 Customer Support",
-    "supportDesc": "We're here to help anytime you need"
+    "supportDesc": "We're here to help anytime you need",
+    "bankTransferTitle": "Complete Your Bank Transfer",
+    "bankTransferInstructions": "Transfer the order total to the account below, then upload your payment receipt so we can confirm it.",
+    "bankName": "Bank Name",
+    "accountName": "Account Name",
+    "accountNumber": "Account Number",
+    "iban": "IBAN",
+    "swift": "SWIFT/BIC",
+    "reference": "Reference",
+    "uploadProof": "Upload Payment Proof",
+    "uploadProofDesc": "Accepted formats: JPG, PNG, PDF — max 10MB.",
+    "chooseFile": "Choose File",
+    "submitProof": "Submit Proof",
+    "uploadingProof": "Uploading...",
+    "proofUploaded": "Proof uploaded successfully. We'll confirm your payment shortly.",
+    "proofUploadFailed": "Failed to upload proof. Please try again.",
+    "note": "Note (optional)",
+    "notePlaceholder": "Add any additional details about your payment"
   },
   "openSooq": {
     "header": {

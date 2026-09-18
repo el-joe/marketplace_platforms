@@ -4,6 +4,7 @@ namespace App\Services\Payments;
 
 use App\Contracts\Payments\PaymentGatewayInterface;
 use App\Models\CountryPaymentGateway;
+use App\Models\PaymentGateway;
 
 class PaymentGatewayFactory
 {
@@ -63,5 +64,16 @@ class PaymentGatewayFactory
     public static function internalCodes(): array
     {
         return ['cod', 'wallet', 'bank_transfer'];
+    }
+
+    /**
+     * True when the gateway's `payment_gateways.type` is 'offline' — i.e. it
+     * is not COD and has no automated redirect/webhook confirmation, so it
+     * requires customer proof upload + admin approval (see
+     * OFFLINE_PAYMENT_APPROVAL_PLAN.md).
+     */
+    public static function isOffline(string $gatewayCode): bool
+    {
+        return PaymentGateway::where('code', $gatewayCode)->value('type') === 'offline';
     }
 }

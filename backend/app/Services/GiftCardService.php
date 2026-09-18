@@ -4,10 +4,10 @@ namespace App\Services;
 
 use App\Models\Admin;
 use App\Models\Customer;
-use App\Models\CustomerWallet;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardTransaction;
+use App\Models\Wallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -27,14 +27,19 @@ class GiftCardService
         $batch = null;
         $plainPins = [];
 
-        DB::transaction(function () use ($data, $admin, &$batch, &$plainPins) {
+        // Storefront FAQ copy promises "valid for 1 year" — default to that
+        // window when an admin leaves expires_at blank, so cards actually
+        // honor the claim instead of never expiring.
+        $expiresAt = $data['expires_at'] ?? now()->addYear()->toDateString();
+
+        DB::transaction(function () use ($data, $admin, $expiresAt, &$batch, &$plainPins) {
             $batch = GiftCardBatch::create([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'amount' => $data['amount'],
                 'currency_code' => $data['currency_code'],
                 'quantity' => $data['quantity'],
-                'expires_at' => $data['expires_at'] ?? null,
+                'expires_at' => $expiresAt,
                 'created_by_admin_id' => $admin->id,
             ]);
 
@@ -57,7 +62,7 @@ class GiftCardService
                     'remaining_balance' => $data['amount'],
                     'currency_code' => $data['currency_code'],
                     'status' => ($data['activate_immediately'] ?? false) ? 'active' : 'inactive',
-                    'expires_at' => $data['expires_at'] ?? null,
+                    'expires_at' => $expiresAt,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -118,9 +123,9 @@ class GiftCardService
 
             $amountToCredit = $card->remaining_balance;
 
-            $wallet = CustomerWallet::lockForUpdate()->firstOrCreate(
-                ['customer_id' => $customer->id, 'currency_code' => $card->currency_code],
-                ['balance' => 0]
+            $wallet = Wallet::lockForUpdate()->firstOrCreate(
+                ['owner_type' => 'customer', 'owner_id' => $customer->id, 'currency' => $card->currency_code],
+                ['balance' => 0, 'pending_balance' => 0]
             );
 
             $newBalance = $wallet->balance + $amountToCredit;
@@ -144,7 +149,7 @@ class GiftCardService
 
             DB::table('wallet_transactions')->insert([
                 'id' => (string) Str::uuid(),
-                'wallet_id' => null,
+                'wallet_id' => $wallet->id,
                 'customer_id' => $customer->id,
                 'type' => 'gift_card_redemption',
                 'direction' => 'credit',

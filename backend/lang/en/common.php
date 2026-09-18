@@ -408,6 +408,8 @@ return [
             'cannot_cancel'      => 'This order cannot be cancelled in its current status.',
             'cancelled'          => 'Order cancelled successfully.',
             'suborder_not_found' => 'Sub-order not found.',
+            'not_bank_transfer'  => 'This order was not placed with bank transfer.',
+            'proof_uploaded'     => 'Payment proof uploaded successfully.',
         ],
 
         'page' => [

@@ -100,14 +100,17 @@ class CheckoutController extends Controller
                 ];
             });
 
-        $wallet = \App\Models\CustomerWallet::where('customer_id', $customer->id)->first();
+        $wallet = Wallet::where('owner_type', \App\Enums\WalletOwnerType::Customer)
+            ->where('owner_id', $customer->id)
+            ->where('currency', $country->currency_code)
+            ->first();
 
         return ApiResponse::success([
             'payment_options' => $gateways->values(),
             'wallet' => [
                 'balance'       => $wallet?->balance ?? 0,
-                'currency_code' => $wallet?->currency_code ?? $country->currency_code,
-                'applicable'    => $wallet && $wallet->currency_code === $country->currency_code && $wallet->balance > 0,
+                'currency_code' => $wallet?->currency ?? $country->currency_code,
+                'applicable'    => $wallet && $wallet->currency === $country->currency_code && $wallet->balance > 0,
             ],
         ]);
     }

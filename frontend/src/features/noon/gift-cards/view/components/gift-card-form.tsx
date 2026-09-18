@@ -7,6 +7,8 @@ import SelectedThemePreview from "./selected-theme-preview";
 import ThemeSelector from "./theme-selector";
 import QuantitySelector from "./quantity-selector";
 import ReceiverForm from "./receiver-form";
+import PaymentMethodSelector from "./payment-method-selector";
+import OfflinePaymentProofCard from "./offline-payment-proof-card";
 import PriceSummary from "./price-summary";
 import type { GiftCardBatch } from "../../helpers/types";
 
@@ -31,6 +33,16 @@ export default function GiftCardForm({ batch }: Props) {
     receiverEmail,
     setReceiverEmail,
     handleBuyingForMyselfChange,
+    isLoadingPaymentOptions,
+    paymentOptions,
+    paymentOptionsError,
+    selectedGatewayId,
+    setSelectedGatewayId,
+    isOfflinePaymentMethod,
+    offlineProofFile,
+    setOfflineProofFile,
+    offlineProofNote,
+    setOfflineProofNote,
     totalAmount,
     canSubmit,
     isSubmitting,
@@ -67,6 +79,23 @@ export default function GiftCardForm({ batch }: Props) {
             receiverEmail={receiverEmail}
             onReceiverEmailChange={setReceiverEmail}
           />
+
+          <PaymentMethodSelector
+            isLoading={isLoadingPaymentOptions}
+            options={paymentOptions}
+            selectedId={selectedGatewayId}
+            onSelect={setSelectedGatewayId}
+            error={paymentOptionsError ?? undefined}
+          />
+
+          {isOfflinePaymentMethod && (
+            <OfflinePaymentProofCard
+              file={offlineProofFile}
+              setFile={setOfflineProofFile}
+              note={offlineProofNote}
+              setNote={setOfflineProofNote}
+            />
+          )}
 
           <PriceSummary
             quantity={quantity}

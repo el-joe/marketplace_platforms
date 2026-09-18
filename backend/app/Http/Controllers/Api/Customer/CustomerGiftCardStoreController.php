@@ -7,7 +7,7 @@ use App\Http\Requests\Api\Customer\PurchaseGiftCardRequest;
 use App\Http\Resources\Api\Customer\GiftCardBatchResource;
 use App\Http\Resources\Api\Customer\GiftCardPurchaseResource;
 use App\Http\Responses\ApiResponse;
-use App\Jobs\SendGiftCardNotificationJob;
+use App\Jobs\SendGiftCardDeliveryJob;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
 use App\Services\GiftCardPurchaseService;
@@ -73,12 +73,20 @@ class CustomerGiftCardStoreController extends Controller
             return ApiResponse::error($e->getMessage(), $e->errors());
         }
 
-        foreach ($result['cards'] as $card) {
-            SendGiftCardNotificationJob::dispatch($card->id);
+        // Only dispatch delivery immediately when payment was actually
+        // captured synchronously (wallet). Offline gateways (bank transfer,
+        // etc.) and redirect gateways (thawani, paytabs) stay 'pending' —
+        // GiftCardPurchaseService::dispatchPendingDeliveries() fires once an
+        // admin approves the offline payment or the gateway webhook confirms.
+        if ($result['order']->payment_status?->value === 'captured') {
+            foreach ($result['purchases'] as $purchase) {
+                SendGiftCardDeliveryJob::dispatch($purchase->id);
+            }
         }
 
         return ApiResponse::success([
             'order_id' => $result['order']->id,
+            'order_number' => $result['order']->order_number,
             'purchases' => GiftCardPurchaseResource::collection(collect($result['purchases'])),
         ], __('customer_api.gift_card_store.purchased'), 201);
     }
@@ -108,7 +116,7 @@ class CustomerGiftCardStoreController extends Controller
             return ApiResponse::error(__('customer_api.gift_card_store.max_resend_reached'), [], 422);
         }
 
-        SendGiftCardNotificationJob::dispatch($purchase->gift_card_id);
+        SendGiftCardDeliveryJob::dispatch($purchase->id);
 
         return ApiResponse::success(null, __('customer_api.gift_card_store.delivery_email_resent'));
     }

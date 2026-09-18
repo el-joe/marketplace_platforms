@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\RefundProcessingJob;
 use App\Models\PaymentTransaction;
 use App\Models\Refund;
+use App\Services\Payments\PaymentGatewayFactory;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
@@ -200,20 +201,25 @@ class TransactionController extends Controller
     }
 
     /**
-     * enhancement.md P-05 task 8: bank_transfer orders are captured
-     * "at admin confirmation" per the payment matrix — the customer wires
-     * the money outside the platform, and nothing here ever hears back
-     * from a gateway. An admin (finance) marks the transaction confirmed
-     * once the transfer is verified as received, which captures the
-     * payment and confirms the order.
+     * enhancement.md P-05 task 8: offline-gateway orders (bank transfer
+     * today, any other PaymentGatewayFactory::isOffline() gateway going
+     * forward) are captured "at admin confirmation" per the payment
+     * matrix — the customer pays outside the platform, and nothing here
+     * ever hears back from a gateway. An admin (finance) marks the
+     * transaction confirmed once the payment is verified as received,
+     * which captures the payment and confirms the order. Route/method
+     * name kept as `confirmBankTransfer` for backward compatibility with
+     * the existing admin frontend button, but the guard is now
+     * type-driven (see PaymentGatewayFactory::isOffline()) so it works
+     * for any offline gateway without further changes.
      */
     public function confirmBankTransfer(Request $request, PaymentTransaction $transaction): JsonResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
 
-        if ($transaction->gateway !== 'bank_transfer') {
-            return response()->json(['message' => 'Not a bank transfer transaction.'], 422);
+        if (!PaymentGatewayFactory::isOffline($transaction->gateway)) {
+            return response()->json(['message' => 'Not an offline-payment transaction.'], 422);
         }
 
         if ($transaction->status->value === 'succeeded') {
@@ -237,7 +243,58 @@ class TransactionController extends Controller
             (new \App\Services\Checkout\CouponUsageService())->consumeForOrder($order);
         });
 
+        // Gift-card purchase orders don't fulfill/ship — instead, approving
+        // their offline payment is what releases the (still-undelivered)
+        // gift card code(s) to the recipient. Regular orders have no
+        // matching GiftCardPurchase rows, so this is a no-op for them.
+        (new \App\Services\GiftCardPurchaseService())->dispatchPendingDeliveries($order->fresh());
+
         return response()->json(['message' => 'Bank transfer confirmed.', 'order_number' => $order->order_number]);
+    }
+
+    /**
+     * Reject counterpart to confirmBankTransfer() for offline-gateway
+     * payments: the admin has checked and the claimed payment did not
+     * come through (or the proof was invalid/fraudulent). Marks the
+     * transaction failed and the order payment as failed, records the
+     * optional reason as the transaction note, and does NOT touch the
+     * ledger (no capture ever happened) or coupon usage.
+     */
+    public function rejectOfflinePayment(Request $request, PaymentTransaction $transaction): JsonResponse
+    {
+        $admin = auth('admin')->user();
+        abort_unless($admin->hasPermissionTo('transactions.view'), 403);
+
+        if (!PaymentGatewayFactory::isOffline($transaction->gateway)) {
+            return response()->json(['message' => 'Not an offline-payment transaction.'], 422);
+        }
+
+        if ($transaction->status->value === 'succeeded') {
+            return response()->json(['message' => 'Already confirmed.'], 422);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $order = $transaction->order;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($transaction, $order, $validated) {
+            $transaction->update([
+                'status' => 'failed',
+                'processed_at' => now(),
+                'failure_message' => $validated['reason'] ?? $transaction->failure_message,
+                'note' => $validated['reason'] ?? $transaction->note,
+            ]);
+
+            if ($order) {
+                $order->update([
+                    'payment_status' => 'failed',
+                ]);
+            }
+        });
+
+        return response()->json(['message' => 'Offline payment rejected.', 'order_number' => $order?->order_number]);
     }
 
     // ─── Refunds ──────────────────────────────────────────────────────────────

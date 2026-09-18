@@ -176,8 +176,8 @@ export interface DisplayName {
 }
 
 export interface DeliveryInstruction {
-  value: DisplayName;
   key: string;
+  value: DisplayName;
 }
 
 export interface Loyalty {

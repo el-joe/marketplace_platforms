@@ -14,10 +14,13 @@ use App\Http\Controllers\Customer\SponsoredAdController;
 use App\Http\Controllers\Customer\VendorPageController;
 use App\Http\Controllers\Customer\BrandPageController;
 use App\Http\Controllers\Customer\WalletController;
+// NOTE: Api\Customer\WalletController and Api\Customer\CustomerWalletController
+// were deleted as part of the wallet systems merge (Phase 3). All three
+// route families below now alias to Customer\WalletController (the single
+// canonical, Wallet-backed controller).
 use App\Http\Controllers\Customer\WarrantyClaimController;
 use App\Http\Controllers\Customer\WarrantyPurchaseController;
 use App\Http\Controllers\Api\Customer\SecurityController;
-use App\Http\Controllers\Api\Customer\WalletController as ApiWalletController;
 use App\Http\Controllers\Api\Customer\WarrantyController as ApiWarrantyController;
 use App\Http\Controllers\Api\Customer\WishlistController as ApiWishlistController;
 use App\Http\Controllers\Customer\AddressController;
@@ -38,11 +41,11 @@ use App\Http\Controllers\Customer\SearchController;
 use App\Http\Controllers\Customer\SupportTicketController;
 use App\Http\Controllers\Customer\AccountController;
 use App\Http\Controllers\Api\Customer\CustomerGiftCardStoreController;
+use App\Http\Controllers\Api\Customer\PageContentController;
 use App\Http\Controllers\Api\Customer\QrCodeController;
 use App\Http\Controllers\Api\Customer\NotificationController;
 use App\Http\Controllers\Api\Customer\OrderController as ApiOrderController;
 use App\Http\Controllers\Api\Customer\GiftCardController as ApiGiftCardController;
-use App\Http\Controllers\Api\Customer\CustomerWalletController;
 use App\Http\Controllers\Api\Customer\NewsletterController;
 use App\Http\Controllers\Api\Customer\PaymentCallbackController;
 use App\Http\Controllers\Api\Customer\PaymentHistoryController;
@@ -264,10 +267,6 @@ use Illuminate\Support\Facades\Route;
             Route::post('reset-password', [AuthController::class, 'resetPassword'])
                 ->middleware('throttle:5,1')
                 ->name('reset-password');
-
-            // Email verification — token from email link, no auth guard needed
-            Route::post('verify-email', [AuthController::class, 'verifyEmail'])
-                ->name('verify-email');
         });
 
         // ── Gift Card Storefront (browse & purchase gift cards) ──
@@ -284,6 +283,11 @@ use Illuminate\Support\Facades\Route;
             // Single batch lookup for the storefront detail/purchase page (public, no auth required).
             // Registered last so it doesn't shadow the static routes above.
             Route::get('{batchId}', [CustomerGiftCardStoreController::class, 'show'])->name('show');
+        });
+
+        // ── Page content (public, admin-managed banners & FAQs for storefront pages) ──
+        Route::prefix('page-content')->name('customer.api.page-content.')->group(function (): void {
+            Route::get('gift-cards', [PageContentController::class, 'giftCards'])->name('gift-cards');
         });
 
         // ── Marketer Contracts (view + accept before checkout) ──
@@ -321,9 +325,6 @@ use Illuminate\Support\Facades\Route;
             Route::prefix('auth')->name('customer.auth.')->group(function (): void {
                 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
                 Route::get('me', [AuthController::class, 'me'])->name('me');
-                Route::post('resend-verification', [AuthController::class, 'resendVerification'])
-                    ->middleware('throttle:3,1')
-                    ->name('resend-verification');
             });
 
             // Payment transaction history (read-only)
@@ -412,7 +413,9 @@ use Illuminate\Support\Facades\Route;
             // Cart merge (auth only)
             Route::post('cart/merge', [CartController::class, 'mergeCart'])->name('customer.cart.merge');
 
-            // Wallet
+            // Wallet — canonical route family (customer.wallet.*), backed by
+            // Customer\WalletController. `api-wallet/*` and `gift-card-wallet/*`
+            // below are deprecated aliases onto the same controller.
             Route::prefix('wallet')->name('customer.wallet.')->group(function (): void {
                 Route::get('/', [WalletController::class, 'show'])->name('show');
                 Route::get('transactions', [WalletController::class, 'transactions'])->name('transactions');
@@ -454,6 +457,7 @@ use Illuminate\Support\Facades\Route;
                 Route::post('{order_number}/returns', [ReturnController::class, 'store'])->name('returns.store');
                 Route::post('{order_number}/disputes', [DisputeController::class, 'store'])->name('disputes.store');
                 Route::post('{order_number}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+                Route::post('{order_number}/bank-transfer-proof', [OrderController::class, 'uploadBankTransferProof'])->name('bank-transfer-proof.upload');
             });
 
             // Sub-order tracking
@@ -558,11 +562,14 @@ use Illuminate\Support\Facades\Route;
                 Route::get('{orderNumber}/invoice', [ApiOrderController::class, 'invoice'])->name('invoice');
             });
 
-            // Wallet (Api\Customer)
+            // Wallet (Api\Customer) — DEPRECATED ALIAS: kept only so existing
+            // frontend URLs keep working; now points at the canonical
+            // Customer\WalletController (Wallet-backed). Slated to be
+            // consolidated into the `wallet/*` family in the frontend wave.
             Route::prefix('api-wallet')->name('customer.api.wallet.')->group(function (): void {
-                Route::get('/', [ApiWalletController::class, 'index'])->name('index');
-                Route::get('transactions', [ApiWalletController::class, 'transactions'])->name('transactions');
-                Route::post('withdrawal-request', [ApiWalletController::class, 'withdrawalRequest'])->name('withdrawal-request');
+                Route::get('/', [WalletController::class, 'apiIndex'])->name('index');
+                Route::get('transactions', [WalletController::class, 'apiTransactions'])->name('transactions');
+                Route::post('withdrawal-request', [WalletController::class, 'apiWithdrawalRequest'])->name('withdrawal-request');
             });
 
             // Gift cards
@@ -571,14 +578,17 @@ use Illuminate\Support\Facades\Route;
                 Route::get('mine', [ApiGiftCardController::class, 'mine'])->name('mine');
             });
 
-            // Gift-card wallet (CustomerWallet/GiftCardService-backed; distinct from
-            // the owner_type/owner_id Wallet system above)
+            // Gift-card wallet — DEPRECATED ALIAS: kept only so existing
+            // frontend URLs keep working; now points at the canonical
+            // Customer\WalletController (Wallet-backed, no longer
+            // CustomerWallet-backed). Slated to be consolidated into the
+            // `wallet/*` family in the frontend wave.
             Route::prefix('gift-card-wallet')->name('customer.api.gift-card-wallet.')->group(function (): void {
-                Route::get('/', [CustomerWalletController::class, 'index'])->name('index');
-                Route::post('redeem-gift-card', [CustomerWalletController::class, 'redeemGiftCard'])->name('redeem-gift-card');
-                Route::get('transactions', [CustomerWalletController::class, 'transactions'])->name('transactions');
-                Route::post('/redeem/voucher', [CustomerWalletController::class, 'redeemVoucher'])->name('redeem.voucher');
-                Route::post('/gift-card/balance', [CustomerWalletController::class, 'giftCardBalance'])->name('gift_card.balance');
+                Route::get('/', [WalletController::class, 'giftCardWalletIndex'])->name('index');
+                Route::post('redeem-gift-card', [WalletController::class, 'redeemGiftCard'])->name('redeem-gift-card');
+                Route::get('transactions', [WalletController::class, 'giftCardWalletTransactions'])->name('transactions');
+                Route::post('/redeem/voucher', [WalletController::class, 'redeemVoucher'])->name('redeem.voucher');
+                Route::post('/gift-card/balance', [WalletController::class, 'giftCardBalance'])->name('gift_card.balance');
             });
 
             // Warranty

@@ -16,9 +16,7 @@ export default function DeliveryInstructionsCard({
   onSelect: (value: string | null) => void;
 }) {
   const t = useTranslations("checkout");
-
-  const locale = useLocale() as "ar" | "en";
-
+  const locale = useLocale();
   if (!instructions || !instructions.length) {
     return null;
   }
@@ -41,7 +39,7 @@ export default function DeliveryInstructionsCard({
             ) : (
               <CircleQuestionMarkIcon />
             )}
-            <p className="text-gray text-sm">{s.value?.[locale]}</p>
+            <p className="text-gray text-sm">{s.value[locale]}</p>
             <Checkbox
               checked={selectedInstruction === s.key}
               onCheckedChange={(checked) => onSelect(checked ? s.key : null)}

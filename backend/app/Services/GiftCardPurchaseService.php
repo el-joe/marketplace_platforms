@@ -2,19 +2,35 @@
 
 namespace App\Services;
 
+use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderStatus;
+use App\Mail\GiftCardDeliveryMail;
 use App\Models\Customer;
+use App\Models\CountryPaymentGateway;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
 use App\Models\Order;
+use App\Models\PaymentTransaction;
+use App\Services\PaymentService;
+use App\Services\Payments\PaymentGatewayFactory;
+use App\Services\Payments\PaymentMethodMapper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class GiftCardPurchaseService
 {
+    public function __construct(
+        private readonly PaymentService $paymentService = new PaymentService(),
+    ) {
+    }
+
     /**
      * Purchasable batches that currently have available (active, unassigned) cards.
      */
@@ -44,11 +60,29 @@ class GiftCardPurchaseService
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $gatewayConfig = \App\Models\CountryPaymentGateway::where('id', $data['country_payment_gateway_id'])
+            $gatewayConfig = CountryPaymentGateway::where('id', $data['country_payment_gateway_id'])
                 ->with('gateway')
                 ->first();
 
-            $gatewayCode = $gatewayConfig?->gateway?->code ?? $data['country_payment_gateway_id'];
+            if (! $gatewayConfig || ! $gatewayConfig->gateway) {
+                throw ValidationException::withMessages([
+                    'country_payment_gateway_id' => 'Selected payment method is not available.',
+                ]);
+            }
+
+            $gatewayCode = $gatewayConfig->gateway->code;
+            $gatewayType = $gatewayConfig->gateway->type;
+            $isWallet = $gatewayCode === 'wallet';
+            $isCod = $gatewayCode === 'cod';
+
+            if ($isCod) {
+                // Gift cards are digital-only; PurchaseGiftCardRequest already
+                // rejects COD, but guard here too since this service could be
+                // called from elsewhere.
+                throw ValidationException::withMessages([
+                    'country_payment_gateway_id' => 'Cash on Delivery is not available for gift card purchases.',
+                ]);
+            }
 
             $qty = $data['quantity'] ?? 1;
             if ($qty < $batch->min_quantity || $qty > $batch->max_quantity) {
@@ -76,7 +110,11 @@ class GiftCardPurchaseService
                 'order_number' => $this->generateOrderNumber(),
                 'customer_id' => $buyer->id,
                 'country_id' => $buyer->country_id,
-                'status' => 'completed',
+                // Payment is not actually captured/verified here (see purchase() note
+                // below) — the order must not be marked as a finished/completed order
+                // until payment is confirmed. 'placed' matches the initial status used
+                // by the regular checkout flow before payment capture.
+                'status' => OrderStatus::Placed->value,
                 'currency' => $batch->currency_code,
                 'subtotal' => $totalAmount,
                 'discount' => 0,
@@ -86,9 +124,15 @@ class GiftCardPurchaseService
                 'warranty_total' => 0,
                 'total' => $totalAmount,
                 'wallet_amount_used' => 0,
-                'payment_method' => $gatewayCode,
-                'payment_status' => 'pending',
+                'payment_method' => PaymentMethodMapper::toOrderPaymentMethod($gatewayCode, $gatewayType),
+                'payment_gateway_code' => $gatewayCode,
+                // Set to 'captured' below once the gateway is actually invoked
+                // (wallet debit or online-gateway success). Offline gateways
+                // (e.g. bank transfer) stay 'pending' until an admin approves.
+                'payment_status' => OrderPaymentStatus::Pending->value,
                 'placed_at' => now(),
+                'shipping_address_snapshot' => [],
+                'ip_address' => request()->ip(),
             ]);
 
             $isGift = ! empty($data['recipient_email']) && $data['recipient_email'] !== $buyer->email;
@@ -120,8 +164,88 @@ class GiftCardPurchaseService
                 ]);
             }
 
+            // ── Actually invoke the payment gateway ──────────────────────────
+            // Previously this order was created and left 'pending' forever —
+            // no gateway was ever charged, yet the controller dispatched the
+            // gift-card delivery job unconditionally. Now: wallet is debited
+            // synchronously (instant capture); any other gateway (redirect,
+            // e.g. thawani/paytabs, or offline, e.g. bank_transfer) goes
+            // through the same PaymentService::initiatePayment() checkout
+            // uses. Offline gateways stay 'pending' until an admin approves
+            // via Admin\TransactionController::confirmBankTransfer(); redirect
+            // gateways stay 'pending' until the webhook/callback confirms.
+            if ($isWallet) {
+                $wallet = (new \App\Services\WalletService())->getOrCreateWallet(
+                    \App\Enums\WalletOwnerType::Customer->value,
+                    $buyer->id,
+                    $order->currency,
+                );
+
+                try {
+                    (new \App\Services\WalletService())->debit(
+                        $wallet,
+                        (int) $totalAmount,
+                        'gift_card_purchase',
+                        $order->id,
+                        "Gift card purchase {$order->order_number}",
+                    );
+                } catch (\App\Exceptions\InsufficientBalanceException $e) {
+                    throw ValidationException::withMessages([
+                        'country_payment_gateway_id' => 'Insufficient wallet balance for this purchase.',
+                    ]);
+                }
+
+                $order->update(['payment_status' => OrderPaymentStatus::Captured->value]);
+
+                PaymentTransaction::create([
+                    'id' => (string) Str::uuid(),
+                    'order_id' => $order->id,
+                    'customer_id' => $buyer->id,
+                    'type' => 'sale',
+                    'gateway' => 'wallet',
+                    'gateway_transaction_id' => 'WALLET-'.$order->order_number,
+                    'idempotency_key' => (string) Str::uuid(),
+                    'amount' => $totalAmount,
+                    'currency' => $order->currency,
+                    'status' => 'succeeded',
+                    'processed_at' => now(),
+                ]);
+            } else {
+                try {
+                    $paymentResult = $this->paymentService->initiatePayment($order, $gatewayConfig, (string) Str::uuid(), (int) $totalAmount);
+
+                    if (! $paymentResult->success) {
+                        Log::error('Gift card payment gateway declined purchase', [
+                            'order_id' => $order->id,
+                            'order_number' => $order->order_number,
+                            'gateway_code' => $gatewayCode,
+                            'error' => $paymentResult->errorMessage ?? null,
+                        ]);
+                        $order->update(['payment_status' => OrderPaymentStatus::Failed->value, 'status' => OrderStatus::Cancelled->value]);
+
+                        throw ValidationException::withMessages([
+                            'country_payment_gateway_id' => $paymentResult->errorMessage ?? 'Payment could not be initiated.',
+                        ]);
+                    }
+                } catch (ValidationException $e) {
+                    throw $e;
+                } catch (\Throwable $e) {
+                    Log::error('Gift card payment initiation threw an exception', [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'gateway_code' => $gatewayCode,
+                        'exception' => $e->getMessage(),
+                    ]);
+                    $order->update(['payment_status' => OrderPaymentStatus::Failed->value, 'status' => OrderStatus::Cancelled->value]);
+
+                    throw ValidationException::withMessages([
+                        'country_payment_gateway_id' => 'Payment could not be initiated.',
+                    ]);
+                }
+            }
+
             return [
-                'order' => $order,
+                'order' => $order->fresh(),
                 'purchases' => $purchases,
                 'cards' => $cards,
             ];
@@ -129,23 +253,59 @@ class GiftCardPurchaseService
     }
 
     /**
-     * Called by the delivery job after payment has been confirmed for the purchase's order.
+     * Dispatches the delivery job for any not-yet-delivered gift card
+     * purchases on an order, but only once the order's payment has actually
+     * been captured. Called right after purchase() when payment captured
+     * synchronously (wallet), and from the offline-payment admin-approval
+     * flow (Admin\TransactionController::confirmBankTransfer) /
+     * online-gateway webhook capture once payment_status flips to
+     * 'captured' for an order that turns out to be a gift-card order.
+     */
+    public function dispatchPendingDeliveries(Order $order): void
+    {
+        if ($order->payment_status?->value !== OrderPaymentStatus::Captured->value) {
+            return;
+        }
+
+        $purchases = GiftCardPurchase::where('order_id', $order->id)
+            ->where('delivery_status', 'pending')
+            ->get();
+
+        foreach ($purchases as $purchase) {
+            \App\Jobs\SendGiftCardDeliveryJob::dispatch($purchase->id);
+        }
+    }
+
+    /**
+     * Delivers (or re-delivers, on resend) a purchased card to its recipient.
+     *
+     * The original batch PIN is hashed-only and never recoverable (see
+     * GiftCardService::generateBatch), so every delivery — including resends —
+     * mints a brand-new plain PIN, hashes it into the card, and emails the
+     * plaintext immediately. Nothing plaintext is ever persisted.
      */
     public function deliverCard(GiftCardPurchase $purchase): void
     {
-        DB::transaction(function () use ($purchase) {
+        $plainPin = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+
+        DB::transaction(function () use ($purchase, $plainPin) {
+            $card = GiftCard::where('id', $purchase->gift_card_id)->lockForUpdate()->first();
+
+            if ($card) {
+                $card->pin_hash = Hash::make($plainPin);
+                $card->delivery_sent_at = now();
+                $card->save();
+            }
+
             $purchase->delivery_status = 'sent';
             $purchase->delivered_at = now();
             $purchase->increment('delivery_attempts');
             $purchase->save();
-
-            $purchase->giftCard()->update(['delivery_sent_at' => now()]);
         });
 
-        // Dispatch: Mail::to($purchase->recipient_email)->send(new GiftCardDeliveryMail($purchase))
-        // The plain PIN is not stored after batch generation. For purchased cards, either
-        // re-generate/re-hash the PIN at purchase time and cache the plain value briefly
-        // for delivery, or send code-only delivery and require PIN reset before redemption.
+        $purchase->refresh()->load(['giftCard', 'batch', 'buyer']);
+
+        Mail::to($purchase->recipient_email)->send(new GiftCardDeliveryMail($purchase, $plainPin));
     }
 
     public function getPurchaseHistory(Customer $customer): LengthAwarePaginator

@@ -1,20 +1,29 @@
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import useLocale from "@/src/hooks/use-locale";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/src/components/ui/accordion";
+import type { PageContentFaq } from "../../helpers/types";
 
-export default function FaqSection() {
+type Props = {
+  /**
+   * Admin-managed FAQs (context = 'gift_cards') fetched from
+   * GET /page-content/gift-cards. When empty (nothing configured yet),
+   * the whole section is omitted rather than rendering an empty box.
+   */
+  faqs: PageContentFaq[];
+};
+
+export default function FaqSection({ faqs }: Props) {
   const t = useTranslations("giftCards");
+  const locale = useLocale();
 
-  const faqs = [
-    { questionKey: "faqWhatIsGiftCard", answerKey: "faqWhatIsGiftCardAnswer" },
-    { questionKey: "faqHowDelivered", answerKey: "faqHowDeliveredAnswer" },
-    { questionKey: "faqHowLongValid", answerKey: "faqHowLongValidAnswer" },
-  ];
+  if (faqs.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-10 bg-gray-2">
@@ -25,27 +34,19 @@ export default function FaqSection() {
         <Accordion className="bg-white rounded-md">
           {faqs.map((faq) => (
             <AccordionItem
-              key={faq.questionKey}
-              value={faq.questionKey}
+              key={faq.id}
+              value={faq.id}
               className={"border-border"}
             >
               <AccordionTrigger className="font-bold text-light px-4 py-4 cursor-pointer hover:no-underline">
-                {t(faq.questionKey)}
+                {locale === "ar" ? faq.question_ar : faq.question_en}
               </AccordionTrigger>
               <AccordionContent className={"px-4 py-2 text-gray"}>
-                {t(faq.answerKey)}
+                {locale === "ar" ? faq.answer_ar : faq.answer_en}
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
-        <div className="mt-4 flex items-center justify-between mx-auto">
-          <Link href="/" className="text-sm text-blue-3 underline">
-            {t("viewAllFaqs")}
-          </Link>
-          <Link href="/" className="text-sm text-blue-3 underline">
-            {t("readTerms")}
-          </Link>
-        </div>
       </div>
     </section>
   );

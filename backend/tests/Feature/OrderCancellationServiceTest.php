@@ -6,7 +6,8 @@ use App\Enums\CancelActor;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
-use App\Models\CustomerWallet;
+use App\Enums\WalletOwnerType;
+use App\Models\Wallet;
 use App\Models\LedgerEntry;
 use App\Models\MarketerCampaignConversion;
 use App\Models\Order;
@@ -100,7 +101,7 @@ class OrderCancellationServiceTest extends TestCase
         $order->refresh();
         $this->assertSame('cancelled', $order->status->value);
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($balanceBefore, $wallet->balance, 'wallet must be fully refunded');
 
         $this->assertStock($scenario->vendorListingFbp, 50, 0);
@@ -123,7 +124,7 @@ class OrderCancellationServiceTest extends TestCase
         app(OrderCancellationService::class)->cancel($order, CancelActor::Customer, 'first cancel');
         app(OrderCancellationService::class)->cancel($order, CancelActor::Customer, 'second cancel');
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $this->assertSame($balanceBefore, $wallet->balance, 'second cancel must not refund the wallet again');
 
         $this->assertStock($scenario->vendorListingFbp, 50, 0);
@@ -228,7 +229,7 @@ class OrderCancellationServiceTest extends TestCase
         $this->assertStock($scenario->vendorListingFbp, 50, 0);
         $this->assertStock($scenario->adminListing, 30, 1);
 
-        $wallet = CustomerWallet::where('customer_id', $scenario->customer->id)->first();
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
         $expectedRefund = (int) round(((int) $order->wallet_amount_used) * ($cancelledLineTotal / max(1, (int) $order->total)));
         $this->assertSame($balanceBefore - ((int) $order->total - $expectedRefund), $wallet->balance);
 

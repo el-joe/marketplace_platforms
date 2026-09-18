@@ -118,6 +118,7 @@ return [
         'how_to_use_title'   => 'كيفية الاستخدام',
         'how_to_use_body'    => 'انتقل إلى الملف الشخصي ← المحفظة ← استرداد ← تبويب بطاقة الهدايا ← أدخل الرمز والرقم السري.',
         'thanks'             => 'شكراً،<br>:app_name',
+        'footer_copyright'   => '&copy; :year نون — جميع الحقوق محفوظة',
     ],
 
     'marketer_welcome' => [

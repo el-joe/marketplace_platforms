@@ -18,6 +18,7 @@ class VoucherRedemption extends Model
         'voucher_id',
         'customer_id',
         'customer_wallet_id',
+        'wallet_id',
         'amount',
         'currency_code',
         'wallet_balance_after',
@@ -43,6 +44,11 @@ class VoucherRedemption extends Model
     public function customerWallet(): BelongsTo
     {
         return $this->belongsTo(CustomerWallet::class, 'customer_wallet_id');
+    }
+
+    public function wallet(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class, 'wallet_id');
     }
 
     /**

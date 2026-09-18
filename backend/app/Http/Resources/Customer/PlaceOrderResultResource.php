@@ -2,7 +2,8 @@
 
 namespace App\Http\Resources\Customer;
 
-use App\Models\CustomerWallet;
+use App\Enums\WalletOwnerType;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,7 +36,10 @@ class PlaceOrderResultResource extends JsonResource
 
         $remainingPaid = $this->total - $this->wallet_amount_used;
 
-        $updatedWallet = CustomerWallet::where('customer_id', $this->customer_id)->first();
+        $updatedWallet = Wallet::where('owner_type', WalletOwnerType::Customer)
+            ->where('owner_id', $this->customer_id)
+            ->where('currency', $this->currency)
+            ->first();
 
         return [
             'wallet_amount_used' => $this->wallet_amount_used,

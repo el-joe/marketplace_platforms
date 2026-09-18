@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\Admin;
 use App\Models\Customer;
-use App\Models\CustomerWallet;
 use App\Models\Voucher;
 use App\Models\VoucherRedemption;
+use App\Models\Wallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -86,9 +86,9 @@ class VoucherService
                 throw ValidationException::withMessages(['code' => 'You have already redeemed this voucher.']);
             }
 
-            $wallet = CustomerWallet::lockForUpdate()->firstOrCreate(
-                ['customer_id' => $customer->id, 'currency_code' => $voucher->currency_code],
-                ['balance' => 0]
+            $wallet = Wallet::lockForUpdate()->firstOrCreate(
+                ['owner_type' => 'customer', 'owner_id' => $customer->id, 'currency' => $voucher->currency_code],
+                ['balance' => 0, 'pending_balance' => 0]
             );
 
             $newBalance = $wallet->balance + $voucher->amount;
@@ -98,7 +98,7 @@ class VoucherService
             VoucherRedemption::create([
                 'voucher_id' => $voucher->id,
                 'customer_id' => $customer->id,
-                'customer_wallet_id' => $wallet->id,
+                'wallet_id' => $wallet->id,
                 'amount' => $voucher->amount,
                 'currency_code' => $voucher->currency_code,
                 'wallet_balance_after' => $newBalance,
@@ -107,7 +107,7 @@ class VoucherService
 
             DB::table('wallet_transactions')->insert([
                 'id' => Str::uuid(),
-                'wallet_id' => null,
+                'wallet_id' => $wallet->id,
                 'customer_id' => $customer->id,
                 'type' => 'voucher_redemption',
                 'direction' => 'credit',

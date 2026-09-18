@@ -111,7 +111,36 @@ function initTransactionsIndex() {
 // ─── Transactions Show ────────────────────────────────────────────────────────
 
 function initTransactionsShow() {
-    // Nothing extra needed — Alpine handles collapsible JSON, copy handled globally
+    const btn = document.getElementById('js-confirm-bank-transfer');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            if (!confirm(btn.dataset.confirmMessage || 'Confirm this bank transfer?')) return;
+            btn.disabled = true;
+            try {
+                await postJson(btn.dataset.url);
+                window.location.reload();
+            } catch (err) {
+                window.Toast?.error(err?.message || 'Failed to confirm bank transfer.');
+                btn.disabled = false;
+            }
+        });
+    }
+
+    const rejectBtn = document.getElementById('js-reject-offline-payment');
+    if (rejectBtn) {
+        rejectBtn.addEventListener('click', async () => {
+            if (!confirm(rejectBtn.dataset.confirmMessage || 'Reject this offline payment?')) return;
+            const reason = prompt('Reason (optional):') ?? '';
+            rejectBtn.disabled = true;
+            try {
+                await postJson(rejectBtn.dataset.url, { reason: reason.trim() || null });
+                window.location.reload();
+            } catch (err) {
+                window.Toast?.error(err?.message || 'Failed to reject offline payment.');
+                rejectBtn.disabled = false;
+            }
+        });
+    }
 }
 
 // ─── Refunds Page ─────────────────────────────────────────────────────────────

@@ -645,6 +645,9 @@
     "selectATheme": "اختر تصميمًا",
     "selectAmount": "اختر المبلغ",
     "selectQuantity": "اختر الكمية",
+    "selectPaymentMethod": "اختر طريقة الدفع",
+    "loadingPaymentMethods": "جارٍ تحميل طرق الدفع...",
+    "noPaymentMethodsAvailable": "لا توجد طرق دفع متاحة حاليًا. يرجى المحاولة لاحقًا.",
     "buyingForMyself": "أشتري لنفسي",
     "receiversName": "اسم المستلم",
     "receiversEmail": "البريد الإلكتروني للمستلم",
@@ -659,7 +662,14 @@
     "myGiftCardsEmptyMessage": "لم تشترِ أي بطاقات هدايا بعد.",
     "giftCardPurchasedOnLabel": "تم الشراء",
     "giftCardPendingDelivery": "بانتظار التسليم",
-    "loading": "جارٍ التحميل..."
+    "loading": "جارٍ التحميل...",
+    "offlinePaymentUploadTitle": "رفع إثبات الدفع",
+    "offlinePaymentUploadDesc": "يرجى إرفاق نسخة من الفاتورة/إيصال الدفع. هذا مطلوب لشراء بطاقة الهدايا بطريقة الدفع هذه.",
+    "chooseFile": "اختر ملفًا",
+    "note": "ملاحظة",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول دفعتك",
+    "fileRequiredError": "يرجى إرفاق ملف إثبات الدفع للمتابعة.",
+    "proofUploadFailedFallback": "تم إتمام طلب بطاقة الهدايا، لكن تعذّر رفع إثبات الدفع. يرجى المحاولة مرة أخرى من سجل طلباتك."
   },
   "cart": {
     "freeShipping": "شحن مجاني",
@@ -758,7 +768,16 @@
     "marketerContractAccept": "أوافق",
     "marketerContractCancel": "إلغاء",
     "marketerContractRequiredNotice": "يرجى قراءة الشروط والموافقة عليها قبل إتمام طلبك.",
-    "marketerContractDownload": "عرض ملف PDF"
+    "marketerContractDownload": "عرض ملف PDF",
+    "offlinePaymentUploadTitle": "رفع إثبات الدفع",
+    "offlinePaymentUploadDesc": "يرجى إرفاق نسخة من الفاتورة/إيصال الدفع. هذا مطلوب لإتمام الطلب بهذه الطريقة.",
+    "chooseFile": "اختر ملف",
+    "note": "ملاحظة (اختياري)",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول عملية الدفع",
+    "fileRequiredError": "يرجى إرفاق ملف إثبات الدفع للمتابعة.",
+    "placingOrder": "جاري تقديم الطلب...",
+    "uploadingProof": "جاري رفع الإثبات...",
+    "proofUploadFailedFallback": "تم تقديم طلبك، لكن تعذر رفع إثبات الدفع. يرجى رفعه من صفحة تأكيد الطلب."
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!",
@@ -800,7 +819,24 @@
     "easyReturnsTitle": "إرجاع سهل وبدون تعقيد",
     "easyReturnsDesc": "سياسة إرجاع لمدة 15 يومًا على المنتجات المؤهلة",
     "supportTitle": "دعم عملاء على مدار الساعة",
-    "supportDesc": "نحن هنا لمساعدتك في أي وقت تحتاج فيه إلينا"
+    "supportDesc": "نحن هنا لمساعدتك في أي وقت تحتاج فيه إلينا",
+    "bankTransferTitle": "أكمل عملية التحويل البنكي",
+    "bankTransferInstructions": "قم بتحويل إجمالي الطلب إلى الحساب أدناه، ثم ارفع إيصال الدفع حتى نتمكن من تأكيده.",
+    "bankName": "اسم البنك",
+    "accountName": "اسم الحساب",
+    "accountNumber": "رقم الحساب",
+    "iban": "رقم الآيبان",
+    "swift": "رمز السويفت",
+    "reference": "المرجع",
+    "uploadProof": "رفع إثبات الدفع",
+    "uploadProofDesc": "الصيغ المقبولة: JPG، PNG، PDF — بحد أقصى 10 ميجابايت.",
+    "chooseFile": "اختر ملفًا",
+    "submitProof": "إرسال الإثبات",
+    "uploadingProof": "جارٍ الرفع...",
+    "proofUploaded": "تم رفع الإثبات بنجاح. سنقوم بتأكيد دفعتك قريبًا.",
+    "proofUploadFailed": "فشل رفع الإثبات. يرجى المحاولة مرة أخرى.",
+    "note": "ملاحظة (اختياري)",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول عملية الدفع"
   },
   "openSooq": {
     "header": {

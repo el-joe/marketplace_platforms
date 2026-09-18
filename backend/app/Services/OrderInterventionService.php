@@ -20,6 +20,7 @@ use App\Notifications\Customer\OrderOutForDelivery;
 use App\Notifications\Customer\OrderRefunded;
 use App\Notifications\Customer\OrderShipped as CustomerOrderShipped;
 use App\Notifications\Vendor\OrderCancelledByAdmin;
+use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -85,6 +86,8 @@ class OrderInterventionService
             ]);
         }
 
+        $this->guardOfflinePaymentApproval($order, $newStatus);
+
         DB::transaction(function () use ($order, $newStatus, $reason, $adminId) {
             $old = $order->status->value;
 
@@ -110,6 +113,49 @@ class OrderInterventionService
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Offline-payment approval gate
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Block any transition that would move an order/sub-order out of
+     * `placed` and into fulfillment while an offline-gateway payment
+     * (e.g. bank transfer) is still awaiting admin approval.
+     *
+     * COD and online/instant-capture (wallet, redirect gateways) orders are
+     * never affected: COD has its own capture-on-delivery flow
+     * (App\Listeners\CaptureCodOnDelivery), and PaymentGatewayFactory::isOffline()
+     * only returns true for `type === 'offline'` gateways.
+     *
+     * @throws ValidationException
+     */
+    private function guardOfflinePaymentApproval(Order $order, string $newStatus): void
+    {
+        // Cancelling out of `placed` is always allowed regardless of
+        // payment approval state.
+        if ($newStatus === 'cancelled') {
+            return;
+        }
+
+        $gatewayCode = $order->payment_gateway_code ?? $order->payment_method;
+
+        if (!$gatewayCode || !PaymentGatewayFactory::isOffline((string) $gatewayCode)) {
+            return;
+        }
+
+        $paymentStatus = $order->payment_status instanceof \BackedEnum
+            ? $order->payment_status->value
+            : $order->payment_status;
+
+        if ($paymentStatus === 'captured') {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'new_status' => ['Order payment is pending admin approval.'],
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Update sub-order status
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -128,6 +174,11 @@ class OrderInterventionService
             throw ValidationException::withMessages([
                 'new_status' => ["Status transition from '{$subOrder->status->value}' to '{$newStatus}' is not allowed."],
             ]);
+        }
+
+        $subOrder->loadMissing('order');
+        if ($subOrder->order) {
+            $this->guardOfflinePaymentApproval($subOrder->order, $newStatus);
         }
 
         DB::transaction(function () use ($subOrder, $newStatus, $reason, $adminId) {

@@ -9,13 +9,10 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-// The PIN is only passed to this Mailable from a short-lived Redis cache.
-// It was generated fresh at purchase time (not the original batch PIN).
-// Redis key: "gift_card_pin:{gift_card_id}" with TTL 24 hours.
-// After this email is sent, the plain PIN is inaccessible forever.
-// If customer requests resend within 24h: retrieve from Redis.
-// If resend after 24h: generate a NEW PIN, re-hash into gift_cards.pin_hash,
-//   cache the new plain PIN, then send.
+// The plain PIN is minted fresh by GiftCardPurchaseService::deliverCard() on
+// every delivery (including resends) and never persisted anywhere — only its
+// hash is stored on the GiftCard. Once this email is sent, the plaintext is
+// gone; a resend mints and emails a brand-new PIN rather than recovering one.
 class GiftCardDeliveryMail extends Mailable
 {
     use Queueable, SerializesModels;

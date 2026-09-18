@@ -21,6 +21,7 @@ return [
         'destination_invalid' => 'The selected destination is invalid.',
         'cancel_not_allowed' => 'This booking cannot be cancelled in its current status.',
         'transition_not_allowed' => 'This booking cannot transition from :from to :to.',
+        'proof_required' => 'A payment proof file is required to mark this booking as paid.',
     ],
     'booking_status' => [
         'draft' => 'Draft',

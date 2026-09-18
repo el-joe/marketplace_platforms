@@ -118,6 +118,7 @@ return [
         'how_to_use_title'   => 'How to use',
         'how_to_use_body'    => 'Go to profile → Wallet → Redeem → Gift Card tab → enter your code and PIN.',
         'thanks'             => 'Thanks,<br>:app_name',
+        'footer_copyright'   => '&copy; :year Noon — All rights reserved',
     ],
 
     'marketer_welcome' => [
