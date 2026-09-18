@@ -1610,6 +1610,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         Route::prefix('inquiries')->name('inquiries.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TravelPackageInquiryController::class, 'index'])->name('index');
+            Route::post('/{inquiry}/convert', [\App\Http\Controllers\Admin\TravelPackageInquiryController::class, 'convertToBooking'])->name('convert');
         });
 
         Route::prefix('inclusions')->name('inclusions.')->group(function () {

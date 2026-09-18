@@ -3294,7 +3294,12 @@ return [
         'inclusion_packages_count' => 'Packages',
         'delete_inclusion_confirm' => 'Delete ":name"? This cannot be undone.',
         'inquiries_title'    => 'Travel Package Inquiries',
-        'inquiries_desc'     => 'Read-only lead volume overview across all agencies.',
+        'inquiries_desc'     => 'Lead volume overview across all agencies.',
+        'convert_to_booking' => 'Convert to Booking',
+        'convert_inquiry_confirm' => 'Convert this inquiry into a confirmed booking? This cannot be undone.',
+        'inquiry_converted_success' => 'Inquiry converted to booking.',
+        'inquiry_cannot_be_converted' => 'This inquiry cannot be converted to a booking.',
+        'inquiry_no_email_on_file' => 'This inquiry has no email on file, so a new customer cannot be created.',
 
         // Categories
         'travel_categories'          => 'Travel Categories',

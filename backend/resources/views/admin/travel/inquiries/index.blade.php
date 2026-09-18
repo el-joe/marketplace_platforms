@@ -38,12 +38,14 @@
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.travel.travelers') }}</th>
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('common.status') }}</th>
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.travel.submitted') }}</th>
+                    <th class="px-4 py-3 text-end font-semibold text-gray-700">{{ __('admin.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($inquiries as $inq)
                 @php
                 $colors = ['new'=>'bg-blue-100 text-blue-700','contacted'=>'bg-amber-100 text-amber-700','converted'=>'bg-emerald-100 text-emerald-700','closed'=>'bg-gray-100 text-gray-500'];
+                $canConvert = in_array($inq->status->value, ['new', 'contacted']) && auth('admin')->user()->hasPermissionTo('travel.approve');
                 @endphp
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3">
@@ -62,10 +64,21 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ $inq->created_at->format('d M Y') }}</td>
+                    <td class="px-4 py-3 text-end">
+                        @if($canConvert)
+                        <form method="POST" action="{{ route('admin.travel.inquiries.convert', $inq) }}"
+                              onsubmit="return confirm('{{ __('admin.travel.convert_inquiry_confirm') }}');">
+                            @csrf
+                            <button type="submit" class="text-xs font-medium text-emerald-600 hover:underline">
+                                {{ __('admin.travel.convert_to_booking') }}
+                            </button>
+                        </form>
+                        @endif
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-4 py-10 text-center text-gray-400 text-sm">{{ __('admin.travel.no_inquiries_yet') }}</td>
+                    <td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">{{ __('admin.travel.no_inquiries_yet') }}</td>
                 </tr>
                 @endforelse
             </tbody>

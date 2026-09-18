@@ -3254,7 +3254,12 @@ return [
         'inclusion_packages_count' => 'الباقات',
         'delete_inclusion_confirm' => 'حذف ":name"؟ لا يمكن التراجع عن هذا الإجراء.',
         'inquiries_title'    => 'استفسارات باقات السفر',
-        'inquiries_desc'     => 'نظرة عامة للقراءة فقط على حجم العملاء المحتملين عبر جميع الوكالات.',
+        'inquiries_desc'     => 'نظرة عامة على حجم العملاء المحتملين عبر جميع الوكالات.',
+        'convert_to_booking' => 'تحويل إلى حجز',
+        'convert_inquiry_confirm' => 'هل تريد تحويل هذا الاستفسار إلى حجز مؤكد؟ لا يمكن التراجع عن هذا الإجراء.',
+        'inquiry_converted_success' => 'تم تحويل الاستفسار إلى حجز.',
+        'inquiry_cannot_be_converted' => 'لا يمكن تحويل هذا الاستفسار إلى حجز.',
+        'inquiry_no_email_on_file' => 'لا يوجد بريد إلكتروني مسجل لهذا الاستفسار، لذا لا يمكن إنشاء عميل جديد.',
 
         // Categories
         'travel_categories'          => 'فئات السفر',
