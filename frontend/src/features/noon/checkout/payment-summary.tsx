@@ -113,6 +113,17 @@ export default function PaymentSummary({
           </p>
         </div>
       )}
+      {/* customs duty */}
+      {checkoutSummary.customs_duty > 0 && (
+        <div className="flex justify-between mb-3">
+          <p className=" text-gray">{t("customsDuty")}</p>
+          <Price
+            currentPrice={checkoutSummary.customs_duty}
+            size="xs"
+            currency={currency}
+          />
+        </div>
+      )}
       {/* tax */}
       <div className="flex justify-between pb-4 border-b border-border border-dashed mb-4">
         <p className=" text-gray">{t("tax")}</p>
