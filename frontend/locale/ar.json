@@ -1020,6 +1020,12 @@
       "passportHint": "الصيغ المقبولة: PDF أو JPG أو PNG. الحجم الأقصى 10MB.",
       "passportUploadedSuccess": "تم رفع جواز السفر! يمكن للوكالة الآن تأكيد حجزك.",
       "uploadError": "فشل الرفع. يرجى المحاولة مجدداً."
+    },
+    "filters": {
+      "allCountries": "كل الدول",
+      "allCities": "كل المدن",
+      "dateRange": "تواريخ السفر",
+      "clearFilters": "مسح الفلاتر"
     }
   },
   "vewAll": "عرض الكل",
@@ -1350,5 +1356,9 @@
     "guestNamePlaceholder": "اسمك (اختياري)",
     "commentPlaceholder": "اكتب شيئًا…",
     "send": "إرسال"
+  },
+  "adsPopup": {
+    "close": "إغلاق",
+    "viewProduct": "عرض المنتج"
   }
 }

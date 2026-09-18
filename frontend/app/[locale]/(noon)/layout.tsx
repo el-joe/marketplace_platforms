@@ -4,6 +4,7 @@ import MobileNav from "@/src/layout/noon/MobileNav";
 import Header from "@/src/layout/noon/header/Header";
 import LiveStreamButton from "@/src/components/shared/LiveStreamButton";
 import EchoProvider from "@/src/providers/echo-provider";
+import SeriousFeaturedPopup from "@/src/features/noon/ads/serious-featured-popup";
 
 export const metadata: Metadata = {
   title: "noon",
@@ -21,6 +22,7 @@ export default async function RootLayout({
       <main className="md:pt-26">{children}</main>
       <MobileNav />
       <LiveStreamButton />
+      <SeriousFeaturedPopup />
     </EchoProvider>
   );
 }

@@ -1020,6 +1020,12 @@
       "passportHint": "Accepted formats: PDF, JPG, PNG. Max 10MB.",
       "passportUploadedSuccess": "Passport uploaded! The agency can now confirm your booking.",
       "uploadError": "Upload failed. Please try again."
+    },
+    "filters": {
+      "allCountries": "All countries",
+      "allCities": "All cities",
+      "dateRange": "Travel dates",
+      "clearFilters": "Clear filters"
     }
   },
   "vewAll": "Vew All",
@@ -1350,5 +1356,9 @@
     "guestNamePlaceholder": "Your name (optional)",
     "commentPlaceholder": "Say something…",
     "send": "Send"
+  },
+  "adsPopup": {
+    "close": "Close",
+    "viewProduct": "View product"
   }
 }
