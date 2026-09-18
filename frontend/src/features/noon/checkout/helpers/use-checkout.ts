@@ -15,6 +15,7 @@ import { getMarketerContract } from "../api/get";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { ApiRequestError } from "@/src/lib/utils";
+import { useAddressesContext } from "@/src/providers/addresses-provider";
 
 export const useCheckout = () => {
   const router = useRouter();
@@ -34,6 +35,10 @@ export const useCheckout = () => {
     string | null
   >(null);
 
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(
+    null,
+  );
+
   const [offlineProofFile, setOfflineProofFile] = useState<File | null>(null);
   const [offlineProofNote, setOfflineProofNote] = useState("");
   const [isUploadingProof, setIsUploadingProof] = useState(false);
@@ -43,15 +48,11 @@ export const useCheckout = () => {
     queryKey: ["payment-gateways"],
     queryFn: getPaymentGateways,
   });
-  const addresses = useQuery({
-    queryKey: ["addressesList"],
-    queryFn: getAddresses,
-  });
-
-  const selectedAddress = useMemo(
-    () => addresses.data?.find((a) => a.is_default) ?? addresses.data?.[0],
-    [addresses.data],
-  );
+  const {
+    selectedAddress,
+    addresses,
+    isLoading: isGettingAddresses,
+  } = useAddressesContext();
   const selectedGateway = useMemo(
     () =>
       checkoutData?.available_payment_gateways.find(
@@ -201,6 +202,7 @@ export const useCheckout = () => {
       address_id: Number(selectedAddress.id),
       country_payment_gateway_id: selectedGatewayId,
       idempotency_key: uuidv4(),
+      receiver_id: selectedReceiverId ?? undefined,
       delivery_instruction: !!selectedInstruction
         ? Object.entries(selectedInstruction)
             .map(([key, val]) => val)
@@ -232,10 +234,10 @@ export const useCheckout = () => {
     isPreparingCheckout: prepareCheckout.isPending,
     prepareCheckoutError: prepareCheckout.error,
 
-    addressesData: addresses.data,
-    isGettingAddresses: addresses.isPending,
-    addressesError: addresses.error,
-    selectedAddress,
+    addressesData: addresses,
+    isGettingAddresses,
+    // addressesError: addresses.error,
+    // selectedAddress,
 
     gatewaysData: gateways.data,
     isGettingGateways: gateways.isPending,
@@ -259,6 +261,9 @@ export const useCheckout = () => {
 
     selectedInstruction,
     setSelectedInstruction,
+
+    selectedReceiverId,
+    setSelectedReceiverId,
 
     contract,
     isContractModalOpen,

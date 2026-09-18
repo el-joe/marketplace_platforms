@@ -1,12 +1,11 @@
 "use client";
 import LocationDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
 import { Button } from "@/src/components/ui/button";
-import { getAddresses } from "@/src/services/address";
-import { useQuery } from "@tanstack/react-query";
 import { Building2Icon, HomeIcon, MapPinIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
 import { IPrepareCheckout } from "./types/checkout.type";
+import { useAddressesContext } from "@/src/providers/addresses-provider";
 
 export default function AddressCard({
   addressId,
@@ -14,19 +13,15 @@ export default function AddressCard({
   addressId: IPrepareCheckout["address"]["id"];
 }) {
   const t = useTranslations("checkout");
-  const addresses = useQuery({
-    queryKey: ["addresses"],
-    queryFn: getAddresses,
-  });
-  const selectedAddress = addresses.data?.find(
-    (a) => `${a.id}` === `${addressId}`,
-  );
+
+  const { addresses } = useAddressesContext();
+  const selectedAddress = addresses?.find((a) => `${a.id}` === `${addressId}`);
   return (
     <div className="p-3 rounded-2xl bg-white flex gap-3 items-center">
       <div className="bg-gray-2 text-black min-w-10 h-10 rounded-lg grid place-items-center">
-        {selectedAddress?.label === "home" ? (
+        {selectedAddress?.address_type === "home" ? (
           <HomeIcon className="size-4" />
-        ) : selectedAddress?.label === "work" ? (
+        ) : selectedAddress?.address_type === "work" ? (
           <Building2Icon className="size-4" />
         ) : (
           <MapPinIcon className="size-4" />
@@ -34,7 +29,7 @@ export default function AddressCard({
       </div>
       <div>
         <h4 className="text-base font-semibold">
-          {t("deliverTo")} {selectedAddress?.label}
+          {t("deliverTo")} {selectedAddress?.address_type}
         </h4>
         <p className="text-gray text-sm line-clamp-1">
           {selectedAddress?.full_address}
