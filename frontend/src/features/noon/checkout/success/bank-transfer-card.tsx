@@ -8,6 +8,7 @@ import { useBankTransferProof } from "./helpers/use-bank-transfer-proof";
 interface Props {
   orderNumber: string;
   details: Record<string, unknown>;
+  alreadyUploaded?: boolean;
 }
 
 const FIELD_KEYS: { key: string; labelKey: string }[] = [
@@ -19,10 +20,14 @@ const FIELD_KEYS: { key: string; labelKey: string }[] = [
   { key: "reference", labelKey: "reference" },
 ];
 
-export default function BankTransferCard({ orderNumber, details }: Props) {
+export default function BankTransferCard({
+  orderNumber,
+  details,
+  alreadyUploaded = false,
+}: Props) {
   const t = useTranslations("checkoutSuccess");
   const { file, setFile, note, setNote, submitProof, isUploading, isUploaded } =
-    useBankTransferProof(orderNumber);
+    useBankTransferProof(orderNumber, alreadyUploaded);
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-border shadow-xs">

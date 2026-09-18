@@ -191,6 +191,11 @@ export type OrderDetail = {
   };
   sub_orders: OrderDetailSubOrder[];
   marketer_ref: string | null;
+  bank_transfer_details: {
+    details: Record<string, unknown>;
+    proof_file_path: string | null;
+    proof_uploaded_at: string | null;
+  } | null;
 };
 
 // ---- Request Return (POST /orders/:order_number/returns) ----

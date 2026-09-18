@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\DeliveryAssignment;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentTransaction;
 use App\Models\Review;
 use App\Models\Shipment;
 use App\Models\ShipmentTrackingEvent;
@@ -86,6 +87,39 @@ class OrderTrackingService
             'sub_orders'        => $order->subOrders->map(
                 fn (SubOrder $subOrder) => $this->buildSubOrder($subOrder, $reviewedItemIds)
             )->all(),
+            'bank_transfer_details' => $this->buildBankTransferDetails($order),
+        ];
+    }
+
+    /**
+     * FIX-5: bank transfer instructions + proof-of-payment status were only
+     * ever surfaced on the one-time post-checkout success screen (from
+     * sessionStorage). Resurface them here too, from the persisted
+     * PaymentTransaction row (its raw_response holds the same bank details
+     * BankTransferGateway::initiate() returned at checkout — see
+     * PaymentService::initiatePayment), so customers can always find how to
+     * pay/upload proof from their normal order history, not just that
+     * single post-checkout view.
+     */
+    private function buildBankTransferDetails(Order $order): ?array
+    {
+        if ($order->payment_method !== 'bank_transfer') {
+            return null;
+        }
+
+        $transaction = PaymentTransaction::where('order_id', $order->id)
+            ->where('gateway', $order->payment_gateway_code)
+            ->latest('created_at')
+            ->first();
+
+        if (! $transaction) {
+            return null;
+        }
+
+        return [
+            'details'            => $transaction->raw_response,
+            'proof_file_path'    => $transaction->proof_file_path,
+            'proof_uploaded_at'  => $transaction->proof_uploaded_at?->toIso8601String(),
         ];
     }
 
