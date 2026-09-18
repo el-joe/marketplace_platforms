@@ -62,6 +62,8 @@ export interface Product {
   }[];
   campaign_context?: { id: string; title: string | null; vendor_name: string | null } | null;
   is_mega_deal?: boolean;
+  is_flash_sale?: boolean;
+  flash_sale_ends_at?: string | null;
   promo_badges?: PromoBadge[];
 }
 

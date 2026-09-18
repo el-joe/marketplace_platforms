@@ -46,6 +46,8 @@ export interface IProduct {
     sort_order: number;
   }[];
   is_mega_deal?: boolean;
+  is_flash_sale?: boolean;
+  flash_sale_ends_at?: string | null;
   promo_badges?: PromoBadge[];
 }
 

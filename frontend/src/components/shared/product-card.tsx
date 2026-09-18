@@ -26,6 +26,7 @@ import { useTranslations } from "next-intl";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { AdBadge } from "./ad-badge";
 import AnimatedBadge from "./animated-badge";
+import useCountDown from "@/src/hooks/useCountDown";
 
 type Props = {
   productData: Product | IProduct;
@@ -46,6 +47,9 @@ const ProductCard = ({ productData }: Props) => {
     // checkItem,
   } = useWishlistContext();
   const swiperRef = useRef<null | SwiperType>(null);
+  const { H, M } = useCountDown(
+    new Date(productData.flash_sale_ends_at || Date.now()),
+  );
   const handleAutoplay = (state: "start" | "stop") => {
     const swiper = swiperRef.current;
     if (!swiper) return;
@@ -218,6 +222,23 @@ const ProductCard = ({ productData }: Props) => {
               }))}
               containerClasses="mb-1"
             />
+          )}
+          {/* mega deal / flash sale badge */}
+          {productData.is_flash_sale ? (
+            <div className="flex w-fit font-semibold text-red bg-[#f5ced7] rounded-md items-center text-[9px] lg:text-xs gap-1 px-1.5 py-0.5 mb-1">
+              <span>{t("flashSale")}</span>
+              {!!productData.flash_sale_ends_at && (
+                <span>
+                  {H}h {M}m
+                </span>
+              )}
+            </div>
+          ) : (
+            !!productData.is_mega_deal && (
+              <div className="flex w-fit font-semibold text-red bg-[#f5ced7] rounded-md items-center text-[9px] lg:text-xs gap-1 px-1.5 py-0.5 mb-1">
+                <span>{t("megaDeal")}</span>
+              </div>
+            )
           )}
           {/* bottom badge */}
           {!!productData.shipping_badge && (
