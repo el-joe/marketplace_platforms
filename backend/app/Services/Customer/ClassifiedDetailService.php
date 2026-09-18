@@ -42,6 +42,7 @@ class ClassifiedDetailService
                 ->count();
 
             return [
+                'id'              => $vendor?->id,
                 'type'            => 'vendor',
                 'display_name'    => $vendor?->store_name ?? 'Vendor',
                 'positive_rating' => $vendor?->positive_rating_pct,
@@ -64,6 +65,7 @@ class ClassifiedDetailService
             ->count();
 
         return [
+            'id'              => null,
             'type'            => 'individual',
             'display_name'    => trim($firstName . ' ' . $lastInitial),
             'positive_rating' => null,

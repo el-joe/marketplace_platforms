@@ -1220,7 +1220,8 @@
     "askTheLister": "Ask the Lister",
     "messagePlaceholder": "Message...",
     "sendMessage": "Send Message",
-    "messageSentTo": "Your message has been sent to {name}!"
+    "messageSentTo": "Your message has been sent to {name}!",
+    "sendFailed": "Couldn't send your message. Please try again."
   },
   "classifiedGallery": {
     "promotedTurbo": "Promoted Turbo",

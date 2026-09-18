@@ -1220,7 +1220,8 @@
     "askTheLister": "اسأل المُعلِن",
     "messagePlaceholder": "رسالة...",
     "sendMessage": "إرسال الرسالة",
-    "messageSentTo": "تم إرسال رسالتك إلى {name}!"
+    "messageSentTo": "تم إرسال رسالتك إلى {name}!",
+    "sendFailed": "تعذر إرسال رسالتك. يرجى المحاولة مرة أخرى."
   },
   "classifiedGallery": {
     "promotedTurbo": "إعلان مميز",

@@ -9,3 +9,12 @@ export const getRelatedClassifiedService = (slug: string) =>
   fetchInstance<{ data: { items: ClassifiedItem[] } }>(
     `/listings/classified/${slug}/similar`,
   );
+
+export const postClassifiedInquiryService = (slug: string, message: string) =>
+  fetchInstance<{ data: unknown; message: string }>(
+    `/listings/classified/${slug}/inquiries`,
+    {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    },
+  );

@@ -1,6 +1,7 @@
 import { Currency } from "@/src/features/noon/cart/types/recommendations.type";
 
 export interface IClassified {
+  id: string;
   listing_number: string;
   slug: string;
   title: Description;
@@ -40,6 +41,7 @@ export interface Location {
 }
 
 export interface Seller {
+  id: string | null;
   type: string;
   display_name: string;
   positive_rating: number;

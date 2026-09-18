@@ -3,17 +3,22 @@
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Send, CheckCircle } from "lucide-react";
+import toast from "react-hot-toast";
+import { postClassifiedInquiryService } from "./api/get";
 
 interface ClassifiedInquiryProps {
   sellerName?: string;
+  slug: string;
 }
 
 export default function ClassifiedInquiry({
   sellerName,
+  slug,
 }: ClassifiedInquiryProps) {
   const t = useTranslations("classifiedInquiry");
   const [message, setMessage] = useState("");
   const [isSent, setIsSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const displaySellerName = sellerName || t("theLister");
 
   const PRESET_QUESTIONS = [
@@ -28,15 +33,24 @@ export default function ClassifiedInquiry({
     setMessage(text);
   };
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isSending) return;
 
-    setIsSent(true);
-    setTimeout(() => {
+    const sentMessage = message.trim();
+    setIsSending(true);
+    try {
+      await postClassifiedInquiryService(slug, sentMessage);
+      setIsSent(true);
       setMessage("");
-      setIsSent(false);
-    }, 3500);
+      setTimeout(() => {
+        setIsSent(false);
+      }, 3500);
+    } catch {
+      toast.error(t("sendFailed"));
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -73,7 +87,7 @@ export default function ClassifiedInquiry({
 
         <button
           type="submit"
-          disabled={!message.trim()}
+          disabled={!message.trim() || isSending}
           className={`px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-colors shrink-0 flex items-center gap-1.5 ${
             message.trim()
               ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer shadow-xs"

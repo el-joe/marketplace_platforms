@@ -7,6 +7,8 @@ export interface ClassifiedImage {
 
 export interface ClassifiedSeller {
   id: string;
+  /** Real vendor UUID for linking to /seller/[seller_id]; null for individual sellers (no public seller page yet). */
+  vendorId?: string | null;
   name: string;
   avatar?: string;
   rating: number;
@@ -43,6 +45,8 @@ export interface RecommendedClassifiedItem {
 
 export interface ClassifiedDetail {
   id: string;
+  /** Real listing UUID — needed for wishlist/favorite API calls (id/listingId above are the display listing_number). */
+  uuid: string;
   listingId: string;
   slug: string;
   titleAr: string;
