@@ -57,6 +57,17 @@ export type CancelBookingResult = {
   status: BookingStatus;
 };
 
+export type CreateBookingResult = {
+  id: string;
+  booking_number: string;
+  status: BookingStatus;
+  travelers_count: number;
+  total_price: number;
+  currency: string;
+  created_at: string;
+  message: string | null;
+};
+
 export type TravelPackageCategorySummary = {
   name_en: string;
   slug: string;

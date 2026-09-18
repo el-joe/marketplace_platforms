@@ -972,7 +972,15 @@
       "groupPricingTitle": "أسعار المجموعات",
       "travelersCount": "{count, plural, one {# مسافر} other {# مسافرين}}",
       "agencyTitle": "وكالة السفر",
-      "licenseLabel": "الترخيص:"
+      "licenseLabel": "الترخيص:",
+      "travelersCountLabel": "عدد المسافرين",
+      "decreaseTravelers": "تقليل عدد المسافرين",
+      "increaseTravelers": "زيادة عدد المسافرين",
+      "totalPrice": "السعر الإجمالي",
+      "bookNow": "احجز الآن",
+      "bookingInProgress": "جارٍ الحجز…",
+      "bookingError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "soldOut": "نفدت المقاعد"
     },
     "myBookings": {
       "title": "حجوزاتي",
