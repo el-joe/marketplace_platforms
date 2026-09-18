@@ -1,300 +1,391 @@
-# International Product Shipping — Design & Execution Plan
-Author pass: Sonnet 5 | Generated: 2026-09-19 | Base commit: `7b579cc`
+# International Product Shipping — Design & Execution Plan (v2)
+Author pass: Sonnet 5 | Generated: 2026-09-19 | Base commit: `3591d89`
+Rewritten after reading the actual schema dump (`marketplace_platform.sql`, 40k lines) — v1 of
+this doc guessed at a zone-based design without checking what already exists; this version is
+grounded in it and supersedes v1 entirely.
 
 **Problem statement:** A product listed on one country storefront (e.g. a vendor listing under
-`/uae/...`) should be purchasable by a customer whose shipping address is in a *different*
-country (e.g. Egypt), with correct pricing/currency, a real cross-border shipping cost and ETA,
-customs/duty handling, COD eligibility, and multi-leg tracking. Today the platform has **zero**
-representation of this: every listing, carrier, and order is implicitly single-country
-(`vendor_listings.country_id` is NOT NULL/single-value, `shipping_carriers.country_id` is
-single-value, `orders.country_id` is single-value and assumed to match the listing's country).
-This doc also resolves `QUESTION-1.md` (FIX-S1's blocked COD "international product" exemption)
-as a side effect of Phase 1.
+`/uae/...`) should be purchasable by a customer whose shipping address is in a different country
+(e.g. Egypt), with correct pricing/currency, a real cross-border shipping cost and ETA, customs
+handling, COD eligibility, and tracking. This is genuinely missing end-to-end today.
 
 ---
 
-## Current-state findings (grounding — do not re-derive, verified against working tree)
+## What already exists (verified against `marketplace_platform.sql` + app code — do not rebuild these)
 
-- Country routing: `Route::prefix('{country}')->middleware('detect.country')` resolves a
-  `Country` row (string PK) by `site_code` (`backend/app/Http/Middleware/DetectCountry.php`,
-  `backend/app/Models/Country.php`).
-- Every `vendor_listings` row has one `country_id` + its own `currency` (schema
-  `mysql-schema.sql:6583-6645`). Selling the same product in multiple countries today means
-  multiple separate listing rows, each independently priced/stocked. No `available_countries`
-  concept ties them together.
-- `orders.country_id` + `orders.currency` are single-value and assumed to equal the listing's
-  country/currency.
-- `fulfillment_model` enum on `vendor_listings` is `fbm|fbn|cross_dock` (not `fbp` — correct any
-  future references). Admin/platform listings have no column and are implicitly `fbn`.
-- Shipping infra already exists and is solid within a country: `Shipment`, `ShippingCarrier`
-  (single-`country_id`), `ShippingMethod`, `ShipmentTrackingEvent`, `CategoryShippingMethod`,
-  `CarrierPerformanceRating`, `CarrierClaim`, `InboundShipment`, `AramexCarrier`/`ManualCarrier`
-  service classes.
-- The **one** existing multi-country construct is `shipping_companies.served_countries`/
-  `served_cities` — stored as **JSON**, which violates platform invariant #8 (no JSON blobs for
-  structured relational data). Do not replicate this pattern for new work; call it out as
-  pre-existing tech debt.
-- `CodValidationService` has zero concept of "international" — confirmed, this plan defines it.
-- `InventoryMovement` is append-only — any stock decrement for an international order still goes
-  through it normally (warehouse stock never changes ownership until it ships; no new invariant
-  needed there).
+- **Country routing:** `Route::prefix('{country}')->middleware('detect.country')` resolves a
+  `countries` row by `site_code` (e.g. `uae`). `countries` has `currency_code`, `vat_rate`,
+  `cod_available`, `is_launched` — string/UUID PK.
+- **Domestic shipping is already rich:** `shipping_zones` (scoped to one `country_id`, has
+  `cities`), `shipping_rates` (`origin_zone_id` → `destination_zone_id`, both zones — this is
+  intra-country zone-to-zone routing for warehouse dispatch, NOT cross-country), `delivery_zones`
+  (a second, newer-looking per-country zone table with city_ids/polygon — likely overlapping with
+  `shipping_zones`, not our concern to reconcile here), `shipping_weight_slabs`,
+  `warehouse_exceptional_zones`, `warehouse_shipping_surcharges`, `vendor_city_shipping_surcharges`,
+  `shipping_fallback_rules`. All of this is single-country.
+- **`shipping_carriers`**: `country_id` is nullable — a carrier row can already be
+  country-agnostic. `supports_cod`, `supports_returns`, `tracking_url_pattern` already exist.
+- **`shipping_companies`**: has `served_countries`/`served_cities` as **JSON** — the one existing
+  multi-country construct, and it's a pre-existing violation of the "no JSON for structured
+  relational data" invariant. Do not copy this pattern for new work.
+- **`marketplace_shipping_rules`**: has the exact `vendor_listing_id` nullable / `admin_listing_id`
+  nullable pair pattern this codebase already uses to attach a rule to either listing type — reuse
+  this pattern for our new eligibility table instead of inventing two separate tables (v1 of this
+  doc wrongly proposed two).
+- **`product_countries` / `product_country_settings`**: per-`(product_id, country_id)`
+  availability + localized overrides — this is the "is this product sellable/visible in country
+  X at all" gate. It has nothing to do with physical shipping capability; it's a separate,
+  earlier gate that any international-shipping check must sit behind.
+- **`vendor_listings.is_global_shipping` / `global_system_type`** (`express_fbn` /
+  `merchant_fbp` / `marketplace`): **red herring** — despite the Arabic comment ("النظام العالمي" /
+  "the global system"), this is Nawi-express-fulfillment vs. merchant-fulfillment classification
+  (confirmed via `ListingShippingResolver.php:60` — it only gates `category_shipping_methods`
+  eligibility columns `is_available_for_express_fbn`/`is_available_for_merchant_fbp`). It is
+  unrelated to cross-border shipping. Do not repurpose it.
+- **`vendor_listings.country_id`** is NOT NULL, single value — one listing = one country, its own
+  `price`/`currency`. Selling into another country needs either (a) a second listing row in that
+  country, or (b) genuine cross-border fulfillment from the first listing's warehouse — this plan
+  is about (b).
+- **`orders.country_id`** / **`orders.currency`**: single value, assumed today to be the buyer's
+  storefront country/currency and (implicitly) to match every line's origin. `sub_orders` already
+  carries its own `carrier_id`, `tracking_number`, `shipping`, `carrier_shipping_cost`,
+  `shipping_gap`, `fulfillment_model` (`fbm`/`fbn` only at sub-order level, `cross_dock` exists
+  only on `vendor_listings`).
+- **`shipments`** (per sub-order, one carrier, one tracking number, status enum) +
+  **`shipment_tracking_events`** (append-only, `shipment_id` FK, free-text `status`/`description`/
+  `location`/`occurred_at`, `raw_payload` JSON for carrier webhook payloads — this is fine, it's
+  an opaque passthrough field, not structured data we're choosing to normalize). **This table
+  already fully supports a multi-leg tracking timeline** (v1 of this doc wrongly proposed a new
+  `international_shipment_legs` table — not needed, just insert more events with descriptive
+  `status`/`location`, e.g. "export_scan" / "customs_cleared" / "linehaul" / "import_scan").
+- **No FX/currency-conversion table anywhere.** No customs/duty/tariff/HS-code table anywhere. No
+  country-to-country shipping rate table anywhere. These three are the real gaps.
+- **`CodValidationService`**: confirmed no international concept (per prior audit).
 
-## Design decisions (the part that needs your sign-off before Phase 1 starts)
+## What's genuinely missing (the actual scope of this feature)
 
-1. **Zone-based shipping, not O(n²) country pairs.** Model `shipping_zones` (e.g. "GCC", "MENA",
-   "Rest of World") with a `shipping_zone_countries` pivot, then rate cards keyed on
-   `(origin_country_id, destination_zone_id, carrier_id)`. A raw country-to-country pair table
-   would work for a handful of corridors but doesn't scale past ~10 countries; zones do, and the
-   platform already has multi-country ambition (`Country.is_launched`).
-2. **Opt-in at the listing level, not global.** A vendor's UAE listing shipping to Egypt is a
-   deliberate choice (customs, returns cost, product suitability), not a default. New pivot
-   `vendor_listing_ship_destinations (vendor_listing_id, destination_country_id)` — explicit FK
-   rows, never a JSON array, consistent with invariant #8. Admin/platform (`admin_listings`)
-   listings default to "ships everywhere the platform operates" unless explicitly restricted,
-   mirrored via `admin_listing_ship_restrictions` (opt-out list) since Nawi's own catalog is the
-   common case and per-listing opt-in would be needless friction — see Q3 below to confirm this
-   asymmetry is acceptable.
-3. **"International order" is a computed relationship, not a stored flag.** An order is
-   international iff `orders.country_id != sub_orders.listing_country_id` for at least one sub-
-   order. Store the per-sub-order origin/destination pair explicitly on `sub_orders`
-   (`origin_country_id`, already implied by the listing, kept redundant on the row for query/
-   audit simplicity — money/shipping snapshots are always denormalized onto the order in this
-   codebase already, e.g. `shipping_address_snapshot`).
-4. **Currency: convert once, at order placement, and snapshot the rate.** Checkout displays in
-   the *buyer's* storefront currency (per invariant #9, never sum across currencies). The vendor's
-   listing price (their country's currency) is converted via a new `currency_exchange_rates`
-   table (base-currency-integer-safe fixed-point rate, e.g. `rate_numerator`/`rate_denominator`
-   BIGINTs, not float) snapshotted onto the `sub_order` as `fx_rate_numerator`/
-   `fx_rate_denominator` + `fx_rate_captured_at`, so historical orders are immune to later rate
-   changes. This is a new concept — the platform has no FX table today; flag as the single
-   highest-risk new subsystem in this plan (money correctness).
-5. **COD exemption resolved:** an order/cart item is "international" (per the definition in #3)
-   → COD is exempted from the global/Supermal caps by definition (cross-border COD is
-   operationally near-impossible to collect reliably, so international lines should default to
-   **prepaid-only**, not COD-exempt-from-limit). This is a *stronger* answer than the original
-   QUESTION-1 (exemption) — recommend prepaid-only for international lines rather than "no COD
-   limit"; flagged as Q1 below, needs explicit confirmation since it changes the original ask.
-6. **Tracking:** reuse `Shipment`/`ShipmentTrackingEvent` for the domestic leg at both ends, add a
-   new `international_shipment_legs` table
-   (`shipment_id`, `leg_type` enum(`export`,`customs`,`linehaul`,`import`,`last_mile`),
-   `carrier_id` nullable, `external_tracking_number`, `status`, timestamps) so a single logical
-   shipment can show a multi-leg progress trail (export scan → customs cleared → linehaul →
-   import → last-mile carrier → delivered) without overloading the existing single-carrier
-   `shipments.status` enum.
+1. A way to say "listing X (in country A) can physically ship to country B" — doesn't exist.
+2. A country-pair (or listing-country → destination-country) shipping rate/ETA — doesn't exist.
+3. Currency conversion with an auditable snapshot per order — doesn't exist.
+4. Customs/duty handling in the price and checkout display — doesn't exist.
+5. COD policy for cross-border orders — doesn't exist (this is `QUESTION-1.md` / FIX-S1).
+6. A small extension to already-fine tracking (`shipment_tracking_events`) so a multi-leg
+   international journey is distinguishable from a domestic one — mostly exists, needs 2 columns.
 
-## Open questions (need your answer before Phase 3+ starts — Phase 1/2 can proceed regardless)
+## Design decisions
 
-- **Q1:** International order lines — hard-block COD entirely (prepaid only), or allow COD with
-  a *separate*, lower cap (needs its own setting)? Recommendation: prepaid-only for v1.
-- **Q2:** Who owns customs/duty cost — absorbed into the displayed price (DDP, "Delivered Duty
-  Paid"), or collected from the customer on delivery (DDU)? This changes checkout line items and
-  is a legal/finance decision, not engineering. Recommendation: DDP for v1 (simpler UX, matches
-  "show final price" expectations), revisit DDU later if margins require it.
-- **Q3:** Confirm the admin/platform listing default-ships-everywhere-with-opt-out vs. vendor
-  listing opt-in asymmetry (design decision #2) is acceptable, or whether platform listings
-  should also be opt-in per destination.
-- **Q4:** Return/reverse logistics for a cross-border order — same `ReturnRequestService` flow,
-  or does an international return need its own policy (who pays return shipping, customs on
-  return)? Out of scope for Phase 1-4 below; needs its own follow-up doc once Q1-Q3 land.
+1. **No new "zone" abstraction.** Direct `origin_country_id` → `destination_country_id` rate
+   rows. The existing `shipping_zones` name is taken and means something else (intra-country);
+   reusing or shadowing it would be confusing and wrong. Table: `international_shipping_rates`,
+   column names mirrored from the existing `shipping_rates` table for consistency
+   (`base_fee`, `rate_per_kg`, `free_shipping_threshold`, `cod_extra_fee`-style naming, all
+   BIGINT).
+2. **One eligibility table, not two**, following the `marketplace_shipping_rules` precedent
+   exactly: `international_shipping_eligibility (vendor_listing_id nullable, admin_listing_id
+   nullable, destination_country_id, is_active)`. A row = "this listing can ship to this
+   destination." Uniform opt-in for both vendor and admin listings (simpler mental model than
+   v1's opt-in/opt-out asymmetry) — Nawi's own catalog can be bulk-seeded "ships everywhere
+   active+launched" via a one-off artisan command/seeder rather than needing different schema
+   semantics for admin listings. **This still needs your confirmation (was Q3, see below).**
+3. **Currency: convert once, at order placement, snapshot the rate.** New append-only
+   `currency_exchange_rates` table (`from_currency_code`, `to_currency_code`,
+   `rate_numerator`/`rate_denominator` BIGINT — never float, never a plain decimal rate), most
+   recent `effective_at` row wins. `sub_orders` gets `origin_country_id`,
+   `fx_rate_numerator`/`fx_rate_denominator`/`fx_rate_captured_at` (nullable — null means
+   domestic, no conversion happened). "Is this sub-order international" is computed as
+   `origin_country_id !== orders.country_id` — no generated column, no extra boolean to keep in
+   sync, computed in a model accessor.
+4. **COD: prepaid-only for international lines (v1 recommendation, adopted).** Cross-border COD
+   collection is operationally unreliable; this is a stronger, simpler answer than "exempt from
+   the cap" and directly resolves `QUESTION-1.md`.
+5. **Duty: DDP (Delivered Duty Paid) for v1 (recommendation, adopted).** `customs_fee_flat` on
+   `international_shipping_rates` gets folded into the checkout total as its own named line item
+   (`customs_duty`), not hidden inside `shipping`. Shown to the customer before payment, not
+   collected on delivery.
+6. **Tracking: extend, don't replace.** Add nullable `carrier_id` (FK `shipping_carriers`) and
+   `external_tracking_number` (VARCHAR) to `shipment_tracking_events`, so an international
+   shipment's customs/linehaul legs — which may run under a different carrier's tracking number
+   than the primary `shipments.tracking_number` — can be recorded per-event without inventing a
+   parallel table. `shipments.status` stays the coarse top-level state; the events table carries
+   the detailed multi-leg trail, exactly as it does today for domestic carrier webhooks.
+
+## Open questions (need your answer before Phase 3 starts — Phases 1, 2, 4, 5 can proceed now)
+
+- **Q3 (was the only real open item):** Confirm uniform opt-in eligibility (design decision #2)
+  for both vendor and admin listings is acceptable — i.e. Nawi's own catalog needs an explicit
+  seed/backfill of `international_shipping_eligibility` rows rather than shipping everywhere by
+  default with no row. Proceeding with this by default unless told otherwise.
+- **Q4 (deferred, not blocking Phases 1-6):** Reverse logistics/returns for a cross-border order —
+  needs its own follow-up doc once this feature is live and has real order volume to reason about.
+
+Q1 (COD policy) and Q2 (duty model) are resolved above and adopted — proceeding without further
+sign-off per your instruction to just execute.
 
 ---
 
 ## Phases — each is a self-contained sub-agent prompt
 
-Run phases in order; each phase's prompt is written to be handed to a fresh sub-agent with no
-other context. Do not start a phase whose "Blocked on" isn't satisfied.
-
-### Phase 1 — Schema foundation (migrations only, no logic)
-**Blocked on:** nothing — can start immediately.
+### Phase 1 — Schema foundation (migrations + models only)
+**Blocked on:** nothing.
 **Prompt:**
-> Repo: /var/www/marketplace (Laravel 11). Add migrations (correct `YYYY_MM_DD_HHMMSS` prefix
-> based on the latest file in `backend/database/migrations/`) for:
-> 1. `shipping_zones` (id UUID via HasUuids, name_en, name_ar, is_active, timestamps).
-> 2. `shipping_zone_countries` (shipping_zone_id FK, country_id FK, composite unique, no
->    surrogate PK needed beyond the pair — but follow this codebase's convention, check an
->    existing pivot migration first for the exact pattern used, e.g. `product_country_buybox`).
-> 3. `vendor_listing_ship_destinations` (vendor_listing_id FK, destination_country_id FK,
->    composite unique, created_at).
-> 4. `admin_listing_ship_restrictions` (admin_listing_id FK, destination_country_id FK, composite
->    unique, created_at) — an opt-OUT list; absence of a row means "ships there".
-> 5. `international_shipping_rates` (id UUID, origin_country_id FK, destination_zone_id FK to
->    shipping_zones, carrier_id FK nullable to shipping_carriers, base_fee_minor BIGINT,
->    per_kg_fee_minor BIGINT, customs_fee_flat_minor BIGINT nullable, eta_days_min SMALLINT,
->    eta_days_max SMALLINT, is_active, timestamps) — all money columns BIGINT, no floats.
-> 6. `currency_exchange_rates` (id UUID, from_currency_code CHAR(3), to_currency_code CHAR(3),
->    rate_numerator BIGINT, rate_denominator BIGINT, effective_at TIMESTAMP, created_at) —
->    append-only, never updated in place (new row per rate change, most-recent-by-effective_at
->    wins). Add composite index (from_currency_code, to_currency_code, effective_at).
-> 7. On `sub_orders`: add nullable `origin_country_id` FK, `is_international` BOOLEAN GENERATED
->    ALWAYS AS (`origin_country_id IS NOT NULL AND origin_country_id != <the order's country_id
->    column, via a generated expression or a trigger — check whether this DB version supports
->    cross-column generated columns; if not, compute it in the application layer instead and drop
->    this column>`), `fx_rate_numerator` BIGINT nullable, `fx_rate_denominator` BIGINT nullable,
->    `fx_rate_captured_at` TIMESTAMP nullable.
-> 8. On `international_shipment_legs` — new table: id UUID, shipment_id FK, leg_type
->    enum(`export`,`customs`,`linehaul`,`import`,`last_mile`), carrier_id FK nullable,
->    external_tracking_number VARCHAR nullable, status VARCHAR, occurred_at TIMESTAMP nullable,
->    timestamps.
+> Repo: /var/www/marketplace (Laravel 11, PHP 8.3). Read
+> `docs/plans/international_product_shipping.md` in full first — it explains exactly why each
+> table below is shaped this way and what already exists that you must NOT duplicate (domestic
+> `shipping_zones`/`shipping_rates`, `shipping_carriers`, `shipment_tracking_events`,
+> `marketplace_shipping_rules`'s vendor_listing_id/admin_listing_id nullable-pair pattern).
 >
-> Do NOT run the migrations. Do NOT touch `database/schema/mysql-schema.sql` (auto-generated —
-> note in your report that `php artisan schema:dump --prune` must run after these apply on
-> server). Write corresponding Eloquent models with `HasUuids` for new UUID-PK tables, following
-> this codebase's existing model conventions (check `ShippingCarrier.php` or `Country.php` as a
-> template for casts/fillable). Confirm every money column is BIGINT via `php artisan tinker`-free
-> static read of the migration file — do not add any `/100` or `*100`. Run `php -l` on every new
-> file. Git commit only these new files, message describing the schema foundation. End with:
+> Before writing anything, read: `backend/database/migrations/` for the most recent migration
+> (for the timestamp prefix), an existing migration that creates a table with the
+> vendor_listing_id/admin_listing_id nullable pair (`marketplace_shipping_rules`) as your
+> structural template, and `backend/app/Models/ShippingCarrier.php` +
+> `backend/app/Models/Country.php` as model-style templates (HasUuids, casts, fillable, string PK
+> for Country FKs — Country's PK is `char(36)` string, NOT an auto-increment int).
+>
+> Create migrations (do NOT run them) for:
+> 1. `international_shipping_rates`: id (UUID), origin_country_id (FK countries), 
+>    destination_country_id (FK countries), carrier_id (FK shipping_carriers, nullable),
+>    base_fee (BIGINT), rate_per_kg (BIGINT), customs_fee_flat (BIGINT, nullable),
+>    min_eta_days (SMALLINT), max_eta_days (SMALLINT), is_active (boolean default true),
+>    timestamps. Unique composite index on (origin_country_id, destination_country_id,
+>    carrier_id).
+> 2. `international_shipping_eligibility`: id (UUID), vendor_listing_id (FK vendor_listings,
+>    nullable), admin_listing_id (FK admin_listings, nullable), destination_country_id (FK
+>    countries), is_active (boolean default true), timestamps. Match whatever check-constraint or
+>    convention `marketplace_shipping_rules` uses to ensure exactly one of the two listing FKs is
+>    set (read that migration first) — replicate the same approach here exactly, don't invent a
+>    different one.
+> 3. `currency_exchange_rates`: id (UUID), from_currency_code (CHAR(3)), to_currency_code
+>    (CHAR(3)), rate_numerator (BIGINT), rate_denominator (BIGINT), effective_at (TIMESTAMP),
+>    created_at only (append-only — no updated_at, this table is never updated in place, mirror
+>    `InventoryMovement`'s migration for the append-only convention if it has one worth copying).
+>    Composite index on (from_currency_code, to_currency_code, effective_at).
+> 4. Alter `sub_orders`: add nullable `origin_country_id` (FK countries), nullable
+>    `fx_rate_numerator` (BIGINT), nullable `fx_rate_denominator` (BIGINT), nullable
+>    `fx_rate_captured_at` (TIMESTAMP).
+> 5. Alter `shipment_tracking_events`: add nullable `carrier_id` (FK shipping_carriers), nullable
+>    `external_tracking_number` (VARCHAR 100).
+>
+> Write Eloquent models `InternationalShippingRate`, `InternationalShippingEligibility`,
+> `CurrencyExchangeRate` (all `HasUuids`), with `belongsTo` relations to `Country`/
+> `ShippingCarrier`/`VendorListing`/`AdminListing` as appropriate. Add the new columns to
+> `SubOrder` and `ShipmentTrackingEvent` models' `$fillable`/casts.
+>
+> Constraints: every money column BIGINT, never float, never `/100`/`*100` outside legitimate
+> percentage math. Every new PK UUID via HasUuids. No JSON columns. Do NOT touch
+> `database/schema/mysql-schema.sql`, `package-lock.json`, `.env` files, or
+> `marketplace_platform.sql` (that's a data dump snapshot, not a live schema source — never
+> edit it).
+>
+> Verify: re-read every file you wrote; run `php -l` on every new/changed PHP file and report
+> results; confirm every country_id FK column type matches `countries.id` (char(36) string, not
+> an integer or a different UUID format); confirm the vendor_listing_id/admin_listing_id
+> exactly-one-set convention matches `marketplace_shipping_rules`'s approach.
+>
+> Git commit only the files you created/changed, descriptive message. End with:
 > `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
+>
+> Report back: every file created/changed, php -l results, commit hash, and exactly which
+> convention you copied from `marketplace_shipping_rules` for the nullable-pair constraint.
 
-### Phase 2 — Rate & FX calculation services (pure logic, unit-testable, no checkout wiring yet)
+### Phase 2 — Rate & FX calculation services
 **Blocked on:** Phase 1 merged.
 **Prompt:**
 > Repo: /var/www/marketplace. Implement two services under `backend/app/Services/Shipping/`:
-> 1. `InternationalShippingRateService` — given a destination country + total weight (grams) +
->    origin country, resolve the destination's `shipping_zone_countries` row, look up the
->    matching `international_shipping_rates` row (origin_country_id + destination_zone_id,
->    is_active), and return `base_fee_minor + per_kg_fee_minor * ceil(weight_grams / 1000)` plus
->    `customs_fee_flat_minor` (0 if null) as a single BIGINT total in the *origin* listing's
->    currency, plus the ETA range. Throw a typed exception (follow existing exception patterns in
->    `backend/app/Exceptions/`) if no rate exists for that corridor — this must be a hard stop,
->    never a silent fallback that lets an unpriced international order through.
-> 2. `CurrencyConversionService` — given an amount (BIGINT minor units) + from/to currency codes,
->    look up the most recent `currency_exchange_rates` row by `effective_at <= now()` and return
->    `floor(amount * rate_numerator / rate_denominator)` plus the numerator/denominator/captured_at
->    used (so callers can snapshot them). Same-currency calls should short-circuit and return the
->    amount unchanged (numerator=denominator=1) without a DB lookup. Throw if no rate row exists.
->    Never use float arithmetic anywhere in this service — integer-only BIGINT math throughout.
-> Write PHPUnit tests under `backend/tests/Unit/Services/Shipping/` covering: no-rate-found
-> throws, correct fee math with weight rounding up to the next kg, same-currency short-circuit,
-> and rate-selection picks the most recent `effective_at` row when multiple exist. Run
-> `php artisan test --filter=InternationalShippingRateServiceTest` and
-> `--filter=CurrencyConversionServiceTest` (or this repo's actual test-run convention — check
-> `backend/tests/` structure first) and confirm they pass. Git commit, message describing the two
-> services + tests. End with: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not
-> push.
+> 1. `InternationalShippingRateService::quote(string $originCountryId, string
+>    $destinationCountryId, int $weightGrams): array` — look up the active
+>    `international_shipping_rates` row for that country pair (prefer a row with a specific
+>    `carrier_id` if one matches an eligible carrier, else the row with `carrier_id IS NULL` as a
+>    generic fallback — read the Phase 1 migration to confirm this fallback semantics is what was
+>    built, adjust if it differs), compute `base_fee + rate_per_kg * ceil(weightGrams / 1000)` +
+>    `customs_fee_flat` (0 if null), return the fee breakdown (shipping fee, customs fee, total,
+>    ETA min/max days). Throw a typed exception (check `backend/app/Exceptions/` for this
+>    codebase's exception conventions) if no rate row exists for that corridor — never silently
+>    fall back to a domestic rate or zero.
+> 2. `CurrencyConversionService::convert(int $amountMinor, string $fromCurrency, string
+>    $toCurrency): array` — same-currency short-circuits to the input amount with
+>    numerator=denominator=1 and no DB query. Otherwise looks up the most recent
+>    `currency_exchange_rates` row by `effective_at <= now()` for that currency pair, computes
+>    `intdiv($amountMinor * $rateNumerator, $rateDenominator)` (integer-only, never float),
+>    returns the converted amount plus the numerator/denominator/effective_at used (callers
+>    snapshot these onto the sub_order). Throw if no rate exists.
+>
+> Write PHPUnit tests under `backend/tests/Unit/Services/Shipping/` for both: no-rate-found
+> throws; fee math with weight rounding correctly up to the next full kg (e.g. 1001g rounds to 2kg
+> worth of per-kg fee); same-currency short-circuit does zero DB queries (assert via query count
+> or a mock); most-recent-effective_at wins when multiple rate rows exist for the same pair; no
+> float anywhere (grep your own new files for `(float)`, `floatval`, or bare division without
+> `intdiv`/explicit integer math and fix any you find).
+>
+> Run the test suite for these two test files and report pass/fail output. Git commit. End with:
+> `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
+>
+> Report back: files created, test run output, commit hash.
 
-### Phase 3 — Checkout & COD integration
-**Blocked on:** Phase 2 merged, **and Q1 + Q2 answered** (do not start without explicit answers —
-these change the checkout line-item shape and the COD gate).
-**Prompt (fill in {Q1_ANSWER} and {Q2_ANSWER} before dispatching):**
-> Repo: /var/www/marketplace. Wire international shipping into checkout, given these product
-> decisions: Q1 (COD for international lines) = {Q1_ANSWER}; Q2 (duty model) = {Q2_ANSWER}.
-> 1. In `backend/app/Services/Checkout/CartLineSource.php` and `CheckoutPricingEngine.php`,
->    detect when a cart line's listing country differs from the order's destination country
->    (`orders.country_id` / the buyer's selected storefront country). Validate against
->    `vendor_listing_ship_destinations` (or `admin_listing_ship_restrictions` for admin listings)
->    — reject the line with a typed, user-facing error if that destination isn't served.
->    Consult `docs/plans/international_product_shipping.md`'s design decisions #2/#3 in this repo
->    for the exact opt-in/opt-out semantics per listing type.
-> 2. For international lines, call `InternationalShippingRateService` for the shipping cost line
->    item (do not use the existing domestic `ShippingMethodResolverService` for these lines), and
->    `CurrencyConversionService` to convert the listing-currency price into the buyer's storefront
->    currency, snapshotting `fx_rate_numerator`/`fx_rate_denominator`/`fx_rate_captured_at` onto
->    the `sub_order` at the point of order placement (not at cart-add time — rates can move).
-> 3. In `backend/app/Services/Customer/CodValidationService.php`, apply the Q1 answer: if
->    prepaid-only, reject COD as the payment method whenever any cart line is international
->    (clear error message); if a separate lower cap, add that setting (name it
->    `cod_international_max_amount` for consistency with the existing `cod_global_max_amount`/
->    `cod_supermall_max_amount` naming) and enforce it.
-> 4. If Q2 = DDP: fold `customs_fee_flat_minor` into the displayed subtotal/total as a named line
->    item (e.g. `customs_duty`) rather than hiding it inside `shipping_fee`, so the customer sees
->    it itemized — this also needs a new field in the checkout `order_summary` payload
->    (`PricedCart.php`, mirroring how `loyalty_discount` was recently added) and a corresponding
->    frontend line in `frontend/src/features/noon/checkout/payment-summary.tsx` (green-negative
->    style isn't right here — it's a charge, not a discount; follow the `shipping`/`cod_fee` line
->    styling instead). Add locale keys to both `locale/en.json` and `locale/ar.json`.
-> 5. Confirm no `/100`/`*100` introduced, all new money fields BIGINT end-to-end frontend and
->    backend. Re-read every changed file. Run `php -l` on changed PHP files and
->    `npx tsc --noEmit` scoped to changed frontend files. Git commit (may need 2-3 commits if
->    backend/frontend split makes sense — use judgment, but keep each commit buildable/coherent).
->    End each with: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
-
-### Phase 4 — Multi-leg tracking
-**Blocked on:** Phase 1 merged (does not need Phase 3 — can run in parallel with it once schema
-exists).
+### Phase 3 — Checkout, pricing, and COD integration
+**Blocked on:** Phase 2 merged. Q1/Q2 already resolved (prepaid-only COD, DDP duty) — proceed
+using those answers; Q3 (uniform opt-in eligibility) is assumed yes per the design doc unless
+told otherwise before this phase starts.
 **Prompt:**
-> Repo: /var/www/marketplace. Extend shipment tracking for international orders using the
-> `international_shipment_legs` table from Phase 1.
-> 1. Add an `InternationalShipmentLeg` model + relation on `Shipment` (`hasMany`).
-> 2. Add a service `backend/app/Services/Shipping/InternationalTrackingService.php` with a method
->    to append a new leg event (`recordLeg(Shipment $shipment, string $legType, ?string $carrierId,
->    ?string $externalTrackingNumber, string $status, ?Carbon $occurredAt)`) — this is
->    append-only (new row per event, mirroring `InventoryMovement`'s pattern in this codebase —
->    never update an existing leg row's status in place, always insert a new leg row so history
->    is preserved; if you need "current status", compute it as the latest row per leg_type).
-> 3. Expose a read endpoint (follow this codebase's existing customer order-tracking endpoint
->    pattern — find it first, e.g. under `routes/api_customer_v1.php`) that returns the full leg
->    history for an international shipment, ordered chronologically, for the order-tracking page.
-> 4. Add a minimal frontend tracking timeline addition (find the existing order-tracking page
->    under `frontend/src/features/noon/` and extend it, don't build a new page) that renders the
->    extra legs when present, falling back to the existing single-status display for domestic
->    shipments (i.e. this must be fully backward-compatible — most shipments have zero
->    international legs).
-> Re-read every changed file, run `php -l` and `npx tsc --noEmit` scoped appropriately. Git
-> commit. End with: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
+> Repo: /var/www/marketplace. Read `docs/plans/international_product_shipping.md` in full first,
+> especially design decisions #3-#6 and the adopted Q1/Q2 answers (COD = prepaid-only for
+> international lines; duty = DDP, itemized as its own `customs_duty` line).
+> 1. In `backend/app/Services/Checkout/CartLineSource.php` and
+>    `backend/app/Services/Checkout/CheckoutPricingEngine.php`: when building a cart line, compare
+>    the listing's `country_id` to the order's destination `country_id`. If they differ, validate
+>    an active `international_shipping_eligibility` row exists (vendor_listing_id or
+>    admin_listing_id matching, destination_country_id = order's country) — reject with a clear
+>    typed error if not (product/listing doesn't ship there). Also confirm `product_countries`
+>    (if a row exists for that product+destination country) doesn't mark it unavailable — that
+>    gate takes precedence.
+> 2. For eligible international lines: call `InternationalShippingRateService::quote()` for the
+>    shipping+customs fee (do not route these through the existing domestic
+>    `ShippingMethodResolverService`/`shipping_zones` machinery — that's intra-country only), and
+>    `CurrencyConversionService::convert()` to convert the listing's price (its own currency) into
+>    the order's currency. At order placement (not cart-add time), snapshot
+>    `fx_rate_numerator`/`fx_rate_denominator`/`fx_rate_captured_at` and `origin_country_id` onto
+>    the `sub_order` row.
+> 3. In `backend/app/Services/Customer/CodValidationService.php`: if any cart line is
+>    international (per the origin/destination country comparison above), reject `cod` as the
+>    selected payment method with a clear customer-facing error — international lines are
+>    prepaid-only. This also resolves `QUESTION-1.md`/FIX-S1 — update that file's status to
+>    resolved, referencing this implementation.
+> 4. Add a `customs_duty` field to the checkout `order_summary` payload
+>    (`backend/app/Services/Checkout/PricedCart.php` — mirror exactly how `loyalty_discount` was
+>    added there recently, same pattern) and render it in
+>    `frontend/src/features/noon/checkout/payment-summary.tsx` as a charge line (not a discount —
+>    follow the `shipping`/`cod_fee` styling, not the green/negative `gift_card_applied` styling).
+>    Add `customsDuty` locale keys to both `frontend/locale/en.json` and `frontend/locale/ar.json`.
+> 5. Confirm no `/100`/`*100` anywhere new, all money BIGINT end-to-end. Re-read every changed
+>    file. Run `php -l` on changed PHP and `npx tsc --noEmit` scoped to changed frontend files.
+>    Split into 2-3 coherent commits if that makes sense (e.g. backend pricing/COD, then
+>    frontend). End each with: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not
+>    push.
+>
+> Report back: files changed, commit hash(es), and explicit confirmation that a cart with an
+> international line can no longer select COD as payment method (describe how you verified this
+> — unit test, or manual trace through the code path).
+
+### Phase 4 — Tracking extension
+**Blocked on:** Phase 1 merged (independent of Phase 3, can run in parallel).
+**Prompt:**
+> Repo: /var/www/marketplace. Using the `carrier_id`/`external_tracking_number` columns added to
+> `shipment_tracking_events` in Phase 1 (read `docs/plans/international_product_shipping.md`
+> design decision #6 for why no new table was created):
+> 1. Add a small helper on the `Shipment` model or a new
+>    `backend/app/Services/Shipping/InternationalTrackingService.php` with a method
+>    `recordLeg(Shipment $shipment, string $status, string $description, ?string $carrierId,
+>    ?string $externalTrackingNumber, ?string $location, Carbon $occurredAt)` that just creates a
+>    new `ShipmentTrackingEvent` row (this table is already append-only by convention — never
+>    update an existing row).
+> 2. Find the existing customer order-tracking endpoint (grep `routes/api_customer_v1.php` for
+>    the shipment/tracking route) and confirm it already returns all `shipment_tracking_events`
+>    for a shipment — if it does, no backend change needed there, just confirm. If it filters or
+>    truncates the event list in a way that would hide multi-leg international events, fix that.
+> 3. On the frontend order-tracking page (find it under `frontend/src/features/noon/`), confirm
+>    the existing timeline component already renders arbitrary tracking events generically
+>    (status/description/location/occurred_at) — if so, no change needed, an international
+>    shipment's extra events will just show up. If the component assumes a fixed small set of
+>    statuses, extend it to render unknown/extra statuses gracefully instead of hardcoding a list.
+>
+> This phase should end up being small — the existing generic event log likely needs no
+> structural frontend change, only verification. Re-read every changed file, run `php -l`/
+> `npx tsc --noEmit` on anything touched. Git commit (skip if truly nothing needed changing,
+> in which case just report that verification passed with no diff). End with:
+> `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
+>
+> Report back: what (if anything) needed changing, files touched, commit hash or "no changes
+> needed" with your verification evidence.
 
 ### Phase 5 — Admin tooling
 **Blocked on:** Phase 1 merged.
 **Prompt:**
-> Repo: /var/www/marketplace. Build the admin surface for this feature, reusing this codebase's
-> existing admin CRUD conventions (find an existing simple admin resource controller + Blade
-> index/edit view pair as a template, e.g. check `Admin\SettingsController` or a similar simple
-> resource under `backend/app/Http/Controllers/Admin/`):
-> 1. CRUD for `shipping_zones` and their country membership (`shipping_zone_countries`).
-> 2. CRUD for `international_shipping_rates` (origin country × destination zone × carrier →
+> Repo: /var/www/marketplace. Build admin CRUD, reusing this codebase's existing simple
+> admin-resource conventions (find an existing controller+Blade index/edit pair for a comparably
+> simple settings-style resource under `backend/app/Http/Controllers/Admin/` as your template):
+> 1. CRUD for `international_shipping_rates` (origin country × destination country × carrier →
 >    fees/ETA).
-> 3. CRUD for `currency_exchange_rates` (append-only — the UI should only ever INSERT a new rate
->    row, never edit an existing one, consistent with the model design in Phase 1).
-> 4. A per-listing "ships to" destination picker on the existing vendor-listing edit view (find
->    it, likely under `backend/resources/views/admin/vendor_listings/` or wherever
->    `vendor_listings` are edited) writing to `vendor_listing_ship_destinations`, and the
->    equivalent opt-out picker for admin listings writing to `admin_listing_ship_restrictions`.
-> Re-read every changed/created file. Run `php -l` on all PHP files. Add route entries following
-> this codebase's existing admin route file conventions and naming. Git commit. End with:
+> 2. CRUD for `currency_exchange_rates` — UI must only ever INSERT a new rate row, never edit one
+>    in place (append-only, per Phase 1's design) — show rate history per currency pair, most
+>    recent first.
+> 3. A "ships to" destination picker on the existing vendor-listing edit view (find it — likely
+>    under `backend/resources/views/admin/vendor_listings/` or wherever those are edited) writing
+>    rows to `international_shipping_eligibility` with `vendor_listing_id` set. Same for the
+>    admin-listing edit view with `admin_listing_id` set.
+> 4. A one-off artisan command (e.g. `international-shipping:seed-admin-eligibility`) that backfills
+>    `international_shipping_eligibility` rows for all active `admin_listings` against all
+>    active+launched `countries` — per design decision #2 (uniform opt-in, Nawi's own catalog
+>    bulk-seeded rather than defaulted). Do not run it, just write it and document the exact
+>    command to run in your report.
+>
+> Re-read every file. Run `php -l` on all PHP files. Git commit. End with:
 > `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
+>
+> Report back: files created/changed, commit hash, exact artisan command name for the seeder.
 
-### Phase 6 — Customer-facing UI polish
+### Phase 6 — Customer-facing UI
 **Blocked on:** Phase 3 merged.
 **Prompt:**
-> Repo: /var/www/marketplace (Next.js frontend). Add customer-facing signals for international
-> products, reusing existing badge/UI components (check how `promo_badges`/`AnimatedBadge` are
-> rendered on product cards and PDP from recent work in this repo for the pattern to follow):
-> 1. A "Ships from {origin country flag/name}" badge or note on the PDP and product card when a
->    listing's `vendor_listing_ship_destinations` includes the currently-selected storefront
->    country and that country differs from the listing's own `country_id`.
-> 2. Show the ETA range (from `InternationalShippingRateService`) and, if Q2={DDP}, a "customs
->    included" note, or if {DDU}, a "customs fees may apply on delivery" disclaimer — reuse the
->    Q2 answer resolved in Phase 3.
+> Repo: /var/www/marketplace (Next.js frontend). Reuse the existing badge/UI patterns from recent
+> promo-badge work (`promo_badges`/`AnimatedBadge` on product cards and PDP) as your template:
+> 1. A "Ships from {origin country}" indicator on PDP/product card when the listing's country
+>    differs from the currently-selected storefront country and an active
+>    `international_shipping_eligibility` row exists for that destination.
+> 2. Show the ETA range and a "customs included" note (DDP, per the adopted Q2 answer) near the
+>    shipping info.
 > 3. Locale keys in both `locale/en.json` and `locale/ar.json`.
+>
 > Re-read every changed file, run `npx tsc --noEmit` scoped to changed files. Git commit. End
 > with: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`. Do not push.
+>
+> Report back: files changed, commit hash.
+
+---
+
+## Phase 7 — QC pass (run after Phases 1-6 all land)
+**Blocked on:** all of Phases 1-6 merged.
+This phase is run by the orchestrating session directly (not delegated), acting as senior QC:
+- Re-read the full diff across all phases as one unit (not just each phase's self-report).
+- Verify: no float/`/100`/`*100` money bugs anywhere in the new code; every new PK is UUID; no
+  new JSON columns for structured data; `shipment_tracking_events`/`currency_exchange_rates`
+  truly never get UPDATE'd, only INSERT'd (grep for `->update(` / `::update(` / `save()` on
+  existing rows of these models across the whole diff).
+- Verify the COD rejection path actually triggers for an international cart line (trace the code
+  path or add/run a test if one doesn't already cover it).
+- Verify a domestic-only order is completely unaffected (all new columns nullable, all new logic
+  gated behind "listing country != order country").
+- Run full `php artisan test` (or this repo's actual test command) and `npx tsc --noEmit` across
+  the whole frontend, not just changed files, to catch cross-phase breakage.
+- Produce a findings list (bugs found, fixed, or flagged) and update this doc's Execution
+  Summary table with final status.
 
 ---
 
 ## Execution tracking
-_To be filled in as phases run:_
 
 | Phase | Status | Blocked on | Commit(s) |
 |---|---|---|---|
 | 1 — Schema foundation | Not started | — | — |
 | 2 — Rate/FX services | Not started | Phase 1 | — |
-| 3 — Checkout/COD | Not started | Phase 2, Q1, Q2 | — |
-| 4 — Multi-leg tracking | Not started | Phase 1 | — |
+| 3 — Checkout/COD | Not started | Phase 2 | — |
+| 4 — Tracking extension | Not started | Phase 1 | — |
 | 5 — Admin tooling | Not started | Phase 1 | — |
 | 6 — Customer UI | Not started | Phase 3 | — |
+| 7 — QC pass | Not started | Phases 1-6 | — |
 
-## Migrations needed (run on server, in this order)
+## Migrations needed (run on server, in order)
 - All Phase 1 migration files, then `php artisan schema:dump --prune`.
-- Phase 3's `cod_international_max_amount` setting seed migration, if Q1 answer requires it.
+- Phase 5's admin-eligibility seeder command, run once after Phase 5 deploys (not a migration,
+  an artisan command — do not add it to a migration file).
 
-## Non-negotiable constraints (carried over from platform invariants)
+## Non-negotiable constraints
 - All new money columns: BIGINT, no floats, no stray `/100`/`*100` outside legitimate percentage
-  math (VAT/commission/coupon %).
+  math.
 - All new PKs: UUID via `HasUuids`.
-- No JSON blobs for structured relational data (this explicitly means: do not copy
-  `shipping_companies.served_countries`'s JSON pattern for any new multi-country modeling here —
-  use the zone/pivot tables specified above instead).
-- `InventoryMovement`/append-only pattern is the model to follow for `currency_exchange_rates`
-  and `international_shipment_legs` — insert-only, never mutate history.
-- Multi-currency: every display/calculation stays scoped to one currency at a time; the FX
-  conversion happens exactly once, at order placement, with the rate snapshotted — never
-  re-derive or re-sum across currencies later.
+- No JSON columns for structured relational data (do not copy `shipping_companies`.
+  `served_countries`/`served_cities`'s existing JSON pattern).
+- Append-only for `currency_exchange_rates` and the tracking-event extension — insert-only, never
+  mutate history, matching `InventoryMovement`'s established pattern in this codebase.
+- Every new table/column must be additive and nullable where it touches existing tables
+  (`sub_orders`, `shipment_tracking_events`) — zero behavior change for domestic orders.
+- Never edit `database/schema/mysql-schema.sql` or `marketplace_platform.sql` directly — both are
+  generated/dumped artifacts, not sources of truth to hand-edit.
