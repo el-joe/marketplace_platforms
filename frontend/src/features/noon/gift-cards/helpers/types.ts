@@ -42,25 +42,37 @@ export type GiftCardBatch = {
 
 export type GiftCardDeliveryStatus = "pending" | "delivered" | "failed";
 
+/** The batch a past purchase was bought from, embedded on `GiftCardPurchase`. */
+export type GiftCardPurchaseBatch = {
+  id: string;
+  title_en: string;
+  title_ar: string;
+  amount: number;
+};
+
 /** GET /gift-card-store/my-purchases — a single past gift card purchase/order line. */
 export type GiftCardPurchase = {
   id: string;
   order_id: string;
-  amount_paid: string;
+  amount_paid: number;
   currency_code: string;
   is_gift: boolean;
   recipient_email: string | null;
+  recipient_name: string | null;
+  gift_message: string | null;
   delivery_status: GiftCardDeliveryStatus;
   delivered_at: string | null;
   gift_card_code: string | null;
+  batch: GiftCardPurchaseBatch;
   created_at: string;
 };
 
-/** Laravel's default paginator shape, as returned by GET /gift-card-store/my-purchases. */
 export type GiftCardPurchasesResponse = {
-  data: GiftCardPurchase[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
+  items: GiftCardPurchase[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
 };

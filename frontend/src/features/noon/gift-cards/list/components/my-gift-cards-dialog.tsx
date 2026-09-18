@@ -35,7 +35,7 @@ export default function MyGiftCardsDialog() {
 
     getMyGiftCardPurchases()
       .then((response) => {
-        if (!cancelled) setPurchases(response.data);
+        if (!cancelled) setPurchases(response.items);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -86,7 +86,7 @@ export default function MyGiftCardsDialog() {
         )}
 
         {!isLoading && !error && purchases?.length > 0 && (
-          <div className="flex flex-col divide-y divide-border">
+          <div className="flex max-h-[60vh] flex-col divide-y divide-border overflow-y-auto">
             {purchases.map((purchase) => (
               <div
                 key={purchase.id}
