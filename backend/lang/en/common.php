@@ -463,6 +463,8 @@ return [
             'cod_unavailable'            => 'Cash on delivery is not available for your location.',
             'cod_limit_exceeded'         => 'Your cart total exceeds the maximum allowed for Cash on Delivery (:limit).',
             'cod_supermall_limit_exceeded' => 'Your Super Mall items exceed the maximum allowed for Cash on Delivery (:limit).',
+            'cod_international_not_allowed' => 'Cash on delivery is not available for international items in your cart. Please choose a prepaid payment method.',
+            'international_shipping_ineligible' => 'This item cannot be shipped to your selected country.',
             'invalid_coupon'             => 'Invalid coupon code.',
             'order_already_placed'       => 'Order already placed.',
             'order_placed'               => 'Order placed successfully',

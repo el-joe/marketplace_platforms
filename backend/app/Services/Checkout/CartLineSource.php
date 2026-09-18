@@ -2,8 +2,11 @@
 
 namespace App\Services\Checkout;
 
+use App\Exceptions\InternationalShippingIneligibleException;
 use App\Models\AdminListing;
 use App\Models\CartItem;
+use App\Models\InternationalShippingEligibility;
+use App\Models\ProductCountry;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
 use Illuminate\Support\Collection;
@@ -171,5 +174,86 @@ class CartLineSource
     public function groupKey(?string $shippingMethodId, ?string $warehouseId = null): string
     {
         return $this->sellerParty.'|'.($shippingMethodId ?? '').'|'.($warehouseId ?? '');
+    }
+
+    /**
+     * docs/plans/international_product_shipping.md Phase 3.
+     *
+     * The country the fulfilment listing (vendor or admin listing — always
+     * has a NOT NULL country_id) ships from. This is what "origin_country_id"
+     * means everywhere in the international-shipping feature: the listing's
+     * own storefront country, never the marketer/sellable listing.
+     */
+    public function originCountryId(): ?string
+    {
+        return $this->fulfilmentListing->country_id ?? null;
+    }
+
+    /**
+     * A line is "international" when the fulfilment listing's country
+     * differs from the order's destination country — mirrors
+     * SubOrder::isInternational()'s origin_country_id !== order.country_id
+     * definition, just computed pre-order at cart-line time.
+     */
+    public function isInternational(string $destinationCountryId): bool
+    {
+        $origin = $this->originCountryId();
+
+        return $origin !== null && $origin !== $destinationCountryId;
+    }
+
+    /**
+     * Validate that this line's listing is actually allowed to ship to
+     * $destinationCountryId. Called only for international lines
+     * (isInternational() === true) — a domestic line never needs this.
+     *
+     * Precedence (per the Phase 3 spec): product_countries availability is
+     * an earlier, separate gate ("is this product sellable/visible in
+     * country X at all") and is checked first; international_shipping_
+     * eligibility ("can this specific listing physically ship there") is
+     * checked second. Both must pass.
+     *
+     * @throws InternationalShippingIneligibleException
+     */
+    public function assertEligibleForDestination(string $destinationCountryId): void
+    {
+        if (! $this->isInternational($destinationCountryId)) {
+            return;
+        }
+
+        $productId = $this->fulfilmentListing->productVariant?->product_id;
+
+        if ($productId !== null) {
+            $productCountry = ProductCountry::query()
+                ->where('product_id', $productId)
+                ->where('country_id', $destinationCountryId)
+                ->first();
+
+            if ($productCountry !== null && ! $productCountry->is_available) {
+                throw new InternationalShippingIneligibleException(
+                    __('common.exceptions.checkout.international_shipping_ineligible'),
+                    listingId: $this->fulfilmentListing->id,
+                    destinationCountryId: $destinationCountryId,
+                );
+            }
+        }
+
+        $eligibilityQuery = InternationalShippingEligibility::query()
+            ->where('destination_country_id', $destinationCountryId)
+            ->where('is_active', true);
+
+        if ($this->fulfilmentListing instanceof VendorListing) {
+            $eligibilityQuery->where('vendor_listing_id', $this->fulfilmentListing->id);
+        } else {
+            $eligibilityQuery->where('admin_listing_id', $this->fulfilmentListing->id);
+        }
+
+        if (! $eligibilityQuery->exists()) {
+            throw new InternationalShippingIneligibleException(
+                __('common.exceptions.checkout.international_shipping_ineligible'),
+                listingId: $this->fulfilmentListing->id,
+                destinationCountryId: $destinationCountryId,
+            );
+        }
     }
 }

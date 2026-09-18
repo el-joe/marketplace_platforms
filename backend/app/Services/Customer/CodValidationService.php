@@ -4,6 +4,7 @@ namespace App\Services\Customer;
 
 use App\Models\Category;
 use App\Models\Setting;
+use App\Services\Checkout\CartLineSource;
 
 class CodValidationService
 {
@@ -12,12 +13,29 @@ class CodValidationService
      * Nawi/platform (admin_listings) products are always exempt. Items in the
      * Super Mall category subtree are checked against a separate limit.
      *
+     * docs/plans/international_product_shipping.md Phase 3 / design decision
+     * #4 (adopted Q1 answer): COD is prepaid-only for international lines —
+     * cross-border COD collection is operationally unreliable. When
+     * $destinationCountryId is given, any cart line whose fulfilment
+     * listing's country differs from it rejects COD outright (a hard
+     * rejection, not a limit check like the two below).
+     *
      * @param  array<\App\Models\CartItem>  $cartItems
      * @return array<int, string> Validation error messages; empty when COD is allowed.
      */
-    public function validate(array $cartItems): array
+    public function validate(array $cartItems, ?string $destinationCountryId = null): array
     {
         $errors = [];
+
+        if ($destinationCountryId !== null) {
+            foreach ($cartItems as $item) {
+                $source = CartLineSource::resolve($item);
+                if ($source !== null && $source->isInternational($destinationCountryId)) {
+                    $errors[] = __('common.exceptions.checkout.cod_international_not_allowed');
+                    break;
+                }
+            }
+        }
 
         $regularTotal = 0;
         $supermallTotal = 0;

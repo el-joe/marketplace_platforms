@@ -277,6 +277,7 @@ class CheckoutPricingEngine
         int $giftCardAppliedCents,
         array $warrantySelections,
         array $shippingByGroup = [],
+        int $customsDutyCents = 0,
     ): PricedCart {
         $lines = $this->normalizeAll($items);
 
@@ -347,6 +348,7 @@ class CheckoutPricingEngine
             + $codFeeCents
             + $orderTax
             + $orderWarrantyTotal
+            + $customsDutyCents
             - $giftCardAppliedCents);
 
         return new PricedCart(
@@ -362,6 +364,7 @@ class CheckoutPricingEngine
             giftCardApplied: $giftCardAppliedCents,
             total: $total,
             currency: $country->currency_code,
+            customsDuty: $customsDutyCents,
         );
     }
 

@@ -25,4 +25,22 @@ addition to `CodValidationService::validate()`'s exemption check
 field/logic to determine "international" must be specified first, and may require a new
 migration (new column) depending on the answer.
 
-**Status:** Blocked — no code changes made for this item, per instructions for SKIP-category fixes.
+**Status:** Resolved — see `docs/plans/international_product_shipping.md` (design decision #3
+and the adopted Q1 answer) and its Phase 3 implementation.
+
+**Resolution:** "International" is defined as: the cart line's fulfilment listing's `country_id`
+(the vendor or admin listing's own storefront country — `App\Services\Checkout\CartLineSource
+::originCountryId()`) differs from the order's destination country (`Country::$id` resolved from
+the request). This is option 2 in the list above (fulfillment/shipping origin country differs
+from the customer's/order's country), computed the same way `SubOrder::isInternational()`
+(added in Phase 1) defines it for a placed order.
+
+The policy adopted is **not** an exemption from the COD limit — it's a harder rule: COD is
+rejected outright for a cart containing any international line (cross-border COD collection is
+operationally unreliable). Implemented in
+`App\Services\Customer\CodValidationService::validate(array $cartItems, ?string
+$destinationCountryId = null)` — when a destination country is passed and any line resolves as
+international via `CartLineSource::isInternational()`, validation fails with
+`common.exceptions.checkout.cod_international_not_allowed` before the existing global/Super Mall
+limit checks run. Wired into both `CheckoutController::prepare()` and `CheckoutController::
+placeOrder()`, which now pass `$country->id` as the second argument.
