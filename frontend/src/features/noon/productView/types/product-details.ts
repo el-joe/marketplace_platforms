@@ -25,6 +25,17 @@ export interface IProductDetails {
   cross_sell_ad: CrossSellAd | null;
   inline_banner_1: PlacementBanner | null;
   inline_banner_2: PlacementBanner | null;
+  is_mega_deal?: boolean;
+  promo_badges?: PromoBadge[];
+}
+
+export interface PromoBadge {
+  id: string;
+  label: { ar: string; en: string };
+  icon_key: string;
+  color_hex: string;
+  text_color_hex: string;
+  sort_order: number;
 }
 
 export interface CrossSellAdShippingBadge {

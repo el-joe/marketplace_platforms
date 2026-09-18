@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CircleStarIcon,
   StarIcon,
+  TruckIcon,
 } from "lucide-react";
 import React from "react";
 import { IProductDetails } from "./types";
@@ -24,6 +25,17 @@ type Props = {
   product: IProductDetails;
 };
 
+const PROMO_BADGE_ICONS: Record<
+  string,
+  React.ForwardRefExoticComponent<
+    Omit<React.ComponentProps<typeof CarIcon>, "ref"> &
+      React.RefAttributes<SVGSVGElement>
+  >
+> = {
+  car: CarIcon,
+  truck: TruckIcon,
+};
+
 export default function BaseInfo({ product }: Props) {
   const locale = useLocale();
   const t = useTranslations("productView");
@@ -34,9 +46,11 @@ export default function BaseInfo({ product }: Props) {
   return (
     <>
       <div className="flex mb-5">
-        <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
-          {t("megaDeal")}
-        </Badge>
+        {product.is_mega_deal && (
+          <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
+            {t("megaDeal")}
+          </Badge>
+        )}
         {!!isInCart && (
           <Badge className="text-sm font-bold bg-green text-white ms-auto">
             <Image
@@ -122,18 +136,16 @@ export default function BaseInfo({ product }: Props) {
           // oldPrice={product.oldPrice}
           // discountPercent={product.discount}
         />
-        <AnimatedBadge
-          badges={[
-            {
-              label: "hello world hello world",
-              icon: CarIcon,
-              iconColor: "red",
-            },
-            { label: "hello world5", icon: CarIcon, iconColor: "green" },
-            { label: "hello world", icon: CarIcon, iconColor: "blue" },
-          ]}
-          containerClasses="px-2! bg-gray-2! rounded-md!"
-        />
+        {!!product.promo_badges?.length && (
+          <AnimatedBadge
+            badges={product.promo_badges.map((badge) => ({
+              label: badge.label[locale],
+              icon: PROMO_BADGE_ICONS[badge.icon_key] || CarIcon,
+              iconColor: badge.color_hex,
+            }))}
+            containerClasses="px-2! bg-gray-2! rounded-md!"
+          />
+        )}
         <Link
           href={`/bestseller/${product.product.category.slug}`}
           className="bg-gray-2 px-3 py-2 mt-2 flex items-center gap-2 rounded-md w-full font-bold"
