@@ -35,6 +35,7 @@ export default async function OrderTracking({ order }: Props) {
       <div className="mt-4">
         <DeliveryAddressCard
           address={order.shipping_address}
+          status={order.status}
           isNegative={isNegative}
         />
       </div>
