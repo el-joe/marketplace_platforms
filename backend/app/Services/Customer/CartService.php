@@ -9,7 +9,6 @@ use App\Models\Cart;
 use App\Models\CartInventoryLock;
 use App\Models\CartItem;
 use App\Models\Coupon;
-use App\Models\CouponUsage;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CountryShippingSetting;
@@ -84,10 +83,20 @@ class CartService
         return $cart;
     }
 
+    /**
+     * Carts are scoped per (identity, country_id) — a customer/guest gets one
+     * cart per country, mirroring getOrCreateCart()'s authed lookup. This
+     * keeps country-scoping consistent between the two identity paths (a
+     * guest switching country context gets/creates their own cart for that
+     * country, same as an authed customer would), rather than the guest path
+     * previously ignoring country_id and always returning whichever single
+     * cart the session_token pointed at regardless of country.
+     */
     public function getOrCreateGuestCart(string $sessionToken, string $countryId, string $currency): Cart
     {
         $cart = Cart::where('session_token', $sessionToken)
             ->whereNull('user_id')
+            ->where('country_id', $countryId)
             ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->with(['items.vendorListing', 'coupon'])
             ->first();
@@ -410,7 +419,18 @@ class CartService
         $this->recalculateCart($cart);
     }
 
-    public function applyCoupon(Cart $cart, Customer $customer, string $code): Coupon
+    /**
+     * $customer is null for guest carts (auth('customer')->user() is null
+     * for guests). Eligibility (active/date range, country, currency,
+     * min-order, customer_eligibility, usage limits, shipping-type
+     * restriction) is fully delegated to
+     * CheckoutCalculationService::applyCoupon() -> CheckoutPricingEngine so
+     * this is the *same* validation recalculateCart() re-runs on every
+     * subsequent cart load — a coupon that passes here cannot later fail
+     * silently at recalculation for a reason this method didn't already
+     * check (see recalculateCart()).
+     */
+    public function applyCoupon(Cart $cart, ?Customer $customer, string $code): Coupon
     {
         $coupon = Coupon::where('code', $code)
             ->where('is_active', true)
@@ -418,23 +438,19 @@ class CartService
             ->where('valid_until', '>=', now())
             ->firstOrFail();
 
-        if ($coupon->usage_limit_total !== null && $coupon->times_used >= $coupon->usage_limit_total) {
-            throw new \DomainException(__('common.exceptions.cart.coupon_usage_limit_reached'));
-        }
-
-        $customerUsageCount = CouponUsage::where('coupon_id', $coupon->id)
-            ->where('customer_id', $customer->id)
-            ->count();
-
-        if ($customerUsageCount >= $coupon->usage_limit_per_customer) {
-            throw new \DomainException(__('common.exceptions.cart.coupon_customer_limit_reached'));
-        }
-
         $subtotal = (int) $cart->items()->get()->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
 
-        if ($coupon->min_order_amount !== null && $subtotal < $coupon->min_order_amount) {
-            $minFormatted = number_format($coupon->min_order_amount, 2);
-            throw new \DomainException(__('common.exceptions.cart.coupon_min_order_required', ['amount' => $minFormatted, 'currency' => $cart->currency]));
+        $result = $this->calculationService->applyCoupon(
+            $coupon,
+            $customer,
+            $subtotal,
+            $cart->currency,
+            $cart->items()->get()->all(),
+            $cart->country_id,
+        );
+
+        if ($result['error']) {
+            throw new \DomainException($result['error']);
         }
 
         $cart->update(['coupon_id' => $coupon->id]);
@@ -519,15 +535,34 @@ class CartService
         $subtotal = (int) $cart->items->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
 
         $discount = 0;
-        if ($cart->coupon && $cart->customer) {
+        $couponError = null;
+        if ($cart->coupon) {
+            // Same validation applyCoupon() ran when the coupon was first
+            // attached (CheckoutCalculationService -> CheckoutPricingEngine
+            // is the single source of truth used at both apply-time and
+            // recalculation-time), so a coupon accepted here cannot silently
+            // fail later for a reason apply-time didn't already check. It
+            // can still legitimately stop being eligible between requests
+            // (e.g. cart contents changed so min_order_amount is no longer
+            // met, or the cart's country/currency changed) — in that case we
+            // detach the coupon and surface why, instead of leaving
+            // coupon_id set while quietly showing a 0 discount.
             $result = $this->calculationService->applyCoupon(
                 $cart->coupon,
                 $cart->customer,
                 $subtotal,
                 $cart->currency,
                 $cart->items->all(),
+                $cart->country_id,
             );
-            $discount = $result['error'] ? 0 : $result['discount'];
+
+            if ($result['error']) {
+                $couponError = $result['error'];
+                $cart->update(['coupon_id' => null]);
+                $cart->unsetRelation('coupon');
+            } else {
+                $discount = $result['discount'];
+            }
         }
 
         $country = Country::find($cart->country_id);
@@ -547,6 +582,14 @@ class CartService
         foreach ($cart->items as $item) {
             $item->setAttribute('price_changed', $priceChanges[$item->id] ?? false);
         }
+
+        // Transient, non-persisted (there is no coupon_error column). Synced
+        // as "original" immediately so it never gets swept into a later,
+        // unrelated $cart->update()/save() call's dirty-attribute diff in
+        // the same request (which would otherwise fail with "Unknown column
+        // 'coupon_error'").
+        $cart->setAttribute('coupon_error', $couponError);
+        $cart->syncOriginalAttribute('coupon_error');
     }
 
     /**

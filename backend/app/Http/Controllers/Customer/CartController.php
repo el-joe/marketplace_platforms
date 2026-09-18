@@ -63,6 +63,46 @@ class CartController extends Controller
         );
     }
 
+    /**
+     * Resolves a CartItem by its own primary key and verifies it belongs to
+     * the current customer/guest, without requiring the cart resolved from
+     * the request's {country} segment to be the same cart the item lives in.
+     * A cart is scoped per (customer|guest) + country (see CartService), so
+     * a customer/guest legitimately has one cart per country; item-level
+     * mutations (warranty, quantity, removal) must operate on whichever of
+     * those carts actually owns the item, not force-resolve the "current"
+     * country's cart and 404 when it doesn't match.
+     *
+     * Returns null if the item doesn't exist or isn't owned by the caller —
+     * callers should treat that the same as "not found" (never leak whether
+     * an item exists under someone else's cart).
+     */
+    private function resolveOwnedCartItem(Request $request, string $itemId): ?\App\Models\CartItem
+    {
+        $item = \App\Models\CartItem::with('cart')->find($itemId);
+
+        if (!$item || !$item->cart) {
+            return null;
+        }
+
+        $cart = $item->cart;
+        $customer = auth('customer')->user();
+
+        if ($customer) {
+            if ($cart->user_id !== $customer->id) {
+                return null;
+            }
+        } else {
+            $token = $request->attributes->get('guest_cart_token');
+
+            if (!$token || $cart->session_token !== $token || $cart->user_id !== null) {
+                return null;
+            }
+        }
+
+        return $item;
+    }
+
     private function cartResponse(Cart $cart, array $extra = [], string $message = 'Success', int $code = 200): JsonResponse
     {
         $data = array_merge(['cart' => new CartResource($cart)], $extra);
@@ -288,10 +328,11 @@ class CartController extends Controller
         }
 
         if ($request->filled('warranty_plan_id')) {
-            $plan = WarrantyPlan::active()->find($request->warranty_plan_id);
+            $country = $request->attributes->get('country');
+            $error = $this->applyWarrantyPlanToItem($item, $request->input('warranty_plan_id'), $country);
 
-            if ($plan) {
-                $item->update(['warranty_plan_id' => $plan->id]);
+            if ($error) {
+                return ApiResponse::error($error, [], 422);
             }
         }
 
@@ -331,8 +372,13 @@ class CartController extends Controller
 
     public function updateItem(UpdateCartItemRequest $request, $countryId, string $id): JsonResponse
     {
-        $cart = $this->resolveCart($request);
+        $owned = $this->resolveOwnedCartItem($request, $id);
 
+        if (!$owned) {
+            return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
+        }
+
+        $cart = $owned->cart;
         $countryId = $request->attributes->get('country')->id;
 
         try {
@@ -370,46 +416,76 @@ class CartController extends Controller
         ], __('common.exceptions.cart.item_updated'));
     }
 
-    public function updateItemWarranty(Request $request, string $id): JsonResponse
+    /**
+     * Shared warranty-plan validation/assignment for both addItem() and
+     * updateItemWarranty() — the two entry points a warranty can be attached
+     * from must enforce the exact same applicability rule (plan active +
+     * applicable to the item's product in this country at the item's unit
+     * price), rather than addItem() silently setting whatever plan id it was
+     * given. Callers keep their own status-code mapping for "plan doesn't
+     * exist" (updateItemWarranty uses 404 for that case; addItem treats it
+     * as a 422 validation error) since the error message alone doesn't
+     * distinguish the two.
+     *
+     * @return string|null an error message on failure, or null on success
+     *                      (in which case the item's warranty_plan_id has
+     *                      already been updated)
+     */
+    private function applyWarrantyPlanToItem(\App\Models\CartItem $item, ?string $warrantyPlanId, $country): ?string
+    {
+        if ($warrantyPlanId === null) {
+            $item->update(['warranty_plan_id' => null]);
+
+            return null;
+        }
+
+        $plan = WarrantyPlan::active()->find($warrantyPlanId);
+
+        if (!$plan) {
+            return __('common.exceptions.cart.warranty_plan_not_found');
+        }
+
+        $listing = $item->vendor_listing_id ? $item->vendorListing : $item->adminListing;
+        $product = $listing?->productVariant?->product;
+
+        $applicablePlanIds = $product && $country
+            ? collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $item->unit_price))
+                ->pluck('id')
+                ->all()
+            : [];
+
+        if (!in_array($plan->id, $applicablePlanIds, true)) {
+            return __('common.exceptions.cart.warranty_plan_not_applicable');
+        }
+
+        $item->update(['warranty_plan_id' => $plan->id]);
+
+        return null;
+    }
+
+    public function updateItemWarranty(Request $request, $countryId, string $id): JsonResponse
     {
         $request->validate([
             'warranty_plan_id' => ['nullable', 'uuid', 'exists:warranty_plans,id'],
         ]);
 
-        $cart = $this->resolveCart($request);
-
-        $item = $cart->items()->find($id);
+        $item = $this->resolveOwnedCartItem($request, $id);
 
         if (!$item) {
             return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
         }
 
+        $cart = $item->cart;
+
         $warrantyPlanId = $request->input('warranty_plan_id');
+        $country = $request->attributes->get('country');
 
-        if ($warrantyPlanId === null) {
-            $item->update(['warranty_plan_id' => null]);
-        } else {
-            $plan = WarrantyPlan::active()->find($warrantyPlanId);
+        $error = $this->applyWarrantyPlanToItem($item, $warrantyPlanId, $country);
 
-            if (!$plan) {
-                return ApiResponse::error(__('common.exceptions.cart.warranty_plan_not_found'), [], 404);
-            }
+        if ($error) {
+            $code = $error === __('common.exceptions.cart.warranty_plan_not_found') ? 404 : 422;
 
-            $listing = $item->vendor_listing_id ? $item->vendorListing : $item->adminListing;
-            $product = $listing?->productVariant?->product;
-            $country = $request->attributes->get('country');
-
-            $applicablePlanIds = $product && $country
-                ? collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $item->unit_price))
-                    ->pluck('id')
-                    ->all()
-                : [];
-
-            if (!in_array($plan->id, $applicablePlanIds, true)) {
-                return ApiResponse::error(__('common.exceptions.cart.warranty_plan_not_applicable'), [], 422);
-            }
-
-            $item->update(['warranty_plan_id' => $plan->id]);
+            return ApiResponse::error($error, [], $code);
         }
 
         $item->load([
@@ -433,7 +509,13 @@ class CartController extends Controller
 
     public function removeItem(Request $request, $countryId, string $id): JsonResponse
     {
-        $cart = $this->resolveCart($request);
+        $owned = $this->resolveOwnedCartItem($request, $id);
+
+        if (!$owned) {
+            return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
+        }
+
+        $cart = $owned->cart;
 
         try {
             $this->cartService->removeItem($cart, $id);

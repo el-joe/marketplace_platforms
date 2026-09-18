@@ -192,12 +192,13 @@ class CheckoutCalculationService
      */
     public function applyCoupon(
         Coupon $coupon,
-        Customer $customer,
+        ?Customer $customer,
         int $subtotalCents,
         string $currency,
         array $cartItems,
+        ?string $countryId = null,
     ): array {
-        return $this->pricingEngine->applyCoupon($coupon, $customer, $subtotalCents, $currency, $cartItems);
+        return $this->pricingEngine->applyCoupon($coupon, $customer, $subtotalCents, $currency, $cartItems, $countryId);
     }
 
     /**

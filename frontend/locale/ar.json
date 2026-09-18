@@ -766,6 +766,7 @@
     "editAddress": "تعديل العنوان",
     "whoWillReceiveThisOrder": "كيف سيتم استلام هذا الطلب",
     "changeReceiver": "تغيير المستلم",
+    "noReceivers": "لا يوجد مستلمين",
     "deliveryInstructions": "تعليمات التوصيل",
     "getItemsTogether": "احصل على المنتجات معًا",
     "leaveAtMyDoor": "اتركه عند بابي",

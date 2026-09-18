@@ -29,6 +29,8 @@ export default function Checkout() {
     isGettingGateways,
     selectedInstruction,
     setSelectedInstruction,
+    selectedReceiverId,
+    setSelectedReceiverId,
     contract,
     isContractModalOpen,
     closeContractModal,
@@ -90,7 +92,12 @@ export default function Checkout() {
             <div className="flex flex-col gap-5 flex-1 max-w-full md:max-w-2/3">
               <AddressCard addressId={checkoutData?.address?.id} />
               <div className="flex gap-5 flex-wrap">
-                <OrderReceiverCard />
+                <OrderReceiverCard
+                  selectedReceiverId={selectedReceiverId}
+                  onSelectReceiver={(receiver) =>
+                    setSelectedReceiverId(receiver.id)
+                  }
+                />
                 <DeliveryInstructionsCard
                   instructions={checkoutData?.delivery_instructions ?? []}
                   selectedInstruction={selectedInstruction}

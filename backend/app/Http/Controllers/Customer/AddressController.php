@@ -10,11 +10,15 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Address;
 use App\Models\Customer;
 use App\Services\Customer\AddressService;
+use App\Services\Customer\ReceiverService;
 use Illuminate\Http\JsonResponse;
 
 class AddressController extends Controller
 {
-    public function __construct(private readonly AddressService $addressService) {}
+    public function __construct(
+        private readonly AddressService $addressService,
+        private readonly ReceiverService $receiverService,
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -44,6 +48,12 @@ class AddressController extends Controller
             'country_id' => $request->attributes->get('country')?->id ?? $customer->country_id,
         ]));
 
+        $this->receiverService->findOrCreateForNameAndPhone(
+            $customer,
+            $address->recipient_name,
+            $address->recipient_phone,
+        );
+
         return ApiResponse::success(new AddressResource($address), __('common.exceptions.address.created'), 201);
     }
 
@@ -57,6 +67,17 @@ class AddressController extends Controller
         }
 
         $address->update($data);
+
+        if (array_key_exists('recipient_name', $data) || array_key_exists('recipient_phone', $data)) {
+            // Ensure a matching receiver exists for the (possibly new) name/phone
+            // combo, without mutating any existing receiver the customer may have
+            // since customized (e.g. renamed) independently of this address.
+            $this->receiverService->findOrCreateForNameAndPhone(
+                auth('customer')->user(),
+                $address->recipient_name,
+                $address->recipient_phone,
+            );
+        }
 
         return ApiResponse::success(new AddressResource($address->fresh()), __('common.exceptions.address.updated'));
     }

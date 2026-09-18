@@ -154,12 +154,11 @@ export default function AddedToCartSheet({ productData }: Props) {
                         <Button
                           variant={"outline"}
                           onClick={async () => {
-                            console.log(
-                              "isSheetOpen.cartItemId",
-                              isSheetOpen.cartItemId,
-                            );
+                            if (!isSheetOpen.cartItemId) {
+                              return;
+                            }
                             updateItemWarranty({
-                              cartItemId: isSheetOpen.cartItemId || "",
+                              cartItemId: isSheetOpen.cartItemId,
                               warrantyPlanId: warranty.id,
                             }).then(() => setHadSelectedWarrantyAfterAdd(true));
                           }}

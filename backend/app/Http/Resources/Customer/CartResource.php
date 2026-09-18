@@ -30,6 +30,14 @@ class CartResource extends JsonResource
                 'type'        => $this->coupon->type?->value,
                 'description' => $this->coupon->description,
             ] : null,
+            // Set (transient, non-persisted) by CartService::recalculateCart()
+            // when a previously-applied coupon fails re-validation on this
+            // load and gets detached — surfaces why the coupon disappeared
+            // instead of the cart silently showing discount: 0.
+            'coupon_error' => $this->when(
+                $this->offsetExists('coupon_error') && $this->coupon_error !== null,
+                fn () => $this->coupon_error
+            ),
             'items'      => CartItemResource::collection($this->items),
             'expires_at' => $this->expires_at,
         ];

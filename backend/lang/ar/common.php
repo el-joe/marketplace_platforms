@@ -496,6 +496,7 @@ return [
                 'monthly_limit_reached' => 'لقد بلغت الحد الأقصى الشهري لاستخدام هذا الكوبون.',
                 'shipping_type_restricted' => 'هذا الكوبون صالح فقط لطلبات الشحن من نوع :type.',
                 'no_applicable_items' => 'لا ينطبق هذا الكوبون على أي عناصر في سلتك.',
+                'account_required' => 'يجب تسجيل الدخول لاستخدام هذا الكوبون.',
             ],
             'addon_group_required'       => 'يرجى اختيار خيار لـ ":name".',
             'addon_group_single_choice'  => 'يمكن اختيار خيار واحد فقط لـ ":name".',
