@@ -14,6 +14,10 @@ export async function getTravelPackages(
   const params = new URLSearchParams();
   if (filters.page) params.set("page", String(filters.page));
   if (filters.perPage) params.set("per_page", String(filters.perPage));
+  if (filters.countryId) params.set("country_id", filters.countryId);
+  if (filters.cityId) params.set("city_id", filters.cityId);
+  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+  if (filters.dateTo) params.set("date_to", filters.dateTo);
 
   const query = params.toString();
   try {

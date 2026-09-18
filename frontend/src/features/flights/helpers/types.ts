@@ -62,6 +62,15 @@ export type TravelPackageCategorySummary = {
   slug: string;
 };
 
+export type TravelPackageDestination = {
+  country_id: string | null;
+  country_en: string | null;
+  country_ar: string | null;
+  city_id: string | null;
+  city_en: string | null;
+  city_ar: string | null;
+};
+
 export type TravelPackageSummary = {
   package_id: string;
   title_en: string;
@@ -70,6 +79,7 @@ export type TravelPackageSummary = {
   thumbnail: string;
   destination_country: string;
   destination_city: string;
+  destination?: TravelPackageDestination;
   departure_date: string;
   return_date: string;
   duration_days: number;
@@ -120,6 +130,10 @@ export type ListTravelPackagesFilters = {
   categoryId?: string;
   page?: number;
   perPage?: number;
+  countryId?: string;
+  cityId?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type TravelPackageImage = {
