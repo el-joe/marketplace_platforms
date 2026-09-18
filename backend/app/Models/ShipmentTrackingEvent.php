@@ -13,6 +13,8 @@ class ShipmentTrackingEvent extends Model
 
     protected $fillable = [
         'shipment_id',
+        'carrier_id',
+        'external_tracking_number',
         'status',
         'description',
         'location',
@@ -28,5 +30,10 @@ class ShipmentTrackingEvent extends Model
     public function shipment(): BelongsTo
     {
         return $this->belongsTo(Shipment::class);
+    }
+
+    public function carrier(): BelongsTo
+    {
+        return $this->belongsTo(ShippingCarrier::class, 'carrier_id');
     }
 }
