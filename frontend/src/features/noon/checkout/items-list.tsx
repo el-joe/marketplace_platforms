@@ -7,6 +7,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import useLocale from "@/src/hooks/use-locale";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
+import { XIcon } from "lucide-react";
+import { Navigation } from "swiper/modules";
 
 export default function ItemsList({
   shipment_groups,
@@ -36,7 +38,6 @@ const Shipment = ({
   const t = useTranslations("checkout");
   const locale = useLocale();
 
-
   return (
     <div className="bg-white rounded-2xl">
       <div className="flex gap-2 items-center p-3">
@@ -47,7 +48,12 @@ const Shipment = ({
           {group?.items_count} {t("items")}
         </p>
       </div>
-      <Swiper>
+      <Swiper
+        slidesPerView={group.items_count > 1 ? 2 : 1}
+        navigation
+        modules={[Navigation]}
+        className="px-2!"
+      >
         {group.items.map((item) => (
           <SwiperSlide key={item.listing_id}>
             {" "}
@@ -66,8 +72,9 @@ const Shipment = ({
                     height={280}
                     className="object-contain"
                   />
-                  <div className="absolute bottom-1 right-1 text-xs text-gray font-bold border border-border p-1 rounded-md bg-white grid place-items-center">
-                    x{item.quantity}
+                  <div className="absolute bottom-1 right-1 font-semibold border border-border p-1 rounded-sm bg-white flex W-7 h-7 text-sm">
+                    <span>x</span>
+                    <span>{item.quantity}</span>
                   </div>
                 </div>
               </div>

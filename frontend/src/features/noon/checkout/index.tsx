@@ -43,6 +43,8 @@ export default function Checkout() {
     setOfflineProofNote,
     isPlacingOrder,
     isUploadingProof,
+    selectedReceiverId,
+    setSelectedReceiverId,
   } = useCheckout();
   if (
     (isPreparingCheckout && !checkoutData) ||
@@ -65,7 +67,7 @@ export default function Checkout() {
         {Array.from({ length: 8 }).map((e, i) => (
           <Skeleton key={i} className="min-h-60" />
         ))}
-        <LocationDialog open />;
+        <LocationDialog open />
       </div>
     );
   }

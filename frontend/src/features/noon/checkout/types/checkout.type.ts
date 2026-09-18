@@ -1,5 +1,6 @@
 import { PlacementBanner } from "@/src/types/placement-banner";
 import { ImageDTO } from "@/src/types/media";
+import { Receiver } from "@/src/services/receiver";
 
 // response
 // export interface IPrepareCheckout {
@@ -121,8 +122,8 @@ export interface IPrepareCheckout {
   order_summary: OrderSummary;
   shipping: Shipping;
   address: Address;
-  receiver: null;
-  receivers: unknown[];
+  receiver: Receiver | null;
+  receivers: Receiver[];
   gateway_code: string;
   gateway_type: string;
   available_payment_gateways: AvailablePaymentGateway[];

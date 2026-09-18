@@ -1,102 +1,288 @@
-# FIXES.md — Platform Audit Results
-Generated: 2026-09-18 | Commit: f3ff324 (HEAD, main)
+# Fix Plan — Customer/Admin Issues (2026-09-18)
 
-Scope: items A–J from the product-owner brief. Every claim below is based on reading the current
-working tree (not the brief's stale line numbers/paths, several of which have moved since the
-brief was written).
+Root-cause investigation completed via code exploration (Laravel backend `backend/`, Next.js
+customer frontend `frontend/`, Blade admin panel `backend/resources/views/admin`). Each issue
+below is a **self-contained prompt** meant to be run as an independent subagent. Each subagent
+must, when finished:
+1. Implement the fix (backend + frontend/admin as needed).
+2. Manually verify with `php artisan tinker`/relevant routes or a quick build/typecheck.
+3. `git add` only the files it touched and create **one commit** for its issue
+   (do not amend, do not push). Commit message format: `Fix: <short summary> (FIX-<ID>)`.
+4. Report back a short summary of what changed and the commit hash.
 
----
-
-## CRITICAL (breaks functionality)
-
-_None found among items A–J. `AutoCompleteOrdersJob` / `CheckSlaBreachJob` are registered
-(`backend/routes/console.php:28-29`), the marketer checkout groupBy crash (J) is already fixed,
-and the sponsored-products category filter (G) is already applied — see DONE notes below._
-
----
-
-## HIGH (wrong output, financial impact, or broken UX)
-
-### FIX-H1: Payment summary omits the loyalty-points discount line item
-- **File(s):**
-  - `frontend/src/features/noon/checkout/payment-summary.tsx` (component, lines 18–133)
-  - `frontend/src/features/noon/checkout/types/checkout.type.ts` (`OrderSummary` interface, commented block lines 75–85, and the live `IPrepareCheckout`/order_summary shape around line 119+)
-  - Backend already emits the field: `backend/app/Services/Checkout/PricedCart.php:25` (`loyaltyDiscount` readonly prop) and `:44`/`:61` (`'loyalty_discount' => $this->loyaltyDiscount` in `toArray()`), consumed at `backend/app/Http/Controllers/Customer/CheckoutController.php:406,474` (`'order_summary' => $summary` where `$summary = $pricedCart->toArray()`).
-- **Root cause:** `CheckoutCalculationService`/`CheckoutPricingEngine` already compute and return `loyalty_discount` in the `order_summary` payload (confirmed present in `PricedCart::toArray()`). `PaymentSummary` renders `cod_fee`, `warranty_total`, and `gift_card_applied` but has no block for `loyalty_discount`, so a customer who redeems loyalty points never sees that discount reflected in the line-item breakdown even though it is subtracted from `total` server-side — money "disappears" from the customer's view without explanation.
-- **Fix:** Add a `checkoutSummary.loyalty_discount > 0` conditional block to `payment-summary.tsx` mirroring the `gift_card_applied` block (green, negative-signed `Price`), add `loyalty_discount: number` to the `OrderSummary` type, and add a `loyaltyDiscount` / equivalent translation key to `checkout` locale namespace (en + ar).
-- **Acceptance test:** Apply loyalty points at checkout so `loyalty_discount > 0` in the `/prepare` response; `PaymentSummary` renders a "Loyalty discount" row equal to that amount, and `total` shown still equals `subtotal - discount - loyalty_discount + shipping + cod_fee + warranty_total - gift_card_applied + tax` (minus wallet deduction).
-
-### FIX-H2: Ad-package "listing boost" ranking is not applied to browse/search results
-- **File(s):** `backend/app/Services/Customer/ProductQueryService.php`, `backend/app/Models/AdPackage.php`, `backend/database/migrations/2026_09_12_000001_create_ad_packages_table.php` (tier enum: `serious`, `serious_featured`), `backend/app/Models/VendorAdSubscription.php`
-- **Root cause:** `ProductQueryService` has no reference to `boost_priority`, `ad_packages`, or `VendorAdSubscription` at all — only `SponsoredProductService::inject()` (a *separate* slot-injection mechanism at fixed positions 1/5/9, driven by `ad_campaigns`/`ad_campaign_products`) affects result order. A vendor who buys a "serious" (non-featured) Nawi ad package gets no ranking boost in organic browse results — the feature described in the brief ("listing boost & popup logic") only has the popup half wired (see DONE note below), not the sort/ranking half.
-- **Fix:** In `ProductQueryService`'s base listing query, left-join active `vendor_ad_subscriptions` (via `vendor_listing_id`, `status = active`, `ends_at > now()` or null) joined to `ad_packages` on `tier`, and add a boost term to the `ORDER BY` (e.g. `ORDER BY (subscription exists) DESC, tier weight DESC, <existing sort>`), gated so it only reorders within relevance and never overrides an explicit customer sort (price/rating) if one is requested. Needs a small scoring column or `CASE` expression — no schema change required if `ad_packages`/`vendor_ad_subscriptions` already carry `tier` and `is_active`/`ends_at`.
-- **Acceptance test:** A vendor listing with an active "serious" or "serious_featured" ad subscription appears above equivalent non-boosted listings on the default category sort, and boosted position does not change when the customer explicitly sorts by price/newest (those sorts should override boost).
-
-### FIX-H3: Nawi Ads popup (serious_featured tier) has no frontend consumer
-- **File(s):** `backend/app/Http/Controllers/Api/Public/AdPopupController.php` (exists, returns popup payload), `backend/routes/api_public.php:21` (`GET active-popup`, routed and public), frontend: no match for `active-popup` anywhere under `frontend/src`.
-- **Root cause:** Backend is fully wired — `AdPopupController::show()` picks a random active `VendorAdSubscription` on the `serious_featured` tier with popup copy filled in, and the route is public. But no frontend component calls `active-popup` or renders a popup — grep across `frontend/src` for `active-popup` and for popup components under `features/noon` returns nothing relevant (only generic UI popovers/dropdowns, unrelated). So `serious_featured` vendors pay for a popup placement that never displays.
-- **Fix:** Add a frontend popup component (e.g. `frontend/src/features/noon/ads/serious-featured-popup.tsx`) that fetches `GET /active-popup` on storefront mount (once per session, e.g. gated by a `sessionStorage` "seen" flag), and renders `title_en/ar`, `body_en/ar`, `image_url`, with a CTA linking to `product_slug`. Mount it in the root customer layout.
-- **Acceptance test:** With an active `serious_featured` subscription seeded with popup fields, loading the storefront shows the popup once per session; clicking the CTA navigates to `product_slug`.
+Do not work on more than one issue per subagent/session — this avoids merge conflicts since
+several issues touch overlapping files (e.g. order detail pages).
 
 ---
 
-## MEDIUM (missing feature that has DB schema but no UI/route)
+## FIX-1 — Order summary page has no invoice (`/orders/${orderNumber}`)
 
-### FIX-M1: Travel search filters have no frontend inputs
-- **File(s):** `backend/app/Http/Controllers/Customer/BrowseController.php:189-230` (`browseTravel`, validates and applies `country_id`, `city_id`, `date_from`, `date_to`), `frontend/src/features/flights/travel-packages/index.tsx` (only reads `page`, `category` from `searchParams`), `frontend/src/features/flights/api/travel-packages.actions.ts` (`getTravelPackages` only forwards `categoryId`/`page`/`perPage` — never `country_id`/`city_id`/`date_from`/`date_to`).
-- **Root cause:** The brief's `TravelController` (`backend/app/Http/Controllers/Storefront/TravelController.php`) is a separate admin/agency-portal-facing Blade controller using `country`/`city`/`departure_from`/`departure_to` — not what the Next.js customer app calls. The customer app actually calls `GET /browse/travel/{id}` → `BrowseController::browseTravel()`, which already validates and applies `country_id`, `city_id`, `date_from`, `date_to` (lines 215-230) via `ListingQueryService::paginateTravelPackages()`. The frontend simply never sends these params and has no filter UI (`TravelHero`, `CategoryTabs` components only handle hero copy and category tabs, no date/country/city inputs).
-- **Fix:** Add filter controls (country select, city select, date-range picker) to `frontend/src/features/flights/travel-packages/`, wire them into `searchParams`, and extend `getTravelPackages()`/`ListTravelPackagesFilters` to forward `country_id`, `city_id`, `date_from`, `date_to` to the existing, already-working backend endpoint.
-- **Acceptance test:** Selecting a country/city/date range on the travel listing page updates the URL query params and the returned package list is filtered server-side accordingly (verified against `BrowseController::browseTravel`'s existing validation).
+**Root cause (frontend-only):** Backend is fully implemented —
+`GET /api/customer/v1/{country}/{orderNumber}/invoice` (`backend/routes/api_customer_v1.php:562`)
+→ `OrderController::invoice` (`backend/app/Http/Controllers/Api/Customer/OrderController.php:173-184`)
+→ returns `OrderInvoiceResource` with full line items/tax/totals. Nothing frontend calls it.
+`frontend/src/features/noon/profile/orders/summary/components/invoice-card.tsx` only renders a
+static header + a non-interactive `DownloadIcon` (no `onClick`/`href`, lines ~13-35) and, when the
+order is in-progress, an "invoice in progress" message — otherwise renders `null`. It never fetches
+`/orders/{orderNumber}/invoice` or links to a downloadable/printable invoice.
 
----
-
-## LOW (cosmetic, locale keys, labels)
-
-_None identified beyond the locale keys needed for FIX-H1 (loyalty discount label) — folded into that fix rather than listed separately._
-
----
-
-## SKIP (needs business decision before code — document, do not implement)
-
-### FIX-S1: COD limits — "international products" exemption has no schema concept
-- **Reason:** COD limits are otherwise already implemented and working: `backend/app/Services/Customer/CodValidationService.php` enforces `cod_global_max_amount` and a separate `cod_supermall_max_amount` (scoped via `cod_supermall_category_id`'s nested-set `lft`/`rgt` range), both settings seeded by `backend/database/migrations/2026_09_12_173000_add_cod_limit_settings.php` under the generic `Setting` model (`category = 'orders'`), editable through the existing dynamic admin Settings UI (`Admin\SettingsController` — no bespoke `cod_limit_settings` table needed, and none exists, by design). Nawi/platform products are already exempt (`$item->adminListing !== null` check, `CodValidationService.php` line ~30). However, the brief's second exemption — **"international products"** — has no corresponding concept anywhere in the schema or models: no `is_international`, `ships_internationally`, or `international_shipping` field exists on `VendorListing`, `AdminListing`, `Product`, or `Country` (grepped across `backend/app` and `mysql-schema.sql`, zero hits).
-- **Open question:** What defines an "international product" for COD-exemption purposes — country of the seller vs. country of fulfillment vs. an explicit per-listing flag vs. cross-border shipping method? Once defined, the fix is a one-line addition to `CodValidationService::validate()`'s exemption check (`if ($item->adminListing !== null || $this->isInternational($item)) continue;`), but the field/logic to determine "international" must be specified by product first — this may also require a migration if a new column is chosen.
-
----
-
-## DONE (already correctly implemented — verified this pass, no action needed)
-
-- **G. Sponsored products category filter** — `backend/app/Services/Customer/SponsoredProductService.php::fetchSponsored()` (lines 201-249) already accepts and applies `$categoryIds` via `whereHas('productVariant.product', ...)`, and also mirrors attribute filters from `ProductQueryService::applyFilters`. `PROMPT-sponsored-category-filter.md`'s fix is applied. *(Side note, not in scope A–J: `fetchSponsored()`'s `ac.ends_at` clause at lines 214-218 uses an un-grouped `->orWhere('ac.ends_at', '>', now())` after two chained `->where()`/`whereNull()` calls, which is a classic Eloquent OR-precedence bug that can leak expired campaigns into results regardless of country/status — worth a follow-up look though it wasn't asked for in items A–J.)*
-- **F. Coupon `shipping_type_restriction` enforcement** — `backend/app/Services/Checkout/CheckoutPricingEngine.php:801-809` checks the coupon's restriction against each cart line's derived `shipping_type` (fbn/fbp/fbm) and rejects the coupon with a typed error when any line mismatches.
-- **I. `order.completed` automation** — Both `AutoCompleteOrdersJob` and `CheckSlaBreachJob` exist under `backend/app/Jobs/` and are registered in `backend/routes/console.php:28-29` (`everyFifteenMinutes()` / `dailyAt('02:00')`).
-- **J. Marketer checkout crash** — `backend/app/Http/Controllers/Customer/CheckoutController.php` no longer groups by raw `$item->vendorListing->vendor_id`; it resolves a `CartLineSource`/`sellerParty` per item first (see `resolveMarketerCartItems()` at line 1537 and the `groupBy(fn ($item) => $cartLineSources[$item->id]->sellerParty)` at line 1619), which is null-safe for marketer-listing items. No null-pointer risk found on the current code path.
-- **E. OMR currency symbol** — `frontend/src/helpers/get-currency-symbol.ts:107` already maps `OMR: "ر.ع."`.
-- **B. COD limits (core enforcement)** — see FIX-S1 above; everything except the "international products" exemption is implemented and working, including the Supermal-specific limit.
-- **H. `cod_fee` / `warranty_total` / `gift_card_applied`** — all three already render conditionally in `payment-summary.tsx` (lines 62-96). Only `loyalty_discount` is missing — see FIX-H1.
-- **A.2 (popup route wiring)** — route exists and is public (`backend/routes/api_public.php:21`); only the frontend consumer is missing — see FIX-H3.
-- **FIX-M2. Influencer body/size measurements in sample-dispatch UI** — already fully implemented in both views. `backend/resources/views/partner/marketer_campaigns/show.blade.php:397-444` renders an "Influencer Sizes" block (`influencer_measurements` label) inside an `@if ($isInfluencer && $sampleProfile)` row, iterating `clothing_size`, `shirt_size`, `pants_size`, `dress_size`, `abaya_size`, `shoe_size` (+ `shoe_size_system`), `chest_cm`, `waist_cm`, plus `hip_cm`/`height_cm`/sleeve/item-length fields, each only shown `@if(!is_null($value) && $value !== '')`; `measurements_notes` shown when present (lines 430-435); an `@elseif ($isInfluencer && !$sampleProfile)` branch (lines 438-443) shows a "no measurements on file" notice. `backend/resources/views/admin/marketer_campaigns/show.blade.php:605-654` mirrors the identical pattern for the admin view. No gap found — no code changes made.
+**Prompt:**
+> You are fixing FIX-1 in /var/www/marketplace. The backend endpoint
+> `GET /api/customer/v1/{country}/{orderNumber}/invoice` already works
+> (`backend/app/Http/Controllers/Api/Customer/OrderController.php:173-184`, returns
+> `OrderInvoiceResource`). The bug is purely on the frontend: open
+> `frontend/src/features/noon/profile/orders/summary/components/invoice-card.tsx` — it renders a
+> disabled-looking download icon with no click handler and returns `null` unless the order is
+> in-progress. Fix it so that when the order is NOT in-progress (invoice available), the component
+> fetches/links to the invoice endpoint and lets the customer download or open it (PDF/print view —
+> check if `OrderInvoiceResource` is meant to back a printable HTML view or if you need to add one;
+> if no PDF generation exists, render a printable invoice view page using the JSON from that
+> endpoint, e.g. a route like `/orders/[orderNumber]/invoice` that calls window.print(), OR wire a
+> `Content-Disposition` PDF response backend-side if that's more consistent with the rest of the
+> app — check for existing PDF libs in backend/composer.json first (e.g. barryvdh/laravel-dompdf)
+> before adding a new dependency). Wire the download icon's onClick to open/download it. Test by
+> hitting the invoice endpoint for a real completed order number and confirming the frontend button
+> now works. Commit your changes as one commit: "Fix: add working invoice download on order summary
+> page (FIX-1)".
 
 ---
 
-## Execution Summary
+## FIX-2 — Cannot book more than 1 seat for a travel package (group booking)
 
-| Fix ID | Status | Files changed | Notes |
-|--------|--------|---------------|-------|
-| FIX-H1 | ✅ DONE (`c0693f9`) | `payment-summary.tsx`, `checkout.type.ts`, `locale/en.json`, `locale/ar.json` | Loyalty discount line item now rendered when > 0 |
-| FIX-H2 | ✅ DONE (`20d6c83`) | `backend/app/Services/Customer/ProductQueryService.php` | Boost via `orderByRaw` CASE on ad tier, default-sort only; explicit customer sorts unaffected |
-| FIX-H3 | ✅ DONE (`2cc4e83`) | `features/noon/ads/{serious-featured-popup.tsx,api.ts,types.ts}`, `(noon)/layout.tsx`, locale files | Once-per-session popup via existing Sheet component |
-| FIX-M1 | ✅ DONE (`d362ce8`) | `travel-packages.actions.ts`, `helpers/types.ts`, `travel-packages/index.tsx`, new `travel-filters.tsx`, `build-destination-options.ts` | Country/city/date filters wired to existing working backend endpoint; destination options derived client-side (no dedicated facets endpoint exists) |
-| FIX-M2 | ✅ DONE, no action needed (`d5c9d63`) | — (verification only) | Sizes already rendered in both `show.blade.php` views (partner:397-444, admin:605-654) |
-| FIX-S1 | ⏳ SKIP — blocked | `QUESTION-1.md` (`6b06dcf`) | Needs product-owner definition of "international product" before any code/migration |
+**Root cause (frontend-only):** Backend fully supports multi-seat bookings already:
+`CreateBookingRequest` requires `travelers_count` (int, min:1, max:50) —
+`backend/app/Http/Requests/Customer/Travel/CreateBookingRequest.php:16-19`;
+`TravelBookingService::book()` prices and stores it
+(`backend/app/Services/Customer/TravelBookingService.php:60-82`); route
+`POST listings/travel/{slug}/bookings` (`backend/routes/api_customer_v1.php:124-126`). But there is
+**no frontend caller of this endpoint at all**. The package detail page
+(`frontend/src/features/flights/package-details/components/booking-sidebar.tsx`) only shows price/
+seats-remaining and opens a `ContactModal` that submits a name/email/phone "inquiry" via
+`submitTravelInquiry()` — not a real booking, and has no traveler-count field.
+`frontend/src/features/flights/api/bookings.actions.ts` only has list/detail/cancel/passport-upload
+actions — no `createBooking`. `PricingTiers` component only displays tiers read-only.
 
-## Migrations needed (run on server)
-- None required — FIX-H2's join relies on the existing composite index on `vendor_ad_subscriptions(vendor_listing_id, status, ends_at)` from its original creation migration; no new migration was needed.
-- FIX-S1 will need a migration once the "international product" definition is decided (new column or derivation logic) — not yet written.
+**Prompt:**
+> You are fixing FIX-2 in /var/www/marketplace. The backend already supports booking a travel
+> package with any number of travelers via `POST listings/travel/{slug}/bookings` with a
+> `travelers_count` field (1-50) — see
+> `backend/app/Http/Requests/Customer/Travel/CreateBookingRequest.php` and
+> `backend/app/Services/Customer/TravelBookingService.php::book()`. The frontend has NO booking
+> flow at all yet — `frontend/src/features/flights/package-details/components/booking-sidebar.tsx`
+> only opens a `ContactModal` that submits an inquiry (see
+> `frontend/src/features/flights/package-details/components/contact-modal.tsx` and
+> `travel-packages.actions.ts`'s `submitTravelInquiry`), not an actual booking. Build the missing
+> piece: add a `createBooking` server action in
+> `frontend/src/features/flights/api/bookings.actions.ts` that POSTs to
+> `listings/travel/{slug}/bookings` with `travelers_count` (and any other required fields the
+> request class needs — check `CreateBookingRequest` for the full field list, e.g. traveler names/
+> passport info if required). Add a traveler-count stepper/input to the booking sidebar (respecting
+> `available_seats`/`seatsRemaining()` from `TravelPackage`, don't let the user request more seats
+> than remain), show the computed total price using the existing group-pricing tier logic
+> (`priceForTravelersCount`), and wire the submit button to call the new action and redirect to the
+> booking confirmation/detail page on success. Keep the existing "Contact us" inquiry option as a
+> separate, secondary action if useful, but the primary flow must be a real booking. Test by
+> creating a booking for 3+ travelers against a real package and confirming `travelers_count` and
+> price are correct in the DB. Commit as one commit: "Fix: add multi-seat travel package booking
+> flow to frontend (FIX-2)".
 
-## Questions requiring product owner input
-- FIX-S1: definition of "international product" for COD exemption purposes. See `QUESTION-1.md`.
+---
 
-## Follow-up items noted but out of scope (not implemented)
-- `SponsoredProductService::fetchSponsored()`'s `ac.ends_at` OR-precedence bug (found during FIX-G verification, pre-existing, not one of items A–J) — worth a separate look.
-- FIX-H2: a subscription tied to a since-deactivated `ad_packages` row still boosts (`ap.is_active` not checked) — confirm with product if that's intended.
-- FIX-H2: no `distinct()` guard on the paginated fetch if a vendor listing somehow has overlapping active subscriptions — theoretical edge case, not DB-enforced unique.
+## FIX-3 — Admin cannot convert a booking inquiry into a real booking
+
+**Root cause:** This capability exists only for the Travel Agency Portal, never for Admin.
+`TravelAgencyPortal\PackageInquiryController::convertToBooking` is wired via
+`backend/routes/api_travel_agency.php:72` and `backend/routes/travel.php:115` (behind
+`travel_agency.can:inquiries.manage`). The Admin controller
+`backend/app/Http/Controllers/Admin/TravelPackageInquiryController.php` (33 lines) only has
+`index()` — no convert/approve method — and `backend/routes/admin.php:1611-1613` registers only a
+GET listing route. The admin Blade view (`resources/views/admin/travel/inquiries/index.blade.php`)
+is read-only. This is a missing feature, not a permissions bug.
+
+**Prompt:**
+> You are fixing FIX-3 in /var/www/marketplace. Admins need the ability to convert a travel
+> package booking inquiry into a real confirmed booking from the admin panel — this endpoint
+> currently only exists for Travel Agency Portal users, not Admin. Study
+> `TravelAgencyPortal\PackageInquiryController::convertToBooking` (find it via
+> `backend/app/Http/Controllers/Api/TravelAgencyPortal/PackageInquiryController.php` and/or
+> `backend/app/Http/Controllers/TravelAgencyPortal/PackageInquiryController.php`) and the
+> booking-creation logic it reuses (likely `TravelBookingService` — see FIX-2 notes above for that
+> service, at `backend/app/Services/Customer/TravelBookingService.php`) to understand how an
+> inquiry becomes a booking (traveler count, package, pricing, customer). Add an equivalent
+> `convertToBooking` (or `convert`) action to
+> `backend/app/Http/Controllers/Admin/TravelPackageInquiryController.php`, reusing the same
+> underlying service rather than duplicating booking-creation logic. Add a route in
+> `backend/routes/admin.php` near line 1611-1613 (e.g.
+> `POST /admin/travel/inquiries/{inquiry}/convert`), gated behind the appropriate admin permission
+> (check how other admin travel routes gate permissions, e.g. a `travel.manage` or similar gate/
+> policy — follow the existing convention in that routes file, don't invent a new permission scheme).
+> Update `backend/resources/views/admin/travel/inquiries/index.blade.php` to add a "Convert to
+> Booking" action button per row (with a confirm dialog), wired to the new route. On conversion,
+> update the inquiry's status so it's clearly marked converted/booked and not actionable twice.
+> Test by converting a real inquiry via the admin UI and confirming a TravelBooking row is created
+> with correct traveler_count/pricing, and the inquiry is marked converted. Commit as one commit:
+> "Fix: allow admin to convert booking inquiries into confirmed bookings (FIX-3)".
+
+---
+
+## FIX-4 — Filters not working on admin /orders
+
+**Root cause:** Admin `/orders` is Blade + DataTables
+(`backend/resources/views/admin/orders/index.blade.php` →
+`backend/resources/js/components/datatable.js` → `Admin\OrderController::datatable()` (line 140) →
+`buildOrdersQuery()` (line 62) → `HasDataTable::applyFilters()`). Most filters are wired correctly,
+but two concrete bugs exist:
+1. `min_total`/`max_total` filters cast to `(int) round((float) $v)`
+   (`OrderController.php:98-99`), while `orders.total` is a real decimal column — this truncates
+   cents and silently excludes/includes wrong rows for any non-integer amount (the common case).
+2. The top toolbar quick-search box (`#orders-table-search`) only searches the `order_number`
+   column (via DataTables' built-in `searchable_columns`), while the separate filter-panel "search"
+   field searches order_number + customer name + email — two inputs behaving inconsistently, which
+   reads as "filters broken" to admins expecting the top search to match customer name/email too.
+
+**Prompt:**
+> You are fixing FIX-4 in /var/www/marketplace, the admin orders filters at `backend/resources/
+> views/admin/orders/index.blade.php` (served via DataTables →
+> `backend/app/Http/Controllers/Admin/OrderController.php::datatable()`/`buildOrdersQuery()` around
+> lines 62-140, using `HasDataTable::applyFilters()` from `backend/app/Traits/HasDataTable.php`).
+> Two confirmed bugs to fix:
+> 1. In `OrderController.php` around lines 98-99, the `min_total`/`max_total` filter closures cast
+>    the input to `(int) round((float) $v)` before comparing against `orders.total`, which is a
+>    real decimal money column (see `total_formatted` using `number_format($row->total, 2)` in the
+>    same file's datatable row transformer, and confirm `Order.php` has no int cast on `total`).
+>    Fix the filters to compare against the actual decimal value (cast input with `(float)`, not
+>    `(int) round(...)`), so e.g. `min_total=149.99` correctly matches orders totaling 149.99.
+>    Also double check `max_total`'s closure actually uses `<=` — re-read the two lines carefully,
+>    there may be a copy-paste bug where both use the same comparison operator.
+> 2. The toolbar quick-search box (`#orders-table-search` in datatable.js, submitted via DataTables'
+>    built-in `search.value`) only searches `order_number` per `columnDefinitions()`'s
+>    `searchable_columns` (`OrderController.php` around line 581+), while the separate filter-panel
+>    "search" scope (lines ~87-91) also matches customer name/email. Make the toolbar quick-search
+>    behave the same as the filter-panel search (order_number + customer name + email) — either by
+>    routing the toolbar search through the same backend scope, or by widening
+>    `searchable_columns`/the query builder used for the DataTables global search to match. Pick
+>    whichever approach fits the existing `HasDataTable` trait pattern with the least duplication.
+> Test by filtering orders with a decimal min/max total and by quick-searching a customer email in
+> the toolbar box, confirming both return correct results. Commit as one commit: "Fix: correct
+> admin orders total-range filter truncation and inconsistent search behavior (FIX-4)".
+
+---
+
+## FIX-5 — "How do I pay via bank transfer?" (customer confusion / lost instructions)
+
+**Root cause:** Bank transfer IS fully implemented backend-side (gateway, bank details,
+proof-of-payment upload: `backend/app/Services/Payments/BankTransferGateway.php`,
+`backend/app/Services/Customer/BankTransferProofService.php`, upload route at
+`backend/routes/api_customer_v1.php:460`) and mostly on the frontend
+(`frontend/src/features/noon/checkout/success/bank-transfer-card.tsx` renders bank details + proof
+upload). The real bug: `frontend/src/features/noon/checkout/success/index.tsx` (lines ~19-28) reads
+the order **only from `sessionStorage.getItem("last_placed_order")`**, ignoring the
+`initialOrderData` prop that's presumably fetched server-side. If the customer leaves the success
+page (closes tab, opens an emailed/bookmarked confirmation link later, private browsing clears
+storage), `order` is null and the page hard-redirects to `/` — the bank transfer instructions and
+upload form become permanently inaccessible, even though the backend still has the data. There also
+does not appear to be a fallback to view bank transfer details/upload proof from the regular order
+history/detail page.
+
+**Prompt:**
+> You are fixing FIX-5 in /var/www/marketplace: customers report not knowing how to complete a
+> bank transfer payment. The backend is complete (bank account details returned by
+> `backend/app/Services/Payments/BankTransferGateway.php::initiate()`, proof-of-payment upload via
+> `backend/app/Services/Customer/BankTransferProofService.php` and route
+> `POST .../orders/{order}/bank-transfer-proof` at `backend/routes/api_customer_v1.php:460`). The
+> bug is `frontend/src/features/noon/checkout/success/index.tsx` (~lines 19-28): it reads the order
+> ONLY from `sessionStorage.getItem("last_placed_order")` and ignores the `initialOrderData` prop
+> that appears to be passed in (presumably from a server-side fetch for direct/deep links). If
+> sessionStorage is empty (tab closed and reopened, emailed confirmation link visited later, private
+> browsing), the component treats `order` as null and redirects to `/`, permanently hiding the bank
+> transfer instructions/upload form for that customer. Fix `success/index.tsx` to fall back to
+> `initialOrderData` when sessionStorage is empty/invalid, instead of always redirecting home. Then
+> check `frontend/src/features/noon/profile/orders/summary/components/payment-details-card.tsx`
+> (or wherever the regular order-detail/summary page renders payment info) — if it does NOT already
+> show bank transfer account details + a proof-upload option for orders paid via bank_transfer with
+> no proof uploaded yet, add that, reusing the existing `bank-transfer-card.tsx` component/
+> `use-bank-transfer-proof.ts` hook logic so customers can always find how to pay from their normal
+> order history, not just the one-time post-checkout success screen. Test by placing a bank-transfer
+> order, closing the tab, reopening the order via /orders/{orderNumber}, and confirming bank details
+> + upload form are visible and functional. Commit as one commit: "Fix: make bank transfer payment
+> instructions accessible after leaving checkout success page (FIX-5)".
+
+---
+
+## FIX-6 — Warranty purchases API doesn't include the warranty product; purchased warranty
+## doesn't appear as claimable ("اشتريت منتج وخدت عليه ضمان بس منزلش في warranty claims")
+
+**Root cause (two related bugs):**
+1. **Missing product data:** `WarrantyPurchase` model
+   (`backend/app/Models/WarrantyPurchase.php:26-44`) has no `product()` relationship (unlike
+   `WarrantyClaim`, which does). `WarrantyController::purchases()`
+   (`backend/app/Http/Controllers/Api/Customer/WarrantyController.php:70-82`) eager-loads only
+   `['orderItem', 'plan']`. `WarrantyPurchaseResource::toArray()` (lines 41-44) synthesizes a
+   `product` object purely from `orderItem->product_snapshot` JSON + `orderItem->sku` — no
+   `product_id`, image, slug, or live product link — so if the snapshot is incomplete/missing, the
+   product shows as unknown (frontend fallback "unknownProduct" at
+   `frontend/src/features/noon/profile/warranties/index.tsx:74`).
+2. **Newly purchased warranty invisible / not claimable:** Warranty purchases are created at
+   checkout with `status: 'pending'`, `coverage_starts_at/ends_at: null`
+   (`backend/app/Http/Controllers/Customer/CheckoutController.php:1222-1243`), and only become
+   `active` with real coverage dates via `SubOrderObserver` when the sub-order is marked delivered
+   (`backend/app/Observers/SubOrderObserver.php:40-68`). `WarrantyController::purchases()` applies
+   an `->active()` scope (line 76), excluding ALL pending rows — so a warranty is invisible in "My
+   Warranties" until delivery is recorded AND that recording path actually fires the observer. If
+   any delivery-marking code path (manual admin status override, alternate fulfillment service,
+   COD-capture listener, etc.) doesn't trigger `SubOrderObserver`, the purchase stays `pending`
+   forever, explaining "bought a product with warranty but it never shows up as claimable."
+
+**Prompt:**
+> You are fixing FIX-6 in /var/www/marketplace, warranty visibility issues. Two sub-bugs to fix in
+> one pass since they share the same files:
+>
+> **(a) Missing product info in warranty purchases API**
+> (`GET /api/customer/v1/{country}/warranty/purchases`): `WarrantyPurchase` model
+> (`backend/app/Models/WarrantyPurchase.php`) has no proper relation to the actual `Product` — only
+> a snapshot copy via `orderItem->product_snapshot`. Add a real relationship (e.g.
+> `product()` belongsTo/hasOneThrough via `orderItem->product_id`, matching however `WarrantyClaim`
+> already does it — check its model for the pattern) so the purchase can resolve the live product
+> (id, name, slug, image, current price) even when the snapshot is stale/incomplete. Update
+> `WarrantyController::purchases()` (`backend/app/Http/Controllers/Api/Customer/
+> WarrantyController.php` ~lines 70-82) to eager-load the new relation, and update
+> `WarrantyPurchaseResource::toArray()` (~lines 41-44) to prefer live product data (falling back to
+> the order_item snapshot only if the live product was deleted), including `product_id` and image/
+> slug so the frontend can link to the product page.
+>
+> **(b) Purchased warranty never appears as claimable**
+> Warranty purchases are created `pending` at checkout
+> (`backend/app/Http/Controllers/Customer/CheckoutController.php` ~lines 1222-1243) and only
+> activated by `SubOrderObserver` (`backend/app/Observers/SubOrderObserver.php` ~lines 40-68) when
+> a sub-order is marked delivered. `WarrantyController::purchases()` filters to `->active()` only,
+> hiding pending warranties entirely. First, grep the codebase for every place a sub-order's status
+> gets set to delivered (admin manual override, fulfillment/shipping service, COD capture listener,
+> etc.) and confirm each path actually fires the observer/event that activates the warranty — if you
+> find a path that updates status directly (e.g. `SubOrder::where(...)->update(['status' =>
+> 'delivered'])`, which bypasses Eloquent observers on bulk updates) rather than
+> `$subOrder->update([...])` on a model instance, fix it to go through the model so the observer
+> fires, or explicitly call the activation logic there. Second, decide product UX: should a
+> `pending` (not-yet-delivered) warranty purchase show up in "My Warranties" as
+> "upcoming/not yet active" instead of being hidden entirely? If so, relax the `->active()` scope in
+> `purchases()` to also include `pending`, and have `WarrantyPurchaseResource`'s `is_claimable`
+> (already correctly gated on `active` + coverage dates) clearly communicate status so pending ones
+> render as non-claimable-but-visible rather than being silently dropped from the list. Test by
+> creating an order with a warranty add-on, confirming it appears in "My Warranties" pre-delivery as
+> pending, then marking the sub-order delivered through every relevant admin/fulfillment path and
+> confirming the warranty flips to active+claimable each time, with correct product info shown.
+> Commit as one commit: "Fix: warranty purchases show correct product info and become claimable
+> after delivery (FIX-6)".
+
+---
+
+## Notes for whoever runs these
+
+- Run FIX-1, FIX-4, FIX-5, FIX-6 in parallel — they touch disjoint files.
+- Run FIX-2 before/independent of FIX-3, since FIX-3 reuses the booking-creation service FIX-2's
+  investigation describes (no frontend dependency between them, but conceptually related).
+- None of these issues are permission-config bugs; all required real code changes.
+- After all fixes land, re-test the two originally-reported admin return/warranty URLs manually:
+  - `https://admin.noon.codefanz.com/api/customer/v1/uae/warranty/purchases?page=1` (FIX-6)
+  - `https://admin.noon.codefanz.com/api/customer/v1/uae/orders/NOON-20260918-0WPTDB/returns`
+    (not covered by an issue above — if still broken after FIX-1/4/5/6, file as FIX-7 separately;
+    it wasn't part of this investigation batch).

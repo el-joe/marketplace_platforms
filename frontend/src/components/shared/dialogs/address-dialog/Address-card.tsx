@@ -1,7 +1,6 @@
 import {
   BadgeCheckIcon,
   BriefcaseBusinessIcon,
-  Building2Icon,
   HomeIcon,
   MapPinIcon,
 } from "lucide-react";
@@ -13,9 +12,14 @@ import { useAddressesContext } from "@/src/providers/addresses-provider";
 type Props = {
   address: Address;
   className?: string;
+  handleCloseDialog?: () => void;
 };
 
-export default function AddressCard({ address, className }: Props) {
+export default function AddressCard({
+  address,
+  className,
+  handleCloseDialog,
+}: Props) {
   const { selectedAddress, handleSelectAddress } = useAddressesContext();
   return (
     <div
@@ -24,7 +28,12 @@ export default function AddressCard({ address, className }: Props) {
         selectedAddress?.id === address.id && "border-blue!",
         className,
       )}
-      onClick={() => handleSelectAddress(address)}
+      onClick={() => {
+        handleSelectAddress(address);
+        setTimeout(() => {
+          handleCloseDialog?.();
+        }, 300);
+      }}
     >
       <div className="mb-2 flex items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-2">
@@ -39,7 +48,7 @@ export default function AddressCard({ address, className }: Props) {
         <div className="flex-1">
           <p className="text-base font-bold">{address.address_type}</p>
           <p className="text-light">{address.full_address}</p>
-          <Separator className={"my-[6px] w-full h-px"} />
+          <Separator className={"my-1.5 w-full h-px"} />
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-gray flex items-center font-semibold gap-1">
               {address.recipient_name} , {address.recipient_phone}
