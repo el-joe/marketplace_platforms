@@ -1,16 +1,16 @@
 import { getAddresses } from "@/src/services/address";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import AddressCard from "../../AddressCard";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAuthContext } from "@/src/providers/auth-provider";
+import AddressCard from "./Address-card";
 
 export default function AddressesList() {
   const t = useTranslations("header.locationDialog");
   const { isLogged } = useAuthContext();
-  const { data, isPending, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["addresses"],
     queryFn: getAddresses,
     enabled: isLogged,
@@ -40,17 +40,12 @@ export default function AddressesList() {
           </p>
         </div>
       ) : (
-        data?.map((address) => (
-          <AddressCard
-            key={address.id}
-            label={address.label}
-            addressLine={address.full_address || address.street_address}
-            receiverName={address.recipient_name}
-            receiverPhone={address.recipient_phone}
-            verified={false}
-            className="mb-2"
-          />
-        ))
+        <>
+          <p className="mb-3 text-light uppercase">{t("savedAddresses")}</p>
+          {data?.map((address) => (
+            <AddressCard key={address.id} address={address} className="mb-2" />
+          ))}
+        </>
       )}
     </div>
   );

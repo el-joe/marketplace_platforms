@@ -1,10 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  BriefcaseBusinessIcon,
   ChevronDownIcon,
   ChevronLeft,
   ChevronRight,
+  DotIcon,
   HeartIcon,
+  HomeIcon,
   LanguagesIcon,
   LogOutIcon,
   LucideProps,
@@ -35,6 +38,11 @@ import {
 import CategoriesNav from "./categories-nav";
 import { HelpSheet } from "@/src/features/help-sheet";
 import useHandleLocale from "@/src/hooks/use-handle-locale";
+import { useAddressesContext } from "@/src/providers/addresses-provider";
+import { getRegion } from "@/src/helpers/handleRegionAndLocal";
+// eslint-disable-next-line no-restricted-imports
+import { useLocale as useClientLocale } from "next-intl";
+import { getCountriesService } from "@/src/services/countries";
 
 const profileDropdownLinks: {
   href: string;
@@ -80,21 +88,18 @@ const Header = () => {
   const { handleToggleLang } = useHandleLocale();
   const { setAuthDialogIsOpen, isLogged, profile, logout } = useAuthContext();
   const [helpSheetOpen, setHelpSheetOpen] = useState(false);
+  const { selectedAddress } = useAddressesContext();
+  const countryCode = getRegion(useClientLocale());
+  const {
+    data: countriesData,
+    isLoading: isLoadingCountries,
+    isSuccess,
+  } = useQuery({
+    queryKey: ["countries"],
+    queryFn: getCountriesService,
+  });
 
   const splittedName = profile?.name?.split(" ");
-
-  const { data: addresses } = useQuery({
-    queryKey: ["addresses"],
-    queryFn: getAddresses,
-    enabled: isLogged,
-  });
-  const defaultAddress =
-    addresses?.find((address) => address.is_default) ?? addresses?.[0];
-  const deliveryCityName = defaultAddress?.city
-    ? locale === "ar"
-      ? defaultAddress.city.name_ar
-      : defaultAddress.city.name_en
-    : null;
 
   const { cart } = useCartContext();
   return (
@@ -112,12 +117,31 @@ const Header = () => {
               <Button
                 variant={"ghost"}
                 className={
-                  "font-semibold gap-0 py-2.5 hidden md:inline-flex justify-start"
+                  "font-semibold gap-0 py-2.5 hidden md:inline-flex justify-start items-center gap-0.5 max-w-[226px]"
                 }
                 title={t("locationButtonLabel")}
               >
-                <MapPinIcon className="me-1" />
-                {t("other")} .<span className="font-thin"> {deliveryCityName ?? t("locationButtonLabel")}</span>
+                {selectedAddress?.address_type === "home" ? (
+                  <HomeIcon className="size-5" />
+                ) : selectedAddress?.address_type === "work" ? (
+                  <BriefcaseBusinessIcon className="size-5" />
+                ) : (
+                  <MapPinIcon className="size-5" />
+                )}
+                <span className="text-base">
+                  {selectedAddress?.address_type ?? t("other")}
+                </span>
+                <DotIcon />
+                <span className="font-thin line-clamp-1">
+                  {selectedAddress?.full_address ??
+                    (!isLoadingCountries &&
+                    isSuccess &&
+                    countriesData?.data?.length
+                      ? countriesData?.data?.find(
+                          (c) => c.site_code === countryCode,
+                        )?.name
+                      : countryCode)}
+                </span>
                 <ChevronDownIcon />
               </Button>
             }
@@ -284,7 +308,18 @@ const Header = () => {
                 title={t("locationButtonLabel")}
               >
                 <MapPinIcon className="me-1" />
-                {t("other")} .<span className="font-thin"> {deliveryCityName ?? t("locationButtonLabel")}</span>
+                {t("deliverTo")} .
+                <span className="font-thin line-clamp-1">
+                  {" "}
+                  {selectedAddress?.full_address ??
+                    (!isLoadingCountries &&
+                    isSuccess &&
+                    countriesData?.data?.length
+                      ? countriesData?.data?.find(
+                          (c) => c.site_code === countryCode,
+                        )?.name
+                      : countryCode)}
+                </span>
                 <ChevronDownIcon />
               </Button>
             }
