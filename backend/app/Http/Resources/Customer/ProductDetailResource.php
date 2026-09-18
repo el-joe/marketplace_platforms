@@ -66,6 +66,20 @@ class ProductDetailResource extends JsonResource
             'min_age'          => $this->min_age,
             'is_hazardous'     => $this->is_hazardous,
             'has_variants'     => $this->has_variants,
+            'is_mega_deal'     => (bool) $this->is_mega_deal,
+            'promo_badges'     => $this->whenLoaded('promoBadges', fn() =>
+                $this->promoBadges->map(fn($b) => [
+                    'id'             => $b->id,
+                    'label'          => [
+                        'ar' => $b->label_ar,
+                        'en' => $b->label_en,
+                    ],
+                    'icon_key'       => $b->icon_key,
+                    'color_hex'      => $b->color_hex,
+                    'text_color_hex' => $b->text_color_hex,
+                    'sort_order'     => $b->sort_order,
+                ])
+            ),
             'rating_avg'       => (float) ($this->relationLoaded('activeListings') ? ($this->activeListings->first()->rating_avg ?? 0) : 0),
             'rating_count'     => (int) ($this->relationLoaded('activeListings') ? ($this->activeListings->first()->rating_count ?? 0) : 0),
             'rating_breakdown' => $this->ratingBreakdown,

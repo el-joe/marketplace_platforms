@@ -33,6 +33,7 @@ class Product extends Model
         'status',
         'is_hidden',
         'is_featured',
+        'is_mega_deal',
         'requires_brand_auth',
         'is_age_restricted',
         'min_age',
@@ -54,6 +55,7 @@ class Product extends Model
     protected $casts = [
         'is_hidden' => 'boolean',
         'is_featured' => 'boolean',
+        'is_mega_deal' => 'boolean',
         'requires_brand_auth' => 'boolean',
         'is_age_restricted' => 'boolean',
         'is_hazardous' => 'boolean',
@@ -153,6 +155,18 @@ class Product extends Model
     public function specifications(): HasMany
     {
         return $this->hasMany(ProductSpecification::class)->orderBy('position');
+    }
+
+    /**
+     * Active rotating promo badge messages (PDP/listing-card AnimatedBadge),
+     * ordered for display. Inactive rows are excluded — the frontend should
+     * never see them.
+     */
+    public function promoBadges(): HasMany
+    {
+        return $this->hasMany(ProductPromoBadge::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order');
     }
 
     public function coupons(): BelongsToMany

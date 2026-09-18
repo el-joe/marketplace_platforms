@@ -196,11 +196,15 @@ class ProductQueryService
         $variantIds = $rows->pluck('buy_box_variant_id')->filter()->unique()->values();
         $imagesByVariant = $this->imageResolver->forVariants($variantIds);
 
+        $productIds = $rows->pluck('id')->filter()->unique()->values();
+        $promoBadgesByProduct = $this->promoBadgesForProducts($productIds);
+
         $items = ProductListResource::collection($rows)
-            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant) {
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
                 $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
+                $r->resource->promo_badges = $promoBadgesByProduct[$r->resource->id] ?? [];
                 return $r->toArray(request());
             })
             ->toArray();
@@ -247,6 +251,7 @@ class ProductQueryService
         return [
             'bb.product_id as id',
             'p.name_en', 'p.name_ar', 'p.slug', 'p.is_featured', 'p.published_at',
+            'p.is_mega_deal',
             'pcs.name_override_en', 'pcs.name_override_ar',
             'bb.min_price', 'bb.max_price',
             'bb.seller_count as active_seller_count',
@@ -375,5 +380,37 @@ class ProductQueryService
             ->pluck('product_variants.product_id');
 
         return $vendorProductIds->merge($adminProductIds)->unique()->toArray();
+    }
+
+    /**
+     * Batched active promo-badge lookup for a page of product ids (mirrors
+     * the ListingImageResolver batching pattern above — never per-row).
+     *
+     * @param  \Illuminate\Support\Collection<int, string>  $productIds
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function promoBadgesForProducts($productIds): array
+    {
+        if ($productIds->isEmpty()) {
+            return [];
+        }
+
+        return \App\Models\ProductPromoBadge::whereIn('product_id', $productIds)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('product_id')
+            ->map(fn ($badges) => $badges->map(fn ($b) => [
+                'id'             => $b->id,
+                'label'          => [
+                    'ar' => $b->label_ar,
+                    'en' => $b->label_en,
+                ],
+                'icon_key'       => $b->icon_key,
+                'color_hex'      => $b->color_hex,
+                'text_color_hex' => $b->text_color_hex,
+                'sort_order'     => $b->sort_order,
+            ])->values()->all())
+            ->all();
     }
 }

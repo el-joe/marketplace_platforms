@@ -257,6 +257,7 @@ class ProductController extends Controller
                 'brand',
                 'category',
                 'images',
+                'promoBadges',
                 'variants.variantAttributes.attribute',
                 'variants.variantAttributes.attributeValue',
                 'variants.images',
