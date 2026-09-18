@@ -1,5 +1,6 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { IProduct } from "@/types";
+import { InternationalShippingIndicator } from "@/types/globals";
 import { PlacementBanner } from "@/src/types/placement-banner";
 
 export interface IProductDetails {
@@ -137,6 +138,7 @@ export interface Listing {
   rating_count: number;
   is_global_shipping: boolean;
   is_wishlisted: boolean;
+  international_shipping?: InternationalShippingIndicator | null;
 }
 
 export interface OtherSeller {
