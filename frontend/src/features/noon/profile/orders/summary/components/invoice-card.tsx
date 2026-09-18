@@ -12,6 +12,7 @@ type Props = {
 
 export default async function InvoiceCard({ orderNumber, status }: Props) {
   const t = await getTranslations("profile");
+  const invoiceAvailable = !isInProgressStatus(status);
 
   return (
     <Card className="border border-border p-6">
@@ -20,7 +21,21 @@ export default async function InvoiceCard({ orderNumber, status }: Props) {
           <FileTextIcon className="size-5" />
           {t("viewInvoice")}
         </h2>
-        <DownloadIcon className="size-5 text-gray" />
+
+        {invoiceAvailable ? (
+          <Link
+            href={`/orders/${orderNumber}/invoice`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("downloadInvoice")}
+            title={t("downloadInvoice")}
+            className="text-gray hover:text-blue-3"
+          >
+            <DownloadIcon className="size-5" />
+          </Link>
+        ) : (
+          <DownloadIcon className="size-5 text-gray" />
+        )}
       </div>
 
       {isInProgressStatus(status) ? (
