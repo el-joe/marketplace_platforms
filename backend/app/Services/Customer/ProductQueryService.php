@@ -303,7 +303,18 @@ class ProductQueryService
                     ->where('pcs.is_available', true);
             })
             ->leftJoin('product_variants as pv', 'pv.id', '=', 'bb.variant_id')
-            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id');
+            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id')
+            // FIX-H2: ranking boost for vendors with an active ad-package
+            // subscription on the winning (buy-box) vendor listing. Left join
+            // so listings without a subscription still pass through with
+            // ap.tier NULL (=> boost weight 0 in applySort()).
+            ->leftJoin('vendor_ad_subscriptions as vas', function ($j) {
+                $j->on('vas.vendor_listing_id', '=', 'bb.listing_id')
+                    ->where('bb.listing_type', '=', 'vendor')
+                    ->where('vas.status', '=', 'active')
+                    ->where('vas.ends_at', '>', now());
+            })
+            ->leftJoin('ad_packages as ap', 'ap.id', '=', 'vas.ad_package_id');
 
         if (!empty($filters['category'])) {
             $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
@@ -361,12 +372,22 @@ class ProductQueryService
     public function applySort($builder, string $sort)
     {
         return match ($sort) {
+            // Explicit customer-requested sorts always win — no ad-package
+            // boost applied here (FIX-H2 acceptance test: boosted position
+            // must not change when price/newest/rating is requested).
             'price_asc' => $builder->orderBy('bb.min_price', 'asc'),
             'price_desc' => $builder->orderBy('bb.max_price', 'desc'),
             'rating' => $builder->orderBy('bb.rating_avg', 'desc'),
             'newest' => $builder->orderBy('p.published_at', 'desc'),
             'best_selling' => $builder->orderBy('bb.total_sold', 'desc'),
-            default => $builder->orderBy('p.is_featured', 'desc')
+            // Default/relevance sort only: active-subscription listings are
+            // boosted ahead of non-boosted ones, ranked by package tier
+            // (serious_featured > serious), before falling back to the
+            // pre-existing featured/rating tiebreakers.
+            default => $builder->orderByRaw(
+                "CASE WHEN ap.tier = 'serious_featured' THEN 2 WHEN ap.tier = 'serious' THEN 1 ELSE 0 END DESC"
+            )
+                ->orderBy('p.is_featured', 'desc')
                 ->orderBy('bb.rating_avg', 'desc'),
         };
     }
