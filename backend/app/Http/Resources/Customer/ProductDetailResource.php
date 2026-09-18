@@ -10,6 +10,28 @@ class ProductDetailResource extends JsonResource
 {
     public bool $isWishlisted = false;
 
+    /**
+     * Whether this product is currently part of an active, visible
+     * mega_deals Page Builder block — computed by the controller via
+     * PageBuilderService::isProductInActiveMegaDeal() (see
+     * docs/plans/mega-deal-page-builder-correction.md Task F). Defaults to
+     * false so callers that never set it (e.g. tests instantiating this
+     * resource directly) still get a boolean, not null.
+     */
+    public bool $isMegaDeal = false;
+
+    /**
+     * Whether this product currently has a `live` FlashSaleSubmission —
+     * computed by the controller via
+     * FlashSaleService::activeFlashSaleEndsAtForProduct(). Takes precedence
+     * over isMegaDeal: a product never reports both true (see
+     * docs/plans/flash-sale-badge-and-countdown.md Task H).
+     */
+    public bool $isFlashSale = false;
+
+    /** ISO 8601 end timestamp of the product's live flash sale, or null. */
+    public ?string $flashSaleEndsAt = null;
+
     /** @var array<string, mixed>|null Pre-shaped banner/ad array from PlacementAdService::resolve(). */
     public ?array $banner = null;
 
@@ -66,6 +88,22 @@ class ProductDetailResource extends JsonResource
             'min_age'          => $this->min_age,
             'is_hazardous'     => $this->is_hazardous,
             'has_variants'     => $this->has_variants,
+            'is_mega_deal'     => $this->isMegaDeal,
+            'is_flash_sale'    => $this->isFlashSale,
+            'flash_sale_ends_at' => $this->flashSaleEndsAt,
+            'promo_badges'     => $this->whenLoaded('promoBadges', fn() =>
+                $this->promoBadges->map(fn($b) => [
+                    'id'             => $b->id,
+                    'label'          => [
+                        'ar' => $b->label_ar,
+                        'en' => $b->label_en,
+                    ],
+                    'icon_key'       => $b->icon_key,
+                    'color_hex'      => $b->color_hex,
+                    'text_color_hex' => $b->text_color_hex,
+                    'sort_order'     => $b->sort_order,
+                ])
+            ),
             'rating_avg'       => (float) ($this->relationLoaded('activeListings') ? ($this->activeListings->first()->rating_avg ?? 0) : 0),
             'rating_count'     => (int) ($this->relationLoaded('activeListings') ? ($this->activeListings->first()->rating_count ?? 0) : 0),
             'rating_breakdown' => $this->ratingBreakdown,

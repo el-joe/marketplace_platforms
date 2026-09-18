@@ -22,6 +22,7 @@ use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\SponsoredProductService;
 use App\Services\BannerService;
+use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Support\Concerns\BuildsProductAttributeSelector;
 use Illuminate\Http\JsonResponse;
@@ -40,6 +41,7 @@ class ProductController extends Controller
         private readonly ReviewService $reviewService,
         private readonly \App\Services\Customer\ListingIdentifierService $identifiers,
         private readonly PageBuilderService $pageBuilder,
+        private readonly FlashSaleService $flashSale,
         private readonly BannerService $bannerService,
         private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {
@@ -257,6 +259,7 @@ class ProductController extends Controller
                 'brand',
                 'category',
                 'images',
+                'promoBadges',
                 'variants.variantAttributes.attribute',
                 'variants.variantAttributes.attributeValue',
                 'variants.images',
@@ -345,6 +348,11 @@ class ProductController extends Controller
 
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;
+        $flashSaleEndsAt = $this->flashSale->activeFlashSaleEndsAtForProduct($product->id, $country);
+        $resource->isFlashSale = $flashSaleEndsAt !== null;
+        $resource->flashSaleEndsAt = $flashSaleEndsAt?->toISOString();
+        // Flash sale takes precedence over mega deal when both apply.
+        $resource->isMegaDeal = $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
         $resource->banner = $banner;
         $resource->crossSellAd = $crossSellAd;
         $resource->inlineBanner1 = $inlineBanner1;

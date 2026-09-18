@@ -11,6 +11,19 @@ export function isInProgressStatus(status: OrderStatus): boolean {
   return (inProgressStatuses as readonly string[]).includes(status);
 }
 
+/** Once the order has shipped, it's out of the warehouse — the delivery address can no longer change. */
+const shippedOrLaterStatuses = [
+  "partially_shipped",
+  "shipped",
+  "partially_delivered",
+  "delivered",
+  "completed",
+] as const;
+
+export function hasShippedOrLater(status: OrderStatus): boolean {
+  return (shippedOrLaterStatuses as readonly string[]).includes(status);
+}
+
 const statusLabelKeys: Record<OrderStatus, string> = {
   placed: "orderStatusPlaced",
   confirmed: "orderStatusConfirmed",

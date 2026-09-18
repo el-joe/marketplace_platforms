@@ -798,6 +798,64 @@ class PageBuilderService
     }
 
     /**
+     * Batched check: which of the given product ids currently belong to an
+     * active, visible `mega_deals` page block for this country.
+     *
+     * "Active" mirrors buildSkeleton()'s block-visibility filter above
+     * exactly (is_visible, visible_from/visible_until, country_override) —
+     * intentionally NOT re-implemented, so this stays in lockstep with
+     * whatever a customer would actually see rendered on the page. See
+     * docs/plans/mega-deal-page-builder-correction.md Task F: this replaces
+     * the removed flat `products.is_mega_deal` column, which was never
+     * written to by the real (Page Builder) admin flow.
+     *
+     * One query for the candidate blocks + one join query for the matching
+     * products — never per-product — same batching shape as
+     * ProductQueryService::promoBadgesForProducts().
+     *
+     * @param  \Illuminate\Support\Collection<int,string>|array<int,string>  $productIds
+     * @return \Illuminate\Support\Collection<int,string> subset of $productIds currently in an active mega_deals block
+     */
+    public function activeMegaDealProductIds($productIds, Country $country): Collection
+    {
+        $productIds = collect($productIds)->filter()->unique()->values();
+
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        $now = now();
+
+        $blockIds = PageBlock::where('block_type', 'mega_deals')
+            ->where('is_visible', true)
+            ->where(fn ($q) => $q->whereNull('visible_from')->orWhere('visible_from', '<=', $now))
+            ->where(fn ($q) => $q->whereNull('visible_until')->orWhere('visible_until', '>', $now))
+            ->where(fn ($q) => $q->whereNull('country_override')->orWhere('country_override', $country->id))
+            ->pluck('id');
+
+        if ($blockIds->isEmpty()) {
+            return collect();
+        }
+
+        return \App\Models\PageBlockProduct::query()
+            ->whereIn('page_block_id', $blockIds)
+            ->join('product_variants', 'product_variants.id', '=', 'page_block_products.product_variant_id')
+            ->whereIn('product_variants.product_id', $productIds)
+            ->distinct()
+            ->pluck('product_variants.product_id');
+    }
+
+    /**
+     * Single-product convenience wrapper around activeMegaDealProductIds() —
+     * used by the PDP detail resource path, which only ever needs one
+     * product's worth of the same check.
+     */
+    public function isProductInActiveMegaDeal(string $productId, Country $country): bool
+    {
+        return $this->activeMegaDealProductIds([$productId], $country)->isNotEmpty();
+    }
+
+    /**
      * Detect mobile vs desktop from User-Agent header.
      */
     public function detectDevice(Request $request): string

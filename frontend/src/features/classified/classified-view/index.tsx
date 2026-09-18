@@ -47,7 +47,7 @@ export default function ClassifiedView({ initialData }: ClassifiedViewProps) {
             <ClassifiedFeatures features={listing.features} />
 
             {/* 6. Ask the Lister */}
-            <ClassifiedInquiry sellerName={listing.seller.name} />
+            <ClassifiedInquiry sellerName={listing.seller.name} slug={listing.slug} />
           </div>
 
           {/* Sticky Right Sidebar (4 cols on lg) */}

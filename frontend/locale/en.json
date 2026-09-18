@@ -243,6 +243,7 @@
     "addedToTheCart": "added to the cart",
     "inYourCart": "In your cart",
     "megaDeal": "Mega deal 📣",
+    "flashSale": "Flash sale ⚡",
     "freeDelivery": "Free Delivery",
     "noonExpress": "Noon Express",
     "close": "Close"
@@ -664,7 +665,14 @@
     "myGiftCardsEmptyMessage": "You haven't purchased any gift cards yet.",
     "giftCardPurchasedOnLabel": "Purchased",
     "giftCardPendingDelivery": "Pending delivery",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "offlinePaymentUploadTitle": "Upload payment proof",
+    "offlinePaymentUploadDesc": "Please attach a copy of your invoice/payment receipt. This is required to purchase a gift card with this payment method.",
+    "chooseFile": "Choose file",
+    "note": "Note",
+    "notePlaceholder": "Add any additional details about your payment",
+    "fileRequiredError": "Please attach a payment proof file to continue.",
+    "proofUploadFailedFallback": "Your gift card order was placed, but we couldn't upload your payment proof. Please try again from your order history."
   },
   "cart": {
     "freeShipping": "Free shipping",
@@ -751,6 +759,7 @@
     "codFee": "Cash on delivery fee",
     "warrantyTotal": "Warranty",
     "giftCard": "Gift card",
+    "loyaltyDiscount": "Loyalty discount",
     "walletUsed": "Wallet credit",
     "items": "Items",
     "placeOrder": "Place order",
@@ -763,7 +772,16 @@
     "marketerContractAccept": "I agree",
     "marketerContractCancel": "Cancel",
     "marketerContractRequiredNotice": "Please read and accept the terms before placing your order.",
-    "marketerContractDownload": "View PDF"
+    "marketerContractDownload": "View PDF",
+    "offlinePaymentUploadTitle": "Upload payment proof",
+    "offlinePaymentUploadDesc": "Please attach a copy of your invoice/payment receipt. This is required to place your order with this payment method.",
+    "chooseFile": "Choose file",
+    "note": "Note (optional)",
+    "notePlaceholder": "Add any additional details about your payment",
+    "fileRequiredError": "Please attach a payment proof file to continue.",
+    "placingOrder": "Placing order...",
+    "uploadingProof": "Uploading proof...",
+    "proofUploadFailedFallback": "Your order was placed, but we couldn't upload your payment proof. Please upload it from the order confirmation page."
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "Order Placed Successfully!",
@@ -820,7 +838,9 @@
     "submitProof": "Submit Proof",
     "uploadingProof": "Uploading...",
     "proofUploaded": "Proof uploaded successfully. We'll confirm your payment shortly.",
-    "proofUploadFailed": "Failed to upload proof. Please try again."
+    "proofUploadFailed": "Failed to upload proof. Please try again.",
+    "note": "Note (optional)",
+    "notePlaceholder": "Add any additional details about your payment"
   },
   "openSooq": {
     "header": {
@@ -1003,6 +1023,12 @@
       "passportHint": "Accepted formats: PDF, JPG, PNG. Max 10MB.",
       "passportUploadedSuccess": "Passport uploaded! The agency can now confirm your booking.",
       "uploadError": "Upload failed. Please try again."
+    },
+    "filters": {
+      "allCountries": "All countries",
+      "allCities": "All cities",
+      "dateRange": "Travel dates",
+      "clearFilters": "Clear filters"
     }
   },
   "vewAll": "Vew All",
@@ -1205,7 +1231,8 @@
     "askTheLister": "Ask the Lister",
     "messagePlaceholder": "Message...",
     "sendMessage": "Send Message",
-    "messageSentTo": "Your message has been sent to {name}!"
+    "messageSentTo": "Your message has been sent to {name}!",
+    "sendFailed": "Couldn't send your message. Please try again."
   },
   "classifiedGallery": {
     "promotedTurbo": "Promoted Turbo",
@@ -1332,5 +1359,9 @@
     "guestNamePlaceholder": "Your name (optional)",
     "commentPlaceholder": "Say something…",
     "send": "Send"
+  },
+  "adsPopup": {
+    "close": "Close",
+    "viewProduct": "View product"
   }
 }

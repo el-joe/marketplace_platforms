@@ -14,4 +14,7 @@ export interface ICustomerProfile {
   member_since: Date;
   gender: "male" | "female";
   nationality: string;
+  profile_completion: {
+    percentage: number;
+  };
 }

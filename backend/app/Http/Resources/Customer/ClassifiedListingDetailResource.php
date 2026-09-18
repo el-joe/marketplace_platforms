@@ -14,6 +14,7 @@ class ClassifiedListingDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id'               => $this->id,
             'listing_number'   => $this->listing_number,
             'slug'             => $this->slug,
             'title'            => Bilingual::pair($this->resource, 'title'),

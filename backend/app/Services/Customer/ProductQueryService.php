@@ -6,6 +6,8 @@ use App\Http\Resources\Customer\ProductListResource;
 use App\Models\Attribute;
 use App\Models\Country;
 use App\Models\WishlistItem;
+use App\Services\FlashSaleService;
+use App\Services\Shared\PageBuilderService;
 use App\Support\Bilingual;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -33,6 +35,8 @@ class ProductQueryService
     public function __construct(
         private readonly SponsoredProductService $sponsored,
         private readonly \App\Services\Media\ListingImageResolver $imageResolver,
+        private readonly PageBuilderService $pageBuilder,
+        private readonly FlashSaleService $flashSale,
     ) {
     }
 
@@ -196,11 +200,23 @@ class ProductQueryService
         $variantIds = $rows->pluck('buy_box_variant_id')->filter()->unique()->values();
         $imagesByVariant = $this->imageResolver->forVariants($variantIds);
 
+        $productIds = $rows->pluck('id')->filter()->unique()->values();
+        $promoBadgesByProduct = $this->promoBadgesForProducts($productIds);
+        $megaDealProductIds = $this->pageBuilder->activeMegaDealProductIds($productIds, $country);
+        $flashSaleEndsAtByProduct = $this->flashSale->activeFlashSaleEndsAtByProduct($productIds, $country);
+
         $items = ProductListResource::collection($rows)
-            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant) {
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct, $megaDealProductIds, $flashSaleEndsAtByProduct) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
                 $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
+                $r->resource->promo_badges = $promoBadgesByProduct[$r->resource->id] ?? [];
+                $flashSaleEndsAt = $flashSaleEndsAtByProduct->get($r->resource->id);
+                // Flash sale takes precedence over mega deal when both apply
+                // (edge case) — a product never shows both badges.
+                $r->resource->is_flash_sale = $flashSaleEndsAt !== null;
+                $r->resource->flash_sale_ends_at = $flashSaleEndsAt?->toISOString();
+                $r->resource->is_mega_deal = $flashSaleEndsAt === null && $megaDealProductIds->contains($r->resource->id);
                 return $r->toArray(request());
             })
             ->toArray();
@@ -287,7 +303,18 @@ class ProductQueryService
                     ->where('pcs.is_available', true);
             })
             ->leftJoin('product_variants as pv', 'pv.id', '=', 'bb.variant_id')
-            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id');
+            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id')
+            // FIX-H2: ranking boost for vendors with an active ad-package
+            // subscription on the winning (buy-box) vendor listing. Left join
+            // so listings without a subscription still pass through with
+            // ap.tier NULL (=> boost weight 0 in applySort()).
+            ->leftJoin('vendor_ad_subscriptions as vas', function ($j) {
+                $j->on('vas.vendor_listing_id', '=', 'bb.listing_id')
+                    ->where('bb.listing_type', '=', 'vendor')
+                    ->where('vas.status', '=', 'active')
+                    ->where('vas.ends_at', '>', now());
+            })
+            ->leftJoin('ad_packages as ap', 'ap.id', '=', 'vas.ad_package_id');
 
         if (!empty($filters['category'])) {
             $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
@@ -345,12 +372,22 @@ class ProductQueryService
     public function applySort($builder, string $sort)
     {
         return match ($sort) {
+            // Explicit customer-requested sorts always win — no ad-package
+            // boost applied here (FIX-H2 acceptance test: boosted position
+            // must not change when price/newest/rating is requested).
             'price_asc' => $builder->orderBy('bb.min_price', 'asc'),
             'price_desc' => $builder->orderBy('bb.max_price', 'desc'),
             'rating' => $builder->orderBy('bb.rating_avg', 'desc'),
             'newest' => $builder->orderBy('p.published_at', 'desc'),
             'best_selling' => $builder->orderBy('bb.total_sold', 'desc'),
-            default => $builder->orderBy('p.is_featured', 'desc')
+            // Default/relevance sort only: active-subscription listings are
+            // boosted ahead of non-boosted ones, ranked by package tier
+            // (serious_featured > serious), before falling back to the
+            // pre-existing featured/rating tiebreakers.
+            default => $builder->orderByRaw(
+                "CASE WHEN ap.tier = 'serious_featured' THEN 2 WHEN ap.tier = 'serious' THEN 1 ELSE 0 END DESC"
+            )
+                ->orderBy('p.is_featured', 'desc')
                 ->orderBy('bb.rating_avg', 'desc'),
         };
     }
@@ -375,5 +412,37 @@ class ProductQueryService
             ->pluck('product_variants.product_id');
 
         return $vendorProductIds->merge($adminProductIds)->unique()->toArray();
+    }
+
+    /**
+     * Batched active promo-badge lookup for a page of product ids (mirrors
+     * the ListingImageResolver batching pattern above — never per-row).
+     *
+     * @param  \Illuminate\Support\Collection<int, string>  $productIds
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function promoBadgesForProducts($productIds): array
+    {
+        if ($productIds->isEmpty()) {
+            return [];
+        }
+
+        return \App\Models\ProductPromoBadge::whereIn('product_id', $productIds)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('product_id')
+            ->map(fn ($badges) => $badges->map(fn ($b) => [
+                'id'             => $b->id,
+                'label'          => [
+                    'ar' => $b->label_ar,
+                    'en' => $b->label_en,
+                ],
+                'icon_key'       => $b->icon_key,
+                'color_hex'      => $b->color_hex,
+                'text_color_hex' => $b->text_color_hex,
+                'sort_order'     => $b->sort_order,
+            ])->values()->all())
+            ->all();
     }
 }

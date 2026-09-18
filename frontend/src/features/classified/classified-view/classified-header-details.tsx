@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Heart,
   Share2,
@@ -13,6 +13,12 @@ import {
   Building2,
   Check,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  addWishlistItemService,
+  checkWishlistItemService,
+  removeWishlistItemService,
+} from "@/src/services/wishlist";
 import { ClassifiedDetail } from "./types";
 
 interface ClassifiedHeaderDetailsProps {
@@ -26,14 +32,63 @@ export default function ClassifiedHeaderDetails({
   const [favCount, setFavCount] = useState(listing.favoritesCount);
   const [isNotified, setIsNotified] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const wishlistItemId = useRef<string | null>(null);
 
-  const toggleFavorite = () => {
-    if (isFavorite) {
-      setIsFavorite(false);
-      setFavCount((c) => Math.max(0, c - 1));
-    } else {
-      setIsFavorite(true);
-      setFavCount((c) => c + 1);
+  // Sync the real favorite state from the wishlist on mount (the server-rendered
+  // listing doesn't currently know the viewer's wishlist state).
+  useEffect(() => {
+    let cancelled = false;
+    if (!listing.uuid) return;
+
+    checkWishlistItemService(listing.uuid, "classified")
+      .then((res) => {
+        if (cancelled) return;
+        const group = res.data.groups?.[0];
+        wishlistItemId.current = group?.item_id ?? null;
+        setIsFavorite(res.data.in_wishlist);
+      })
+      .catch(() => {
+        // Non-fatal: leave the initial (default) favorite state as-is.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [listing.uuid]);
+
+  const toggleFavorite = async () => {
+    if (isTogglingFavorite || !listing.uuid) return;
+
+    const wasFavorite = isFavorite;
+    const previousItemId = wishlistItemId.current;
+
+    // Optimistic update
+    setIsFavorite(!wasFavorite);
+    setFavCount((c) => (wasFavorite ? Math.max(0, c - 1) : c + 1));
+    setIsTogglingFavorite(true);
+
+    try {
+      if (wasFavorite) {
+        if (previousItemId) {
+          await removeWishlistItemService(previousItemId);
+        }
+        wishlistItemId.current = null;
+      } else {
+        const res = await addWishlistItemService({
+          listing_id: listing.uuid,
+          item_type: "classified",
+        });
+        wishlistItemId.current = res.data.item.id;
+      }
+    } catch {
+      // Roll back optimistic update on failure
+      setIsFavorite(wasFavorite);
+      setFavCount((c) => (wasFavorite ? c + 1 : Math.max(0, c - 1)));
+      wishlistItemId.current = previousItemId;
+      toast.error("Couldn't update favorites. Please try again.");
+    } finally {
+      setIsTogglingFavorite(false);
     }
   };
 

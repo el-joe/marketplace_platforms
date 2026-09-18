@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   Phone,
@@ -127,14 +128,25 @@ export default function ClassifiedSidebar({
           </div>
         </div>
 
-        {/* View All Listings link */}
-        <a
-          href="#seller-listings"
-          className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
-        >
-          <span>{t("viewAllListings", { count: seller.totalListings })}</span>
-          <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
-        </a>
+        {/* View All Listings link — only routable for vendor sellers today;
+            individual sellers have no public seller-profile page yet. */}
+        {seller.vendorId ? (
+          <Link
+            href={`/seller/${seller.vendorId}`}
+            className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
+          >
+            <span>{t("viewAllListings", { count: seller.totalListings })}</span>
+            <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
+          </Link>
+        ) : (
+          <a
+            href="#seller-listings"
+            className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
+          >
+            <span>{t("viewAllListings", { count: seller.totalListings })}</span>
+            <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
+          </a>
+        )}
       </div>
 
       {/* 3. General Safety Tips Card */}

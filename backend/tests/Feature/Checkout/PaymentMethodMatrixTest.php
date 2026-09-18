@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\PaymentTransaction;
 use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Tests\Support\AssertsOrderMoney;
@@ -247,6 +248,86 @@ class PaymentMethodMatrixTest extends TestCase
 
         $order->refresh();
         $this->assertSame('captured', $order->payment_status->value);
+    }
+
+    public function test_bank_transfer_sub_order_cannot_leave_placed_until_admin_approves_payment(): void
+    {
+        $scenario = $this->buildScenario();
+        $fake = (new FakePaymentGateway())->withCode('bank_transfer');
+        $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
+        PaymentGatewayFactory::fake($fake);
+
+        $cart = $this->cartFor($scenario);
+        $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
+
+        $response = $this->placeOrder($scenario, 'bank_transfer');
+        $response->assertStatus(201);
+
+        $orderNumber = $response->json('data.order.order_number') ?? $response->json('data.order_number');
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+        $subOrder = $order->subOrders()->firstOrFail();
+
+        $intervention = app(\App\Services\OrderInterventionService::class);
+
+        // Payment is still pending admin approval: the sub-order must not
+        // be allowed to move out of `placed` into fulfillment.
+        try {
+            $intervention->updateSubOrderStatus($subOrder, 'confirmed', 'vendor accepted', (string) \App\Models\Admin::factory()->create()->id);
+            $this->fail('Expected a ValidationException blocking the transition.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->assertStringContainsString('pending admin approval', collect($e->errors())->flatten()->first());
+        }
+
+        $subOrder->refresh();
+        $this->assertSame('placed', $subOrder->status->value);
+
+        // Admin approves the offline payment.
+        $transaction = PaymentTransaction::where('order_id', $order->id)->where('gateway', 'bank_transfer')->latest()->first();
+
+        $admin = \App\Models\Admin::factory()->create();
+        \Spatie\Permission\Models\Permission::findOrCreate('transactions.view', 'admin');
+        \Spatie\Permission\Models\Permission::findOrCreate('vendors.assigned_only', 'admin');
+        $admin->givePermissionTo('transactions.view');
+        $this->actingAs($admin, 'admin');
+
+        $this->postJson(route('admin.transactions.confirm-bank-transfer', $transaction->id))->assertOk();
+
+        $order->refresh();
+        $this->assertSame('captured', $order->payment_status->value);
+
+        // Now the transition is allowed. Reload the sub-order so the
+        // `order` relation the guard reads reflects the fresh payment_status.
+        Notification::fake();
+        $subOrder = $subOrder->fresh();
+        $intervention->updateSubOrderStatus($subOrder, 'confirmed', 'vendor accepted', (string) $admin->id);
+        $subOrder->refresh();
+        $this->assertSame('confirmed', $subOrder->status->value);
+    }
+
+    public function test_cod_sub_order_can_move_out_of_placed_while_payment_status_is_pending(): void
+    {
+        $scenario = $this->buildScenario();
+        $cart = $this->cartFor($scenario);
+        $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
+
+        $response = $this->placeOrder($scenario, 'cod');
+        $response->assertStatus(201);
+
+        $orderNumber = $response->json('data.order.order_number') ?? $response->json('data.order_number');
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+        $subOrder = $order->subOrders()->firstOrFail();
+
+        $this->assertSame('pending', $order->payment_status->value);
+
+        $admin = \App\Models\Admin::factory()->create();
+        $intervention = app(\App\Services\OrderInterventionService::class);
+
+        // COD is never gated on the offline-payment-approval flow.
+        Notification::fake();
+        $intervention->updateSubOrderStatus($subOrder, 'confirmed', 'vendor accepted', (string) $admin->id);
+
+        $subOrder->refresh();
+        $this->assertSame('confirmed', $subOrder->status->value);
     }
 
     // ── Callback security ────────────────────────────────────────────────

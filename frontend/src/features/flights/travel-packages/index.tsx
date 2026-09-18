@@ -3,15 +3,21 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import TravelPackageCard from "./components/package-card";
 import CategoryTabs from "./components/category-tabs";
+import TravelFilters from "./components/travel-filters";
 import TravelHero from "./components/travel-hero";
 import PackagesPagination from "./components/packages-pagination";
-import { PACKAGES_PER_PAGE } from "./helpers/constants";
+import { PACKAGES_PER_PAGE, DESTINATION_OPTIONS_PER_PAGE } from "./helpers/constants";
+import { buildDestinationOptions } from "./helpers/build-destination-options";
 import { getTravelPackages } from "../api/travel-packages.actions";
 
 type Props = {
   searchParams: {
     page?: string;
     category?: string;
+    country_id?: string;
+    city_id?: string;
+    date_from?: string;
+    date_to?: string;
   };
 };
 
@@ -21,16 +27,37 @@ export default async function TravelPackagesListing({ searchParams }: Props) {
   const page = Math.max(1, Number(searchParams.page) || 1);
 
   const activeCategorySlug = searchParams.category;
+  const countryId = searchParams.country_id;
+  const cityId = searchParams.city_id;
+  const dateFrom = searchParams.date_from;
+  const dateTo = searchParams.date_to;
 
-  const result = await getTravelPackages({
-    categoryId: activeCategorySlug,
-    page,
-    perPage: PACKAGES_PER_PAGE,
-  });
+  const [result, optionsResult] = await Promise.all([
+    getTravelPackages({
+      categoryId: activeCategorySlug,
+      page,
+      perPage: PACKAGES_PER_PAGE,
+      countryId,
+      cityId,
+      dateFrom,
+      dateTo,
+    }),
+    // Unfiltered (category-scoped only) fetch used solely to derive the set
+    // of available country/city filter options — there is no dedicated
+    // destinations endpoint on the customer browse API.
+    getTravelPackages({
+      categoryId: activeCategorySlug,
+      perPage: DESTINATION_OPTIONS_PER_PAGE,
+    }),
+  ]);
 
   if (!result) {
     notFound();
   }
+
+  const { countries, cities } = buildDestinationOptions(
+    optionsResult?.listings.items ?? [],
+  );
 
   const {
     available_categories,
@@ -53,6 +80,12 @@ export default async function TravelPackagesListing({ searchParams }: Props) {
           </Suspense>
         </div>
       )}
+
+      <div className="mb-6">
+        <Suspense>
+          <TravelFilters countries={countries} cities={cities} />
+        </Suspense>
+      </div>
 
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray">

@@ -1006,6 +1006,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{paidAdBooking}', [PaidAdBookingController::class, 'show'])->name('show');
         Route::post('/{paidAdBooking}/approve', [PaidAdBookingController::class, 'approve'])->name('approve');
         Route::post('/{paidAdBooking}/reject', [PaidAdBookingController::class, 'reject'])->name('reject');
+        Route::post('/{paidAdBooking}/mark-offline-paid', [PaidAdBookingController::class, 'markOfflinePaid'])->name('mark-offline-paid');
+        Route::post('/{paidAdBooking}/reject-offline-payment', [PaidAdBookingController::class, 'rejectOfflinePayment'])->name('reject-offline-payment');
     });
 
     // ─── Vendor Applications Queue ────────────────────────────────────────────────
@@ -1046,6 +1048,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/', [TransactionController::class, 'index'])->name('index');
         Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
         Route::post('/{transaction}/confirm-bank-transfer', [TransactionController::class, 'confirmBankTransfer'])->name('confirm-bank-transfer');
+        Route::post('/{transaction}/reject-offline-payment', [TransactionController::class, 'rejectOfflinePayment'])->name('reject-offline-payment');
     });
 
     // ─── Ledger ───────────────────────────────────────────────────────────────────

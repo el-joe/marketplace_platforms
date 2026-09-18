@@ -11,7 +11,10 @@ type Props = {
   activeCategorySlug: string | null;
 };
 
-export default function CategoryTabs({ categories, activeCategorySlug }: Props) {
+export default function CategoryTabs({
+  categories,
+  activeCategorySlug,
+}: Props) {
   const t = useTranslations("flights");
   const locale = useLocale();
   const router = useRouter();
@@ -31,7 +34,6 @@ export default function CategoryTabs({ categories, activeCategorySlug }: Props) 
     },
     [router, pathname, searchParams],
   );
-
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -56,14 +58,12 @@ export default function CategoryTabs({ categories, activeCategorySlug }: Props) 
               : "bg-white text-gray border-border hover:border-blue-3"
           }`}
         >
-          {cat.icon && <span>{cat.icon}</span>}
-
-          {locale === "ar" ? cat.name_ar : cat.name_en}
+          {cat.name?.[locale]}
 
           {cat.package_count > 0 && (
             <span
               className={`text-xs px-1.5 py-0.5 rounded-full ${
-                activeCategorySlug === cat.id ? "bg-white/20" : "bg-gray-2"
+                activeCategorySlug === cat.slug ? "bg-white/20" : "bg-gray-2"
               }`}
             >
               {cat.package_count}

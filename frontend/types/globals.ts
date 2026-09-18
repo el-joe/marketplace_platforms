@@ -61,6 +61,19 @@ export interface Product {
     sort_order: number;
   }[];
   campaign_context?: { id: string; title: string | null; vendor_name: string | null } | null;
+  is_mega_deal?: boolean;
+  is_flash_sale?: boolean;
+  flash_sale_ends_at?: string | null;
+  promo_badges?: PromoBadge[];
+}
+
+export interface PromoBadge {
+  id: string;
+  label: Name;
+  icon_key: string;
+  color_hex: string;
+  text_color_hex: string;
+  sort_order: number;
 }
 
 export interface Images {

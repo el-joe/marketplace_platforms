@@ -8,8 +8,6 @@ type Props = {
 
 export default async function GiftCardViewPage({ params }: Props) {
   const { slug } = await params;
-  // `slug` is the gift-card batch id (see gift-card-offer-card.tsx's
-  // `/gift-cards/${giftCard.id}` link).
   const batch = await getGiftCardBatch(slug, "AED");
 
   if (!batch) {

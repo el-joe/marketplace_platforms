@@ -47,6 +47,7 @@ class PaymentTransaction extends Model
         'raw_response',
         'proof_file_path',
         'proof_uploaded_at',
+        'note',
         'processed_at',
     ];
 

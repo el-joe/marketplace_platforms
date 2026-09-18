@@ -9,12 +9,16 @@ use App\Mail\GiftCardDeliveryMail;
 use App\Models\GiftCard;
 use App\Models\GiftCardBatch;
 use App\Models\GiftCardPurchase;
+use App\Models\PaymentTransaction;
 use App\Services\GiftCardService;
+use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Tests\Support\FakePaymentGateway;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
 
@@ -96,12 +100,14 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
         $purchase = GiftCardPurchase::firstOrFail();
         $order = $purchase->order;
 
-        // Gap #1: the order must not be marked "completed" with unconfirmed
-        // payment — status should reflect "placed, payment pending", not done.
+        // Wallet purchases are captured synchronously (debited at purchase
+        // time), so the order is immediately fully paid — unlike offline/
+        // redirect gateways, which stay 'placed'/'pending' until an admin
+        // approves or a webhook confirms (see GiftCardPurchaseService::purchase()).
         $this->assertSame(OrderStatus::Placed, $order->status);
-        $this->assertSame(OrderPaymentStatus::Pending, $order->payment_status);
+        $this->assertSame(OrderPaymentStatus::Captured, $order->payment_status);
 
-        // Gap #2/#3: purchase dispatches the real delivery job (which mints a
+        // Purchase dispatches the real delivery job (which mints a
         // fresh PIN and emails it), not the broken/dead notification job.
         Queue::assertPushed(SendGiftCardDeliveryJob::class, fn ($job) => $job->giftCardPurchaseId === $purchase->id);
 
@@ -145,6 +151,82 @@ class GiftCardPurchaseAndRedemptionTest extends TestCase
 
         $secondAttempt->assertStatus(422);
         $secondAttempt->assertJsonPath('success', false);
+    }
+
+    protected function tearDown(): void
+    {
+        PaymentGatewayFactory::fake(null);
+        parent::tearDown();
+    }
+
+    /**
+     * Task 05: a gift card bought with an offline gateway (bank transfer)
+     * must NOT dispatch the delivery job until an admin approves the
+     * payment — mirroring the checkout order flow. The proof-upload route
+     * (generalized to any offline gateway in an earlier task) must also
+     * work for gift-card orders, since it's keyed by order_number.
+     */
+    public function test_offline_gateway_gift_card_purchase_blocks_delivery_until_admin_approves(): void
+    {
+        Mail::fake();
+        Queue::fake([SendGiftCardDeliveryJob::class]);
+
+        $fake = (new FakePaymentGateway())->withCode('bank_transfer');
+        $fake->scriptDefaultInitiate(FakePaymentGateway::OUTCOME_SUCCESS);
+        PaymentGatewayFactory::fake($fake);
+
+        $scenario = $this->buildScenario();
+        $batch = $this->makeBatch();
+        $this->makeActiveCard($batch);
+
+        $this->actingAs($scenario->customer, 'customer');
+
+        $gateway = $scenario->countryPaymentGateways['bank_transfer'];
+
+        $response = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/gift-card-store/purchase",
+            [
+                'gift_card_batch_id' => $batch->id,
+                'quantity' => 1,
+                'country_payment_gateway_id' => $gateway->id,
+            ]
+        );
+
+        $response->assertStatus(201);
+
+        $purchase = GiftCardPurchase::firstOrFail();
+        $order = $purchase->order;
+
+        $this->assertSame(OrderPaymentStatus::Pending, $order->payment_status);
+        $this->assertSame('bank_transfer', $order->payment_gateway_code);
+        Queue::assertNotPushed(SendGiftCardDeliveryJob::class);
+
+        // The generalized proof-upload route works for gift-card orders too
+        // (it's keyed by order_number, not order type).
+        $file = UploadedFile::fake()->create('proof.pdf', 100, 'application/pdf');
+        $upload = $this->post(
+            "/api/customer/v1/{$scenario->country->site_code}/orders/{$order->order_number}/bank-transfer-proof",
+            ['file' => $file, 'note' => 'Paid via bank X'],
+        );
+        $upload->assertOk();
+
+        $transaction = PaymentTransaction::where('order_id', $order->id)->where('gateway', 'bank_transfer')->latest()->first();
+        $this->assertNotNull($transaction->proof_uploaded_at);
+        $this->assertSame('Paid via bank X', $transaction->note);
+
+        $admin = \App\Models\Admin::factory()->create();
+        \Spatie\Permission\Models\Permission::findOrCreate('transactions.view', 'admin');
+        \Spatie\Permission\Models\Permission::findOrCreate('vendors.assigned_only', 'admin');
+        $admin->givePermissionTo('transactions.view');
+        $this->actingAs($admin, 'admin');
+
+        $confirm = $this->postJson(route('admin.transactions.confirm-bank-transfer', $transaction->id));
+        $confirm->assertOk();
+
+        $order->refresh();
+        $this->assertSame('captured', $order->payment_status->value);
+
+        Queue::assertPushed(SendGiftCardDeliveryJob::class, fn ($job) => $job->giftCardPurchaseId === $purchase->id);
     }
 
     public function test_cannot_purchase_gift_card_with_cash_on_delivery(): void

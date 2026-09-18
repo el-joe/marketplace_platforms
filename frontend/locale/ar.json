@@ -241,6 +241,7 @@
     "addedToTheCart": "تمت الإضافة إلى السلة",
     "inYourCart": "في سلتك",
     "megaDeal": "صفقة ضخمة 📣",
+    "flashSale": "عرض برق ⚡",
     "freeDelivery": "توصيل مجاني",
     "noonExpress": "نون إكسبريس",
     "close": "إغلاق"
@@ -662,7 +663,14 @@
     "myGiftCardsEmptyMessage": "لم تشترِ أي بطاقات هدايا بعد.",
     "giftCardPurchasedOnLabel": "تم الشراء",
     "giftCardPendingDelivery": "بانتظار التسليم",
-    "loading": "جارٍ التحميل..."
+    "loading": "جارٍ التحميل...",
+    "offlinePaymentUploadTitle": "رفع إثبات الدفع",
+    "offlinePaymentUploadDesc": "يرجى إرفاق نسخة من الفاتورة/إيصال الدفع. هذا مطلوب لشراء بطاقة الهدايا بطريقة الدفع هذه.",
+    "chooseFile": "اختر ملفًا",
+    "note": "ملاحظة",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول دفعتك",
+    "fileRequiredError": "يرجى إرفاق ملف إثبات الدفع للمتابعة.",
+    "proofUploadFailedFallback": "تم إتمام طلب بطاقة الهدايا، لكن تعذّر رفع إثبات الدفع. يرجى المحاولة مرة أخرى من سجل طلباتك."
   },
   "cart": {
     "freeShipping": "شحن مجاني",
@@ -749,6 +757,7 @@
     "codFee": "رسوم الدفع عند الاستلام",
     "warrantyTotal": "الضمان",
     "giftCard": "بطاقة الهدايا",
+    "loyaltyDiscount": "خصم نقاط الولاء",
     "walletUsed": "رصيد المحفظة",
     "items": "المنتجات",
     "placeOrder": "إتمام الطلب",
@@ -761,7 +770,16 @@
     "marketerContractAccept": "أوافق",
     "marketerContractCancel": "إلغاء",
     "marketerContractRequiredNotice": "يرجى قراءة الشروط والموافقة عليها قبل إتمام طلبك.",
-    "marketerContractDownload": "عرض ملف PDF"
+    "marketerContractDownload": "عرض ملف PDF",
+    "offlinePaymentUploadTitle": "رفع إثبات الدفع",
+    "offlinePaymentUploadDesc": "يرجى إرفاق نسخة من الفاتورة/إيصال الدفع. هذا مطلوب لإتمام الطلب بهذه الطريقة.",
+    "chooseFile": "اختر ملف",
+    "note": "ملاحظة (اختياري)",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول عملية الدفع",
+    "fileRequiredError": "يرجى إرفاق ملف إثبات الدفع للمتابعة.",
+    "placingOrder": "جاري تقديم الطلب...",
+    "uploadingProof": "جاري رفع الإثبات...",
+    "proofUploadFailedFallback": "تم تقديم طلبك، لكن تعذر رفع إثبات الدفع. يرجى رفعه من صفحة تأكيد الطلب."
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!",
@@ -818,7 +836,9 @@
     "submitProof": "إرسال الإثبات",
     "uploadingProof": "جارٍ الرفع...",
     "proofUploaded": "تم رفع الإثبات بنجاح. سنقوم بتأكيد دفعتك قريبًا.",
-    "proofUploadFailed": "فشل رفع الإثبات. يرجى المحاولة مرة أخرى."
+    "proofUploadFailed": "فشل رفع الإثبات. يرجى المحاولة مرة أخرى.",
+    "note": "ملاحظة (اختياري)",
+    "notePlaceholder": "أضف أي تفاصيل إضافية حول عملية الدفع"
   },
   "openSooq": {
     "header": {
@@ -1000,6 +1020,12 @@
       "passportHint": "الصيغ المقبولة: PDF أو JPG أو PNG. الحجم الأقصى 10MB.",
       "passportUploadedSuccess": "تم رفع جواز السفر! يمكن للوكالة الآن تأكيد حجزك.",
       "uploadError": "فشل الرفع. يرجى المحاولة مجدداً."
+    },
+    "filters": {
+      "allCountries": "كل الدول",
+      "allCities": "كل المدن",
+      "dateRange": "تواريخ السفر",
+      "clearFilters": "مسح الفلاتر"
     }
   },
   "vewAll": "عرض الكل",
@@ -1202,7 +1228,8 @@
     "askTheLister": "اسأل المُعلِن",
     "messagePlaceholder": "رسالة...",
     "sendMessage": "إرسال الرسالة",
-    "messageSentTo": "تم إرسال رسالتك إلى {name}!"
+    "messageSentTo": "تم إرسال رسالتك إلى {name}!",
+    "sendFailed": "تعذر إرسال رسالتك. يرجى المحاولة مرة أخرى."
   },
   "classifiedGallery": {
     "promotedTurbo": "إعلان مميز",
@@ -1329,5 +1356,9 @@
     "guestNamePlaceholder": "اسمك (اختياري)",
     "commentPlaceholder": "اكتب شيئًا…",
     "send": "إرسال"
+  },
+  "adsPopup": {
+    "close": "إغلاق",
+    "viewProduct": "عرض المنتج"
   }
 }

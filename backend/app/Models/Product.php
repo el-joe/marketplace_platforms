@@ -155,6 +155,18 @@ class Product extends Model
         return $this->hasMany(ProductSpecification::class)->orderBy('position');
     }
 
+    /**
+     * Active rotating promo badge messages (PDP/listing-card AnimatedBadge),
+     * ordered for display. Inactive rows are excluded — the frontend should
+     * never see them.
+     */
+    public function promoBadges(): HasMany
+    {
+        return $this->hasMany(ProductPromoBadge::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order');
+    }
+
     public function coupons(): BelongsToMany
     {
         return $this->belongsToMany(Coupon::class, 'coupon_products');

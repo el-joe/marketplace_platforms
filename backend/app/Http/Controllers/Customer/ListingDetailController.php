@@ -20,6 +20,8 @@ use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\UnifiedListingQueryService;
+use App\Services\FlashSaleService;
+use App\Services\Shared\PageBuilderService;
 use App\Models\ProductView;
 use App\Services\WarrantyPlanService;
 use App\Support\Bilingual;
@@ -40,6 +42,8 @@ class ListingDetailController extends Controller
         private readonly ListingQueryService $listings,
         private readonly AppContextService $appContext,
         private readonly UnifiedListingQueryService $unifiedQuery,
+        private readonly PageBuilderService $pageBuilder,
+        private readonly FlashSaleService $flashSale,
     ) {
     }
 
@@ -93,6 +97,7 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
+                    'productVariant.product.promoBadges',
                     'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
@@ -109,6 +114,7 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
+                    'productVariant.product.promoBadges',
                     'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
@@ -243,6 +249,7 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
+                    'productVariant.product.promoBadges',
                     'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
@@ -262,6 +269,7 @@ class ListingDetailController extends Controller
                         'productVariant.product.brand',
                         'productVariant.product.highlights',
                         'productVariant.product.specifications',
+                        'productVariant.product.promoBadges',
                         'productVariant.product.customAttributes',
                         'productVariant.variantAttributes.attribute',
                         'productVariant.variantAttributes.attributeValue',
@@ -431,6 +439,8 @@ class ListingDetailController extends Controller
 
     private function productShape($product, VendorListing|AdminListing|MarketerListing $listing, Country $country): array
     {
+        $flashSaleEndsAt = $this->flashSale->activeFlashSaleEndsAtForProduct($product->id, $country);
+
         return [
             'id' => $product->id,
             'slug' => $product->slug,
@@ -475,6 +485,22 @@ class ListingDetailController extends Controller
                 'title' => Bilingual::pairFromKeys($product, 'seo_title_ar', 'seo_title_en'),
                 'description' => Bilingual::pairFromKeys($product, 'seo_description_ar', 'seo_description_en'),
             ],
+            'is_mega_deal' => $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country),
+            'is_flash_sale' => $flashSaleEndsAt !== null,
+            'flash_sale_ends_at' => $flashSaleEndsAt?->toISOString(),
+            'promo_badges' => $product->relationLoaded('promoBadges')
+                ? $product->promoBadges->map(fn($b) => [
+                    'id' => $b->id,
+                    'label' => [
+                        'ar' => $b->label_ar,
+                        'en' => $b->label_en,
+                    ],
+                    'icon_key' => $b->icon_key,
+                    'color_hex' => $b->color_hex,
+                    'text_color_hex' => $b->text_color_hex,
+                    'sort_order' => $b->sort_order,
+                ])->values()->all()
+                : [],
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
             'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
                 ? $product->customAttributes->map(fn($a) => [

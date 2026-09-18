@@ -7,5 +7,5 @@ type Props = {
 export default async function OrdersPage({ searchParams }: Props) {
   const sp = await searchParams;
 
-  return <Orders status={sp.filter_orders_status} />;
+  return <Orders status={sp.status} />;
 }

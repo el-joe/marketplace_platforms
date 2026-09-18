@@ -61,7 +61,8 @@ export const removeWishlistGroupService = (groupId: string) =>
 
 export const addWishlistItemService = (body: {
   listing_id: string;
-  product_variant_id: string;
+  product_variant_id?: string;
+  item_type?: "classified" | "marketer";
   group_id?: string;
 }) =>
   fetchInstance<IAddWishlistItemResponseBody>("/wishlist/items", {
@@ -92,13 +93,19 @@ export interface IWishlistCheckResponse {
         id: string;
         name: string;
         is_default: boolean;
+        item_id: string;
       },
     ];
   };
 }
 
-export const checkWishlistItemService = (listingId: string) =>
+export const checkWishlistItemService = (
+  listingId: string,
+  itemType?: "classified",
+) =>
   fetchInstance<IWishlistCheckResponse>(
-    `/wishlist/check?listing_id=${listingId}`,
+    `/wishlist/check?listing_id=${listingId}${
+      itemType ? `&item_type=${itemType}` : ""
+    }`,
     { method: "GET" },
   );

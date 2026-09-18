@@ -302,22 +302,29 @@ class WishlistController extends Controller
         $isClassified = ($data['item_type'] ?? null) === 'classified';
         $itemType = $isClassified ? 'classified' : (ListingModeResolver::isNawyNow($request) ? 'admin_listing' : 'vendor_listing');
 
-        $groupIds = $this->wishlistService->itemInGroups(
+        $itemDetails = $this->wishlistService->itemDetailsInGroups(
             customer: $customer,
             itemType: $itemType,
             listingId: $data['listing_id'],
         );
+        $itemIdByGroupId = collect($itemDetails)->pluck('item_id', 'group_id');
 
         $groups = [];
-        if (!empty($groupIds)) {
-            $groups = WishlistGroup::whereIn('id', $groupIds)
+        if ($itemIdByGroupId->isNotEmpty()) {
+            $groups = WishlistGroup::whereIn('id', $itemIdByGroupId->keys())
                 ->where('customer_id', $customer->id)
                 ->get(['id', 'name', 'is_default'])
+                ->map(fn (WishlistGroup $g) => [
+                    'id' => $g->id,
+                    'name' => $g->name,
+                    'is_default' => $g->is_default,
+                    'item_id' => $itemIdByGroupId->get($g->id),
+                ])
                 ->toArray();
         }
 
         return ApiResponse::success([
-            'in_wishlist' => !empty($groupIds),
+            'in_wishlist' => $itemIdByGroupId->isNotEmpty(),
             'groups' => $groups,
         ]);
     }

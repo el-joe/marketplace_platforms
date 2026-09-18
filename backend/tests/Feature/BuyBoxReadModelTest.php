@@ -227,17 +227,25 @@ class BuyBoxReadModelTest extends TestCase
         $queries = count(DB::getQueryLog());
         DB::disableQueryLog();
 
-        // 18, not 15: the category block (ProductBrowseCategoryResource)
+        // 20, not 15: the category block (ProductBrowseCategoryResource)
         // adds a fixed handful of one-off queries for parent/children/
         // filterable-attributes+values that P-19 doesn't touch and that
         // don't scale with result-set size — the N+1 this prompt targets
         // (the buy-box aggregate per product row) is what's bounded here;
         // see test_paginate_query_count_does_not_grow_with_result_size for
-        // proof the per-item cost stays flat as N grows.
+        // proof the per-item cost stays flat as N grows. 18 -> 20: Task F
+        // (docs/plans/mega-deal-page-builder-correction.md) replaced the
+        // flat `products.is_mega_deal` column with two batched queries
+        // (active mega_deals block ids, then their products) via
+        // PageBuilderService::activeMegaDealProductIds() — still fixed-cost
+        // per page, not per row. 20 -> 22: docs/plans/flash-sale-badge-and-countdown.md
+        // Task H adds the equivalent batched flash-sale check
+        // (FlashSaleService::activeFlashSaleEndsAtByProduct(), one query per
+        // listing type — vendor_listings/admin_listings — never per-row).
         $this->assertLessThanOrEqual(
-            18,
+            22,
             $queries,
-            "Expected <=18 queries for products?category=, got {$queries}."
+            "Expected <=22 queries for products?category=, got {$queries}."
         );
     }
 

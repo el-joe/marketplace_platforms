@@ -141,6 +141,30 @@ class WishlistService
             ->toArray();
     }
 
+    /**
+     * Like itemInGroups(), but also returns each matching wishlist item's own id
+     * (needed by clients to call removeItem(), which only accepts an item id).
+     *
+     * @param  string  $itemType  One of 'vendor_listing', 'admin_listing', 'classified'
+     * @return array<int, array{group_id: string, item_id: string}>
+     */
+    public function itemDetailsInGroups(Customer $customer, string $itemType, string $listingId): array
+    {
+        $column = self::TYPE_COLUMNS[$itemType] ?? null;
+        if (!$column) {
+            throw new \InvalidArgumentException("Unknown wishlist item type [{$itemType}]");
+        }
+
+        return WishlistItem::where('customer_id', $customer->id)
+            ->where($column, $listingId)
+            ->get(['id', 'wishlist_group_id'])
+            ->map(fn (WishlistItem $item) => [
+                'group_id' => $item->wishlist_group_id,
+                'item_id'  => $item->id,
+            ])
+            ->all();
+    }
+
     public function deleteGroupWithMigration(WishlistGroup $group, Customer $customer): void
     {
         DB::transaction(function () use ($group, $customer) {

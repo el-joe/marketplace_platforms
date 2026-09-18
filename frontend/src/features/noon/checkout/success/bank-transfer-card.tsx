@@ -21,7 +21,7 @@ const FIELD_KEYS: { key: string; labelKey: string }[] = [
 
 export default function BankTransferCard({ orderNumber, details }: Props) {
   const t = useTranslations("checkoutSuccess");
-  const { file, setFile, submitProof, isUploading, isUploaded } =
+  const { file, setFile, note, setNote, submitProof, isUploading, isUploaded } =
     useBankTransferProof(orderNumber);
 
   return (
@@ -57,6 +57,13 @@ export default function BankTransferCard({ orderNumber, details }: Props) {
             {t("uploadProof")}
           </p>
           <p className="text-xs text-gray-500 mb-3">{t("uploadProofDesc")}</p>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={t("notePlaceholder")}
+            rows={2}
+            className="w-full mb-3 rounded-lg border border-gray-300 p-2 text-sm resize-none"
+          />
           <div className="flex flex-wrap items-center gap-3">
             <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 cursor-pointer hover:bg-gray-50">
               <UploadCloud className="size-4" />
