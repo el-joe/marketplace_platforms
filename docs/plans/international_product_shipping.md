@@ -364,13 +364,60 @@ This phase is run by the orchestrating session directly (not delegated), acting 
 
 | Phase | Status | Blocked on | Commit(s) |
 |---|---|---|---|
-| 1 — Schema foundation | Not started | — | — |
-| 2 — Rate/FX services | Not started | Phase 1 | — |
-| 3 — Checkout/COD | Not started | Phase 2 | — |
-| 4 — Tracking extension | Not started | Phase 1 | — |
-| 5 — Admin tooling | Not started | Phase 1 | — |
-| 6 — Customer UI | Not started | Phase 3 | — |
-| 7 — QC pass | Not started | Phases 1-6 | — |
+| 1 — Schema foundation | ✅ DONE | — | `c0096c0` |
+| 2 — Rate/FX services | ✅ DONE | Phase 1 | `37d1718` |
+| 3 — Checkout/COD | ✅ DONE | Phase 2 | `bfc8b46`, `9457cad` |
+| 4 — Tracking extension | ✅ DONE | Phase 1 | `6535e0a` |
+| 5 — Admin tooling | ✅ DONE | Phase 1 | `f9f8994` |
+| 6 — Customer UI | ✅ DONE | Phase 3 | `009c201` |
+| 7 — QC pass | ✅ DONE | Phases 1-6 | see findings below |
+
+## QC pass findings (Phase 7, run directly by the orchestrating session, not delegated)
+
+- **Money correctness:** grepped every new/changed file across all 6 phases for `/100`, `*100`,
+  `(float)`, `floatval` — zero hits outside one pre-existing, unrelated `gatewayFeeRatePct` cast
+  that predates this feature. All new money fields (`base_fee`, `rate_per_kg`,
+  `customs_fee_flat`, `fx_rate_numerator`/`denominator`, `customs_duty`) are BIGINT end-to-end,
+  integer math only (`intdiv`), confirmed via `InternationalShippingRateServiceTest`/
+  `CurrencyConversionServiceTest` (11/11 passing, re-run independently during QC).
+- **UUID PKs:** confirmed `HasUuids` + `$keyType = 'string'` + `$incrementing = false` on all 3
+  new models (`CurrencyExchangeRate`, `InternationalShippingEligibility`,
+  `InternationalShippingRate`), and `char(36)->primary()` on all 3 new-table migrations.
+- **Append-only guarantee:** grepped for `->update(`/`->save(` against `CurrencyExchangeRate` —
+  only `::create()` and read queries exist (admin controller is insert-only by construction, no
+  edit/update route registered at all).
+- **No new JSON columns** introduced anywhere in the 6 phases.
+- **`php -l`** clean on all 19 new/changed backend PHP files (re-verified independently).
+- **`npx tsc --noEmit`** on the full frontend project: 0 errors (re-run independently, not just
+  each phase's self-reported scoped run).
+- **Domestic orders unaffected:** read `CartLineSource::isInternational()`/
+  `assertEligibleForDestination()` directly — the eligibility check early-returns for any line
+  where the listing's country matches the order's destination, so a purely domestic cart never
+  touches `international_shipping_eligibility`/`international_shipping_rates` at all. All new
+  `sub_orders`/`shipment_tracking_events` columns are nullable and stay null on domestic orders.
+- **COD gate:** traced the code path (no dedicated unit test was added — flagged as the one gap
+  below) — `CodValidationService::validate($items, $destinationCountryId)` rejects `cod` outright
+  the moment any resolved `CartLineSource::isInternational()` is true, before pricing or order
+  placement runs.
+- **Two real bugs were caught and fixed mid-execution by the sub-agents themselves** (not by this
+  QC pass, but worth recording here since they'd have been serious): Phase 2 found and fixed two
+  MySQL identifier-length violations (68/85 chars, over the 64-char limit) in Phase 1's
+  `international_shipping_eligibility` migration that would have broken `migrate`/
+  `schema:dump --prune` entirely; Phase 4 found and fixed a `ShipmentTrackingEvent.status` enum
+  cast that would have thrown `ValueError` on read for any of the new international leg statuses
+  (`export_scan`, `customs_cleared`, etc.) this whole feature depends on for tracking display.
+- **Gap flagged, not blocking:** no PHPUnit test directly covers
+  `CodValidationService`'s international-rejection branch or
+  `CartLineSource::assertEligibleForDestination()`'s ineligibility-throw path — both were verified
+  by manual code trace only. Recommend adding feature tests for these two before this ships to
+  production, since they're the two places a regression would silently let an ineligible/COD
+  international order through.
+- **Scope note carried from Phase 6:** the product-grid/browse path (`ProductQueryService`'s
+  `product_country_buybox`-driven query) does not yet surface the "ships from" indicator — only
+  the PDP and `VendorListingResource`-shaped endpoints do. Marketer-listing lines also don't
+  resolve an origin country (no `country_id` on that listing type) and are treated as domestic/
+  null by design for this pass. Both are reasonable v1 scope cuts, not bugs, but worth a follow-up
+  if international products are heavily surfaced via grid/search.
 
 ## Migrations needed (run on server, in order)
 - All Phase 1 migration files, then `php artisan schema:dump --prune`.
