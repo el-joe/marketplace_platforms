@@ -9,11 +9,14 @@ use App\Jobs\FlashSaleInviteBulkJob;
 use App\Jobs\SubmissionApprovedNotificationJob;
 use App\Jobs\SubmissionRejectedNotificationJob;
 use App\Models\Admin;
+use App\Models\Country;
 use App\Models\FlashSale;
 use App\Models\FlashSaleSubmission;
 use App\Models\FlashSaleSubmissionHistory;
 use App\Models\FlashSaleVendorInvitition;
 use App\Models\Vendor;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 use App\Services\FakeDiscountDetectionService;
@@ -331,5 +334,71 @@ class FlashSaleService
             'invited_at' => now(),
             'slots_allocated' => $sale->max_products_per_seller ?? null,
         ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Customer-facing: batched "is this product in a live flash sale" check
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Batched check, mirroring
+     * PageBuilderService::activeMegaDealProductIds()'s shape: given a batch
+     * of product ids, returns which ones currently have a `live`
+     * FlashSaleSubmission (whose parent FlashSale is also `live`), keyed by
+     * product id, with the value being that submission's parent
+     * FlashSale.sale_ends_at — the countdown source of truth.
+     *
+     * A FlashSaleSubmission belongs to exactly one listing via
+     * vendor_listing_id XOR admin_listing_id, so this runs one query per
+     * listing type (never per-product) and merges the results.
+     *
+     * @param  \Illuminate\Support\Collection<int,string>|array<int,string>  $productIds
+     * @return \Illuminate\Support\Collection<string,\Illuminate\Support\Carbon> product_id => sale_ends_at
+     */
+    public function activeFlashSaleEndsAtByProduct($productIds, ?Country $country = null): Collection
+    {
+        $productIds = collect($productIds)->filter()->unique()->values();
+
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        $countryScope = fn ($q) => $country
+            ? $q->where(fn ($qq) => $qq->whereNull('flash_sales.country_id')->orWhere('flash_sales.country_id', $country->id))
+            : $q;
+
+        $viaVendor = $countryScope(
+            DB::table('flash_sale_submissions')
+                ->join('flash_sales', 'flash_sales.id', '=', 'flash_sale_submissions.flash_sale_id')
+                ->join('vendor_listings', 'vendor_listings.id', '=', 'flash_sale_submissions.vendor_listing_id')
+                ->join('product_variants', 'product_variants.id', '=', 'vendor_listings.product_variant_id')
+                ->where('flash_sale_submissions.status', 'live')
+                ->where('flash_sales.status', 'live')
+                ->whereIn('product_variants.product_id', $productIds)
+        )->select('product_variants.product_id', 'flash_sales.sale_ends_at')->get();
+
+        $viaAdmin = $countryScope(
+            DB::table('flash_sale_submissions')
+                ->join('flash_sales', 'flash_sales.id', '=', 'flash_sale_submissions.flash_sale_id')
+                ->join('admin_listings', 'admin_listings.id', '=', 'flash_sale_submissions.admin_listing_id')
+                ->join('product_variants', 'product_variants.id', '=', 'admin_listings.product_variant_id')
+                ->where('flash_sale_submissions.status', 'live')
+                ->where('flash_sales.status', 'live')
+                ->whereIn('product_variants.product_id', $productIds)
+        )->select('product_variants.product_id', 'flash_sales.sale_ends_at')->get();
+
+        return $viaVendor->concat($viaAdmin)
+            ->keyBy('product_id')
+            ->map(fn ($row) => Carbon::parse($row->sale_ends_at));
+    }
+
+    /**
+     * Single-product convenience wrapper around
+     * activeFlashSaleEndsAtByProduct() — used by the PDP detail resource
+     * path, which only ever needs one product's worth of the same check.
+     */
+    public function activeFlashSaleEndsAtForProduct(string $productId, ?Country $country = null): ?Carbon
+    {
+        return $this->activeFlashSaleEndsAtByProduct([$productId], $country)->get($productId);
     }
 }

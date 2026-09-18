@@ -23,6 +23,7 @@ use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ReviewService;
+use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Models\Product;
 use App\Models\Wishlist;
@@ -46,6 +47,7 @@ class ListingController extends Controller
         private readonly ReviewService $reviewService,
         private readonly ListingQueryService $listings,
         private readonly PageBuilderService $pageBuilder,
+        private readonly FlashSaleService $flashSale,
     ) {}
 
     public function show(Request $request,$country, string $type, string $slug): JsonResponse
@@ -269,7 +271,11 @@ class ListingController extends Controller
 
         $resource                  = new ProductDetailResource($product);
         $resource->isWishlisted    = $isWishlisted;
-        $resource->isMegaDeal      = $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
+        $flashSaleEndsAt           = $this->flashSale->activeFlashSaleEndsAtForProduct($product->id, $country);
+        $resource->isFlashSale     = $flashSaleEndsAt !== null;
+        $resource->flashSaleEndsAt = $flashSaleEndsAt?->toISOString();
+        // Flash sale takes precedence over mega deal when both apply.
+        $resource->isMegaDeal      = $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
         $resource->enrichment      = [
             'best_seller_badge' => $this->enrichment->getBestSellerBadge($product, $country),

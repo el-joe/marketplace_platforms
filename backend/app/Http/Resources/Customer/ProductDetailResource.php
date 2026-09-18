@@ -20,6 +20,18 @@ class ProductDetailResource extends JsonResource
      */
     public bool $isMegaDeal = false;
 
+    /**
+     * Whether this product currently has a `live` FlashSaleSubmission —
+     * computed by the controller via
+     * FlashSaleService::activeFlashSaleEndsAtForProduct(). Takes precedence
+     * over isMegaDeal: a product never reports both true (see
+     * docs/plans/flash-sale-badge-and-countdown.md Task H).
+     */
+    public bool $isFlashSale = false;
+
+    /** ISO 8601 end timestamp of the product's live flash sale, or null. */
+    public ?string $flashSaleEndsAt = null;
+
     /** @var array<string, mixed>|null Pre-shaped banner/ad array from PlacementAdService::resolve(). */
     public ?array $banner = null;
 
@@ -77,6 +89,8 @@ class ProductDetailResource extends JsonResource
             'is_hazardous'     => $this->is_hazardous,
             'has_variants'     => $this->has_variants,
             'is_mega_deal'     => $this->isMegaDeal,
+            'is_flash_sale'    => $this->isFlashSale,
+            'flash_sale_ends_at' => $this->flashSaleEndsAt,
             'promo_badges'     => $this->whenLoaded('promoBadges', fn() =>
                 $this->promoBadges->map(fn($b) => [
                     'id'             => $b->id,

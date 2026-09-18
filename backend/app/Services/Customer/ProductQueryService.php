@@ -6,6 +6,7 @@ use App\Http\Resources\Customer\ProductListResource;
 use App\Models\Attribute;
 use App\Models\Country;
 use App\Models\WishlistItem;
+use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Support\Bilingual;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -35,6 +36,7 @@ class ProductQueryService
         private readonly SponsoredProductService $sponsored,
         private readonly \App\Services\Media\ListingImageResolver $imageResolver,
         private readonly PageBuilderService $pageBuilder,
+        private readonly FlashSaleService $flashSale,
     ) {
     }
 
@@ -201,14 +203,20 @@ class ProductQueryService
         $productIds = $rows->pluck('id')->filter()->unique()->values();
         $promoBadgesByProduct = $this->promoBadgesForProducts($productIds);
         $megaDealProductIds = $this->pageBuilder->activeMegaDealProductIds($productIds, $country);
+        $flashSaleEndsAtByProduct = $this->flashSale->activeFlashSaleEndsAtByProduct($productIds, $country);
 
         $items = ProductListResource::collection($rows)
-            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct, $megaDealProductIds) {
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct, $megaDealProductIds, $flashSaleEndsAtByProduct) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
                 $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
                 $r->resource->promo_badges = $promoBadgesByProduct[$r->resource->id] ?? [];
-                $r->resource->is_mega_deal = $megaDealProductIds->contains($r->resource->id);
+                $flashSaleEndsAt = $flashSaleEndsAtByProduct->get($r->resource->id);
+                // Flash sale takes precedence over mega deal when both apply
+                // (edge case) — a product never shows both badges.
+                $r->resource->is_flash_sale = $flashSaleEndsAt !== null;
+                $r->resource->flash_sale_ends_at = $flashSaleEndsAt?->toISOString();
+                $r->resource->is_mega_deal = $flashSaleEndsAt === null && $megaDealProductIds->contains($r->resource->id);
                 return $r->toArray(request());
             })
             ->toArray();

@@ -68,6 +68,8 @@ class ProductListResource extends JsonResource
             'is_sponsored'        => (bool) ($this->is_sponsored ?? false),
             'is_wishlisted'       => (bool) ($this->is_wishlisted ?? false),
             'is_mega_deal'        => (bool) ($this->is_mega_deal ?? false),
+            'is_flash_sale'       => (bool) ($this->is_flash_sale ?? false),
+            'flash_sale_ends_at'  => $this->flash_sale_ends_at ?? null,
             'promo_badges'        => $this->promo_badges ?? [],
             'shipping_badge' => ($this->buy_box_shipping_label_en || $this->buy_box_shipping_label_ar)
                 ? [

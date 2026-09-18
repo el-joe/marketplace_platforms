@@ -238,11 +238,14 @@ class BuyBoxReadModelTest extends TestCase
         // flat `products.is_mega_deal` column with two batched queries
         // (active mega_deals block ids, then their products) via
         // PageBuilderService::activeMegaDealProductIds() — still fixed-cost
-        // per page, not per row.
+        // per page, not per row. 20 -> 22: docs/plans/flash-sale-badge-and-countdown.md
+        // Task H adds the equivalent batched flash-sale check
+        // (FlashSaleService::activeFlashSaleEndsAtByProduct(), one query per
+        // listing type — vendor_listings/admin_listings — never per-row).
         $this->assertLessThanOrEqual(
-            20,
+            22,
             $queries,
-            "Expected <=20 queries for products?category=, got {$queries}."
+            "Expected <=22 queries for products?category=, got {$queries}."
         );
     }
 

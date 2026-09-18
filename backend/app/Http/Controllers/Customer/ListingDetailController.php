@@ -20,6 +20,7 @@ use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\UnifiedListingQueryService;
+use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Models\ProductView;
 use App\Services\WarrantyPlanService;
@@ -42,6 +43,7 @@ class ListingDetailController extends Controller
         private readonly AppContextService $appContext,
         private readonly UnifiedListingQueryService $unifiedQuery,
         private readonly PageBuilderService $pageBuilder,
+        private readonly FlashSaleService $flashSale,
     ) {
     }
 
@@ -437,6 +439,8 @@ class ListingDetailController extends Controller
 
     private function productShape($product, VendorListing|AdminListing|MarketerListing $listing, Country $country): array
     {
+        $flashSaleEndsAt = $this->flashSale->activeFlashSaleEndsAtForProduct($product->id, $country);
+
         return [
             'id' => $product->id,
             'slug' => $product->slug,
@@ -481,7 +485,9 @@ class ListingDetailController extends Controller
                 'title' => Bilingual::pairFromKeys($product, 'seo_title_ar', 'seo_title_en'),
                 'description' => Bilingual::pairFromKeys($product, 'seo_description_ar', 'seo_description_en'),
             ],
-            'is_mega_deal' => $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country),
+            'is_mega_deal' => $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country),
+            'is_flash_sale' => $flashSaleEndsAt !== null,
+            'flash_sale_ends_at' => $flashSaleEndsAt?->toISOString(),
             'promo_badges' => $product->relationLoaded('promoBadges')
                 ? $product->promoBadges->map(fn($b) => [
                     'id' => $b->id,

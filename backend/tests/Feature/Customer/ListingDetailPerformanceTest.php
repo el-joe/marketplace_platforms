@@ -115,9 +115,12 @@ class ListingDetailPerformanceTest extends TestCase
         // too, which is a materially bigger change than this pass makes.
         // This assertion is therefore an honest regression ceiling (down
         // from the audited 76-83), not the doc's literal target — see the
-        // P-22 report for what's still open.
+        // P-22 report for what's still open. 55 -> 56:
+        // docs/plans/flash-sale-badge-and-countdown.md Task H adds one
+        // batched flash-sale query via
+        // FlashSaleService::activeFlashSaleEndsAtForProduct().
         $this->assertLessThanOrEqual(
-            55,
+            56,
             count($queries),
             "PDP issued " . count($queries) . " queries, expected <= 20:\n" .
                 implode("\n", array_map(fn ($q) => $q['query'], $queries))
