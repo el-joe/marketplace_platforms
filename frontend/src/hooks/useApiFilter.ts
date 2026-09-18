@@ -5,40 +5,20 @@ import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
 export type QueryParam = {
-  targetEndpoint: string;
   filterBy: string;
   query: string;
 };
-
-const FILTER_PREFIX = process.env.NEXT_PUBLIC_FILTER_PREFIX ?? "filter";
 
 const useApiFilter = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [filters, setFilters] = useState<QueryParam[]>([
-    ...(() => {
-      const result: QueryParam[] = [];
-
-      for (const [key, value] of searchParams.entries()) {
-        if (!key.startsWith(`${FILTER_PREFIX}_`)) continue;
-
-        const segments = key.replace(`${FILTER_PREFIX}_`, "").split("_");
-
-        if (segments.length < 2) continue;
-
-        const [targetEndpoint, ...filterParts] = segments;
-
-        result.push({
-          targetEndpoint,
-          filterBy: filterParts.join("_"),
-          query: value,
-        });
-      }
-
-      return result;
-    })(),
-  ]);
+  const [filters, setFilters] = useState<QueryParam[]>(
+    Array.from(searchParams.entries()).map(([filterBy, query]) => ({
+      filterBy,
+      query,
+    })),
+  );
   const setFilter = (newFilter: QueryParam) => {
     if (filters.find((f) => f.filterBy === newFilter.filterBy)) {
       return setFilters((p) => [
@@ -56,17 +36,16 @@ const useApiFilter = () => {
     if (!!newFilter) setFilter(newFilter);
     [...filters, newFilter]
       .filter((f) => f !== undefined)
-      .forEach(({ targetEndpoint, filterBy, query }) => {
-        const key = `${FILTER_PREFIX}_${targetEndpoint}_${filterBy}`;
+      .forEach(({ filterBy, query }) => {
         const value = query?.trim();
 
         if (!value) {
-          params.delete(key);
+          params.delete(filterBy);
           setFilters((p) => [...p.filter((f) => f.filterBy !== filterBy)]);
           return;
         }
 
-        params.set(key, value);
+        params.set(filterBy, value);
       });
 
     const queryString = params.toString();
@@ -79,36 +58,27 @@ const useApiFilter = () => {
     if (!!newFilter) setFilter(newFilter);
     [...filters, newFilter]
       .filter((f) => f !== undefined)
-      .forEach(({ targetEndpoint, filterBy, query }) => {
-        const key = `${FILTER_PREFIX}_${targetEndpoint}_${filterBy}`;
+      .forEach(({ filterBy, query }) => {
         const value = query?.trim();
 
         if (!value) {
-          params.delete(key);
+          params.delete(filterBy);
           setFilters((p) => [...p.filter((f) => f.filterBy !== filterBy)]);
           return;
         }
 
-        params.set(key, value);
+        params.set(filterBy, value);
       });
     const queryString = params.toString();
     return queryString;
   };
 
   const removeAllFilters = useCallback(
-    (except?: { targetEndpoint: string; filterName: string }[]) => {
+    (except?: string[]) => {
       const params = new URLSearchParams(searchParams.toString());
 
       Array.from(params.keys())
-        .filter(
-          (key) =>
-            key.startsWith(`${FILTER_PREFIX}_`) &&
-            !except?.find(
-              (e) =>
-                key ===
-                `${FILTER_PREFIX}_${e?.targetEndpoint}_${e?.filterName}`,
-            ),
-        )
+        .filter((key) => !except?.includes(key))
         .forEach((key) => params.delete(key));
 
       const queryString = params.toString();

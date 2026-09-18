@@ -100,8 +100,7 @@ export type TravelCategoryInfo = {
 
 export type TravelAvailableCategory = {
   id: string;
-  name_en: string;
-  name_ar: string;
+  name: { ar: string; en: string };
   slug: string;
   icon: string | null;
   package_count: number;
