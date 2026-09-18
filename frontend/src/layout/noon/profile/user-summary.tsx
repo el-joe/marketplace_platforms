@@ -14,7 +14,7 @@ export default function UserSummary() {
 
   const splitUserName = profile?.name?.split(" ") as string[];
 
-  const completion = 80;
+  const completion = profile?.profile_completion?.percentage;
 
   return (
     <Card className="p-4">
