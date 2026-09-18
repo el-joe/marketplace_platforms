@@ -26,6 +26,8 @@ export interface IProductDetails {
   inline_banner_1: PlacementBanner | null;
   inline_banner_2: PlacementBanner | null;
   is_mega_deal?: boolean;
+  is_flash_sale?: boolean;
+  flash_sale_ends_at?: string | null;
   promo_badges?: PromoBadge[];
 }
 

@@ -20,6 +20,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import StanderWarrantyDialog from "./dialogs/stander-warranty-dialog";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
+import useCountDown from "@/src/hooks/useCountDown";
 
 type Props = {
   product: IProductDetails;
@@ -43,13 +44,27 @@ export default function BaseInfo({ product }: Props) {
   const isInCart = cart?.cart.items.find(
     (item) => item.listing_id === product.listing.listing_id,
   );
+  const { H, M } = useCountDown(
+    new Date(product.flash_sale_ends_at || Date.now()),
+  );
   return (
     <>
       <div className="flex mb-5">
-        {product.is_mega_deal && (
+        {product.is_flash_sale ? (
           <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
-            {t("megaDeal")}
+            {t("flashSale")}
+            {!!product.flash_sale_ends_at && (
+              <span className="ms-1">
+                {H}h {M}m
+              </span>
+            )}
           </Badge>
+        ) : (
+          product.is_mega_deal && (
+            <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
+              {t("megaDeal")}
+            </Badge>
+          )
         )}
         {!!isInCart && (
           <Badge className="text-sm font-bold bg-green text-white ms-auto">
