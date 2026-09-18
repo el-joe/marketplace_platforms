@@ -153,6 +153,15 @@ class VendorListingController extends Controller
                 ->getAvailableForListing($vendorListing->id, 'vendor_listing', $vendorListing->country_id),
             'statuses' => collect(VendorListingStatus::cases())
                 ->mapWithKeys(fn($status) => [$status->value => Str::headline($status->value)]),
+            'shipsToCountries' => Country::where('is_active', true)
+                ->where('id', '!=', $vendorListing->country_id)
+                ->orderBy('name_en')
+                ->get(),
+            'selectedDestinationIds' => \App\Models\InternationalShippingEligibility::query()
+                ->where('vendor_listing_id', $vendorListing->id)
+                ->where('is_active', true)
+                ->pluck('destination_country_id')
+                ->all(),
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Vendor Listings', 'url' => route('admin.vendor-listings.index')],

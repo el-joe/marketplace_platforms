@@ -274,6 +274,15 @@ class AdminListingController extends Controller
             'warehouses'      => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
             'shippingMethods' => ShippingMethod::where('is_active', true)->orderBy('name')->get(),
             'selectedVariant' => $adminListing->productVariant()->with('product')->first(),
+            'shipsToCountries' => Country::where('is_active', true)
+                ->where('id', '!=', $adminListing->country_id)
+                ->orderBy('name_en')
+                ->get(),
+            'selectedDestinationIds' => \App\Models\InternationalShippingEligibility::query()
+                ->where('admin_listing_id', $adminListing->id)
+                ->where('is_active', true)
+                ->pluck('destination_country_id')
+                ->all(),
             'breadcrumbs'     => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admin_listings.title'), 'url' => route('admin.admin-listings.index')],
