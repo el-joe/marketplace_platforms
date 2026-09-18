@@ -586,7 +586,7 @@ class OrderController extends Controller
                 'data' => 'order_number',
                 'name' => 'order_number',
                 'orderable_column' => 'orders.order_number',
-                'searchable_columns' => ['orders.order_number'],
+                'searchable_columns' => ['orders.order_number', 'c.name', 'c.email'],
                 'render' => 'function(data,t,row){return "<a href=\""+row.show_url+"\" class=\"font-medium text-primary-600 hover:text-primary-800 hover:underline\">"+data+"</a>";}',
             ],
             [

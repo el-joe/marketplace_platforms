@@ -191,6 +191,63 @@ export type OrderDetail = {
   };
   sub_orders: OrderDetailSubOrder[];
   marketer_ref: string | null;
+  bank_transfer_details: {
+    details: Record<string, unknown>;
+    proof_file_path: string | null;
+    proof_uploaded_at: string | null;
+  } | null;
+};
+
+// ---- Get Order Invoice (GET /orders/:order_number/invoice) ----
+
+export type OrderInvoiceItem = {
+  sku: string;
+  name_en: string;
+  name_ar: string;
+  quantity: number;
+  unit_price: number;
+  line_subtotal: number;
+  line_discount: number;
+  line_tax: number;
+  line_total: number;
+};
+
+export type OrderInvoiceSubOrder = {
+  sub_order_number: string;
+  vendor_name: string;
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  items: OrderInvoiceItem[];
+};
+
+export type OrderInvoice = {
+  order_number: string;
+  placed_at: string | null;
+  currency: string;
+  payment_method: PaymentMethod;
+  payment_status: string | null;
+  /** Raw shipping-address snapshot — shape varies by order (recipient_name/street_address/area vs. street/city only), so treat every field as optional. */
+  shipping_address: {
+    recipient_name?: string;
+    recipient_phone?: string;
+    street_address?: string;
+    street?: string;
+    area?: string;
+    city?: string;
+    country?: string;
+  } | null;
+  summary: {
+    subtotal: number;
+    discount: number;
+    shipping: number;
+    tax: number;
+    cod_fee: number;
+    warranty_total: number;
+    total: number;
+    coupon_code_used: string | null;
+  };
+  sub_orders: OrderInvoiceSubOrder[];
 };
 
 // ---- Request Return (POST /orders/:order_number/returns) ----

@@ -27,6 +27,7 @@ import { getImageURL } from "@/src/helpers/get-image-url";
 import { AdBadge } from "./ad-badge";
 import AnimatedBadge from "./animated-badge";
 import useCountDown from "@/src/hooks/useCountDown";
+import InternationalShippingIndicator from "./international-shipping-indicator";
 
 type Props = {
   productData: Product | IProduct;
@@ -210,6 +211,10 @@ const ProductCard = ({ productData }: Props) => {
           <Price
             currentPrice={productData.price}
             currency={productData.currency}
+            size="sm"
+          />
+          <InternationalShippingIndicator
+            data={productData.international_shipping}
             size="sm"
           />
           {!!productData.promo_badges?.length && (

@@ -1,5 +1,5 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
-import { Name, PromoBadge } from "./globals";
+import { InternationalShippingIndicator, Name, PromoBadge } from "./globals";
 
 export interface IProduct {
   listing_id: string;
@@ -49,6 +49,7 @@ export interface IProduct {
   is_flash_sale?: boolean;
   flash_sale_ends_at?: string | null;
   promo_badges?: PromoBadge[];
+  international_shipping?: InternationalShippingIndicator | null;
 }
 
 export interface Images {

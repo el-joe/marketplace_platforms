@@ -4,7 +4,9 @@ import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
 import DateRangeDisplay from "./date-range-display";
 import ContactModal from "./contact-modal";
+import BookingForm from "./booking-form";
 import type { TravelPackageDetail } from "../../helpers/types";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 
 type Props = {
   pkg: TravelPackageDetail;
@@ -53,12 +55,27 @@ export default async function BookingSidebar({ pkg }: Props) {
           />
         </div>
 
-        <ContactModal
-          packageSlug={pkg.slug}
-          packageName={pkg.destination_city}
-          email={pkg.agency?.contact_email ?? null}
-          phone={pkg.agency?.contact_phone ?? null}
+        <BookingForm
+          slug={pkg.slug}
+          price={pkg.price}
+          currency={pkg.currency as CurrencyCode}
+          seatsRemaining={pkg.seats_remaining}
+          priceTiers={pkg.price_tiers}
         />
+
+        <div className="mt-4">
+          <ContactModal
+            packageSlug={pkg.slug}
+            packageName={pkg.destination_city}
+            email={pkg.agency?.contact_email ?? null}
+            phone={pkg.agency?.contact_phone ?? null}
+            trigger={
+              <button className="w-full text-xs text-blue-3 font-bold text-center py-2 hover:underline cursor-pointer">
+                {td("contactModalTitle")}
+              </button>
+            }
+          />
+        </div>
 
         <div className="mt-6 flex justify-center gap-4 opacity-50">
           <span className="text-[10px] uppercase font-bold tracking-tighter text-light">

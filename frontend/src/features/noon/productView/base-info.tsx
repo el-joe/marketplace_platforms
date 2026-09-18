@@ -21,6 +21,7 @@ import Image from "next/image";
 import StanderWarrantyDialog from "./dialogs/stander-warranty-dialog";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
 import useCountDown from "@/src/hooks/useCountDown";
+import InternationalShippingIndicator from "@/src/components/shared/international-shipping-indicator";
 
 type Props = {
   product: IProductDetails;
@@ -161,6 +162,9 @@ export default function BaseInfo({ product }: Props) {
             containerClasses="px-2! bg-gray-2! rounded-md!"
           />
         )}
+        <InternationalShippingIndicator
+          data={product.listing.international_shipping}
+        />
         <Link
           href={`/bestseller/${product.product.category.slug}`}
           className="bg-gray-2 px-3 py-2 mt-2 flex items-center gap-2 rounded-md w-full font-bold"

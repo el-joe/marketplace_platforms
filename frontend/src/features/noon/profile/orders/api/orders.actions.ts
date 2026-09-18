@@ -3,6 +3,7 @@ import type {
   ApiEnvelope,
   ListOrdersFilters,
   OrderDetail,
+  OrderInvoice,
   OrdersListResponse,
   RequestReturnPayload,
   ReturnRequestResult,
@@ -30,6 +31,23 @@ export async function getOrderByNumber(
   try {
     const envelope = await fetchInstance<ApiEnvelope<OrderDetail>>(
       `/orders/${orderNumber}`,
+    );
+    return envelope.data;
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+/** Feature-only: GET /orders/:order_number/invoice — full invoice (line items/tax/totals). Returns undefined on 404. */
+export async function getOrderInvoice(
+  orderNumber: string,
+): Promise<OrderInvoice | undefined> {
+  try {
+    const envelope = await fetchInstance<ApiEnvelope<OrderInvoice>>(
+      `/orders/${orderNumber}/invoice`,
     );
     return envelope.data;
   } catch (error) {

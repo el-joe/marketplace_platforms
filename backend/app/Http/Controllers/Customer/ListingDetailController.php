@@ -22,6 +22,7 @@ use App\Services\Customer\ReviewService;
 use App\Services\Customer\UnifiedListingQueryService;
 use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
+use App\Services\Shipping\ListingOriginShippingIndicator;
 use App\Models\ProductView;
 use App\Services\WarrantyPlanService;
 use App\Support\Bilingual;
@@ -44,6 +45,7 @@ class ListingDetailController extends Controller
         private readonly UnifiedListingQueryService $unifiedQuery,
         private readonly PageBuilderService $pageBuilder,
         private readonly FlashSaleService $flashSale,
+        private readonly ListingOriginShippingIndicator $originShippingIndicator,
     ) {
     }
 
@@ -316,6 +318,7 @@ class ListingDetailController extends Controller
                 'rating_count' => $listing->rating_count,
                 'is_global_shipping' => (bool) $listing->is_global_shipping,
                 'is_wishlisted' => $isWishlisted,
+                'international_shipping' => $this->originShippingIndicator->resolve($listing, $country),
             ];
         }
 
@@ -344,6 +347,12 @@ class ListingDetailController extends Controller
                 'rating_count' => $listing->rating_count,
                 'is_global_shipping' => false,
                 'is_wishlisted' => $isWishlisted,
+                // Marketer listings sell through a source vendor/admin listing
+                // (see CartLineSource) rather than owning a country_id of
+                // their own; resolving the true fulfilment-listing origin for
+                // this indicator is out of scope here, so it degrades to null
+                // (no "ships from" shown) rather than guessing.
+                'international_shipping' => null,
                 'listing_type' => 'marketer',
                 'vendor' => null,
                 'marketer' => $marketer ? [
@@ -380,6 +389,7 @@ class ListingDetailController extends Controller
             'rating_count' => $listing->rating_count,
             'is_global_shipping' => $listing->fulfillment_model === 'marketplace',
             'is_wishlisted' => $isWishlisted,
+            'international_shipping' => $this->originShippingIndicator->resolve($listing, $country),
         ];
     }
 

@@ -31,6 +31,9 @@ use App\Enums\WalletOwnerType;
 use App\Models\Wallet;
 use App\Exceptions\GiftCardCurrencyMismatchException;
 use App\Exceptions\InsufficientWalletBalanceException;
+use App\Exceptions\InternationalShippingIneligibleException;
+use App\Services\Shipping\InternationalShippingRateService;
+use App\Services\Shipping\CurrencyConversionService;
 use App\Models\InventoryMovement;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -93,7 +96,92 @@ class CheckoutController extends Controller
         private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
         private readonly CheckoutRollbackService $rollbackService = new CheckoutRollbackService(),
         private readonly \App\Services\Inventory\InventoryService $inventoryService = new \App\Services\Inventory\InventoryService(),
+        private readonly InternationalShippingRateService $internationalShippingRateService = new InternationalShippingRateService(),
+        private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService(),
     ) {}
+
+    /**
+     * docs/plans/international_product_shipping.md Phase 3.
+     *
+     * Validates every cart line against international_shipping_eligibility
+     * (and product_countries availability) when the line's fulfilment
+     * listing's country differs from the order's destination country.
+     * Returns a customer-facing error message for the first ineligible
+     * line, or null when every line is eligible (including all-domestic
+     * carts, which never hit the eligibility check at all).
+     *
+     * @param  array<string, CartLineSource>  $cartLineSources
+     */
+    private function assertInternationalEligibility(array $cartLineSources, string $destinationCountryId): ?string
+    {
+        foreach ($cartLineSources as $source) {
+            try {
+                $source->assertEligibleForDestination($destinationCountryId);
+            } catch (InternationalShippingIneligibleException $e) {
+                return $e->getMessage();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * docs/plans/international_product_shipping.md Phase 3 / design
+     * decisions #1-#5.
+     *
+     * For every seller-party group that is international (fulfilment
+     * listing's country != destination country), replaces the domestic
+     * shipping figure computed by resolveVendorShipping() — which only
+     * knows about the intra-country shipping_zones/shipping_rates
+     * machinery — with InternationalShippingRateService::quote()'s
+     * shipping_fee, and returns the summed customs_fee (DDP, itemized as
+     * its own customs_duty line, never folded into shipping). Mutates
+     * $vendorShipping in place.
+     *
+     * @param  array<string, CartLineSource>  $cartLineSources
+     */
+    private function applyInternationalShippingOverrides(
+        \Illuminate\Support\Collection $cartItems,
+        array $cartLineSources,
+        array &$vendorShipping,
+        string $destinationCountryId,
+    ): int {
+        $customsDutyCents = 0;
+
+        $grouped = $cartItems->groupBy(fn ($item) => $cartLineSources[$item->id]->sellerParty);
+
+        foreach ($grouped as $vendorId => $items) {
+            $firstSource = $cartLineSources[$items->first()->id];
+            if (! $firstSource->isInternational($destinationCountryId)) {
+                continue;
+            }
+
+            $weightGrams = (int) $items->sum(function ($item) use ($cartLineSources) {
+                $listing = $cartLineSources[$item->id]->fulfilmentListing;
+
+                return (int) ($listing->productVariant?->weight_grams ?? 0) * (int) $item->quantity;
+            });
+
+            $quote = $this->internationalShippingRateService->quote(
+                $firstSource->originCountryId(),
+                $destinationCountryId,
+                $weightGrams,
+            );
+
+            $oldShipping = (int) ($vendorShipping['per_vendor'][$vendorId]['shipping'] ?? 0);
+            $vendorShipping['total'] = max(0, (int) $vendorShipping['total'] - $oldShipping + $quote['shipping_fee']);
+            $vendorShipping['per_vendor'][$vendorId]['shipping'] = $quote['shipping_fee'];
+            $vendorShipping['per_vendor'][$vendorId]['international'] = true;
+            $vendorShipping['per_vendor'][$vendorId]['international_carrier_id'] = $quote['carrier_id'];
+            $vendorShipping['per_vendor'][$vendorId]['international_rate_id'] = $quote['rate_id'];
+            $vendorShipping['per_vendor'][$vendorId]['international_eta_min_days'] = $quote['min_eta_days'];
+            $vendorShipping['per_vendor'][$vendorId]['international_eta_max_days'] = $quote['max_eta_days'];
+
+            $customsDutyCents += $quote['customs_fee'];
+        }
+
+        return $customsDutyCents;
+    }
 
     /**
      * Zero the shipping of every seller-party group in scope for a
@@ -276,7 +364,7 @@ class CheckoutController extends Controller
         $cartItems = $cart->items->all();
 
         if ($isCod) {
-            $codErrors = $this->codValidationService->validate($cartItems);
+            $codErrors = $this->codValidationService->validate($cartItems, $country->id);
             if (!empty($codErrors)) {
                 return ApiResponse::error($codErrors[0], ['errors' => $codErrors], 422);
             }
@@ -323,7 +411,19 @@ class CheckoutController extends Controller
             }
         }
 
+        $ineligibleError = $this->assertInternationalEligibility($cartLineSources, $country->id);
+        if ($ineligibleError !== null) {
+            return ApiResponse::error($ineligibleError, [], 422);
+        }
+
         $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
+
+        $customsDutyCents = $this->applyInternationalShippingOverrides(
+            collect($cartItems),
+            $cartLineSources,
+            $vendorShipping,
+            $country->id,
+        );
 
         $codFeeCents = $isCod ? $codExtraFee : 0;
 
@@ -401,6 +501,7 @@ class CheckoutController extends Controller
             0,
             $warrantyResult['selections'],
             collect($vendorShipping['per_vendor'])->map(fn ($v) => $v['shipping'])->all(),
+            $customsDutyCents,
         );
 
         $summary = $pricedCart->toArray();
@@ -630,6 +731,11 @@ class CheckoutController extends Controller
             $cartLineSources[$item->id] = $source;
         }
 
+        $ineligibleError = $this->assertInternationalEligibility($cartLineSources, $country->id);
+        if ($ineligibleError !== null) {
+            return ApiResponse::error($ineligibleError, [], 422);
+        }
+
         $address = $customer->addresses()->find($validated['address_id']);
         if (! $address) {
             return ApiResponse::error(__('common.exceptions.checkout.address_not_found'), [], 404);
@@ -660,7 +766,7 @@ class CheckoutController extends Controller
         $cartItems = $cart->items->all();
 
         if ($isCod) {
-            $codErrors = $this->codValidationService->validate($cartItems);
+            $codErrors = $this->codValidationService->validate($cartItems, $country->id);
             if (!empty($codErrors)) {
                 return ApiResponse::error($codErrors[0], ['errors' => $codErrors], 422);
             }
@@ -692,6 +798,14 @@ class CheckoutController extends Controller
 
         $shippingZone   = $address->city?->shippingZone;
         $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
+
+        $customsDutyCents = $this->applyInternationalShippingOverrides(
+            collect($cartItems),
+            $cartLineSources,
+            $vendorShipping,
+            $country->id,
+        );
+
         $shippingFeeCents = $vendorShipping['total'];
         $codFeeCents      = $isCod ? $codExtraFee : 0;
 
@@ -755,7 +869,7 @@ class CheckoutController extends Controller
         $comparablePricedCart = $this->pricingEngine->priceCart(
             $cartItems, $country, $shippingFeeCents, $codFeeCents,
             $discountCents, $discountAllocations, 0, [], 0,
-            $warrantyResult['selections'], $shippingByGroup,
+            $warrantyResult['selections'], $shippingByGroup, $customsDutyCents,
         );
 
         $preparedSignature = \Illuminate\Support\Facades\Cache::pull("checkout_prepare_signature:{$customer->id}");
@@ -798,7 +912,7 @@ class CheckoutController extends Controller
         $pricedCart = $this->pricingEngine->priceCart(
             $cartItems, $country, $shippingFeeCents, $codFeeCents,
             $discountCents, $discountAllocations, $loyaltyDiscount, $loyaltyAllocations, 0,
-            $warrantyResult['selections'], $shippingByGroup,
+            $warrantyResult['selections'], $shippingByGroup, $customsDutyCents,
         );
 
         $summary = $pricedCart->toArray();
@@ -1083,6 +1197,29 @@ class CheckoutController extends Controller
                     $gatewayFeeRatePct = $isCod ? 0.0 : (float) $methodConfig->fee_pct;
                     $warrantyRevenueForSubOrder = $pricedSubOrder?->warrantyTotal ?? 0;
 
+                    // docs/plans/international_product_shipping.md Phase 3 /
+                    // design decision #3: the fx rate is snapshotted here, at
+                    // order placement (never at cart-add time), so a rate
+                    // change after this order is placed never retroactively
+                    // changes what was actually charged. null/null/null for
+                    // a domestic sub-order (isInternational() === false).
+                    $originCountryIdForSubOrder = null;
+                    $fxRateNumeratorForSubOrder = null;
+                    $fxRateDenominatorForSubOrder = null;
+                    $fxRateCapturedAtForSubOrder = null;
+                    if ($firstSource->isInternational($country->id)) {
+                        $originCountryIdForSubOrder = $firstSource->originCountryId();
+                        $listingCurrency = (string) ($firstSource->fulfilmentListing->currency ?? $country->currency_code);
+                        $fxResult = $this->currencyConversionService->convert(
+                            $vendorSubtotal,
+                            $listingCurrency,
+                            $country->currency_code,
+                        );
+                        $fxRateNumeratorForSubOrder = $fxResult['rate_numerator'];
+                        $fxRateDenominatorForSubOrder = $fxResult['rate_denominator'];
+                        $fxRateCapturedAtForSubOrder = $fxResult['effective_at'] ?? now();
+                    }
+
                     $subOrder = SubOrder::create([
                         'order_id' => $order->id,
                         'sub_order_number' => $order->order_number.'-'.str_pad((string) $idx, 2, '0', STR_PAD_LEFT),
@@ -1116,6 +1253,10 @@ class CheckoutController extends Controller
                         'gateway_fee' => $gatewayFeeForSubOrder,
                         'gateway_fee_rate' => $gatewayFeeRatePct,
                         'vendor_payout' => $vendorPayoutForSubOrder,
+                        'origin_country_id' => $originCountryIdForSubOrder,
+                        'fx_rate_numerator' => $fxRateNumeratorForSubOrder,
+                        'fx_rate_denominator' => $fxRateDenominatorForSubOrder,
+                        'fx_rate_captured_at' => $fxRateCapturedAtForSubOrder,
                         'shipping_method_id' => $subOrderShippingMethodId,
                         'estimated_delivery_date' => $subOrderShippingMethod
                             ? $this->calculateEstimatedDeliveryDate($subOrderShippingMethod)
@@ -1223,6 +1364,10 @@ class CheckoutController extends Controller
                                 'customer_id' => $customer->id,
                                 'order_id' => $order->id,
                                 'order_item_id' => $orderItem->id,
+                                // FIX-6: real link to the product being covered, resolved
+                                // live from the listing's variant rather than relying
+                                // solely on the order_item's product_snapshot JSON.
+                                'product_id' => $listing->productVariant->product_id,
                                 'warranty_plan_id' => $plan->id,
                                 'plan_snapshot' => [
                                     'name_en' => $plan->name_en,

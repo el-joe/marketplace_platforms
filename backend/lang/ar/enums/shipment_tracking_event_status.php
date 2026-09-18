@@ -8,4 +8,9 @@ return [
     'delivered' => 'تم التوصيل',
     'failed' => 'فشل الشحن',
     'returned' => 'تم الإرجاع',
+    'export_scan' => 'مسح التصدير',
+    'customs_cleared' => 'تم التخليص الجمركي',
+    'customs_hold' => 'محتجز في الجمارك',
+    'linehaul' => 'في طريق النقل الرئيسي',
+    'import_scan' => 'مسح الاستيراد',
 ];

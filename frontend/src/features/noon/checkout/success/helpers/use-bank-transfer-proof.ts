@@ -4,7 +4,10 @@ import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { uploadBankTransferProofService } from "../../api/post";
 
-export const useBankTransferProof = (orderNumber: string) => {
+export const useBankTransferProof = (
+  orderNumber: string,
+  alreadyUploaded = false,
+) => {
   const t = useTranslations("checkoutSuccess");
   const [file, setFile] = useState<File | null>(null);
   const [note, setNote] = useState("");
@@ -28,6 +31,9 @@ export const useBankTransferProof = (orderNumber: string) => {
     setNote,
     submitProof: () => file && uploadProof.mutate(),
     isUploading: uploadProof.isPending,
-    isUploaded: uploadProof.isSuccess,
+    // Reflects proof already on file from a previous visit (e.g. the
+    // order-detail page, reached after leaving the one-time checkout
+    // success screen), not just a mutation just performed in this session.
+    isUploaded: uploadProof.isSuccess || alreadyUploaded,
   };
 };

@@ -13,5 +13,11 @@
         @method('PUT')
         @include('admin.vendor-listings._form', ['listing' => $listing])
     </form>
+
+    @include('admin.vendor-listings._ships_to', [
+        'listing' => $listing,
+        'shipsToCountries' => $shipsToCountries,
+        'selectedDestinationIds' => $selectedDestinationIds,
+    ])
 </div>
 @endsection

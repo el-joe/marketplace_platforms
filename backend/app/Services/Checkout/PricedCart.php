@@ -30,6 +30,13 @@ final class PricedCart
         public readonly int $giftCardApplied,
         public readonly int $total,
         public readonly string $currency,
+        // docs/plans/international_product_shipping.md Phase 3 / design
+        // decision #5 (adopted Q2 answer): DDP — customs duty for
+        // international lines is itemized as its own named charge, folded
+        // into $total, never hidden inside $shipping. Mirrors how
+        // $loyaltyDiscount was added to this class. Zero for an order with
+        // no international lines.
+        public readonly int $customsDuty = 0,
     ) {}
 
     /**
@@ -47,6 +54,7 @@ final class PricedCart
             'tax' => $this->tax,
             'warranty_total' => $this->warrantyTotal,
             'gift_card_applied' => $this->giftCardApplied,
+            'customs_duty' => $this->customsDuty,
             'total' => $this->total,
         ];
     }
@@ -64,6 +72,7 @@ final class PricedCart
             'tax' => $this->tax,
             'warranty_total' => $this->warrantyTotal,
             'gift_card_applied' => $this->giftCardApplied,
+            'customs_duty' => $this->customsDuty,
             'total' => $this->total,
             'currency' => $this->currency,
         ];

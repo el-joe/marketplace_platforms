@@ -30,12 +30,16 @@ export type WarrantyPurchase = {
     features: string[] | null;
   };
   product: {
+    id: string | null;
     name: string | null;
+    slug: string | null;
     sku: string | null;
+    image: string | null;
   };
   order_id: string;
   order_item_id: string;
   is_claimable: boolean;
+  is_upcoming: boolean;
   created_at: string;
 };
 

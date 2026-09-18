@@ -18,9 +18,21 @@ export default function CheckoutSuccess({
   orderNumber,
   initialOrderData,
 }: Props) {
-  const order = JSON.parse(
-    sessionStorage.getItem("last_placed_order") as string,
-  );
+  let storedOrder: IPlaceOrderResponse | null = null;
+  try {
+    const raw = sessionStorage.getItem("last_placed_order");
+    storedOrder = raw ? JSON.parse(raw) : null;
+  } catch {
+    storedOrder = null;
+  }
+
+  // Fall back to server-fetched initialOrderData whenever sessionStorage is
+  // empty/invalid (tab closed and reopened, emailed confirmation link
+  // visited later, private browsing) instead of always redirecting home —
+  // that previously made bank transfer instructions/upload permanently
+  // inaccessible for those customers even though the backend still has the
+  // data.
+  const order = storedOrder ?? initialOrderData ?? null;
   const router = useRouter();
 
   if (!order) {

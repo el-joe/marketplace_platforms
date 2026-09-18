@@ -3,11 +3,31 @@ import type {
   ApiEnvelope,
   BookingsListResponse,
   CancelBookingResult,
+  CreateBookingResult,
   ListBookingsFilters,
   TravelBookingDetail,
 } from "../helpers/types";
 
 type UploadPassportResult = { passport_uploaded: boolean };
+
+/**
+ * Feature-only: POST /listings/travel/:slug/bookings — creates a real,
+ * multi-seat booking for the given travel package (requires auth:customer).
+ * `travelersCount` maps to the backend's `travelers_count` (1-50).
+ */
+export async function createBooking(
+  slug: string,
+  travelersCount: number,
+): Promise<CreateBookingResult> {
+  const envelope = await fetchInstance<ApiEnvelope<CreateBookingResult>>(
+    `/listings/travel/${slug}/bookings`,
+    {
+      method: "POST",
+      body: JSON.stringify({ travelers_count: travelersCount }),
+    },
+  );
+  return envelope.data;
+}
 
 /** Feature-only: GET /account/travel-bookings — paginated list of the customer's bookings. */
 export async function getMyBookings(

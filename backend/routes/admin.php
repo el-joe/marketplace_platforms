@@ -55,6 +55,8 @@ use App\Http\Controllers\Admin\PortalContentController;
 use App\Http\Controllers\Admin\ContentSettingsController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\CurrencyExchangeRateController;
+use App\Http\Controllers\Admin\InternationalShippingRateController;
 use App\Http\Controllers\Admin\ShippingSubsidyController;
 use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\Admin\WarehouseController;
@@ -1175,6 +1177,35 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         });
     });
 
+    // ─── International Shipping Rates ──────────────────────────────────────────
+    // docs/plans/international_product_shipping.md Phase 5.
+    Route::prefix('international-shipping-rates')->name('international-shipping-rates.')
+        ->middleware('admin.permission:settings.view')
+        ->group(function () {
+            Route::get('/', [InternationalShippingRateController::class, 'index'])->name('index');
+            Route::get('/create', [InternationalShippingRateController::class, 'create'])
+                ->middleware('admin.permission:settings.edit')->name('create');
+            Route::post('/', [InternationalShippingRateController::class, 'store'])
+                ->middleware('admin.permission:settings.edit')->name('store');
+            Route::get('/{internationalShippingRate}/edit', [InternationalShippingRateController::class, 'edit'])
+                ->middleware('admin.permission:settings.edit')->name('edit');
+            Route::put('/{internationalShippingRate}', [InternationalShippingRateController::class, 'update'])
+                ->middleware('admin.permission:settings.edit')->name('update');
+            Route::delete('/{internationalShippingRate}', [InternationalShippingRateController::class, 'destroy'])
+                ->middleware('admin.permission:settings.edit')->name('destroy');
+        });
+
+    // ─── Currency Exchange Rates (append-only) ─────────────────────────────────
+    // docs/plans/international_product_shipping.md Phase 5. Insert-only UI —
+    // no edit/destroy routes, matching currency_exchange_rates' append-only design.
+    Route::prefix('currency-exchange-rates')->name('currency-exchange-rates.')
+        ->middleware('admin.permission:settings.view')
+        ->group(function () {
+            Route::get('/', [CurrencyExchangeRateController::class, 'index'])->name('index');
+            Route::post('/', [CurrencyExchangeRateController::class, 'store'])
+                ->middleware('admin.permission:settings.edit')->name('store');
+        });
+
     // ─── Warehouses ───────────────────────────────────────────────────────────
     Route::prefix('warehouses')->name('warehouses.')->middleware('admin.permission:warehouses.view')->group(function () {
         // Index + datatable
@@ -1516,6 +1547,9 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/{adminListing}/clear-cache', [\App\Http\Controllers\Admin\AdminListingController::class, 'clearCache'])
                 ->middleware('admin.permission:admin_listings.edit')
                 ->name('clear-cache');
+            Route::post('/{adminListing}/ships-to', [\App\Http\Controllers\Admin\InternationalShippingEligibilityController::class, 'updateForAdminListing'])
+                ->middleware('admin.permission:admin_listings.edit')
+                ->name('ships-to.update');
             Route::get('/{adminListing}/inventory', [\App\Http\Controllers\Admin\AdminListingInventoryController::class, 'index'])
                 ->name('inventory.index');
             Route::post('/{adminListing}/inventory', [\App\Http\Controllers\Admin\AdminListingInventoryController::class, 'store'])
@@ -1547,6 +1581,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::put('/{vendorListing}', [\App\Http\Controllers\Admin\VendorListingController::class, 'update'])->name('update');
             Route::post('/{vendorListing}/clear-cache', [\App\Http\Controllers\Admin\VendorListingController::class, 'clearCache'])
                 ->name('clear-cache');
+            Route::post('/{vendorListing}/ships-to', [\App\Http\Controllers\Admin\InternationalShippingEligibilityController::class, 'updateForVendorListing'])
+                ->name('ships-to.update');
             Route::get('/{vendorListing}', [\App\Http\Controllers\Admin\VendorListingController::class, 'show'])->name('show');
         });
 
@@ -1610,6 +1646,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         Route::prefix('inquiries')->name('inquiries.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\TravelPackageInquiryController::class, 'index'])->name('index');
+            Route::post('/{inquiry}/convert', [\App\Http\Controllers\Admin\TravelPackageInquiryController::class, 'convertToBooking'])->name('convert');
         });
 
         Route::prefix('inclusions')->name('inclusions.')->group(function () {

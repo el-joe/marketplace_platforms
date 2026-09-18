@@ -52,7 +52,11 @@ export default async function OrderSummary({ order }: Props) {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <PaymentDetailsCard paymentMethod={order.payment_method} />
+        <PaymentDetailsCard
+          orderNumber={order.order_number}
+          paymentMethod={order.payment_method}
+          bankTransferDetails={order.bank_transfer_details}
+        />
         <InvoiceCard orderNumber={order.order_number} status={order.status} />
       </div>
 

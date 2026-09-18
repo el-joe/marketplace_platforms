@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\Customer;
 
 use App\Models\Country;
+use App\Services\Shipping\ListingOriginShippingIndicator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -61,6 +62,13 @@ class VendorListingResource extends JsonResource
             'rating_count' => (int) $listing->rating_count,
             'total_sold' => (int) $listing->total_sold,
             'vendor_covers_delivery' => (bool) $listing->vendor_covers_delivery,
+            // docs/plans/international_product_shipping.md Phase 6 — "Ships
+            // from {origin country}" indicator data. Null for every domestic
+            // listing (the overwhelming common case); only computed when the
+            // listing actually has a country_id at all.
+            'international_shipping' => $listing->country_id
+                ? app(ListingOriginShippingIndicator::class)->resolve($listing, $this->country)
+                : null,
             'shipping_badge' => $listing->primaryShippingMethod ? [
                 'label'            => [
                     'ar' => $listing->primaryShippingMethod->badge_label_ar,

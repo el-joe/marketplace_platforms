@@ -73,6 +73,9 @@ class SubOrder extends Model
             'shipping_gap' => 'integer',
             'billable_weight_grams' => 'integer',
             'subsidy_ledgered' => 'boolean',
+            'fx_rate_numerator' => 'integer',
+            'fx_rate_denominator' => 'integer',
+            'fx_rate_captured_at' => 'datetime',
         ];
     }
 
@@ -86,6 +89,10 @@ class SubOrder extends Model
         // instead of seeding a synthetic "platform vendor" row.
         'seller_type',
         'warehouse_id',
+        'origin_country_id',
+        'fx_rate_numerator',
+        'fx_rate_denominator',
+        'fx_rate_captured_at',
         'status',
         'fulfillment_model',
         'subtotal',
@@ -135,6 +142,22 @@ class SubOrder extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function originCountry(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'origin_country_id');
+    }
+
+    /**
+     * True when this sub-order's fulfillment origin differs from the order's
+     * destination country — computed, not stored (design decision #3 in
+     * docs/plans/international_product_shipping.md).
+     */
+    public function isInternational(): bool
+    {
+        return $this->origin_country_id !== null
+            && $this->origin_country_id !== $this->order?->country_id;
     }
 
     public function shippingMethod(): BelongsTo

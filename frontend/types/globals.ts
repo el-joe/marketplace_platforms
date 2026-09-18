@@ -65,6 +65,7 @@ export interface Product {
   is_flash_sale?: boolean;
   flash_sale_ends_at?: string | null;
   promo_badges?: PromoBadge[];
+  international_shipping?: InternationalShippingIndicator | null;
 }
 
 export interface PromoBadge {
@@ -74,6 +75,22 @@ export interface PromoBadge {
   color_hex: string;
   text_color_hex: string;
   sort_order: number;
+}
+
+/**
+ * docs/plans/international_product_shipping.md Phase 6 — present only when
+ * the listing's own country differs from the currently-selected storefront
+ * country and it's actively eligible to ship there. Null/absent otherwise
+ * (the domestic default), so consumers should always guard on its presence.
+ */
+export interface InternationalShippingIndicator {
+  origin_country: {
+    id: string;
+    name: Name;
+  };
+  min_eta_days: number;
+  max_eta_days: number;
+  customs_included: boolean;
 }
 
 export interface Images {

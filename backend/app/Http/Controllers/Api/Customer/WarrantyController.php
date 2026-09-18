@@ -72,9 +72,18 @@ class WarrantyController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
+        // FIX-6: a warranty purchased at checkout starts life `pending` and
+        // is only flipped to `active` (with real coverage dates) by
+        // SubOrderObserver once the sub-order is delivered. Filtering to
+        // ->active() only hid every newly-purchased warranty from "My
+        // Warranties" until delivery, which read as "I bought a warranty
+        // and it never showed up." Show pending ones too, as
+        // upcoming/not-yet-active — WarrantyPurchaseResource marks them
+        // clearly non-claimable via `is_claimable`/`status` rather than
+        // dropping them from the list.
         $paginator = WarrantyPurchase::forCustomer($customer->id)
-            ->active()
-            ->with(['orderItem', 'plan'])
+            ->whereIn('status', ['pending', 'active'])
+            ->with(['orderItem', 'plan', 'product.images'])
             ->orderByDesc('created_at')
             ->paginate(15);
 
@@ -101,7 +110,7 @@ class WarrantyController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        $orderItem = OrderItem::with(['order', 'subOrder.vendor'])
+        $orderItem = OrderItem::with(['order', 'subOrder.vendor', 'productVariant'])
             ->findOrFail($request->validated('order_item_id'));
 
         $plan = WarrantyPlan::findOrFail($request->validated('warranty_plan_id'));
@@ -142,6 +151,8 @@ class WarrantyController extends Controller
                     'customer_id' => $customer->id,
                     'order_id' => $orderItem->order_id,
                     'order_item_id' => $orderItem->id,
+                    // FIX-6: real link to the product being covered.
+                    'product_id' => $orderItem->productVariant?->product_id,
                     'warranty_plan_id' => $plan->id,
                     'plan_snapshot' => [
                         'name_en' => $plan->name_en,
