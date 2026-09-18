@@ -15,6 +15,33 @@ class WarrantyPurchaseResource extends JsonResource
         $orderItem = $this->whenLoaded('orderItem');
         $productSnapshot = $orderItem && $orderItem !== null ? ($this->orderItem?->product_snapshot ?? []) : [];
 
+        // FIX-6: prefer the live product (current name/image/slug/price) and
+        // fall back to the order_item snapshot only if the live product was
+        // deleted or isn't loaded.
+        $liveProduct = $this->whenLoaded('product');
+        $liveProduct = $liveProduct instanceof \App\Models\Product ? $liveProduct : null;
+
+        $product = $liveProduct
+            ? [
+                'id' => $liveProduct->id,
+                'name' => $locale === 'ar'
+                    ? ($liveProduct->name_ar ?? $liveProduct->name_en)
+                    : ($liveProduct->name_en ?? $liveProduct->name_ar),
+                'slug' => $liveProduct->slug,
+                'sku' => $this->orderItem?->sku,
+                'image' => $liveProduct->images?->first()?->url ?? $liveProduct->images?->first()?->path ?? null,
+            ]
+            : [
+                'id' => null,
+                'name' => $productSnapshot['name'] ?? $productSnapshot['name_en'] ?? null,
+                'slug' => $productSnapshot['slug'] ?? null,
+                'sku' => $this->orderItem?->sku,
+                'image' => $productSnapshot['image'] ?? null,
+            ];
+
+        $isActive = $this->status === 'active';
+        $isPending = $this->status === 'pending';
+
         return [
             'id' => $this->id,
             'status' => $this->status,
@@ -38,14 +65,16 @@ class WarrantyPurchaseResource extends JsonResource
                     ? ($snapshot['features_ar'] ?? $snapshot['features_en'] ?? null)
                     : ($snapshot['features_en'] ?? $snapshot['features_ar'] ?? null),
             ],
-            'product' => [
-                'name' => $productSnapshot['name'] ?? $productSnapshot['name_en'] ?? null,
-                'sku' => $this->orderItem?->sku,
-            ],
+            'product' => $product,
             'order_id' => $this->order_id,
             'order_item_id' => $this->order_item_id,
             'created_at' => $this->created_at?->toIso8601String(),
-            'is_claimable' => $this->status === 'active'
+            // FIX-6: pending purchases (not yet delivered) are now returned
+            // by purchases() instead of being hidden, so the frontend needs
+            // an explicit signal to render them as "upcoming/not yet
+            // active" rather than claimable.
+            'is_upcoming' => $isPending,
+            'is_claimable' => $isActive
                 && $this->coverage_ends_at !== null
                 && $this->coverage_ends_at->greaterThanOrEqualTo(today())
                 && ! \App\Models\WarrantyClaim::where('order_item_id', $this->order_item_id)
