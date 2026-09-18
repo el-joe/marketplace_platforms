@@ -8,4 +8,9 @@ return [
     'delivered' => 'Delivered',
     'failed' => 'Failed',
     'returned' => 'Returned',
+    'export_scan' => 'Export Scan',
+    'customs_cleared' => 'Customs Cleared',
+    'customs_hold' => 'Held at Customs',
+    'linehaul' => 'In Linehaul Transit',
+    'import_scan' => 'Import Scan',
 ];
