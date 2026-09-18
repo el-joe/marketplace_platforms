@@ -1,238 +1,102 @@
-# Senior Fullstack Audit & Fix — MarketPlace Platform
-**Role:** You are a senior fullstack developer and problem-solving expert.  
-**Mission:** Audit the live codebase, produce a structured fix plan as `FIXES.md`, then execute each fix as an independent sub-agent task.
-
----
-
-## Repository
-
-```
-Monorepo: https://github.com/el-joe/marketplace_platforms
-Backend:  /backend  (Laravel 11, PHP 8.3)
-Frontend: /frontend (Next.js 15, TypeScript, TailwindCSS)
-Commit:   87c58da
-```
-
----
-
-## Platform invariants — read before touching any file
-
-1. **All money = BIGINT base-currency integers.** No `/100` or `*100` anywhere in controllers, services, resources, or TSX — only legitimate `/100` is percentage math (VAT, commission rate, coupon %).
-2. **All PKs = UUIDs** via `HasUuids` trait — never `$table->id()`.
-3. `quantity_available` and `quantity_remaining` are **VIRTUAL GENERATED** columns — never write to them, never put in `$fillable`.
-4. `InventoryMovement` is **append-only** — throws on update/delete.
-5. `paid_ad_slots` page-block slots use `pageBlock()` not `block()` on `SliderSlide`/`AdImageItem`.
-6. `marketer_campaign_conversions` is the conversion table (not `marketer_conversions`).
-7. `flash_sale_vendor_invititions` has intentional double-"ti" typo — preserve everywhere.
-8. No JSON blobs for structured relational data — always use proper FK tables.
-9. Multi-currency: always show per-currency rows, never sum across currencies.
-
----
-
-## Step 0 — Pull latest & read the codebase
-
-```bash
-cd /repo && git fetch origin && git reset --hard origin/main
-git log -1 --format='%h %ci %s'
-```
-
-Then read these files **in order** before doing anything else:
-
-```bash
-# Backend — core order/checkout
-cat backend/app/Http/Controllers/Customer/CheckoutController.php
-cat backend/app/Services/CheckoutCalculationService.php
-cat backend/app/Services/ShippingSubsidyService.php
-cat backend/app/Services/Ads/PlacementAdService.php
-cat backend/app/Services/Customer/SponsoredProductService.php
-
-# Backend — marketer/influencer/broker
-cat backend/app/Services/MarketerCampaignService.php
-cat backend/app/Http/Controllers/Admin/MarketerController.php
-cat backend/app/Models/MarketerProfile.php
-
-# Backend — coupon & payments
-cat backend/app/Http/Controllers/Customer/CheckoutController.php | grep -n "coupon\|wallet\|gateway" | head -40
-
-# Frontend — checkout
-cat frontend/src/features/noon/checkout/helpers/use-checkout.ts
-cat frontend/src/features/noon/checkout/payment-summary.tsx
-cat frontend/src/features/noon/checkout/types/checkout.type.ts
-
-# Routes (for gap detection)
-grep -n "Route::" backend/routes/admin.php | grep -i "cod.*limit\|size.guide\|travel.*filter\|supermal\|omani" | head -20
-grep -n "Route::" backend/routes/api_customer_v1.php | grep -i "travel\|special.*request\|ad.*package" | head -20
-
-# Schema — tables that may be missing
-python3 -c "
-import re
-sql = open('backend/database/schema/mysql-schema.sql').read()
-for t in ['cod_limit_settings','ad_package_subscriptions','marketer_sample_sizes','travel_search_filters']:
-    found = bool(re.search(r'CREATE TABLE \`%s\`' % t, sql))
-    print(t, '✅' if found else '❌ MISSING')
-"
-```
-
----
-
-## Step 1 — Diagnose: produce `FIXES.md`
-
-After reading the codebase, produce a file called `FIXES.md` at the repo root. Structure it exactly like this:
-
-```markdown
 # FIXES.md — Platform Audit Results
-Generated: {timestamp} | Commit: {hash}
+Generated: 2026-09-18 | Commit: f3ff324 (HEAD, main)
+
+Scope: items A–J from the product-owner brief. Every claim below is based on reading the current
+working tree (not the brief's stale line numbers/paths, several of which have moved since the
+brief was written).
+
+---
 
 ## CRITICAL (breaks functionality)
-### FIX-C1: {title}
-- **File(s):** ...
-- **Root cause:** ...
-- **Fix:** ...
-- **Acceptance test:** ...
+
+_None found among items A–J. `AutoCompleteOrdersJob` / `CheckSlaBreachJob` are registered
+(`backend/routes/console.php:28-29`), the marketer checkout groupBy crash (J) is already fixed,
+and the sponsored-products category filter (G) is already applied — see DONE notes below._
+
+---
 
 ## HIGH (wrong output, financial impact, or broken UX)
-### FIX-H1: {title}
-...
+
+### FIX-H1: Payment summary omits the loyalty-points discount line item
+- **File(s):**
+  - `frontend/src/features/noon/checkout/payment-summary.tsx` (component, lines 18–133)
+  - `frontend/src/features/noon/checkout/types/checkout.type.ts` (`OrderSummary` interface, commented block lines 75–85, and the live `IPrepareCheckout`/order_summary shape around line 119+)
+  - Backend already emits the field: `backend/app/Services/Checkout/PricedCart.php:25` (`loyaltyDiscount` readonly prop) and `:44`/`:61` (`'loyalty_discount' => $this->loyaltyDiscount` in `toArray()`), consumed at `backend/app/Http/Controllers/Customer/CheckoutController.php:406,474` (`'order_summary' => $summary` where `$summary = $pricedCart->toArray()`).
+- **Root cause:** `CheckoutCalculationService`/`CheckoutPricingEngine` already compute and return `loyalty_discount` in the `order_summary` payload (confirmed present in `PricedCart::toArray()`). `PaymentSummary` renders `cod_fee`, `warranty_total`, and `gift_card_applied` but has no block for `loyalty_discount`, so a customer who redeems loyalty points never sees that discount reflected in the line-item breakdown even though it is subtracted from `total` server-side — money "disappears" from the customer's view without explanation.
+- **Fix:** Add a `checkoutSummary.loyalty_discount > 0` conditional block to `payment-summary.tsx` mirroring the `gift_card_applied` block (green, negative-signed `Price`), add `loyalty_discount: number` to the `OrderSummary` type, and add a `loyaltyDiscount` / equivalent translation key to `checkout` locale namespace (en + ar).
+- **Acceptance test:** Apply loyalty points at checkout so `loyalty_discount > 0` in the `/prepare` response; `PaymentSummary` renders a "Loyalty discount" row equal to that amount, and `total` shown still equals `subtotal - discount - loyalty_discount + shipping + cod_fee + warranty_total - gift_card_applied + tax` (minus wallet deduction).
+
+### FIX-H2: Ad-package "listing boost" ranking is not applied to browse/search results
+- **File(s):** `backend/app/Services/Customer/ProductQueryService.php`, `backend/app/Models/AdPackage.php`, `backend/database/migrations/2026_09_12_000001_create_ad_packages_table.php` (tier enum: `serious`, `serious_featured`), `backend/app/Models/VendorAdSubscription.php`
+- **Root cause:** `ProductQueryService` has no reference to `boost_priority`, `ad_packages`, or `VendorAdSubscription` at all — only `SponsoredProductService::inject()` (a *separate* slot-injection mechanism at fixed positions 1/5/9, driven by `ad_campaigns`/`ad_campaign_products`) affects result order. A vendor who buys a "serious" (non-featured) Nawi ad package gets no ranking boost in organic browse results — the feature described in the brief ("listing boost & popup logic") only has the popup half wired (see DONE note below), not the sort/ranking half.
+- **Fix:** In `ProductQueryService`'s base listing query, left-join active `vendor_ad_subscriptions` (via `vendor_listing_id`, `status = active`, `ends_at > now()` or null) joined to `ad_packages` on `tier`, and add a boost term to the `ORDER BY` (e.g. `ORDER BY (subscription exists) DESC, tier weight DESC, <existing sort>`), gated so it only reorders within relevance and never overrides an explicit customer sort (price/rating) if one is requested. Needs a small scoring column or `CASE` expression — no schema change required if `ad_packages`/`vendor_ad_subscriptions` already carry `tier` and `is_active`/`ends_at`.
+- **Acceptance test:** A vendor listing with an active "serious" or "serious_featured" ad subscription appears above equivalent non-boosted listings on the default category sort, and boosted position does not change when the customer explicitly sorts by price/newest (those sorts should override boost).
+
+### FIX-H3: Nawi Ads popup (serious_featured tier) has no frontend consumer
+- **File(s):** `backend/app/Http/Controllers/Api/Public/AdPopupController.php` (exists, returns popup payload), `backend/routes/api_public.php:21` (`GET active-popup`, routed and public), frontend: no match for `active-popup` anywhere under `frontend/src`.
+- **Root cause:** Backend is fully wired — `AdPopupController::show()` picks a random active `VendorAdSubscription` on the `serious_featured` tier with popup copy filled in, and the route is public. But no frontend component calls `active-popup` or renders a popup — grep across `frontend/src` for `active-popup` and for popup components under `features/noon` returns nothing relevant (only generic UI popovers/dropdowns, unrelated). So `serious_featured` vendors pay for a popup placement that never displays.
+- **Fix:** Add a frontend popup component (e.g. `frontend/src/features/noon/ads/serious-featured-popup.tsx`) that fetches `GET /active-popup` on storefront mount (once per session, e.g. gated by a `sessionStorage` "seen" flag), and renders `title_en/ar`, `body_en/ar`, `image_url`, with a CTA linking to `product_slug`. Mount it in the root customer layout.
+- **Acceptance test:** With an active `serious_featured` subscription seeded with popup fields, loading the storefront shows the popup once per session; clicking the CTA navigates to `product_slug`.
+
+---
 
 ## MEDIUM (missing feature that has DB schema but no UI/route)
-### FIX-M1: {title}
-...
+
+### FIX-M1: Travel search filters have no frontend inputs
+- **File(s):** `backend/app/Http/Controllers/Customer/BrowseController.php:189-230` (`browseTravel`, validates and applies `country_id`, `city_id`, `date_from`, `date_to`), `frontend/src/features/flights/travel-packages/index.tsx` (only reads `page`, `category` from `searchParams`), `frontend/src/features/flights/api/travel-packages.actions.ts` (`getTravelPackages` only forwards `categoryId`/`page`/`perPage` — never `country_id`/`city_id`/`date_from`/`date_to`).
+- **Root cause:** The brief's `TravelController` (`backend/app/Http/Controllers/Storefront/TravelController.php`) is a separate admin/agency-portal-facing Blade controller using `country`/`city`/`departure_from`/`departure_to` — not what the Next.js customer app calls. The customer app actually calls `GET /browse/travel/{id}` → `BrowseController::browseTravel()`, which already validates and applies `country_id`, `city_id`, `date_from`, `date_to` (lines 215-230) via `ListingQueryService::paginateTravelPackages()`. The frontend simply never sends these params and has no filter UI (`TravelHero`, `CategoryTabs` components only handle hero copy and category tabs, no date/country/city inputs).
+- **Fix:** Add filter controls (country select, city select, date-range picker) to `frontend/src/features/flights/travel-packages/`, wire them into `searchParams`, and extend `getTravelPackages()`/`ListTravelPackagesFilters` to forward `country_id`, `city_id`, `date_from`, `date_to` to the existing, already-working backend endpoint.
+- **Acceptance test:** Selecting a country/city/date range on the travel listing page updates the URL query params and the returned package list is filtered server-side accordingly (verified against `BrowseController::browseTravel`'s existing validation).
+
+---
 
 ## LOW (cosmetic, locale keys, labels)
-### FIX-L1: {title}
-...
+
+_None identified beyond the locale keys needed for FIX-H1 (loyalty discount label) — folded into that fix rather than listed separately._
+
+---
 
 ## SKIP (needs business decision before code — document, do not implement)
-### FIX-S1: {title}
-- **Reason:** ...
-- **Open question:** ...
-```
+
+### FIX-S1: COD limits — "international products" exemption has no schema concept
+- **Reason:** COD limits are otherwise already implemented and working: `backend/app/Services/Customer/CodValidationService.php` enforces `cod_global_max_amount` and a separate `cod_supermall_max_amount` (scoped via `cod_supermall_category_id`'s nested-set `lft`/`rgt` range), both settings seeded by `backend/database/migrations/2026_09_12_173000_add_cod_limit_settings.php` under the generic `Setting` model (`category = 'orders'`), editable through the existing dynamic admin Settings UI (`Admin\SettingsController` — no bespoke `cod_limit_settings` table needed, and none exists, by design). Nawi/platform products are already exempt (`$item->adminListing !== null` check, `CodValidationService.php` line ~30). However, the brief's second exemption — **"international products"** — has no corresponding concept anywhere in the schema or models: no `is_international`, `ships_internationally`, or `international_shipping` field exists on `VendorListing`, `AdminListing`, `Product`, or `Country` (grepped across `backend/app` and `mysql-schema.sql`, zero hits).
+- **Open question:** What defines an "international product" for COD-exemption purposes — country of the seller vs. country of fulfillment vs. an explicit per-listing flag vs. cross-border shipping method? Once defined, the fix is a one-line addition to `CodValidationService::validate()`'s exemption check (`if ($item->adminListing !== null || $this->isInternational($item)) continue;`), but the field/logic to determine "international" must be specified by product first — this may also require a migration if a new column is chosen.
 
 ---
 
-## Step 2 — The specific gaps to investigate (from product owner brief)
+## DONE (already correctly implemented — verified this pass, no action needed)
 
-Investigate each item below. For each: check if it exists, where it's broken, and what the minimal correct fix is.
-
-### A. Nawi Ad Packages — listing boost & popup logic
-
-1. `ad_packages` table and `PartnerAdSubscriptionController` exist. Does the **sort/ranking** actually apply to browse results? Check `BrowseService` and `ProductQueryService` — is there a `WHERE listing boosted = true ORDER BY boost_priority` anywhere?
-2. Does the `serious_featured` tier actually trigger a popup? Check if `popup_ad` or `featured_popup` is returned in any API response, and if the frontend has a popup component for it.
-3. If the boost ordering and popup are not wired: plan the fix.
-
-### B. COD Limits — not implemented at all
-
-The product owner requires:
-- Admin sets a **global max COD cart value** (e.g. 500 OMR)
-- **Exceptions** (no limit): Nawi own products, international products
-- **Separate limit** for Supermal products
-
-Check:
-- Is there a `cod_limit_settings` table? (Likely: NO)
-- Is there any COD amount check in `CheckoutController`?
-- Plan: migration + admin UI + validation in checkout
-
-### C. Travel Search Filters — backend done, frontend missing
-
-`TravelController` accepts `departure_from`, `departure_to`, `country_id`, `city_id`.  
-Check `frontend/src/features/noon/` for a travel browse page. Do the filter inputs exist? If not, plan the frontend component.
-
-### D. Influencer sample sizes — visible in samples workflow
-
-`marketer_profiles` has `clothing_size`, `shirt_size`, `pants_size`, `dress_size`, `abaya_size`, `shoe_size`, `chest_cm`, `waist_cm`, etc.  
-Check `partner/marketer_campaigns/show.blade.php` and `admin/marketer_campaigns/show.blade.php`:
-- When the admin/vendor dispatches a sample, are the influencer's sizes displayed?
-- If not: plan a read-only "Influencer Sizes" card in the sample dispatch UI.
-
-### E. Omani Rial (OMR) currency symbol
-
-The product owner requests the official symbol **ر.ع** (not the ISO code OMR) displayed on invoices and the UI.  
-Check:
-- `get-currency-symbol.ts` or equivalent in the frontend
-- `CurrencyController` in admin — does it support uploading a symbol image for OMR?
-- Plan: add `OMR → ر.ع` to the frontend symbol map.
-
-### F. Coupon `shipping_type_restriction` — is it enforced?
-
-`coupons.shipping_type_restriction` enum (`all`/`fbn`/`fbp`/`fbm`) exists.  
-Check `CouponService::validate()` or wherever coupons are applied in `CheckoutCalculationService`. Is the restriction actually checked against the cart's listings' `fulfillment_model`? If the field exists but isn't validated: plan the enforcement.
-
-### G. Sponsored products — empty category shows wrong results
-
-`SponsoredProductService::fetchSponsored()` has no category filter.  
-Check if `PROMPT-sponsored-category-filter.md` was applied (look for `$categoryIds` param in `fetchSponsored()`).  
-If not applied: this is HIGH priority — implement the fix.
-
-### H. Payment summary missing line items
-
-Check `frontend/src/features/noon/checkout/payment-summary.tsx` for these line items:
-- `cod_fee` — shown? 
-- `warranty_total` — shown?
-- `gift_card_applied` — shown?
-- `loyalty_discount` — shown?
-
-Report what's missing and plan the fix if needed.
-
-### I. `order.completed` never set automatically
-
-Check `backend/app/Jobs/AutoCompleteOrdersJob.php` — does it exist and is it registered in `routes/console.php`?  
-Check `backend/app/Jobs/CheckSlaBreachJob.php` — same.  
-If both exist and are registered: mark as DONE. If not: plan.
-
-### J. Marketer checkout crash (B1)
-
-Check `CheckoutController` around line 637 for `resolveMarketerCartItems` or the `groupBy` that would null-pointer on `$item->vendorListing->vendor_id` when `marketer_listing_id` is set.  
-Confirm fix is applied or still broken.
+- **G. Sponsored products category filter** — `backend/app/Services/Customer/SponsoredProductService.php::fetchSponsored()` (lines 201-249) already accepts and applies `$categoryIds` via `whereHas('productVariant.product', ...)`, and also mirrors attribute filters from `ProductQueryService::applyFilters`. `PROMPT-sponsored-category-filter.md`'s fix is applied. *(Side note, not in scope A–J: `fetchSponsored()`'s `ac.ends_at` clause at lines 214-218 uses an un-grouped `->orWhere('ac.ends_at', '>', now())` after two chained `->where()`/`whereNull()` calls, which is a classic Eloquent OR-precedence bug that can leak expired campaigns into results regardless of country/status — worth a follow-up look though it wasn't asked for in items A–J.)*
+- **F. Coupon `shipping_type_restriction` enforcement** — `backend/app/Services/Checkout/CheckoutPricingEngine.php:801-809` checks the coupon's restriction against each cart line's derived `shipping_type` (fbn/fbp/fbm) and rejects the coupon with a typed error when any line mismatches.
+- **I. `order.completed` automation** — Both `AutoCompleteOrdersJob` and `CheckSlaBreachJob` exist under `backend/app/Jobs/` and are registered in `backend/routes/console.php:28-29` (`everyFifteenMinutes()` / `dailyAt('02:00')`).
+- **J. Marketer checkout crash** — `backend/app/Http/Controllers/Customer/CheckoutController.php` no longer groups by raw `$item->vendorListing->vendor_id`; it resolves a `CartLineSource`/`sellerParty` per item first (see `resolveMarketerCartItems()` at line 1537 and the `groupBy(fn ($item) => $cartLineSources[$item->id]->sellerParty)` at line 1619), which is null-safe for marketer-listing items. No null-pointer risk found on the current code path.
+- **E. OMR currency symbol** — `frontend/src/helpers/get-currency-symbol.ts:107` already maps `OMR: "ر.ع."`.
+- **B. COD limits (core enforcement)** — see FIX-S1 above; everything except the "international products" exemption is implemented and working, including the Supermal-specific limit.
+- **H. `cod_fee` / `warranty_total` / `gift_card_applied`** — all three already render conditionally in `payment-summary.tsx` (lines 62-96). Only `loyalty_discount` is missing — see FIX-H1.
+- **A.2 (popup route wiring)** — route exists and is public (`backend/routes/api_public.php:21`); only the frontend consumer is missing — see FIX-H3.
+- **FIX-M2. Influencer body/size measurements in sample-dispatch UI** — already fully implemented in both views. `backend/resources/views/partner/marketer_campaigns/show.blade.php:397-444` renders an "Influencer Sizes" block (`influencer_measurements` label) inside an `@if ($isInfluencer && $sampleProfile)` row, iterating `clothing_size`, `shirt_size`, `pants_size`, `dress_size`, `abaya_size`, `shoe_size` (+ `shoe_size_system`), `chest_cm`, `waist_cm`, plus `hip_cm`/`height_cm`/sleeve/item-length fields, each only shown `@if(!is_null($value) && $value !== '')`; `measurements_notes` shown when present (lines 430-435); an `@elseif ($isInfluencer && !$sampleProfile)` branch (lines 438-443) shows a "no measurements on file" notice. `backend/resources/views/admin/marketer_campaigns/show.blade.php:605-654` mirrors the identical pattern for the admin view. No gap found — no code changes made.
 
 ---
 
-## Step 3 — Execute fixes as sub-agents
-
-After writing `FIXES.md`, execute each fix in priority order:
-
-**For each fix in CRITICAL then HIGH:**
-1. Read the exact files mentioned in `FIXES.md`
-2. Write the minimal correct change
-3. Run `php -l {file}` for PHP files; `npx tsc --noEmit 2>&1 | grep {filename}` for TS files
-4. Confirm no `/100` money bugs introduced
-5. Confirm no BIGINT→float conversions
-6. Mark the fix as ✅ DONE in `FIXES.md`
-
-**Rules for sub-agent execution:**
-- One fix at a time — do not batch
-- If a fix requires a DB migration: write the migration file, do NOT run it (server can't be accessed here)
-- If a fix requires a business decision (SKIP category): write a `QUESTION-{N}.md` file with the exact question, stop, and move to the next fix
-- If a fix has a dependency on another fix: note it and do the dependency first
-- Never modify: `database/schema/mysql-schema.sql` (auto-generated), `package-lock.json`, `.env` files
-
----
-
-## Step 4 — Final report
-
-After all fixes, produce a summary section at the bottom of `FIXES.md`:
-
-```markdown
 ## Execution Summary
+
 | Fix ID | Status | Files changed | Notes |
 |--------|--------|---------------|-------|
-| FIX-C1 | ✅ DONE | app/...php | ... |
-| FIX-H1 | ⏳ SKIP | — | Needs Q1 answered |
-...
+| FIX-H1 | ✅ DONE (`c0693f9`) | `payment-summary.tsx`, `checkout.type.ts`, `locale/en.json`, `locale/ar.json` | Loyalty discount line item now rendered when > 0 |
+| FIX-H2 | ✅ DONE (`20d6c83`) | `backend/app/Services/Customer/ProductQueryService.php` | Boost via `orderByRaw` CASE on ad tier, default-sort only; explicit customer sorts unaffected |
+| FIX-H3 | ✅ DONE (`2cc4e83`) | `features/noon/ads/{serious-featured-popup.tsx,api.ts,types.ts}`, `(noon)/layout.tsx`, locale files | Once-per-session popup via existing Sheet component |
+| FIX-M1 | ✅ DONE (`d362ce8`) | `travel-packages.actions.ts`, `helpers/types.ts`, `travel-packages/index.tsx`, new `travel-filters.tsx`, `build-destination-options.ts` | Country/city/date filters wired to existing working backend endpoint; destination options derived client-side (no dedicated facets endpoint exists) |
+| FIX-M2 | ✅ DONE, no action needed (`d5c9d63`) | — (verification only) | Sizes already rendered in both `show.blade.php` views (partner:397-444, admin:605-654) |
+| FIX-S1 | ⏳ SKIP — blocked | `QUESTION-1.md` (`6b06dcf`) | Needs product-owner definition of "international product" before any code/migration |
 
 ## Migrations needed (run on server)
-- `php artisan migrate` after applying: {list migration files}
+- None required — FIX-H2's join relies on the existing composite index on `vendor_ad_subscriptions(vendor_listing_id, status, ends_at)` from its original creation migration; no new migration was needed.
+- FIX-S1 will need a migration once the "international product" definition is decided (new column or derivation logic) — not yet written.
 
 ## Questions requiring product owner input
-See: QUESTION-1.md, QUESTION-2.md, ...
-```
+- FIX-S1: definition of "international product" for COD exemption purposes. See `QUESTION-1.md`.
 
----
-
-## Non-negotiable constraints
-
-- Read before writing — never assume schema, enum values, or route names
-- After every file write: re-read it to confirm the change is correct
-- No placeholder comments like `// TODO implement`  — either implement it or put it in SKIP
-- Locale keys: always add to BOTH `lang/en/` and `lang/ar/` simultaneously
-- Migration timestamps: use format `YYYY_MM_DD_HHMMSS_description.php` — check the last migration file for the correct date prefix
-- `php artisan schema:dump --prune` must be noted as required after migrations run on server
+## Follow-up items noted but out of scope (not implemented)
+- `SponsoredProductService::fetchSponsored()`'s `ac.ends_at` OR-precedence bug (found during FIX-G verification, pre-existing, not one of items A–J) — worth a separate look.
+- FIX-H2: a subscription tied to a since-deactivated `ad_packages` row still boosts (`ap.is_active` not checked) — confirm with product if that's intended.
+- FIX-H2: no `distinct()` guard on the paginated fetch if a vendor listing somehow has overlapping active subscriptions — theoretical edge case, not DB-enforced unique.
