@@ -19,6 +19,8 @@ export default async function OrderSummary({ order }: Props) {
   const estimatedDeliveryDate =
     order.sub_orders[0]?.tracking.estimated_delivery_date ?? null;
 
+  console.log(order);
+
   return (
     <div>
       <Link

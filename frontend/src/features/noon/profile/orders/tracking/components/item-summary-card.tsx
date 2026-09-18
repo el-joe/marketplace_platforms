@@ -3,7 +3,6 @@ import { Link } from "@/i18n/navigation";
 import Card from "@/src/components/shared/Card";
 import { Button } from "@/src/components/ui/button";
 import OrderItemRow from "../../history/order-item-row";
-import { isInProgressStatus } from "../../helpers/to-order-status";
 import type { OrderDetail } from "../../helpers/types";
 import getLocale from "@/src/helpers/getLocale";
 
@@ -23,7 +22,7 @@ export default async function ItemSummaryCard({ order }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-lg">{t("itemSummary")}</h2>
 
-        {isInProgressStatus(order.status) && (
+        {order.status === "delivered" && (
           <Button
             render={<Link href={`/orders/${order.order_number}/cancel`} />}
             nativeButton={false}

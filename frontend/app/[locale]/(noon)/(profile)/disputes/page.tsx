@@ -4,5 +4,6 @@ import { getDisputes } from "@/src/features/noon/profile/support/api/support.act
 export default async function DisputesPage() {
   const disputes = await getDisputes();
 
+
   return <CaseListPage mode="dispute" data={disputes} />;
 }

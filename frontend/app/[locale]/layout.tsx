@@ -54,7 +54,7 @@ export default async function RootLayout({
         <NextTopLoader color="#111111" showSpinner={false} />
         <NavigationLoadingProvider>
           <NavigationLoadingOverlay />
-          <RootProviders>
+          <RootProviders locale={locale}>
             <Toaster position="bottom-right" />
             {children}
             {/* dialogs */}

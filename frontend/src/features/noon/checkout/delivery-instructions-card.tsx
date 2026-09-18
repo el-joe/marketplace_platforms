@@ -3,7 +3,6 @@ import { Checkbox } from "@/src/components/ui/base-inputs/checkbox";
 import { FieldLabel } from "@/src/components/ui/field";
 import { CircleQuestionMarkIcon, DoorOpenIcon, TreesIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import React from "react";
 import { IPrepareCheckout } from "./types/checkout.type";
 import useLocale from "@/src/hooks/use-locale";
 
@@ -21,6 +20,7 @@ export default function DeliveryInstructionsCard({
   if (!instructions || !instructions.length) {
     return null;
   }
+
   return (
     <div className="p-3 rounded-2xl bg-white flex-1">
       <h4 className="text-base font-semibold mb-2">

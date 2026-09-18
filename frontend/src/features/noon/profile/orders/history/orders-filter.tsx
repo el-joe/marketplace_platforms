@@ -9,15 +9,12 @@ import useApiFilter from "@/src/hooks/useApiFilter";
 import { orderStatusFilterOptions } from "../helpers/constants";
 import { getOrderStatusLabelKey } from "../helpers/to-order-status";
 
-const TARGET_ENDPOINT = "orders";
-
 export default function OrdersFilter() {
   const t = useTranslations("profile");
   const searchParams = useSearchParams();
   const { applyFilter } = useApiFilter();
 
-  const currentStatus =
-    searchParams.get(`filter_${TARGET_ENDPOINT}_status`) ?? undefined;
+  const currentStatus = searchParams.get("status") ?? undefined;
 
   const status = orderStatusFilterOptions.map((value) => ({
     label: t(getOrderStatusLabelKey(value)),
@@ -37,7 +34,6 @@ export default function OrdersFilter() {
         placeholder={t("orderStatusFilterPlaceholder")}
         onValueChange={(value) =>
           applyFilter({
-            targetEndpoint: TARGET_ENDPOINT,
             filterBy: "status",
             query: value ?? "",
           })
