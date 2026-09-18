@@ -1,6 +1,7 @@
 {
   "header": {
     "other": "Other",
+    "deliverTo": "Deliver to",
     "signOut": "Sign out",
     "noonCredits": "Noon Credits",
     "warrantyClaims": "Warranty Claims",
@@ -40,6 +41,7 @@
     "locationDialog": {
       "title": "Deliver to",
       "address": "Address",
+      "savedAddresses": "Saved addresses",
       "pickupPoint": "Locker/Pickup Point",
       "searchPlaceholder": "Search for your building, aree...",
       "addAddress": "Add new address",
@@ -881,6 +883,7 @@
       "locationDialog": {
         "title": "Deliver to",
         "address": "Address",
+        "savedAddresses": "Saved addresses",
         "pickupPoint": "Locker/Pickup Point",
         "searchPlaceholder": "Search for your building, aree...",
         "addAddress": "Add new address",

@@ -7,6 +7,7 @@ import { AuthProvider } from "./auth-provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { CartProvider } from "./cart-provider";
 import { WishlistProvider } from "./wishlist-provider";
+import { AddressesProvider } from "./addresses-provider";
 
 export default function RootProviders({
   locale,
@@ -30,7 +31,9 @@ export default function RootProviders({
               <ThemeProvider>
                 <CartProvider>
                   <AuthProvider>
-                    <WishlistProvider>{children}</WishlistProvider>
+                    <AddressesProvider>
+                      <WishlistProvider>{children}</WishlistProvider>
+                    </AddressesProvider>
                   </AuthProvider>
                 </CartProvider>
               </ThemeProvider>
