@@ -6,6 +6,7 @@ use App\Http\Resources\Customer\ProductListResource;
 use App\Models\Attribute;
 use App\Models\Country;
 use App\Models\WishlistItem;
+use App\Services\Shared\PageBuilderService;
 use App\Support\Bilingual;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -33,6 +34,7 @@ class ProductQueryService
     public function __construct(
         private readonly SponsoredProductService $sponsored,
         private readonly \App\Services\Media\ListingImageResolver $imageResolver,
+        private readonly PageBuilderService $pageBuilder,
     ) {
     }
 
@@ -198,13 +200,15 @@ class ProductQueryService
 
         $productIds = $rows->pluck('id')->filter()->unique()->values();
         $promoBadgesByProduct = $this->promoBadgesForProducts($productIds);
+        $megaDealProductIds = $this->pageBuilder->activeMegaDealProductIds($productIds, $country);
 
         $items = ProductListResource::collection($rows)
-            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct) {
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct, $megaDealProductIds) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
                 $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
                 $r->resource->promo_badges = $promoBadgesByProduct[$r->resource->id] ?? [];
+                $r->resource->is_mega_deal = $megaDealProductIds->contains($r->resource->id);
                 return $r->toArray(request());
             })
             ->toArray();
@@ -251,7 +255,6 @@ class ProductQueryService
         return [
             'bb.product_id as id',
             'p.name_en', 'p.name_ar', 'p.slug', 'p.is_featured', 'p.published_at',
-            'p.is_mega_deal',
             'pcs.name_override_en', 'pcs.name_override_ar',
             'bb.min_price', 'bb.max_price',
             'bb.seller_count as active_seller_count',

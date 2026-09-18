@@ -346,6 +346,7 @@ class ProductController extends Controller
 
         $resource = new ProductDetailResource($product);
         $resource->isWishlisted = $isWishlisted;
+        $resource->isMegaDeal = $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
         $resource->banner = $banner;
         $resource->crossSellAd = $crossSellAd;
         $resource->inlineBanner1 = $inlineBanner1;

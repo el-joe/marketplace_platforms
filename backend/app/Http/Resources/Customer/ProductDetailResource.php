@@ -10,6 +10,16 @@ class ProductDetailResource extends JsonResource
 {
     public bool $isWishlisted = false;
 
+    /**
+     * Whether this product is currently part of an active, visible
+     * mega_deals Page Builder block — computed by the controller via
+     * PageBuilderService::isProductInActiveMegaDeal() (see
+     * docs/plans/mega-deal-page-builder-correction.md Task F). Defaults to
+     * false so callers that never set it (e.g. tests instantiating this
+     * resource directly) still get a boolean, not null.
+     */
+    public bool $isMegaDeal = false;
+
     /** @var array<string, mixed>|null Pre-shaped banner/ad array from PlacementAdService::resolve(). */
     public ?array $banner = null;
 
@@ -66,7 +76,7 @@ class ProductDetailResource extends JsonResource
             'min_age'          => $this->min_age,
             'is_hazardous'     => $this->is_hazardous,
             'has_variants'     => $this->has_variants,
-            'is_mega_deal'     => (bool) $this->is_mega_deal,
+            'is_mega_deal'     => $this->isMegaDeal,
             'promo_badges'     => $this->whenLoaded('promoBadges', fn() =>
                 $this->promoBadges->map(fn($b) => [
                     'id'             => $b->id,

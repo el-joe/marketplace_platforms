@@ -23,6 +23,7 @@ use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ReviewService;
+use App\Services\Shared\PageBuilderService;
 use App\Models\Product;
 use App\Models\Wishlist;
 use App\Models\WishlistItem;
@@ -44,6 +45,7 @@ class ListingController extends Controller
         private readonly ProductDetailEnrichmentService $enrichment,
         private readonly ReviewService $reviewService,
         private readonly ListingQueryService $listings,
+        private readonly PageBuilderService $pageBuilder,
     ) {}
 
     public function show(Request $request,$country, string $type, string $slug): JsonResponse
@@ -267,6 +269,7 @@ class ListingController extends Controller
 
         $resource                  = new ProductDetailResource($product);
         $resource->isWishlisted    = $isWishlisted;
+        $resource->isMegaDeal      = $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
         $resource->enrichment      = [
             'best_seller_badge' => $this->enrichment->getBestSellerBadge($product, $country),

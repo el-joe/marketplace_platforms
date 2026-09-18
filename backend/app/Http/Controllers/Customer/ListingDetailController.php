@@ -20,6 +20,7 @@ use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ProductViewService;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\UnifiedListingQueryService;
+use App\Services\Shared\PageBuilderService;
 use App\Models\ProductView;
 use App\Services\WarrantyPlanService;
 use App\Support\Bilingual;
@@ -40,6 +41,7 @@ class ListingDetailController extends Controller
         private readonly ListingQueryService $listings,
         private readonly AppContextService $appContext,
         private readonly UnifiedListingQueryService $unifiedQuery,
+        private readonly PageBuilderService $pageBuilder,
     ) {
     }
 
@@ -479,7 +481,7 @@ class ListingDetailController extends Controller
                 'title' => Bilingual::pairFromKeys($product, 'seo_title_ar', 'seo_title_en'),
                 'description' => Bilingual::pairFromKeys($product, 'seo_description_ar', 'seo_description_en'),
             ],
-            'is_mega_deal' => (bool) $product->is_mega_deal,
+            'is_mega_deal' => $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country),
             'promo_badges' => $product->relationLoaded('promoBadges')
                 ? $product->promoBadges->map(fn($b) => [
                     'id' => $b->id,
