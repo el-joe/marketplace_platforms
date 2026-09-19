@@ -215,8 +215,9 @@ class SponsoredProductService
                 $j->on('ac.id', '=', 'acp.ad_campaign_id')
                   ->where('ac.country_id', $country->id)
                   ->where('ac.status', 'active')
-                  ->whereNull('ac.ends_at')
-                  ->orWhere('ac.ends_at', '>', now());
+                  ->where(function ($q) {
+                      $q->whereNull('ac.ends_at')->orWhere('ac.ends_at', '>', now());
+                  });
             })
             ->where('vendor_listings.status', 'active')
             ->where('vendor_listings.country_id', $country->id)

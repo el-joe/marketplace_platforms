@@ -162,7 +162,7 @@ class ProductController extends Controller
 
         // Merge: admin first, then vendor
         $items = array_merge($adminItems, $vendorItems);
-        $items = $this->sponsored->inject($items, $country, $page, 'category_top');
+        $items = $this->sponsored->inject($items, $country, $page, 'category_top', null, $categoryIds ?? []);
 
         $facets = $this->products->facets($country, $filters, $categoryIds);
 
