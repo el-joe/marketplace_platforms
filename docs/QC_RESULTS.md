@@ -51,3 +51,8 @@
 - GAP: influencer clothing/shoe measurements are exposed on the public profile (`profile.measurements`) — spec says sizes must not leak; left as-is (product decision, likely intentional for influencer sizing).
 - GAP: currency is only `size:3`, not validated against the currencies table.
 - Test: backend/tests/Feature/Marketer/MarketerProfileAdPriceTest.php (5 tests). Note: shared `marketplace_test` DB deadlocks under parallel agents; ran with DB_DATABASE=marketplace_test_f02.
+
+## F17 follow-up (implementation)
+- FIXED: marketer/broker `specialty_ar`/`specialty_en` — migration 2026_09_19_210000, MarketerProfile fillable, admin updateProfile + admin show form, marketer self-edit (validated max:150), public marketer API, new directory endpoint `GET directory/{influencers|brokers}` (MarketerProfileController::directory, active only). Lang keys common.specialty_ar/en (AR+EN). Blade `{{ }}` escapes output (test asserts).
+- PASS (pre-existing): vendors already have store_description(_ar) + specialization_en/ar (migration 2026_09_14_174100; admin UpdateVendorRequest, partner ProfileController, VendorPageVendorResource); stores directory = `vendors` index/show. Category commission overrides editable in admin marketers/show; broker category/city/all-cities present in admin + self-edit.
+- GAP: storefront (Next) pages/cards for directories not built. Tests in tests/Feature/Marketer/MarketerSpecialtyDirectoryTest.php written but NOT verified green: shared marketplace_test DB deadlocked with concurrent agents' runs (only php -l verified).

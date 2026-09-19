@@ -83,6 +83,14 @@
                 <textarea name="bio_en" rows="3" dir="ltr" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">{{ old('bio_en', $profile->bio_en) }}</textarea>
             </div>
             <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('common.specialty_ar') }}</label>
+                <input type="text" name="specialty_ar" maxlength="150" value="{{ old('specialty_ar', $profile->specialty_ar) }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('common.specialty_en') }}</label>
+                <input type="text" name="specialty_en" dir="ltr" maxlength="150" value="{{ old('specialty_en', $profile->specialty_en) }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
+            </div>
+            <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">رابط فيديو (يوتيوب / انستقرام)</label>
                 <input type="url" name="video_url" value="{{ old('video_url', $profile->video_url) }}" dir="ltr"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">

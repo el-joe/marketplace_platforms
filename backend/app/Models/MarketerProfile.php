@@ -21,6 +21,8 @@ class MarketerProfile extends Model
         'video_url',
         'bio_ar',
         'bio_en',
+        'specialty_ar',
+        'specialty_en',
         'social_links',
         'contact_details',
         'qr_code_path',

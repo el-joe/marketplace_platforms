@@ -80,6 +80,30 @@ class MarketerProfileController extends Controller
      * pages don't need real-time freshness, and this keeps response
      * times well under 1s under load.
      */
+    /** Public directory of active influencers or brokers (affiliates). */
+    public function directory(Request $request, $countryId, string $type): JsonResponse
+    {
+        $marketerType = $type === 'brokers' ? 'affiliate' : 'influencer';
+        $rows = MarketerProfile::query()
+            ->whereNotNull('profile_slug')
+            ->whereHas('marketer', fn ($q) => $q->where('marketer_type', $marketerType)->where('global_status', 'active'))
+            ->with(['marketer:id,name,marketer_type', 'avatarFile', 'brokerCategory', 'brokerCity'])
+            ->orderBy('id')
+            ->paginate(min(48, max(1, (int) $request->query('per_page', 12))));
+
+        return ApiResponse::success($rows->through(fn ($p) => [
+            'slug'         => $p->profile_slug,
+            'name'         => $p->marketer?->name,
+            'bio_ar'       => $p->bio_ar,
+            'bio_en'       => $p->bio_en,
+            'specialty_ar' => $p->specialty_ar,
+            'specialty_en' => $p->specialty_en,
+            'avatar_url'   => $p->avatarFile?->url,
+            'category_name_ar' => $p->brokerCategory?->name_ar,
+            'category_name_en' => $p->brokerCategory?->name_en,
+        ]));
+    }
+
     public function show(Request $request, $countryId, string $slug): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
@@ -210,6 +234,8 @@ class MarketerProfileController extends Controller
                 'slug'            => $profile->profile_slug,
                 'bio_ar'          => $profile->bio_ar,
                 'bio_en'          => $profile->bio_en,
+                'specialty_ar'    => $profile->specialty_ar,
+                'specialty_en'    => $profile->specialty_en,
                 'video_url'       => $profile->video_url,
                 'social_links'    => $profile->social_links ?? [],
                 'contact_details' => $profile->contact_details ?? [],

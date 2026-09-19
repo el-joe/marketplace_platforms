@@ -193,6 +193,16 @@
             </div>
             @endif
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t pt-4 mt-2">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('common.specialty_ar') }}</label>
+                    <input type="text" name="specialty_ar" maxlength="150" value="{{ old('specialty_ar', $marketer->marketerProfile?->specialty_ar) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('common.specialty_en') }}</label>
+                    <input type="text" name="specialty_en" dir="ltr" maxlength="150" value="{{ old('specialty_en', $marketer->marketerProfile?->specialty_en) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+            </div>
             @if($marketer->isAffiliate())
             <div class="border-t pt-4 mt-2">
                 <h4 class="text-sm font-bold text-gray-700 mb-3">تخصص السمسار (Broker Specialization)</h4>

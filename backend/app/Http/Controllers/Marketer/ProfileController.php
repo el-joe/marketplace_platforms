@@ -44,6 +44,8 @@ class ProfileController extends Controller
         $request->validate([
             'bio_ar'          => 'nullable|string|max:1000',
             'bio_en'          => 'nullable|string|max:1000',
+            'specialty_ar'    => 'nullable|string|max:150',
+            'specialty_en'    => 'nullable|string|max:150',
             'video_url'       => 'nullable|url|max:500',
             'social_links'    => 'nullable|array',
             'social_links.*'  => 'nullable|url|max:500',
@@ -73,7 +75,7 @@ class ProfileController extends Controller
             $profile->banner_file_id = $this->storeProfileImage($request, 'banner', 'marketer-banners', $profile)->id;
         }
 
-        $profile->fill($request->only(['bio_ar', 'bio_en', 'video_url', 'social_links', 'contact_details']));
+        $profile->fill($request->only(['bio_ar', 'bio_en', 'specialty_ar', 'specialty_en', 'video_url', 'social_links', 'contact_details']));
 
         // Broker specialization: affiliate marketers only.
         if ($marketer->isAffiliate()) {
