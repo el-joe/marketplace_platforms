@@ -500,6 +500,7 @@ return [
                 'monthly_limit_reached' => 'You have reached your monthly limit for this coupon.',
                 'shipping_type_restricted' => 'This coupon is only valid for :type shipping orders.',
                 'no_applicable_items' => 'This coupon does not apply to any items in your cart.',
+                'account_required' => 'You must be logged in to use this coupon.',
             ],
         ],
 

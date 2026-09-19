@@ -59,7 +59,7 @@ class CheckoutPricingEngine
      */
     public function applyCoupon(
         Coupon $coupon,
-        Customer $customer,
+        ?Customer $customer,
         int $subtotalCents,
         string $currency,
         array $items,
@@ -720,7 +720,7 @@ class CheckoutPricingEngine
 
     private function validateCouponEligibility(
         Coupon $coupon,
-        Customer $customer,
+        ?Customer $customer,
         int $subtotalCents,
         string $currency,
         array $items,
@@ -756,6 +756,21 @@ class CheckoutPricingEngine
         $eligibility = $coupon->customer_eligibility instanceof \App\Enums\CouponCustomerEligibility
             ? $coupon->customer_eligibility->value
             : (string) $coupon->customer_eligibility;
+
+        // Coupons are customer-identity-aware by design: customer_eligibility
+        // ('new_customers'/'specific_users'/'specific_segment') and
+        // usage_limit_per_customer / max_orders_per_customer_per_month all
+        // require a stable customer identity to enforce, and every coupon row
+        // in this schema carries a (non-nullable, default 1) per-customer
+        // usage limit. A guest cart (session_token, no customer_id) has no
+        // identity CouponUsage can be tied to, so its usage could never be
+        // tracked or capped reliably across sessions/devices. Product
+        // decision: coupons require a logged-in account; guests are rejected
+        // here with a clear, actionable error instead of silently computing
+        // (or failing to compute) a discount.
+        if ($customer === null) {
+            return __('common.exceptions.checkout.coupon.account_required');
+        }
 
         if ($eligibility === 'new_customers') {
             $hasCompletedOrder = \App\Models\Order::where('customer_id', $customer->id)

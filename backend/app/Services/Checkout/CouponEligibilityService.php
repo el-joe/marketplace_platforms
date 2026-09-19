@@ -27,7 +27,7 @@ class CouponEligibilityService
      */
     public function evaluate(
         Coupon $coupon,
-        Customer $customer,
+        ?Customer $customer,
         int $subtotalCents,
         string $currency,
         array $items,

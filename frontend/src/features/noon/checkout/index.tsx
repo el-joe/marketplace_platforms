@@ -29,6 +29,8 @@ export default function Checkout() {
     isGettingGateways,
     selectedInstruction,
     setSelectedInstruction,
+    selectedReceiverId,
+    setSelectedReceiverId,
     contract,
     isContractModalOpen,
     closeContractModal,

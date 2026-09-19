@@ -769,6 +769,7 @@
     "editAddress": "Edit address",
     "whoWillReceiveThisOrder": "who will receive this order",
     "changeReceiver": "Change receiver",
+    "noReceivers": "No receivers found",
     "deliveryInstructions": "Delivery instructions",
     "getItemsTogether": "Get items together",
     "leaveAtMyDoor": "Leave at my door",

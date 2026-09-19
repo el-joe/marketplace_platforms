@@ -30,14 +30,18 @@ export const useCheckout = () => {
     string
   > | null>(null);
 
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(
+    null,
+  );
+
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [contractAcceptanceId, setContractAcceptanceId] = useState<
     string | null
   >(null);
 
-  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(
-    null,
-  );
+  // const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(
+  //   null,
+  // );
 
   const [offlineProofFile, setOfflineProofFile] = useState<File | null>(null);
   const [offlineProofNote, setOfflineProofNote] = useState("");
@@ -153,6 +157,7 @@ export const useCheckout = () => {
     prepareCheckout.mutate({
       address_id: addressId,
       country_payment_gateway_id: gatewayId as string,
+      receiver_id: selectedReceiverId,
     });
   };
 
@@ -226,7 +231,7 @@ export const useCheckout = () => {
     if (!selectedAddress || !defaultGatewayId) return;
     prepare(Number(selectedAddress.id), defaultGatewayId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAddress?.id, defaultGatewayId]);
+  }, [selectedAddress?.id, defaultGatewayId, selectedReceiverId]);
 
   return {
     createPrepareCheckout: prepareCheckout.mutateAsync,

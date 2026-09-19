@@ -1,5 +1,5 @@
 "use client";
-
+import ReceiverSelectDialog from "@/src/components/shared/dialogs/receiver-select-dialog/receiver-select-dialog";
 import { Button } from "@/src/components/ui/button";
 import { getAddresses } from "@/src/services/address";
 import { getReceivers, Receiver } from "@/src/services/receiver";
