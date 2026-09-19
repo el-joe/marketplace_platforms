@@ -822,7 +822,12 @@ class CheckoutController extends Controller
             if (! $coupon) {
                 return ApiResponse::error(__('common.exceptions.checkout.invalid_coupon'), [], 422);
             }
+        } elseif ($cart->coupon) {
+            // Parity with prepare(): fall back to the coupon attached to the cart.
+            $coupon = $cart->coupon;
+        }
 
+        if ($coupon) {
             $couponResult = $this->couponEligibilityService->evaluate(
                 $coupon, $customer, $subtotal, $cart->currency, $cartItems, $country->id, $hasAffiliatePromo
             );

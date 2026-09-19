@@ -108,3 +108,11 @@ Test: backend/tests/Feature/MarketerContractAuditTrailTest.php (12 tests; DB_DAT
 - PASS: PDF mime (mimes:pdf) and 10MB max validated; download requires marketers.view (403 otherwise); HTML text contract escaped in admin view (e()); customer API returns raw text (frontend must not use innerHTML).
 - FIXED: versions/acceptances were mutable/deletable. Added model guards (MarketerContractVersion, MarketerContractAcceptance): content fields immutable, only is_active toggles; acceptance order_id may be set once; deletes throw.
 - NOTE: no admin edit/delete routes exist for these records either.
+
+## F13 — Checkout fixes
+Test: backend/tests/Feature/Checkout/CheckoutFixesF13Test.php (6 tests pass; all Checkout filter: 76 pass; DB_DATABASE=marketplace_test_f13).
+- PASS: prepare() uses cart coupon when coupon_code omitted; null when none; expired cart coupon yields no discount/422.
+- FIXED: placeOrder() ignored the cart coupon (only prepare() fell back to it) so prepare total 945 vs place-order 1050 => 409 price_changed. Added the same `elseif ($cart->coupon)` fallback (Customer/CheckoutController.php ~:820).
+- PASS: wallet insufficient => 422 before order creation, no orphan order, balance untouched; sufficient => deducted; same idempotency_key twice => one order, one debit; partial wallet+COD either deducts exactly or rejects cleanly.
+- PASS: prepare order_summary.total == final order total (percentage coupon + tax).
+- GAP (not verified): (c) frontend payment-summary rendering ("مجاني", COD fee only on COD) compared against API totals was code-located only, not browser-tested.
