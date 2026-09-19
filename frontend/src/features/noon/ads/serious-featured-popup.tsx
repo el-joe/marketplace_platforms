@@ -5,12 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import useLocale from "@/src/hooks/use-locale";
 import { X } from "lucide-react";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetTitle,
-} from "@/src/components/ui/sheet";
+import { Dialog } from "@base-ui/react/dialog";
 import { Button } from "@/src/components/ui/button";
 import { getActivePopup } from "./api";
 import type { AdPopup } from "./types";
@@ -81,59 +76,59 @@ export default function SeriousFeaturedPopup() {
     popup.cta_url ?? (popup.product_slug ? `/products/${popup.product_slug}` : null);
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-md! p-0 flex flex-col overflow-hidden bg-white gap-0 rounded-2xl sm:m-auto sm:inset-0 sm:h-fit sm:max-h-[85vh] sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
-        showCloseButton={false}
-        initialFocus={false}
-      >
-        <div className="relative">
-          <SheetClose
-            render={
-              <button
-                type="button"
-                className="absolute top-3 end-3 z-10 rounded-full bg-white/90 p-1.5 text-gray-600 hover:bg-white hover:text-gray-900 transition-colors cursor-pointer"
-                aria-label={t("close")}
-              />
-            }
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 data-starting-style:opacity-0 data-ending-style:opacity-0" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <Dialog.Popup
+            initialFocus={false}
+            className="pointer-events-auto relative flex w-full max-w-md max-h-[90vh] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5 transition duration-200 data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0"
           >
-            <X className="w-5 h-5" />
-          </SheetClose>
+            <Dialog.Close
+              className="absolute top-3 end-3 z-10 flex size-9 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur transition hover:bg-white hover:text-gray-900 cursor-pointer"
+              aria-label={t("close")}
+            >
+              <X className="size-5" />
+            </Dialog.Close>
 
-          {desktopImage && (
-            <picture>
-              {mobileImage && (
-                <source media="(max-width: 639px)" srcSet={mobileImage} />
+            {desktopImage && (
+              <picture className="block bg-gray-100">
+                {mobileImage && (
+                  <source media="(max-width: 639px)" srcSet={mobileImage} />
+                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={desktopImage}
+                  alt={title}
+                  className="w-full h-auto max-h-[55vh] object-contain"
+                />
+              </picture>
+            )}
+
+            <div className="flex flex-col gap-2 overflow-y-auto p-6 text-center">
+              {title && (
+                <Dialog.Title className="text-xl font-extrabold leading-snug text-gray-900">
+                  {title}
+                </Dialog.Title>
               )}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={desktopImage}
-                alt={title}
-                className="w-full h-auto max-h-[60vh] object-contain bg-gray-100"
-              />
-            </picture>
-          )}
+              {body && (
+                <Dialog.Description className="text-sm leading-relaxed text-gray-600">
+                  {body}
+                </Dialog.Description>
+              )}
 
-          <div className="p-5 flex flex-col gap-2">
-            <SheetTitle className="text-lg font-bold text-gray-900">
-              {title}
-            </SheetTitle>
-            {body && (
-              <p className="text-sm text-gray-600 leading-relaxed">{body}</p>
-            )}
-
-            {ctaHref && (
-              <Button
-                render={<Link href={ctaHref} onClick={() => setOpen(false)} />}
-                className="mt-3 w-full justify-center bg-blue-3 text-white hover:bg-blue-3/90 rounded-xl py-2.5 font-bold uppercase"
-              >
-                {ctaLabel}
-              </Button>
-            )}
-          </div>
+              {ctaHref && (
+                <Button
+                  render={<Link href={ctaHref} onClick={() => setOpen(false)} />}
+                  className="mt-4 h-12 w-full justify-center rounded-xl bg-blue-3 font-bold uppercase text-white shadow-md transition hover:bg-blue-3/90"
+                >
+                  {ctaLabel}
+                </Button>
+              )}
+            </div>
+          </Dialog.Popup>
         </div>
-      </SheetContent>
-    </Sheet>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
