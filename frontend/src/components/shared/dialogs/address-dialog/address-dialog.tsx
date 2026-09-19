@@ -40,7 +40,7 @@ type props = {
   onClose?: () => void;
 };
 const AddressDialog = ({ triggerButton, open, onClose }: props) => {
-  const [isOpen, setIsOpen] = useState<boolean>(open ?? false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const t = useTranslations("header.locationDialog");
   const country = getCookie("country");
   const { handleChangeCountry } = useToggleLocale();
@@ -55,7 +55,7 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
     onClose?.();
   };
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open || isOpen} onOpenChange={handleOpenState}>
       <DialogTrigger render={triggerButton} />
       <DialogContent
         className={

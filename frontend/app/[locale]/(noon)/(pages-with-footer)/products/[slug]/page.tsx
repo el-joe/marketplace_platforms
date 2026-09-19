@@ -1,7 +1,4 @@
 import ProductView from "@/src/features/noon/productView";
-import { getProduct } from "@/src/features/noon/productView/api/get";
-import getLocale from "@/src/helpers/getLocale";
-import type { Metadata } from "next";
 import React from "react";
 
 type Props = {
