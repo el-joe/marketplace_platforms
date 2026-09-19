@@ -101,6 +101,7 @@ Route::middleware('web')->group(function () {
         // Samples
         Route::get('/samples', [SampleController::class, 'index'])->name('samples.index');
         Route::post('/samples/{sample}/address', [SampleController::class, 'submitAddress'])->name('samples.address');
+        Route::post('/samples/{sample}/received', [SampleController::class, 'confirmReceipt'])->name('samples.received');
 
         // Orders (read-only — via referral conversions)
         Route::prefix('orders')->name('orders.')->group(function () {

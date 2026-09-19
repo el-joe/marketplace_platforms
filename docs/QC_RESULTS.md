@@ -57,3 +57,12 @@
 - FIXED: marketer/broker `specialty_ar`/`specialty_en` — migration 2026_09_19_210000, MarketerProfile fillable, admin updateProfile + admin show form, marketer self-edit (validated max:150), public marketer API, new directory endpoint `GET directory/{influencers|brokers}` (MarketerProfileController::directory, active only). Lang keys common.specialty_ar/en (AR+EN). Blade `{{ }}` escapes output (test asserts).
 - PASS (pre-existing): vendors already have store_description(_ar) + specialization_en/ar (migration 2026_09_14_174100; admin UpdateVendorRequest, partner ProfileController, VendorPageVendorResource); stores directory = `vendors` index/show. Category commission overrides editable in admin marketers/show; broker category/city/all-cities present in admin + self-edit.
 - GAP: storefront (Next) pages/cards for directories not built. Tests in tests/Feature/Marketer/MarketerSpecialtyDirectoryTest.php written but NOT verified green: shared marketplace_test DB deadlocked with concurrent agents' runs (only php -l verified).
+
+## F03 — Sample sizes + samples lifecycle
+Test: backend/tests/Feature/MarketerSamplesLifecycleTest.php (4 tests, 25 assertions, pass).
+- PASS: size fields + EU/US/UK enum validated on admin `PUT admin/marketers/{m}/profile` (MarketerController.php:106-121); sizes rendered in admin (marketer_campaigns/show.blade.php:613) AND partner (partner/marketer_campaigns/show.blade.php:405) views - doc v1 "partner ❌" is outdated.
+- PASS: sample must belong to campaign (403); status enum validated; other marketer cannot submit address (403); address locked once not pending (422).
+- FIXED: admin `updateSampleStatus` allowed any transition (e.g. pending->returned, backwards). Now only pending->dispatched->delivered->returned (Admin/MarketerCampaignController.php:~105).
+- FIXED: marketer could not confirm receipt. Added `POST marketer/samples/{sample}/received` (routes/marketer.php, Marketer/SampleController::confirmReceipt; owner-only, dispatched only). GAP: no UI button in marketer.samples.index view yet.
+- FIXED: cm measurements had no upper bound; added max:500 (MarketerController.php).
+- NOTE: shared marketplace_test DB deadlocks with parallel agents; ran with DB_DATABASE=marketplace_test_f03.

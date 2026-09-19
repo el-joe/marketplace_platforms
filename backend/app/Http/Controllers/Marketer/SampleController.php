@@ -84,4 +84,22 @@ class SampleController extends Controller
 
         return back()->with('success', 'تم حفظ عنوان التوصيل. سيتواصل معك الفريق لإرسال العينة.');
     }
+
+    /**
+     * Marketer confirms they received a dispatched sample.
+     */
+    public function confirmReceipt(MarketerCampaignSample $sample): RedirectResponse
+    {
+        abort_unless(
+            MarketerCampaignInvitation::where('id', $sample->invitation_id)
+                ->where('marketer_id', $this->marketer()->id)
+                ->exists(),
+            403
+        );
+        abort_unless($sample->status === 'dispatched', 422, 'العينة غير قابلة للتأكيد.');
+
+        $sample->update(['status' => 'delivered', 'delivered_at' => $sample->delivered_at ?? now()]);
+
+        return back()->with('success', 'تم تأكيد استلام العينة.');
+    }
 }

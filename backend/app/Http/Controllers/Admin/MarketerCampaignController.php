@@ -102,6 +102,9 @@ class MarketerCampaignController extends Controller
             'status' => 'required|in:pending,dispatched,delivered,returned',
         ]);
 
+        $allowed = ['pending' => ['dispatched'], 'dispatched' => ['delivered'], 'delivered' => ['returned'], 'returned' => []];
+        abort_unless(in_array($request->status, $allowed[$sample->status] ?? [], true), 422, 'انتقال حالة العينة غير مسموح.');
+
         $data = ['status' => $request->status];
 
         if ($request->status === 'dispatched' && !$sample->dispatched_at) {
