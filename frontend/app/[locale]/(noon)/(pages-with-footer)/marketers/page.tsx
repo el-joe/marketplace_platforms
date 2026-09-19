@@ -19,5 +19,7 @@ export default async function MarketersPage({ searchParams }: Props) {
   const { type } = await searchParams;
   const { items, meta } = await getMarketersList({ type });
 
-  return <MarketersListView marketers={items} total={meta.total} activeType={type} />;
+  return (
+    <MarketersListView marketers={items} total={meta.total} activeType={type} />
+  );
 }

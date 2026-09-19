@@ -3,7 +3,7 @@ import { IProductDetails } from "./types";
 import useLocale from "@/src/hooks/use-locale";
 import { cn } from "@/src/lib/utils";
 import Image from "next/image";
-import { useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { getImageURL } from "@/src/helpers/get-image-url";
 
 type Props = {
@@ -53,22 +53,19 @@ function VariantCard({
   variantData: IProductDetails["product_attributes"][0]["values"][0];
   withImage: boolean;
 }) {
-  const router = useRouter();
   const locale = useLocale();
   if (!!withImage) {
     return (
-      <div
-        className={cn(
+      <VariantWrapper
+        classes={cn(
           `p-3 rounded-md border border-border cursor-pointer transition-all hover:border-black`,
           !variantData.disabled
             ? "hover:border-black"
             : "opacity-35 line-through",
           variantData.selected && "border-black",
         )}
-        onClick={() => {
-          if (!variantData.disabled)
-            router.push(`/products/${variantData.url_param}`);
-        }}
+        url={variantData?.url_param as string}
+        disabled={variantData.disabled || variantData.selected}
       >
         <Image
           className="h-26!"
@@ -80,23 +77,21 @@ function VariantCard({
         <p className="text-gray text-sm text-center">
           {variantData.value[locale]}
         </p>
-      </div>
+      </VariantWrapper>
     );
   }
 
   return (
-    <div
-      className={cn(
+    <VariantWrapper
+      classes={cn(
         `py-1 px-3 lg:py-3 lg:px-6 text-sm lg:text-base rounded-md border border-border cursor-pointer transition-all`,
         !variantData.disabled
           ? "hover:border-black"
           : "opacity-35 line-through",
         variantData.selected && "border-black",
       )}
-      onClick={() => {
-        if (!variantData.disabled)
-          router.push(`/products/${variantData.url_param}`);
-      }}
+      url={variantData?.url_param as string}
+      disabled={variantData.disabled || variantData.selected}
     >
       {!!variantData?.color_hex && (
         <div
@@ -105,6 +100,28 @@ function VariantCard({
         ></div>
       )}
       {variantData.value[locale]}
-    </div>
+    </VariantWrapper>
   );
 }
+
+const VariantWrapper = ({
+  disabled,
+  classes,
+  url,
+  children,
+}: {
+  disabled: boolean;
+  classes: string;
+  url: string;
+  children: React.ReactNode;
+}) => {
+  if (!disabled) {
+    return (
+      <Link className={classes} href={`/products/${url}`}>
+        {children}
+      </Link>
+    );
+  } else {
+    return <div className={classes}>{children}</div>;
+  }
+};
