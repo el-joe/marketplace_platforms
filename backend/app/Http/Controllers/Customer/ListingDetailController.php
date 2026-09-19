@@ -46,6 +46,7 @@ class ListingDetailController extends Controller
         private readonly PageBuilderService $pageBuilder,
         private readonly FlashSaleService $flashSale,
         private readonly ListingOriginShippingIndicator $originShippingIndicator,
+        private readonly \App\Services\Ads\PlacementAdService $placementAds,
     ) {
     }
 
@@ -196,7 +197,15 @@ class ListingDetailController extends Controller
 
         $productAttributes = $this->productAttributesForListing($product, $listing->productVariant, $country);
 
+        $audience = $customer ? 'logged_in' : 'guest';
+        $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
+        $banner = fn (string $code) => $this->placementAds->resolve($code, $country, $audience, $sessionId, $product->id, $product->category_id);
+
         return ApiResponse::success(new ListingDetailResource([
+            'banner' => $banner('product_page_bottom'),
+            'top_banner' => $banner('product_page_top'),
+            'inline_banner_1' => $banner('product_page_inline_1'),
+            'inline_banner_2' => $banner('product_page_inline_2'),
             'listing' => $this->listingShape($listing, $country, $isWishlisted),
             'seller' => $this->sellerShape($listing),
             'delivery_options' => $deliveryOptions,
