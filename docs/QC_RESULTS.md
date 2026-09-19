@@ -66,3 +66,9 @@ Test: backend/tests/Feature/MarketerSamplesLifecycleTest.php (4 tests, 25 assert
 - FIXED: marketer could not confirm receipt. Added `POST marketer/samples/{sample}/received` (routes/marketer.php, Marketer/SampleController::confirmReceipt; owner-only, dispatched only). GAP: no UI button in marketer.samples.index view yet.
 - FIXED: cm measurements had no upper bound; added max:500 (MarketerController.php).
 - NOTE: shared marketplace_test DB deadlocks with parallel agents; ran with DB_DATABASE=marketplace_test_f03.
+
+## F12 — International shipping
+- PASS: existing tests (Unit InternationalShippingRateServiceTest, CurrencyConversionServiceTest, Checkout pricing reconciliation; 15 tests, 54 assertions) green with DB_DATABASE=marketplace_test_f12.
+- PASS (code review): rate quote picks carrier-specific over generic, missing corridor throws InternationalShippingRateNotFoundException, weight rounded up per kg with integer math; COD blocked for international lines (CodValidationService.php:33); admin routes gated settings.view/settings.edit (routes/admin.php:1180-1210); rate validation (different origin/destination, ints >= 0, gte eta); ships-to eligibility routes for admin + vendor listings; append-only tracking service.
+- GAP: customs duty is a flat amount (customs_fee_flat), not a % per route as the spec says. Not changed.
+- GAP: no new Feature tests written for admin CRUD authz, mixed local+intl cart split, or tracking customer visibility; not verified beyond code review.
