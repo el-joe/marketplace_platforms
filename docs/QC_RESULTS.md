@@ -72,3 +72,10 @@ Test: backend/tests/Feature/MarketerSamplesLifecycleTest.php (4 tests, 25 assert
 - PASS (code review): rate quote picks carrier-specific over generic, missing corridor throws InternationalShippingRateNotFoundException, weight rounded up per kg with integer math; COD blocked for international lines (CodValidationService.php:33); admin routes gated settings.view/settings.edit (routes/admin.php:1180-1210); rate validation (different origin/destination, ints >= 0, gte eta); ships-to eligibility routes for admin + vendor listings; append-only tracking service.
 - GAP: customs duty is a flat amount (customs_fee_flat), not a % per route as the spec says. Not changed.
 - GAP: no new Feature tests written for admin CRUD authz, mixed local+intl cart split, or tracking customer visibility; not verified beyond code review.
+
+## F09 — Commission discounts (vendor + marketer)
+Test: backend/tests/Unit/CommissionDiscountTest.php (2 tests pass) + Checkout money-split/ledger suites (see run).
+- PASS: none/flat/percentage in Vendor::applyCommissionDiscount and MarketerProfile::applyCommissionDiscount; flat > commission clamps to 0; percentage floors; engine applies vendor discount (CheckoutPricingEngine.php:511), marketer discount in LastClickAttributionService.php:183.
+- PASS: admin validation: type enum, flat integer >=0, percentage 0-100 (>100 rejected) (MarketerController.php:127, UpdateVendorRequest.php:40).
+- PASS: unit is base-currency integer (500 = 500 base units, no x100); doc(2) "50 riyals" is consistent, v1 wording just differs by example.
+- NOTE: vendor and marketer discounts apply to different commissions (platform vs marketer), so they do not stack on the same amount.
