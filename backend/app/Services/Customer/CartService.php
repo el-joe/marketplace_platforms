@@ -210,7 +210,7 @@ class CartService
             $out[$id] = $val;
         }
         foreach ($defs as $id => $def) {
-            if ($def->is_required && !isset($out[$id])) {
+            if ($def->is_required && (!isset($out[$id]) || ($def->type === 'checkbox' && $out[$id] !== '1'))) {
                 throw new \DomainException(__('common.exceptions.cart.custom_attribute_required'));
             }
         }

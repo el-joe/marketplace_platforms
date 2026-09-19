@@ -125,3 +125,13 @@ Tests: backend/tests/Feature/InvoiceAndBankTransferTest.php (4 pass) + WarrantyL
 - PASS: bank_transfer_details (bank, IBAN, reference = order number, amount) from gateway credentials in order detail; null for COD; other customer 404.
 - GAP: invoice endpoint returns JSON, not a PDF (no PDF lib installed); the storefront renders a printable page. Arabic glyph/PDF filename spec not met. Not changed.
 - GAP: values come from gateway credentials, not "settings"; duty line not in invoice resource.
+
+## Follow-up pass (F17, F08, F03, F15, F02)
+Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across the filtered suites.
+- F17 FIXED: MarketerSpecialtyDirectoryTest now green (3 tests). Real bugs: Marketer/ProfileController::generateQrCode used the removed endroid v5 `QrCode::create()` API (500/404 on every marketer profile save) - now uses the v6 constructor; public `marketers` index did not return specialty_ar/en - added. Test used non-existent `directory/*` URLs; now uses `marketers?type=`.
+- F08 FIXED: required checkbox sent as '0' counted as provided (CartService::normalizeCustomAttributeValues) - now rejected. New tests/Feature/Cart/CustomAttributesHttpTest.php: required-missing 422 (+ unchecked checkbox 422), partner of another vendor gets 403 on store/update/delete, order snapshot values unchanged after definition edit/delete.
+- F03 FIXED: confirm-receipt button ("تأكيد استلام العينة") in resources/views/marketer/samples/index.blade.php for dispatched samples, posts to marketer.samples.received; asserted in MarketerSamplesLifecycleTest.
+- F15 PASS: HTTP tests (tests/Feature/Admin/CurrencySymbolImageTest.php) for valid SVG stored, non-svg/php/plain-text rejected 422, unauthenticated 401. FIXED: SVG sanitiser left orphan closing tags and inner content of foreignObject; now strips the block and stray tags (script, on*, javascript:, external href verified).
+- F15 PASS: storefront renders image symbol else text (frontend CurrencySymbol.tsx / Price.tsx). GAP: admin and partner Blade pages have no central price formatter (~480 ad-hoc number_format sites print the currency code/text), so image symbols are not rendered there. Not refactored.
+- F02 FIXED: ad_price_currency now validated with exists:currencies,code (Marketer ProfileController, Admin MarketerController); MarketerProfileAdPriceTest extended (ZZZ rejected).
+- F02 NOTE: influencer measurements intentionally NOT hidden (product decision pending).

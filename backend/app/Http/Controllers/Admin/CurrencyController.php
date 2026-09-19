@@ -161,7 +161,8 @@ class CurrencyController extends Controller
             return null;
         }
         $svg = preg_replace('#<script\b.*?</script\s*>#is', '', $svg);
-        $svg = preg_replace('#<(script|foreignObject|iframe|object|embed)\b[^>]*/?>#i', '', $svg);
+        $svg = preg_replace('#<(foreignObject|iframe|object|embed)\b.*?</\1\s*>#is', '', $svg);
+        $svg = preg_replace('#</?(script|foreignObject|iframe|object|embed)\b[^>]*>#i', '', $svg);
         $svg = preg_replace('/\son\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $svg);
         $svg = preg_replace('/\s(?:xlink:)?href\s*=\s*("\s*(?!#)[^"]*"|\'\s*(?!#)[^\']*\')/i', '', $svg);
         $svg = preg_replace('/javascript:/i', '', $svg);

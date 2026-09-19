@@ -111,7 +111,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'ad_price'          => ['required', 'integer', 'min:0'],
-            'ad_price_currency' => ['nullable', 'string', 'size:3'],
+            'ad_price_currency' => ['nullable', 'string', 'size:3', \Illuminate\Validation\Rule::exists('currencies', 'code')],
         ]);
 
         $profile->update([
@@ -145,7 +145,7 @@ class ProfileController extends Controller
         // Points to the customer-facing marketer profile page (handled by Next.js frontend)
         $url = rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug;
 
-        $qr     = QrCode::create($url)->setSize(300)->setMargin(10)->setEncoding(new Encoding('UTF-8'));
+        $qr     = new QrCode(data: $url, encoding: new Encoding('UTF-8'), size: 300, margin: 10);
         $result = (new PngWriter())->write($qr);
 
         $path = 'marketer-profile-qr/' . $profile->marketer_id . '.png';

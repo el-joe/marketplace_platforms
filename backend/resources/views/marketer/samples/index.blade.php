@@ -79,6 +79,15 @@
             </div>
             @endif
 
+            @if($sample->status === 'dispatched')
+            <form method="POST" action="{{ route('marketer.samples.received', $sample) }}" class="mt-3">
+                @csrf
+                <button type="submit" class="px-5 py-2 bg-green-600 text-white font-bold rounded-lg text-sm hover:bg-green-700">
+                    تأكيد استلام العينة
+                </button>
+            </form>
+            @endif
+
             @if($sample->dispatched_at)
             <div class="text-xs text-gray-400 mt-2">تاريخ الشحن: {{ $sample->dispatched_at->format('Y-m-d') }}</div>
             @endif

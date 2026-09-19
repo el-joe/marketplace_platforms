@@ -58,6 +58,8 @@ class MarketerProfileController extends Controller
                 'total_campaigns'   => $marketer->total_campaigns,
                 'total_conversions' => $marketer->total_conversions,
                 'avatar_initial'    => mb_substr($marketer->name, 0, 1),
+                'specialty_ar'      => $profile->specialty_ar,
+                'specialty_en'      => $profile->specialty_en,
                 'ad_price'          => $profile->ad_price,
                 'ad_price_currency' => $profile->ad_price_currency,
             ];

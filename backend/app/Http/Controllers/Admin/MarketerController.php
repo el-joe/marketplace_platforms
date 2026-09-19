@@ -101,7 +101,7 @@ class MarketerController extends Controller
 
         $validated = $request->validate([
             'ad_price'                => ['nullable', 'integer', 'min:0'],
-            'ad_price_currency'       => ['nullable', 'string', 'size:3'],
+            'ad_price_currency'       => ['nullable', 'string', 'size:3', \Illuminate\Validation\Rule::exists('currencies', 'code')],
             'can_self_edit_ad_price'  => ['nullable', 'boolean'],
             'clothing_size'           => ['nullable', 'string', 'max:20'],
             'shirt_size'              => ['nullable', 'string', 'max:20'],

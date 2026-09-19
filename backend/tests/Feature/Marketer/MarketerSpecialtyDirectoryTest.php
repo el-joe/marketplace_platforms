@@ -55,9 +55,9 @@ class MarketerSpecialtyDirectoryTest extends TestCase
         $p = $a->marketer->marketerProfile->fresh();
         $this->assertSame('عقارات', $p->specialty_ar);
 
-        $this->getJson($this->url('directory/brokers'))->assertOk()
+        $this->getJson($this->url('marketers?type=affiliate'))->assertOk()
             ->assertJsonFragment(['specialty_ar' => 'عقارات']);
-        $this->getJson($this->url('directory/influencers'))->assertOk()
+        $this->getJson($this->url('marketers?type=influencer'))->assertOk()
             ->assertJsonMissing(['specialty_ar' => 'عقارات']);
         $this->getJson($this->url('marketers/' . $p->profile_slug))->assertOk()
             ->assertJsonFragment(['specialty_ar' => 'عقارات']);

@@ -101,6 +101,8 @@ class MarketerSamplesLifecycleTest extends TestCase
         // Receipt: only when dispatched, only owner.
         $this->actingAs($owner, 'marketer')->post(route('marketer.samples.received', $sample->id))->assertStatus(422);
         $sample->update(['status' => 'dispatched']);
+        $this->actingAs($owner, 'marketer')->get(route('marketer.samples.index'))->assertOk()
+            ->assertSee(route('marketer.samples.received', $sample->id), false);
         $this->actingAs($intruder, 'marketer')->post(route('marketer.samples.received', $sample->id))->assertForbidden();
         $this->actingAs($owner, 'marketer')->post(route('marketer.samples.received', $sample->id))->assertSessionHasNoErrors();
         $this->assertSame('delivered', $sample->fresh()->status);

@@ -22,6 +22,7 @@ class MarketerProfileAdPriceTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        \App\Models\Currency::query()->firstOrCreate(['code' => 'AED'], ['name' => 'Dirham', 'symbol' => 'AED', 'is_active' => true]);
         $this->s = MarketplaceScenario::make()->build();
         $this->s->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
     }
@@ -61,6 +62,7 @@ class MarketerProfileAdPriceTest extends TestCase
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 'abc'])->assertSessionHasErrors('ad_price');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 12.5])->assertSessionHasErrors('ad_price');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 5, 'ad_price_currency' => 'AEDX'])->assertSessionHasErrors('ad_price_currency');
+        $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 5, 'ad_price_currency' => 'ZZZ'])->assertSessionHasErrors('ad_price_currency');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 500, 'ad_price_currency' => 'AED'])->assertSessionHasNoErrors();
         $p = $a->marketer->marketerProfile->fresh();
         $this->assertSame(500, (int) $p->ad_price);
