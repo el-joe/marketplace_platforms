@@ -303,18 +303,7 @@ class ProductQueryService
                     ->where('pcs.is_available', true);
             })
             ->leftJoin('product_variants as pv', 'pv.id', '=', 'bb.variant_id')
-            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id')
-            // FIX-H2: ranking boost for vendors with an active ad-package
-            // subscription on the winning (buy-box) vendor listing. Left join
-            // so listings without a subscription still pass through with
-            // ap.tier NULL (=> boost weight 0 in applySort()).
-            ->leftJoin('vendor_ad_subscriptions as vas', function ($j) {
-                $j->on('vas.vendor_listing_id', '=', 'bb.listing_id')
-                    ->where('bb.listing_type', '=', 'vendor')
-                    ->where('vas.status', '=', 'active')
-                    ->where('vas.ends_at', '>', now());
-            })
-            ->leftJoin('ad_packages as ap', 'ap.id', '=', 'vas.ad_package_id');
+            ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id');
 
         if (!empty($filters['category'])) {
             $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
@@ -381,11 +370,20 @@ class ProductQueryService
             'newest' => $builder->orderBy('p.published_at', 'desc'),
             'best_selling' => $builder->orderBy('bb.total_sold', 'desc'),
             // Default/relevance sort only: active-subscription listings are
-            // boosted ahead of non-boosted ones, ranked by package tier
-            // (serious_featured > serious), before falling back to the
+            // boosted ahead of non-boosted ones, ranked by slot tier
+            // (popup slot > plain promotion slot), before falling back to the
             // pre-existing featured/rating tiebreakers.
             default => $builder->orderByRaw(
-                "CASE WHEN ap.tier = 'serious_featured' THEN 2 WHEN ap.tier = 'serious' THEN 1 ELSE 0 END DESC"
+                "(SELECT COALESCE(MAX(CASE WHEN pas.shows_popup = 1 THEN 2 ELSE 1 END), 0)
+                    FROM paid_ad_bookings pab
+                    JOIN paid_ad_slots pas ON pas.id = pab.paid_ad_slot_id
+                    JOIN paid_ad_creatives pac ON pac.paid_ad_booking_id = pab.id AND pac.is_current = 1
+                    WHERE bb.listing_type = 'vendor'
+                      AND pac.destination_reference_id = bb.listing_id
+                      AND pab.status = 'active'
+                      AND pas.target_type = 'listing_promotion'
+                      AND (pab.booked_until IS NULL OR pab.booked_until >= ?)) DESC",
+                [now()->toDateString()]
             )
                 ->orderBy('p.is_featured', 'desc')
                 ->orderBy('bb.rating_avg', 'desc'),

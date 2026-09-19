@@ -43,42 +43,14 @@ class PaidAdBoostSyncService
             return;
         }
 
-        if ($booking->status === PaidAdBookingStatus::Active) {
-            $listing->update([
-                'is_ad_boosted' => true,
-                'ad_boost_expires_at' => $booking->booked_until,
-            ]);
+        if ($booking->status === PaidAdBookingStatus::Active || $booking->status->isTerminal()) {
+            app(ListingBoostService::class)->refresh($listing);
 
-            Log::info('PaidAdBoostSyncService: boost activated', [
+            Log::info('PaidAdBoostSyncService: boost refreshed', [
                 'listing_id' => $listing->id,
                 'booking_id' => $booking->id,
-                'expires_at' => $booking->booked_until,
+                'status' => $booking->status->value,
             ]);
-
-            return;
-        }
-
-        if ($booking->status->isTerminal()) {
-            // Only clear if no other active listing_promotion booking targets
-            // the same listing (guard against overlapping bookings).
-            $hasOtherActiveBooking = PaidAdBooking::where('id', '!=', $booking->id)
-                ->where('status', PaidAdBookingStatus::Active->value)
-                ->whereHas('slot', fn ($q) => $q->where('target_type', PaidAdSlotTargetType::ListingPromotion->value))
-                ->whereHas('currentCreative', fn ($q) => $q->where('destination_reference_id', $listingId))
-                ->exists();
-
-            if (! $hasOtherActiveBooking) {
-                $listing->update([
-                    'is_ad_boosted' => false,
-                    'ad_boost_expires_at' => null,
-                ]);
-
-                Log::info('PaidAdBoostSyncService: boost cleared', [
-                    'listing_id' => $listing->id,
-                    'booking_id' => $booking->id,
-                    'reason' => $booking->status->value,
-                ]);
-            }
         }
 
         // All other statuses (pending_review, draft, scheduled, paused, etc.)

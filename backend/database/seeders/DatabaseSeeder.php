@@ -61,6 +61,9 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             AdminRoleAssignmentSeeder::class,
 
+                // ── Nawi Ads slot tiers (needs countries + admins; idempotent) ──
+            NawiAdsSlotSeeder::class,
+
                 // ── Cart card cashback offers (needs countries + admins) ────────
             CartCardOfferSeeder::class,
 

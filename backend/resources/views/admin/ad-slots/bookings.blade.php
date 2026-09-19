@@ -78,8 +78,9 @@
                             @php
                                 $statusColors = ['pending' => 'warning', 'active' => 'success', 'rejected' => 'danger', 'cancelled' => 'gray', 'ended' => 'gray'];
                                 $sc = $statusColors[$booking->status->value] ?? 'gray';
-                                $payColors = ['unpaid' => 'danger', 'paid' => 'success', 'invoiced' => 'warning', 'refunded' => 'gray'];
-                                $pc = $payColors[$booking->payment_status ?? 'unpaid'] ?? 'gray';
+                                $payColors = ['unpaid' => 'danger', 'paid' => 'success', 'reserved' => 'warning', 'refunded' => 'gray', 'partially_refunded' => 'gray'];
+                                $payValue = $booking->payment_status?->value ?? 'unpaid';
+                                $pc = $payColors[$payValue] ?? 'gray';
                             @endphp
                             <tr class="hover:bg-gray-50">
                                 <td class="py-2 pr-4 font-mono text-xs">{{ $booking->booking_reference }}</td>
@@ -99,7 +100,7 @@
                                 <td class="py-2 pr-4">
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $pc }}-100 text-{{ $pc }}-700">
-                                        {{ ucfirst($booking->payment_status ?? 'unpaid') }}
+                                        {{ ucfirst(str_replace('_', ' ', $payValue)) }}
                                     </span>
                                 </td>
                                 <td class="py-2">
