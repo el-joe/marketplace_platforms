@@ -1,5 +1,5 @@
 export type AdPopup = {
-  id: number;
+  id: number | string;
   title_en: string | null;
   title_ar: string | null;
   body_en: string | null;
