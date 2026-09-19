@@ -38,6 +38,8 @@ class ProductDetailResource extends JsonResource
     /** @var array<string, mixed>|null Pre-shaped sponsored listing from SponsoredProductService::forProductPage(). */
     public ?array $crossSellAd = null;
 
+    public ?array $topBanner = null;
+
     public ?array $inlineBanner1 = null;
 
     public ?array $inlineBanner2 = null;
@@ -207,6 +209,7 @@ class ProductDetailResource extends JsonResource
             'is_wishlisted'    => $this->isWishlisted,
             'banner'           => $this->banner,
             'cross_sell_ad'    => $this->crossSellAd,
+            'top_banner'       => $this->topBanner,
             'inline_banner_1'  => $this->inlineBanner1,
             'inline_banner_2'  => $this->inlineBanner2,
             'seo'              => [
