@@ -1167,6 +1167,8 @@
   "anErrorHasOccurred": "حدث خطأ",
   "weAreVerySorryButSomethingHasGoneWrongPleaseTryAgain": "نأسف بشدة، حدث خطأ ما، يرجى المحاولة مرة أخرى",
   "shop": {
+    "cantFindIt": "لم تجد ما تبحث عنه؟",
+    "sendSpecialRequest": "أرسل طلبًا خاصًا",
     "resultsFor": "النتائج لـ",
     "sortBy": "ترتيب حسب",
     "filters": "عوامل التصفية",

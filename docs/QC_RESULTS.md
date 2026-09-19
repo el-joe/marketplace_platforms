@@ -41,8 +41,9 @@
 
 ## F05 — Special requests + broker smart routing
 - Existing `SpecialRequestRoutingTest` (10 tests) already covers: validation, city/category routing, null city, non-affiliate/inactive brokers, once-per-admin notify, marketer index/show/API matching, IDOR, close guard, throttle, layout.
-- NOT EXECUTED (GAP): both runs failed at schema load on shared `marketplace_test` DB (table-exists / deadlock from parallel agents), 0 assertions run. No app code changed. Re-run alone: `php artisan test --filter=SpecialRequestRoutingTest`.
-- Not verified: guest 401 on store, in_progress transition, storefront browse-page button (only profile/special-requests pages found).
+- EXECUTED: SpecialRequestRoutingTest 13/13 pass (61 assertions) on isolated DB (DB_DATABASE=marketplace_test_f05). Added: guest 401, in_progress->closed + hidden from broker panel, Blade panel index/show.
+- GAP: no endpoint/action moves a request open->in_progress (only open->closed and in_progress->closed exist; broker panel lists status=open only). Not built: spec ambiguous on who transitions.
+- FIXED (frontend): storefront category/search page (frontend/src/features/noon/shop/index.tsx) had no special-request CTA; added button linking /special-requests/create (locale keys shop.cantFindIt/sendSpecialRequest in en+ar). Not built/typechecked.
 
 ## F02 — Influencer/Broker profile fields, ad price, self-edit
 - PASS: `PUT /marketer/profile/ad-price` 403 when `can_self_edit_ad_price` false; rejects negative/non-integer/non-numeric price and >3-char currency; saves valid (ProfileController.php:103).

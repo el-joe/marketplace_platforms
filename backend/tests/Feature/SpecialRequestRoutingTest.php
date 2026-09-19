@@ -211,4 +211,29 @@ class SpecialRequestRoutingTest extends TestCase
         }
         $this->store()->assertStatus(429);
     }
+
+    public function test_guest_cannot_create_special_request(): void
+    {
+        $this->postJson("/api/customer/v1/{$this->s->country->site_code}/special-requests", [
+            'category_id' => $this->s->category->id, 'title_en' => 'x', 'description_en' => 'y',
+        ])->assertUnauthorized();
+    }
+
+    public function test_in_progress_request_can_be_closed_and_leaves_broker_panel(): void
+    {
+        $b = $this->broker(['broker_category_id' => $this->s->category->id, 'broker_serves_all_cities' => true]);
+        $r = $this->req(null, null, 'in_progress');
+        $this->actingAs($b, 'marketer')->get(route('marketer.special-requests.show', $r->id))->assertNotFound();
+        $this->actingAs($this->s->customer, 'customer');
+        $this->patchJson("/api/customer/v1/{$this->s->country->site_code}/special-requests/{$r->id}/close")->assertOk();
+        $this->assertSame('closed', $r->fresh()->status);
+    }
+
+    public function test_blade_panel_index_lists_matching_and_show_renders(): void
+    {
+        $b = $this->broker(['broker_category_id' => $this->s->category->id, 'broker_serves_all_cities' => true]);
+        $r = $this->req(null);
+        $this->actingAs($b, 'marketer')->get(route('marketer.special-requests.index'))->assertOk();
+        $this->actingAs($b, 'marketer')->get(route('marketer.special-requests.show', $r->id))->assertOk()->assertSee('T');
+    }
 }

@@ -1178,6 +1178,8 @@
   "anErrorHasOccurred": "An error has occurred",
   "weAreVerySorryButSomethingHasGoneWrongPleaseTryAgain": "We are very sorry but something has gone wrong, please try again",
   "shop": {
+    "cantFindIt": "Cannot find what you need?",
+    "sendSpecialRequest": "Send a special request",
     "resultsFor": "Results for",
     "sortBy": "Sort by",
     "filters": "Filters",
