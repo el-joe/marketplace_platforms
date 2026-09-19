@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import MarketerProfileView from "@/src/features/noon/marketer-profile";
-import { getMarketerProfile, MarketerProfileNotFoundError } from "@/src/features/noon/marketer-profile/api";
+import {
+  getMarketerProfile,
+  MarketerProfileNotFoundError,
+} from "@/src/features/noon/marketer-profile/api";
 import getLocale from "@/src/helpers/getLocale";
 
 type Props = {
