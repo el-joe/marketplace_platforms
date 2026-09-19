@@ -63,12 +63,25 @@ class CheckoutController extends Controller
         $customer   = auth('customer')->user();
         $orderTotal = (int) $request->query('order_total', 0);
 
+        // COD limits / international restriction (F11): mirror the server-side
+        // check done at place-order so the UI can hide COD up front.
+        $codErrors = [];
+        if ($customer) {
+            $cart = \App\Models\Cart::where('user_id', $customer->id)->where('country_id', $country->id)
+                ->with(['items.adminListing', 'items.vendorListing.productVariant.product', 'items.marketerListing.invitation.campaign.vendorListing.productVariant.product'])
+                ->first();
+            if ($cart && $cart->items->isNotEmpty()) {
+                $codErrors = app(\App\Services\Customer\CodValidationService::class)
+                    ->validate($cart->items->all(), $country->id);
+            }
+        }
+
         $gateways = \App\Models\CountryPaymentGateway::where('country_id', $country->id)
             ->where('is_active', true)
             ->with('gateway')
             ->orderBy('sort_order')
             ->get()
-            ->map(function ($cpg) use ($orderTotal) {
+            ->map(function ($cpg) use ($orderTotal, $codErrors) {
                 $code      = $cpg->gateway?->code;
                 $feePct    = (float) $cpg->fee_pct;
                 $feeFixed  = (int) $cpg->fee_fixed;
@@ -82,6 +95,11 @@ class CheckoutController extends Controller
                 if ($cpg->max_order && $orderTotal > 0 && $orderTotal > $cpg->max_order) {
                     $available = false;
                     $reason    = 'Order exceeds maximum.';
+                }
+
+                if ($code === 'cod' && ! empty($codErrors)) {
+                    $available = false;
+                    $reason    = $codErrors[0];
                 }
 
                 return [

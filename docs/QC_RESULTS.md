@@ -86,3 +86,12 @@ Test: backend/tests/Feature/Checkout/CouponShippingTypeRestrictionTest.php (3 te
 - DOCUMENTED BEHAVIOR: mixed cart => coupon REJECTED entirely if any line mismatches (no partial discount, so no ineligible line enters the discount base).
 - GAP (minor): message text is "only valid for :type shipping orders", not the spec's exact "هذه القسيمة غير صالحة لنوع الشحن المحدد". Type mapping: cross_dock => fbp, other non-fbn => fbm, admin => fbn.
 - PASS: CouponUsageConcurrencyTest re-run (see output).
+
+## F11 — COD limits
+Test: backend/tests/Feature/Checkout/CodLimitsTest.php (8 tests pass; DB_DATABASE=marketplace_test_f11).
+- PASS: keys `cod_global_max_amount`, `cod_supermall_max_amount`, `cod_supermall_category_id` are seeded (migration 2026_09_12_173000) in the `settings` table, category `orders`, and editable in Admin > Settings > Orders tab (NOT content-settings as the doc says; content-settings is a different table).
+- PASS: CodValidationService: =limit ok, +1 blocked; 0 or missing setting = unlimited; Nawi admin listings exempt; Super Mall subtree uses its own limit; any international line blocks COD; enforced server-side in both prepare and place-order (CheckoutController.php:366, :762); direct COD POST over limit => 422, no order.
+- DOCUMENTED BEHAVIOR: limit is on the partner-item subtotal (unit_price*qty, excl. shipping/fees), Nawi lines excluded from the total.
+- FIXED: GET checkout/payment-options did not reflect COD limits/international (COD shown available). Now marks COD `is_available=false` + reason (Api/Customer/CheckoutController.php paymentOptions).
+- FIXED: admin settings save had no validation for COD keys; SettingsService::validateGroup now requires non-negative whole numbers and an existing category id.
+- GAP (minor): units are base-currency integers (50000 = 500 per doc example); no Arabic lang key check beyond existing cod_* keys (present in ar/en).
