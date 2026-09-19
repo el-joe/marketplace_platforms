@@ -46,7 +46,19 @@ class TravelBookingService
 
         // No automatic refund logic or cancellation_reason column exists in
         // the schema — cancellation is marked and left for admin/agency review.
-        $booking->update(['status' => TravelBookingStatus::Cancelled]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($booking) {
+            $wasConfirmed = $booking->status === TravelBookingStatus::Confirmed;
+            $booking->update(['status' => TravelBookingStatus::Cancelled]);
+            if ($wasConfirmed) {
+                $pkg = TravelPackage::lockForUpdate()->find($booking->travel_package_id);
+                if ($pkg) {
+                    $pkg->update([
+                        'seats_booked' => max(0, $pkg->seats_booked - $booking->travelers_count),
+                        ...($pkg->status === \App\Enums\TravelPackageStatus::SoldOut ? ['status' => \App\Enums\TravelPackageStatus::Active] : []),
+                    ]);
+                }
+            }
+        });
 
         $booking->loadMissing('package.agency');
         Notification::send($booking->package->agency->activeMembers(), new BookingCancelled($booking, 'customer'));
@@ -60,14 +72,22 @@ class TravelBookingService
     public function book(TravelPackage $package, Customer $customer, array $data): TravelBooking
     {
         $travelersCount = (int) $data['travelers_count'];
-        $totalCents     = $package->priceForTravelersCount($travelersCount);
+
+        $booking = \Illuminate\Support\Facades\DB::transaction(function () use ($package, $customer, $data, $travelersCount) {
+        $pkg = TravelPackage::lockForUpdate()->findOrFail($package->id);
+        if ($pkg->available_seats !== null
+            && ($pkg->seats_booked + $travelersCount) > $pkg->available_seats
+        ) {
+            throw ValidationException::withMessages(['travelers_count' => 'Not enough seats available.']);
+        }
+        $totalCents     = $pkg->priceForTravelersCount($travelersCount);
 
         $passportPath = null;
         if (isset($data['passport_file']) && $data['passport_file'] instanceof UploadedFile) {
             $passportPath = $data['passport_file']->store('travel-bookings/passports', 'private');
         }
 
-        $booking = TravelBooking::create([
+        return TravelBooking::create([
             'travel_package_id'  => $package->id,
             'customer_id'        => $customer->id,
             'travelers_count'    => $travelersCount,
@@ -75,6 +95,7 @@ class TravelBookingService
             'passport_file_path' => $passportPath,
             'status'             => TravelBookingStatus::PendingDocuments,
         ]);
+        });
 
         NotifyTravelBookingJob::dispatch($booking);
 

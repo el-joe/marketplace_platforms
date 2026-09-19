@@ -28,3 +28,13 @@
 - PASS: required missing rejected; partner ownership check (active listing) exists; toggle hides fields when off (resource); mobile FloatingCartButton uses same modal (sends values); persistence cart->order values code exists (CheckoutController:1363).
 - GAP: not tested by feature test: HTTP-level 422 mapping, partner cross-vendor 403, order-view rendering in 3 panels, immutability after order, admin UI for size-guide upload/presets (API only). Required checkbox: unchecked '0' counts as provided.
 - Tests: tests/Feature/Cart/CustomAttributesTest.php 3/3 pass (run with DB_DATABASE=marketplace_test_f08; shared test DB deadlocks under parallel agents).
+
+## F07 — Travel bookings
+- FIXED: customer booking request allowed 1..50 seats, spec 1..10 — app/Http/Requests/Customer/Travel/CreateBookingRequest.php
+- FIXED: TravelBookingService::book had no seat-availability check/lock (overbooking); now locked + rejects seats > available - booked — app/Services/Customer/TravelBookingService.php
+- FIXED: customer cancel of a Confirmed booking did not release seats (nor reopen SoldOut) — same file
+- FIXED: BookingCreationService incremented seats_booked at creation AND agency confirm incremented again (double count); reservation now only at confirm — app/Services/TravelAgency/BookingCreationService.php
+- FIXED: admin inquiry convert sent no customer notification and was not idempotent under races; now row-locked and notifies TravelBookingConfirmed — app/Http/Controllers/Admin/TravelPackageInquiryController.php
+- PASS: total = seats x price (tier-aware), IDOR on my-bookings show/cancel scoped to customer.
+- GAP (not verified): admin search bar vs sidebar search; passport upload endpoint; live-total UI in frontend; true concurrent race (relies on lockForUpdate, not tested in parallel). Test DB was shared/deadlocking, ran with DB_DATABASE=marketplace_test_f07.
+- Test: backend/tests/Feature/Travel/TravelBookingSeatsTest.php (3 pass)

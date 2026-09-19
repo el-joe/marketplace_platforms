@@ -76,12 +76,24 @@ class TravelPackageInquiryController extends Controller
             return back()->with('error', __('admin.travel.inquiry_no_email_on_file'));
         }
 
-        $booking = $this->bookingCreationService->create($inquiry->package->travel_agency_id, $data);
+        $booking = \Illuminate\Support\Facades\DB::transaction(function () use ($inquiry, $data) {
+            $locked = TravelPackageInquiry::lockForUpdate()->findOrFail($inquiry->id);
+            if (! in_array($locked->status, [TravelPackageInquiryStatus::New, TravelPackageInquiryStatus::Contacted])) {
+                return null;
+            }
+            $booking = $this->bookingCreationService->create($inquiry->package->travel_agency_id, $data);
+            $locked->update([
+                'status'                  => TravelPackageInquiryStatus::Converted,
+                'converted_to_booking_id' => $booking->id,
+            ]);
+            return $booking;
+        });
 
-        $inquiry->update([
-            'status'                  => TravelPackageInquiryStatus::Converted,
-            'converted_to_booking_id' => $booking->id,
-        ]);
+        if (! $booking) {
+            return back()->with('error', __('admin.travel.inquiry_cannot_be_converted'));
+        }
+
+        $booking->customer?->notify(new \App\Notifications\Customer\TravelBookingConfirmed($booking->load('package')));
 
         return back()->with('success', __('admin.travel.inquiry_converted_success'));
     }

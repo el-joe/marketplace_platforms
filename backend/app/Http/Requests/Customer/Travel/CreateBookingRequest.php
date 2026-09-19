@@ -14,7 +14,7 @@ class CreateBookingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'travelers_count' => ['required', 'integer', 'min:1', 'max:50'],
+            'travelers_count' => ['required', 'integer', 'min:1', 'max:10'],
             'passport_file'   => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ];
     }

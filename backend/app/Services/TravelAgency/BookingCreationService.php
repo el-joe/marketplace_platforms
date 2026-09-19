@@ -64,7 +64,7 @@ class BookingCreationService
                 'status'            => TravelBookingStatus::PendingDocuments,
             ]);
 
-            $pkg->increment('seats_booked', $data['travelers_count']);
+            // Seats are reserved when the booking is confirmed (booking status change), not here.
 
             return $booking;
         });
