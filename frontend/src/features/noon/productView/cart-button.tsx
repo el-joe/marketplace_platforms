@@ -10,12 +10,14 @@ import React, { useState } from "react";
 import { useWarrantySelection } from "./warranty-selection-context";
 import CustomAttributesModal from "@/src/components/shared/custom-attributes-modal";
 import { ProductCustomAttribute } from "./types/product-details";
+import { cn } from "@/src/lib/utils";
 
 type Props = {
   listingId: string;
   quantity?: number;
   hasCustomAttributes?: boolean;
   customAttributes?: ProductCustomAttribute[];
+  classes?: string;
 };
 
 export default function CartButton({
@@ -23,6 +25,7 @@ export default function CartButton({
   quantity = 1,
   hasCustomAttributes = false,
   customAttributes = [],
+  classes,
 }: Props) {
   const t = useTranslations("productView");
   const {
@@ -125,9 +128,10 @@ export default function CartButton({
           }}
           disabled={isMutating}
           size={"lg"}
-          className={
-            "mx-auto bg-blue text-white min-h-11! text-lg w-full py-2 rounded-xl uppercase justify-center"
-          }
+          className={cn(
+            "mx-auto bg-blue text-white min-h-11! text-lg w-full py-2 rounded-xl uppercase justify-center",
+            classes,
+          )}
         >
           {isMutating && (targetItemMutating as string) === listingId ? (
             <Spinner />

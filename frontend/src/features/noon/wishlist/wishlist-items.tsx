@@ -42,7 +42,7 @@ export default function WishlistItems() {
     }
   }, [selectedGroupId]);
   return (
-    <div className="flex-1">
+    <div className="flex-1 w-full md:w-auto">
       <div className="flex gap-3 py-4 ps-4 md:border-b items-center border-border">
         {isLoading ? (
           <>
@@ -100,7 +100,7 @@ export default function WishlistItems() {
       </div>
       {/* items grid */}
       {isLoadingGroup ? (
-        <div className="flex gap-3 flex-wrap items-stretch md:py-4 ps-4">
+        <div className="flex gap-3 flex-wrap items-stretch md:py-4 md:ps-4">
           {Array.from({ length: 4 }).map((e, i) => (
             <Skeleton key={i} className="h-130 w-37 md:w-40 lg:w-48 xl:w-72" />
           ))}
@@ -108,7 +108,7 @@ export default function WishlistItems() {
       ) : !wishlistGroup?.items.length ? (
         <EmptyState />
       ) : (
-        <div className="flex gap-3 flex-wrap items-stretch md:py-4 ps-4">
+        <div className="w-full flex gap-3 flex-wrap items-stretch md:py-4 md:ps-4">
           {wishlistGroup?.items.map((p) => (
             <ItemCard item={p} key={p.id} />
           ))}

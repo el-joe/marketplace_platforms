@@ -31,9 +31,9 @@ export default function ItemCard({ item }: Props) {
     }
   };
   return (
-    <div className="flex flex-col h-auto gap-1">
+    <div className="flex flex-col h-auto gap-1 w-[calc((100%-12px)/2)] md:w-40 lg:w-48 xl:w-72">
       <div
-        className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden flex-1 flex flex-col gap-2"
+        className="border border-border-color w-full rounded-lg overflow-hidden flex-1 flex flex-col gap-2"
         onMouseEnter={() => handleAutoplay("start")}
         onMouseLeave={() => handleAutoplay("stop")}
       >
@@ -112,7 +112,10 @@ export default function ItemCard({ item }: Props) {
       </div>
       <div className="flex gap-3">
         <div className="flex-1">
-          <CartButton listingId={item.listing.listing_id} />
+          <CartButton
+            listingId={item.listing.listing_id}
+            classes="text-xs md:text-base"
+          />
         </div>
         <WishlistItemOptionsMenu
           item={item}
