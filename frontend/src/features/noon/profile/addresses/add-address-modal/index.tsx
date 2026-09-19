@@ -68,7 +68,7 @@ export default function AddAddressModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={trigger} />
       <DialogContent
-        className=" lg:min-w-3xl! lg:w-[50vw]  max-w-7xl! gap-0 overflow-y-auto p-0 flex flex-col h-screen lg:h-[70vh]"
+        className=" lg:min-w-3xl! lg:w-[50vw]  max-w-7xl! gap-0 overflow-y-auto p-0 flex flex-col h-dvh lg:h-[70vh]"
         showCloseButton
       >
         <DialogHeader className="flex-row items-center gap-2 border-b border-border px-6 py-5">
