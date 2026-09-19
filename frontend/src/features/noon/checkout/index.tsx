@@ -52,7 +52,7 @@ export default function Checkout() {
     isGettingGateways
   ) {
     return (
-      <div className="h-screen flex flex-col container py-12 gap-4">
+      <div className="h-screen overflow-hidden flex flex-col container py-12 gap-4">
         {Array.from({ length: 8 }).map((e, i) => (
           <Skeleton key={i} className="min-h-60" />
         ))}
@@ -61,7 +61,7 @@ export default function Checkout() {
   }
   if (!addressesData?.length) {
     return (
-      <div className="h-screen flex flex-col container py-12 gap-4">
+      <div className="h-screen overflow-hidden flex flex-col container py-12 gap-4">
         {Array.from({ length: 8 }).map((e, i) => (
           <Skeleton key={i} className="min-h-60" />
         ))}
@@ -72,7 +72,7 @@ export default function Checkout() {
 
   return (
     <div className="bg-gray-4">
-      <div className="container py-8">
+      <div className="container py-10">
         <div className="max-w-304 mx-auto">
           {checkoutData?.checkout_banner && (
             <div className="mb-4 px-4 lg:px-0">
@@ -122,7 +122,7 @@ export default function Checkout() {
               )}
             </div>
             {/* right col */}
-            <div className="flex flex-col gap-8 flex-1 md:flex-[.5] sticky top-28">
+            <div className="flex flex-col gap-8 flex-1 md:flex-[.5] sticky top-25">
               <PaymentSummary
                 checkoutSummary={{
                   ...checkoutData?.order_summary,
