@@ -15,7 +15,7 @@ import {
   Package2Icon,
   UserCircleIcon,
 } from "lucide-react";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
@@ -88,6 +88,7 @@ const Header = () => {
   const { setAuthDialogIsOpen, isLogged, profile, logout } = useAuthContext();
   const [helpSheetOpen, setHelpSheetOpen] = useState(false);
   const { selectedAddress } = useAddressesContext();
+  const router = useRouter();
   const countryCode = getRegion(useClientLocale());
   const {
     data: countriesData,
@@ -239,7 +240,10 @@ const Header = () => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={logout}
+                  onClick={() => {
+                    logout();
+                    router.refresh();
+                  }}
                   className={"flex items-center gap-3 py-2.5 px-4"}
                 >
                   <LogOutIcon />
