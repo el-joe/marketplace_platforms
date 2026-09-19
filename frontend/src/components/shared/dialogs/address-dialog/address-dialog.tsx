@@ -110,9 +110,9 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
             <TabsTrigger value="address" className={"flex-none"}>
               {t("address")}
             </TabsTrigger>
-            <TabsTrigger value="pickupPoint" className={"flex-none"}>
+            {/* <TabsTrigger value="pickupPoint" className={"flex-none"}>
               {t("pickupPoint")}
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
           {/* address tap */}
           <TabsContent
