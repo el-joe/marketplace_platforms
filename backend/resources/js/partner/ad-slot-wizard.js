@@ -153,7 +153,7 @@ window.adBookingWizard = function () {
         onFile(event, slotKey) {
             const file = event.target.files[0];
             if (!file) return;
-            const required = slotKey.startsWith('desktop') ? this.slot.creative_spec.desktop : this.slot.creative_spec.mobile;
+            const required = slotKey.startsWith('desktop') ? this.slot.creative_spec?.desktop : this.slot.creative_spec?.mobile;
             const img = new Image();
             const url = URL.createObjectURL(file);
             img.onload = () => {
