@@ -2156,6 +2156,16 @@ return [
 
     // ─── Custom Pages ────────────────────────────────────────────────────────
     'custom_pages' => [
+        'listing_types' => 'Listing types',
+        'listing_types_help' => 'Leave empty to include all listing types (admin, vendor and marketer).',
+        'type_admin' => 'Admin listings',
+        'type_vendor' => 'Vendor listings',
+        'type_marketer' => 'Marketer listings',
+        'all_types' => 'All types',
+        'all_categories' => 'All categories',
+        'all_categories_help' => 'Show products from every category. The category picker is ignored.',
+        'categories_required' => 'Select at least one category, or enable All categories.',
+        'all_categories_filters' => 'All filterable attributes present in the results are used as filters.',
         'title'                        => 'Custom Pages',
         'create_title'                 => 'New Custom Page',
         'slug'                         => 'Slug',

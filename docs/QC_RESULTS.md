@@ -179,3 +179,12 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - PASS: CategoryService::resolveCustomPageScope (all categories => null, subset + descendants, none/deleted category => []), normalizeListingTypes (tests/Feature/CustomPages/CustomPageScopeTest.php, 6 tests).
 - FIXED: syncCategories tolerates empty list, dedupes ids.
 - NOTE: getCategoryIdsForFilter keeps array contract (all-categories page => []); new getCategoryScopeForFilter returns null for unrestricted. A3 must switch callers and short-circuit [] (no whereIn([])).
+
+## Custom Pages A2: admin add/edit form (listing types + all categories)
+
+- PASS: create/update persist `listing_types` (normalized; all three or none = null) and `all_categories`; all_categories clears linked categories.
+- PASS: validation 422 (bogus type, no categories without all_categories), en+ar messages; 403 without `categories.view`; XSS in names escaped on index.
+- PASS: edit prefill, old() prefill of types and toggle, index badges (types, All categories). Tests: `tests/Feature/CustomPages/CustomPageAdminFormTest.php` (8), own DB `marketplace_test_a2`.
+- PASS: UI toggle verified in headless Chrome against the built bundle (checkbox disables search and dims picker, and reverts).
+- FIXED: create form used a plain POST and would show raw JSON; `custom-pages.js` now submits create via AJAX and follows `redirect`.
+- GAP: the Inherited Filters card (edit only) is server-rendered, so toggling all categories updates it only after save. RTL only checked by lang keys, not visually.

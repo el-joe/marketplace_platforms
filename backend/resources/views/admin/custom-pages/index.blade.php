@@ -25,6 +25,7 @@
                             <th class="px-4 py-3 text-left font-medium text-gray-500">{{ __('admin.name_en') }}</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-500">{{ __('admin.custom_pages.slug') }}</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-500">{{ __('admin.custom_pages.categories') }}</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500">{{ __('admin.custom_pages.listing_types') }}</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-500">{{ __('admin.categories.has_filters') }}</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-500">{{ __('admin.is_active') }}</th>
                             <th class="px-4 py-3"></th>
@@ -35,7 +36,19 @@
                             <tr data-id="{{ $page->id }}">
                                 <td class="px-4 py-3 font-medium text-gray-800">{{ $page->name_en }}</td>
                                 <td class="px-4 py-3 text-gray-500">{{ $page->slugRecord?->slug_url }}</td>
-                                <td class="px-4 py-3 text-gray-500">{{ $page->categories()->count() }}</td>
+                                <td class="px-4 py-3 text-gray-500">@if($page->all_categories)
+                                        <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">{{ __('admin.custom_pages.all_categories') }}</span>
+                                    @else
+                                        {{ $page->categories()->count() }}
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-gray-500">
+                                    @forelse($page->listing_types ?? [] as $t)
+                                        <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">{{ __('admin.custom_pages.type_'.$t) }}</span>
+                                    @empty
+                                        <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">{{ __('admin.custom_pages.all_types') }}</span>
+                                    @endforelse
+                                </td>
                                 <td class="px-4 py-3 text-gray-500">
                                     {{ $page->has_filters ? __('admin.yes') : __('admin.no') }}
                                 </td>
@@ -52,7 +65,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">{{ __('admin.custom_pages.no_custom_pages_yet') }}</td></tr>
+                            <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">{{ __('admin.custom_pages.no_custom_pages_yet') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -14,6 +14,13 @@
         return old($field, $isEdit ? ($customPage->{$field} ?? $default) : $default);
     };
 
+    $allCategories = (bool) old('all_categories', $isEdit ? $customPage->all_categories : false);
+    $typeOptions = [
+        'admin' => __('admin.custom_pages.type_admin'),
+        'vendor' => __('admin.custom_pages.type_vendor'),
+        'marketer' => __('admin.custom_pages.type_marketer'),
+    ];
+    $selectedTypes = old('listing_types', $isEdit ? ($customPage->listing_types ?? []) : []);
     $selectedCategories = $isEdit ? $customPage->categories->map(fn ($c) => ['id' => $c->id, 'text' => $c->name_en])->values() : collect();
 @endphp
 
@@ -62,6 +69,11 @@
                     help-text="{{ __('admin.categories.has_filters_hint') }}" />
             </div>
 
+            <x-form.select name="listing_types" label="{{ __('admin.custom_pages.listing_types') }}"
+                :options="$typeOptions" :value="$selectedTypes" multiple select2
+                placeholder="{{ __('admin.custom_pages.all_types') }}"
+                help-text="{{ __('admin.custom_pages.listing_types_help') }}" />
+
             <hr class="border-gray-100">
 
             <div class="grid grid-cols-2 gap-4">
@@ -78,6 +90,11 @@
                 <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
                     {{ __('admin.custom_pages.categories') }}
                 </h4>
+                <div class="mb-3">
+                    <x-form.toggle name="all_categories" label="{{ __('admin.custom_pages.all_categories') }}"
+                        :checked="$allCategories" help-text="{{ __('admin.custom_pages.all_categories_help') }}" />
+                </div>
+                <div id="custom-page-category-picker" class="{{ $allCategories ? 'opacity-50 pointer-events-none' : '' }}">
                 <p class="text-xs text-gray-400 mb-3">{{ __('admin.custom_pages.categories_help') }}</p>
 
                 <div class="relative mb-3">
@@ -93,6 +110,7 @@
                 <div id="custom-page-category-list" class="space-y-1 text-sm text-gray-500">
                     <div class="text-xs text-gray-400 px-2 py-3 text-center">{{ __('admin.custom_pages.no_categories_yet') }}</div>
                 </div>
+                </div>
             </div>
 
             @if($isEdit)
@@ -102,11 +120,15 @@
                 </h4>
                 <p class="text-xs text-gray-400 mb-3">{{ __('admin.custom_pages.inherited_filters_help') }}</p>
                 <div class="space-y-1 text-sm text-gray-600">
+                    @if($allCategories)
+                        <div class="text-xs text-gray-500 px-2 py-3 text-center">{{ __('admin.custom_pages.all_categories_filters') }}</div>
+                    @else
                     @forelse($filterableAttributes as $attribute)
                         <div class="px-2 py-1 rounded bg-gray-50">{{ $attribute->name_en }}</div>
                     @empty
                         <div class="text-xs text-gray-400 px-2 py-3 text-center">{{ __('admin.custom_pages.no_filters_yet') }}</div>
                     @endforelse
+                    @endif
                 </div>
             </div>
             @endif

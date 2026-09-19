@@ -64,9 +64,13 @@ class CustomPageController extends Controller
             'seo_title_ar' => 'nullable|string|max:255',
             'seo_description_en' => 'nullable|string|max:255',
             'seo_description_ar' => 'nullable|string|max:255',
+            'listing_types' => 'nullable|array',
+            'listing_types.*' => ['string', \Illuminate\Validation\Rule::in(CustomPage::LISTING_TYPES)],
+            'all_categories' => 'nullable|boolean',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'string|exists:categories,id',
-        ]);
+        ], $this->categoryMessages());
+        $this->assertCategoryScope($request);
 
         $customPage = DB::transaction(function () use ($data, $request) {
             $customPage = CustomPage::create([
@@ -81,14 +85,17 @@ class CustomPageController extends Controller
                 'seo_title_ar' => $data['seo_title_ar'] ?? null,
                 'seo_description_en' => $data['seo_description_en'] ?? null,
                 'seo_description_ar' => $data['seo_description_ar'] ?? null,
+                'listing_types' => $this->service->normalizeListingTypes($data['listing_types'] ?? null),
+                'all_categories' => $request->boolean('all_categories'),
             ]);
 
             $slug = $this->service->uniqueSlug($data['slug'] ?? null, $data['name_en'], $customPage);
             Slug::upsertFor($customPage, $slug);
 
-            if (!empty($data['category_ids'])) {
-                $this->service->syncCategories($customPage, $data['category_ids']);
-            }
+            $this->service->syncCategories(
+                $customPage,
+                $request->boolean('all_categories') ? [] : ($data['category_ids'] ?? [])
+            );
 
             return $customPage;
         });
@@ -134,9 +141,13 @@ class CustomPageController extends Controller
             'seo_title_ar' => 'nullable|string|max:255',
             'seo_description_en' => 'nullable|string|max:255',
             'seo_description_ar' => 'nullable|string|max:255',
+            'listing_types' => 'nullable|array',
+            'listing_types.*' => ['string', \Illuminate\Validation\Rule::in(CustomPage::LISTING_TYPES)],
+            'all_categories' => 'nullable|boolean',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'string|exists:categories,id',
-        ]);
+        ], $this->categoryMessages());
+        $this->assertCategoryScope($request);
 
         DB::transaction(function () use ($data, $request, $customPageModel) {
             $customPageModel->update([
@@ -151,6 +162,8 @@ class CustomPageController extends Controller
                 'seo_title_ar' => $data['seo_title_ar'] ?? null,
                 'seo_description_en' => $data['seo_description_en'] ?? null,
                 'seo_description_ar' => $data['seo_description_ar'] ?? null,
+                'listing_types' => $this->service->normalizeListingTypes($data['listing_types'] ?? null),
+                'all_categories' => $request->boolean('all_categories'),
             ]);
 
             $currentSlug = $customPageModel->slugRecord?->slug_url;
@@ -159,10 +172,27 @@ class CustomPageController extends Controller
                 Slug::upsertFor($customPageModel, $slug);
             }
 
-            $this->service->syncCategories($customPageModel, $data['category_ids'] ?? []);
+            $this->service->syncCategories(
+                $customPageModel,
+                $request->boolean('all_categories') ? [] : ($data['category_ids'] ?? [])
+            );
         });
 
         return response()->json(['success' => true, 'message' => __('admin.custom_pages.updated')]);
+    }
+
+    private function categoryMessages(): array
+    {
+        return ['category_ids.required_without_all' => __('admin.custom_pages.categories_required')];
+    }
+
+    private function assertCategoryScope(Request $request): void
+    {
+        if (!$request->boolean('all_categories') && empty($request->input('category_ids'))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'category_ids' => [__('admin.custom_pages.categories_required')],
+            ]);
+        }
     }
 
     public function destroy(string $customPage): JsonResponse

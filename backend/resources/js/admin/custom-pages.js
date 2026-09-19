@@ -27,6 +27,7 @@ function t(key) {
 document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('custom-page-form')) {
         initCategoryPicker();
+        initAllCategoriesToggle();
         initFormSubmit();
     }
 
@@ -122,15 +123,25 @@ function escapeHtml(str) {
 
 // ─── Form submit (edit mode via AJAX, create mode via standard POST) ───────
 
-function initFormSubmit() {
-    if (!isEditMode()) return;
+function initAllCategoriesToggle() {
+    const $cb = $('#all_categories');
+    const apply = () => {
+        const on = $cb.is(':checked');
+        $('#custom-page-category-picker').toggleClass('opacity-50 pointer-events-none', on);
+        $('#custom-page-category-search').prop('disabled', on);
+        $('#category-ids-inputs input').prop('disabled', on);
+    };
+    $cb.on('change', apply);
+    apply();
+}
 
+function initFormSubmit() {
     $('#custom-page-form').on('submit', function (e) {
         e.preventDefault();
 
         const $btn = $('#submit-btn').prop('disabled', true);
         const formData = new FormData(this);
-        formData.set('_method', 'PUT');
+        if (isEditMode()) formData.set('_method', 'PUT');
 
         $.ajax({
             url: $(this).attr('action'),
@@ -141,6 +152,7 @@ function initFormSubmit() {
         })
             .done(function (res) {
                 window.Toast?.success(res.message || 'Saved.');
+                if (!isEditMode() && res.redirect) window.location.href = res.redirect;
             })
             .fail(function (xhr) {
                 if (xhr.status === 422) {
