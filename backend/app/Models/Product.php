@@ -167,6 +167,12 @@ class Product extends Model
             ->orderBy('sort_order');
     }
 
+    /** All promo badges (active and inactive) for the admin editor. */
+    public function allPromoBadges(): HasMany
+    {
+        return $this->hasMany(ProductPromoBadge::class)->orderBy('sort_order');
+    }
+
     public function coupons(): BelongsToMany
     {
         return $this->belongsToMany(Coupon::class, 'coupon_products');

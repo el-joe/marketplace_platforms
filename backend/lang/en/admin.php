@@ -3585,6 +3585,7 @@ return [
         'tab_fbt'                   => 'Frequently Bought Together',
         'tab_countries'             => 'Countries',
         'tab_seo'                   => 'SEO',
+        'tab_promo_badges'          => 'Promo Badges',
         'form_tabs_aria'            => 'Product form tabs',
         'fbt_hint'                  => 'Choose products that are commonly bought together with this product. These will be suggested to customers on the product page.',
         'fbt_save_first'            => 'Save this product first to manage frequently bought together items.',

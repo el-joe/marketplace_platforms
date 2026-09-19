@@ -65,6 +65,16 @@ class UpdateProductRequest extends FormRequest
             'highlights.*.text_en' => ['required_with:highlights.*.text_ar', 'nullable', 'string', 'max:500'],
             'highlights.*.text_ar' => ['required_with:highlights.*.text_en', 'nullable', 'string', 'max:500'],
 
+            // Promo badges
+            'promo_badges' => ['nullable', 'array', 'max:10'],
+            'promo_badges.*.id' => ['nullable', 'exists:product_promo_badges,id'],
+            'promo_badges.*.label_en' => ['required_with:promo_badges.*.label_ar', 'nullable', 'string', 'max:100'],
+            'promo_badges.*.label_ar' => ['required_with:promo_badges.*.label_en', 'nullable', 'string', 'max:100'],
+            'promo_badges.*.icon_key' => ['nullable', 'string', 'max:50'],
+            'promo_badges.*.color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'promo_badges.*.text_color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'promo_badges.*.is_active' => ['nullable', 'boolean'],
+
             // Specifications
             'specifications' => ['nullable', 'array'],
             'specifications.*.id' => ['nullable', 'exists:product_specifications,id'],

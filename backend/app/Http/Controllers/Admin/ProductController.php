@@ -16,6 +16,7 @@ use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductCountrySetting;
 use App\Models\ProductHighlight;
+use App\Models\ProductPromoBadge;
 use App\Models\ProductImage;
 use App\Models\ProductSpecification;
 use App\Models\ProductVariant;
@@ -417,6 +418,7 @@ class ProductController extends Controller
             'existingAttrValues' => $existingAttrValueIds,
             'highlights' => $highlights,
             'specifications' => $specifications,
+            'promoBadges' => ProductPromoBadge::query()->where('product_id', $product)->orderBy('sort_order')->get(),
         ]));
     }
 
@@ -467,6 +469,7 @@ class ProductController extends Controller
         $this->syncImages($product, $request->input('images', []));
 
         $this->syncHighlights($product, $request->input('highlights', []), update: true);
+        $this->syncPromoBadges($product, $request->input('promo_badges', []));
         $this->syncSpecifications($product, $request->input('specifications', []), update: true);
 
         DB::commit();
@@ -1495,6 +1498,41 @@ class ProductController extends Controller
                     'is_primary' => $i === 0,
                     'updated_at' => now(),
                 ]);
+        }
+    }
+
+    private function syncPromoBadges(string $productId, array $badges): void
+    {
+        $rows = collect($badges)
+            ->filter(fn($b) => filled($b['label_en'] ?? null) && filled($b['label_ar'] ?? null))
+            ->values();
+
+        $incomingIds = $rows->pluck('id')->filter()->values()->all();
+
+        ProductPromoBadge::query()
+            ->where('product_id', $productId)
+            ->when(!empty($incomingIds), fn($q) => $q->whereNotIn('id', $incomingIds))
+            ->delete();
+
+        foreach ($rows as $i => $b) {
+            $payload = [
+                'label_en' => $b['label_en'],
+                'label_ar' => $b['label_ar'],
+                'icon_key' => $b['icon_key'] ?: 'Tag',
+                'color_hex' => $b['color_hex'] ?? '#1a1a2e',
+                'text_color_hex' => $b['text_color_hex'] ?? '#FFFFFF',
+                'sort_order' => $i,
+                'is_active' => filter_var($b['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            ];
+
+            if (filled($b['id'] ?? null)) {
+                ProductPromoBadge::query()
+                    ->where('product_id', $productId)
+                    ->where('id', $b['id'])
+                    ->update($payload);
+            } else {
+                ProductPromoBadge::create($payload + ['product_id' => $productId]);
+            }
         }
     }
 
