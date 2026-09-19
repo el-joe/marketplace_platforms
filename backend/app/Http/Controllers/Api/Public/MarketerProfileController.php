@@ -130,7 +130,7 @@ class MarketerProfileController extends Controller
     {
         $profile = MarketerProfile::where('profile_slug', $slug)
             ->with([
-                'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
+                'marketer:id,name,marketer_type,country_id,global_status,total_campaigns,total_conversions',
                 'marketer.country:id,name_en,name_ar,currency_code',
                 'bannerFile',
                 'avatarFile',
@@ -139,7 +139,7 @@ class MarketerProfileController extends Controller
             ])
             ->first();
 
-        if (!$profile || !$profile->marketer) {
+        if (!$profile || !$profile->marketer || ($profile->marketer->global_status?->value ?? $profile->marketer->global_status) !== 'active') {
             return null;
         }
 

@@ -43,3 +43,11 @@
 - Existing `SpecialRequestRoutingTest` (10 tests) already covers: validation, city/category routing, null city, non-affiliate/inactive brokers, once-per-admin notify, marketer index/show/API matching, IDOR, close guard, throttle, layout.
 - NOT EXECUTED (GAP): both runs failed at schema load on shared `marketplace_test` DB (table-exists / deadlock from parallel agents), 0 assertions run. No app code changed. Re-run alone: `php artisan test --filter=SpecialRequestRoutingTest`.
 - Not verified: guest 401 on store, in_progress transition, storefront browse-page button (only profile/special-requests pages found).
+
+## F02 — Influencer/Broker profile fields, ad price, self-edit
+- PASS: `PUT /marketer/profile/ad-price` 403 when `can_self_edit_ad_price` false; rejects negative/non-integer/non-numeric price and >3-char currency; saves valid (ProfileController.php:103).
+- PASS: public list shows ad_price/currency, hides non-active marketers; unknown slug 404; profile splits own (invitation_id NULL) vs campaign (NOT NULL) listings; no email/commission leak.
+- FIXED: `GET /marketers/{slug}` returned suspended/inactive marketers' profiles (list hid them). Now 404 (MarketerProfileController.php buildHeader).
+- GAP: influencer clothing/shoe measurements are exposed on the public profile (`profile.measurements`) — spec says sizes must not leak; left as-is (product decision, likely intentional for influencer sizing).
+- GAP: currency is only `size:3`, not validated against the currencies table.
+- Test: backend/tests/Feature/Marketer/MarketerProfileAdPriceTest.php (5 tests). Note: shared `marketplace_test` DB deadlocks under parallel agents; ran with DB_DATABASE=marketplace_test_f02.
