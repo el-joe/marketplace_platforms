@@ -18,7 +18,7 @@
             <h1 class="text-2xl font-bold text-gray-900 font-mono">{{ $paidAdBooking->booking_reference }}</h1>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            @if($paidAdBooking->status->value === 'pending')
+            @if($paidAdBooking->status->value === 'pending_review')
                 <button type="button"
                     class="btn btn-success js-approve-booking-btn"
                     data-url="{{ route('admin.paid-ad-bookings.approve', $paidAdBooking->id) }}"
@@ -49,10 +49,11 @@
             <x-card title="{{ __('admin.paid_ad_bookings.booking_details') }}">
                 <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 text-sm">
                     @php
-                        $statusColors = ['pending'=>'warning','active'=>'success','rejected'=>'danger','cancelled'=>'gray','ended'=>'gray'];
+                        $statusColors = ['draft'=>'gray','pending_review'=>'warning','approved'=>'info','scheduled'=>'info','active'=>'success','paused'=>'warning','completed'=>'gray','rejected'=>'danger','cancelled'=>'gray','expired'=>'gray'];
                         $sc = $statusColors[$paidAdBooking->status->value] ?? 'gray';
-                        $payColors = ['unpaid'=>'danger','paid'=>'success','invoiced'=>'warning','refunded'=>'gray'];
-                        $pc = $payColors[$paidAdBooking->payment_status ?? 'unpaid'] ?? 'gray';
+                        $payColors = ['unpaid'=>'danger','paid'=>'success','reserved'=>'warning','refunded'=>'gray','partially_refunded'=>'gray'];
+                        $payValue = $paidAdBooking->payment_status?->value ?? 'unpaid';
+                        $pc = $payColors[$payValue] ?? 'gray';
                     @endphp
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.status') }}</dt>
@@ -66,7 +67,7 @@
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.payment') }}</dt>
                         <dd>
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $pc }}-100 text-{{ $pc }}-700">
-                                {{ ucfirst($paidAdBooking->payment_status ?? 'unpaid') }}
+                                {{ ucfirst($payValue) }}
                             </span>
                         </dd>
                     </div>
