@@ -70,6 +70,39 @@ class ListingController extends Controller
         );
     }
 
+    public function promoBadges(string $id): \Illuminate\Http\JsonResponse
+    {
+        $listing = VendorListing::findOrFail($id);
+
+        Gate::authorize('view', $listing);
+
+        return ApiResponse::success($this->badgePayload($listing));
+    }
+
+    public function updatePromoBadges(\Illuminate\Http\Request $request, string $id): \Illuminate\Http\JsonResponse
+    {
+        $listing = VendorListing::with('productVariant')->findOrFail($id);
+
+        Gate::authorize('view', $listing);
+
+        if (!auth('vendor')->user()->can('listings.edit')) {
+            return ApiResponse::error('You do not have permission to edit listings.', [], 403);
+        }
+
+        // Archived listings are read-only; rejected ones stay editable (never public anyway).
+        if ($listing->status === \App\Enums\VendorListingStatus::Archived) {
+            return ApiResponse::error('Archived listings cannot be edited.', [], 403);
+        }
+
+        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+
+        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+            $listing->productVariant->product_id, 'vendor_listing_id', $listing->id, $data['promo_badges'] ?? [],
+        );
+
+        return ApiResponse::success($this->badgePayload($listing), 'Promo badges saved.');
+    }
+
     public function updatePrice(UpdateListingPriceRequest $request, string $id): \Illuminate\Http\JsonResponse
     {
         $listing = VendorListing::findOrFail($id);
@@ -148,5 +181,18 @@ class ListingController extends Controller
         $this->listingService->delete($listing);
 
         return ApiResponse::success(null, 'Listing archived.');
+    }
+
+    private function badgePayload(VendorListing $listing): array
+    {
+        return $listing->promoBadges()->orderBy('sort_order')->get()->map(fn ($b) => [
+            'id' => $b->id,
+            'label' => ['ar' => $b->label_ar, 'en' => $b->label_en],
+            'icon_key' => $b->icon_key,
+            'color_hex' => $b->color_hex,
+            'text_color_hex' => $b->text_color_hex,
+            'sort_order' => $b->sort_order,
+            'is_active' => (bool) $b->is_active,
+        ])->all();
     }
 }

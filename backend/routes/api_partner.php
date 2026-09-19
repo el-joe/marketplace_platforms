@@ -76,6 +76,7 @@ Route::prefix('v1')->group(function (): void {
         // Listings (read-only)
         Route::prefix('listings')->name('partner.api.listings.')->group(function (): void {
             Route::get('/',      [ListingController::class, 'index'])->name('index');
+            Route::get('{id}/promo-badges', [ListingController::class, 'promoBadges'])->name('promo-badges');
             Route::get('{id}',   [ListingController::class, 'show'])->name('show');
         });
 

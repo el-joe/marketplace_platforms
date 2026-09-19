@@ -44,6 +44,8 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/listings',                             [ListingController::class, 'index']);
     Route::post('/listings/{listing}/toggle',           [ListingController::class, 'toggleStatus']);
     Route::post('/listings/{listing}/price',            [ListingController::class, 'updatePrice']);
+    Route::get('/listings/{listing}/promo-badges',      [ListingController::class, 'promoBadges']);
+    Route::put('/listings/{listing}/promo-badges',      [ListingController::class, 'updatePromoBadges']);
     Route::delete('/listings/{listing}',                [ListingController::class, 'destroy']);
 
     Route::get('/finance/commissions',                  [FinanceController::class, 'commissions']);

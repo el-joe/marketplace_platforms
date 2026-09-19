@@ -6,6 +6,7 @@ use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MarketerListing extends Model
@@ -147,5 +148,11 @@ class MarketerListing extends Model
 
         static::saved($bump);
         static::deleted($bump);
+    }
+
+    /** Rotating promo badges attached to this listing (incl. inactive). */
+    public function promoBadges(): HasMany
+    {
+        return $this->hasMany(ProductPromoBadge::class)->orderBy('sort_order');
     }
 }

@@ -59,6 +59,7 @@ class BrandPageController extends Controller
 
         $wishlistListingIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($paginator->getCollection()));
         $items = $paginator->getCollection()->map(function ($listing) use ($country, $wishlistListingIds) {
             $product = $listing->productVariant->product;
 

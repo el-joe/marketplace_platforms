@@ -5,6 +5,8 @@ import { Link } from "@/i18n/navigation";
 import Price from "./Price";
 import useLocale from "@/src/hooks/use-locale";
 import type { Product } from "@/types/globals";
+import AnimatedBadge from "./animated-badge";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 import { AdBadge } from "./ad-badge";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
@@ -74,6 +76,12 @@ const SpecialProductCard = ({ productData }: Props) => {
           size="sm"
         />
 
+        {!!productData.promo_badges?.length && (
+          <AnimatedBadge
+            size="sm"
+            badges={mapPromoBadges(productData.promo_badges, locale)}
+          />
+        )}
         {!!productData.shipping_badge && (
           <div
             className="flex w-fit font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1"

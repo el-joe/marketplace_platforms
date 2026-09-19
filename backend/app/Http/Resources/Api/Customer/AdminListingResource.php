@@ -53,6 +53,7 @@ class AdminListingResource extends JsonResource
             'status' => $listing->status?->value,
             'rating_avg' => (float) $listing->rating_avg,
             'rating_count' => (int) $listing->rating_count,
+            'promo_badges' => \App\Services\Customer\PromoBadgeResolver::instance()->lookup('admin', $listing->id, $product->id),
             'shipping_badge' => $listing->primaryShippingMethod ? [
                 'label'            => [
                     'ar' => $listing->primaryShippingMethod->badge_label_ar,

@@ -1,3 +1,4 @@
+import type { PromoBadge } from "@/types/globals";
 export interface MarketerProfileMarketer {
   id: string;
   name: string;
@@ -65,6 +66,7 @@ export interface MarketerProfileListingItem {
   url_param: string;
   product_url: string;
   is_wishlisted: boolean;
+  promo_badges?: PromoBadge[];
   campaign?: CampaignContext | null; // only on campaign_listings items
 }
 

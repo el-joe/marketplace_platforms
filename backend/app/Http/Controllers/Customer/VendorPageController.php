@@ -109,6 +109,7 @@ class VendorPageController extends Controller
             $paginator->getCollection()->concat($marketerListings)->all()
         );
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($deduped));
         $items = collect($deduped)->map(function ($listing) use ($country, $wishlistListingIds) {
             $product = $listing->productVariant->product;
 

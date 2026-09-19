@@ -6,21 +6,10 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/src/components/ui/badge";
 import useCountDown from "@/src/hooks/useCountDown";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
-import { CarIcon, TruckIcon } from "lucide-react";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 import useLocale from "@/src/hooks/use-locale";
 
 type Props = { product: IProductDetails };
-const PROMO_BADGE_ICONS: Record<
-  string,
-  React.ForwardRefExoticComponent<
-    Omit<React.ComponentProps<typeof CarIcon>, "ref"> &
-      React.RefAttributes<SVGSVGElement>
-  >
-> = {
-  car: CarIcon,
-  truck: TruckIcon,
-};
-
 export default function SmallScreenPrice({ product }: Props) {
   const t = useTranslations("productView");
   const locale = useLocale();
@@ -58,11 +47,7 @@ export default function SmallScreenPrice({ product }: Props) {
       )}
       {!!product.promo_badges?.length && (
         <AnimatedBadge
-          badges={product.promo_badges.map((badge) => ({
-            label: badge.label[locale],
-            icon: PROMO_BADGE_ICONS[badge.icon_key] || CarIcon,
-            iconColor: badge.color_hex,
-          }))}
+          badges={mapPromoBadges(product.promo_badges, locale)}
           containerClasses="px-2! bg-gray-2! rounded-md!"
         />
       )}

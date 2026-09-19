@@ -37,6 +37,7 @@ class WishlistResource extends JsonResource
                 'image'     => $thumbnail ? ['url' => $thumbnail, 'alt' => $images[0]->alt] : null,
                 'images'    => array_map(fn ($i) => $i->toArray(), $images),
             ] : null,
+            'promo_badges'    => $listing ? \App\Services\Customer\PromoBadgeResolver::instance()->lookup('vendor', $listing->id, $product?->id) : [],
             'vendor'          => $listing?->vendor ? [
                 'id'         => $listing->vendor->id,
                 'store_name' => $listing->vendor->store_name,

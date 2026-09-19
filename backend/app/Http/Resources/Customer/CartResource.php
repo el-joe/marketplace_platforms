@@ -38,7 +38,19 @@ class CartResource extends JsonResource
                 $this->offsetExists('coupon_error') && $this->coupon_error !== null,
                 fn () => $this->coupon_error
             ),
-            'items'      => CartItemResource::collection($this->items),
+            'items'      => (function () {
+                \App\Services\Customer\PromoBadgeResolver::instance()->prime(
+                    $this->items->map(function ($i) {
+                        $l = $i->marketer_listing_id ? $i->marketerListing : ($i->admin_listing_id ? $i->adminListing : $i->vendorListing);
+                        return $l ? [
+                            $i->marketer_listing_id ? 'marketer' : ($i->admin_listing_id ? 'admin' : 'vendor'),
+                            $l->id,
+                            $l->productVariant?->product_id,
+                        ] : null;
+                    })->filter()->values()
+                );
+                return CartItemResource::collection($this->items);
+            })(),
             'expires_at' => $this->expires_at,
         ];
     }

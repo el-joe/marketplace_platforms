@@ -530,6 +530,7 @@ class ListingController extends Controller
         $this->authoriseListing($listing);
 
         $listing->load([
+            'promoBadges',
             'productVariant.product.category',
             'productVariant.product.images',
             'warehouseInventories.warehouse',
@@ -1172,6 +1173,23 @@ class ListingController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     // Update Shipping Method
     // ─────────────────────────────────────────────────────────────────────────
+
+    public function updatePromoBadges(Request $request, VendorListing $listing): RedirectResponse
+    {
+        $this->authoriseListing($listing);
+
+        // Archived listings are retired and read-only; rejected ones stay editable so the
+        // vendor can fix them before resubmitting (badges are never public until approval).
+        abort_if($listing->status === VendorListingStatus::Archived, 403);
+
+        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+
+        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+            $listing->productVariant->product_id, 'vendor_listing_id', $listing->id, $data['promo_badges'] ?? [],
+        );
+
+        return back()->with('success', __('partner.promo_badges_saved'));
+    }
 
     public function updateShipping(Request $request, VendorListing $listing): JsonResponse
     {

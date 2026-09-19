@@ -163,6 +163,7 @@ class Product extends Model
     public function promoBadges(): HasMany
     {
         return $this->hasMany(ProductPromoBadge::class)
+            ->productLevel()
             ->where('is_active', true)
             ->orderBy('sort_order');
     }
@@ -170,7 +171,7 @@ class Product extends Model
     /** All promo badges (active and inactive) for the admin editor. */
     public function allPromoBadges(): HasMany
     {
-        return $this->hasMany(ProductPromoBadge::class)->orderBy('sort_order');
+        return $this->hasMany(ProductPromoBadge::class)->productLevel()->orderBy('sort_order');
     }
 
     public function coupons(): BelongsToMany

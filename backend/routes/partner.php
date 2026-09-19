@@ -129,6 +129,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::post('/{listing}/toggle-status', 'toggleStatus')->name('toggle-status')->middleware('vendor.can:listings.publish');
         Route::post('/{listing}/adjust-stock', 'adjustStock')->name('adjust-stock')->middleware('vendor.can:listings.stock.edit');
         Route::post('/{listing}/toggle-covers-delivery', 'toggleCoversDelivery')->name('toggle-covers-delivery')->middleware('vendor.can:listings.edit');
+        Route::put('/{listing}/promo-badges', 'updatePromoBadges')->name('promo-badges.update')->middleware('vendor.can:listings.edit');
         Route::post('/{listing}/update-dimensions', 'updateDimensions')->name('update-dimensions')->middleware('vendor.can:listings.edit');
         Route::get('/{listing}/shipping-preview', 'shippingPreview')->name('shipping-preview')->middleware('vendor.can:listings.view');
         Route::post('/{listing}/clear-cache', 'clearCache')

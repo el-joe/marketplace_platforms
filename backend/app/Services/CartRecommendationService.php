@@ -185,7 +185,8 @@ class CartRecommendationService
                     ->limit(self::SECTION_LIMIT)
                     ->with(self::ADMIN_WITH)
                     ->get()
-                    ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                    ->tap(fn ($c) => \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($c)))
+                ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
                     ->filter();
             }
 
@@ -202,6 +203,7 @@ class CartRecommendationService
                 ->limit(self::SECTION_LIMIT)
                 ->with(self::VENDOR_WITH)
                 ->get()
+                ->tap(fn ($c) => \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($c)))
                 ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
                 ->filter();
         });
@@ -227,7 +229,8 @@ class CartRecommendationService
                     ->limit(self::SECTION_LIMIT)
                     ->with(self::ADMIN_WITH)
                     ->get()
-                    ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+                    ->tap(fn ($c) => \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($c)))
+                ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
                     ->filter();
             }
 
@@ -241,6 +244,7 @@ class CartRecommendationService
                 ->limit(self::SECTION_LIMIT)
                 ->with(self::VENDOR_WITH)
                 ->get()
+                ->tap(fn ($c) => \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($c)))
                 ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
                 ->filter();
         });
@@ -300,6 +304,7 @@ class CartRecommendationService
                 ->map(fn ($group) => $group->first())
                 ->values()
                 ->take($limit)
+                ->tap(fn ($c) => \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($c)))
                 ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
                 ->filter();
         }
@@ -320,7 +325,8 @@ class CartRecommendationService
             ->map(fn ($group) => $group->first())
             ->values()
             ->take($limit)
-            ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
+            ->tap(fn ($c) => \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($c)))
+                ->map(fn ($l) => $this->toCard($l, $country, $wishlistIds, $isNawyNow))
             ->filter();
     }
 

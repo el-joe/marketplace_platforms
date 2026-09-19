@@ -293,6 +293,7 @@ class MarketerProfileController extends Controller
 
         $campaignTotal = $campaignBaseQuery()->count();
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings(collect($ownListings)->concat($campaignListings)));
         $ownCards = collect($ownListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
             $card = $this->listings->toMarketerCardShape(
                 listing: $listing,

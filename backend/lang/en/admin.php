@@ -3543,6 +3543,14 @@ return [
     ],
 
     // ─── Products ────────────────────────────────────────────────────────────
+    'promo_badges' => [
+        'title' => 'Promo Badges',
+        'hint' => 'Messages rotated on the product card and product page, in the order shown. Max :max.',
+        'listing_hint' => 'Shown on this listing only. When empty, the product-level badges are used.',
+        'add' => '+ Add badge', 'label_en' => 'Label (EN)', 'label_ar' => 'Label (AR)',
+        'icon' => 'Icon (Lucide name)', 'active' => 'Active', 'up' => 'Up', 'remove' => 'Remove',
+        'empty' => 'No badges yet.',
+    ],
     'products' => [
         'images' => 'Images',
         'listings' => 'Listings',

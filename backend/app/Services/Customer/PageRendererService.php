@@ -500,6 +500,15 @@ class PageRendererService
             ->get()
             ->keyBy('product_variant_id');
 
+        $primeTuples = [];
+        foreach ($blockProducts as $bp) {
+            $l = $adminByVariant[$bp->product_variant_id] ?? $vendorByVariant[$bp->product_variant_id] ?? null;
+            if ($l) {
+                $primeTuples[] = [\App\Services\Customer\PromoBadgeResolver::typeOf($l), $l->id, $bp->productVariant?->product_id];
+            }
+        }
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime($primeTuples);
+
         return $blockProducts
             ->filter(fn ($bp) =>
                 $bp->productVariant
@@ -583,6 +592,8 @@ class PageRendererService
         app(\App\Services\Media\ListingImageResolver::class)->forVariants(
             $submissions->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
         );
+
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')->filter()));
 
         return $submissions
             ->filter(fn ($s) =>
@@ -673,6 +684,8 @@ class PageRendererService
         app(\App\Services\Media\ListingImageResolver::class)->forVariants(
             $submissions->pluck('vendorListing.productVariant.id')->filter()->unique()->values()
         );
+
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')->filter()));
 
         $items = $submissions
             ->filter(fn($s) => $s->vendorListing)
@@ -1140,6 +1153,7 @@ class PageRendererService
                 ->limit((int) ceil($maxProducts / 2))
                 ->get();
 
+            \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($adminListings->concat($vendorListings)));
             $cards = collect();
             foreach ($adminListings as $al) {
                 if ($al->productVariant?->product) {

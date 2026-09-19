@@ -57,6 +57,7 @@ class MarketerListingResource extends JsonResource
             'status' => $listing->status,
             'rating_avg' => (float) $listing->rating_avg,
             'rating_count' => (int) $listing->rating_count,
+            'promo_badges' => \App\Services\Customer\PromoBadgeResolver::instance()->lookup('marketer', $listing->id, $product->id),
             'total_sold' => (int) $listing->total_sold,
             'shipping_badge' => null,
             'referral_code' => $listing->referral_code,

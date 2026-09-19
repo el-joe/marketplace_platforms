@@ -80,4 +80,37 @@ class ListingController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function promoBadges(MarketerListing $listing): JsonResponse
+    {
+        abort_unless($listing->marketer_id === $this->marketer()->id && $listing->product_variant_id, 403);
+
+        return response()->json(['success' => true, 'data' => $this->badgePayload($listing)]);
+    }
+
+    public function updatePromoBadges(Request $request, MarketerListing $listing): JsonResponse
+    {
+        abort_unless($listing->marketer_id === $this->marketer()->id && $listing->product_variant_id, 403);
+
+        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+
+        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+            $listing->productVariant->product_id, 'marketer_listing_id', $listing->id, $data['promo_badges'] ?? [],
+        );
+
+        return response()->json(['success' => true, 'message' => 'Promo badges saved.', 'data' => $this->badgePayload($listing)]);
+    }
+
+    private function badgePayload(MarketerListing $listing): array
+    {
+        return $listing->promoBadges()->orderBy('sort_order')->get()->map(fn ($b) => [
+            'id' => $b->id,
+            'label' => ['ar' => $b->label_ar, 'en' => $b->label_en],
+            'icon_key' => $b->icon_key,
+            'color_hex' => $b->color_hex,
+            'text_color_hex' => $b->text_color_hex,
+            'sort_order' => $b->sort_order,
+            'is_active' => (bool) $b->is_active,
+        ])->all();
+    }
 }

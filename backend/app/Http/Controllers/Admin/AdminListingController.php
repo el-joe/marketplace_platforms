@@ -231,7 +231,9 @@ class AdminListingController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate($this->storeRules());
+        $data = $request->validate($this->storeRules() + \App\Services\Shared\PromoBadgeSyncService::rules());
+        $badges = $data['promo_badges'] ?? [];
+        unset($data['promo_badges']);
 
         if (!empty($data['warehouse_id'])) {
             $warehouse = Warehouse::find($data['warehouse_id']);
@@ -240,7 +242,7 @@ class AdminListingController extends Controller
             }
         }
 
-        $listing = DB::transaction(function () use ($data) {
+        $listing = DB::transaction(function () use ($data, $badges) {
             $listing = AdminListing::create(array_merge($data, [
                 'currency'               => Country::findOrFail($data['country_id'])->currency_code,
                 'created_by_admin_id'    => auth('admin')->id(),
@@ -258,6 +260,10 @@ class AdminListingController extends Controller
                 ]);
             }
 
+            if (!empty($badges)) {
+                $this->syncListingBadges($listing, $badges);
+            }
+
             return $listing;
         });
 
@@ -266,8 +272,42 @@ class AdminListingController extends Controller
             ->with('success', __('admin.admin_listings.created_success'));
     }
 
+    public function updatePromoBadges(Request $request, AdminListing $adminListing): RedirectResponse
+    {
+        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+
+        $this->syncListingBadges($adminListing, $data['promo_badges'] ?? []);
+
+        return back()->with('success', __('admin.products.tab_promo_badges') . ' ✓');
+    }
+
+    private function syncListingBadges(AdminListing $listing, array $badges): void
+    {
+        $labels = fn () => $listing->promoBadges()->orderBy('sort_order')->get()
+            ->map(fn ($b) => ['label_en' => $b->label_en, 'label_ar' => $b->label_ar, 'is_active' => (bool) $b->is_active])->values()->all();
+        $before = $labels();
+
+        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+            $listing->productVariant->product_id, 'admin_listing_id', $listing->id, $badges,
+        );
+
+        $after = $labels();
+        if ($before !== $after) {
+            app(\App\Services\ActivityLoggerService::class)->log(
+                description: 'Admin listing promo badges changed',
+                subject: $listing,
+                causer: auth('admin')->user(),
+                properties: ['before' => $before, 'after' => $after],
+                logName: 'catalog',
+                event: 'promo_badges_changed',
+            );
+        }
+    }
+
     public function edit(AdminListing $adminListing): View
     {
+        $adminListing->load('promoBadges');
+
         return view('admin.admin-listings.edit', [
             'listing'         => $adminListing,
             'countries'       => Country::where('is_active', true)->orderBy('name_en')->get(),
@@ -476,7 +516,7 @@ class AdminListingController extends Controller
         app(\App\Services\CachedListingResolver::class)->bustAdminListing($adminListing);
 
         // Bust any page builder blocks that reference this listing
-        $pageCache->bustAdminListingBlocks($adminListing);
+        $pageCache->bustAdminListing($adminListing);
 
         return response()->json([
             'success' => true,

@@ -65,6 +65,7 @@ export function toProductCard(
     total_sold: item.total_sold,
     is_wishlisted: item.is_wishlisted ?? false,
     is_sponsored: false,
+    promo_badges: item.promo_badges,
     ...(item.campaign ? { campaign_context: item.campaign } : {}),
   };
 }

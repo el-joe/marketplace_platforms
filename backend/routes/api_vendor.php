@@ -128,6 +128,8 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('{id}/shipping-methods', [ListingController::class, 'availableShippingMethods'])->name('shipping-methods');
                 Route::put('{id}/shipping', [ListingController::class, 'updateShipping'])->name('shipping');
                 Route::put('{id}/delivery-coverage', [ListingController::class, 'updateDeliveryCoverage'])->name('delivery-coverage');
+                Route::get('{id}/promo-badges', [ListingController::class, 'promoBadges'])->name('promo-badges.show')->middleware('vendor.can:listings.view');
+                Route::put('{id}/promo-badges', [ListingController::class, 'updatePromoBadges'])->name('promo-badges.update')->middleware('vendor.can:listings.edit');
                 Route::delete('{id}',      [ListingController::class, 'destroy'])->name('destroy');
             });
 

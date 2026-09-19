@@ -809,6 +809,8 @@ CREATE TABLE `banner_placement_definitions` (
   `device_restriction` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `max_simultaneous` int NOT NULL,
   `supports_vendor_ads` tinyint(1) NOT NULL,
+  `creative_source` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'upload',
+  `allowed_destination_types` json DEFAULT NULL,
   `base_rate_weekly` bigint DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL,
   `sort_order` int NOT NULL DEFAULT '0',
@@ -825,7 +827,7 @@ CREATE TABLE `banners` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `country_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `placement_code` enum('homepage_hero','homepage_secondary_left','homepage_secondary_right','homepage_midpage','category_top_{slug}','category_sidebar','search_top','cart_banner','checkout_banner','product_page_bottom','app_splash','app_home_top','email_header','product_page_inline_1','product_page_inline_2','gift_cards_hero','gift_cards_redeem') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `placement_code` enum('homepage_hero','homepage_secondary_left','homepage_secondary_right','homepage_midpage','category_top_{slug}','category_sidebar','search_top','cart_banner','checkout_banner','product_page_bottom','app_splash','app_home_top','email_header','product_page_inline_1','product_page_inline_2','gift_cards_hero','gift_cards_redeem','product_page_top') COLLATE utf8mb4_unicode_ci NOT NULL,
   `product_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'If set, this banner is shown only on this product page',
   `title_en` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `title_ar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -1797,6 +1799,21 @@ CREATE TABLE `currencies` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `currency_exchange_rates`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `currency_exchange_rates` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `from_currency_code` char(3) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `to_currency_code` char(3) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rate_numerator` bigint NOT NULL,
+  `rate_denominator` bigint NOT NULL,
+  `effective_at` timestamp NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `currency_exchange_rates_pair_effective_at_idx` (`from_currency_code`,`to_currency_code`,`effective_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `custom_page_category_map`;
@@ -2913,6 +2930,51 @@ CREATE TABLE `inbound_shipments` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `inbound_shipments_shipment_code_unique` (`shipment_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `international_shipping_eligibility`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `international_shipping_eligibility` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `admin_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `destination_country_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `intl_shipping_elig_dest_country_fk` (`destination_country_id`),
+  KEY `intl_shipping_elig_vendor_dest_idx` (`vendor_listing_id`,`destination_country_id`),
+  KEY `intl_shipping_elig_admin_dest_idx` (`admin_listing_id`,`destination_country_id`),
+  CONSTRAINT `international_shipping_eligibility_admin_listing_id_foreign` FOREIGN KEY (`admin_listing_id`) REFERENCES `admin_listings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `international_shipping_eligibility_vendor_listing_id_foreign` FOREIGN KEY (`vendor_listing_id`) REFERENCES `vendor_listings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `intl_shipping_elig_dest_country_fk` FOREIGN KEY (`destination_country_id`) REFERENCES `countries` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `international_shipping_rates`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `international_shipping_rates` (
+  `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `origin_country_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `destination_country_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `carrier_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `base_fee` bigint NOT NULL,
+  `rate_per_kg` bigint NOT NULL,
+  `customs_fee_flat` bigint DEFAULT NULL,
+  `min_eta_days` smallint NOT NULL,
+  `max_eta_days` smallint NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `intl_shipping_rates_corridor_carrier_unique` (`origin_country_id`,`destination_country_id`,`carrier_id`),
+  KEY `international_shipping_rates_destination_country_id_foreign` (`destination_country_id`),
+  KEY `international_shipping_rates_carrier_id_foreign` (`carrier_id`),
+  CONSTRAINT `international_shipping_rates_carrier_id_foreign` FOREIGN KEY (`carrier_id`) REFERENCES `shipping_carriers` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `international_shipping_rates_destination_country_id_foreign` FOREIGN KEY (`destination_country_id`) REFERENCES `countries` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `international_shipping_rates_origin_country_id_foreign` FOREIGN KEY (`origin_country_id`) REFERENCES `countries` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `inventory_movements`;
@@ -4845,6 +4907,9 @@ DROP TABLE IF EXISTS `product_promo_badges`;
 CREATE TABLE `product_promo_badges` (
   `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `product_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `vendor_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `admin_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `marketer_listing_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `label_en` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `label_ar` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `icon_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -4856,7 +4921,14 @@ CREATE TABLE `product_promo_badges` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `product_promo_badges_product_id_is_active_sort_order_index` (`product_id`,`is_active`,`sort_order`),
-  CONSTRAINT `product_promo_badges_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+  KEY `ppb_listing_active_sort_idx` (`vendor_listing_id`,`is_active`,`sort_order`),
+  KEY `ppb_admin_listing_idx` (`admin_listing_id`,`is_active`,`sort_order`),
+  KEY `ppb_marketer_listing_idx` (`marketer_listing_id`,`is_active`,`sort_order`),
+  CONSTRAINT `product_promo_badges_admin_listing_id_foreign` FOREIGN KEY (`admin_listing_id`) REFERENCES `admin_listings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `product_promo_badges_marketer_listing_id_foreign` FOREIGN KEY (`marketer_listing_id`) REFERENCES `marketer_listings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `product_promo_badges_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `product_promo_badges_vendor_listing_id_foreign` FOREIGN KEY (`vendor_listing_id`) REFERENCES `vendor_listings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_promo_badge_single_owner` CHECK (((((`vendor_listing_id` is not null) + (`admin_listing_id` is not null)) + (`marketer_listing_id` is not null)) <= 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `product_specifications`;
@@ -4962,7 +5034,6 @@ CREATE TABLE `products` (
   `has_custom_attributes` tinyint(1) NOT NULL DEFAULT '0',
   `is_hidden` tinyint(1) NOT NULL DEFAULT '0',
   `is_featured` tinyint(1) NOT NULL DEFAULT '0',
-  `is_mega_deal` tinyint(1) NOT NULL DEFAULT '0',
   `requires_brand_auth` tinyint(1) NOT NULL DEFAULT '0',
   `is_age_restricted` tinyint(1) NOT NULL DEFAULT '0',
   `min_age` tinyint DEFAULT NULL,
@@ -5352,6 +5423,8 @@ DROP TABLE IF EXISTS `shipment_tracking_events`;
 CREATE TABLE `shipment_tracking_events` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `shipment_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `carrier_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `external_tracking_number` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -5360,7 +5433,9 @@ CREATE TABLE `shipment_tracking_events` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `shipment_tracking_events_shipment_id_index` (`shipment_id`)
+  KEY `shipment_tracking_events_shipment_id_index` (`shipment_id`),
+  KEY `shipment_tracking_events_carrier_id_foreign` (`carrier_id`),
+  CONSTRAINT `shipment_tracking_events_carrier_id_foreign` FOREIGN KEY (`carrier_id`) REFERENCES `shipping_carriers` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `shipments`;
@@ -5647,6 +5722,7 @@ CREATE TABLE `sub_orders` (
   `vendor_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `seller_type` enum('vendor','platform') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'vendor',
   `warehouse_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `origin_country_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` enum('placed','confirmed','processing','packed','shipped','out_for_delivery','delivered','completed','cancelled','returned','refunded') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `fulfillment_model` enum('fbm','fbn') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `subtotal` bigint NOT NULL,
@@ -5667,6 +5743,9 @@ CREATE TABLE `sub_orders` (
   `warranty_revenue` bigint NOT NULL DEFAULT '0' COMMENT 'Platform revenue from warranty plans sold on this sub-order''s lines (platform underwrites 100% of warranty_total). BIGINT base currency.',
   `gateway_fee` bigint NOT NULL DEFAULT '0' COMMENT 'Vendor-borne share of payment gateway fee, deducted from vendor_payout. In cents.',
   `gateway_fee_rate` decimal(8,6) NOT NULL DEFAULT '0.000000' COMMENT 'Effective gateway fee rate applied to this sub-order, stored for audit/recalculation transparency.',
+  `fx_rate_numerator` bigint DEFAULT NULL,
+  `fx_rate_denominator` bigint DEFAULT NULL,
+  `fx_rate_captured_at` timestamp NULL DEFAULT NULL,
   `vendor_payout` bigint NOT NULL,
   `cod_remittance_confirmed` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'For COD orders: true only after the delivery agent''s COD settlement covering this order has been marked settled. Vendor payout is blocked until this is true.',
   `cod_remittance_confirmed_at` timestamp NULL DEFAULT NULL,
@@ -5694,8 +5773,10 @@ CREATE TABLE `sub_orders` (
   KEY `sub_orders_exceptional_zone_subsidy_id_foreign` (`exceptional_zone_subsidy_id`),
   KEY `sub_orders_order_status_index` (`order_id`,`status`),
   KEY `sub_orders_vendor_status_delivered_at_index` (`vendor_id`,`status`,`delivered_at`),
+  KEY `sub_orders_origin_country_id_foreign` (`origin_country_id`),
   CONSTRAINT `sub_orders_cod_settlement_id_foreign` FOREIGN KEY (`cod_settlement_id`) REFERENCES `delivery_agent_cod_settlements` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `sub_orders_exceptional_zone_subsidy_id_foreign` FOREIGN KEY (`exceptional_zone_subsidy_id`) REFERENCES `platform_shipping_subsidies` (`id`) ON DELETE SET NULL
+  CONSTRAINT `sub_orders_exceptional_zone_subsidy_id_foreign` FOREIGN KEY (`exceptional_zone_subsidy_id`) REFERENCES `platform_shipping_subsidies` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `sub_orders_origin_country_id_foreign` FOREIGN KEY (`origin_country_id`) REFERENCES `countries` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `subscription_plans`;
@@ -7211,6 +7292,7 @@ CREATE TABLE `warranty_purchases` (
   `customer_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `order_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `order_item_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `product_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `warranty_plan_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `plan_snapshot` json NOT NULL COMMENT 'Immutable copy of plan at purchase time',
   `price_paid` bigint NOT NULL,
@@ -7226,9 +7308,11 @@ CREATE TABLE `warranty_purchases` (
   KEY `warranty_purchases_order_id_index` (`order_id`),
   KEY `warranty_purchases_warranty_plan_id_foreign` (`warranty_plan_id`),
   KEY `warranty_purchases_customer_status_created_index` (`customer_id`,`status`,`created_at`),
+  KEY `warranty_purchases_product_id_index` (`product_id`),
   CONSTRAINT `warranty_purchases_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `warranty_purchases_order_id_foreign` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `warranty_purchases_order_item_id_foreign` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `warranty_purchases_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE SET NULL,
   CONSTRAINT `warranty_purchases_warranty_plan_id_foreign` FOREIGN KEY (`warranty_plan_id`) REFERENCES `warranty_plans` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -7900,3 +7984,16 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (571,'2026_09_18_11
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (572,'2026_09_18_090000_add_note_to_payment_transactions',92);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (573,'2026_09_19_090000_add_offline_proof_fields_to_paid_ad_bookings',93);
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (574,'2026_09_19_100000_create_product_promo_badges_table',94);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (575,'2026_09_19_110000_drop_is_mega_deal_from_products',95);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (576,'2026_09_19_120000_add_product_id_to_warranty_purchases',96);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (577,'2026_09_19_000001_add_product_page_top_placement_to_banners',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (578,'2026_09_19_120000_add_vendor_listing_id_to_product_promo_badges',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (579,'2026_09_19_120000_create_international_shipping_rates_table',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (580,'2026_09_19_120001_create_international_shipping_eligibility_table',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (581,'2026_09_19_120002_create_currency_exchange_rates_table',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (582,'2026_09_19_120003_add_international_shipping_columns_to_sub_orders_table',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (583,'2026_09_19_120004_add_carrier_columns_to_shipment_tracking_events_table',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (584,'2026_09_19_130000_add_creative_source_to_banner_placement_definitions',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (585,'2026_09_19_140000_normalize_listing_ad_creative_urls',97);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (586,'2026_09_19_150000_add_admin_and_marketer_listing_ids_to_product_promo_badges',98);
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES (588,'2026_09_19_180000_add_single_owner_check_to_product_promo_badges',99);

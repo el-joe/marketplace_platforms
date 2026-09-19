@@ -492,6 +492,7 @@ class ListingQueryService
             'rating_avg' => $listing->rating_avg,
             'rating_count' => $listing->rating_count,
             'total_sold' => $listing->total_sold,
+            'promo_badges' => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
             'is_wishlisted' => $isWishlisted,
             'is_sponsored' => $isSponsored,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
@@ -595,6 +596,7 @@ class ListingQueryService
             'vendor'           => null,
             'rating_avg'       => (float) $listing->rating_avg,
             'rating_count'     => (int) $listing->rating_count,
+            'promo_badges'     => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
             'is_wishlisted'    => $isWishlisted,
             'is_sponsored'     => false,
             'shipping_badge'   => $listing->primaryShippingMethod ? [
@@ -696,6 +698,7 @@ class ListingQueryService
             'rating_avg'        => $listing->rating_avg,
             'rating_count'      => $listing->rating_count,
             'total_sold'        => $listing->total_sold,
+            'promo_badges'      => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
             'is_wishlisted'     => $isWishlisted,
             'is_sponsored'      => false,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,

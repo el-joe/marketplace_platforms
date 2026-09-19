@@ -119,6 +119,8 @@ Route::middleware('web')->group(function () {
             Route::get('/search-products', [ListingController::class, 'searchProducts'])->name('search-products');
             Route::post('/{listing}/toggle-status', [ListingController::class, 'toggleStatus'])->name('toggle-status');
             Route::patch('/{listing}/price', [ListingController::class, 'updatePrice'])->name('update-price');
+            Route::get('/{listing}/promo-badges', [ListingController::class, 'promoBadges'])->name('promo-badges.edit');
+            Route::put('/{listing}/promo-badges', [ListingController::class, 'updatePromoBadges'])->name('promo-badges.update');
             Route::delete('/{listing}', [ListingController::class, 'destroy'])->name('destroy');
         });
 
