@@ -38,3 +38,8 @@
 - PASS: total = seats x price (tier-aware), IDOR on my-bookings show/cancel scoped to customer.
 - GAP (not verified): admin search bar vs sidebar search; passport upload endpoint; live-total UI in frontend; true concurrent race (relies on lockForUpdate, not tested in parallel). Test DB was shared/deadlocking, ran with DB_DATABASE=marketplace_test_f07.
 - Test: backend/tests/Feature/Travel/TravelBookingSeatsTest.php (3 pass)
+
+## F05 — Special requests + broker smart routing
+- Existing `SpecialRequestRoutingTest` (10 tests) already covers: validation, city/category routing, null city, non-affiliate/inactive brokers, once-per-admin notify, marketer index/show/API matching, IDOR, close guard, throttle, layout.
+- NOT EXECUTED (GAP): both runs failed at schema load on shared `marketplace_test` DB (table-exists / deadlock from parallel agents), 0 assertions run. No app code changed. Re-run alone: `php artisan test --filter=SpecialRequestRoutingTest`.
+- Not verified: guest 401 on store, in_progress transition, storefront browse-page button (only profile/special-requests pages found).
