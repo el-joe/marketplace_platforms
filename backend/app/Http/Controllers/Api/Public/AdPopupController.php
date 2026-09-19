@@ -9,14 +9,16 @@ use App\Enums\PaidAdSlotTargetType;
 use App\Models\PaidAdBooking;
 use App\Models\VendorListing;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AdPopupController extends Controller
 {
-    public function show(): JsonResponse
+    public function show(Request $request): JsonResponse
     {
         $candidates = [];
 
         $booking = PaidAdBooking::with(['currentCreative.files'])
+            ->where('country_id', $request->attributes->get('country')->id)
             ->where('status', PaidAdBookingStatus::Active->value)
             ->where(fn ($q) => $q->whereNull('booked_until')->orWhereDate('booked_until', '>=', today()))
             ->whereHas('slot', fn ($q) => $q->where('target_type', PaidAdSlotTargetType::ListingPromotion->value)
@@ -35,7 +37,12 @@ class AdPopupController extends Controller
                 'title_ar' => $c->title_ar,
                 'body_en' => $c->subtitle_en,
                 'body_ar' => $c->subtitle_ar,
+                'cta_label_en' => $c->cta_label_en,
+                'cta_label_ar' => $c->cta_label_ar,
                 'image_url' => $c->imagePair('desktop')['en'],
+                'image_url_ar' => $c->imagePair('desktop')['ar'],
+                'image_url_mobile' => $c->imagePair('mobile')['en'],
+                'image_url_mobile_ar' => $c->imagePair('mobile')['ar'],
                 'cta_url' => $this->safeUrl($c->destination_url),
                 'product_slug' => $listing?->productVariant?->product?->slug,
             ];

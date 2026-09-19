@@ -11,6 +11,7 @@ use App\Services\Ads\AdBookingService;
 use App\Services\Ads\AdSlotQuoteService;
 use Database\Seeders\NawiAdsSlotSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\Support\MarketplaceScenario;
 use App\Models\Country;
 use Tests\TestCase;
@@ -110,24 +111,24 @@ class NawiAdsLifecycleTest extends TestCase
         $svc->submit($b);
         $this->assertSame('pending_review', $b->fresh()->status->value);
         $this->assertFalse((bool) $listing->fresh()->is_ad_boosted);
-        $this->getJson('/api/public/v1/active-popup')->assertJson(['popup' => null]);
+        $this->getJson($this->popupUrl())->assertJson(['popup' => null]);
 
         PaidAdCreative::where('paid_ad_booking_id', $b->id)->update(['status' => 'approved', 'approved_at' => now()]);
         $svc->approve($b->fresh(), Admin::first());
 
         $this->assertSame('scheduled', $b->fresh()->status->value);
-        $this->getJson('/api/public/v1/active-popup')->assertJson(['popup' => null]);
+        $this->getJson($this->popupUrl())->assertJson(['popup' => null]);
         $this->runSchedulerAt(today()->addDay()->setTime(12, 0));
 
         $this->assertSame('active', $b->fresh()->status->value);
         $this->assertTrue((bool) $listing->fresh()->is_ad_boosted);
-        $this->getJson('/api/public/v1/active-popup')->assertOk()
+        $this->getJson($this->popupUrl())->assertOk()
             ->assertJsonPath('popup.id', $b->id)
             ->assertJsonPath('popup.title_en', 'Hello');
 
         $this->runSchedulerAt($b->booked_until->copy()->addDay()->setTime(12, 0));
         $this->assertFalse((bool) $listing->fresh()->is_ad_boosted);
-        $this->getJson('/api/public/v1/active-popup')->assertJson(['popup' => null]);
+        $this->getJson($this->popupUrl())->assertJson(['popup' => null]);
     }
 
     /** Move the clock and run the real scheduler job (scheduled -> active / active -> completed). */
@@ -146,7 +147,7 @@ class NawiAdsLifecycleTest extends TestCase
     public function test_popup_is_null_without_popup_bookings(): void
     {
         MarketplaceScenario::make()->build();
-        $this->getJson('/api/public/v1/active-popup')->assertOk()->assertJson(['popup' => null]);
+        $this->getJson($this->popupUrl())->assertOk()->assertJson(['popup' => null]);
     }
 
     public function test_popup_serves_only_active_booking_on_popup_slot(): void
@@ -160,10 +161,20 @@ class NawiAdsLifecycleTest extends TestCase
         $this->assertSame('active', $b->fresh()->status->value);
 
         for ($i = 0; $i < 5; $i++) {
-            $this->getJson('/api/public/v1/active-popup')->assertOk()
+            $this->getJson($this->popupUrl())->assertOk()
                 ->assertJsonPath('popup.id', $b->id)
                 ->assertJsonPath('popup.title_en', 'Hello')
                 ->assertJsonPath('popup.cta_url', 'https://example.com/p');
         }
+    }
+
+    private function popupUrl(?\App\Models\Country $country = null): string
+    {
+        $country ??= \App\Models\Country::query()->first() ?? MarketplaceScenario::make()->build()->country;
+        if (! $country->site_code) {
+            $country->update(['site_code' => 'c'.strtolower(Str::random(5))]);
+        }
+
+        return "/api/public/v1/{$country->site_code}/active-popup";
     }
 }

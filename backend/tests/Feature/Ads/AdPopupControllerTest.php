@@ -48,13 +48,13 @@ class AdPopupControllerTest extends TestCase
 
     public function test_no_active_returns_null(): void
     {
-        $this->getJson('/api/public/v1/active-popup')->assertOk()->assertJson(['popup' => null]);
+        $this->getJson($this->popupUrl())->assertOk()->assertJson(['popup' => null]);
     }
 
     public function test_slot_booking_popup_is_served(): void
     {
         $b = $this->makeBooking(true, 'https://example.com/x');
-        $this->getJson('/api/public/v1/active-popup')->assertOk()
+        $this->getJson($this->popupUrl())->assertOk()
             ->assertJsonPath('popup.id', $b->id)
             ->assertJsonPath('popup.title_en', 'Big deal')
             ->assertJsonPath('popup.cta_url', 'https://example.com/x');
@@ -63,12 +63,32 @@ class AdPopupControllerTest extends TestCase
     public function test_bad_cta_scheme_is_dropped_and_non_popup_slot_ignored(): void
     {
         $this->makeBooking(true, 'javascript:alert(1)');
-        $this->getJson('/api/public/v1/active-popup')->assertOk()->assertJsonPath('popup.cta_url', null);
+        $this->getJson($this->popupUrl())->assertOk()->assertJsonPath('popup.cta_url', null);
     }
 
     public function test_slot_without_shows_popup_is_ignored(): void
     {
         $this->makeBooking(false, 'https://example.com');
-        $this->getJson('/api/public/v1/active-popup')->assertOk()->assertJson(['popup' => null]);
+        $this->getJson($this->popupUrl())->assertOk()->assertJson(['popup' => null]);
+    }
+
+    public function test_popup_is_scoped_to_the_requested_country(): void
+    {
+        $b = $this->makeBooking(true, 'https://example.com/x');
+        $other = \App\Models\Country::factory()->create(['is_active' => true]);
+
+        $this->getJson($this->popupUrl($b->country))->assertOk()->assertJsonPath('popup.id', $b->id);
+        $this->getJson($this->popupUrl($other))->assertOk()->assertJson(['popup' => null]);
+        $this->getJson('/api/public/v1/zz-nope/active-popup')->assertNotFound();
+    }
+
+    private function popupUrl(?\App\Models\Country $country = null): string
+    {
+        $country ??= \App\Models\Country::query()->first() ?? MarketplaceScenario::make()->build()->country;
+        if (! $country->site_code) {
+            $country->update(['site_code' => 'c'.strtolower(Str::random(5))]);
+        }
+
+        return "/api/public/v1/{$country->site_code}/active-popup";
     }
 }

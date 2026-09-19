@@ -1,8 +1,12 @@
 import { apiPublicBaseUrlGlobal } from "@/src/lib/utils";
+import resolveCookie from "@/src/helpers/resolveCookie";
 import type { AdPopup } from "./types";
 
 export async function getActivePopup(): Promise<AdPopup | null> {
-  const res = await fetch(`${apiPublicBaseUrlGlobal}/active-popup`, {
+  const country = await resolveCookie("country");
+  if (!country) return null;
+
+  const res = await fetch(`${apiPublicBaseUrlGlobal}/${country}/active-popup`, {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",

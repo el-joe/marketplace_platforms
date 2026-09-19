@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import useLocale from "@/src/hooks/use-locale";
@@ -63,11 +62,23 @@ export default function SeriousFeaturedPopup() {
 
   if (!popup) return null;
 
-  const title = (locale === "ar" ? popup.title_ar : popup.title_en) ?? "";
-  const body = (locale === "ar" ? popup.body_ar : popup.body_en) ?? "";
-  const ctaHref = popup.product_slug
-    ? `/products/${popup.product_slug}`
-    : popup.cta_url;
+  const isAr = locale === "ar";
+  const title = (isAr ? popup.title_ar || popup.title_en : popup.title_en) ?? "";
+  const body = (isAr ? popup.body_ar || popup.body_en : popup.body_en) ?? "";
+  const ctaLabel =
+    (isAr ? popup.cta_label_ar || popup.cta_label_en : popup.cta_label_en) ||
+    t("viewProduct");
+  const desktopImage = isAr
+    ? popup.image_url_ar || popup.image_url
+    : popup.image_url;
+  const mobileImage =
+    (isAr
+      ? popup.image_url_mobile_ar || popup.image_url_mobile
+      : popup.image_url_mobile) || desktopImage;
+  // cta_url is built server-side from the booked destination (exact listing,
+  // store, brand, category...); product_slug is only a fallback.
+  const ctaHref =
+    popup.cta_url ?? (popup.product_slug ? `/products/${popup.product_slug}` : null);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -90,16 +101,18 @@ export default function SeriousFeaturedPopup() {
             <X className="w-5 h-5" />
           </SheetClose>
 
-          {popup.image_url && (
-            <div className="relative w-full aspect-square bg-gray-100">
-              <Image
-                src={popup.image_url}
+          {desktopImage && (
+            <picture>
+              {mobileImage && (
+                <source media="(max-width: 639px)" srcSet={mobileImage} />
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={desktopImage}
                 alt={title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 100vw, 480px"
+                className="w-full h-auto max-h-[60vh] object-contain bg-gray-100"
               />
-            </div>
+            </picture>
           )}
 
           <div className="p-5 flex flex-col gap-2">
@@ -115,7 +128,7 @@ export default function SeriousFeaturedPopup() {
                 render={<Link href={ctaHref} onClick={() => setOpen(false)} />}
                 className="mt-3 w-full justify-center bg-blue-3 text-white hover:bg-blue-3/90 rounded-xl py-2.5 font-bold uppercase"
               >
-                {t("viewProduct")}
+                {ctaLabel}
               </Button>
             )}
           </div>

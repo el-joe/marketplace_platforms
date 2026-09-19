@@ -17,9 +17,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
 
-    // ── Nawi Ads popup (public — no auth) ────────────────────────────────────
-    Route::get('active-popup', [AdPopupController::class, 'show'])->name('public.active-popup');
-
     // ── Live Streams (public — no auth) ──────────────────────────────────────
     Route::prefix('streams')->name('public.streams.')->group(function () {
         Route::get('/', [PublicLiveStreamController::class, 'index'])->name('index');
@@ -51,6 +48,11 @@ Route::prefix('v1')->group(function (): void {
     // ── Marketer public profile (country-scoped — controller reads the
     //    resolved country from `detect.country` to filter/localize results) ──
     Route::prefix('{country}')->middleware('detect.country')->group(function (): void {
+        // Nawi Ads popup — only bookings made for the resolved country
+        Route::get('active-popup', [AdPopupController::class, 'show'])
+            ->name('public.active-popup')
+            ->middleware('throttle:60,1');
+
         Route::get('marketers', [MarketerProfileController::class, 'index'])
             ->name('public.marketers.index')
             ->middleware('throttle:60,1');
