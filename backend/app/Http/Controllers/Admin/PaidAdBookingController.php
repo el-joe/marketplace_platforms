@@ -142,7 +142,20 @@ class PaidAdBookingController extends Controller
 
         $paidAdBooking->load(['slot.placementDefinition', 'vendor', 'marketer', 'country', 'approvedByAdmin', 'creatives.reviewedByAdmin']);
 
-        return view('admin.paid-ad-bookings.show', compact('paidAdBooking'));
+        $derivedProduct = null;
+        if ($paidAdBooking->slot?->derivesCreativeFromProduct()) {
+            $ref = $paidAdBooking->creatives->firstWhere('is_current', true)?->destination_reference_id
+                ?? $paidAdBooking->creatives->last()?->destination_reference_id;
+            $listing = $ref ? \App\Models\VendorListing::with('productVariant.product')->find($ref) : null;
+            if ($listing?->productVariant) {
+                $derivedProduct = [
+                    'name' => $listing->productVariant->product?->name_en,
+                    'image' => app(\App\Services\Media\ListingImageResolver::class)->primary($listing->productVariant->id),
+                ];
+            }
+        }
+
+        return view('admin.paid-ad-bookings.show', compact('paidAdBooking', 'derivedProduct'));
     }
 
     // ─── Approve ──────────────────────────────────────────────────────────────

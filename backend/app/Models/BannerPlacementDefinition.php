@@ -22,6 +22,8 @@ class BannerPlacementDefinition extends Model
         'device_restriction',
         'max_simultaneous',
         'supports_vendor_ads',
+        'creative_source',
+        'allowed_destination_types',
         'base_rate_weekly',
         'is_active',
         'sort_order',
@@ -30,6 +32,7 @@ class BannerPlacementDefinition extends Model
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
         'allowed_formats' => 'array',
+        'allowed_destination_types' => 'array',
         'supports_vendor_ads' => 'boolean',
         'is_active' => 'boolean',
     ];

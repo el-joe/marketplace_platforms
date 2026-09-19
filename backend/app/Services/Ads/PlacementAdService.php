@@ -21,7 +21,7 @@ class PlacementAdService
         ?string $productId = null,
         ?string $categoryId = null,
     ): ?array {
-        $paid = $this->resolvePaid($code, $country, $sessionId, $categoryId);
+        $paid = $this->resolvePaid($code, $country, $sessionId, $categoryId, $productId);
 
         if ($paid !== null) {
             return $paid;
@@ -57,7 +57,7 @@ class PlacementAdService
         ];
     }
 
-    private function resolvePaid(string $code, Country $country, ?string $sessionId, ?string $categoryId): ?array
+    private function resolvePaid(string $code, Country $country, ?string $sessionId, ?string $categoryId, ?string $productId = null): ?array
     {
         $index = $this->resolver->activeIndex($country->id);
         $candidates = $index['placement'][$code] ?? [];
@@ -68,7 +68,8 @@ class PlacementAdService
 
         $scoped = array_filter(
             $candidates,
-            fn (array $c) => $c['category_id'] === null || $c['category_id'] === $categoryId,
+            fn (array $c) => ($c['category_id'] === null || $c['category_id'] === $categoryId)
+                && ! ($productId !== null && ($c['payload']['product_id'] ?? null) === $productId),
         );
 
         // Prefer category-scoped slots over unscoped ones.

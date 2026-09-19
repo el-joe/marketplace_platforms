@@ -2,6 +2,7 @@
 
 namespace App\Services\Ads;
 
+use App\Enums\PaidAdAdvertiserType;
 use App\Enums\PaidAdBookingStatus;
 use App\Enums\PaidAdCreativeStatus;
 use App\Enums\PaidAdSlotTargetType;
@@ -48,27 +49,41 @@ class AdCreativeService
             ]));
         }
 
-        // Boost-only listing promotions (no popup) link straight to the listing and need
-        // no creative artwork at all — the image requirement below does not apply to them.
-        $isBoostOnly = $booking->slot->target_type === PaidAdSlotTargetType::ListingPromotion
-            && ! $booking->slot->shows_popup;
+        $slot = $booking->slot;
+        $productMode = $slot->derivesCreativeFromProduct();
 
-        if (! $isBoostOnly) {
-            foreach (self::REQUIRED_SLOTS as $slot) {
-                if (empty($files[$slot])) {
+        // Vendor destination types are restricted per slot; marketer bookings use their own set.
+        if ($productMode || $booking->advertiser_type === PaidAdAdvertiserType::Vendor) {
+            if (! in_array($data['destination_type'] ?? null, $slot->allowedDestinationTypes(), true)) {
+                throw new DomainException(__('ads.errors.destination_invalid'));
+            }
+        }
+
+        // Boost-only listing promotions (no popup) link straight to the listing and need
+        // no creative artwork at all. Product-derived slots take the image from the product.
+        $isBoostOnly = $slot->target_type === PaidAdSlotTargetType::ListingPromotion
+            && ! $slot->shows_popup;
+
+        if (! $isBoostOnly && ! $productMode) {
+            foreach (self::REQUIRED_SLOTS as $slotKey) {
+                if (empty($files[$slotKey])) {
                     throw new DomainException(__('ads.errors.creative_required'));
                 }
             }
 
-            $spec = $booking->slot->creativeSpec();
+            $spec = $slot->creativeSpec();
 
             if ($spec !== null) {
-                foreach ([...self::REQUIRED_SLOTS, ...self::OPTIONAL_SLOTS] as $slot) {
-                    if (! empty($files[$slot])) {
-                        $this->validateImage($files[$slot], $slot, $spec);
+                foreach ([...self::REQUIRED_SLOTS, ...self::OPTIONAL_SLOTS] as $slotKey) {
+                    if (! empty($files[$slotKey])) {
+                        $this->validateImage($files[$slotKey], $slotKey, $spec);
                     }
                 }
             }
+        }
+
+        if ($productMode) {
+            $files = [];
         }
 
         $destination = $this->destinationResolver->resolve(

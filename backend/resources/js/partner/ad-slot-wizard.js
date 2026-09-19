@@ -24,6 +24,7 @@ window.adBookingWizard = function () {
         slot: cfg.slot,
         isMetered: ['cpm', 'cpc'].includes(cfg.slot.pricing_model),
         isBoostOnly: cfg.slot.target_type === 'listing_promotion' && !cfg.slot.shows_popup,
+        isProductSource: cfg.slot.creative_source === 'product',
         listingDestinationType: cfg.slot.vendor_type === 'classified_vendor' ? 'classified_listing' : 'listing',
         listingDestinationTypeLabel: cfg.slot.vendor_type === 'classified_vendor' ? 'Classified listing' : 'Product listing',
         dateHint: '',
@@ -42,7 +43,20 @@ window.adBookingWizard = function () {
             terms: false,
         },
 
+        get totalSteps() { return this.isProductSource ? 4 : 5; },
+        get displayStep() { return this.isProductSource && this.step === 5 ? 4 : this.step; },
+        get destinationTypes() {
+            const all = [this.listingDestinationType, 'store', 'brand', 'category'];
+            const allowed = this.slot.allowed_destination_types;
+            if (!Array.isArray(allowed) || !allowed.length) return all;
+            const mapped = allowed.map((t) => (t === 'listing' || t === 'classified_listing') ? this.listingDestinationType : t);
+            const res = all.filter((t) => mapped.includes(t));
+            return res.length ? res : all;
+        },
+
         init() {
+            if (this.isProductSource) this.form.destination_type = this.listingDestinationType;
+            else if (!this.destinationTypes.includes(this.form.destination_type)) this.form.destination_type = this.destinationTypes[0];
             if (this.slot.pricing_model === 'fixed_weekly') this.dateHint = 'Range must be a multiple of 7 days.';
             if (this.slot.pricing_model === 'fixed_monthly') this.dateHint = 'Range must be a multiple of 30 days.';
         },
@@ -82,11 +96,17 @@ window.adBookingWizard = function () {
                 }
                 await this.createDraft();
                 if (this.error) return;
+                if (this.isProductSource) {
+                    await this.uploadCreative();
+                    if (this.error) return;
+                    this.step = 5;
+                    return;
+                }
                 this.step = 4;
                 return;
             }
             if (this.step === 4) {
-                if (!this.isBoostOnly && (!this.files.desktop_en || !this.files.mobile_en)) {
+                if (!this.isBoostOnly && !this.isProductSource && (!this.files.desktop_en || !this.files.mobile_en)) {
                     this.error = 'Desktop EN and Mobile EN creatives are required.';
                     return;
                 }
@@ -97,7 +117,10 @@ window.adBookingWizard = function () {
             }
         },
 
-        prev() { if (this.step > 1) this.step -= 1; },
+        prev() {
+            if (this.step === 5 && this.isProductSource) { this.step = 3; return; }
+            if (this.step > 1) this.step -= 1;
+        },
 
         async fetchQuote() {
             this.loading = true;
@@ -174,7 +197,7 @@ window.adBookingWizard = function () {
             this.loading = true;
             try {
                 const fd = new FormData();
-                Object.entries(this.files).forEach(([k, f]) => fd.append(k, f));
+                if (!this.isProductSource) Object.entries(this.files).forEach(([k, f]) => fd.append(k, f));
                 fd.append('title_en', this.form.title_en || '');
                 fd.append('title_ar', this.form.title_ar || '');
                 fd.append('subtitle_en', this.form.subtitle_en || '');

@@ -137,6 +137,31 @@ class PaidAdSlot extends Model
         ];
     }
 
+    public function derivesCreativeFromProduct(): bool
+    {
+        return $this->target_type === PaidAdSlotTargetType::Placement
+            && $this->placementDefinition?->creative_source === 'product';
+    }
+
+    public function creativeSource(): string
+    {
+        return $this->derivesCreativeFromProduct() ? 'product' : 'upload';
+    }
+
+    /** @return string[] */
+    public function allowedDestinationTypes(): array
+    {
+        if ($this->derivesCreativeFromProduct()) {
+            return ['listing'];
+        }
+
+        $types = $this->target_type === PaidAdSlotTargetType::Placement
+            ? $this->placementDefinition?->allowed_destination_types
+            : null;
+
+        return ! empty($types) ? array_values($types) : ['listing', 'classified_listing', 'store', 'brand', 'category'];
+    }
+
     public function allowsAdvertiser(string $type): bool
     {
         return $this->allowed_advertisers === 'both' || $this->allowed_advertisers === $type;

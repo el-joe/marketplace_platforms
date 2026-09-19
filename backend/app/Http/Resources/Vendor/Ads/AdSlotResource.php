@@ -58,6 +58,8 @@ class AdSlotResource extends JsonResource
                 'max_kb' => $spec['max_kb'],
                 'formats' => $spec['formats'],
             ],
+            'creative_source' => $this->creativeSource(),
+            'allowed_destination_types' => $this->allowedDestinationTypes(),
             'lead_time_days' => $this->lead_time_days,
             'notes' => [
                 'en' => $this->notes_for_vendors,

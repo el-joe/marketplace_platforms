@@ -14,9 +14,9 @@ class UploadCreativeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'desktop_en' => ['required', 'image'],
+            'desktop_en' => ['nullable', 'image'],
             'desktop_ar' => ['nullable', 'image'],
-            'mobile_en' => ['required', 'image'],
+            'mobile_en' => ['nullable', 'image'],
             'mobile_ar' => ['nullable', 'image'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'title_ar' => ['nullable', 'string', 'max:255'],

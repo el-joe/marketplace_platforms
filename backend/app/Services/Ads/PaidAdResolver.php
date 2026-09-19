@@ -6,6 +6,7 @@ use App\Enums\PaidAdBookingStatus;
 use App\Enums\PaidAdCreativeStatus;
 use App\Enums\PaidAdSlotTargetType;
 use App\Models\PaidAdBooking;
+use App\Models\VendorListing;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -64,6 +65,14 @@ class PaidAdResolver
             ])
             ->get();
 
+        $listingIds = $bookings
+            ->filter(fn ($b) => $b->slot?->derivesCreativeFromProduct() && $b->currentCreative?->destination_reference_id)
+            ->map(fn ($b) => $b->currentCreative->destination_reference_id)
+            ->unique()->values();
+        $listings = $listingIds->isEmpty()
+            ? collect()
+            : VendorListing::with('productVariant.product')->whereIn('id', $listingIds)->get()->keyBy('id');
+
         $placement = [];
         $pageBlock = [];
 
@@ -75,7 +84,11 @@ class PaidAdResolver
                 continue;
             }
 
-            $payload = PaidAdPresenter::present($booking);
+            $payload = PaidAdPresenter::present($booking, $listings->get($creative->destination_reference_id));
+
+            if ($slot->derivesCreativeFromProduct() && empty($payload['image_url']['en'])) {
+                continue;
+            }
 
             if ($slot->target_type === PaidAdSlotTargetType::Placement) {
                 $code = $slot->placementDefinition?->code;

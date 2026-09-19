@@ -157,7 +157,13 @@
 
             {{-- ─── Creatives ──────────────────────────────────────────────────────── --}}
             <x-card title="{{ __('admin.paid_ad_bookings.ad_creatives') }}">
-                @if($paidAdBooking->creatives->isEmpty())
+                @if($derivedProduct)
+                    <div class="flex items-center gap-3 mb-3">
+                        @if($derivedProduct['image'])<img src="{{ $derivedProduct['image'] }}" class="h-20 w-20 rounded object-cover" alt="">@endif
+                        <span class="text-sm font-medium">{{ $derivedProduct['name'] }}</span>
+                    </div>
+                @endif
+                @if($paidAdBooking->creatives->isEmpty() && ! $derivedProduct)
                     <p class="text-sm text-gray-400 py-6 text-center">{{ __('admin.paid_ad_bookings.no_creatives') }}</p>
                 @else
                     <div class="space-y-4">

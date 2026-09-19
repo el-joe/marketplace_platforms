@@ -15,6 +15,8 @@
                 'min_booking_days' => $slot->min_booking_days,
                 'max_booking_days' => $slot->max_booking_days,
                 'min_budget' => $slot->min_budget,
+                'creative_source' => $slot->creative_source ?? 'upload',
+                'allowed_destination_types' => $slot->allowed_destination_types ?? null,
                 'creative_spec' => $slot->creativeSpec(),
                 'vendor_type' => auth('vendor')->user()->vendor->vendor_type->value ?? 'product_vendor',
             ]) !!},
@@ -35,7 +37,17 @@
 <div x-data="adBookingWizard()" x-init="init()" class="bg-white rounded-2xl border border-gray-200 p-6 max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-lg font-bold text-gray-900">{{ __('partner.ad_slots.wizard_title') }}</h2>
-        <span class="text-xs text-gray-500">{{ __('partner.ad_slots.step') }} <span x-text="step"></span> / 5</span>
+        <span class="text-xs text-gray-500">{{ __('partner.ad_slots.step') }} <span x-text="displayStep"></span> / <span x-text="totalSteps"></span></span>
+    </div>
+
+    @php($__src = $slot->creative_source ?? 'upload')
+    <div class="mb-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-600 space-y-1">
+        <div class="font-semibold text-gray-800">{{ __('partner.ad_slots.placement_summary') }}</div>
+        <div>{{ __('partner.ad_slots.creative_required_size') }}:
+            desktop <span x-text="slot.creative_spec?.desktop?.w"></span>×<span x-text="slot.creative_spec?.desktop?.h"></span>px,
+            mobile <span x-text="slot.creative_spec?.mobile?.w"></span>×<span x-text="slot.creative_spec?.mobile?.h"></span>px</div>
+        <div>{{ __('partner.ad_slots.allowed_destinations') }}: <span x-text="destinationTypes.join(', ')"></span></div>
+        <div>{{ __('partner.ad_slots.creative_source') }}: {{ $__src === 'product' ? __('partner.ad_slots.source_product') : __('partner.ad_slots.source_upload') }}</div>
     </div>
 
     <div x-show="error" class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700" x-text="error"></div>
@@ -69,18 +81,19 @@
     <!-- Step 3: Destination -->
     <div x-show="step === 3" class="space-y-3">
         <label class="block text-sm font-medium text-gray-700">{{ __('partner.ad_slots.destination_type') }}</label>
-        <select x-model="form.destination_type" @change="searchDestinations('')" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
-            <option :value="listingDestinationType" x-text="listingDestinationTypeLabel"></option>
-            <option value="store">{{ __('partner.ad_slots.destination_store') }}</option>
-            <option value="brand">{{ __('partner.ad_slots.destination_brand') }}</option>
-            <option value="category">{{ __('partner.ad_slots.destination_category') }}</option>
+        <p x-show="isProductSource" class="text-xs text-gray-500">{{ __('partner.ad_slots.product_source_note') }}</p>
+        <select x-show="!isProductSource" x-model="form.destination_type" @change="searchDestinations('')" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
+            <option x-show="destinationTypes.includes(listingDestinationType)" :value="listingDestinationType" x-text="listingDestinationTypeLabel"></option>
+            <option x-show="destinationTypes.includes('store')" value="store">{{ __('partner.ad_slots.destination_store') }}</option>
+            <option x-show="destinationTypes.includes('brand')" value="brand">{{ __('partner.ad_slots.destination_brand') }}</option>
+            <option x-show="destinationTypes.includes('category')" value="category">{{ __('partner.ad_slots.destination_category') }}</option>
         </select>
         <template x-if="form.destination_type !== 'store'">
             <div>
                 <input type="text" placeholder="{{ __('partner.ad_slots.search_placeholder') }}" @input="searchDestinations($event.target.value)" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm">
                 <div class="mt-2 max-h-48 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg">
                     <template x-for="opt in destinationOptions" :key="opt.id">
-                        <div class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50" :class="form.destination_reference_id === opt.id ? 'bg-primary-50 text-primary-700' : ''" @click="form.destination_reference_id = opt.id" x-text="opt.label"></div>
+                        <div class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50" :class="form.destination_reference_id === opt.id ? 'bg-primary-50 text-primary-700' : ''" @click="form.destination_reference_id = opt.id"><div class="flex items-center gap-2"><img x-show="opt.image || opt.image_url" :src="opt.image || opt.image_url" class="w-8 h-8 rounded object-cover" alt=""><span x-text="opt.label"></span></div></div>
                     </template>
                 </div>
             </div>
@@ -88,7 +101,7 @@
     </div>
 
     <!-- Step 4: Creative -->
-    <div x-show="step === 4" class="space-y-4">
+    <div x-show="step === 4 && !isProductSource" class="space-y-4">
         <template x-if="isBoostOnly">
             <p class="text-sm text-gray-500">{{ __('partner.ad_slots.boost_no_creative_needed') }}</p>
         </template>

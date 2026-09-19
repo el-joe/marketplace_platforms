@@ -130,13 +130,10 @@ class AdBookingController extends Controller
     {
         $booking = $this->resolve($booking);
 
-        $isBoostOnly = $booking->slot->target_type === \App\Enums\PaidAdSlotTargetType::ListingPromotion
-            && ! $booking->slot->shows_popup;
-
         $data = $request->validate([
-            'desktop_en' => [$isBoostOnly ? 'nullable' : 'required', 'image'],
+            'desktop_en' => ['nullable', 'image'],
             'desktop_ar' => ['nullable', 'image'],
-            'mobile_en' => [$isBoostOnly ? 'nullable' : 'required', 'image'],
+            'mobile_en' => ['nullable', 'image'],
             'mobile_ar' => ['nullable', 'image'],
             'title_en' => ['nullable', 'string', 'max:255'],
             'title_ar' => ['nullable', 'string', 'max:255'],
