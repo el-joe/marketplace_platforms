@@ -55,7 +55,7 @@ class AdBillingService
                     $b->update([
                         'payment_status' => PaidAdPaymentStatus::Paid->value,
                         'paid_at' => now(),
-                        'total_charged' => $b->quoted_amount,
+                        'subscription_charged' => $b->quoted_amount,
                     ]);
                 } else {
                     $amount = $b->budget_amount;
@@ -98,7 +98,7 @@ class AdBillingService
                         'tax_amount' => $b->tax_amount,
                         'settlement' => 'payout_deduction',
                     ]);
-                    $b->update(['total_charged' => $b->quoted_amount]);
+                    $b->update(['subscription_charged' => $b->quoted_amount]);
                 }
                 // cpm/cpc payout_deduction: no charge until delivery (recordDelivery()).
                 $b->update(['payment_status' => PaidAdPaymentStatus::Reserved->value]);
@@ -166,6 +166,7 @@ class AdBillingService
                 }
             }
 
+            // Fixed bookings: counters/stats only; no usage charge math (subscription is not usage spend).
             $b->update([
                 'impressions_delivered' => $impressionsDelivered,
                 'clicks_delivered' => $clicksDelivered,

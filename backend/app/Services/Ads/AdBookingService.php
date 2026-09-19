@@ -425,7 +425,7 @@ class AdBookingService
             $b->update([
                 'payment_status' => PaidAdPaymentStatus::Paid->value,
                 'paid_at' => now(),
-                'total_charged' => $b->quoted_amount,
+                'subscription_charged' => $b->quoted_amount,
                 'offline_proof_file_path' => $proofFilePath,
                 'offline_proof_uploaded_at' => now(),
             ]);
@@ -452,7 +452,8 @@ class AdBookingService
             $elapsedDays = Carbon::parse($b->booked_from)->diffInDays(Carbon::today()) + 1;
             $remainingDays = max(0, min($totalDays, $totalDays - $elapsedDays));
 
-            return intdiv($b->quoted_amount * $remainingDays, $totalDays);
+            // Customer paid quoted_amount + tax_amount (ledger `amount` includes tax), so refund prorated tax too.
+            return intdiv(($b->quoted_amount + $b->tax_amount) * $remainingDays, $totalDays);
         }
 
         return max(0, $b->budget_amount - $b->total_charged);

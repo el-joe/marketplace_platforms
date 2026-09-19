@@ -77,8 +77,18 @@
                         <dd class="font-medium text-gray-800">{{ $booking->booked_from?->format('d M Y') }} – {{ $booking->booked_until?->format('d M Y') }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.amount') }}</dt>
-                        <dd class="font-semibold text-gray-900">{{ number_format($booking->total_charged ?: ($booking->quoted_amount + $booking->tax_amount)) }} {{ $booking->currency }}</dd>
+                        <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.subscription_fee') }}</dt>
+                        <dd class="font-semibold text-gray-900">{{ number_format($booking->subscription_charged) }} {{ $booking->currency }}</dd>
+                    </div>
+                    @if(! \App\Enums\PaidAdSlotPricingModel::from($booking->pricing_model)->isFixed())
+                    <div>
+                        <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.usage_spend') }}</dt>
+                        <dd class="font-semibold text-gray-900">{{ number_format($booking->total_charged) }} {{ $booking->currency }}</dd>
+                    </div>
+                    @endif
+                    <div>
+                        <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.total_spend') }}</dt>
+                        <dd class="font-semibold text-gray-900">{{ number_format($booking->total_spend) }} {{ $booking->currency }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.payment') }}</dt>

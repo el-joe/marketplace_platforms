@@ -43,7 +43,7 @@ class AdAttributionService
             ->get();
 
         $commissionEarned = (int) $conversions->sum('commission_amount');
-        $adSpend = (int) ($booking->total_charged ?: ($booking->quoted_amount + $booking->tax_amount));
+        $adSpend = (int) $booking->total_spend;
 
         return [
             'invitation_id' => $invitation->id,

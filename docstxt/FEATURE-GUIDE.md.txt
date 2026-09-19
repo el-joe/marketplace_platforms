@@ -1,0 +1,686 @@
+﻿دليل الميزات — الصفحات والتدفق الكامل لكل وحدة
+المنصة: noon.codefanz.com | آخر تحديث: كوميت 87c58da
+
+
+________________
+
+
+1. باقات ناوي الإعلانية (Nawi Ad Packages)
+ما هي الباقات؟
+الباقة
+	الكود
+	ما تفعله
+	إعلان جاد
+	serious
+	تثبيت المنتج/المتجر أعلى القائمة في القسم
+	إعلان جاد ومميز
+	serious_featured
+	تثبيت في القائمة + نافذة منبثقة للعميل
+	
+
+________________
+
+
+خطوات الأدمن
+1. إنشاء الباقة وتسعيرها
+
+
+admin.noon.codefanz.com/ad-packages
+
+
+* اضغط إنشاء باقة
+* أدخل: اسم EN/AR، وصف، نوع (serious أو serious_featured)، السعر الشهري (BIGINT — مثلاً 200 = 200 ريال)، العملة
+* فعّل الباقة بتبديل is_active
+
+
+API:
+
+
+GET  /admin/ad-packages         ← قائمة الباقات
+
+
+POST /admin/ad-packages          ← إنشاء باقة
+
+
+PUT  /admin/ad-packages/{id}     ← تعديل
+
+
+POST /admin/ad-packages/{id}/toggle-active
+
+
+DELETE /admin/ad-packages/{id}
+
+
+________________
+
+
+خطوات البائع (Partner Panel)
+2. اشتراك البائع في باقة
+
+
+partner.noon.codefanz.com/ad-subscriptions
+
+
+* اضغط الباقات المتاحة
+* اختر الباقة → اضغط اشتراك
+* يُخصم من المحفظة أو يُضاف لـ next payout
+
+
+API:
+
+
+GET  /partner/ad-subscriptions          ← اشتراكاتي الحالية
+
+
+GET  /partner/ad-subscriptions/packages ← الباقات المتاحة
+
+
+POST /partner/ad-subscriptions/subscribe
+
+
+     body: { ad_package_id, listing_id, billing_method: 'wallet'|'payout_deduction' }
+
+
+POST /partner/ad-subscriptions/{id}/cancel
+
+
+________________
+
+
+كيف يظهر للعميل؟
+* إعلان جاد: منتجات البائع المشترك تظهر أولاً في قائمة التصنيف مع ترتيب مرجّح
+* إعلان جاد ومميز: نفس الترتيب + نافذة منبثقة popup_ad تظهر مرة واحدة للعميل عند دخول القسم
+* العلامة: شارة "مميّز" أو "إعلان" في بطاقة المنتج
+
+
+________________
+
+
+2. المشاهير والوسطاء (Influencers & Brokers)
+الفرق بين النوعين في النظام
+
+
+	المشهور (Influencer)
+	الوسيط (Broker)
+	نوع التسويق
+	حملات ومنتجات ممولة
+	طلبات خاصة وعقارات وسيارات
+	الخصوصية
+	مقاسات عينات في ملفه
+	تخصص بالقسم + المدينة
+	العمولة
+	نسبة بعد البيع
+	يُحدده الأدمن في ملفه
+	
+
+________________
+
+
+خطوات الأدمن — إنشاء وإعداد مشهور/وسيط
+3. إنشاء ملف المشهور/الوسيط
+
+
+admin.noon.codefanz.com/marketers/create
+
+
+أو تحرير ملف موجود:
+
+
+admin.noon.codefanz.com/marketers/{id}/edit
+
+
+الحقول المهمة في ملف المشهور (Influencer):
+
+
+القسم
+	الحقول
+	السعر الإعلاني
+	ad_price (BIGINT)، ad_price_currency، can_self_edit_ad_price
+	العمولات المخصصة
+	commission_discount_type (none/flat/percentage)، commission_discount_flat، commission_discount_percentage، commission_discount_notes
+	مقاسات العينات
+	clothing_size، shirt_size، pants_size، dress_size، abaya_size، shoe_size، shoe_size_system (EU/US/UK)
+	القياسات التفصيلية
+	chest_cm، waist_cm، hip_cm، height_cm، item_length_cm، sleeve_from_neck_cm، sleeve_from_shoulder_cm، sleeve_width_cm، measurements_notes
+	
+
+الحقول الإضافية للوسيط (Broker):
+
+
+الحقل
+	الوصف
+	broker_category_id
+	القسم الذي يتخصص فيه (عقارات، سيارات...)
+	broker_city_id
+	المدينة المحددة
+	broker_serves_all_cities
+	إذا فعّل → يستقبل طلبات من كل المدن
+	
+
+تحديد سعر إعلان المشهور:
+
+
+PUT /admin/marketers/{id}
+
+
+body: { ad_price: 50000, ad_price_currency: "OMR", can_self_edit_ad_price: true }
+
+
+منح صلاحية التعديل الذاتي للسعر:
+
+
+* في لوحة الأدمن → ملف المشهور → فعّل can_self_edit_ad_price
+* المشهور يعدّل سعره من:
+
+
+marketer.noon.codefanz.com/profile → تعديل السعر الإعلاني
+
+
+PUT /marketer/profile/ad-price
+
+
+________________
+
+
+كيف يرى العميل المشاهير والوسطاء؟
+قائمة المشاهير:
+
+
+noon.codefanz.com/uae-ar/marketers
+
+
+* يظهر سعر الإعلان بجانب كل مشهور
+* ينقر على المشهور → صفحة البروفايل
+
+
+صفحة بروفايل المشهور:
+
+
+noon.codefanz.com/uae-ar/marketer/{slug}
+
+
+* منتجاته المختارة
+* سعره الإعلاني في الـ sidebar
+* زر "التواصل للتعاون"
+
+
+________________
+
+
+3. العقود وتوثيق الموافقات (Contracts & Audit Trail)
+دورة الحياة الكاملة
+الأدمن يرفع العقد ──► العميل يختار المشهور/الوسيط ──► يظهر العقد في checkout
+
+
+       ↓                                                        ↓
+
+
+نسخة جديدة تُحفظ                                    العميل يوافق (Timestamp + IP)
+
+
+تاريخياً                                                       ↓
+
+
+                                                      يُسجَّل في marketer_contract_acceptances
+
+
+4. رفع عقد لمشهور/وسيط (الأدمن)
+
+
+admin.noon.codefanz.com/marketers/{id}  ← تبويب "العقد"
+
+
+* رفع ملف PDF أو كتابة نص HTML
+* أدخل عنوان EN/AR
+* احفظ ← يُنشأ version_number جديد تلقائياً
+* النسخة القديمة محفوظة تاريخياً ولا تُحذف
+
+
+API:
+
+
+POST /admin/marketers/{id}/contract/upload
+
+
+GET  /admin/marketers/{id}/contract/acceptances  ← سجل الموافقات
+
+
+GET  /admin/marketers/{id}/contract/versions/{v}/download
+
+
+5. عرض العقد للعميل عند الدفع
+
+
+* عندما تحتوي السلة على منتج ماركيتر لديه is_required = true
+* يظهر modal بالعقد في صفحة checkout
+* العميل يمرر للنهاية → يضغط "أوافق"
+
+
+POST /api/customer/v1/{region}/marketers/{id}/contract/accept
+
+
+body: { version_id: "uuid" }
+
+
+سجل الموافقة يحفظ:
+
+
+* customer_id، ip_address، user_agent، accepted_at، marketer_contract_version_id، order_id
+
+
+استعراض سجل الموافقات (الأدمن):
+
+
+admin.noon.codefanz.com/marketers/{id}/contract/acceptances
+
+
+جدول يعرض: العميل، الإصدار المُوافَق عليه، التاريخ والتوقيت، الـ IP، رقم الطلب.
+
+
+________________
+
+
+4. الطلبات الخاصة وإشعارات الوسطاء (Special Requests & Smart Routing)
+كيف يعمل النظام
+6. العميل يُنشئ طلباً خاصاً
+
+
+noon.codefanz.com/uae-ar/special-requests/create
+
+
+* يختار التصنيف (عقارات، سيارات...)
+* يختار المدينة
+* يكتب وصف الطلب والميزانية
+
+
+POST /api/customer/v1/{region}/special-requests
+
+
+body: {
+
+
+  category_id,
+
+
+  city_id,          ← null = كل المدن
+
+
+  title_en,
+
+
+  description_en,
+
+
+  budget,
+
+
+  budget_currency
+
+
+}
+
+
+7. التوجيه الذكي للوسطاء
+
+
+يُرسل النظام إشعاراً تلقائياً لكل وسيط تتطابق شروطه:
+
+
+* broker_category_id = تصنيف الطلب
+* broker_city_id = مدينة الطلب أو broker_serves_all_cities = true
+
+
+الوسيط يرى الطلبات في:
+
+
+marketer.noon.codefanz.com/special-requests
+
+
+GET /marketer/special-requests        ← الطلبات المطابقة لتخصصي
+
+
+GET /marketer/special-requests/{id}   ← تفاصيل طلب
+
+
+________________
+
+
+5. فلاتر البحث في عروض السفر (Travel Search Filters)
+8. بحث العميل في عروض السفر
+
+
+الـ API يدعم الفلاتر التالية:
+
+
+GET /api/customer/v1/{region}/travel?
+
+
+  country_id={uuid}
+
+
+  &city_id={uuid}
+
+
+  &departure_from=2026-10-01
+
+
+  &departure_to=2026-12-31
+
+
+  &page=1
+
+
+صفحة السفر:
+
+
+noon.codefanz.com/uae-ar/browse/travel
+
+
+* فلتر البلد
+* فلتر المدينة
+* نطاق تواريخ السفر (من/إلى)
+* النتائج تُرتَّب بتاريخ المغادرة تصاعدياً
+
+
+________________
+
+
+6. منتجات التفصيل والمدخلات المخصصة (Custom Attributes)
+للبائع في Partner Panel
+9. تفعيل الخصائص المخصصة
+
+
+partner.noon.codefanz.com/listings/{id}
+
+
+* مرر للأسفل إلى بطاقة "Custom Order Fields"
+* فعّل التبديل (Toggle ON)
+* اضغط Add field:
+   * Label: عرض الصدر / Chest Width
+   * Unit (اختياري): cm
+   * Required: ✓ إذا كان إلزامياً
+
+
+أنواع الحقول التي يستطيع البائع إضافتها:
+
+
+* حقل نصي (لـ الطول، العرض، الملاحظات...)
+* حقل رقمي (للقياسات بالسنتيمتر)
+* قائمة منسدلة (عباية مفتوحة/مغلقة)
+* خانة اختيار (Checkbox للإضافات)
+
+
+API (يستخدمه الـ partner panel):
+
+
+GET    /partner-api/products/{id}/custom-attributes
+
+
+POST   /partner-api/products/{id}/custom-attributes
+
+
+       body: { label: "عرض الصدر", unit: "cm", is_required: true }
+
+
+PUT    /partner-api/products/{id}/custom-attributes/{attr_id}
+
+
+DELETE /partner-api/products/{id}/custom-attributes/{attr_id}
+
+
+POST   /partner-api/products/{id}/toggle-custom-attributes
+
+
+للأدمن:
+
+
+admin.noon.codefanz.com/products/{id}/edit
+
+
+← تبويب "Basic Info" → Classification card → فعّل "Has Custom Attributes"
+للعميل
+عند فتح صفحة المنتج:
+
+
+* تظهر حقول الإدخال تحت "معلومات التفصيل"
+* العميل يملأ القياسات + يختار الخيارات
+* الحقول المُعلَّمة بـ Required إلزامية
+
+
+عند إضافة للسلة:
+
+
+* يظهر Modal بحقول الخصائص
+* بعد التعبئة → يُضاف للسلة مع الخصائص
+
+
+في تفاصيل الطلب (الأدمن والبائع):
+
+
+admin.noon.codefanz.com/orders/{id}       ← يظهر: الخاصية / القيمة / الوحدة
+
+
+partner.noon.codefanz.com/orders/{id}     ← نفس العرض
+
+
+________________
+
+
+7. خصومات العمولات للبائعين والمشاهير
+10. الأدمن يمنح خصم على العمولة
+
+
+للبائع:
+
+
+admin.noon.codefanz.com/vendors/{id}/edit
+
+
+← قسم "Commission Discount"
+
+
+للمشهور:
+
+
+admin.noon.codefanz.com/marketers/{id}/edit
+
+
+← قسم "Commission Discount"
+
+
+الحقل
+	القيمة
+	commission_discount_type
+	none / flat (مبلغ ثابت) / percentage (نسبة)
+	commission_discount_flat
+	مثلاً 500 = خصم 500 من العمولة لكل بيعة
+	commission_discount_percentage
+	مثلاً 10.00 = خصم 10% من العمولة
+	commission_discount_notes
+	ملاحظة داخلية
+	
+
+يُطبَّق الخصم تلقائياً في CheckoutCalculationService::calculateCommission() عند كل طلب.
+
+
+________________
+
+
+8. قسائم الشراء والهدايا — شرط نوع الشحن (Coupon Shipping Restriction)
+11. الأدمن يُنشئ قسيمة بشرط نوع الشحن
+
+
+admin.noon.codefanz.com/coupons/create
+
+
+في حقل "Shipping Type Restriction" (شرط نوع الشحن):
+
+
+الخيار
+	المعنى
+	all
+	تنطبق على جميع أنواع الشحن
+	fbn
+	فقط للمنتجات التي تشحنها ناوي (Fulfilled by Nawi)
+	fbp
+	فقط للمنتجات التي يشحنها الشريك (Fulfilled by Partner)
+	fbm
+	فقط للمنتجات التي يشحنها التاجر (Fulfilled by Merchant)
+	
+
+مثال: قسيمة خصم 20% صالحة فقط لمنتجات FBN:
+
+
+{
+
+
+  "code": "FBN20",
+
+
+  "type": "percentage",
+
+
+  "value": 20,
+
+
+  "shipping_type_restriction": "fbn"
+
+
+}
+
+
+________________
+
+
+9. حدود الدفع عند الاستلام (COD Limits)
+⚠️ هذه الوحدة موجودة في المخطط المعماري ولكن لم تُنفَّذ بعد كواجهة مستخدم في لوحة الأدمن. تحتاج إلى prompt منفصل.
+
+
+التصميم المقترح:
+
+
+admin.noon.codefanz.com/settings/cod-limits
+
+
+الإعداد
+	الوصف
+	الحد الأقصى العام للـ COD
+	مثلاً 500 ريال
+	استثناء منتجات ناوي
+	بدون حد أقصى
+	استثناء المنتجات العالمية
+	بدون حد أقصى
+	حد منفصل لـ Supermal
+	مثلاً 1000 ريال
+	
+
+ملاحظة: ستحتاج migration جديدة لجدول cod_limit_settings وتطبيقه في CartService وCheckoutController.
+
+
+________________
+
+
+10. العملة العُمانية (Omani Rial — OMR)
+الرمز الرسمي: ر.ع
+كود ISO: OMR
+
+
+لإضافة الريال العُماني كعملة للمنصة:
+
+
+admin.noon.codefanz.com/settings/currencies
+
+
+* اختر OMR من القائمة
+* أو أضف دولة عُمان مع تعيين العملة OMR
+* ارفع صورة رمز العملة (ر.ع):
+
+
+POST /admin/settings/currencies/OMR/symbol-image
+
+
+* حدّث سعر الصرف:
+
+
+PATCH /admin/settings/currencies/OMR/rate
+
+
+body: { rate: 3.85 }   ← مثلاً 1 OMR = 3.85 AED
+
+
+________________
+
+
+ملخص الحالة الحالية
+الوحدة
+	الـ DB
+	Backend/Routes
+	Admin UI
+	Partner UI
+	Customer UI
+	باقات ناوي الإعلانية
+	✅
+	✅ routes موجودة
+	✅ CRUD
+	✅ اشتراك
+	⚠️ منطق الترتيب يحتاج تطوير
+	مشاهير/وسطاء — ملف
+	✅ كل الحقول
+	✅
+	✅
+	✅
+	✅ صفحة البروفايل
+	مقاسات العينات
+	✅ marketer_profiles
+	✅
+	✅
+	❌ عرض في العينات
+	⚠️ تحتاج prompt
+	العقود والموافقات
+	✅
+	✅
+	✅
+	N/A
+	✅ Modal checkout
+	الطلبات الخاصة
+	✅
+	✅
+	✅
+	✅
+	✅
+	فلاتر السفر
+	✅
+	✅
+	✅
+	N/A
+	⚠️ Frontend تحتاج فلاتر
+	خصائص التفصيل المخصصة
+	✅
+	✅
+	✅
+	✅
+	✅ Modal
+	خصم العمولات
+	✅ marketer_profiles
+	✅
+	✅
+	N/A
+	N/A
+	قسيمة + شرط الشحن
+	✅ shipping_type_restriction
+	✅
+	✅
+	N/A
+	N/A
+	حدود COD
+	❌ لا يوجد جدول
+	❌
+	❌
+	❌
+	❌
+	العملة العُمانية
+	✅ currencies table
+	✅
+	✅ رفع صورة
+	N/A
+	⚠️ تحتاج تفعيل

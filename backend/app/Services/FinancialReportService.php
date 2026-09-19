@@ -212,7 +212,7 @@ class FinancialReportService
                 countries.id                          AS country_id,
                 countries.name_en                     AS country_name,
                 paid_ad_bookings.currency             AS currency_code,
-                SUM(paid_ad_bookings.total_charged) AS spend,
+                SUM(paid_ad_bookings.subscription_charged + paid_ad_bookings.total_charged) AS spend,
                 COUNT(*)                              AS booking_count
             ')
             ->get();

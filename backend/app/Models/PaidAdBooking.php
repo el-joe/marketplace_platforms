@@ -8,6 +8,7 @@ use App\Enums\PaidAdPaymentMethod;
 use App\Enums\PaidAdPaymentStatus;
 use DomainException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -42,6 +43,7 @@ class PaidAdBooking extends Model
         'tax_amount' => 'integer',
         'budget_amount' => 'integer',
         'total_charged' => 'integer',
+        'subscription_charged' => 'integer',
         'pricing_units' => 'integer',
         'impressions_delivered' => 'integer',
         'clicks_delivered' => 'integer',
@@ -79,6 +81,7 @@ class PaidAdBooking extends Model
         'clicks_delivered',
         'cpm_impressions_billed',
         'total_charged',
+        'subscription_charged',
         'submitted_at',
         'started_at',
         'completed_at',
@@ -187,5 +190,27 @@ class PaidAdBooking extends Model
     public function getNetChargedAttribute(): int
     {
         return (int) $this->charges()->sum('amount');
+    }
+
+    /** Subscription fee (ex-tax) plus usage spend, base currency. */
+    protected function totalSpend(): Attribute
+    {
+        return Attribute::get(fn () => (int) $this->subscription_charged + (int) $this->total_charged);
+    }
+
+    /** Total spend per click; null when no clicks. */
+    protected function effectiveCpc(): Attribute
+    {
+        return Attribute::get(fn () => $this->clicks_delivered > 0
+            ? (int) round($this->total_spend / $this->clicks_delivered)
+            : null);
+    }
+
+    /** Total spend per 1,000 impressions; null when no impressions. */
+    protected function effectiveCpm(): Attribute
+    {
+        return Attribute::get(fn () => $this->impressions_delivered > 0
+            ? (int) round($this->total_spend / $this->impressions_delivered * 1000)
+            : null);
     }
 }

@@ -61,7 +61,7 @@ class PromoteBookingController extends Controller
             ['searchable_columns' => ['paid_ad_bookings.booking_reference']],
             [],
             ['orderable_column' => 'paid_ad_bookings.booked_from'],
-            ['orderable_column' => 'paid_ad_bookings.total_charged'],
+            ['orderable_column' => 'total_spend_sort'],
             ['orderable_column' => 'paid_ad_bookings.payment_status'],
             ['orderable_column' => 'paid_ad_bookings.status'],
             [],
@@ -69,6 +69,7 @@ class PromoteBookingController extends Controller
         ];
 
         $query = PaidAdBooking::where('advertiser_type', 'marketer')->where('marketer_id', $marketerId)
+            ->select('paid_ad_bookings.*')->selectRaw('(paid_ad_bookings.subscription_charged + paid_ad_bookings.total_charged) AS total_spend_sort')
             ->with(['slot', 'currentCreative']);
 
         $query = $this->applyFilters($query, $request, [
@@ -79,7 +80,7 @@ class PromoteBookingController extends Controller
             'reference' => '<a href="'.route('marketer.promote.bookings.show', $b->id).'" class="font-medium text-primary-600 hover:underline">'.e($b->booking_reference).'</a>',
             'slot' => e($b->slot?->name),
             'dates' => $b->booked_from?->format('d M Y').' - '.$b->booked_until?->format('d M Y'),
-            'amount' => number_format($b->total_charged ?: ($b->quoted_amount + $b->tax_amount)).' '.$b->currency,
+            'amount' => number_format($b->total_spend).' '.$b->currency,
             'payment' => __('ads.payment_status.'.$b->payment_status->value),
             'status' => __('ads.booking_status.'.$b->status->value),
             'creative_status' => $b->currentCreative ? __('ads.creative_status.'.$b->currentCreative->status->value) : '-',

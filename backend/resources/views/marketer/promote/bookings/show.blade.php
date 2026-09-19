@@ -27,7 +27,7 @@
             </div>
             <div class="grid grid-cols-2 gap-4 text-sm">
                 <div><span class="text-gray-400">التواريخ:</span> {{ $booking->booked_from?->format('d M Y') }} - {{ $booking->booked_until?->format('d M Y') }}</div>
-                <div><span class="text-gray-400">المبلغ:</span> {{ number_format($booking->total_charged ?: ($booking->quoted_amount + $booking->tax_amount)) }} {{ $booking->currency }}</div>
+                <div><span class="text-gray-400">المبلغ:</span> {{ number_format($booking->total_spend) }} {{ $booking->currency }}</div>
                 <div><span class="text-gray-400">الدفع:</span> {{ __('ads.payment_status.'.$booking->payment_status->value) }} (محفظة)</div>
                 @if ($booking->payment_due_at)
                     <div><span class="text-gray-400">استحقاق الدفع:</span> {{ $booking->payment_due_at->format('d M Y H:i') }}</div>
