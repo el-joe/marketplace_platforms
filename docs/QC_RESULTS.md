@@ -135,3 +135,29 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - F15 PASS: storefront renders image symbol else text (frontend CurrencySymbol.tsx / Price.tsx). GAP: admin and partner Blade pages have no central price formatter (~480 ad-hoc number_format sites print the currency code/text), so image symbols are not rendered there. Not refactored.
 - F02 FIXED: ad_price_currency now validated with exists:currencies,code (Marketer ProfileController, Admin MarketerController); MarketerProfileAdPriceTest extended (ZZZ rejected).
 - F02 NOTE: influencer measurements intentionally NOT hidden (product decision pending).
+
+## F16 — Cross-cutting sweep (DB_DATABASE=marketplace_test_f16)
+- Full backend suite: 426 tests, 423 pass, 2 fail, 1 skipped (1759 assertions, ~63s).
+  - FAIL (pre-existing, not from QC): Customer\ListingDetailPerformanceTest::test_pdp_query_count_is_within_budget (62 queries vs budget 20; PDP/home queries, no QC commit touches that path).
+  - FAIL (pre-existing): ExampleTest::test_the_application_returns_a_successful_response (GET / returns 404; backend is API/panel-host only).
+  - No failures caused by QC commits; nothing to fix.
+- Route map: docs/QC_ROUTE_MAP.md. Panel routes register without /admin,/marketer,/partner prefix (host-based), so they match by suffix. Truly missing: /admin/ad-packages*, /partner/ad-subscriptions* (F01), doc paths `currencies/OMR/rate|symbol-image` exist as `currencies/{code}/...`; `/api/public/active-popup` is `/api/public/v1/{country}/active-popup`; `marketer/profile/ad-price` is `PUT profile/ad-price`.
+- Lang parity: QC commits touched no lang files; no changes needed.
+- Permission sweep: contract/currency admin routes carry CheckAdminPermission. RISK: PATCH marketer-campaigns/{c}/samples/{s} (a mutation) is guarded only by marketer_campaigns.view; currencies/{code}/rate only countries.view. Marketer routes (profile/ad-price, samples/{sample}/address) have no permission middleware, scoped by owner in controller (covered by tests).
+- Frontend: QC touched no frontend files. `tsc --noEmit` errors are only in generated .next/types/validator.ts (missing checkout page modules), pre-existing. Lint/Playwright not run.
+
+### Final summary
+| Feature | Status | Notes / remaining risk |
+|---|---|---|
+| F01 Ads packages/popup | GAP | package model (serious/serious_featured, /admin/ad-packages, /partner/ad-subscriptions) NOT implemented; Ads is booking-based; popup tests FIXED |
+| F02 Marketer profile | FIXED | currency validation; measurements public (open) |
+| F03 Samples | FIXED | confirm-receipt button; PATCH sample perm is .view only |
+| F04 Contracts | FIXED | immutable versions/acceptances |
+| F05 Special requests | GAP | no open->in_progress action |
+| F08 Custom attributes | FIXED | required checkbox |
+| F10 | GAP | error wording |
+| F12 | GAP | customs duty flat, not % |
+| F13 Checkout | FIXED | placeOrder honors cart coupon |
+| F14 Warranty/invoice | FIXED/GAP | country param bug fixed; invoice JSON not PDF |
+| F15 Currency symbol | FIXED/GAP | SVG sanitiser; admin/partner Blade don't render image symbols |
+| F17 Specialty directory | FIXED | QR v6 API, specialty fields |
