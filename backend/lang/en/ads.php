@@ -51,5 +51,6 @@ return [
     'payment_method' => [
         'wallet' => 'Wallet',
         'payout_deduction' => 'Payout deduction',
+        'offline' => 'Offline payment',
     ],
 ];

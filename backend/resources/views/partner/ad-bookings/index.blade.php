@@ -25,6 +25,7 @@
                 'approved' => __('ads.booking_status.approved'),
                 'scheduled' => __('ads.booking_status.scheduled'),
                 'active' => __('ads.booking_status.active'),
+                'paused' => __('ads.booking_status.paused'),
                 'completed' => __('ads.booking_status.completed'),
                 'rejected' => __('ads.booking_status.rejected'),
                 'cancelled' => __('ads.booking_status.cancelled'),

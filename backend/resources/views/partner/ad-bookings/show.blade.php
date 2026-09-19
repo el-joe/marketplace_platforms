@@ -84,7 +84,7 @@
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.payment') }}</dt>
                         <dd class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $paymentColor }}">{{ __('ads.payment_status.'.$booking->payment_status->value) }}</span>
-                            <span class="text-gray-500 text-xs">({{ __('ads.payment_method.'.$booking->payment_method?->value) }})</span>
+                            @if ($booking->payment_method)<span class="text-gray-500 text-xs">({{ __('ads.payment_method.'.$booking->payment_method->value) }})</span>@endif
                         </dd>
                     </div>
                     @if ($booking->payment_due_at)

@@ -34,7 +34,7 @@
             </div>
             <div>
                 <dt class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.ad_slots.base_rate') }}</dt>
-                <dd class="font-semibold">${{ number_format($adSlot->base_rate ?? 0, 2) }}</dd>
+                <dd class="font-semibold">{{ number_format($adSlot->base_rate ?? 0) }} {{ $adSlot->currency ?? $adSlot->country?->currency_code }}</dd>
             </div>
             <div>
                 <dt class="text-xs text-gray-400 uppercase font-medium mb-0.5">{{ __('admin.ad_slots.status') }}</dt>
@@ -90,7 +90,7 @@
                                     –
                                     {{ $booking->booked_until ? \Carbon\Carbon::parse($booking->booked_until)->format('d M Y') : '—' }}
                                 </td>
-                                <td class="py-2 pr-4">${{ number_format($booking->agreed_rate, 2) }}</td>
+                                <td class="py-2 pr-4">{{ number_format($booking->agreed_rate) }} {{ $booking->currency ?? $adSlot->currency }}</td>
                                 <td class="py-2 pr-4">
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $sc }}-100 text-{{ $sc }}-700">

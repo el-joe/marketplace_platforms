@@ -119,11 +119,11 @@
             </x-form-select>
         </div>
 
-        {{-- Base Rate (in cents) --}}
+        {{-- Base Rate (main currency units, stored as-is) --}}
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.ad_slots.base_rate_usd') }} <span class="text-red-500">*</span></label>
             @php
-                $baseRateDisplay = $adSlot?->base_rate ? number_format($adSlot->base_rate, 2) : old('base_rate_display');
+                $baseRateDisplay = $adSlot?->base_rate ? (int) $adSlot->base_rate : old('base_rate_display');
             @endphp
             <input
                 type="number"

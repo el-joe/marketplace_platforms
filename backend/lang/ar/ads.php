@@ -51,5 +51,6 @@ return [
     'payment_method' => [
         'wallet' => 'المحفظة',
         'payout_deduction' => 'خصم من الدفعة',
+        'offline' => 'دفع خارجي',
     ],
 ];

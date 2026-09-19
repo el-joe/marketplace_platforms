@@ -12,6 +12,7 @@ use App\Services\Ads\AdSlotQuoteService;
 use Database\Seeders\NawiAdsSlotSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\MarketplaceScenario;
+use App\Models\Country;
 use Tests\TestCase;
 
 class NawiAdsLifecycleTest extends TestCase
@@ -24,9 +25,9 @@ class NawiAdsLifecycleTest extends TestCase
         Admin::factory()->create();
         $this->seed(NawiAdsSlotSeeder::class);
 
-        $slot = PaidAdSlot::where('slot_code', $slotCode)->firstOrFail();
-        // Seeder uses Country::first(); align it with the scenario vendor's country.
-        $slot->update(['country_id' => $s->vendorListingFbp->vendor->country_id, 'allowed_advertisers' => 'vendor']);
+        $slot = PaidAdSlot::where('slot_code', 'like', $slotCode.'-%')
+            ->where('country_id', $s->vendorListingFbp->vendor->country_id)->firstOrFail();
+        $slot->update(['allowed_advertisers' => 'vendor']);
         $slot->refresh();
 
         $listing = $s->vendorListingFbp;
@@ -60,7 +61,7 @@ class NawiAdsLifecycleTest extends TestCase
         Admin::factory()->create();
         $this->seed(NawiAdsSlotSeeder::class);
         $this->seed(NawiAdsSlotSeeder::class);
-        $this->assertSame(2, PaidAdSlot::whereIn('slot_code', ['listing-boost-serious', 'listing-boost-featured'])->count());
+        $this->assertSame(Country::count() * 2, PaidAdSlot::where('slot_code', 'like', 'listing-boost-%')->count());
 
         $src = file_get_contents(database_path('seeders/DatabaseSeeder.php'));
         $this->assertStringContainsString('NawiAdsSlotSeeder::class', $src);
@@ -72,7 +73,7 @@ class NawiAdsLifecycleTest extends TestCase
         $svc = app(AdBookingService::class);
 
         $quote = app(AdSlotQuoteService::class)->quote($slot, today()->addDay(), today()->addDays(30));
-        $this->assertSame(50000, $quote['subtotal']);
+        $this->assertSame(500, $quote['subtotal']);
 
         $b = $this->draftWithCreative($slot, $vendor, $listing, 'approved');
         $svc->submit($b); // no approval required: auto approve -> wallet pay -> active
