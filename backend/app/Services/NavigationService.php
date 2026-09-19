@@ -633,6 +633,14 @@ class NavigationService
                     ],
                     [
                         'label' => 'Nawi Ads',
+                        'route' => 'admin.ad-slots.index',
+                        'route_params' => ['target_type' => 'listing_promotion'],
+                        'icon' => 'megaphone',
+                        'permission' => 'ad_slots.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => 'Nawi Ads (Legacy Packages)',
                         'route' => 'admin.ad-packages.index',
                         'icon' => 'megaphone',
                         'permission' => 'transactions.view',

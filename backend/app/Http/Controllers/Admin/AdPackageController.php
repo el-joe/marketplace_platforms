@@ -20,7 +20,8 @@ class AdPackageController extends Controller
         return view('admin.ad-packages.index', [
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
-                ['label' => 'Nawi Ads'],
+                ['label' => 'Nawi Ads', 'url' => route('admin.ad-slots.index', ['target_type' => 'listing_promotion'])],
+                ['label' => 'Legacy Packages'],
             ],
             'packages' => $packages,
             'currencies' => $currencies,
@@ -29,6 +30,8 @@ class AdPackageController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        return $this->legacyReadOnly();
+
         $data = $request->validate([
             'tier' => ['required', Rule::in(['serious', 'serious_featured'])],
             'name_en' => 'required|string|max:255',
@@ -53,6 +56,8 @@ class AdPackageController extends Controller
 
     public function update(Request $request, AdPackage $adPackage): JsonResponse
     {
+        return $this->legacyReadOnly();
+
         $data = $request->validate([
             'name_en' => 'required|string|max:255',
             'name_ar' => 'required|string|max:255',
@@ -72,6 +77,14 @@ class AdPackageController extends Controller
         $adPackage->update($data);
 
         return response()->json(['success' => true, 'message' => 'Ad package updated.', 'package' => $adPackage]);
+    }
+
+    private function legacyReadOnly(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Legacy ad packages are read-only. Manage Nawi Ads via Ad Slots.',
+        ], 410);
     }
 
     public function toggleActive(AdPackage $adPackage): JsonResponse

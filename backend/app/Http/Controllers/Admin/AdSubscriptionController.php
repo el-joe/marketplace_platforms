@@ -18,7 +18,7 @@ class AdSubscriptionController extends Controller
         return view('admin.ad-subscriptions.index', [
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
-                ['label' => 'Nawi Ads', 'url' => route('admin.ad-packages.index')],
+                ['label' => 'Nawi Ads', 'url' => route('admin.ad-slots.index', ['target_type' => 'listing_promotion'])],
                 ['label' => 'Ad Subscriptions'],
             ],
             'subscriptions' => $subscriptions,

@@ -12,6 +12,11 @@
         <button type="button" id="btn-create-package" class="btn btn-primary btn-sm">New Package</button>
     </div>
 
+    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        Legacy &mdash; read only. Packages can no longer be created or edited. Manage Nawi Ads from
+        <a href="{{ route('admin.ad-slots.index', ['target_type' => 'listing_promotion']) }}" class="underline font-medium">Ad Slots</a>.
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8" id="packages-grid">
         @forelse($packages as $package)
             @php

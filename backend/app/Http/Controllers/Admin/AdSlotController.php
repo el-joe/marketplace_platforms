@@ -51,6 +51,7 @@ class AdSlotController extends Controller
         $query = $this->applyFilters($query, $request, [
             'is_available' => fn($q, $v) => $q->where('is_available', (int) $v),
             'country_id' => fn($q, $v) => $q->where('country_id', $v),
+            'target_type' => fn($q, $v) => $q->where('target_type', $v),
         ]);
 
         $columns = [

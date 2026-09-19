@@ -74,7 +74,7 @@
 
         {{-- Advertising (both vendor types — classified vendors advertise classified listings) --}}
         <x-partner-nav-group label="{{ __('partner.nav.advertising') }}">
-            <x-partner-nav-item route="partner.ad-slots.index" icon="megaphone" label="{{ __('partner.nav.ad_slots') }}" />
+            <x-partner-nav-item route="partner.ad-slots.index" icon="megaphone" label="Nawi Ads" />
             <x-partner-nav-item route="partner.ad-bookings.index" icon="calendar-days" label="{{ __('partner.nav.ad_bookings') }}" :badge="$awaitingPaymentAdBookings ?: null" />
         </x-partner-nav-group>
 

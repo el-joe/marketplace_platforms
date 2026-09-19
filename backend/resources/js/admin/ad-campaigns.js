@@ -462,6 +462,7 @@ function initSlotsTable() {
             headers: { 'X-CSRF-TOKEN': csrfToken() },
             data(d) {
                 d.is_available = document.getElementById('slots-filter-available')?.value ?? '';
+                d.target_type = new URLSearchParams(window.location.search).get('target_type') ?? '';
                 d.country_id = document.getElementById('slots-filter-country')?.value ?? '';
             },
         },
