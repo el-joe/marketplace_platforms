@@ -193,8 +193,10 @@ class AdBookingService
                 return;
             }
 
-            $today = Carbon::now($b->country->timezone ?? 'UTC')->startOfDay();
-            $bookedFrom = Carbon::parse($b->booked_from)->startOfDay();
+            $tz = $b->country->timezone ?? 'UTC';
+            $today = Carbon::now($tz)->startOfDay();
+            // booked_from is a calendar date: anchor it in the country timezone, not UTC.
+            $bookedFrom = Carbon::parse(Carbon::parse($b->booked_from)->toDateString(), $tz)->startOfDay();
 
             $target = $today->gte($bookedFrom) ? PaidAdBookingStatus::Active : PaidAdBookingStatus::Scheduled;
 
@@ -275,8 +277,10 @@ class AdBookingService
         DB::transaction(function () use ($b) {
             $b = PaidAdBooking::whereKey($b->id)->lockForUpdate()->firstOrFail();
 
-            $today = Carbon::now($b->country->timezone ?? 'UTC')->startOfDay();
-            $bookedFrom = Carbon::parse($b->booked_from)->startOfDay();
+            $tz = $b->country->timezone ?? 'UTC';
+            $today = Carbon::now($tz)->startOfDay();
+            // booked_from is a calendar date: anchor it in the country timezone, not UTC.
+            $bookedFrom = Carbon::parse(Carbon::parse($b->booked_from)->toDateString(), $tz)->startOfDay();
             $target = $today->gte($bookedFrom) ? PaidAdBookingStatus::Active : PaidAdBookingStatus::Scheduled;
 
             $this->assertTransition($b, $target);

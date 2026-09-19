@@ -44,9 +44,11 @@ class PaidAdSchedulerJob implements ShouldQueue
 
     private function evaluate(PaidAdBooking $booking, AdBookingService $service): void
     {
-        $today = Carbon::now($booking->country->timezone ?? 'UTC')->startOfDay();
-        $bookedFrom = Carbon::parse($booking->booked_from)->startOfDay();
-        $bookedUntil = Carbon::parse($booking->booked_until)->startOfDay();
+        $tz = $booking->country->timezone ?? 'UTC';
+        $today = Carbon::now($tz)->startOfDay();
+        // Booking dates are calendar dates: anchor them in the country timezone, not UTC.
+        $bookedFrom = Carbon::parse(Carbon::parse($booking->booked_from)->toDateString(), $tz)->startOfDay();
+        $bookedUntil = Carbon::parse(Carbon::parse($booking->booked_until)->toDateString(), $tz)->startOfDay();
 
         if ($booking->status === PaidAdBookingStatus::Scheduled && $today->gte($bookedFrom)) {
             $service->activateOrSchedule($booking);
