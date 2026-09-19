@@ -46,6 +46,11 @@ export default async function ProductView({ slug }: { slug: string }) {
             ]}
             containerClasses="pb-3"
           />
+          {productData.top_banner && (
+            <div className="mb-3">
+              <InlineBannerSlot banner={productData.top_banner} />
+            </div>
+          )}
           <SmallScreenHeader product={productData} />
           {/* top three cols (images overview, core info & shipping options..., add to cart box) */}
           <div className="grid grid-cols-1 lg:grid-cols-22 md:gap-3 lg:gap-6 items-start">

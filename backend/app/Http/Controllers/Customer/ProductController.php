@@ -343,6 +343,7 @@ class ProductController extends Controller
             sessionId:        $sessionId,
         );
 
+        $topBanner = $this->placementAds->resolve('product_page_top', $country, $audience, $sessionId, $product->id, $product->category_id);
         $inlineBanner1 = $this->placementAds->resolve('product_page_inline_1', $country, $audience, $sessionId, $product->id, $product->category_id);
         $inlineBanner2 = $this->placementAds->resolve('product_page_inline_2', $country, $audience, $sessionId, $product->id, $product->category_id);
 
@@ -355,6 +356,7 @@ class ProductController extends Controller
         $resource->isMegaDeal = $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
         $resource->banner = $banner;
         $resource->crossSellAd = $crossSellAd;
+        $resource->topBanner = $topBanner;
         $resource->inlineBanner1 = $inlineBanner1;
         $resource->inlineBanner2 = $inlineBanner2;
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
