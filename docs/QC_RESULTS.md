@@ -196,3 +196,9 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - Decision: sort is global across the merged set; relevance = admin (search_boost), vendor, marketer blocks, then score/rating/price. Facets (price range + filterable attributes present in the set) come from the same union as the grid, so counts equal the grid. Response `category` gains `listing_types`, `all_categories` (backward compatible). No cache on this path, so admin edits are visible immediately (tested).
 - PASS: admin-only, vendor-only, marketer-only, all types, category subset, zero-category, price/sort/brand/attr filters, pagination, guest+customer, 404s, plain category regression, query count < 60 (CustomPageProductsApiTest).
 - GAP: ListingDetailPerformanceTest::test_pdp_query_count_is_within_budget fails (62 > 56) on clean HEAD too; unrelated. EXPLAIN not run manually; queries use existing indexes (country/status, product category).
+
+## Custom pages A4: Nawy Now seeder + fixed button
+- PASS: NawyNowCustomPageSeeder idempotent (1 page + 1 slug after two runs, admin edits preserved), fails loudly if slug owned by another entity; registered in DatabaseSeeder. GET /products?category=nawy-now returns admin only, has_filters, price/sort/brand filters OK (NawyNowSeederTest, DB marketplace_test_a4; all 27 CustomPages tests pass).
+- PASS: NawyNowButton (i18n nawyNow.*, locale-aware Link, end-aligned so RTL mirrors, stacked above LiveStreamButton, z-40, hidden on /nawy-now); eslint clean, tsc no errors in touched files. LiveStreamButton switched right-* to end-* so both stay aligned in RTL.
+- GAP: dev DB has pending migration 2026_09_20_100000 (listing_types); seeder run against dev fails safely, NOT applied. Run `php artisan migrate` then the seeder.
+- GAP: no browser check (no frontend server running, dev DB not migrated); catch-all rendering, sidebar/mobile sheet, empty state, en/ar visual stacking unverified.

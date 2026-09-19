@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import MobileNav from "@/src/layout/noon/MobileNav";
 import Header from "@/src/layout/noon/header/Header";
 import LiveStreamButton from "@/src/components/shared/LiveStreamButton";
+import NawyNowButton from "@/src/components/shared/NawyNowButton";
 import EchoProvider from "@/src/providers/echo-provider";
 import SeriousFeaturedPopup from "@/src/features/noon/ads/serious-featured-popup";
 
@@ -22,6 +23,7 @@ export default async function RootLayout({
       <main className="md:pt-26">{children}</main>
       <MobileNav />
       <LiveStreamButton />
+      <NawyNowButton />
       <SeriousFeaturedPopup />
     </EchoProvider>
   );

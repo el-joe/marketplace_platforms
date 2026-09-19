@@ -1385,6 +1385,10 @@
     "download": "تنزيل",
     "close": "إغلاق"
   },
+  "nawyNow": {
+    "label": "نوي الآن",
+    "ariaLabel": "تسوق نوي الآن"
+  },
   "liveStreams": {
     "pageTitle": "البث المباشر",
     "pageSubtitle": "شاهد البث المباشر والقادم والسابق",

@@ -1396,6 +1396,10 @@
     "download": "Download",
     "close": "Close"
   },
+  "nawyNow": {
+    "label": "Nawy Now",
+    "ariaLabel": "Shop Nawy Now"
+  },
   "liveStreams": {
     "pageTitle": "Live Streams",
     "pageSubtitle": "Watch live, upcoming, and past broadcasts",
