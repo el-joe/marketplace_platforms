@@ -212,9 +212,15 @@ class BrowseController extends Controller
             )
             : null;
 
+        // Documented names are departure_from/departure_to; date_from/date_to kept as aliases.
+        $request->merge([
+            'date_from' => $request->input('departure_from', $request->input('date_from')),
+            'date_to'   => $request->input('departure_to', $request->input('date_to')),
+        ]);
         $request->validate([
             'country_id' => 'nullable|uuid|exists:travel_countries,id',
-            'city_id'    => 'nullable|uuid|exists:travel_cities,id',
+            'city_id'    => ['nullable', 'uuid', \Illuminate\Validation\Rule::exists('travel_cities', 'id')
+                ->when($request->filled('country_id'), fn ($r) => $r->where('travel_country_id', $request->input('country_id')))],
             'date_from'  => 'nullable|date',
             'date_to'    => 'nullable|date|after_or_equal:date_from',
         ]);

@@ -86,7 +86,7 @@ use Illuminate\Support\Facades\Route;
         // GET /browse/{type}/{id}  — type IN (product, classified, travel); id = category UUID
         Route::get('browse/{type}/{id}', [BrowseController::class, 'show'])->name('customer.browse.show');
 
-        // GET /travel — all active travel packages, unfiltered (same as browse/travel/all)
+        // GET /travel — active upcoming travel packages; filters: country_id, city_id, departure_from, departure_to (same as browse/travel/all)
         Route::get('travel', [BrowseController::class, 'travelIndex'])->name('customer.travel.index');
 
         // GET /classified — all active classified listings, unfiltered (same as browse/classified/all)
@@ -223,6 +223,9 @@ use Illuminate\Support\Facades\Route;
             ->name('customer.brands.show');
 
         // ── Marketer public profile page (public) ─────────────────────────────
+        Route::get('directory/{type}', [MarketerProfileController::class, 'directory'])
+            ->whereIn('type', ['influencers', 'brokers'])
+            ->name('customer.directory.marketers');
         Route::get('marketers/{slug}', [MarketerProfileController::class, 'show'])
             ->name('customer.marketer.profile');
 

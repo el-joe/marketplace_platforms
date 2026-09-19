@@ -859,7 +859,7 @@ class ListingQueryService
                 'destinationCity:id,name_en,name_ar',
                 'media' => fn($q) => $q->orderBy('position')->limit(1),
             ])
-            ->orderByDesc('departure_date')
+            ->orderBy('departure_date')
             ->paginate($perPage);
     }
 
