@@ -3,11 +3,9 @@
 namespace Tests\Feature\Ads;
 
 use App\Models\Admin;
-use App\Models\AdPackage;
 use App\Models\PaidAdBooking;
 use App\Models\PaidAdCreative;
 use App\Models\PaidAdSlot;
-use App\Models\VendorAdSubscription;
 use App\Models\Wallet;
 use App\Services\Ads\AdBookingService;
 use App\Services\Ads\AdSlotQuoteService;
@@ -146,31 +144,13 @@ class NawiAdsLifecycleTest extends TestCase
         parent::tearDown();
     }
 
-    private function legacySub($listingId, $vendorId): VendorAdSubscription
+    public function test_popup_is_null_without_popup_bookings(): void
     {
-        $pkg = AdPackage::create(['tier' => 'serious_featured', 'name_en' => 'P', 'name_ar' => 'P', 'price_monthly' => 100, 'currency' => 'AED']);
-
-        return VendorAdSubscription::create([
-            'vendor_listing_id' => $listingId, 'vendor_id' => $vendorId, 'ad_package_id' => $pkg->id,
-            'status' => 'active', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(5),
-            'amount_paid' => 0, 'currency' => 'AED',
-            'popup_title_en' => 'Legacy popup', 'popup_body_en' => 'LB', 'popup_cta_url' => 'https://example.com/legacy',
-        ]);
+        MarketplaceScenario::make()->build();
+        $this->getJson('/api/public/v1/active-popup')->assertOk()->assertJson(['popup' => null]);
     }
 
-    public function test_popup_from_legacy_subscription_only(): void
-    {
-        $s = MarketplaceScenario::make()->build();
-        $l = $s->vendorListingFbp;
-        $sub = $this->legacySub($l->id, $l->vendor_id);
-
-        $this->getJson('/api/public/v1/active-popup')->assertOk()
-            ->assertJsonPath('popup.id', $sub->id)
-            ->assertJsonPath('popup.title_en', 'Legacy popup')
-            ->assertJsonPath('popup.cta_url', 'https://example.com/legacy');
-    }
-
-    public function test_popup_with_both_sources_serves_one_of_them(): void
+    public function test_popup_serves_only_active_booking_on_popup_slot(): void
     {
         [$slot, $vendor, $listing] = $this->setUpSeeded('listing-boost-featured');
         $b = $this->draftWithCreative($slot, $vendor, $listing, 'approved');
@@ -179,15 +159,12 @@ class NawiAdsLifecycleTest extends TestCase
         $svc->approve($b->fresh(), Admin::first());
         $this->runSchedulerAt(today()->addDay()->setTime(12, 0));
         $this->assertSame('active', $b->fresh()->status->value);
-        $this->legacySub($listing->id, $vendor->id);
 
-        $titles = [];
-        for ($i = 0; $i < 40; $i++) {
-            $res = $this->getJson('/api/public/v1/active-popup')->assertOk();
-            $titles[] = $res->json('popup.title_en');
+        for ($i = 0; $i < 5; $i++) {
+            $this->getJson('/api/public/v1/active-popup')->assertOk()
+                ->assertJsonPath('popup.id', $b->id)
+                ->assertJsonPath('popup.title_en', 'Hello')
+                ->assertJsonPath('popup.cta_url', 'https://example.com/p');
         }
-        $this->assertSame([], array_diff($titles, ['Hello', 'Legacy popup']));
-        $this->assertContains('Hello', $titles);
-        $this->assertContains('Legacy popup', $titles);
     }
 }
