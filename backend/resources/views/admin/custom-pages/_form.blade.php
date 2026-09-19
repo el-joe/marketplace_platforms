@@ -66,7 +66,7 @@
                 <x-form.toggle name="is_active" label="{{ __('admin.is_active') }}" :checked="$isEdit ? $customPage->is_active : true" />
                 <x-form.toggle name="has_filters" label="{{ __('admin.categories.has_filters') }}"
                     :checked="$isEdit ? $customPage->has_filters : false"
-                    help-text="{{ __('admin.categories.has_filters_hint') }}" />
+                    :help-text="__('admin.categories.has_filters_hint')" />
             </div>
 
             <x-form.select name="listing_types" label="{{ __('admin.custom_pages.listing_types') }}"
@@ -142,3 +142,10 @@
         </button>
     </div>
 </div>
+
+<script>
+    window.TRANSLATIONS = Object.assign(window.TRANSLATIONS || {}, {
+        'admin.custom_pages.no_categories_yet': @json(__('admin.custom_pages.no_categories_yet')),
+        'admin.remove': @json(__('admin.remove')),
+    });
+</script>

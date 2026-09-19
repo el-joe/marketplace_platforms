@@ -5,6 +5,7 @@
 @push('styles')
 @vite([
     'resources/js/components/slug-input.js',
+    'resources/js/components/select2.js',
     'resources/js/admin/custom-pages.js',
 ])
 @endpush
