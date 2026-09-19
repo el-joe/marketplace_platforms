@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\VendorAdSubscription;
+use App\Services\Ads\ListingBoostService;
 use App\Models\VendorListing;
 use Illuminate\Console\Command;
 
@@ -21,10 +22,10 @@ class ExpireAdBoosts extends Command
         foreach ($expired as $subscription) {
             $subscription->update(['status' => 'expired']);
 
-            VendorListing::where('id', $subscription->vendor_listing_id)->update([
-                'is_ad_boosted' => false,
-                'ad_boost_expires_at' => null,
-            ]);
+            $listing = VendorListing::find($subscription->vendor_listing_id);
+            if ($listing) {
+                app(ListingBoostService::class)->refresh($listing);
+            }
         }
 
         $this->info("Expired {$expired->count()} ad subscription(s).");

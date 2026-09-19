@@ -61,10 +61,9 @@ class AdSubscriptionController extends Controller
 
         $subscription->update(['status' => 'cancelled']);
 
-        $subscription->vendorListing()->update([
-            'is_ad_boosted' => false,
-            'ad_boost_expires_at' => null,
-        ]);
+        if ($subscription->vendorListing) {
+            app(\App\Services\Ads\ListingBoostService::class)->refresh($subscription->vendorListing);
+        }
 
         return response()->json(['success' => true, 'message' => 'Subscription cancelled.']);
     }
