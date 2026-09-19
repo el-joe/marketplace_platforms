@@ -15,7 +15,7 @@ class AdPopupControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeBooking(bool $popup, string $url): PaidAdBooking
+    private function makeBooking(bool $popup, string $url, bool $withListing = true): PaidAdBooking
     {
         $s = MarketplaceScenario::make()->build();
         $listing = $s->vendorListingFbp;
@@ -39,7 +39,7 @@ class AdPopupControllerTest extends TestCase
         PaidAdCreative::create([
             'paid_ad_booking_id' => $booking->id, 'version' => 1, 'vendor_id' => $listing->vendor_id,
             'title_en' => 'Big deal', 'subtitle_en' => 'Body', 'destination_url' => $url,
-            'destination_type' => 'listing', 'destination_reference_id' => $listing->id,
+            'destination_type' => $withListing ? 'listing' : 'url', 'destination_reference_id' => $withListing ? $listing->id : null,
             'status' => 'approved', 'is_current' => true, 'approved_at' => now(),
         ]);
 
@@ -53,16 +53,22 @@ class AdPopupControllerTest extends TestCase
 
     public function test_slot_booking_popup_is_served(): void
     {
-        $b = $this->makeBooking(true, 'https://example.com/x');
+        $b = $this->makeBooking(true, 'https://example.com/x', false);
         $this->getJson($this->popupUrl())->assertOk()
             ->assertJsonPath('popup.id', $b->id)
             ->assertJsonPath('popup.title_en', 'Big deal')
             ->assertJsonPath('popup.cta_url', 'https://example.com/x');
     }
 
+    public function test_listing_destination_links_to_product_page(): void
+    {
+        $this->makeBooking(true, 'https://example.com/x');
+        $this->getJson($this->popupUrl())->assertOk()->assertJsonPath('popup.cta_url', fn ($u) => str_starts_with($u, '/products/'));
+    }
+
     public function test_bad_cta_scheme_is_dropped_and_non_popup_slot_ignored(): void
     {
-        $this->makeBooking(true, 'javascript:alert(1)');
+        $this->makeBooking(true, 'javascript:alert(1)', false);
         $this->getJson($this->popupUrl())->assertOk()->assertJsonPath('popup.cta_url', null);
     }
 
@@ -74,7 +80,7 @@ class AdPopupControllerTest extends TestCase
 
     public function test_popup_is_scoped_to_the_requested_country(): void
     {
-        $b = $this->makeBooking(true, 'https://example.com/x');
+        $b = $this->makeBooking(true, 'https://example.com/x', false);
         $other = \App\Models\Country::factory()->create(['is_active' => true]);
 
         $this->getJson($this->popupUrl($b->country))->assertOk()->assertJsonPath('popup.id', $b->id);

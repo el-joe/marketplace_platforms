@@ -95,3 +95,9 @@ Test: backend/tests/Feature/Checkout/CodLimitsTest.php (8 tests pass; DB_DATABAS
 - FIXED: GET checkout/payment-options did not reflect COD limits/international (COD shown available). Now marks COD `is_available=false` + reason (Api/Customer/CheckoutController.php paymentOptions).
 - FIXED: admin settings save had no validation for COD keys; SettingsService::validateGroup now requires non-negative whole numbers and an existing category id.
 - GAP (minor): units are base-currency integers (50000 = 500 per doc example); no Arabic lang key check beyond existing cod_* keys (present in ar/en).
+
+## F01 — Nawi Ad Packages + popup
+Tests: backend/tests/Feature/Ads (36+ tests; DB_DATABASE=marketplace_test_f01).
+- FIXED (tests): 3 stale popup assertions expected the raw destination_url; AdPopupController (by design) links to /products/{variant}--{listing} when a listing destination exists and only falls back to a sanitized URL otherwise. Tests updated in AdPopupControllerTest and NawiAdsLifecycleTest; added listing-link and URL-only cases.
+- NOTE: the system is booking-based (PaidAdSlot/PaidAdBooking), not the spec's ad-package/serious_featured tables; AdBillingSeparationTest (user WIP) left untouched and passes.
+- GAP: the spec's package CRUD, popup_* validation matrix and localStorage `nawi_ads_popup_seen` were not separately verified here.

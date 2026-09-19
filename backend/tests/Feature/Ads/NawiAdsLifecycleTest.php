@@ -164,7 +164,7 @@ class NawiAdsLifecycleTest extends TestCase
             $this->getJson($this->popupUrl())->assertOk()
                 ->assertJsonPath('popup.id', $b->id)
                 ->assertJsonPath('popup.title_en', 'Hello')
-                ->assertJsonPath('popup.cta_url', 'https://example.com/p');
+                ->assertJsonPath('popup.cta_url', "/products/{$listing->product_variant_id}--{$listing->id}");
         }
     }
 
