@@ -13,12 +13,16 @@ class CustomPage extends Model
 {
     use HasUuids, SoftDeletes;
 
+    public const LISTING_TYPES = ['admin', 'vendor', 'marketer'];
+
     protected $fillable = [
         'name_en',
         'name_ar',
         'description_en',
         'description_ar',
         'has_filters',
+        'listing_types',
+        'all_categories',
         'is_active',
         'sort_order',
         'seo_title_en',
@@ -29,9 +33,24 @@ class CustomPage extends Model
 
     protected $casts = [
         'has_filters' => 'boolean',
+        'listing_types' => 'array',
+        'all_categories' => 'boolean',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    /** Listing types this page shows; null/empty/invalid => all three. */
+    public function allowedListingTypes(): array
+    {
+        $types = array_values(array_intersect(self::LISTING_TYPES, (array) ($this->listing_types ?? [])));
+
+        return $types === [] ? self::LISTING_TYPES : $types;
+    }
+
+    public function allowsType(string $type): bool
+    {
+        return in_array($type, $this->allowedListingTypes(), true);
+    }
 
     protected static function booted(): void
     {

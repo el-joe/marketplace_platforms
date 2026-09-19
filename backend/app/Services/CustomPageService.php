@@ -29,12 +29,32 @@ class CustomPageService
         return $slug;
     }
 
+    /**
+     * Normalise submitted listing types: dedupe, keep order, drop unknowns.
+     * All three or none => null (meaning "all types").
+     *
+     * @return list<string>|null
+     */
+    public function normalizeListingTypes(?array $types): ?array
+    {
+        $out = [];
+        foreach ($types ?? [] as $t) {
+            if (is_string($t) && in_array($t, CustomPage::LISTING_TYPES, true) && !in_array($t, $out, true)) {
+                $out[] = $t;
+            }
+        }
+
+        return ($out === [] || count($out) === count(CustomPage::LISTING_TYPES)) ? null : $out;
+    }
+
     public function syncCategories(CustomPage $customPage, array $categoryIds): void
     {
+        $categoryIds = array_values(array_unique(array_filter($categoryIds)));
+
         DB::transaction(function () use ($customPage, $categoryIds) {
             DB::table('custom_page_category_map')->where('custom_page_id', $customPage->id)->delete();
 
-            foreach (array_values($categoryIds) as $i => $categoryId) {
+            foreach ($categoryIds as $i => $categoryId) {
                 DB::table('custom_page_category_map')->insert([
                     'id' => (string) Str::uuid(),
                     'custom_page_id' => $customPage->id,

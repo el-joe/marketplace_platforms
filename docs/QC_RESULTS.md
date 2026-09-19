@@ -173,3 +173,9 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - F05 FIXED: broker action open -> in_progress (marketer panel PATCH special-requests/{id}/start + API PATCH /api/marketer/special-requests/{id}/start); only matching broker, only from open; status badge in list; close guard unchanged. Note: in_progress requests leave the broker list (existing behaviour, no broker assignment column).
 - F07 FIXED: TravelBookingConfirmed text now "Booking Received ... pending documents" (ar+en).
 - F02/F12/F14: no change.
+
+## Custom pages A1: backend data layer
+- PASS: migration adds custom_pages.listing_types (JSON null) + all_categories (bool default 0), reversible; casts, allowedListingTypes()/allowsType().
+- PASS: CategoryService::resolveCustomPageScope (all categories => null, subset + descendants, none/deleted category => []), normalizeListingTypes (tests/Feature/CustomPages/CustomPageScopeTest.php, 6 tests).
+- FIXED: syncCategories tolerates empty list, dedupes ids.
+- NOTE: getCategoryIdsForFilter keeps array contract (all-categories page => []); new getCategoryScopeForFilter returns null for unrestricted. A3 must switch callers and short-circuit [] (no whereIn([])).

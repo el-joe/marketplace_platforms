@@ -398,6 +398,11 @@ class CategoryService
      * results to — a category's own subtree, or the union of subtrees for
      * every category linked to a custom page.
      *
+     * NOTE: an all_categories custom page yields [] here (legacy array-typed
+     * contract); callers that must support it use getCategoryScopeForFilter()
+     * (null = unrestricted). A page with no categories also yields [] and
+     * callers must return an empty result rather than whereIn([]).
+     *
      * @return list<string>
      */
     public function getCategoryIdsForFilter(string $idOrSlug): array
@@ -412,12 +417,46 @@ class CategoryService
             return $this->getDescendantIds($resolved['model']);
         }
 
-        $ids = [];
-        foreach ($resolved['model']->categories as $category) {
-            $ids = array_merge($ids, $this->getDescendantIds($category));
+        return $this->resolveCustomPageScope($resolved['model'])['category_ids'] ?? [];
+    }
+
+    /**
+     * Effective scope of a custom page.
+     * category_ids: null = NO category restriction (all_categories); [] = page
+     * has no usable categories (callers MUST short-circuit to an empty result,
+     * never whereIn([])); otherwise linked categories + active descendants.
+     *
+     * @return array{category_ids: ?list<string>, listing_types: list<string>}
+     */
+    public function resolveCustomPageScope(CustomPage $page): array
+    {
+        $ids = null;
+        if (!$page->all_categories) {
+            $ids = [];
+            foreach ($page->categories()->get() as $category) {
+                $ids = array_merge($ids, $this->getDescendantIds($category));
+            }
+            $ids = array_values(array_unique($ids));
         }
 
-        return array_values(array_unique($ids));
+        return ['category_ids' => $ids, 'listing_types' => $page->allowedListingTypes()];
+    }
+
+    /**
+     * Like getCategoryIdsForFilter but null-aware: null = no category
+     * restriction (all-categories custom page). [] = empty result.
+     *
+     * @return list<string>|null
+     */
+    public function getCategoryScopeForFilter(string $idOrSlug): ?array
+    {
+        $resolved = $this->resolveSlug($idOrSlug);
+
+        if ($resolved && $resolved['type'] === 'custom_page') {
+            return $this->resolveCustomPageScope($resolved['model'])['category_ids'];
+        }
+
+        return $this->getCategoryIdsForFilter($idOrSlug);
     }
 
     /**
