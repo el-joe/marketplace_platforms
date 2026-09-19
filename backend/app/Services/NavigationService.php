@@ -639,20 +639,6 @@ class NavigationService
                         'permission' => 'ad_slots.view',
                         'badge' => null,
                     ],
-                    [
-                        'label' => 'Nawi Ads (Legacy Packages)',
-                        'route' => 'admin.ad-packages.index',
-                        'icon' => 'megaphone',
-                        'permission' => 'transactions.view',
-                        'badge' => null,
-                    ],
-                    [
-                        'label' => 'Ad Subscriptions',
-                        'route' => 'admin.ad-subscriptions.index',
-                        'icon' => 'chart-bar',
-                        'permission' => 'transactions.view',
-                        'badge' => null,
-                    ],
                 ],
             ],
             [
