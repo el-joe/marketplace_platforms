@@ -43,7 +43,9 @@ class AdPopupController extends Controller
                 'image_url_ar' => $c->imagePair('desktop')['ar'],
                 'image_url_mobile' => $c->imagePair('mobile')['en'],
                 'image_url_mobile_ar' => $c->imagePair('mobile')['ar'],
-                'cta_url' => $this->safeUrl($c->destination_url),
+                'cta_url' => $listing
+                    ? "/products/{$listing->product_variant_id}--{$listing->id}"
+                    : $this->safeUrl($c->destination_url),
                 'product_slug' => $listing?->productVariant?->product?->slug,
             ];
         }

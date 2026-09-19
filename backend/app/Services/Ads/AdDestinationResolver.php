@@ -65,7 +65,7 @@ class AdDestinationResolver
         return [
             'destination_type' => PaidAdDestinationType::Listing->value,
             'destination_reference_id' => $listing->id,
-            'destination_url' => "/products/{$listingRef}",
+            'destination_url' => "/products/{$listing->product_variant_id}--{$listing->id}",
             'referral_code' => null,
             'is_external' => false,
         ];
