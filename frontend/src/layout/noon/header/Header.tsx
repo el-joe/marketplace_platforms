@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   BriefcaseBusinessIcon,
   ChevronDownIcon,
@@ -22,7 +22,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useCartContext } from "@/src/providers/cart-provider";
 import useLocale from "@/src/hooks/use-locale";
 import { useAuthContext } from "@/src/providers/auth-provider";
-import { getAddresses } from "@/src/services/address";
 import SideCategoriesList from "./SideCategoriesList";
 import Logo from "@/src/components/shared/Logo";
 import AddressDialog from "@/src/components/shared/dialogs/address-dialog/address-dialog";
@@ -372,7 +371,7 @@ const HeaderButton = ({
               </span>
             )}
           </span>
-          <span className="hidden lg:block">{text}</span>
+          <span className="hidden xl:block">{text}</span>
         </Button>
       </Link>
     );
@@ -394,7 +393,7 @@ const HeaderButton = ({
             </span>
           )}
         </span>
-        <span className="hidden lg:block">{text}</span>
+        <span className="hidden xl:block">{text}</span>
       </Button>
     );
   }

@@ -2,7 +2,7 @@
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { IWishlistGroup } from "@/types";
-import { ShoppingBagIcon } from "lucide-react";
+import { EarthIcon, LockIcon, ShoppingBagIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useQueryState } from "nuqs";
 import React, { useEffect } from "react";
@@ -10,7 +10,7 @@ import React, { useEffect } from "react";
 export default function WishlistsNav() {
   const { wishlistGroups, isLoadingGroups } = useWishlistContext();
   return (
-    <div className="md:py-4 md:pe-4 border-b md:border-e flex-1 md:flex-0 border-border md:min-w-54 lg:min-w-90 2xl:min-w-120 flex md:flex-col items-stretch gap-4">
+    <div className="md:py-4 md:pe-4 border-b md:border-e md:flex-0 border-border md:min-w-54 lg:min-w-90 2xl:min-w-120 flex md:flex-col items-stretch gap-4 overflow-x-auto max-w-full scrollbar-none">
       {isLoadingGroups &&
         Array.from({ length: 4 }).map((e, i) => (
           <Skeleton key={i} className="h-22" />
@@ -33,22 +33,31 @@ const NavItem = ({ group }: { group: IWishlistGroup }) => {
   }, [group.id, group.is_default, selectedWishlistId, setSelectedWishlistId]);
   return (
     <div
-      className={`${selectedWishlistId === group.id ? "bg-gray-2" : ""} p-1 md:p-4 md:border border-border cursor-pointer`}
+      className={`${selectedWishlistId === group.id ? "border-b-2 border-b-blue text-blue md:border md:border-border md:text-black md:bg-gray-2" : ""} p-1 md:p-4 md:border border-border cursor-pointer min-w-fit`}
       onClick={() => setSelectedWishlistId(group.id)}
     >
       <div className="flex gap-2 mb-2 items-center">
         <h3 className="font-semibold text-base">{group.name}</h3>
         {group.is_default && (
-          <p className="bg-blue-2 rounded-2xl px-2 py-0.5 text-white text-xs">
+          <p className="hidden md:block bg-blue-2 rounded-2xl px-2 py-0.5 text-white text-xs">
             {t("default")}
           </p>
+        )}
+        {group.is_public ? (
+          <EarthIcon className="md:hidden size-4" />
+        ) : (
+          <LockIcon className="md:hidden size-4" />
         )}
       </div>
       <div className="hidden md:flex gap-2 items-center">
         <p className="text-gray text-sm">
           {group.items_count} {t("items")}
         </p>
-        <ShoppingBagIcon size={"16px"} />
+        {group.is_public ? (
+          <EarthIcon className="size-5" />
+        ) : (
+          <LockIcon className="size-5" />
+        )}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ export default async function Wishlist() {
   return (
     <div className="container">
       {/* header */}
-      <div className="flex justify-between items-stretch py-5 border-b border-border">
+      <div className="flex justify-between items-stretch py-5 md:border-b border-border">
         <h2 className="text-2xl font-bold text-light">{t("wishlist")}</h2>
         <CreateGroupDialog
           trigger={
@@ -24,7 +24,7 @@ export default async function Wishlist() {
           }
         />
       </div>
-      <div className="flex items-stretch min-h-screen flex-wrap">
+      <div className="flex items-stretch min-h-screen flex-wrap flex-col md:flex-row">
         <WishlistsNav />
         <WishlistItems />
       </div>
