@@ -222,7 +222,17 @@ class ProductController extends Controller
 
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
         [$meta, $cards] = $this->listings->paginateMixed($country, $types, $categoryIds, $filters, $page, $perPage, $wishlistIds);
-        $items = $cards ? $this->sponsored->inject($cards, $country, $page, 'category_top', null, $categoryIds ?? []) : [];
+        // Sponsored slots are always vendor listings: inject only when the page allows vendor
+        // listings (otherwise they would leak past the type scope), and drop the organic copy of
+        // a promoted listing so it does not appear twice.
+        $items = $cards;
+        if ($cards && in_array('vendor', $types, true)) {
+            $items = $this->sponsored->inject($cards, $country, $page, 'category_top', null, $categoryIds ?? []);
+            $sponsoredIds = collect($items)->pluck('_sponsored_listing_id')->filter()->all();
+            if ($sponsoredIds) {
+                $items = array_values(array_filter($items, fn ($i) => isset($i['_sponsored_listing_id']) || !in_array($i['listing_id'] ?? null, $sponsoredIds, true)));
+            }
+        }
         $facets = $this->listings->mixedFacets($country, $types, $categoryIds, $filters);
 
         $pageBuilder = $this->resolvePageBuilder($country, $filters, null, $customPage, $this->pageBuilder->detectDevice($request), auth('customer')->check() ? 'authenticated' : 'guest');
