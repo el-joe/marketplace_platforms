@@ -202,3 +202,21 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - PASS: NawyNowButton (i18n nawyNow.*, locale-aware Link, end-aligned so RTL mirrors, stacked above LiveStreamButton, z-40, hidden on /nawy-now); eslint clean, tsc no errors in touched files. LiveStreamButton switched right-* to end-* so both stay aligned in RTL.
 - GAP: dev DB has pending migration 2026_09_20_100000 (listing_types); seeder run against dev fails safely, NOT applied. Run `php artisan migrate` then the seeder.
 - GAP: no browser check (no frontend server running, dev DB not migrated); catch-all rendering, sidebar/mobile sheet, empty state, en/ar visual stacking unverified.
+
+## Custom pages A5: final QC and regression sweep
+Scratch DB `marketplace_qc_a5` (import of marketplace_platform.sql + pending migrations + NawyNowCustomPageSeeder); dev DB untouched. Next.js dev server (webpack, copy of frontend in scratchpad, port 3000 for CORS) + `artisan serve` on 8011; headless Google Chrome via Playwright.
+- PASS: 27 CustomPages tests, Customer suite 28/29. ListingDetailPerformanceTest (62 > 56) confirmed PRE-EXISTING: fails identically on 6ebdb42 (pre-A1) in a clean worktree.
+- PASS: matrix 5 type combos x 5 category scopes (25 pages via CustomPageService) vs independent SQL expectation: item id set equals expected set, meta.total equals expected, nothing out of scope, nothing missing.
+- FIXED (185f760): sponsored (always vendor) ads were injected into admin-only / marketer-only pages, leaking past the type scope and duplicating organic items; now injected only when `vendor` is allowed, organic duplicate removed.
+- FIXED (next commit after 185f760): attribute filters now forwarded to sponsored injection (color=Black gave 10 items for total 7).
+- PASS: brand filter (vendor 5, admin 1, all 7) and attribute filter (color=Black, values matched by value_en, count equals facet count 7) combined with types.
+- FIXED (5992927): `useAddresses` read localStorage in a useState initializer, so every category / custom page returned 500 on SSR (pre-existing; reproduced on a plain category). Now guarded.
+- PASS (browser): /nawy-now via catch-all renders card, filter sidebar, sort; empty state ("No products found") renders; RTL (ar) page and sidebar mirror; mobile filter sheet opens from the right in ar; no horizontal overflow at 390px.
+- PASS (browser): NawyNowButton above LiveStreamButton (8px gap, no overlap) at 390 and 1280, en and ar (mirrors to the left in RTL), hidden on /nawy-now. LiveStreamButton only renders when a stream is live (mocked in the test).
+- FIXED (4b0daa8): real admin form: Listing types had no select2 (select2.js entry was not loaded); empty-category text showed raw key `admin.custom_pages.no_categories_yet` (window.TRANSLATIONS never defined); `category&#039;s` double-escaped hint. Verified: all-categories toggle disables picker, select2 options, edit prefill (admin selected, toggle on), RTL mirror, Inherited Filters card shows the "all filterable attributes in results" text for all-categories pages, 403 for admin without categories.view.
+- GAP: Inherited Filters card still only refreshes after save (server-rendered), acceptable.
+- GAP: sponsored slots (page 1) can repeat a listing that also appears on page 2; inherent to the sponsored injector, same on plain categories. Sponsored ads are not filtered by price/brand.
+- GAP: use-addresses reads localStorage key "as" but writes "selectedAddress" (selection never restores); not touched.
+- GAP: mobile page shows two "Filters" buttons on custom pages (page-level one is unconditional in the catch-all page); pre-existing.
+- GAP: not run: wishlist/cart per card type, cache-freshness after category deletion, slug collision UI, page-builder / flash-sale regression in browser (covered by tests only).
+- Dev DB: run `php artisan migrate` then `php artisan db:seed --class=NawyNowCustomPageSeeder`, and `npm run build` in backend (admin bundle now includes select2 for custom pages).
