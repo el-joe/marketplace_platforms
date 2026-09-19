@@ -4,9 +4,14 @@ import { Address, getAddresses } from "../services/address";
 import { useQuery } from "@tanstack/react-query";
 
 export const useAddresses = () => {
-  const [selectedAddress, setSelectedAddress] = useState<Address | null>(() =>
-    JSON.parse(localStorage.getItem("as") as string),
-  );
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(() => {
+    if (typeof window === "undefined") return null; // SSR: no localStorage
+    try {
+      return JSON.parse(localStorage.getItem("as") as string);
+    } catch {
+      return null;
+    }
+  });
   const { data: addressesData, isLoading } = useQuery({
     queryKey: ["addresses"],
     queryFn: getAddresses,
