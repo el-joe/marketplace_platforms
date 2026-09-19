@@ -43,8 +43,6 @@ export default function Checkout() {
     setOfflineProofNote,
     isPlacingOrder,
     isUploadingProof,
-    selectedReceiverId,
-    setSelectedReceiverId,
   } = useCheckout();
   if (
     (isPreparingCheckout && !checkoutData) ||
