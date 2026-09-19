@@ -1,11 +1,10 @@
 "use client";
 
-import { Link } from "@/i18n/navigation";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
 import { apiBaseUrlGlobal } from "@/src/lib/utils";
 import { PlacementBanner } from "@/src/types/placement-banner";
+import { SponsoredLink } from "@/src/components/shared/sponsored-link";
 import resolveCookie from "@/src/helpers/resolveCookie";
 
 interface Props {
@@ -14,24 +13,28 @@ interface Props {
 
 export default function InlineBannerSlot({ banner }: Props) {
   const locale = useLocale();
-  const t = useTranslations();
+  const isAr = locale === "ar";
 
   const desktopSrc =
-    (locale === "ar" && banner.desktop_image_url_ar) ||
-    banner.desktop_image_url;
+    (isAr && banner.desktop_image_url_ar) || banner.desktop_image_url;
   const mobileSrc =
-    (locale === "ar" && banner.mobile_image_url_ar) || banner.mobile_image_url;
+    (isAr && banner.mobile_image_url_ar) || banner.mobile_image_url;
   const imgSrc = desktopSrc || mobileSrc;
 
   if (!imgSrc) return null;
 
-  const title =
-    locale === "ar"
-      ? (banner.title_ar ?? banner.title_en)
-      : (banner.title_en ?? banner.title_ar);
+  const title = isAr
+    ? banner.title_ar || banner.title_en
+    : banner.title_en || banner.title_ar;
+  const subtitle = isAr
+    ? banner.subtitle_ar || banner.subtitle_en
+    : banner.subtitle_en || banner.subtitle_ar;
+  const cta = isAr
+    ? banner.cta_label_ar || banner.cta_label_en
+    : banner.cta_label_en || banner.cta_label_ar;
 
-  const handleClick = async () => {
-    if (!banner.id) return;
+  const trackLegacyClick = async () => {
+    if (!banner.id || banner.is_paid) return;
     const country = await resolveCookie("country");
     fetch(`${apiBaseUrlGlobal}/${country}/banners/${banner.id}/click`, {
       method: "POST",
@@ -39,12 +42,57 @@ export default function InlineBannerSlot({ banner }: Props) {
     }).catch(() => {});
   };
 
+  // Paid ads derived from a product carry a square product photo + title, so
+  // they are shown as a compact sponsored card rather than a stretched banner.
+  const isProductCard = !!banner.is_paid && !!title;
+
+  if (isProductCard) {
+    return (
+      <SponsoredLink
+        href={banner.cta_url}
+        isExternal={banner.is_external}
+        ad={banner.ad}
+        isPaid
+        className="rounded-xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm transition"
+      >
+        <div className="flex items-center gap-3 md:gap-4 p-2.5 md:p-3 pb-6 md:pb-3">
+          <div className="relative size-14 md:size-16 shrink-0 rounded-lg bg-[#f7f7fa] overflow-hidden">
+            <Image
+              src={imgSrc}
+              alt={title || ""}
+              fill
+              sizes="64px"
+              className="object-contain p-1"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm md:text-base font-semibold text-gray-900">
+              {title}
+            </p>
+            {subtitle && (
+              <p className="line-clamp-1 mt-0.5 text-xs md:text-sm text-gray-500">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          {cta && (
+            <span className="hidden sm:inline-block shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+              {cta}
+            </span>
+          )}
+        </div>
+      </SponsoredLink>
+    );
+  }
+
   return (
-    <div className="relative my-6 rounded-xl overflow-hidden">
-      <Link
-        href={banner.cta_url || "#"}
-        onClick={handleClick}
-        target={banner.is_external ? "_blank" : undefined}
+    <div onClick={trackLegacyClick}>
+      <SponsoredLink
+        href={banner.cta_url}
+        isExternal={banner.is_external}
+        ad={banner.ad}
+        isPaid={banner.is_paid}
+        className="rounded-xl overflow-hidden"
       >
         <picture>
           {mobileSrc && (
@@ -53,15 +101,12 @@ export default function InlineBannerSlot({ banner }: Props) {
           <Image
             src={imgSrc}
             alt={title || ""}
-            width={1280}
-            height={380}
+            width={1200}
+            height={150}
             className="w-full h-auto object-cover"
           />
         </picture>
-      </Link>
-      <span className="p-1 text-xs rounded-md text-light bg-white opacity-60 absolute right-3 bottom-3">
-        {t("ad")}
-      </span>
+      </SponsoredLink>
     </div>
   );
 }
