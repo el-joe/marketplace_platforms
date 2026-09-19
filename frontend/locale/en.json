@@ -765,6 +765,13 @@
     "readyToMakeAWishDescription": "Start adding items you love to your wishlist by tapping on the heart icon"
   },
   "checkout": {
+    "secureCheckout": "Secure Checkout",
+    "cart": "Cart",
+    "footerAssistanceNumber$": "For assistance, call {number}",
+    "$$AllRightsReserved": "© {date} {brand}, All Rights Reserved",
+    "termsOfUse": "Terms of Use",
+    "termsOfSale": "Terms of Sale",
+    "privacyPolicy": "Privacy Policy",
     "deliverTo": "deliver to",
     "editAddress": "Edit address",
     "whoWillReceiveThisOrder": "who will receive this order",
