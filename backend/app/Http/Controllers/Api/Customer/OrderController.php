@@ -52,7 +52,7 @@ class OrderController extends Controller
         ], __('customer_api.order.retrieved'));
     }
 
-    public function show(Request $request, string $orderNumber): JsonResponse
+    public function show(Request $request, string $country, string $orderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
         $order = $this->findOrder($customer, $orderNumber);
@@ -73,7 +73,7 @@ class OrderController extends Controller
         return ApiResponse::success($this->buildOrderDetail($order), __('customer_api.order.single_retrieved'));
     }
 
-    public function showSubOrder(Request $request, string $orderNumber, string $subOrderNumber): JsonResponse
+    public function showSubOrder(Request $request, string $country, string $orderNumber, string $subOrderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
         $order = $this->findOrder($customer, $orderNumber);
@@ -94,7 +94,7 @@ class OrderController extends Controller
         return ApiResponse::success((new SubOrderDetailResource($subOrder))->toArray($request), __('customer_api.order.sub_order_retrieved'));
     }
 
-    public function tracking(Request $request, string $orderNumber): JsonResponse
+    public function tracking(Request $request, string $country, string $orderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
         $order = $this->findOrder($customer, $orderNumber);
@@ -121,7 +121,7 @@ class OrderController extends Controller
      * order_items.id) to cancel only those items, or `sub_order_id` to
      * cancel one sub-order. With neither, the whole order is cancelled.
      */
-    public function cancel(Request $request, string $orderNumber): JsonResponse
+    public function cancel(Request $request, string $country, string $orderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
         $order = $this->findOrder($customer, $orderNumber);
@@ -170,7 +170,7 @@ class OrderController extends Controller
         return ApiResponse::success($this->buildOrderDetail($order), __('customer_api.order.cancelled_successfully'));
     }
 
-    public function invoice(Request $request, string $orderNumber): JsonResponse
+    public function invoice(Request $request, string $country, string $orderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
         $order = $this->findOrder($customer, $orderNumber);

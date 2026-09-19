@@ -116,3 +116,12 @@ Test: backend/tests/Feature/Checkout/CheckoutFixesF13Test.php (6 tests pass; all
 - PASS: wallet insufficient => 422 before order creation, no orphan order, balance untouched; sufficient => deducted; same idempotency_key twice => one order, one debit; partial wallet+COD either deducts exactly or rejects cleanly.
 - PASS: prepare order_summary.total == final order total (percentage coupon + tax).
 - GAP (not verified): (c) frontend payment-summary rendering ("مجاني", COD fee only on COD) compared against API totals was code-located only, not browser-tested.
+
+## F14 — Extended warranty + invoice + bank transfer
+Tests: backend/tests/Feature/InvoiceAndBankTransferTest.php (4 pass) + WarrantyLifecycleTest/CartWarrantyTest (20 pass); DB_DATABASE=marketplace_test_f14.
+- PASS: warranty purchase only after delivery, within window, one per item, failed payment creates none; claims validated (brand/platform windows, 422 outside).
+- FIXED: Api\Customer\OrderController show/showSubOrder/tracking/cancel/invoice lacked the `{country}` route param, so Laravel passed country as $orderNumber and every call 404'd (invoice included). Added `string $country`.
+- PASS: invoice returns tax/discount/shipping/total lines; other customer 404; unauthenticated 401.
+- PASS: bank_transfer_details (bank, IBAN, reference = order number, amount) from gateway credentials in order detail; null for COD; other customer 404.
+- GAP: invoice endpoint returns JSON, not a PDF (no PDF lib installed); the storefront renders a printable page. Arabic glyph/PDF filename spec not met. Not changed.
+- GAP: values come from gateway credentials, not "settings"; duty line not in invoice resource.
