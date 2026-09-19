@@ -8968,6 +8968,7 @@ return [
         'flat_rate'                => 'Flat Rate',
         'daily_rate'               => 'Daily Rate',
         'weekly_rate'              => 'Weekly Rate',
+        'currency_from_country'   => 'Set automatically from the selected country.',
         'base_rate_usd'            => 'Base Rate (main currency)',
         'base_rate_dollars_note'   => 'Enter the amount in the main unit of the slot currency (e.g. 500 = 500 EGP). Stored as-is, no cents.',
         'currency'                 => 'Currency',

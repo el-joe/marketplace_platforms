@@ -98,7 +98,7 @@
                 required>
                 <option value="">{{ __('admin.ad_slots.select_country') }}</option>
                 @foreach($countries as $c)
-                    <option value="{{ $c->id }}" {{ old('country_id', $adSlot?->country_id) == $c->id ? 'selected' : '' }}>
+                    <option value="{{ $c->id }}" data-currency="{{ $c->currency_code }}" {{ old('country_id', $adSlot?->country_id) == $c->id ? 'selected' : '' }}>
                         {{ $c->flag_emoji ? $c->flag_emoji . ' ' : '' }}{{ $c->name_en }}
                     </option>
                 @endforeach
@@ -140,20 +140,13 @@
             <p class="text-xs text-gray-400 mt-1">{{ __('admin.ad_slots.base_rate_dollars_note') }}</p>
         </div>
 
-        {{-- Currency --}}
+        {{-- Currency (derived from the selected country, never editable) --}}
         <div>
-            <x-form-select
-                name="currency"
-                label="{{ __('admin.ad_slots.currency') }}"
-                :value="old('currency', $adSlot?->currency ?? 'USD')"
-                required>
-                <option value="">{{ __('admin.ad_slots.select_currency') }}</option>
-                @foreach($currencies as $cur)
-                    <option value="{{ $cur->code }}" {{ old('currency', $adSlot?->currency ?? 'USD') === $cur->code ? 'selected' : '' }}>
-                        {{ $cur->code }} ({{ $cur->symbol }}) — {{ $cur->name }}
-                    </option>
-                @endforeach
-            </x-form-select>
+            @php $slotCurrency = $adSlot?->currency ?? $countries->firstWhere('id', old('country_id'))?->currency_code; @endphp
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.ad_slots.currency') }}</label>
+            <input type="text" id="currencyDisplay" value="{{ $slotCurrency }}" disabled
+                   class="form-input w-full bg-gray-50 text-gray-500 cursor-not-allowed">
+            <p class="text-xs text-gray-400 mt-1">{{ __('admin.ad_slots.currency_from_country') }}</p>
         </div>
 
         {{-- Min Booking Days --}}
@@ -246,6 +239,16 @@
 
 <script>
 (function () {
+    const countrySelect = document.getElementById('country_id') || document.querySelector('[name="country_id"]');
+    const currencyDisplay = document.getElementById('currencyDisplay');
+    if (countrySelect && currencyDisplay) {
+        const syncCurrency = () => {
+            currencyDisplay.value = countrySelect.selectedOptions[0]?.dataset.currency || '';
+        };
+        countrySelect.addEventListener('change', syncCurrency);
+        syncCurrency();
+    }
+
     const targetTypeSelect = document.getElementById('target_type');
     const popupWrapper = document.getElementById('showsPopupWrapper');
     const placementWrapper = document.getElementById('placementWrapper');

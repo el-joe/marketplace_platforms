@@ -109,7 +109,7 @@ class AdSlotController extends Controller
         abort_unless($admin->hasPermissionTo('ad_slots.create'), 403);
 
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
-        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji', 'currency_code']);
         $currencies = Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']);
 
         return view('admin.ad-slots.create', compact('placements', 'countries', 'currencies'));
@@ -130,11 +130,10 @@ class AdSlotController extends Controller
                 Rule::requiredIf($request->input('target_type') !== PaidAdSlotTargetType::ListingPromotion->value),
                 'nullable', 'uuid', 'exists:banner_placement_definitions,id',
             ],
-            'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
+            'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'pricing_model' => ['required', Rule::enum(PaidAdSlotPricingModel::class)],
             'base_rate_display' => ['required', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'exists:currencies,code'],
-            'min_booking_days' => ['required', 'integer', 'min:1'],
+                        'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
             'max_concurrent' => ['nullable', 'integer', 'min:1', 'max:4294967295'],
             'is_available' => ['boolean'],
@@ -166,7 +165,7 @@ class AdSlotController extends Controller
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
             'base_rate' => (int) round($validated['base_rate_display']),
-            'currency' => $validated['currency'],
+            'currency' => Country::findOrFail($validated['country_id'])->currency_code, // always the country's currency
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
             'max_concurrent' => $validated['max_concurrent'] ?? 1,
@@ -191,7 +190,7 @@ class AdSlotController extends Controller
         abort_unless($admin->hasPermissionTo('ad_slots.edit'), 403);
 
         $placements = BannerPlacementDefinition::where('is_active', true)->orderBy('sort_order')->get();
-        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);
+        $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji', 'currency_code']);
         $currencies = Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']);
 
         return view('admin.ad-slots.edit', compact('adSlot', 'placements', 'countries', 'currencies'));
@@ -212,11 +211,10 @@ class AdSlotController extends Controller
                 Rule::requiredIf($request->input('target_type') !== PaidAdSlotTargetType::ListingPromotion->value),
                 'nullable', 'uuid', 'exists:banner_placement_definitions,id',
             ],
-            'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
+            'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'pricing_model' => ['required', Rule::enum(PaidAdSlotPricingModel::class)],
             'base_rate_display' => ['required', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'exists:currencies,code'],
-            'min_booking_days' => ['required', 'integer', 'min:1'],
+                        'min_booking_days' => ['required', 'integer', 'min:1'],
             'max_booking_days' => ['nullable', 'integer', 'min:1'],
             'max_concurrent' => ['nullable', 'integer', 'min:1', 'max:4294967295'],
             'is_available' => ['boolean'],
@@ -237,7 +235,7 @@ class AdSlotController extends Controller
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
             'base_rate' => (int) round($validated['base_rate_display']),
-            'currency' => $validated['currency'],
+            'currency' => Country::findOrFail($validated['country_id'])->currency_code, // always the country's currency
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
             'max_concurrent' => $validated['max_concurrent'] ?? 1,
