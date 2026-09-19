@@ -39,6 +39,7 @@ class Product extends Model
         'is_hazardous',
         'has_variants',
         'has_custom_attributes',
+        'size_guide_image',
         'ai_quality_score',
         'seller_count',
         'total_sold',

@@ -166,29 +166,72 @@ class CartService
      */
     private function applyCustomAttributeValues(CartItem $item, \App\Models\Product $product, array $values): void
     {
-        $requiredIds = $product->customAttributes()
-            ->where('is_required', true)
-            ->pluck('id')
-            ->all();
+        foreach ($this->normalizeCustomAttributeValues($product, $values) as $attrId => $val) {
+            $item->customAttributeValues()->create([
+                'product_custom_attribute_id' => $attrId,
+                'value' => $val,
+            ]);
+        }
+    }
 
-        $providedIds = array_column($values, 'product_custom_attribute_id');
-
-        foreach ($requiredIds as $requiredId) {
-            if (!in_array($requiredId, $providedIds, true)) {
+    /**
+     * Validates submitted values against the product's attribute definitions
+     * (ownership, required, type, select options) and returns [attrId => value].
+     *
+     * @return array<string, string>
+     */
+    private function normalizeCustomAttributeValues(\App\Models\Product $product, array $values): array
+    {
+        $defs = $product->customAttributes()->get()->keyBy('id');
+        $out = [];
+        foreach ($values as $value) {
+            $id = $value['product_custom_attribute_id'] ?? null;
+            $val = isset($value['value']) ? trim((string) $value['value']) : '';
+            if (empty($id) || $val === '') {
+                continue;
+            }
+            $def = $defs->get($id);
+            if (!$def) {
+                throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
+            }
+            $type = $def->type ?: 'text';
+            if ($type === 'number' && !is_numeric($val)) {
+                throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
+            }
+            if ($type === 'select' && !in_array($val, (array) $def->options, true)) {
+                throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
+            }
+            if ($type === 'checkbox') {
+                if (!in_array(strtolower($val), ['1', '0', 'true', 'false'], true)) {
+                    throw new \DomainException(__('common.exceptions.cart.custom_attribute_invalid'));
+                }
+                $val = in_array(strtolower($val), ['1', 'true'], true) ? '1' : '0';
+            }
+            $out[$id] = $val;
+        }
+        foreach ($defs as $id => $def) {
+            if ($def->is_required && !isset($out[$id])) {
                 throw new \DomainException(__('common.exceptions.cart.custom_attribute_required'));
             }
         }
 
-        foreach ($values as $value) {
-            if (empty($value['product_custom_attribute_id']) || !isset($value['value']) || $value['value'] === '') {
-                continue;
-            }
+        return $out;
+    }
 
-            $item->customAttributeValues()->create([
-                'product_custom_attribute_id' => $value['product_custom_attribute_id'],
-                'value' => $value['value'],
-            ]);
+    /** Finds an existing cart line whose custom values match exactly (keeps differing values on separate lines). */
+    private function findMatchingLine(Cart $cart, string $column, string $listingId, \App\Models\Product $product, array $values): ?CartItem
+    {
+        $sig = $this->normalizeCustomAttributeValues($product, $values);
+        ksort($sig);
+        foreach ($cart->items()->where($column, $listingId)->with('customAttributeValues')->get() as $line) {
+            $have = $line->customAttributeValues->pluck('value', 'product_custom_attribute_id')->all();
+            ksort($have);
+            if ($have === $sig) {
+                return $line;
+            }
         }
+
+        return null;
     }
 
     public function addItem(Cart $cart, string $vendorListingId, int $quantity, ?string $shippingMethodId, string $countryId, array $customAttributeValues = []): CartItem
@@ -204,7 +247,7 @@ class CartService
 
         $currentCount = $cart->items()->count();
 
-        $existingItem = $cart->items()->where('vendor_listing_id', $vendorListingId)->first();
+        $existingItem = $this->findMatchingLine($cart, 'vendor_listing_id', $vendorListingId, $listing->productVariant->product, $customAttributeValues);
 
         if ($existingItem) {
             $newQty = $existingItem->quantity + $quantity;
@@ -284,7 +327,7 @@ class CartService
 
         $currentCount = $cart->items()->count();
 
-        $existingItem = $cart->items()->where('admin_listing_id', $adminListingId)->first();
+        $existingItem = $this->findMatchingLine($cart, 'admin_listing_id', $adminListingId, $listing->productVariant->product, $customAttributeValues);
 
         if ($existingItem) {
             $newQty = $existingItem->quantity + $quantity;

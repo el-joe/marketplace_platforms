@@ -52,14 +52,21 @@ class ProductCustomAttributeController extends Controller
         $this->assertVendorSellsProduct($vendorId, $product);
 
         $validated = $request->validate([
-            'label' => ['required', 'string', 'max:255'],
+            'label' => ['required_without:preset', 'nullable', 'string', 'max:255'],
+            'preset' => ['nullable', 'string', 'in:'.implode(',', array_keys(ProductCustomAttribute::PRESETS))],
+            'type' => ['nullable', 'in:'.implode(',', ProductCustomAttribute::TYPES)],
+            'options' => ['required_if:type,select', 'nullable', 'array', 'min:1'],
+            'options.*' => ['string', 'max:100'],
             'unit' => ['nullable', 'string', 'max:50'],
             'is_required' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $preset = isset($validated['preset']) ? ProductCustomAttribute::PRESETS[$validated['preset']] : null;
         $attribute = $product->customAttributes()->create([
-            'label' => $validated['label'],
+            'label' => $validated['label'] ?? $preset[app()->getLocale() === 'ar' ? 1 : 0],
+            'type' => $preset ? 'number' : ($validated['type'] ?? 'text'),
+            'options' => ($validated['type'] ?? null) === 'select' ? array_values($validated['options']) : null,
             'unit' => $validated['unit'] ?? null,
             'is_required' => $validated['is_required'] ?? false,
             'sort_order' => $validated['sort_order'] ?? 0,
@@ -77,6 +84,9 @@ class ProductCustomAttributeController extends Controller
 
         $validated = $request->validate([
             'label' => ['sometimes', 'required', 'string', 'max:255'],
+            'type' => ['sometimes', 'in:'.implode(',', ProductCustomAttribute::TYPES)],
+            'options' => ['nullable', 'array'],
+            'options.*' => ['string', 'max:100'],
             'unit' => ['nullable', 'string', 'max:50'],
             'is_required' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -117,6 +127,17 @@ class ProductCustomAttributeController extends Controller
         ]);
     }
 
+    public function sizeGuide(Request $request, Product $product): JsonResponse
+    {
+        $vendorId = Auth::guard('vendor_api')->user()->vendor_id;
+        $this->assertVendorSellsProduct($vendorId, $product);
+        $request->validate(['image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096']]);
+        $path = $request->file('image')->store('size-guides', 'public');
+        $product->update(['size_guide_image' => $path]);
+
+        return ApiResponse::success(['size_guide_image' => \Illuminate\Support\Facades\Storage::disk('public')->url($path)]);
+    }
+
     private function present(ProductCustomAttribute $attribute): array
     {
         return [
@@ -124,6 +145,8 @@ class ProductCustomAttributeController extends Controller
             'product_id' => $attribute->product_id,
             'label' => $attribute->label,
             'unit' => $attribute->unit,
+            'type' => $attribute->type ?: 'text',
+            'options' => $attribute->options ?? [],
             'is_required' => (bool) $attribute->is_required,
             'sort_order' => $attribute->sort_order,
         ];

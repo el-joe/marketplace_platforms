@@ -264,6 +264,7 @@ return [
             'insufficient_stock'         => 'المخزون غير كافٍ. يتوفر فقط :available وحدة.',
             'exceeds_max_order_quantity' => 'تتجاوز الحد الأقصى للكمية المسموح بها لهذا العرض.',
             'custom_attribute_required'  => 'يرجى تحديد جميع خيارات المنتج المطلوبة.',
+            'custom_attribute_invalid'   => 'قيمة غير صالحة لأحد خيارات المنتج.',
             'max_items'                  => 'لا يمكن أن تتجاوز السلة :max عنصر.',
             'coupon_usage_limit_reached'  => 'وصل هذا الكوبون إلى حد الاستخدام الإجمالي.',
             'coupon_customer_limit_reached' => 'لقد استخدمت هذا الكوبون بالفعل الحد الأقصى لعدد المرات المسموح بها.',
@@ -522,4 +523,7 @@ return [
             'passport_uploaded'           => 'تم رفع جواز السفر بنجاح.',
         ],
     ],
+
+    'specialty_ar' => 'التخصص (عربي)',
+    'specialty_en' => 'التخصص (إنجليزي)',
 ];

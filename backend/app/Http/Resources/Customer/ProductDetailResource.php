@@ -151,11 +151,15 @@ class ProductDetailResource extends JsonResource
             ),
             'product_attributes' => $this->productAttributes,
             'has_custom_attributes' => (bool) $this->has_custom_attributes,
+            'size_guide_image' => $this->has_custom_attributes && $this->size_guide_image ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->size_guide_image) : null,
             'custom_attributes' => $this->has_custom_attributes
                 ? $this->whenLoaded('customAttributes', fn () => $this->customAttributes->map(fn ($a) => [
                     'id'          => $a->id,
                     'label'       => $a->label,
                     'unit'        => $a->unit,
+                    'type'        => $a->type ?: 'text',
+                    'options'     => $a->options ?? [],
+                    'size_guide_image' => $this->size_guide_image ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->size_guide_image) : null,
                     'is_required' => (bool) $a->is_required,
                     'sort_order'  => $a->sort_order,
                 ]), [])

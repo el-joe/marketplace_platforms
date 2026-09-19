@@ -201,6 +201,9 @@ export interface ProductCustomAttribute {
   unit: string | null;
   is_required: boolean;
   sort_order: number;
+  type?: "text" | "number" | "select" | "checkbox" | "notes";
+  options?: string[];
+  size_guide_image?: string | null;
 }
 export interface Highlight {
   id: string;

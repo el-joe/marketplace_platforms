@@ -264,6 +264,7 @@ return [
             'insufficient_stock'         => 'Insufficient stock. Only :available unit(s) available.',
             'exceeds_max_order_quantity' => 'Exceeds maximum order quantity for this listing.',
             'custom_attribute_required'  => 'Please provide all required product options.',
+            'custom_attribute_invalid'   => 'Invalid value for a product option.',
             'max_items'                  => 'Cart cannot exceed :max items.',
             'coupon_usage_limit_reached'  => 'This coupon has reached its total usage limit.',
             'coupon_customer_limit_reached' => 'You have already used this coupon the maximum number of times.',
@@ -522,4 +523,7 @@ return [
             'passport_uploaded'           => 'Passport uploaded successfully.',
         ],
     ],
+
+    'specialty_ar' => 'Specialty (Arabic)',
+    'specialty_en' => 'Specialty (English)',
 ];

@@ -9,11 +9,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductCustomAttribute extends Model
 {
+    public const TYPES = ['text', 'number', 'select', 'checkbox', 'notes'];
+
+    /** Fixed body-measurement presets (label EN/AR), all numeric in cm. */
+    public const PRESETS = [
+        'length' => ['Length', 'الطول'],
+        'width' => ['Width', 'العرض'],
+        'chest' => ['Chest', 'الصدر'],
+        'sleeve' => ['Sleeve', 'الكم'],
+        'sleeve_from_neck' => ['Sleeve from neck', 'الكم من الرقبة'],
+    ];
+
     use HasUuids;
 
     protected $fillable = [
         'product_id',
         'label',
+        'type',
+        'options',
         'unit',
         'is_required',
         'sort_order',
@@ -21,6 +34,7 @@ class ProductCustomAttribute extends Model
 
     protected $casts = [
         'is_required' => 'boolean',
+        'options' => 'array',
         'sort_order' => 'integer',
     ];
 

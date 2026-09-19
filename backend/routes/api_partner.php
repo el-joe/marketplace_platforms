@@ -88,6 +88,8 @@ Route::prefix('v1')->group(function (): void {
             Route::put('{customAttribute}',  [ProductCustomAttributeController::class, 'update'])->name('update');
             Route::delete('{customAttribute}', [ProductCustomAttributeController::class, 'destroy'])->name('destroy');
         });
+        Route::post('products/{product}/size-guide', [ProductCustomAttributeController::class, 'sizeGuide'])
+            ->name('partner.api.products.size-guide');
         Route::post('products/{product}/toggle-custom-attributes', [ProductCustomAttributeController::class, 'toggle'])
             ->name('partner.api.products.toggle-custom-attributes');
 
