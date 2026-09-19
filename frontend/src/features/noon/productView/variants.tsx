@@ -29,7 +29,7 @@ function VariantOptionsList({
   const imagesList = !!list.values.find((v) => !!v.variant_image);
   return (
     <>
-      <h5 className="text-gray font-semibold mb-3 uppercase">
+      <h5 className="md:text-gray font-semibold text-sm md:text-base mb-2 md:mb-3 uppercase mt-2 md:mt-0">
         {list.name[locale]}
       </h5>
       <div className="flex items-center flex-wrap gap-3">

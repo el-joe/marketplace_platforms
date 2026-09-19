@@ -46,10 +46,10 @@ export default function BaseInfo({ product }: Props) {
     (item) => item.listing_id === product.listing.listing_id,
   );
   const { H, M } = useCountDown(
-    new Date(product.flash_sale_ends_at || Date.now()),
+    new Date(product.flash_sale_ends_at || new Date().getDate()),
   );
   return (
-    <>
+    <div className="hidden md:block">
       <div className="flex mb-5">
         {product.is_flash_sale ? (
           <Badge className="text-sm font-bold bg-[#f5ced7] text-red rounded-sm">
@@ -208,6 +208,6 @@ export default function BaseInfo({ product }: Props) {
           )}
         </Link>
       )}
-    </>
+    </div>
   );
 }

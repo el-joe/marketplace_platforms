@@ -49,7 +49,7 @@ const ProductCard = ({ productData }: Props) => {
   } = useWishlistContext();
   const swiperRef = useRef<null | SwiperType>(null);
   const { H, M } = useCountDown(
-    new Date(productData.flash_sale_ends_at || Date.now()),
+    new Date(productData.flash_sale_ends_at || new Date().getDate()),
   );
   const handleAutoplay = (state: "start" | "stop") => {
     const swiper = swiperRef.current;

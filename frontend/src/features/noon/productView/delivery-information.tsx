@@ -32,7 +32,7 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
   }, [deliveryOptions, selectedDelivery, setSelectedDelivery]);
   return (
     <>
-      <h5 className="text-gray font-semibold mb-3">
+      <h5 className="md:text-gray font-semibold uppercase md:capitalize text-sm md:text-base mb-2 md:mb-3">
         {t("deliveryInformation")}
       </h5>
       <div className="flex flex-col">
@@ -69,10 +69,10 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
               width={80}
               height={30}
             /> */}
-                <p className="text-sm text-gray-3 px-3 py-1 bg-gray font-bold rounded-lg ">
+                <p className="text-xs md:text-sm text-gray-3 px-3 py-1 bg-gray font-bold rounded-lg ">
                   {option.badge_label[locale] || option.name[locale]}
                 </p>
-                <p>
+                <p className="text-sm md:text-base">
                   {t("getIt")}{" "}
                   <span className="font-semibold">{formattedDeliveryDate}</span>
                 </p>
@@ -84,12 +84,12 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
                 )}
                 {!isSelected &&
                   (option.is_free ? (
-                    <span className="ms-auto flex items-center font-bold">
+                    <span className="text-sm md:text-base ms-auto flex items-center font-bold">
                       {t("freeShipping")}
                       <ArrowUpRight />
                     </span>
                   ) : (
-                    <span className="ms-auto flex items-center">
+                    <span className="text-sm md:text-base ms-auto flex items-center">
                       <Price currentPrice={option?.shipping_fee} />
                       <ArrowUpRight />
                     </span>
@@ -97,7 +97,7 @@ export default function DeliveryInformation({ deliveryOptions }: Props) {
               </div>
               {/* or separator */}
               {deliveryOptions.length > 1 && (
-                <div className="flex items-center max-w-xs gap-2 mx-auto my-3 group-[[data-last=true]]:hidden!">
+                <div className="flex items-center max-w-xs gap-2 mx-auto my-1 md:my-3 group-[[data-last=true]]:hidden!">
                   <Separator className={"flex-1"} />
                   <span className="text-sm">{t("or")}</span>
                   <Separator className={"flex-1"} />

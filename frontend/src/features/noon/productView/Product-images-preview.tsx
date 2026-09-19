@@ -35,8 +35,7 @@ export default function ProductImagesPreview({ product }: Props) {
     })();
   }, [checkItem, product.listing.listing_id]);
   return (
-    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]! lg:max-h-full! min-h-[440px]! overflow-hidden">
-      {" "}
+    <div className="flex flex-col-reverse md:flex-row lg:h-173.75! max-h-[calc(100vh-420px)]!s max-h-[calc(100vh-200px)]! min-h-[430px]! overflow-hidden">
       {/* pagination thumbs */}
       <div className="block min-w-17">
         <Swiper
@@ -71,12 +70,12 @@ export default function ProductImagesPreview({ product }: Props) {
           ))}
         </Swiper>
       </div>
-      <div className=" relative w-full md:w-10/12 group">
+      <div className=" relative w-full md:w-10/12 group h-full">
         {/* wishlist button */}
         <Button
           variant={"ghost"}
           className={
-            " absolute top-0 md:top-1 lg:top-2 p-0! right-1 lg:right-2 z-10 rounded-full aspect-square"
+            "hidden md:block absolute top-0 md:top-1 lg:top-2 p-0! right-1 lg:right-2 z-10 rounded-full aspect-square"
           }
           disabled={isMutating}
           onClick={() => {

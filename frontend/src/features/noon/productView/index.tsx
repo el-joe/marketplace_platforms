@@ -12,7 +12,6 @@ import PaymentDiscount from "@/src/features/noon/productView/payment-discount";
 import ProductImagesPreview from "@/src/features/noon/productView/Product-images-preview";
 import ProductOverview from "@/src/features/noon/productView/product-overview";
 import { getTranslations } from "next-intl/server";
-import React from "react";
 import { PlacementBanner } from "@/src/components/shared/placement-banner";
 import { getProduct } from "./api/get";
 import getLocale from "@/src/helpers/getLocale";
@@ -24,6 +23,8 @@ import AdBar from "./ad-bar";
 import AddedToCartSheet from "./added-to-cart-sheet";
 import FloatingProductSummary from "./floating-product-summary";
 import InlineBannerSlot from "./inline-banner-slot";
+import SmallScreenHeader from "./small-screen-header";
+import SmallScreenPrice from "./small-screen-price";
 
 export default async function ProductView({ slug }: { slug: string }) {
   const t = await getTranslations("productView");
@@ -43,7 +44,9 @@ export default async function ProductView({ slug }: { slug: string }) {
                 href: `/${e.slug}`,
               })),
             ]}
+            containerClasses="pb-3"
           />
+          <SmallScreenHeader product={productData} />
           {/* top three cols (images overview, core info & shipping options..., add to cart box) */}
           <div className="grid grid-cols-1 lg:grid-cols-22 md:gap-3 lg:gap-6 items-start">
             {/* product images preview - col one */}
@@ -53,35 +56,43 @@ export default async function ProductView({ slug }: { slug: string }) {
             {/* col two */}
             <div className="lg:col-span-9">
               <BaseInfo product={productData} />
+              <SmallScreenPrice product={productData} />
+              {/* small screen coupons */}
+              {!!productData.coupons.length && (
+                <div className="md:hidden mb-2">
+                  <CouponsSlide coupons={productData.coupons} />
+                </div>
+              )}
+              {/* delivery options */}
               {!!productData.delivery_options.length && (
                 <>
-                  <Separator className={"my-6"} />
+                  <Separator className={"hidden md:block my-6"} />
                   <DeliveryInformation
                     deliveryOptions={productData.delivery_options}
                   />
                 </>
               )}
               {!!productData.coupons.length && (
-                <>
-                  <Separator className={"my-6"} />
+                <div className="hidden md:block">
+                  <Separator className={"hidden md:block my-6"} />
                   <CouponsSlide coupons={productData.coupons} />
-                </>
+                </div>
               )}
               {!!productData.payment_options.length && (
                 <>
-                  <Separator className={"my-6"} />
+                  <Separator className={"hidden md:block my-6"} />
                   <PaymentDiscount paymentsData={productData.payment_options} />
                 </>
               )}
               {!!productData.product_attributes.length && (
                 <>
-                  <Separator className={"my-6"} />
+                  <Separator className={"hidden md:block my-6"} />
                   <Variants variantsData={productData.product_attributes} />
                 </>
               )}
               {!!productData.warranty_plans.length && (
                 <>
-                  <Separator className={"my-6"} />
+                  <Separator className={"hidden md:block my-6"} />
                   <ExtendedWarranty
                     warrantiesData={productData.warranty_plans}
                     listingId={productData.listing.listing_id}

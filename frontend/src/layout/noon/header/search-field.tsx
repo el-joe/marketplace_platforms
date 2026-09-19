@@ -241,43 +241,43 @@ const SearchField = () => {
                       </li>
                     ))}
                   </ul>
-                  {/* trending searches */}
-                  <p className="text-lg font-semibold mb-2 mt-4">
-                    {t("trendingSearches")}
-                  </p>
-                  <ul className="py-1 flex gap-3 flex-wrap">
-                    {suggestions?.trending.map((item) => (
-                      <li
-                        key={item}
-                        className="flex items-center justify-between px-2 py-1 gap-2 text-sm hover:bg-muted/60 transition-colors group cursor-pointer border border-border rounded-lg"
-                        onClick={() => {
-                          setQuery(item);
-                          handleSearch(item);
-                        }}
-                      >
-                        <TrendingUpIcon className="size-4 text-gray" />
-                        <p className="line-clamp-2">{item}</p>
-                        {/* </span> */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeSearch(item);
-                          }}
-                          className="p-1 text-muted-foreground cursor-pointer"
-                          aria-label={t("removeItemAria")}
-                        >
-                          <XIcon className="size-5" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               ) : (
                 <div className="px-4 py-6 text-center text-sm text-muted-foreground">
                   {t("searchPlaceholder")}
                 </div>
               )}
+              {/* trending searches */}
+              <p className="text-lg font-semibold mb-2 mt-4">
+                {t("trendingSearches")}
+              </p>
+              <ul className="py-1 flex gap-3 flex-wrap">
+                {suggestions?.trending.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-center justify-between px-2 py-1 gap-2 text-sm hover:bg-muted/60 transition-colors group cursor-pointer border border-border rounded-lg"
+                    onClick={() => {
+                      setQuery(item);
+                      handleSearch(item);
+                    }}
+                  >
+                    <TrendingUpIcon className="size-4 text-gray" />
+                    <p className="line-clamp-2">{item}</p>
+                    {/* </span> */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSearch(item);
+                      }}
+                      className="p-1 text-muted-foreground cursor-pointer"
+                      aria-label={t("removeItemAria")}
+                    >
+                      <XIcon className="size-5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -424,7 +424,8 @@ const SearchField = () => {
               ) : (
                 !isLoading && (
                   <div className="px-4 py-3 text-xs text-muted-foreground">
-                    {t("pressEnterLabel")} <span className="font-semibold">{t("enterKeyLabel")}</span>{" "}
+                    {t("pressEnterLabel")}{" "}
+                    <span className="font-semibold">{t("enterKeyLabel")}</span>{" "}
                     {t("orClickToSearchHint", { query })}
                   </div>
                 )

@@ -1,5 +1,11 @@
 "use client";
-import { CopyIcon, TicketPercent } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  PercentCircleIcon,
+  TicketPercent,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import React from "react";
 import toast from "react-hot-toast";
@@ -8,6 +14,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { IProductDetails } from "./types";
 import useLocale from "@/src/hooks/use-locale";
 import CouponDetailsDialog from "./dialogs/coupon-details-dialog";
+import { Coupon } from "./types/product-details";
 
 export default function CouponsSlide({
   coupons,
@@ -18,27 +25,21 @@ export default function CouponsSlide({
   const locale = useLocale();
   return (
     <>
-      <h5 className="text-gray font-semibold mb-3">{t("coupons")}</h5>
+      <h5 className="md:text-gray font-bold text-sm md:text-base mb-2 md:mb-3">
+        {t("coupons")}
+      </h5>
       <Swiper
         modules={[Navigation, FreeMode]}
         navigation
         freeMode={true}
         slidesPerView={"auto"}
         spaceBetween={6}
-        // breakpoints={{
-        //   1024: {
-        //     spaceBetween: 12,
-        //   },
-        //   1440: {
-        //     slidesPerView: 1.7,
-        //     spaceBetween: 16,
-        //   },
-        // }}
         className="pe-8!"
       >
         {coupons.map((coupon) => (
           <SwiperSlide key={coupon.id} className="w-fit!">
-            <div className="flex items-center p-2 border text-sm border-border rounded-md gap-1.5 bg-[linear-gradient(90deg,#fff_35%,#effdf2_100%)]">
+            <SmallScreenCouponSlide coupon={coupon} locale={locale} />
+            <div className="hidden md:flex items-center p-2 border text-sm border-border rounded-md gap-1.5 bg-[linear-gradient(90deg,#fff_35%,#effdf2_100%)]">
               <span className="min-w-9 h-9 grid rounded-full bg-light-green text-green place-items-center">
                 <TicketPercent className="w-1/2 h-1/2" />
               </span>
@@ -74,3 +75,30 @@ export default function CouponsSlide({
     </>
   );
 }
+
+const SmallScreenCouponSlide = ({
+  coupon,
+  locale,
+}: {
+  coupon: Coupon;
+  locale: "en" | "ar";
+}) => (
+  <div className="md:hidden">
+    <CouponDetailsDialog
+      coupon={coupon}
+      trigger={
+        <div className="flex gap-2 items-center bg-[linear-gradient(90deg,#fff_35%,#effdf2_100%)] border border-dashed border-green-2 rounded-md p-2">
+          <PercentCircleIcon className="size-5 text-white fill-green-2" />
+          <p className="me-2 text-sm line-clamp-1">
+            {coupon.name}, CODE: {coupon.code}
+          </p>
+          {locale === "ar" ? (
+            <ChevronLeftIcon className="size-4" />
+          ) : (
+            <ChevronRightIcon className="size-4" />
+          )}
+        </div>
+      }
+    />
+  </div>
+);

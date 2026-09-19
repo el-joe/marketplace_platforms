@@ -8,11 +8,12 @@ import { Link } from "@/i18n/navigation";
 
 type props = {
   list: { label: string; href: string }[];
+  containerClasses?: string;
 };
 
-function Breadcrumb({ list }: props) {
+function Breadcrumb({ list, containerClasses }: props) {
   return (
-    <BreadcrumbRoot>
+    <BreadcrumbRoot className={containerClasses}>
       <BreadcrumbList>
         {list.map((e, i) => (
           <React.Fragment key={i}>
