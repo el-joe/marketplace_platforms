@@ -27,7 +27,7 @@
                         <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">{{ $nm($request->category) }}</span>
                         <span class="text-xs text-gray-400">{{ $request->created_at->format('Y-m-d') }}</span>
                     </div>
-                    <h4 class="font-bold text-gray-900">{{ $ar ? ($request->title_ar ?? $request->title_en) : ($request->title_en ?? $request->title_ar) }}</h4>
+                    <span class="text-xs px-2 py-0.5 rounded bg-gray-100">{{ $request->status }}</span> <h4 class="font-bold text-gray-900 inline">{{ $ar ? ($request->title_ar ?? $request->title_en) : ($request->title_en ?? $request->title_ar) }}</h4>
                     <p class="text-sm text-gray-500 mt-1">{{ \Illuminate\Support\Str::limit($ar ? ($request->description_ar ?? $request->description_en) : ($request->description_en ?? $request->description_ar), 200) }}</p>
                     <div class="text-sm text-gray-500 mt-2">
                         {{ $nm($request->city) ?? ($ar ? 'كل المدن' : 'All cities') }}

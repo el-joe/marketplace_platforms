@@ -19,10 +19,10 @@ class TravelBookingConfirmed extends BaseCustomerNotification
         $this->booking->loadMissing('package:id,title');
 
         return [
-            'title'          => 'Booking Confirmed',
-            'title_ar'       => 'تم تأكيد الحجز',
-            'message'        => "Your travel booking #{$this->booking->booking_number} for \"{$this->booking->package->title}\" has been confirmed.",
-            'message_ar'     => "تم تأكيد حجز السفر رقم #{$this->booking->booking_number} الخاص بـ \"{$this->booking->package->title}\".",
+            'title'          => 'Booking Received',
+            'title_ar'       => 'تم استلام الحجز',
+            'message'        => "Your travel booking #{$this->booking->booking_number} for \"{$this->booking->package->title}\" has been received and is pending documents.",
+            'message_ar'     => "تم استلام حجز السفر رقم #{$this->booking->booking_number} الخاص بـ \"{$this->booking->package->title}\" وهو بانتظار المستندات.",
             'url'            => route('customer.account.travel-bookings.show', ['country' => $notifiable->country?->site_code, 'id' => $this->booking->id]),
             'booking_id'     => $this->booking->id,
             'booking_number' => $this->booking->booking_number,

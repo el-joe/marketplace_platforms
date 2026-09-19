@@ -499,7 +499,7 @@ return [
                 'usage_limit_reached' => 'This coupon has reached its usage limit.',
                 'per_customer_limit_reached' => 'You have already used this coupon the maximum number of times.',
                 'monthly_limit_reached' => 'You have reached your monthly limit for this coupon.',
-                'shipping_type_restricted' => 'This coupon is only valid for :type shipping orders.',
+                'shipping_type_restricted' => 'This coupon is not valid for the selected shipping type.',
                 'no_applicable_items' => 'This coupon does not apply to any items in your cart.',
                 'account_required' => 'You must be logged in to use this coupon.',
             ],

@@ -34,6 +34,12 @@
         </div>
     </div>
 
+    @if($specialRequest->status === 'open')
+        <form method="POST" action="{{ route('marketer.special-requests.start', $specialRequest->id) }}">
+            @csrf @method('PATCH')
+            <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">{{ $ar ? 'بدء المعالجة' : 'Start working' }}</button>
+        </form>
+    @endif
     <a href="{{ route('marketer.special-requests.index') }}" class="inline-block mt-2 text-sm text-blue-600">{{ $ar ? '← العودة للقائمة' : '← Back to list' }}</a>
 </div>
 @endsection

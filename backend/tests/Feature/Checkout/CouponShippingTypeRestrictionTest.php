@@ -65,7 +65,9 @@ class CouponShippingTypeRestrictionTest extends TestCase
         foreach (['en', 'ar'] as $l) {
             $m = __('common.exceptions.checkout.coupon.shipping_type_restricted', ['type' => 'FBN'], $l);
             $this->assertStringNotContainsString('shipping_type_restricted', $m);
-            $this->assertStringContainsString('FBN', $m);
+            $this->assertSame($l === 'en'
+                ? 'This coupon is not valid for the selected shipping type.'
+                : 'هذه القسيمة غير صالحة لنوع الشحن المحدد', $m);
         }
     }
 

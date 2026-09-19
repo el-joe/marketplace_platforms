@@ -44,6 +44,12 @@ class CustomerSpecialRequest extends Model
         return $this->belongsTo(City::class);
     }
 
+    /** Broker action: open -> in_progress. Returns false if not open. */
+    public function startProgress(): bool
+    {
+        return static::where('id', $this->id)->where('status', 'open')->update(['status' => 'in_progress']) === 1;
+    }
+
     /**
      * Open requests a given broker should see. Single source of truth for matching.
      */

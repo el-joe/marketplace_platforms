@@ -55,6 +55,18 @@ class SpecialRequestController extends Controller
         ]);
     }
 
+    public function start(string $id)
+    {
+        $profile = $this->profile();
+        $request = CustomerSpecialRequest::matchingBroker($profile)->where('id', $id)->firstOrFail();
+
+        if (! $request->startProgress()) {
+            return response()->json(['success' => false, 'message' => 'Only open requests can be started.'], 422);
+        }
+
+        return response()->json(['success' => true, 'data' => $this->transform($request->fresh(['customer', 'category', 'city']))]);
+    }
+
     public function show(string $id)
     {
         $profile = $this->profile();

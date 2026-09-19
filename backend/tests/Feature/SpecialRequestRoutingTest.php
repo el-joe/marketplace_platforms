@@ -236,4 +236,29 @@ class SpecialRequestRoutingTest extends TestCase
         $this->actingAs($b, 'marketer')->get(route('marketer.special-requests.index'))->assertOk();
         $this->actingAs($b, 'marketer')->get(route('marketer.special-requests.show', $r->id))->assertOk()->assertSee('T');
     }
+
+    public function test_broker_can_start_only_open_matching_request(): void
+    {
+        $cat = $this->s->category->id;
+        $b = $this->broker(['broker_category_id' => $cat, 'broker_serves_all_cities' => true]);
+        $other = $this->broker(['broker_category_id' => $this->otherCategory->id, 'broker_serves_all_cities' => true]);
+        $r = $this->req($this->s->city->id);
+
+        $this->actingAs($other, 'marketer')->patch(route('marketer.special-requests.start', $r->id))->assertNotFound();
+        $this->assertSame('open', $r->fresh()->status);
+
+        $this->actingAs($b, 'marketer')->patch(route('marketer.special-requests.start', $r->id))->assertRedirect();
+        $this->assertSame('in_progress', $r->fresh()->status);
+
+        // second start: no longer open, not visible
+        $this->actingAs($b, 'marketer')->patch(route('marketer.special-requests.start', $r->id))->assertNotFound();
+
+        $r2 = $this->req($this->s->city->id);
+        $this->actingAs($b, 'marketer_api')->patchJson("/api/marketer/special-requests/{$r2->id}/start")
+            ->assertOk()->assertJsonPath('data.status', 'in_progress');
+        $this->actingAs($other, 'marketer_api')->patchJson("/api/marketer/special-requests/{$this->req($this->s->city->id)->id}/start")->assertNotFound();
+
+        // close guard intact
+        $this->assertTrue(in_array($r->fresh()->status, ['in_progress']));
+    }
 }

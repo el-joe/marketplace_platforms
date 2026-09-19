@@ -65,6 +65,7 @@ Route::middleware('web')->group(function () {
         // Special requests (broker specialization matches)
         Route::prefix('special-requests')->name('special-requests.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'index'])->name('index');
+            Route::patch('{id}/start', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'start'])->name('start');
             Route::get('{id}', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'show'])->name('show');
         });
 

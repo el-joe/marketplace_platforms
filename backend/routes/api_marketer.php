@@ -29,6 +29,7 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::post('/profile',        [ProfileController::class, 'update']);
 
     Route::get('/special-requests',      [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'index']);
+    Route::patch('/special-requests/{id}/start', [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'start']);
     Route::get('/special-requests/{id}', [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'show']);
 
     Route::get('/invitations',                          [InvitationController::class, 'index']);

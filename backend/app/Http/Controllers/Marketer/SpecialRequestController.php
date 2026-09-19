@@ -40,6 +40,17 @@ class SpecialRequestController extends Controller
         return view('marketer.special-requests.index', compact('requests', 'hasSpecialization'));
     }
 
+    public function start(string $id)
+    {
+        $profile = $this->profile();
+        $request = CustomerSpecialRequest::matchingBroker($profile)->where('id', $id)->firstOrFail();
+
+        $ok = $request->startProgress();
+
+        return redirect()->route('marketer.special-requests.index')
+            ->with($ok ? 'success' : 'error', $ok ? 'OK' : 'Only open requests can be started.');
+    }
+
     public function show(string $id): View
     {
         $profile = $this->profile();

@@ -167,3 +167,9 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - en/ar locale keys `shop.cantFindIt`, `shop.sendSpecialRequest` present in both.
 - custom-attributes-modal: text/number/select/checkbox/notes render correctly; fixed required checkbox (unchecked "0" previously passed validation).
 - FloatingCartButton forwards hasCustomAttributes/customAttributes to CartButton, which owns the modal and passes values to use-cart (`custom_attribute_values`).
+
+## Decisions round (F10/F05/F07)
+- F10 FIXED: coupon shipping-type mismatch message now "This coupon is not valid for the selected shipping type." / "هذه القسيمة غير صالحة لنوع الشحن المحدد"; test updated.
+- F05 FIXED: broker action open -> in_progress (marketer panel PATCH special-requests/{id}/start + API PATCH /api/marketer/special-requests/{id}/start); only matching broker, only from open; status badge in list; close guard unchanged. Note: in_progress requests leave the broker list (existing behaviour, no broker assignment column).
+- F07 FIXED: TravelBookingConfirmed text now "Booking Received ... pending documents" (ar+en).
+- F02/F12/F14: no change.
