@@ -226,4 +226,75 @@ class MarketerContractAuditTrailTest extends TestCase
             ->get(route('admin.marketers.contract.acceptances', $s->marketer->id))
             ->assertOk();
     }
+
+    public function test_upload_rejects_non_pdf_oversize_and_download_authz(): void
+    {
+        Storage::fake('local');
+        $s = $this->scenario();
+        $admin = $this->admin();
+        $url = route('admin.marketers.contract.upload', $s->marketer->id);
+
+        $this->actingAs($admin, 'admin')->post($url, [
+            'content_type' => 'pdf', 'contract_file' => UploadedFile::fake()->create('c.exe', 10, 'application/x-msdownload'),
+        ])->assertSessionHasErrors('contract_file');
+        $this->actingAs($admin, 'admin')->post($url, [
+            'content_type' => 'pdf', 'contract_file' => UploadedFile::fake()->create('c.pdf', 20000, 'application/pdf'),
+        ])->assertSessionHasErrors('contract_file');
+        $this->assertSame(0, MarketerContractVersion::count());
+
+        $this->actingAs($admin, 'admin')->post($url, [
+            'content_type' => 'pdf', 'contract_file' => UploadedFile::fake()->create('c.pdf', 10, 'application/pdf'),
+        ]);
+        $v = MarketerContractVersion::firstOrFail();
+        $dl = route('admin.marketers.contract.download', [$s->marketer->id, $v->id]);
+        $this->actingAs($admin, 'admin')->get($dl)->assertOk();
+
+        auth('admin')->logout();
+        $noPerm = Admin::factory()->create();
+        $this->actingAs($noPerm, 'admin')->get($dl)->assertForbidden();
+        $this->actingAs($s->customer, 'customer')->get($dl)->assertStatus(403);
+    }
+
+    public function test_versions_and_acceptances_are_immutable(): void
+    {
+        $s = $this->scenario();
+        [, $v1] = $this->contractWithV1($s);
+        $a = MarketerContractAcceptance::create([
+            'marketer_contract_version_id' => $v1->id, 'customer_id' => $s->customer->id,
+            'marketer_id' => $s->marketer->id, 'ip_address' => '1.1.1.1', 'user_agent' => 'x', 'accepted_at' => now(),
+        ]);
+
+        $v1->update(['is_active' => false]);
+        $this->assertFalse($v1->fresh()->is_active);
+
+        foreach ([
+            fn () => $v1->update(['text_content' => 'tampered']),
+            fn () => $v1->delete(),
+            fn () => $a->update(['ip_address' => '9.9.9.9']),
+            fn () => $a->delete(),
+        ] as $op) {
+            try {
+                $op();
+                $this->fail('mutation should be blocked');
+            } catch (\LogicException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+        $this->assertSame('Terms v1', $v1->fresh()->text_content);
+        $this->assertSame('1.1.1.1', $a->fresh()->ip_address);
+    }
+
+    public function test_text_contract_xss_is_escaped_in_admin_view(): void
+    {
+        $s = $this->scenario();
+        $admin = $this->admin();
+        $c = MarketerContract::create(['marketer_id' => $s->marketer->id, 'current_version' => 1, 'is_required' => true]);
+        MarketerContractVersion::create([
+            'marketer_contract_id' => $c->id, 'version_number' => 1, 'content_type' => 'text',
+            'text_content' => '<script>alert(1)</script>', 'is_active' => true,
+        ]);
+        $r = $this->actingAs($admin, 'admin')->get(route('admin.marketers.contract.show', $s->marketer->id));
+        $r->assertOk();
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $r->getContent());
+    }
 }

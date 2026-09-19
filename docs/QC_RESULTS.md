@@ -101,3 +101,10 @@ Tests: backend/tests/Feature/Ads (36+ tests; DB_DATABASE=marketplace_test_f01).
 - FIXED (tests): 3 stale popup assertions expected the raw destination_url; AdPopupController (by design) links to /products/{variant}--{listing} when a listing destination exists and only falls back to a sanitized URL otherwise. Tests updated in AdPopupControllerTest and NawiAdsLifecycleTest; added listing-link and URL-only cases.
 - NOTE: the system is booking-based (PaidAdSlot/PaidAdBooking), not the spec's ad-package/serious_featured tables; AdBillingSeparationTest (user WIP) left untouched and passes.
 - GAP: the spec's package CRUD, popup_* validation matrix and localStorage `nawi_ads_popup_seen` were not separately verified here.
+
+## F04 — Contracts & acceptance audit trail
+Test: backend/tests/Feature/MarketerContractAuditTrailTest.php (12 tests; DB_DATABASE=marketplace_test_f04).
+- PASS: admin upload creates v1/v2, old version kept inactive; customer GET returns active version; accept stores customer/ip/UA/version/marketer; superseded/foreign version_id rejected (422); checkout blocked without acceptance and order linked to accepted acceptance row; new order needs new acceptance; prepare reports gate.
+- PASS: PDF mime (mimes:pdf) and 10MB max validated; download requires marketers.view (403 otherwise); HTML text contract escaped in admin view (e()); customer API returns raw text (frontend must not use innerHTML).
+- FIXED: versions/acceptances were mutable/deletable. Added model guards (MarketerContractVersion, MarketerContractAcceptance): content fields immutable, only is_active toggles; acceptance order_id may be set once; deletes throw.
+- NOTE: no admin edit/delete routes exist for these records either.

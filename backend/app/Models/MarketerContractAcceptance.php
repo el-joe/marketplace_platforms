@@ -26,6 +26,20 @@ class MarketerContractAcceptance extends Model
         'accepted_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        // Audit trail: only the order link may be set (once); rows are never deleted.
+        static::updating(function (self $a) {
+            $locked = ['marketer_contract_version_id', 'customer_id', 'marketer_id', 'ip_address', 'user_agent', 'accepted_at'];
+            if ($a->isDirty($locked) || ($a->isDirty('order_id') && $a->getOriginal('order_id') !== null)) {
+                throw new \LogicException('Contract acceptances are immutable.');
+            }
+        });
+        static::deleting(function () {
+            throw new \LogicException('Contract acceptances cannot be deleted.');
+        });
+    }
+
     public function contractVersion(): BelongsTo
     {
         return $this->belongsTo(MarketerContractVersion::class, 'marketer_contract_version_id');

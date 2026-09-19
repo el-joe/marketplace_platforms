@@ -27,6 +27,20 @@ class MarketerContractVersion extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        // Versions are an immutable audit record: only is_active may change; never deleted.
+        static::updating(function (self $v) {
+            $locked = ['marketer_contract_id', 'version_number', 'content_type', 'file_url', 'text_content', 'title_en', 'title_ar'];
+            if ($v->isDirty($locked)) {
+                throw new \LogicException('Contract versions are immutable.');
+            }
+        });
+        static::deleting(function () {
+            throw new \LogicException('Contract versions cannot be deleted.');
+        });
+    }
+
     public function contract(): BelongsTo
     {
         return $this->belongsTo(MarketerContract::class, 'marketer_contract_id');
