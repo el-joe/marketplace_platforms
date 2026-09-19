@@ -79,3 +79,10 @@ Test: backend/tests/Unit/CommissionDiscountTest.php (2 tests pass) + Checkout mo
 - PASS: admin validation: type enum, flat integer >=0, percentage 0-100 (>100 rejected) (MarketerController.php:127, UpdateVendorRequest.php:40).
 - PASS: unit is base-currency integer (500 = 500 base units, no x100); doc(2) "50 riyals" is consistent, v1 wording just differs by example.
 - NOTE: vendor and marketer discounts apply to different commissions (platform vs marketer), so they do not stack on the same amount.
+
+## F10 — Coupon shipping-type restriction
+Test: backend/tests/Feature/Checkout/CouponShippingTypeRestrictionTest.php (3 tests, 25 assertions, pass; DB_DATABASE=marketplace_test_f10).
+- PASS: matrix all/fbn/fbp/fbm x fbn/fbm lines (CheckoutPricingEngine.php validateCouponEligibility ~:819); enum validated in Admin + Vendor Store/Update CouponRequest (nullable, Rule::enum); AR+EN string `common.exceptions.checkout.coupon.shipping_type_restricted` exists. Checkout uses the same applyCoupon path (CouponEligibilityService facade).
+- DOCUMENTED BEHAVIOR: mixed cart => coupon REJECTED entirely if any line mismatches (no partial discount, so no ineligible line enters the discount base).
+- GAP (minor): message text is "only valid for :type shipping orders", not the spec's exact "هذه القسيمة غير صالحة لنوع الشحن المحدد". Type mapping: cross_dock => fbp, other non-fbn => fbm, admin => fbn.
+- PASS: CouponUsageConcurrencyTest re-run (see output).
