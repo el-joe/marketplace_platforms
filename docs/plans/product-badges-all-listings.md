@@ -43,3 +43,18 @@ Shared rules for every agent: do not `git commit`; touch only the files in your 
   - **D** partner + marketer: `Partner/ListingController.php`, `Marketer/ListingController.php`, `Api/**` partner/vendor/marketer listing controllers, `routes/partner.php|marketer.php|api_*.php`, `resources/views/partner|marketer/**`, `lang/*/partner.php|marketer.php`, `tests/Feature/PromoBadgePartnerMarketerTest.php`.
   - **E** frontend: `frontend/src/**` only.
 - **Wave F (after B–E)** — integration: full backend test run, `code-review`, cross-check every owner type end to end, update this doc with results.
+
+## 4. Results (Wave F, 2026-09-19)
+
+- Badge tests: 33 passing (ProductPromoBadge, Admin/PromoBadgeAdmin, PromoBadgePartnerMarketer, PromoBadgeReadPath).
+- Full backend suite (marketplace_test_f): 340 tests, 5 failures, **all 5 also fail on a clean HEAD** (3 ad-popup tests, ExampleTest 404, PDP query budget). Badge work adds +1 query to the PDP (HEAD 61 -> 62) and 0 to browse (<=22).
+- Code-review fixes applied: icon validation is case/format-insensitive and stored normalised (legacy `truck` -> `Truck`); cache bust runs `afterCommit`; purge command refuses near-wildcard patterns and asks for confirmation (`--force` skips).
+
+### Open items
+- `Admin` routes: Wave C added `products.create` / `products.edit` middleware to 5 product routes (was `products.view`). Needs a product decision (keep after checking roles, or revert).
+- `Customer\ProductController` / `Customer\ListingController` (non-listing-specific product endpoints) still return product-level badges only; listing-specific badges appear on card lists and listing detail.
+- Cart-recommendation cards are cached (300s TTL for FBT/category recs); badge edits self-heal within that window.
+- Nothing browser-tested (admin tab, admin-listing create, partner panel, marketer page); admin-listing `store()` with badges has no test.
+- PDP query budget test was already failing at HEAD (61 > 56).
+- Frontend: PDP carousels' component usage not traced; `SpecialProductCard` is unused; wishlist reads badges from item or listing.
+- schema dump contains unrelated churn from other pending migrations — review before committing.

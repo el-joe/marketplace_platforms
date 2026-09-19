@@ -8,7 +8,7 @@ use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\VendorListing;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 /**
  * Replace-style sync of rotating promo badges for one owner: the product itself
@@ -26,7 +26,12 @@ class PromoBadgeSyncService
             'promo_badges.*.id' => ['nullable', 'uuid'],
             'promo_badges.*.label_en' => ['required', 'string', 'max:100'],
             'promo_badges.*.label_ar' => ['required', 'string', 'max:100'],
-            'promo_badges.*.icon_key' => ['nullable', 'string', 'max:50', Rule::in(config('promo_badges.icons', []))],
+            'promo_badges.*.icon_key' => ['nullable', 'string', 'max:50', function ($attribute, $value, $fail) {
+                // Case/format-insensitive so legacy keys ("truck", "shield-check") still validate.
+                if (filled($value) && ! in_array(Str::studly($value), config('promo_badges.icons', []), true)) {
+                    $fail('The selected icon is not allowed.');
+                }
+            }],
             'promo_badges.*.color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'promo_badges.*.text_color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'promo_badges.*.is_active' => ['nullable', 'boolean'],
@@ -61,7 +66,7 @@ class PromoBadgeSyncService
                 $payload = [
                     'label_en' => $b['label_en'],
                     'label_ar' => $b['label_ar'],
-                    'icon_key' => ($b['icon_key'] ?? null) ?: 'Tag',
+                    'icon_key' => filled($b['icon_key'] ?? null) ? Str::studly($b['icon_key']) : 'Tag',
                     'color_hex' => $b['color_hex'] ?? '#1a1a2e',
                     'text_color_hex' => $b['text_color_hex'] ?? '#FFFFFF',
                     'sort_order' => $i,
@@ -76,7 +81,9 @@ class PromoBadgeSyncService
             }
         });
 
-        $this->bustCaches($productId, $ownerColumn, $ownerId);
+        // If a caller wraps sync() in its own transaction, defer until it commits so a
+        // concurrent request cannot re-cache the pre-commit rows.
+        DB::afterCommit(fn () => $this->bustCaches($productId, $ownerColumn, $ownerId));
     }
 
     /**
