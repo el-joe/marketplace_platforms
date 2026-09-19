@@ -35,9 +35,9 @@ export const useCheckout = () => {
   );
 
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
-  const [contractAcceptanceId, setContractAcceptanceId] = useState<
-    string | null
-  >(null);
+  const [contractAcceptances, setContractAcceptances] = useState<
+    Record<string, string>
+  >({});
 
   // const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(
   //   null,
@@ -67,22 +67,37 @@ export const useCheckout = () => {
   const selectedGatewayId = selectedGateway?.id;
   const isOfflinePaymentMethod = selectedGateway?.type === "offline";
 
-  const contractGate = checkoutData?.marketer_contract_gate;
-  const contractRequired = !!contractGate?.is_required && !contractAcceptanceId;
+  const contractGates = useMemo(() => {
+    const gates =
+      checkoutData?.marketer_contract_gates ??
+      (checkoutData?.marketer_contract_gate
+        ? [checkoutData.marketer_contract_gate]
+        : []);
+    return gates.filter((g) => g.is_required && !g.accepted);
+  }, [checkoutData]);
+  const pendingGates = contractGates.filter(
+    (g) => !contractAcceptances[g.marketer_id],
+  );
+  const currentGate = pendingGates[0];
+  const contractRequired = pendingGates.length > 0;
 
   const contractQuery = useQuery({
-    queryKey: ["marketer-contract", contractGate?.marketer_id],
-    queryFn: () => getMarketerContract(contractGate!.marketer_id),
-    enabled: !!contractGate?.is_required,
+    queryKey: ["marketer-contract", currentGate?.marketer_id],
+    queryFn: () => getMarketerContract(currentGate!.marketer_id),
+    enabled: !!currentGate,
   });
-  const contract = contractQuery.data?.contract;
+  const contract = currentGate ? contractQuery.data?.contract : null;
 
   const acceptContract = useMutation({
     mutationFn: () =>
-      acceptMarketerContract(contractGate!.marketer_id, contract!.version_id),
+      acceptMarketerContract(currentGate!.marketer_id, contract!.version_id),
     onSuccess: (data) => {
-      setContractAcceptanceId(data.acceptance_id);
-      setIsContractModalOpen(false);
+      const remaining = pendingGates.length - 1;
+      setContractAcceptances((prev) => ({
+        ...prev,
+        [currentGate!.marketer_id]: data.acceptance_id,
+      }));
+      if (remaining <= 0) setIsContractModalOpen(false);
     },
   });
 
@@ -166,6 +181,10 @@ export const useCheckout = () => {
     prepare(Number(selectedAddress.id), gatewayId);
   };
 
+  const acceptanceIds = contractGates
+    .map((g) => contractAcceptances[g.marketer_id])
+    .filter((id): id is string => !!id);
+
   const createOrder = () => {
     if (!selectedAddress || !selectedGatewayId) return;
 
@@ -221,7 +240,8 @@ export const useCheckout = () => {
         : null,
       warranty_selections:
         warrantySelections.length > 0 ? warrantySelections : null,
-      contract_acceptance_id: contractAcceptanceId,
+      contract_acceptance_id: acceptanceIds[0] ?? null,
+      contract_acceptance_ids: acceptanceIds.length > 0 ? acceptanceIds : null,
     });
   };
 

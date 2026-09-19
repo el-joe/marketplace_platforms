@@ -258,7 +258,14 @@ class MarketerLifecycleTest extends TestCase
             'added_at'             => now(),
         ]);
 
+        // The marketer's contract is required, so the customer must accept it first.
+        $acceptanceId = $this->postJson(
+            "/api/customer/v1/{$scenario->country->site_code}/marketers/{$marketer->id}/contract/accept",
+            ['version_id' => $version->id]
+        )->assertStatus(201)->json('acceptance_id');
+
         $placeResponse = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", [
+            'contract_acceptance_ids'    => [$acceptanceId],
             'address_id'                 => $scenario->customerAddress->id,
             'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
             'idempotency_key'            => (string) Str::uuid(),

@@ -560,15 +560,8 @@ class CheckoutController extends Controller
         $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
         $checkoutBanner = $this->placementAds->resolve('checkout_banner', $country, 'logged_in', $sessionId);
 
-        $attributedMarketerId = session('marketer_attribution.marketer_id');
-        $marketerContractGate = null;
-        if ($attributedMarketerId) {
-            $contract = MarketerContract::where('marketer_id', $attributedMarketerId)->first();
-            $marketerContractGate = [
-                'marketer_id' => $attributedMarketerId,
-                'is_required' => $contract?->is_required && $contract?->current_version > 0,
-            ];
-        }
+        $marketerContractGates = app(\App\Services\MarketerContractGateService::class)->gates($customer, $cartItems);
+        $marketerContractGate = collect($marketerContractGates)->firstWhere('accepted', false);
 
         return ApiResponse::success([
             'total_items_qty' => $totalItemsQty,
@@ -609,6 +602,7 @@ class CheckoutController extends Controller
                 'value' => $case->labelBilingual(),
             ])->values(),
             'shipment_groups' => $shipmentGroupsForItems,
+            'marketer_contract_gates' => $marketerContractGates,
             'marketer_contract_gate' => $marketerContractGate,
             'checkout_banner' => $checkoutBanner,
         ], __('common.exceptions.checkout.preview_ready'));
@@ -1007,6 +1001,23 @@ class CheckoutController extends Controller
                 $hasAffiliatePromo
             ) {
                 $vendorShippingMap = $vendorShipping['per_vendor'];
+
+                // Server-side marketer contract gate: every required marketer
+                // in the cart needs an unlinked acceptance owned by this
+                // customer for the ACTIVE contract version.
+                $gateService = app(\App\Services\MarketerContractGateService::class);
+                $providedIds = collect($validated['contract_acceptance_ids'] ?? [])
+                    ->when(! empty($validated['contract_acceptance_id']), fn ($c) => $c->push($validated['contract_acceptance_id']))
+                    ->unique()->values();
+                $contractAcceptanceIds = [];
+                foreach ($gateService->requiredMarketerIds($cartItems) as $marketerId) {
+                    $acceptance = $gateService->pendingAcceptance($customer, $marketerId, $providedIds);
+                    if (! $acceptance) {
+                        throw new \DomainException('You must accept the marketer contract before placing this order.');
+                    }
+                    $contractAcceptanceIds[] = $acceptance->id;
+                }
+
                 $order = Order::create([
                     'order_number' => $this->generateOrderNumber(),
                     'customer_id' => $customer->id,
@@ -1045,11 +1056,11 @@ class CheckoutController extends Controller
                     // per order item (order_items.marketer_listing_id /
                     // marketer_campaign_invitation_id) below, after this
                     // transaction, by LastClickAttributionService.
-                    'marketer_contract_acceptance_id' => $validated['contract_acceptance_id'] ?? null,
+                    'marketer_contract_acceptance_id' => $contractAcceptanceIds[0] ?? null,
                 ]);
 
-                if (! empty($validated['contract_acceptance_id'])) {
-                    \App\Models\MarketerContractAcceptance::where('id', $validated['contract_acceptance_id'])
+                if (! empty($contractAcceptanceIds)) {
+                    \App\Models\MarketerContractAcceptance::whereIn('id', $contractAcceptanceIds)
                         ->where('customer_id', $customer->id)
                         ->whereNull('order_id')
                         ->update(['order_id' => $order->id]);

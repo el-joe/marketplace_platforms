@@ -119,6 +119,7 @@ class Marketer extends Model
         }
 
         return MarketerContractAcceptance::where('marketer_id', $this->id)
+            ->whereNull('customer_id')
             ->where('marketer_contract_version_id', $contract->activeVersion->id)
             ->exists();
     }

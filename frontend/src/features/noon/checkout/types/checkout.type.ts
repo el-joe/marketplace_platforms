@@ -136,12 +136,14 @@ export interface IPrepareCheckout {
   delivery_instructions: DeliveryInstruction[];
   shipment_groups: ShipmentGroup[];
   marketer_contract_gate: MarketerContractGate | null;
+  marketer_contract_gates?: MarketerContractGate[];
   checkout_banner: PlacementBanner | null;
 }
 
 export interface MarketerContractGate {
   marketer_id: string;
   is_required: boolean;
+  accepted?: boolean;
 }
 
 export interface Coupon {

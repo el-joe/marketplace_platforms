@@ -43,6 +43,7 @@ class ContractController extends Controller
         $acceptance = MarketerContractAcceptance::firstOrCreate(
             [
                 'marketer_id' => $marketer->id,
+                'customer_id' => null,
                 'marketer_contract_version_id' => $contract->activeVersion->id,
             ],
             [

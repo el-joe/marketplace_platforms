@@ -19,6 +19,14 @@
 
     @php $activeVersion = $contract->versions->firstWhere('is_active', true); @endphp
 
+    @if(auth('admin')->user()->can('marketers.manage'))
+    <form method="POST" action="{{ route('admin.marketers.contract.required', $marketer) }}" class="bg-white rounded-xl border p-4 flex items-center gap-3">
+        @csrf
+        <input type="hidden" name="is_required" value="0">
+        <label class="text-sm flex items-center gap-2"><input type="checkbox" name="is_required" value="1" @checked($contract->is_required) onchange="this.form.submit()"> Contract required at checkout</label>
+    </form>
+    @endif
+
     <div class="bg-white rounded-xl border p-6">
         @if($activeVersion)
             <div class="flex items-center justify-between mb-3">
@@ -45,8 +53,7 @@
         @endif
     </div>
 
-    @if($contract->versions->count() > 1)
-    <div class="bg-white rounded-xl border p-6">
+        <div class="bg-white rounded-xl border p-6">
         <div class="font-semibold text-gray-900 mb-3">Version History</div>
         <table class="w-full text-sm">
             <thead>
@@ -55,6 +62,8 @@
                     <th class="py-1.5 pr-3">Type</th>
                     <th class="py-1.5 pr-3">Uploaded</th>
                     <th class="py-1.5 pr-3">Status</th>
+                    <th class="py-1.5 pr-3">Acceptances</th>
+                    <th class="py-1.5 pr-3">File</th>
                 </tr>
             </thead>
             <tbody>
@@ -70,12 +79,17 @@
                             <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">inactive</span>
                         @endif
                     </td>
+                    <td class="py-1.5 pr-3">{{ $v->acceptances_count }}</td>
+                    <td class="py-1.5 pr-3">
+                        @if($v->content_type === 'pdf' && $v->file_url)
+                            <a class="text-blue-600" href="{{ route('admin.marketers.contract.download', [$marketer, $v]) }}">Download</a>
+                        @else &mdash; @endif
+                    </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
     </div>
-    @endif
 
     <div class="bg-white rounded-xl border p-6" x-data="{ type: 'pdf' }">
         <div class="font-semibold text-gray-900 mb-3">Upload New Version</div>
@@ -86,7 +100,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contract Type</label>
                 <select name="content_type" x-model="type" class="w-full border rounded-lg px-3 py-2 text-sm">
                     <option value="pdf">PDF File</option>
-                    <option value="text">Text / HTML</option>
+                    <option value="text">Text (plain, escaped)</option>
                 </select>
             </div>
 

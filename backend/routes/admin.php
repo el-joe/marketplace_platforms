@@ -954,6 +954,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->name('contract.show');
         Route::post('/{marketer}/contract/upload', [\App\Http\Controllers\Admin\MarketerContractController::class, 'upload'])
             ->name('contract.upload')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketer}/contract/required', [\App\Http\Controllers\Admin\MarketerContractController::class, 'toggleRequired'])
+            ->name('contract.required')->middleware('admin.permission:marketers.manage');
         Route::get('/{marketer}/contract/acceptances', [\App\Http\Controllers\Admin\MarketerContractController::class, 'acceptances'])
             ->name('contract.acceptances');
         Route::get('/{marketer}/contract/versions/{version}/download', [\App\Http\Controllers\Admin\MarketerContractController::class, 'download'])

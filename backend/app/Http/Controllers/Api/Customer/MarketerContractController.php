@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\MarketerContract;
 use App\Models\MarketerContractAcceptance;
+use App\Models\MarketerContractVersion;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +15,8 @@ class MarketerContractController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $marketerId = $request->route('marketer');
+        $marketerId = (string) $request->route('marketer');
+        abort_unless(Str::isUuid($marketerId), 404);
 
         $contract = MarketerContract::with('activeVersion')
             ->where('marketer_id', $marketerId)
@@ -46,7 +49,8 @@ class MarketerContractController extends Controller
 
     public function downloadActivePdf(Request $request)
     {
-        $marketerId = $request->route('marketer');
+        $marketerId = (string) $request->route('marketer');
+        abort_unless(Str::isUuid($marketerId), 404);
 
         $contract = MarketerContract::with('activeVersion')
             ->where('marketer_id', $marketerId)
@@ -60,14 +64,29 @@ class MarketerContractController extends Controller
 
     public function accept(Request $request): JsonResponse
     {
+        $marketerId = (string) $request->route('marketer');
+        abort_unless(Str::isUuid($marketerId), 404);
+
         $validated = $request->validate([
-            'version_id' => ['required', 'uuid', 'exists:marketer_contract_versions,id'],
+            'version_id' => ['required', 'uuid'],
         ]);
+
+        $version = MarketerContractVersion::query()
+            ->where('id', $validated['version_id'])
+            ->where('is_active', true)
+            ->whereHas('contract', fn ($q) => $q->where('marketer_id', $marketerId))
+            ->first();
+
+        if (! $version) {
+            return response()->json(['message' => 'Contract version is not the active version for this marketer.'], 422);
+        }
 
         $customerId = auth('customer')->id();
 
+        // One row per order: reuse only an acceptance not yet linked to an order.
         $existing = MarketerContractAcceptance::where('customer_id', $customerId)
-            ->where('marketer_contract_version_id', $validated['version_id'])
+            ->where('marketer_contract_version_id', $version->id)
+            ->whereNull('order_id')
             ->first();
 
         if ($existing) {
@@ -79,8 +98,9 @@ class MarketerContractController extends Controller
         }
 
         $acceptance = MarketerContractAcceptance::create([
-            'marketer_contract_version_id' => $validated['version_id'],
+            'marketer_contract_version_id' => $version->id,
             'customer_id' => $customerId,
+            'marketer_id' => $marketerId,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'accepted_at' => now(),

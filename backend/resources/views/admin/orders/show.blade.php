@@ -425,6 +425,19 @@
                 @endforelse
             </x-card>
 
+            @php
+                $contractAccs = \App\Models\MarketerContractAcceptance::with('contractVersion')
+                    ->where('order_id', $order->id)->get();
+                if ($contractAccs->isEmpty() && $order->contractAcceptance) { $contractAccs = collect([$order->contractAcceptance]); }
+            @endphp
+            @if($contractAccs->isNotEmpty())
+            <x-card title="Accepted Marketer Contract">
+                @foreach($contractAccs as $ca)
+                    <div class="text-sm py-1">Version v{{ $ca->contractVersion->version_number ?? '?' }} &mdash; {{ optional($ca->accepted_at)->format('d M Y H:i:s') }}</div>
+                @endforeach
+            </x-card>
+            @endif
+
             {{-- ──────────────────────────────────── --}}
             {{-- Payment Transactions --}}
             {{-- ──────────────────────────────────── --}}
