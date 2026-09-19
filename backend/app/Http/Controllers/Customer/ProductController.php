@@ -227,7 +227,7 @@ class ProductController extends Controller
         // a promoted listing so it does not appear twice.
         $items = $cards;
         if ($cards && in_array('vendor', $types, true)) {
-            $items = $this->sponsored->inject($cards, $country, $page, 'category_top', null, $categoryIds ?? []);
+            $items = $this->sponsored->inject($cards, $country, $page, 'category_top', null, $categoryIds ?? [], (array) ($filters['attributes'] ?? []));
             $sponsoredIds = collect($items)->pluck('_sponsored_listing_id')->filter()->all();
             if ($sponsoredIds) {
                 $items = array_values(array_filter($items, fn ($i) => isset($i['_sponsored_listing_id']) || !in_array($i['listing_id'] ?? null, $sponsoredIds, true)));
