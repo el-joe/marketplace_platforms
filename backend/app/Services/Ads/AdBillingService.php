@@ -185,7 +185,7 @@ class AdBillingService
                     'spend' => DB::raw('spend + '.(int) $totalAmount),
                 ]);
 
-            if ($b->total_charged >= $b->budget_amount) {
+            if (! $pricingModel->isFixed() && $b->total_charged >= $b->budget_amount) {
                 app(AdBookingService::class)->complete($b, 'budget_exhausted');
             }
         });

@@ -3,14 +3,19 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\StoreSpecialRequestRequest;
+use App\Models\Country;
 use App\Http\Responses\ApiResponse;
 use App\Models\CustomerSpecialRequest;
 use App\Services\SpecialRequestRoutingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class SpecialRequestController extends Controller
 {
+    private const STATUSES = ['open', 'in_progress', 'closed'];
+
     public function __construct(
         private readonly SpecialRequestRoutingService $routing,
     ) {}
@@ -21,26 +26,36 @@ class SpecialRequestController extends Controller
 
         $requests = CustomerSpecialRequest::with(['category:id,name_en,name_ar', 'city:id,name_en,name_ar'])
             ->where('customer_id', $customer->id)
+            ->when(
+                in_array($request->query('status'), self::STATUSES, true),
+                fn ($q) => $q->where('status', $request->query('status'))
+            )
             ->latest()
-            ->paginate((int) $request->query('per_page', 20));
+            ->paginate(min(max((int) $request->query('per_page', 20), 1), 100));
 
         return ApiResponse::success($requests);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreSpecialRequestRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'category_id'     => ['required', 'uuid', 'exists:categories,id'],
-            'city_id'         => ['nullable', 'uuid', 'exists:cities,id'],
-            'title_en'        => ['required', 'string', 'max:255'],
-            'title_ar'        => ['nullable', 'string', 'max:255'],
-            'description_en'  => ['required', 'string'],
-            'description_ar'  => ['nullable', 'string'],
-            'budget'          => ['nullable', 'integer', 'min:0'],
-            'budget_currency' => ['nullable', 'string', 'size:3'],
-        ]);
+        $customer = auth('customer')->user();
 
-        $data['customer_id'] = auth('customer')->id();
+        $key = 'special-request:' . $customer->id;
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            return ApiResponse::error('Too many requests. Please try again later.', [], 429);
+        }
+        RateLimiter::hit($key, 3600);
+
+        $data = $request->validated();
+        $data['customer_id'] = $customer->id;
+
+        if (empty($data['budget_currency'])) {
+            $country = $request->attributes->get('country');
+            $country = $country instanceof Country ? $country : $customer->country;
+            $data['budget_currency'] = $country?->currency_code;
+        } else {
+            $data['budget_currency'] = strtoupper($data['budget_currency']);
+        }
 
         $specialRequest = CustomerSpecialRequest::create($data);
 
@@ -49,10 +64,11 @@ class SpecialRequestController extends Controller
         return ApiResponse::success([
             'request_id'       => $specialRequest->id,
             'brokers_notified' => $notified,
+            'status'           => $specialRequest->status,
         ], 'Request posted. Matching brokers have been notified.', 201);
     }
 
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, string $country, string $id): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -64,13 +80,17 @@ class SpecialRequestController extends Controller
         return ApiResponse::success($specialRequest);
     }
 
-    public function close(Request $request, string $id): JsonResponse
+    public function close(Request $request, string $country, string $id): JsonResponse
     {
         $customer = auth('customer')->user();
 
         $specialRequest = CustomerSpecialRequest::where('customer_id', $customer->id)
             ->where('id', $id)
             ->firstOrFail();
+
+        if (! in_array($specialRequest->status, ['open', 'in_progress'], true)) {
+            return ApiResponse::error('Only open or in-progress requests can be closed.', [], 422);
+        }
 
         $specialRequest->update(['status' => 'closed']);
 

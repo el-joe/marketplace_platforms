@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\MarketerCommissionDiscountType;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -137,5 +138,17 @@ class MarketerProfile extends Model
         static::deleted(function (self $profile) {
             MarketerProfileCache::bump($profile->profile_slug);
         });
+    }
+
+    /**
+     * Active affiliate brokers that should receive the given request.
+     */
+    public function scopeMatchingRequest(Builder $q, CustomerSpecialRequest $r): Builder
+    {
+        return $q->whereHas('marketer', fn ($m) => $m->where('marketer_type', 'affiliate')->where('global_status', 'active'))
+            ->where('broker_category_id', $r->category_id)
+            ->when($r->city_id, fn ($w) => $w->where(function ($c) use ($r) {
+                $c->where('broker_serves_all_cities', true)->orWhere('broker_city_id', $r->city_id);
+            }));
     }
 }

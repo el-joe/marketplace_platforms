@@ -27,6 +27,9 @@ class ProfileController extends Controller
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
             'avatar'          => 'nullable|image|max:5120',
             'banner'          => 'nullable|image|max:5120',
+            'broker_category_id'       => 'nullable|uuid|exists:categories,id',
+            'broker_city_id'           => 'nullable|uuid|exists:cities,id',
+            'broker_serves_all_cities' => 'nullable|boolean',
         ]);
         $marketer = Auth::guard('marketer_api')->user()->marketer;
         $marketer->update(['whatsapp_for_campaigns' => $request->whatsapp_for_campaigns]);
@@ -38,6 +41,16 @@ class ProfileController extends Controller
 
         if ($request->hasFile('banner')) {
             $profile->banner_file_id = $this->storeProfileImage($request, 'banner', 'marketer-banners', $profile)->id;
+        }
+
+        // Broker specialization: affiliate marketers only.
+        if ($marketer->isAffiliate()) {
+            $serveAll = $request->boolean('broker_serves_all_cities');
+            $profile->fill([
+                'broker_category_id'       => $request->input('broker_category_id') ?: null,
+                'broker_serves_all_cities' => $serveAll,
+                'broker_city_id'           => $serveAll ? null : ($request->input('broker_city_id') ?: null),
+            ]);
         }
 
         $profile->fill($request->only(['bio_ar', 'bio_en', 'video_url', 'social_links', 'contact_details']))->save();

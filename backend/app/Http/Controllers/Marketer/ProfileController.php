@@ -33,7 +33,10 @@ class ProfileController extends Controller
             ]);
         }
 
-        return view('marketer.profile', compact('marketer', 'profile'));
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $cities     = \App\Models\City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+
+        return view('marketer.profile', compact('marketer', 'profile', 'categories', 'cities'));
     }
 
     public function update(Request $request): RedirectResponse
@@ -49,6 +52,9 @@ class ProfileController extends Controller
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
             'avatar'          => 'nullable|image|max:5120',
             'banner'          => 'nullable|image|max:5120',
+            'broker_category_id'       => 'nullable|uuid|exists:categories,id',
+            'broker_city_id'           => 'nullable|uuid|exists:cities,id',
+            'broker_serves_all_cities' => 'nullable|boolean',
         ]);
 
         $marketer = $this->marketer();
@@ -68,6 +74,16 @@ class ProfileController extends Controller
         }
 
         $profile->fill($request->only(['bio_ar', 'bio_en', 'video_url', 'social_links', 'contact_details']));
+
+        // Broker specialization: affiliate marketers only.
+        if ($marketer->isAffiliate()) {
+            $serveAll = $request->boolean('broker_serves_all_cities');
+            $profile->fill([
+                'broker_category_id'       => $request->input('broker_category_id') ?: null,
+                'broker_serves_all_cities' => $serveAll,
+                'broker_city_id'           => $serveAll ? null : ($request->input('broker_city_id') ?: null),
+            ]);
+        }
         $profile->save();
 
         if (! $profile->qr_code_path) {

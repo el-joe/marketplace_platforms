@@ -631,7 +631,8 @@
       "failed": "فشل",
       "pending": "قيد الانتظار",
       "cancelled": "ملغى"
-    }
+    },
+    "specialRequests": "الطلبات الخاصة"
   },
   "giftCards": {
     "home": "الرئيسية",
@@ -1411,5 +1412,37 @@
   "adsPopup": {
     "close": "إغلاق",
     "viewProduct": "عرض المنتج"
+  },
+  "specialRequests": {
+    "myRequests": "طلباتي الخاصة",
+    "newRequest": "طلب خاص جديد",
+    "category": "الفئة",
+    "selectCategory": "اختر الفئة",
+    "city": "المدينة",
+    "allCities": "كل المدن",
+    "title": "العنوان",
+    "description": "الوصف",
+    "budget": "الميزانية",
+    "currency": "العملة",
+    "optional": "اختياري",
+    "submit": "نشر الطلب",
+    "posted": "تم نشر الطلب",
+    "brokersNotified": "{count, plural, one {تم إشعار وسيط #} other {تم إشعار # وسطاء}}",
+    "brokersNotifiedLabel": "الوسطاء المُشعَرون",
+    "viewMyRequests": "عرض طلباتي",
+    "empty": "ليس لديك طلبات خاصة بعد.",
+    "close": "إغلاق الطلب",
+    "closed": "تم إغلاق الطلب",
+    "closeFailed": "تعذر إغلاق الطلب",
+    "submitFailed": "تعذر نشر الطلب",
+    "categoryRequired": "يرجى اختيار الفئة",
+    "titleRequired": "يرجى إدخال العنوان",
+    "descriptionTooShort": "يجب ألا يقل الوصف عن 10 أحرف",
+    "budgetInvalid": "يجب أن تكون الميزانية رقمًا",
+    "status": {
+      "open": "مفتوح",
+      "in_progress": "قيد التنفيذ",
+      "closed": "مغلق"
+    }
   }
 }

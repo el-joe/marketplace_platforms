@@ -23,6 +23,13 @@
         $pendingFlashSaleInvites = $marketer
             ? \App\Models\FlashSaleMarketerInvitation::where('marketer_id', $marketer->id)->where('status', 'pending')->count()
             : 0;
+        $openSpecialRequests = 0;
+        if ($marketer && $marketer->marketer_type === 'affiliate') {
+            $openSpecialRequests = \Illuminate\Support\Facades\Cache::remember('marketer:special-requests-count:' . $marketer->id, 60, function () use ($marketer) {
+                $bp = $marketer->marketerProfile;
+                return $bp ? \App\Models\CustomerSpecialRequest::matchingBroker($bp)->count() : 0;
+            });
+        }
     @endphp
 
     <div class="flex h-screen overflow-hidden">
@@ -58,6 +65,18 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
                     الإحصائيات
                 </a>
+
+                @if($marketer && $marketer->marketer_type === 'affiliate')
+                <a href="{{ route('marketer.special-requests.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.special-requests.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h5M5 4h14a2 2 0 012 2v10a2 2 0 01-2 2h-5l-4 4v-4H5a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                    {{ session('locale', 'ar') === 'ar' ? 'طلبات العملاء' : 'Special Requests' }}
+                    @if($openSpecialRequests > 0)
+                        <span class="ms-auto bg-red-500 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center">{{ $openSpecialRequests }}</span>
+                    @endif
+                </a>
+                @endif
 
                 <a href="{{ route('marketer.invitations.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium

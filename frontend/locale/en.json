@@ -634,7 +634,8 @@
       "failed": "Failed",
       "pending": "Pending",
       "cancelled": "Cancelled"
-    }
+    },
+    "specialRequests": "Special Requests"
   },
   "giftCards": {
     "home": "Home",
@@ -1422,5 +1423,37 @@
   "adsPopup": {
     "close": "Close",
     "viewProduct": "View product"
+  },
+  "specialRequests": {
+    "myRequests": "My Special Requests",
+    "newRequest": "New Special Request",
+    "category": "Category",
+    "selectCategory": "Select category",
+    "city": "City",
+    "allCities": "All cities",
+    "title": "Title",
+    "description": "Description",
+    "budget": "Budget",
+    "currency": "Currency",
+    "optional": "optional",
+    "submit": "Post request",
+    "posted": "Request posted",
+    "brokersNotified": "{count, plural, one {# broker notified} other {# brokers notified}}",
+    "brokersNotifiedLabel": "Brokers notified",
+    "viewMyRequests": "View my requests",
+    "empty": "You have no special requests yet.",
+    "close": "Close request",
+    "closed": "Request closed",
+    "closeFailed": "Could not close the request",
+    "submitFailed": "Could not post the request",
+    "categoryRequired": "Please select a category",
+    "titleRequired": "Please enter a title",
+    "descriptionTooShort": "Description must be at least 10 characters",
+    "budgetInvalid": "Budget must be a number",
+    "status": {
+      "open": "Open",
+      "in_progress": "In progress",
+      "closed": "Closed"
+    }
   }
 }

@@ -102,6 +102,31 @@
                 <input type="file" name="banner" accept="image/*" class="text-sm text-gray-600">
             </div>
 
+            @if($marketer->isAffiliate())
+            <div class="border border-gray-200 rounded-lg p-4 space-y-3" id="broker-specialization">
+                <div class="font-semibold text-gray-700 text-sm">تخصص الوسيط (لطلبات العملاء الخاصة)</div>
+                <select name="broker_category_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">— بدون تحديد —</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ old('broker_category_id', $profile->broker_category_id) === $cat->id ? 'selected' : '' }}>{{ $cat->name_ar ?? $cat->name_en }}</option>
+                    @endforeach
+                </select>
+                <select name="broker_city_id" id="brokerCitySelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        {{ old('broker_serves_all_cities', $profile->broker_serves_all_cities) ? 'disabled' : '' }}>
+                    <option value="">— اختر مدينة —</option>
+                    @foreach($cities as $city)
+                        <option value="{{ $city->id }}" {{ old('broker_city_id', $profile->broker_city_id) === $city->id ? 'selected' : '' }}>{{ $city->name_ar ?? $city->name_en }}</option>
+                    @endforeach
+                </select>
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="broker_serves_all_cities" value="1"
+                           {{ old('broker_serves_all_cities', $profile->broker_serves_all_cities) ? 'checked' : '' }}
+                           onchange="document.getElementById('brokerCitySelect').disabled = this.checked">
+                    يخدم كل المدن
+                </label>
+            </div>
+            @endif
+
             <button type="submit" class="px-6 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-lg text-sm">
                 حفظ التغييرات
             </button>

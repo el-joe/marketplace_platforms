@@ -28,6 +28,9 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/profile',         [ProfileController::class, 'show']);
     Route::post('/profile',        [ProfileController::class, 'update']);
 
+    Route::get('/special-requests',      [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'index']);
+    Route::get('/special-requests/{id}', [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'show']);
+
     Route::get('/invitations',                          [InvitationController::class, 'index']);
     Route::post('/invitations/{invitation}/accept',     [InvitationController::class, 'accept']);
     Route::post('/invitations/{invitation}/reject',     [InvitationController::class, 'reject']);

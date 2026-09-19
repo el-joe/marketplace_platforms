@@ -26,7 +26,7 @@ class AdBookingCompletedNotification extends BaseDatabaseBroadcastNotification
                 'reference' => $this->booking->booking_reference,
                 'impressions' => number_format($this->booking->impressions_delivered),
                 'clicks' => number_format($this->booking->clicks_delivered),
-                'spend' => number_format($this->booking->total_charged / 100, 2),
+                'spend' => number_format($this->booking->total_charged),
                 'currency' => $this->booking->currency,
             ]),
             'url' => $this->advertiserUrl($this->booking),

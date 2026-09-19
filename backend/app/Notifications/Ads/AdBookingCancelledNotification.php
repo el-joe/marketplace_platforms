@@ -27,7 +27,7 @@ class AdBookingCancelledNotification extends BaseDatabaseBroadcastNotification
             'title' => __('notifications.ads.booking_cancelled.title'),
             'message' => __('notifications.ads.booking_cancelled.message', [
                 'reference' => $this->booking->booking_reference,
-                'refund' => number_format($this->refundAmount / 100, 2),
+                'refund' => number_format($this->refundAmount),
                 'currency' => $this->booking->currency,
             ]),
             'url' => $this->advertiserUrl($this->booking),
