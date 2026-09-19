@@ -116,8 +116,10 @@ class ListingQueryService
     public function applyFilters($builder, array $filters, ?array $categoryIds = null)
     {
         if (!empty($filters['category'])) {
-            $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
-            $builder->whereIn('p.category_id', $categoryIds);
+            $categoryIds ??= app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
+            if ($categoryIds !== null) { // null = all-categories custom page
+                $builder->whereIn('p.category_id', $categoryIds);
+            }
         }
         if (!empty($filters['brand'])) {
             $builder->where('p.brand_id', $filters['brand']);
@@ -946,5 +948,226 @@ class ListingQueryService
             'ar' => $build('ar'),
             'en' => $build('en'),
         ];
+    }
+
+    // ─── Custom-page mixed listing grid (admin + vendor + marketer) ──────────
+
+    /**
+     * Per-type "lean" id queries sharing one column set, so they can be UNIONed
+     * and paginated/sorted in the database (total, last_page and items stay
+     * consistent across blocks; no unbounded load of the admin catalogue).
+     *
+     * @param  list<string>       $types
+     * @param  list<string>|null  $categoryIds  null = no category restriction
+     */
+    public function mixedIdQuery(Country $country, array $types, ?array $categoryIds, array $filters): ?\Illuminate\Database\Query\Builder
+    {
+        $union = null;
+        foreach (['admin', 'vendor', 'marketer'] as $type) {
+            if (!in_array($type, $types, true)) {
+                continue;
+            }
+            $q = $this->mixedTypeQuery($type, $country, $categoryIds, $filters);
+            $union = $union ? $union->unionAll($q) : $q;
+        }
+
+        return $union;
+    }
+
+    private function mixedTypeQuery(string $type, Country $country, ?array $categoryIds, array $filters)
+    {
+        $table = $type . '_listings';
+        $q = DB::table("$table as l")
+            ->join('product_variants as pv', 'pv.id', '=', 'l.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->where('l.country_id', $country->id)
+            ->where('l.status', 'active')
+            ->whereNull('l.deleted_at')
+            ->where('p.status', 'active')
+            ->whereNull('p.deleted_at')
+            ->where('p.is_hidden', false)
+            ->where('pv.is_hidden', false);
+
+        $rank = ['admin' => 0, 'vendor' => 1, 'marketer' => 2][$type];
+        $boost = $type === 'admin' ? 'l.search_boost' : '0';
+        $q->selectRaw("'$type' as ltype, l.id as lid, pv.id as variant_id, p.id as product_id, l.price, l.rating_avg, l.created_at, l.total_sold, l.score, $rank as trank, $boost as boost");
+
+        if ($type === 'vendor') {
+            $q->join('vendors as v', 'v.id', '=', 'l.vendor_id')->where('v.global_status', 'active');
+        } elseif ($type === 'marketer') {
+            $q->join('marketers as mk', 'mk.id', '=', 'l.marketer_id')
+                ->where('mk.global_status', 'active')
+                ->where('l.listing_category', 'product');
+        } else {
+            // one card per variant (same de-dup the old admin block did)
+            $q->whereNotExists(fn ($s) => $s->select(DB::raw(1))->from('admin_listings as a2')
+                ->whereColumn('a2.product_variant_id', 'l.product_variant_id')
+                ->whereColumn('a2.country_id', 'l.country_id')
+                ->where('a2.status', 'active')->whereNull('a2.deleted_at')
+                ->whereColumn('a2.id', '<', 'l.id'));
+        }
+
+        if ($categoryIds !== null) {
+            $q->whereIn('p.category_id', $categoryIds);
+        }
+        if (!empty($filters['brand'])) {
+            $q->where('p.brand_id', $filters['brand']);
+        }
+        if (!empty($filters['price_min'])) {
+            $q->where('l.price', '>=', (int) $filters['price_min']);
+        }
+        if (!empty($filters['price_max'])) {
+            $q->where('l.price', '<=', (int) $filters['price_max']);
+        }
+        if (!empty($filters['rating_min'])) {
+            $q->where('l.rating_avg', '>=', $filters['rating_min']);
+        }
+        if (!empty($filters['condition'])) {
+            $q->where('l.condition', $filters['condition']);
+        }
+        if (!empty($filters['fulfillment_model']) && $type !== 'marketer') {
+            $q->where('l.fulfillment_model', $filters['fulfillment_model']);
+        } elseif (!empty($filters['fulfillment_model'])) {
+            $q->whereRaw('1 = 0'); // marketer listings have no fulfillment model
+        }
+        if (empty($filters['include_oos']) && $type !== 'admin') {
+            // vendor: own stock; marketer: stock of its source listing
+            $q->whereExists(function ($s) use ($type) {
+                $s->select(DB::raw(1))->from('warehouse_inventories as wi')->where('wi.quantity_available', '>', 0);
+                if ($type === 'vendor') {
+                    $s->whereColumn('wi.vendor_listing_id', 'l.id');
+                } else {
+                    $s->where(function ($w) {
+                        $w->where(fn ($x) => $x->where('l.source_type', 'vendor_listing')->whereColumn('wi.vendor_listing_id', 'l.source_listing_id'))
+                            ->orWhere(fn ($x) => $x->where('l.source_type', 'admin_listing')->whereColumn('wi.admin_listing_id', 'l.source_listing_id'));
+                    });
+                }
+            });
+        }
+        if (!empty($filters['attributes']) && is_array($filters['attributes'])) {
+            foreach ($filters['attributes'] as $attrCode => $values) {
+                $values = (array) $values;
+                $q->whereExists(function ($sub) use ($attrCode, $values) {
+                    $sub->select(DB::raw(1))->from('product_variant_attributes as pva')
+                        ->join('attributes as a', 'a.id', '=', 'pva.attribute_id')
+                        ->join('attribute_values as av', 'av.id', '=', 'pva.attribute_value_id')
+                        ->whereColumn('pva.product_variant_id', 'l.product_variant_id')
+                        ->where('a.code', $attrCode)->whereIn('av.value_en', $values);
+                });
+            }
+        }
+
+        return $q;
+    }
+
+    /**
+     * Paginate the merged admin+vendor+marketer set and return
+     * [paginator-of-ids, cards]. Sort applies across the WHOLE merged set:
+     * relevance = admin, vendor, marketer blocks in that order (admin by
+     * search_boost, others by score/rating), the other sorts are global.
+     */
+    public function paginateMixed(Country $country, array $types, ?array $categoryIds, array $filters, int $page, int $perPage, array $wishlistIds): array
+    {
+        $union = $categoryIds === [] ? null : $this->mixedIdQuery($country, $types, $categoryIds, $filters);
+        if (!$union) {
+            return [['total' => 0, 'last_page' => 1, 'current_page' => $page, 'per_page' => $perPage], []];
+        }
+
+        $outer = DB::query()->fromSub($union, 'u');
+        $total = (clone $outer)->count();
+        $outer = match ($filters['sort'] ?? 'relevance') {
+            'price_asc' => $outer->orderBy('price'),
+            'price_desc' => $outer->orderByDesc('price'),
+            'rating' => $outer->orderByRaw('rating_avg IS NULL, rating_avg DESC'),
+            'newest' => $outer->orderByDesc('created_at'),
+            'best_selling' => $outer->orderByDesc('total_sold'),
+            default => $outer->orderBy('trank')->orderByDesc('boost')
+                ->orderByRaw('score IS NULL, score DESC')->orderByRaw('rating_avg IS NULL, rating_avg DESC')->orderBy('price'),
+        };
+        $rows = $outer->orderBy('trank')->orderBy('lid')->forPage($page, $perPage)->get();
+
+        $meta = ['total' => $total, 'last_page' => max(1, (int) ceil($total / $perPage)), 'current_page' => $page, 'per_page' => $perPage];
+        if ($rows->isEmpty()) {
+            return [$meta, []];
+        }
+
+        $img = fn ($q) => $q->select('id', 'product_variant_id', 'product_id', 'path', 'disk', 'alt_text_en', 'alt_text_ar', 'position', 'is_primary')->orderBy('position')->limit(1);
+        $with = [
+            'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
+            'productVariant.images' => $img,
+            'productVariant.product.images' => $img,
+            'productVariant.product.category:id,name_en,name_ar,slug',
+            'productVariant.product.customAttributes',
+        ];
+        $models = [];
+        foreach ([
+            'admin' => [AdminListing::class, ['primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type']],
+            'vendor' => [VendorListing::class, ['vendor:id,store_name,store_rating_avg', 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type']],
+            'marketer' => [MarketerListing::class, ['marketer.marketerProfile', 'productVariant.product.brand']],
+        ] as $type => [$class, $extra]) {
+            $ids = $rows->where('ltype', $type)->pluck('lid')->all();
+            if ($ids) {
+                $models[$type] = $class::query()->whereIn('id', $ids)->with(array_merge($with, $extra))->get()->keyBy('id');
+            }
+        }
+        $all = collect($models)->flatten();
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($all));
+
+        $cards = [];
+        foreach ($rows as $r) {
+            $m = $models[$r->ltype][$r->lid] ?? null;
+            if (!$m) {
+                continue;
+            }
+            $cards[] = $this->toMixedCardShape($m, $m->productVariant->product, $country, in_array($m->id, $wishlistIds));
+        }
+
+        return [$meta, $cards];
+    }
+
+    /**
+     * Facets for the merged set, computed from the SAME union as the grid so
+     * counts always equal what the grid shows (not from the buy-box read model,
+     * which only knows one winner per product and would disagree with a
+     * listing-level, type-restricted grid).
+     */
+    public function mixedFacets(Country $country, array $types, ?array $categoryIds, array $filters): array
+    {
+        $empty = ['price_range' => ['min' => 0, 'max' => 0], 'attributes' => []];
+        $union = $categoryIds === [] ? null : $this->mixedIdQuery($country, $types, $categoryIds, $filters);
+        if (!$union) {
+            return $empty;
+        }
+        $range = DB::query()->fromSub($union, 'u')->selectRaw('MIN(price) as low, MAX(price) as high')->first();
+
+        // Filterable attributes that actually occur in the set (one grouped query).
+        $rows = DB::table('product_variant_attributes as pva')
+            ->join('attributes as a', 'a.id', '=', 'pva.attribute_id')
+            ->joinSub($union, 'u', 'u.variant_id', '=', 'pva.product_variant_id')
+            ->where('a.is_filterable', true)
+            ->groupBy('pva.attribute_id', 'pva.attribute_value_id')
+            ->selectRaw('pva.attribute_id, pva.attribute_value_id, COUNT(DISTINCT u.ltype, u.lid) as cnt')
+            ->get();
+
+        $attributes = [];
+        if ($rows->isNotEmpty()) {
+            $attrs = \App\Models\Attribute::query()->whereIn('id', $rows->pluck('attribute_id')->unique())
+                ->with('values')->orderBy('sort_order')->get();
+            $counts = $rows->groupBy('attribute_id');
+            foreach ($attrs as $attribute) {
+                $c = ($counts->get($attribute->id) ?? collect())->pluck('cnt', 'attribute_value_id');
+                $values = $attribute->values->filter(fn ($v) => isset($c[$v->id]))->map(fn ($v) => [
+                    'id' => $v->id, 'value' => \App\Support\Bilingual::pair($v, 'value'),
+                    'color_hex' => $v->color_hex, 'count' => (int) $c[$v->id],
+                ])->values()->all();
+                $attributes[] = [
+                    'id' => $attribute->id, 'code' => $attribute->code,
+                    'name' => \App\Support\Bilingual::pair($attribute, 'name'),
+                    'type' => $attribute->type->value, 'unit' => $attribute->unit, 'values' => $values,
+                ];
+            }
+        }
+
+        return ['price_range' => ['min' => (int) ($range->low ?? 0), 'max' => (int) ($range->high ?? 0)], 'attributes' => $attributes];
     }
 }

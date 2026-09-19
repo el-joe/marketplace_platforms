@@ -188,3 +188,11 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 - PASS: UI toggle verified in headless Chrome against the built bundle (checkbox disables search and dims picker, and reverts).
 - FIXED: create form used a plain POST and would show raw JSON; `custom-pages.js` now submits create via AJAX and follows `redirect`.
 - GAP: the Inherited Filters card (edit only) is server-rendered, so toggling all categories updates it only after save. RTL only checked by lang keys, not visually.
+
+## Custom pages A3: Storefront API (listing types + all categories)
+- FIXED: `GET /{country}/products?category=<custom-page>` now uses a dedicated merged path (`ProductController::customPageIndex`, `ListingQueryService::paginateMixed/mixedFacets`): one UNION of admin/vendor/marketer id queries, DB-paginated (no unbounded admin load), `meta.total/last_page` consistent.
+- FIXED: all-categories pages returned nothing (`whereIn([])`); ProductQueryService/ListingQueryService now use null-aware `getCategoryScopeForFilter`. Zero-category page returns a well-formed empty payload.
+- FIXED: marketer block added (card shape incl. referral info; stock from source listing). Inactive page and soft-deleted page slug -> 404.
+- Decision: sort is global across the merged set; relevance = admin (search_boost), vendor, marketer blocks, then score/rating/price. Facets (price range + filterable attributes present in the set) come from the same union as the grid, so counts equal the grid. Response `category` gains `listing_types`, `all_categories` (backward compatible). No cache on this path, so admin edits are visible immediately (tested).
+- PASS: admin-only, vendor-only, marketer-only, all types, category subset, zero-category, price/sort/brand/attr filters, pagination, guest+customer, 404s, plain category regression, query count < 60 (CustomPageProductsApiTest).
+- GAP: ListingDetailPerformanceTest::test_pdp_query_count_is_within_budget fails (62 > 56) on clean HEAD too; unrelated. EXPLAIN not run manually; queries use existing indexes (country/status, product category).

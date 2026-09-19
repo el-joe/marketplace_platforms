@@ -63,8 +63,21 @@ class ProductController extends Controller
         $customPage   = $resolvedSlug && $resolvedSlug['type'] === 'custom_page' ? $resolvedSlug['model'] : null;
 
         $categoryIds = !empty($filters['category'])
-            ? $categoryService->getCategoryIdsForFilter($filters['category'])
+            ? $categoryService->getCategoryScopeForFilter($filters['category'])
             : null;
+
+        // A slug whose target (custom page) was soft-deleted no longer resolves -> 404.
+        if (!empty($filters['category']) && !$resolvedSlug
+            && \App\Models\Slug::where('slug_url', $filters['category'])->exists()) {
+            abort(404);
+        }
+        // Inactive custom pages 404 (soft-deleted already fail resolveSlug).
+        if ($customPage && !$customPage->is_active) {
+            abort(404);
+        }
+        if ($customPage) {
+            return $this->customPageIndex($request, $country, $filters, $customPage, $perPage, $page);
+        }
 
         // ── Device & audience (same logic as HomeController) ─────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);
@@ -193,6 +206,47 @@ class ProductController extends Controller
                 'image_url'   => $pageEntity->image_url,
                 'has_filters' => (bool) $pageEntity->has_filters,
             ] : null,
+        ]);
+    }
+
+    /**
+     * Custom page grid: honours listing types + all-categories. One merged,
+     * DB-paginated set (admin + vendor + marketer) so total/last_page/items and
+     * facets are consistent. Not cached, so admin edits are visible immediately.
+     */
+    private function customPageIndex(ProductListRequest $request, Country $country, array $filters, \App\Models\CustomPage $customPage, int $perPage, int $page): JsonResponse
+    {
+        $scope = app(CategoryService::class)->resolveCustomPageScope($customPage);
+        $categoryIds = $scope['category_ids'];
+        $types = $scope['listing_types'];
+
+        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
+        [$meta, $cards] = $this->listings->paginateMixed($country, $types, $categoryIds, $filters, $page, $perPage, $wishlistIds);
+        $items = $cards ? $this->sponsored->inject($cards, $country, $page, 'category_top', null, $categoryIds ?? []) : [];
+        $facets = $this->listings->mixedFacets($country, $types, $categoryIds, $filters);
+
+        $pageBuilder = $this->resolvePageBuilder($country, $filters, null, $customPage, $this->pageBuilder->detectDevice($request), auth('customer')->check() ? 'authenticated' : 'guest');
+
+        return ApiResponse::success([
+            'items'  => ProductCardResource::collection(collect($items)),
+            'facets' => $facets,
+            'meta'   => [
+                'current_page' => $meta['current_page'],
+                'last_page'    => $meta['last_page'],
+                'per_page'     => $meta['per_page'],
+                'total'        => $meta['total'],
+            ],
+            'page_builder'     => $pageBuilder,
+            'has_page_builder' => $pageBuilder !== null,
+            'category'         => [
+                'id'            => $customPage->id,
+                'name'          => ['en' => $customPage->name_en, 'ar' => $customPage->name_ar],
+                'slug'          => $customPage->slugRecord?->slug_url,
+                'image_url'     => $customPage->image_url,
+                'has_filters'   => (bool) $customPage->has_filters,
+                'listing_types' => $types,
+                'all_categories' => (bool) $customPage->all_categories,
+            ],
         ]);
     }
 

@@ -53,7 +53,7 @@ class ProductQueryService
         ?array $categoryIds = null,
     ): LengthAwarePaginator {
         if ($categoryIds === null && !empty($filters['category'])) {
-            $categoryIds = app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
+            $categoryIds = app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
         }
 
         $builder = $this->baseQuery($country);
@@ -94,7 +94,7 @@ class ProductQueryService
     public function facets(Country $country, array $filters, ?array $categoryIds = null): array
     {
         if ($categoryIds === null && !empty($filters['category'])) {
-            $categoryIds = app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
+            $categoryIds = app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
         }
 
         $base = $this->baseQuery($country);
@@ -308,8 +308,11 @@ class ProductQueryService
             ->leftJoin('shipping_methods as sm', 'sm.id', '=', 'bb.shipping_method_id');
 
         if (!empty($filters['category'])) {
-            $categoryIds ??= app(CategoryService::class)->getCategoryIdsForFilter($filters['category']);
-            $builder->whereIn('bb.category_id', $categoryIds);
+            $categoryIds ??= app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
+            // null = all-categories custom page (no restriction)
+            if ($categoryIds !== null) {
+                $builder->whereIn('bb.category_id', $categoryIds);
+            }
         }
         if (!empty($filters['brand'])) {
             $builder->where('bb.brand_id', $filters['brand']);
