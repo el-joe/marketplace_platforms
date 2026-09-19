@@ -125,7 +125,7 @@ class CurrencyController extends Controller
     public function uploadSymbolImage(Request $request, string $code): JsonResponse
     {
         $request->validate([
-            'symbol_image' => ['required', 'image', 'max:512', 'mimes:png,jpg,jpeg,svg,webp'],
+            'symbol_image' => ['required', 'file', 'max:512', 'mimes:png,jpg,jpeg,svg,webp', 'mimetypes:image/png,image/jpeg,image/svg+xml,image/webp,text/xml,text/plain'],
         ]);
 
         $currency = Currency::findOrFail(strtoupper($code));
@@ -134,7 +134,17 @@ class CurrencyController extends Controller
             Storage::disk('public')->delete($currency->symbol_image);
         }
 
-        $path = $request->file('symbol_image')->store('currencies', 'public');
+        $file = $request->file('symbol_image');
+        if (strtolower($file->getClientOriginalExtension()) === 'svg') {
+            $svg = self::sanitizeSvg((string) file_get_contents($file->getRealPath()));
+            if ($svg === null) {
+                return response()->json(['success' => false, 'message' => 'Invalid SVG file.'], 422);
+            }
+            $path = 'currencies/' . \Illuminate\Support\Str::uuid() . '.svg';
+            Storage::disk('public')->put($path, $svg);
+        } else {
+            $path = $file->store('currencies', 'public');
+        }
 
         $currency->update(['symbol_image' => $path]);
 
@@ -143,6 +153,20 @@ class CurrencyController extends Controller
             'symbol_image_url' => Storage::disk('public')->url($path),
             'message' => "{$currency->code} symbol image updated.",
         ]);
+    }
+
+    public static function sanitizeSvg(string $svg): ?string
+    {
+        if (!preg_match('/<svg[\s>]/i', $svg)) {
+            return null;
+        }
+        $svg = preg_replace('#<script\b.*?</script\s*>#is', '', $svg);
+        $svg = preg_replace('#<(script|foreignObject|iframe|object|embed)\b[^>]*/?>#i', '', $svg);
+        $svg = preg_replace('/\son\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $svg);
+        $svg = preg_replace('/\s(?:xlink:)?href\s*=\s*("\s*(?!#)[^"]*"|\'\s*(?!#)[^\']*\')/i', '', $svg);
+        $svg = preg_replace('/javascript:/i', '', $svg);
+        $svg = preg_replace('#<!DOCTYPE[^>]*(\[.*?\])?>#is', '', $svg);
+        return $svg;
     }
 
     public function deleteSymbolImage(string $code): JsonResponse
