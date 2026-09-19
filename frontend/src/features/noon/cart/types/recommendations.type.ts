@@ -1,3 +1,4 @@
+import type { PromoBadge } from "@/types/globals";
 import { IProduct } from "@/types";
 
 export interface IRecommendations {
@@ -31,6 +32,7 @@ export interface Listing {
   product_variant: Product;
   product: Product;
   primary_image_url: string;
+  promo_badges?: PromoBadge[];
 }
 
 export enum Condition {

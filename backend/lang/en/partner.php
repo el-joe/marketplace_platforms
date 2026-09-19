@@ -2728,4 +2728,8 @@ return [
         'mobile' => 'Mobile',
         'creative_hint' => 'Upload a new desktop and mobile image to replace the current creative. It will be reviewed again before it goes live.',
     ],
+    'promo_badges_title'  => 'Promo badges',
+    'promo_badges_hint'   => "Rotating messages shown on the product card and page for this listing (max 10). If you add none, the product's default badges are shown.",
+    'promo_badges_save'   => 'Save',
+    'promo_badges_saved'  => 'Promo badges saved.',
 ];

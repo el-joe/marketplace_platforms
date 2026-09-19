@@ -85,6 +85,20 @@
         </a>
     </div>
 
+    <details class="bg-white rounded-xl border border-gray-200 mb-4">
+        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-800">{{ __('partner.promo_badges_title') }}</summary>
+        <form method="POST" action="{{ route('partner.listings.promo-badges.update', $listing) }}" class="p-4 border-t border-gray-100 space-y-4">
+            @csrf
+            @method('PUT')
+            @include('shared.promo-badges-editor', [
+                'badges' => $listing->promoBadges,
+                'title' => __('partner.promo_badges_title'),
+                'hint' => __('partner.promo_badges_hint'),
+            ])
+            <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium">{{ __('partner.promo_badges_save') }}</button>
+        </form>
+    </details>
+
     <div x-data="{ tab: '{{ request('tab', 'details') }}' }">
 
     {{-- Tab nav --}}

@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use App\Enums\ProductStatus;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Services\Shared\PromoBadgeSyncService;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
@@ -38,6 +39,13 @@ class StoreProductRequest extends FormRequest
             'seo_title' => ['nullable', 'string', 'max:70'],
             'seo_description' => ['nullable', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug'],
+
+            // Promo badges (product-level defaults)
+            ...array_merge(PromoBadgeSyncService::rules(), [
+                // Blank rows are tolerated (dropped by the sync); half-filled rows are not.
+                'promo_badges.*.label_en' => ['required_with:promo_badges.*.label_ar', 'nullable', 'string', 'max:100'],
+                'promo_badges.*.label_ar' => ['required_with:promo_badges.*.label_en', 'nullable', 'string', 'max:100'],
+            ]),
 
             // Variants (when has_variants = true)
             'variants' => ['nullable', 'array'],

@@ -203,6 +203,28 @@ class ListingController extends Controller
         return back()->with('success', 'تم تحديث السعر.');
     }
 
+    public function promoBadges(MarketerListing $listing): View
+    {
+        abort_unless($listing->marketer_id === $this->marketer()->id && $listing->product_variant_id, 403);
+
+        return view('marketer.listings.promo-badges', [
+            'listing' => $listing->load(['promoBadges', 'productVariant.product']),
+        ]);
+    }
+
+    public function updatePromoBadges(Request $request, MarketerListing $listing): RedirectResponse
+    {
+        abort_unless($listing->marketer_id === $this->marketer()->id && $listing->product_variant_id, 403);
+
+        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+
+        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+            $listing->productVariant->product_id, 'marketer_listing_id', $listing->id, $data['promo_badges'] ?? [],
+        );
+
+        return back()->with('success', __('marketer.promo_badges_saved'));
+    }
+
     /**
      * Archive (soft-delete) a listing.
      */

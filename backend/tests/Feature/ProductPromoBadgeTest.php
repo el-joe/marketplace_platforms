@@ -91,4 +91,86 @@ class ProductPromoBadgeTest extends TestCase
         $this->assertArrayNotHasKey('promo_badges', $array);
         $this->assertFalse($array['is_mega_deal']);
     }
+
+    public function test_listing_level_badges_are_excluded_from_product_level_relation(): void
+    {
+        $listing = \Tests\Support\MarketplaceScenario::make()->build()->vendorListingFbp;
+        $product = $listing->productVariant->product;
+
+        $productBadge = ProductPromoBadge::factory()->for($product)->create(['is_active' => true]);
+        $listingBadge = ProductPromoBadge::factory()->for($product)->create([
+            'vendor_listing_id' => $listing->id,
+            'is_active' => true,
+        ]);
+
+        $this->assertSame([$productBadge->id], $product->promoBadges()->pluck('id')->all());
+        $this->assertSame([$listingBadge->id], $listing->promoBadges()->pluck('id')->all());
+    }
+
+    public function test_sync_service_scopes_badges_to_vendor_admin_and_marketer_listings(): void
+    {
+        $sc = \Tests\Support\MarketplaceScenario::make()->build();
+        $productId = $sc->vendorListingFbp->productVariant->product_id;
+        $svc = app(\App\Services\Shared\PromoBadgeSyncService::class);
+        $row = fn (string $en) => [['label_en' => $en, 'label_ar' => $en . ' ar', 'icon_key' => 'Truck', 'is_active' => true]];
+
+        $svc->sync($productId, null, null, $row('product'));
+        $svc->sync($productId, 'vendor_listing_id', $sc->vendorListingFbp->id, $row('vendor'));
+        $svc->sync($productId, 'admin_listing_id', $sc->adminListing->id, $row('admin'));
+        $svc->sync($productId, 'marketer_listing_id', $sc->marketerListing->id, $row('marketer'));
+
+        $this->assertSame(['product'], ProductPromoBadge::productLevel()->pluck('label_en')->all());
+        $this->assertSame(['vendor'], $sc->vendorListingFbp->promoBadges()->pluck('label_en')->all());
+        $this->assertSame(['admin'], $sc->adminListing->promoBadges()->pluck('label_en')->all());
+        $this->assertSame(['marketer'], $sc->marketerListing->promoBadges()->pluck('label_en')->all());
+
+        // Re-syncing one owner with an empty list clears only that owner's rows.
+        $svc->sync($productId, 'admin_listing_id', $sc->adminListing->id, []);
+        $this->assertSame(0, $sc->adminListing->promoBadges()->count());
+        $this->assertSame(4 - 1, ProductPromoBadge::count());
+    }
+
+    public function test_check_constraint_rejects_two_owners_and_accepts_zero_or_one(): void
+    {
+        $sc = \Tests\Support\MarketplaceScenario::make()->build();
+        $productId = $sc->vendorListingFbp->productVariant->product_id;
+
+        ProductPromoBadge::factory()->create(['product_id' => $productId]);
+        ProductPromoBadge::factory()->create(['product_id' => $productId, 'vendor_listing_id' => $sc->vendorListingFbp->id]);
+        $this->assertSame(2, ProductPromoBadge::count());
+
+        $this->expectException(\Illuminate\Database\QueryException::class);
+        ProductPromoBadge::factory()->create([
+            'product_id' => $productId,
+            'vendor_listing_id' => $sc->vendorListingFbp->id,
+            'admin_listing_id' => $sc->adminListing->id,
+        ]);
+    }
+
+    public function test_icon_key_whitelist_rejects_unknown_and_accepts_known(): void
+    {
+        $v = fn (string $icon) => \Illuminate\Support\Facades\Validator::make(
+            ['promo_badges' => [['label_en' => 'a', 'label_ar' => 'b', 'icon_key' => $icon]]],
+            \App\Services\Shared\PromoBadgeSyncService::rules()
+        );
+
+        $this->assertTrue($v('Truck')->passes());
+        $this->assertTrue($v('NotAnIcon')->fails());
+        $this->assertArrayHasKey('promo_badges.0.icon_key', $v('NotAnIcon')->errors()->toArray());
+    }
+
+    public function test_sync_busts_storefront_caches_for_listing_and_product_level(): void
+    {
+        $sc = \Tests\Support\MarketplaceScenario::make()->build();
+        $productId = $sc->vendorListingFbp->productVariant->product_id;
+        $row = [['label_en' => 'x', 'label_ar' => 'y', 'icon_key' => 'Truck', 'is_active' => true]];
+
+        $spy = \Mockery::mock(\App\Services\Shared\PageCacheService::class)->shouldIgnoreMissing();
+        $spy->shouldReceive('bustVendorListing')->atLeast()->once();
+        $this->app->instance(\App\Services\Shared\PageCacheService::class, $spy);
+
+        $svc = app(\App\Services\Shared\PromoBadgeSyncService::class);
+        $svc->sync($productId, 'vendor_listing_id', $sc->vendorListingFbp->id, $row);
+        $svc->sync($productId, null, null, $row);
+    }
 }

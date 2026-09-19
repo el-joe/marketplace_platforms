@@ -5,7 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import useLocale from "@/src/hooks/use-locale";
 import { useCartContext } from "@/src/providers/cart-provider";
 import { ShippingGroupItem, ShippingMethod } from "@/types/cart.type";
-import { CarIcon, StoreIcon, Trash2Icon, TruckIcon, XIcon } from "lucide-react";
+import { StoreIcon, Trash2Icon, TruckIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import CouponDetailsModal from "./coupon-details-modal";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 
 type Props = {
   item: ShippingGroupItem;
@@ -154,14 +155,12 @@ export default function CartItem({
                 </SwiperSlide>
               ))}
           </Swiper>
-          <AnimatedBadge
-            badges={[
-              { icon: CarIcon, label: "Free shipping", iconColor: "red" },
-              { icon: CarIcon, label: "Free shipping2", iconColor: "green" },
-              { icon: CarIcon, label: "Free shipping3", iconColor: "blue" },
-            ]}
-            size="sm"
-          />
+          {!!item.promo_badges?.length && (
+            <AnimatedBadge
+              badges={mapPromoBadges(item.promo_badges, locale)}
+              size="sm"
+            />
+          )}
           {/* features */}
           <div className="flex gap-2 flex-wrap">
             {isFreeShipping && (

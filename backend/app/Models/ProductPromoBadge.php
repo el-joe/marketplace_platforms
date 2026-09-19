@@ -19,6 +19,9 @@ class ProductPromoBadge extends Model
 
     protected $fillable = [
         'product_id',
+        'vendor_listing_id',
+        'admin_listing_id',
+        'marketer_listing_id',
         'label_en',
         'label_ar',
         'icon_key',
@@ -32,6 +35,12 @@ class ProductPromoBadge extends Model
         'sort_order' => 'integer',
         'is_active'  => 'boolean',
     ];
+
+    /** Product-level (admin-managed) badges: not attached to any listing. */
+    public function scopeProductLevel($query)
+    {
+        return $query->whereNull('vendor_listing_id')->whereNull('admin_listing_id')->whereNull('marketer_listing_id');
+    }
 
     public function product(): BelongsTo
     {

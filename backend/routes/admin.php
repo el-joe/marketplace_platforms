@@ -127,25 +127,25 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     // ─── Products ─────────────────────────────────────────────────────────────────
     Route::prefix('products')->name('products.')->middleware('admin.permission:products.view')->group(function () {
         // Specific paths BEFORE the {product} wildcard
-        Route::get('/create', [ProductController::class, 'create'])->name('create');
+        Route::get('/create', [ProductController::class, 'create'])->name('create')->middleware('admin.permission:products.create');
         Route::post('/datatable', [ProductController::class, 'datatable'])->name('datatable');
         Route::post('/bulk', [ProductController::class, 'bulkAction'])->name('bulk');
         Route::post('/generate-variants', [ProductController::class, 'generateVariants'])->name('generate-variants');
         Route::post('/upload-image', [ProductController::class, 'uploadImage'])->name('upload-image');
         Route::get('/check-duplicate', [ProductController::class, 'checkDuplicate'])->name('check-duplicate');
         Route::get('/check-gtin', [ProductController::class, 'checkGtin'])->name('check-gtin');
-        Route::post('/validate', [ProductController::class, 'validateStore'])->name('validate');
+        Route::post('/validate', [ProductController::class, 'validateStore'])->name('validate')->middleware('admin.permission:products.create');
         Route::delete('/delete-image/{mediaId}', [ProductController::class, 'deleteImage'])->name('delete-image');
         Route::post('/country-settings/{setting}', [ProductController::class, 'updateCountrySetting'])->name('update-country-setting');
 
         // CRUD
         Route::get('/', [ProductController::class, 'index'])->name('index');
-        Route::post('/', [ProductController::class, 'store'])->name('store');
+        Route::post('/', [ProductController::class, 'store'])->name('store')->middleware('admin.permission:products.create');
         Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
         Route::post('/{product}/reorder-images', [ProductController::class, 'reorderImages'])->name('reorder-images');
         Route::get('/{product}/country-settings', [ProductController::class, 'countrySettings'])->name('country-settings');
-        Route::post('/{product}/validate', [ProductController::class, 'validateUpdate'])->name('validate-update');
-        Route::put('/{product}', [ProductController::class, 'update'])->name('update');
+        Route::post('/{product}/validate', [ProductController::class, 'validateUpdate'])->name('validate-update')->middleware('admin.permission:products.edit');
+        Route::put('/{product}', [ProductController::class, 'update'])->name('update')->middleware('admin.permission:products.edit');
         Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
         Route::patch('/{product}/hide', [ProductController::class, 'hide'])->name('hide');
         Route::patch('/{product}/restore', [ProductController::class, 'restore'])->name('restore');
@@ -1521,6 +1521,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
                 ->middleware('admin.permission:admin_listings.toggle_status')->name('activate');
             Route::post('/{adminListing}/toggle-status', [\App\Http\Controllers\Admin\AdminListingController::class, 'toggleStatus'])
                 ->middleware('admin.permission:admin_listings.toggle_status')->name('toggle-status');
+            Route::put('/{adminListing}/promo-badges', [\App\Http\Controllers\Admin\AdminListingController::class, 'updatePromoBadges'])
+                ->middleware('admin.permission:admin_listings.edit')->name('promo-badges.update');
             Route::post('/{adminListing}/reference', [\App\Http\Controllers\Admin\AdminListingController::class, 'saveReference'])
                 ->middleware('admin.permission:admin_listings.edit')->name('save-reference');
             Route::patch('/{adminListing}/status', [\App\Http\Controllers\Admin\AdminListingController::class, 'updateStatus'])

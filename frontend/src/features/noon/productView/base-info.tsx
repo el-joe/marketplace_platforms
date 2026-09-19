@@ -3,13 +3,11 @@ import { Link } from "@/i18n/navigation";
 import Price from "@/src/components/shared/Price";
 import { RatingStars } from "@/src/components/ui/RatingStars";
 import {
-  CarIcon,
   // BadgeCheckIcon,
   ChevronLeft,
   ChevronRight,
   CircleStarIcon,
   StarIcon,
-  TruckIcon,
 } from "lucide-react";
 import React from "react";
 import { IProductDetails } from "./types";
@@ -20,22 +18,12 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import StanderWarrantyDialog from "./dialogs/stander-warranty-dialog";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 import useCountDown from "@/src/hooks/useCountDown";
 import InternationalShippingIndicator from "@/src/components/shared/international-shipping-indicator";
 
 type Props = {
   product: IProductDetails;
-};
-
-const PROMO_BADGE_ICONS: Record<
-  string,
-  React.ForwardRefExoticComponent<
-    Omit<React.ComponentProps<typeof CarIcon>, "ref"> &
-      React.RefAttributes<SVGSVGElement>
-  >
-> = {
-  car: CarIcon,
-  truck: TruckIcon,
 };
 
 export default function BaseInfo({ product }: Props) {
@@ -154,11 +142,7 @@ export default function BaseInfo({ product }: Props) {
         />
         {!!product.promo_badges?.length && (
           <AnimatedBadge
-            badges={product.promo_badges.map((badge) => ({
-              label: badge.label[locale],
-              icon: PROMO_BADGE_ICONS[badge.icon_key] || CarIcon,
-              iconColor: badge.color_hex,
-            }))}
+            badges={mapPromoBadges(product.promo_badges, locale)}
             containerClasses="px-2! bg-gray-2! rounded-md!"
           />
         )}

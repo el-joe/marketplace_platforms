@@ -475,6 +475,14 @@ class PageBuilderService
         }
 
         if ($b->blockProducts->isNotEmpty()) {
+            $primeTuples = [];
+            foreach ($b->blockProducts as $bp) {
+                $l = $this->adminListingsByVariant[$bp->productVariant?->id][0] ?? $this->vendorListingsByVariant[$bp->productVariant?->id][0] ?? null;
+                if ($l) {
+                    $primeTuples[] = [\App\Services\Customer\PromoBadgeResolver::typeOf($l), $l->id, $bp->productVariant->product_id];
+                }
+            }
+            \App\Services\Customer\PromoBadgeResolver::instance()->prime($primeTuples);
             $data['products'] = $b->blockProducts
                 ->filter(fn ($bp) => $bp->productVariant?->product !== null)
                 ->map(function ($bp) use ($country) {
@@ -743,6 +751,9 @@ class PageBuilderService
     private function productsToCards(Collection $products, Country $country): array
     {
         $buyBox = $this->unifiedQuery->getBuyBoxForProducts($products, $country);
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(
+            $products->map(fn (Product $p) => isset($buyBox[$p->id]) ? [\App\Services\Customer\PromoBadgeResolver::typeOf($buyBox[$p->id]), $buyBox[$p->id]->id, $p->id] : null)->filter()->values()
+        );
 
         return $products
             ->map(fn (Product $p) => [$p, $buyBox[$p->id] ?? null])
@@ -784,6 +795,8 @@ class PageBuilderService
             ])
             ->get()
             ->filter(fn($s) => $s->vendorListing && $s->vendorListing->productVariant?->product);
+
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($submissions->pluck('vendorListing')));
 
         return $submissions
             ->sortBy(fn ($s) => self::BUY_BOX_ORDER[$s->vendorListing->global_system_type->value] ?? 3)

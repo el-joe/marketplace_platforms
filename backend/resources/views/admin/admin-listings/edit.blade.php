@@ -14,6 +14,18 @@
         @include('admin.admin-listings._form', ['listing' => $listing])
     </form>
 
+    <form method="POST" action="{{ route('admin.admin-listings.promo-badges.update', $listing) }}"
+          class="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mt-6 space-y-4">
+        @csrf
+        @method('PUT')
+        @include('shared.promo-badges-editor', [
+            'badges' => $listing->promoBadges,
+            'title' => __('admin.products.tab_promo_badges'),
+            'hint' => __('admin.promo_badges.listing_hint'),
+        ])
+        <button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium">{{ __('common.save') }}</button>
+    </form>
+
     @include('admin.admin-listings._ships_to', [
         'listing' => $listing,
         'shipsToCountries' => $shipsToCountries,

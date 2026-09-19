@@ -101,6 +101,9 @@
                                     </button>
                                 </form>
 
+                                <a href="{{ route('marketer.listings.promo-badges.edit', $listing) }}"
+                                   class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 hover:opacity-80">{{ __('marketer.promo_badges_button') }}</a>
+
                                 {{-- Update price inline --}}
                                 <form method="POST" action="{{ route('marketer.listings.update-price', $listing) }}"
                                       x-data="{ open: false }" class="relative">

@@ -1,4 +1,5 @@
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
+import { PromoBadge } from "./globals";
 
 export interface IWishlist {
   group: IWishlistGroup;
@@ -19,6 +20,7 @@ export interface Item {
   added_at: Date;
   listing_type: string;
   listing: Listing;
+  promo_badges?: PromoBadge[];
 }
 
 export interface Listing {
@@ -41,6 +43,7 @@ export interface Listing {
   vendor_covers_delivery: boolean;
   product: Product;
   variant: Variant;
+  promo_badges?: PromoBadge[];
 }
 
 export interface Product {

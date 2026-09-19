@@ -10,9 +10,7 @@ import {
   ChevronRight,
   ChevronRightIcon,
   HeartIcon,
-  icons,
   StarIcon,
-  TagIcon,
 } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
@@ -26,6 +24,7 @@ import { useTranslations } from "next-intl";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { AdBadge } from "./ad-badge";
 import AnimatedBadge from "./animated-badge";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 import useCountDown from "@/src/hooks/useCountDown";
 import InternationalShippingIndicator from "./international-shipping-indicator";
 
@@ -220,11 +219,7 @@ const ProductCard = ({ productData }: Props) => {
           {!!productData.promo_badges?.length && (
             <AnimatedBadge
               size="sm"
-              badges={productData.promo_badges.map((badge) => ({
-                label: badge.label?.[locale] ?? badge.label?.en ?? "",
-                icon: icons[badge.icon_key as keyof typeof icons] ?? TagIcon,
-                iconColor: badge.color_hex,
-              }))}
+              badges={mapPromoBadges(productData.promo_badges, locale)}
               containerClasses="mb-1"
             />
           )}

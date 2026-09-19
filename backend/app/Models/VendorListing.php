@@ -165,4 +165,10 @@ class VendorListing extends Model
             LIMIT 1
         )', [$countryId]);
     }
+
+    /** Partner-managed rotating promo badges for this listing (all, incl. inactive). */
+    public function promoBadges(): HasMany
+    {
+        return $this->hasMany(ProductPromoBadge::class)->orderBy('sort_order');
+    }
 }

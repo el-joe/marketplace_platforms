@@ -131,6 +131,8 @@ class ProductController extends Controller
 
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings(collect($adminListings)->concat($paginator->items())));
+
         // ── Admin cards (deduplicated against each other by product_variant_id) ──
         $seenVariantIds = [];
         $adminItems     = [];

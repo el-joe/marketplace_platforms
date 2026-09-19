@@ -100,7 +100,6 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
-                    'productVariant.product.promoBadges',
                     'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
@@ -117,7 +116,6 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
-                    'productVariant.product.promoBadges',
                     'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
@@ -260,7 +258,6 @@ class ListingDetailController extends Controller
                     'productVariant.product.brand',
                     'productVariant.product.highlights',
                     'productVariant.product.specifications',
-                    'productVariant.product.promoBadges',
                     'productVariant.product.customAttributes',
                     'productVariant.variantAttributes.attribute',
                     'productVariant.variantAttributes.attributeValue',
@@ -280,7 +277,6 @@ class ListingDetailController extends Controller
                         'productVariant.product.brand',
                         'productVariant.product.highlights',
                         'productVariant.product.specifications',
-                        'productVariant.product.promoBadges',
                         'productVariant.product.customAttributes',
                         'productVariant.variantAttributes.attribute',
                         'productVariant.variantAttributes.attributeValue',
@@ -507,19 +503,11 @@ class ListingDetailController extends Controller
             'is_mega_deal' => $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country),
             'is_flash_sale' => $flashSaleEndsAt !== null,
             'flash_sale_ends_at' => $flashSaleEndsAt?->toISOString(),
-            'promo_badges' => $product->relationLoaded('promoBadges')
-                ? $product->promoBadges->map(fn($b) => [
-                    'id' => $b->id,
-                    'label' => [
-                        'ar' => $b->label_ar,
-                        'en' => $b->label_en,
-                    ],
-                    'icon_key' => $b->icon_key,
-                    'color_hex' => $b->color_hex,
-                    'text_color_hex' => $b->text_color_hex,
-                    'sort_order' => $b->sort_order,
-                ])->values()->all()
-                : [],
+            'promo_badges' => \App\Services\Customer\PromoBadgeResolver::instance()->forOne(
+                $listing instanceof VendorListing ? 'vendor' : ($listing instanceof AdminListing ? 'admin' : 'marketer'),
+                $listing->id,
+                $product->id,
+            ),
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
             'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
                 ? $product->customAttributes->map(fn($a) => [
@@ -844,6 +832,11 @@ class ListingDetailController extends Controller
 
         $buyBox = $this->unifiedQuery->getBuyBoxForProducts($candidates, $country);
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(
+            collect($candidates)->map(fn ($p) => ($buyBox[$p->id] ?? null)
+                ? [\App\Services\Customer\PromoBadgeResolver::typeOf($buyBox[$p->id]), $buyBox[$p->id]->id, $p->id]
+                : null)->filter()->values()
+        );
 
         return $candidates
             ->map(fn($p) => [$p, $buyBox[$p->id] ?? null])

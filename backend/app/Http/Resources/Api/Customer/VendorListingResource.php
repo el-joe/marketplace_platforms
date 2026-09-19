@@ -60,6 +60,7 @@ class VendorListingResource extends JsonResource
             'status' => $listing->status?->value,
             'rating_avg' => (float) $listing->rating_avg,
             'rating_count' => (int) $listing->rating_count,
+            'promo_badges' => \App\Services\Customer\PromoBadgeResolver::instance()->lookup('vendor', $listing->id, $product->id),
             'total_sold' => (int) $listing->total_sold,
             'vendor_covers_delivery' => (bool) $listing->vendor_covers_delivery,
             // docs/plans/international_product_shipping.md Phase 6 — "Ships

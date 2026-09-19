@@ -2,6 +2,7 @@ import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Warranty } from "@/src/features/noon/productView/types/product-details";
 import { PlacementBanner } from "@/src/types/placement-banner";
 import { IProduct } from "@/types/product.type";
+import { PromoBadge } from "./globals";
 import { ImageDTO } from "@/src/types/media";
 
 export interface ICart {
@@ -162,6 +163,7 @@ export interface WarrantyPlanSummary {
 }
 
 export interface ShippingGroupItem {
+  promo_badges?: PromoBadge[];
   id: string;
   quantity: number;
   unit_price: number;

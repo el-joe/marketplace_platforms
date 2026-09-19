@@ -272,6 +272,7 @@ class ProductController extends Controller
         $this->syncImages($id, $request->input('images', []));
 
         $this->syncHighlights($id, $request->input('highlights', []));
+        $this->syncPromoBadges($id, $request->input('promo_badges', []));
         $this->syncSpecifications($id, $request->input('specifications', []));
 
         DB::commit();
@@ -418,7 +419,7 @@ class ProductController extends Controller
             'existingAttrValues' => $existingAttrValueIds,
             'highlights' => $highlights,
             'specifications' => $specifications,
-            'promoBadges' => ProductPromoBadge::query()->where('product_id', $product)->orderBy('sort_order')->get(),
+            'promoBadges' => ProductPromoBadge::query()->where('product_id', $product)->productLevel()->orderBy('sort_order')->get(),
         ]));
     }
 
@@ -1503,37 +1504,25 @@ class ProductController extends Controller
 
     private function syncPromoBadges(string $productId, array $badges): void
     {
-        $rows = collect($badges)
-            ->filter(fn($b) => filled($b['label_en'] ?? null) && filled($b['label_ar'] ?? null))
-            ->values();
+        $before = $this->badgeLabels(ProductPromoBadge::query()->where('product_id', $productId)->productLevel()->orderBy('sort_order')->get());
+        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync($productId, null, null, $badges);
+        $after = $this->badgeLabels(ProductPromoBadge::query()->where('product_id', $productId)->productLevel()->orderBy('sort_order')->get());
 
-        $incomingIds = $rows->pluck('id')->filter()->values()->all();
-
-        ProductPromoBadge::query()
-            ->where('product_id', $productId)
-            ->when(!empty($incomingIds), fn($q) => $q->whereNotIn('id', $incomingIds))
-            ->delete();
-
-        foreach ($rows as $i => $b) {
-            $payload = [
-                'label_en' => $b['label_en'],
-                'label_ar' => $b['label_ar'],
-                'icon_key' => $b['icon_key'] ?: 'Tag',
-                'color_hex' => $b['color_hex'] ?? '#1a1a2e',
-                'text_color_hex' => $b['text_color_hex'] ?? '#FFFFFF',
-                'sort_order' => $i,
-                'is_active' => filter_var($b['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            ];
-
-            if (filled($b['id'] ?? null)) {
-                ProductPromoBadge::query()
-                    ->where('product_id', $productId)
-                    ->where('id', $b['id'])
-                    ->update($payload);
-            } else {
-                ProductPromoBadge::create($payload + ['product_id' => $productId]);
-            }
+        if ($before !== $after) {
+            app(\App\Services\ActivityLoggerService::class)->log(
+                description: 'Product promo badges changed',
+                subject: Product::query()->find($productId),
+                causer: auth('admin')->user(),
+                properties: ['before' => $before, 'after' => $after],
+                logName: 'catalog',
+                event: 'promo_badges_changed',
+            );
         }
+    }
+
+    private function badgeLabels($badges): array
+    {
+        return collect($badges)->map(fn ($b) => ['label_en' => $b->label_en, 'label_ar' => $b->label_ar, 'is_active' => (bool) $b->is_active])->values()->all();
     }
 
     private function syncHighlights(string $productId, array $highlights, bool $update = false): void

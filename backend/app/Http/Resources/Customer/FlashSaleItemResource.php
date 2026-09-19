@@ -33,6 +33,7 @@ class FlashSaleItemResource extends JsonResource
                 'slug' => $product?->slug,
                 'image' => $imageUrl,
             ],
+            'promo_badges' => $listing ? \App\Services\Customer\PromoBadgeResolver::instance()->lookup('vendor', $listing->id, $product?->id) : [],
             'flash_price' => (int) $this->flash_price,
             'original_price' => (int) $this->original_price,
             'currency' => $this->flash_price_currency,

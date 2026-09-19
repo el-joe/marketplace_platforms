@@ -15,6 +15,8 @@ import SectionTitle from "./section-title";
 import { chunks } from "../helpers/chunks-arr";
 import { getImageURL } from "@/src/helpers/get-image-url";
 import { getListingImage } from "@/src/types/media";
+import AnimatedBadge from "@/src/components/shared/animated-badge";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 
 export const FlashSale = ({ data }: { data: Block }) => {
   const chunksRows = chunks(data?.products || [], 2);
@@ -92,6 +94,12 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
             {locale === "ar" ? p.name_ar : p.name_en}
           </h4>
           <Price currency={p.currency} currentPrice={p.price} />
+          {!!p.promo_badges?.length && (
+            <AnimatedBadge
+              size="sm"
+              badges={mapPromoBadges(p.promo_badges, locale)}
+            />
+          )}
         </div>
       </div>
       <div className="text-center bg-black text-white">

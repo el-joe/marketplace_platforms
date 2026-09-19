@@ -198,4 +198,10 @@ class AdminListing extends Model
             LIMIT 1
         )', [$countryId]);
     }
+
+    /** Rotating promo badges attached to this listing (incl. inactive). */
+    public function promoBadges(): HasMany
+    {
+        return $this->hasMany(ProductPromoBadge::class)->orderBy('sort_order');
+    }
 }

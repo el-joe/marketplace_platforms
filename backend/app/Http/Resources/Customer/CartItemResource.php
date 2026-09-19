@@ -53,6 +53,7 @@ class CartItemResource extends JsonResource
                 'id'         => $listing->vendor->id,
                 'store_name' => $listing->vendor->store_name,
             ] : null,
+            'promo_badges' => $listing ? \App\Services\Customer\PromoBadgeResolver::instance()->lookup($isMarketer ? 'marketer' : ($isAdmin ? 'admin' : 'vendor'), $listing->id, $product?->id) : [],
             'is_admin_listing' => $isAdmin,
             'listing_type' => $isMarketer ? 'marketer' : ($isAdmin ? 'admin' : 'vendor'),
             'shipping_badge'   => (!$isMarketer && $listing?->primaryShippingMethod) ? [

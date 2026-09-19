@@ -201,16 +201,18 @@ class ProductQueryService
         $imagesByVariant = $this->imageResolver->forVariants($variantIds);
 
         $productIds = $rows->pluck('id')->filter()->unique()->values();
-        $promoBadgesByProduct = $this->promoBadgesForProducts($productIds);
+        $promoBadges = PromoBadgeResolver::instance()->resolve(
+            $rows->map(fn ($r) => [$r->buy_box_listing_type ?? null, $r->buy_box_listing_id ?? null, $r->id])
+        );
         $megaDealProductIds = $this->pageBuilder->activeMegaDealProductIds($productIds, $country);
         $flashSaleEndsAtByProduct = $this->flashSale->activeFlashSaleEndsAtByProduct($productIds, $country);
 
         $items = ProductListResource::collection($rows)
-            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadgesByProduct, $megaDealProductIds, $flashSaleEndsAtByProduct) {
+            ->map(function (ProductListResource $r) use ($wishlistIds, $imagesByVariant, $promoBadges, $megaDealProductIds, $flashSaleEndsAtByProduct) {
                 $r->resource->is_sponsored = false;
                 $r->resource->is_wishlisted = in_array($r->resource->id, $wishlistIds);
                 $r->resource->resolved_images = $imagesByVariant[$r->resource->buy_box_variant_id] ?? [];
-                $r->resource->promo_badges = $promoBadgesByProduct[$r->resource->id] ?? [];
+                $r->resource->promo_badges = $promoBadges[PromoBadgeResolver::key($r->resource->buy_box_listing_type ?? null, $r->resource->buy_box_listing_id ?? null, $r->resource->id)] ?? [];
                 $flashSaleEndsAt = $flashSaleEndsAtByProduct->get($r->resource->id);
                 // Flash sale takes precedence over mega deal when both apply
                 // (edge case) — a product never shows both badges.
@@ -410,37 +412,5 @@ class ProductQueryService
             ->pluck('product_variants.product_id');
 
         return $vendorProductIds->merge($adminProductIds)->unique()->toArray();
-    }
-
-    /**
-     * Batched active promo-badge lookup for a page of product ids (mirrors
-     * the ListingImageResolver batching pattern above — never per-row).
-     *
-     * @param  \Illuminate\Support\Collection<int, string>  $productIds
-     * @return array<string, array<int, array<string, mixed>>>
-     */
-    private function promoBadgesForProducts($productIds): array
-    {
-        if ($productIds->isEmpty()) {
-            return [];
-        }
-
-        return \App\Models\ProductPromoBadge::whereIn('product_id', $productIds)
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get()
-            ->groupBy('product_id')
-            ->map(fn ($badges) => $badges->map(fn ($b) => [
-                'id'             => $b->id,
-                'label'          => [
-                    'ar' => $b->label_ar,
-                    'en' => $b->label_en,
-                ],
-                'icon_key'       => $b->icon_key,
-                'color_hex'      => $b->color_hex,
-                'text_color_hex' => $b->text_color_hex,
-                'sort_order'     => $b->sort_order,
-            ])->values()->all())
-            ->all();
     }
 }

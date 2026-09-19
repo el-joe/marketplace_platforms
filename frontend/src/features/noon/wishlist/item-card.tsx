@@ -11,6 +11,8 @@ import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Swiper as SwiperType } from "swiper/types";
 import WishlistItemOptionsMenu from "./item-options-menu";
+import AnimatedBadge from "@/src/components/shared/animated-badge";
+import { mapPromoBadges } from "@/src/lib/promo-badges";
 import CartButton from "../productView/cart-button";
 
 type Props = {
@@ -101,6 +103,15 @@ export default function ItemCard({ item }: Props) {
               currentPrice={item.listing.price}
               size="sm"
             />
+            {!!(item.listing.promo_badges ?? item.promo_badges)?.length && (
+              <AnimatedBadge
+                size="sm"
+                badges={mapPromoBadges(
+                  item.listing.promo_badges ?? item.promo_badges,
+                  locale,
+                )}
+              />
+            )}
             {/* bottom badge */}
             {/* <div className="flex w-fit bg-blue font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1">
               <span>⚡GET IN </span>

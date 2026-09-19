@@ -52,6 +52,8 @@ class SponsoredProductService
             return $items;
         }
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($sponsored));
+
         foreach ($slots as $position) {
             if ($sponsored->isEmpty()) {
                 break;

@@ -71,6 +71,7 @@ class SearchService
             collect($paginator->items())->pluck('productVariant.id')->filter()->unique()->values()
         );
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($paginator->items()));
         $items = [];
         foreach ($paginator as $listing) {
             $product = $listing->productVariant->product;
@@ -90,6 +91,7 @@ class SearchService
             $adminListings->pluck('productVariant.id')->filter()->unique()->values()
         );
 
+        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($adminListings));
         $adminItems = $adminListings->map(function (AdminListing $al) use ($country, $wishlistIds) {
             $product = $al->productVariant->product;
             return $this->listings->toAdminCardShape($al, $product, $country,
