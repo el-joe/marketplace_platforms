@@ -161,3 +161,9 @@ Ran with DB_DATABASE=marketplace_test_fu; 21 tests / 104 assertions green across
 | F14 Warranty/invoice | FIXED/GAP | country param bug fixed; invoice JSON not PDF |
 | F15 Currency symbol | FIXED/GAP | SVG sanitiser; admin/partner Blade don't render image symbols |
 | F17 Specialty directory | FIXED | QR v6 API, specialty fields |
+
+### Frontend QC sweep
+- `tsc --noEmit`: only pre-existing `.next/**/validator.ts` errors (checkout routes); none in changed files. eslint on changed files: 0 errors (3 jsx-no-literals warnings in custom-attributes-modal).
+- en/ar locale keys `shop.cantFindIt`, `shop.sendSpecialRequest` present in both.
+- custom-attributes-modal: text/number/select/checkbox/notes render correctly; fixed required checkbox (unchecked "0" previously passed validation).
+- FloatingCartButton forwards hasCustomAttributes/customAttributes to CartButton, which owns the modal and passes values to use-cart (`custom_attribute_values`).

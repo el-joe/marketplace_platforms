@@ -48,7 +48,11 @@ export default function CustomAttributesModal({
 
   const handleSubmit = () => {
     const missing = sorted.find(
-      (attr) => attr.is_required && !values[attr.id]?.trim(),
+      (attr) =>
+        attr.is_required &&
+        (attr.type === "checkbox"
+          ? values[attr.id] !== "1"
+          : !values[attr.id]?.trim()),
     );
     if (missing) {
       setError(`${missing.label} is required`);
