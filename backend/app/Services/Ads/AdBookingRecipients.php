@@ -12,7 +12,12 @@ class AdBookingRecipients
     /** Admins allowed to review paid ad bookings. */
     public static function reviewers(): Collection
     {
-        return Admin::permission('ad_bookings.review')->get();
+        // Spatie throws PermissionDoesNotExist if the permission was never seeded.
+        try {
+            return Admin::permission('ad_bookings.review')->get();
+        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+            return collect();
+        }
     }
 
     /** Vendor or marketer admins who own the booking's advertiser account. */

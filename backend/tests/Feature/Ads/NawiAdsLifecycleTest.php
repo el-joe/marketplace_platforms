@@ -22,8 +22,6 @@ class NawiAdsLifecycleTest extends TestCase
     {
         $s = MarketplaceScenario::make()->build();
         Admin::factory()->create();
-        // Reviewer notifications query this permission; it is not seeded in the test DB.
-        \Spatie\Permission\Models\Permission::findOrCreate('ad_bookings.review', 'admin');
         $this->seed(NawiAdsSlotSeeder::class);
 
         $slot = PaidAdSlot::where('slot_code', $slotCode)->firstOrFail();

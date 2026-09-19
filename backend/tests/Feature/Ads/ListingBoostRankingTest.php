@@ -98,4 +98,47 @@ class ListingBoostRankingTest extends TestCase
         PaidAdBooking::query()->update(['status' => 'cancelled']);
         $this->assertCount(2, $this->ids($s));
     }
+
+    public function test_tier_ordering_popup_then_plain_then_unboosted(): void
+    {
+        $s = MarketplaceScenario::make()->build();
+        app(BuyBoxRebuildService::class)->rebuildCountry($s->country);
+
+        $clone = function () use ($s): array {
+            $prod = (array) DB::table('products')->where('id', $s->product->id)->first();
+            $id = (string) Str::uuid();
+            $prod['id'] = $id;
+            $prod['slug'] = 'clone-'.Str::random(6);
+            foreach (['sku', 'code'] as $k) {
+                if (array_key_exists($k, $prod) && $prod[$k] !== null) {
+                    $prod[$k] = $prod[$k].'-'.Str::random(3);
+                }
+            }
+            DB::table('products')->insert($prod);
+            $bb = (array) DB::table('product_country_buybox')->where('product_id', $s->product->id)->first();
+            $bb['product_id'] = $id;
+
+            return [$id, $bb];
+        };
+
+        [$plainId, $bbPlain] = $clone();
+        [$freeId, $bbFree] = $clone();
+        $popup = $s->vendorListingFbp;
+        $plainListing = $s->vendorListingFbp->replicate();
+        $plainListing->id = (string) Str::uuid();
+        $plainListing->save();
+
+        DB::table('product_country_buybox')->where('product_id', $s->product->id)
+            ->update(['listing_type' => 'vendor', 'listing_id' => $popup->id]);
+        $bbPlain['listing_type'] = 'vendor';
+        $bbPlain['listing_id'] = $plainListing->id;
+        $bbFree['listing_id'] = (string) Str::uuid();
+        DB::table('product_country_buybox')->insert($bbPlain);
+        DB::table('product_country_buybox')->insert($bbFree);
+
+        $this->book($s, $this->slot($s, false), $plainListing);
+        $this->book($s, $this->slot($s, true), $popup);
+
+        $this->assertSame([$s->product->id, $plainId, $freeId], $this->ids($s));
+    }
 }

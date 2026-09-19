@@ -370,7 +370,7 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
-                        'label' => __('admin.nav.ad_slots'),
+                        'label' => 'Nawi Ads',
                         'route' => 'admin.ad-slots.index',
                         'icon' => 'rectangle-stack',
                         'permission' => 'ad_campaigns.view',
@@ -629,14 +629,6 @@ class NavigationService
                         'route' => 'admin.subscriptions.invoices.index',
                         'icon' => 'document-text',
                         'permission' => 'transactions.view',
-                        'badge' => null,
-                    ],
-                    [
-                        'label' => 'Nawi Ads',
-                        'route' => 'admin.ad-slots.index',
-                        'route_params' => ['target_type' => 'listing_promotion'],
-                        'icon' => 'megaphone',
-                        'permission' => 'ad_slots.view',
                         'badge' => null,
                     ],
                 ],
