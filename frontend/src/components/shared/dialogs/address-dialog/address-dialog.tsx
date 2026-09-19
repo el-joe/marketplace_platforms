@@ -59,7 +59,7 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
       <DialogTrigger render={triggerButton} />
       <DialogContent
         className={
-          "lg:min-w-3xl! lg:w-[50vw]  max-w-7xl! h-[70vh] flex flex-col"
+          "lg:min-w-3xl! lg:w-[50vw]  max-w-7xl! lg:h-[70vh] max-h-[95vh] overflow-auto flex flex-col"
         }
       >
         <DialogHeader className="hidden lg:flex flex-row items-center justify-between pe-9">
