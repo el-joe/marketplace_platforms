@@ -528,7 +528,7 @@ class CheckoutController extends Controller
                 'is_configured' => $cpg->is_configured,
                 'environment'   => $cpg->environment,
                 'image_url'     => $cpg->gateway?->image
-                    ? \Illuminate\Support\Facades\Storage::url($cpg->gateway->image)
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($cpg->gateway->image)
                     : null,
             ])->values()->all();
 

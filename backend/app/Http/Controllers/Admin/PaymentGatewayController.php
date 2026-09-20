@@ -199,7 +199,7 @@ class PaymentGatewayController extends Controller
 
         return response()->json([
             'success'   => true,
-            'image_url' => Storage::url($path),
+            'image_url' => Storage::disk('public')->url($path),
             'message'   => 'Gateway image updated.',
         ]);
     }
