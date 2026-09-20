@@ -202,6 +202,17 @@
 
         <div class="grid grid-cols-3 gap-4">
             <x-form.input
+                name="flag_emoji"
+                label="{{ __('admin.geography.flag_emoji_label') }}"
+                :value="$val('flag_emoji')"
+                maxlength="10"
+                placeholder="🇸🇦"
+                hint="{{ __('admin.geography.flag_emoji_hint') }}"
+            />
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+            <x-form.input
                 name="iso_code_2"
                 label="{{ __('admin.geography.iso2_code') }}"
                 :value="$val('iso_code_2')"

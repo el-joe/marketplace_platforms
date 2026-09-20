@@ -6226,6 +6226,8 @@ return [
         'category_overrides_tab' => 'استثناءات الفئات',
         'name_en_label'     => 'الاسم (إنجليزي)',
         'name_ar_label'     => 'الاسم (عربي)',
+        'flag_emoji_label'  => 'رمز العلم',
+        'flag_emoji_hint'   => 'الصق رمز علم الدولة (مثال 🇸🇦)، يظهر في محدد الدولة بالمتجر.',
         'iso2_code'         => 'رمز ISO-2',
         'iso3_code'         => 'رمز ISO-3',
         'phone_prefix'      => 'مقدمة الهاتف',

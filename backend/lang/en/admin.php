@@ -6258,6 +6258,8 @@ return [
         'category_overrides_tab' => 'Category Overrides',
         'name_en_label'     => 'Name (English)',
         'name_ar_label'     => 'Name (Arabic)',
+        'flag_emoji_label'  => 'Flag Emoji',
+        'flag_emoji_hint'   => 'Paste the country flag emoji (e.g. 🇸🇦), shown in the storefront country selector.',
         'iso2_code'         => 'ISO-2 Code',
         'iso3_code'         => 'ISO-3 Code',
         'phone_prefix'      => 'Phone Prefix',
