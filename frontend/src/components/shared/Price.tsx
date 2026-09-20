@@ -39,13 +39,18 @@ const discountPercentSize = {
 const Price = ({
   currentPrice,
   oldPrice,
-  discountPercent,
   size = "base",
   variant = "default",
   className,
   currency = "AED",
 }: Props) => {
   const t = useTranslations();
+
+  const discountPercent =
+    oldPrice && currentPrice
+      ? Math.round(((oldPrice - Number(currentPrice)) / oldPrice) * 100)
+      : 0;
+
   return (
     <div
       className={`text-start inline-flex items-end font-bold gap-1 ${variant === "cart" ? "flex-col" : ""} ${className}`}
@@ -60,9 +65,7 @@ const Price = ({
       {variant === "default" && (
         <>
           {!!oldPrice && (
-            <p
-              className={`font-semibold line-through text-gray ${oldPriceSize[size]}`}
-            >
+            <p className={`font-semibold line-through text-gray text-xs`}>
               {oldPrice?.toLocaleString()}
             </p>
           )}

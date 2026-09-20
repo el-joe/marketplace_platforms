@@ -34,7 +34,9 @@ const CurrencySymbol = ({ code, className, imageClassName }: Props) => {
   }
 
   return (
-    <span className={className}>{currency?.symbol ?? getCurrencySymbol(code)}</span>
+    <span className={className}>
+      {currency?.symbol ?? getCurrencySymbol(code)}
+    </span>
   );
 };
 

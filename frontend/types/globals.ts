@@ -35,6 +35,8 @@ export interface Product {
   images: Images[];
   category_name?: { en: string | null; ar: string | null };
   price: number;
+  oldPrice: number;
+  discountPercent: number;
   price_formatted: string;
   compare_at_price?: number | null;
   currency: CurrencyCode;
@@ -60,7 +62,11 @@ export interface Product {
     is_required: boolean;
     sort_order: number;
   }[];
-  campaign_context?: { id: string; title: string | null; vendor_name: string | null } | null;
+  campaign_context?: {
+    id: string;
+    title: string | null;
+    vendor_name: string | null;
+  } | null;
   is_mega_deal?: boolean;
   is_flash_sale?: boolean;
   flash_sale_ends_at?: string | null;

@@ -68,12 +68,12 @@ const ProductCard = ({ productData }: Props) => {
       onMouseLeave={() => handleAutoplay("stop")}
     >
       {/* card top (images slide, topleft badge, wishlist but, cart btn) */}
-      <div className="relative h-43 md:h-52 lg:h-60 xl:h-92">
+      <div className="relative h-[300px]">
         {/* sponsored/ad badge */}
         {!!productData.is_sponsored && <AdBadge />}
         {/* top left badge */}
         {!!productData?.category_name?.[locale] && (
-          <div className="absolute top-0 left-0 rounded-br-lg bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10">
+          <div className="absolute top-0 right-0 rounded-tr-lg rounded-bl-lg bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10">
             {productData?.category_name?.[locale]}
           </div>
         )}
@@ -81,7 +81,7 @@ const ProductCard = ({ productData }: Props) => {
         <Button
           variant={"ghost"}
           className={
-            "absolute top-0 md:top-1 lg:top-2 p-1! right-1 lg:right-2 z-10 rounded-full aspect-square bg-white/60"
+            "absolute top-2 p-1! left-1 lg:left-2 z-10 rounded-full aspect-square bg-white/60"
           }
           disabled={
             isAddingWishlist && targetAddingWishlist === productData.listing_id
@@ -162,39 +162,35 @@ const ProductCard = ({ productData }: Props) => {
         </Swiper>
       </div>
       {/* admin listing badge */}
-      {productData.listing_type === "admin" && (
+      {/* {productData.listing_type === "admin" && (
         <span className="px-1 lg:px-2.5 text-[9px] md:text-xs text-yellow-600 font-bold uppercase tracking-wide">
           {t("noonExpress")}
         </span>
-      )}
+      )} */}
       {/* marketer attribution — outside the card Link to avoid nested anchors */}
-      {"marketer" in productData && productData.marketer?.profile_url && (
+      {/* {"marketer" in productData && productData.marketer?.profile_url && (
         <a
           href={productData.marketer.profile_url}
           className="px-1 lg:px-2.5 text-[9px] md:text-xs text-yellow-600 hover:underline font-medium"
         >
           {productData.marketer.name}
         </a>
-      )}
-      {"campaign_context" in productData &&
+      )} */}
+      {/* {"campaign_context" in productData &&
         productData.campaign_context?.vendor_name && (
           <span className="px-1 lg:px-2.5 text-[8px] md:text-[10px] text-blue-500 font-medium">
             🛍 {productData.campaign_context.vendor_name}
           </span>
-        )}
+        )} */}
       {/* card body (title, rate, price, bottom badge) */}
       {/* <Link href={`/products/${productData.id}`}> */}
       <Link href={`/products/${productData.url_param}`} className="flex-1">
-        <div className="flex flex-col justify-start p-1 lg:p-2.5 h-full gap-3">
+        <div className="flex flex-col justify-start p-1 lg:p-2.5 h-full gap-2">
           {/* title */}
-          <h3 className="text-[10px] font-semibold md:text-xs lg:text-base line-clamp-3">
+          <h3 className="text-[10px] font-medium md:text-xs lg:text-base line-clamp-3">
             {locale === "ar" ? productData.name_ar : productData.name_en}
           </h3>
-          {!!productData.variant_name?.[locale] && (
-            <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-full line-clamp-1 overflow-hidden">
-              {productData.variant_name?.[locale]}
-            </p>
-          )}
+
           {/* rating */}
           <ProductCardRate
             rating={productData.rating_avg}
@@ -204,6 +200,7 @@ const ProductCard = ({ productData }: Props) => {
           <Price
             currentPrice={productData.price}
             currency={productData.currency}
+            oldPrice={Number(productData.compare_at_price ?? 0)}
             size="sm"
           />
           <InternationalShippingIndicator
@@ -257,7 +254,7 @@ const ProductCard = ({ productData }: Props) => {
                   </span>
                 );
               })()}
-              <ChevronRightIcon className="size-3 lg:size-5" />
+              <ChevronRightIcon className="size-3 lg:size-5 rtl:rotate-180" />
             </div>
           )}
         </div>
@@ -280,7 +277,7 @@ const ProductImage = ({
       src={getImageURL(image.url)}
       alt={image?.alt?.[locale] || ("" as string)}
       width={500}
-      height={600}
+      height={300}
       className="h-full"
     />
   );

@@ -22,6 +22,8 @@ export interface IProduct {
   thumbnail: string;
   category_name?: { en: string | null; ar: string | null };
   price: number;
+  oldPrice: number;
+  discountPercent: number;
   price_formatted: string;
   compare_at_price?: number | null;
   currency: CurrencyCode;
