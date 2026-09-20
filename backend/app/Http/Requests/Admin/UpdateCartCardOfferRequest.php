@@ -20,7 +20,7 @@ class UpdateCartCardOfferRequest extends FormRequest
             'card_name_ar' => ['required', 'string', 'max:150'],
             'bank_name_en' => ['nullable', 'string', 'max:100'],
             'bank_name_ar' => ['nullable', 'string', 'max:100'],
-            'card_image' => ['nullable', 'image', 'max:2048'],
+            'card_image' => ['nullable', 'file', 'max:2048', 'mimes:jpg,jpeg,png,gif,bmp,webp,avif'],
             'cashback_type' => ['required', Rule::in(['percentage', 'fixed'])],
             'cashback_pct' => [
                 Rule::when(fn () => $this->input('cashback_type') === 'percentage', ['required'], ['nullable']),
