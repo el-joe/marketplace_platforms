@@ -186,7 +186,7 @@ class PaymentGatewayController extends Controller
     public function uploadImage(Request $request, PaymentGateway $gateway): JsonResponse
     {
         $request->validate([
-            'image' => ['required', 'image', 'max:1024', 'mimes:png,jpg,jpeg,svg,webp'],
+            'image' => ['required', 'image', 'max:2048', 'mimes:png,jpg,jpeg,svg,webp'],
         ]);
 
         if ($gateway->image) {

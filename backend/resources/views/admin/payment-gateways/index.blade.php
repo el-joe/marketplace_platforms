@@ -317,36 +317,49 @@ async function uploadGatewayImage(gatewayId, input) {
     const formData = new FormData();
     formData.append('image', file);
 
-    const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-        body: formData,
-    });
+    try {
+        const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: formData,
+        });
 
-    const data = await res.json();
-    if (data.success) {
-        window.Toast?.success(data.message);
-        setTimeout(() => location.reload(), 800);
-    } else {
-        window.Toast?.error(data.message ?? 'Upload failed.');
+        const data = await res.json();
+        if (data.success) {
+            window.Toast?.success(data.message);
+            setTimeout(() => location.reload(), 800);
+        } else {
+            window.Toast?.error(data.message ?? 'Upload failed.');
+        }
+    } catch (e) {
+        window.Toast?.error('Upload failed.');
     }
 }
 
 async function deleteGatewayImage(gatewayId, btn) {
     if (!confirm('Remove this image?')) return;
 
-    const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json',
-        },
-    });
+    try {
+        const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        });
 
-    const data = await res.json();
-    if (data.success) {
-        window.Toast?.success(data.message);
-        setTimeout(() => location.reload(), 800);
+        const data = await res.json();
+        if (data.success) {
+            window.Toast?.success(data.message);
+            setTimeout(() => location.reload(), 800);
+        } else {
+            window.Toast?.error(data.message ?? 'Delete failed.');
+        }
+    } catch (e) {
+        window.Toast?.error('Delete failed.');
     }
 }
 </script>
