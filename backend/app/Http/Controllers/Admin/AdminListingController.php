@@ -443,7 +443,7 @@ class AdminListingController extends Controller
             'availableShippingMethods' => $availableShippingMethods,
             'categoryDefaultShippingMethod' => $adminListing->productVariant->product->category
                 ?->defaultShippingMethod()->first(),
-            'warehouses' => Warehouse::where('is_active', true)->orderBy('name')->get(),
+            'warehouses' => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
             'statuses' => collect(AdminListingStatus::cases())
                 ->mapWithKeys(fn($status) => [$status->value => Str::headline($status->value)]),
             'breadcrumbs' => [
@@ -479,7 +479,7 @@ class AdminListingController extends Controller
     public function adjustStock(Request $request, AdminListing $adminListing): JsonResponse
     {
         $data = $request->validate([
-            'warehouse_id' => ['required', 'exists:warehouses,id'],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->where('type', 'platform_fbn')],
             'adjustment' => ['required', 'integer', 'not_in:0'],
             'reason' => ['required', 'string', 'max:500'],
         ]);
