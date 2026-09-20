@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { MenuPopupProps, MenuPositionerProps } from "@base-ui/react";
-type TItem = { itemLabel: string; value: string };
+type TItem = { itemLabel: string; value: string; itemIcon?: React.ReactNode };
 type Props = {
   triggerButton: React.ReactElement<
     unknown,
@@ -52,6 +52,7 @@ const Dropdown = ({
                     key={item.value}
                     onClick={() => onSelect(item)}
                   >
+                    {item.itemIcon}
                     {item.itemLabel}
                   </DropdownMenuItem>
                 ))}
@@ -63,6 +64,7 @@ const Dropdown = ({
             {listTitle && <DropdownMenuLabel>{listTitle}</DropdownMenuLabel>}
             {items?.map((item) => (
               <DropdownMenuItem key={item.value} onClick={() => onSelect(item)}>
+                {item.itemIcon}
                 {item.itemLabel}
               </DropdownMenuItem>
             ))}

@@ -76,18 +76,13 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
                   "bg-gray-2 rounded-md text-primary font-semibold text-base"
                 }
               >
-                <Image
-                  src={
-                    countriesData?.data.find(
-                      (c) =>
-                        c.site_code.toLowerCase() ===
-                        country?.toString().toLowerCase(),
-                    )?.flag_emoji || "/images/no-image-available-icon.jpg"
-                  }
-                  alt="flag"
-                  width={24}
-                  height={24}
-                />
+                <span className="text-xl leading-none" aria-hidden>
+                  {countriesData?.data.find(
+                    (c) =>
+                      c.site_code.toLowerCase() ===
+                      country?.toString().toLowerCase(),
+                  )?.flag_emoji || "🏳️"}
+                </span>
                 {country?.toString().toUpperCase()} <ChevronDownIcon />
               </Button>
             }
@@ -95,6 +90,11 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
             items={countriesData?.data.map((c) => ({
               itemLabel: c.name,
               value: c.site_code,
+              itemIcon: (
+                <span className="text-lg leading-none" aria-hidden>
+                  {c.flag_emoji || "🏳️"}
+                </span>
+              ),
             }))}
             listTitle="countries"
             onSelect={(item) => handleChangeCountry(item.value)}
