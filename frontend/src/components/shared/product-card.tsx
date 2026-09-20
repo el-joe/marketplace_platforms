@@ -27,6 +27,7 @@ import { mapPromoBadges } from "@/src/lib/promo-badges";
 import useCountDown from "@/src/hooks/useCountDown";
 import InternationalShippingIndicator from "./international-shipping-indicator";
 import { ProductCardRate } from "../ui/rating/product-card-rate";
+import { cn } from "@/src/lib/utils";
 
 type Props = {
   productData: Product | IProduct;
@@ -73,7 +74,12 @@ const ProductCard = ({ productData }: Props) => {
         {!!productData.is_sponsored && <AdBadge />}
         {/* top left badge */}
         {!!productData?.category_name?.[locale] && (
-          <div className="absolute top-0 right-0 rounded-tr-lg rounded-bl-lg bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10">
+          <div
+            className={cn(
+              "absolute top-0 inset-s-0-0 bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10",
+              locale === "ar" ? "rounded-bl-lg" : "rounded-br-lg",
+            )}
+          >
             {productData?.category_name?.[locale]}
           </div>
         )}
@@ -81,7 +87,7 @@ const ProductCard = ({ productData }: Props) => {
         <Button
           variant={"ghost"}
           className={
-            "absolute top-2 p-1! left-1 lg:left-2 z-10 rounded-full aspect-square bg-white/60"
+            "absolute top-2 p-1! inset-e-1 lg:inset-e-2 z-10 rounded-full aspect-square bg-white/60"
           }
           disabled={
             isAddingWishlist && targetAddingWishlist === productData.listing_id
@@ -200,7 +206,7 @@ const ProductCard = ({ productData }: Props) => {
           <Price
             currentPrice={productData.price}
             currency={productData.currency}
-            oldPrice={Number(productData.compare_at_price ?? 0)}
+            oldPrice={Number(productData.compare_at_price)}
             size="sm"
           />
           <InternationalShippingIndicator

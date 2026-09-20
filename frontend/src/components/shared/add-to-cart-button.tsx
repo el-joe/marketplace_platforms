@@ -57,7 +57,7 @@ export default function AddToCartButton({
       <Button
         variant={"outline"}
         className={cn(
-          "absolute bottom-1 lg:bottom-2 left-2 z-10 min-w-0! min-h-0! bg-gray-2 hover:bg-gray-2 group/cart hover:px-1",
+          "absolute bottom-1 lg:bottom-2 inset-e-2 z-10 min-w-0! min-h-0! bg-gray-2 hover:bg-gray-2 group/cart hover:px-1",
           cartItem &&
             "bg-blue-2 text-white hover:bg-blue-2 hover:text-white border-0 pt-2! hover:w-28",
           sizes[size],
