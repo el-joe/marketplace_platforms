@@ -4457,6 +4457,7 @@ return [
         'offer_details'           => 'Offer Details',
         'country'                 => 'Country',
         'select_country'          => 'Select a country',
+        'image'                   => 'Image',
         'card_name'               => 'Card Name',
         'card_name_en'            => 'Card Name (English)',
         'card_name_ar'            => 'Card Name (Arabic)',

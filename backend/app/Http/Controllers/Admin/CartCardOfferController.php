@@ -48,6 +48,7 @@ class CartCardOfferController extends Controller
             ->join('countries', 'countries.id', '=', 'cart_card_offers.country_id')
             ->select([
                 'cart_card_offers.id',
+                'cart_card_offers.card_image_path',
                 'cart_card_offers.card_name_en',
                 'countries.name_en as country_name',
                 'cart_card_offers.cashback_type',
@@ -68,6 +69,9 @@ class CartCardOfferController extends Controller
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
             return [
                 'id' => $row->id,
+                'card_image_url' => $row->card_image_path
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($row->card_image_path)
+                    : null,
                 'card_name_en' => e($row->card_name_en),
                 'country_name' => e($row->country_name),
                 'cashback_type' => $row->cashback_type,
@@ -173,6 +177,7 @@ class CartCardOfferController extends Controller
     private function columnDefinitions(): array
     {
         return [
+            ['title' => 'Image', 'data' => 'card_image_url', 'name' => 'card_image_path', 'orderable' => false, 'searchable' => false],
             ['title' => 'Card', 'data' => 'card_name_en', 'name' => 'card_name_en', 'orderable_column' => 'cart_card_offers.card_name_en', 'searchable_columns' => ['cart_card_offers.card_name_en']],
             ['title' => 'Country', 'data' => 'country_name', 'name' => 'country_name', 'orderable_column' => 'countries.name_en', 'searchable' => false],
             ['title' => 'Type', 'data' => 'cashback_type', 'name' => 'cashback_type', 'searchable' => false],

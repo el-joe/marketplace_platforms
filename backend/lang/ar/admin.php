@@ -4417,6 +4417,7 @@ return [
         'offer_details'           => 'تفاصيل العرض',
         'country'                 => 'الدولة',
         'select_country'          => 'اختر دولة',
+        'image'                   => 'الصورة',
         'card_name'               => 'اسم البطاقة',
         'card_name_en'            => 'اسم البطاقة (إنجليزي)',
         'card_name_ar'            => 'اسم البطاقة (عربي)',

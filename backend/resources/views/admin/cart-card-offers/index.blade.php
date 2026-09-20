@@ -9,6 +9,14 @@
 @section('content')
     @php
         $columns = [
+            [
+                'title' => __('admin.cart_card_offers_section.image'),
+                'data' => 'card_image_url',
+                'name' => 'card_image_path',
+                'orderable' => false,
+                'searchable' => false,
+                'render' => 'Renderers.image("40px")',
+            ],
             ['title' => __('admin.cart_card_offers_section.card_name'), 'data' => 'card_name_en', 'name' => 'card_name_en'],
             ['title' => __('admin.cart_card_offers_section.country'), 'data' => 'country_name', 'name' => 'country_name'],
             [
@@ -75,7 +83,7 @@
 
     <x-table.datatable id="cart-card-offers-table" url="{{ route('admin.cart-card-offers.datatable') }}" :columns="$columns"
         :filters="$filters"
-        :create-action="['url' => route('admin.cart-card-offers.create'), 'label' => __('admin.cart_card_offers_section.add_offer')]" :page-length="25" :order="[[7, 'asc']]" />
+        :create-action="['url' => route('admin.cart-card-offers.create'), 'label' => __('admin.cart_card_offers_section.add_offer')]" :page-length="25" :order="[[8, 'asc']]" />
 @endsection
 
 @push('scripts')
