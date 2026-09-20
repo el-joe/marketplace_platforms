@@ -317,7 +317,7 @@ async function uploadGatewayImage(gatewayId, input) {
     const formData = new FormData();
     formData.append('image', file);
 
-    const res = await fetch(`{{ url('/admin/payment-gateways/gateways') }}/${gatewayId}/image`, {
+    const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
         body: formData,
@@ -335,7 +335,7 @@ async function uploadGatewayImage(gatewayId, input) {
 async function deleteGatewayImage(gatewayId, btn) {
     if (!confirm('Remove this image?')) return;
 
-    const res = await fetch(`{{ url('/admin/payment-gateways/gateways') }}/${gatewayId}/image`, {
+    const res = await fetch(`{{ url('/payment-gateways/gateways') }}/${gatewayId}/image`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
