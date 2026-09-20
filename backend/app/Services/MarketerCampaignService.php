@@ -692,6 +692,24 @@ class MarketerCampaignService
                 'platform_fee_recorded_at' => now(),
             ]);
 
+            // enhancement.md P-16 fix: the influencer platform fee must
+            // actually be debited from the marketer's wallet at acceptance
+            // time, not merely recorded as 'pending' on the invitation —
+            // otherwise it is only ever settled if an admin later remembers
+            // to call markInvitationFeePaid() manually.
+            if ($feeStatus === 'pending' && $feeAmount > 0) {
+                $walletService = app(\App\Services\WalletService::class);
+                $wallet = $walletService->getOrCreateWallet('marketer', $marketer->id, $campaign->currency);
+                $walletService->debit(
+                    $wallet,
+                    (int) $feeAmount,
+                    'marketer_campaign_invitation_platform_fee',
+                    $invitation->id,
+                    'Influencer platform fee for accepted campaign invitation'
+                );
+                $invitation->update(['platform_fee_status' => 'paid']);
+            }
+
             $category = $campaign->vendorListing?->productVariant?->product?->category
                 ?? $campaign->adminListing?->productVariant?->product?->category;
 

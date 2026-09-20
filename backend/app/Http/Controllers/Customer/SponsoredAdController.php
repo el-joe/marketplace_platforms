@@ -32,11 +32,11 @@ class SponsoredAdController extends Controller
             }
 
             $campaign = AdCampaign::find($impression->ad_campaign_id);
-            if (!$campaign || $campaign->status !== 'active') {
+            if (!$campaign || $campaign->status !== \App\Enums\AdCampaignStatus::Active) {
                 return;
             }
 
-            $cost = $campaign->type === 'cpc' ? $campaign->bid : 0;
+            $cost = $campaign->type === \App\Enums\AdCampaignType::Cpc ? $campaign->bid : 0;
 
             AdClick::create([
                 'id'                => (string) Str::uuid(),

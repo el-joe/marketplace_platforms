@@ -292,8 +292,12 @@ class CartService
         $added = [];
 
         foreach ($items as $item) {
-            if (($item['listing_type'] ?? null) === 'admin') {
+            $listingType = $item['listing_type'] ?? null;
+
+            if ($listingType === 'admin') {
                 $added[] = $this->addAdminItem($cart, $item['admin_listing_id'], $item['quantity'], $item['shipping_method_id'] ?? null, $countryId, $item['custom_attribute_values'] ?? []);
+            } elseif ($listingType === 'marketer') {
+                $added[] = $this->addMarketerItem($cart, $item['marketer_listing_id'], $item['quantity'], $countryId);
             } else {
                 $added[] = $this->addItem($cart, $item['vendor_listing_id'], $item['quantity'], $item['shipping_method_id'] ?? null, $countryId, $item['custom_attribute_values'] ?? []);
             }

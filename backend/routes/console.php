@@ -33,6 +33,11 @@ Schedule::job(new BannerSchedulerJob)->everyFiveMinutes();
 Schedule::job(new \App\Jobs\PageSchedulerJob)->everyFiveMinutes()->name('page-scheduler');
 Schedule::job(new PublishScheduledBlogPostsJob)->everyFiveMinutes()->name('publish-scheduled-blog-posts');
 Schedule::job(new MonitorCampaignStockJob)->hourly()->name('monitor-campaign-stock');
+
+// Reset ad_campaigns.budget_spent_today at midnight — was missing entirely,
+// so campaigns that hit budget_daily stayed capped forever (CPC click
+// billing and the new CPM impression billing both gate on this column).
+Schedule::job(new \App\Jobs\ResetAdCampaignDailyBudgetJob)->dailyAt('00:00')->name('reset-ad-campaign-daily-budget');
 Schedule::job(new PaidAdSchedulerJob)->everyFiveMinutes()->withoutOverlapping()->name('paid-ad-scheduler');
 // enhancement.md P-05 task 5: roll back gateway orders stuck 'pending'
 // because the customer never returned and no webhook arrived.

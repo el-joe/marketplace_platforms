@@ -316,6 +316,18 @@
                                                         <br>
                                                         <span class="text-danger-600 font-medium">=
                                                             {{ $fmt($item->commission_amount) }}</span>
+                                                        @if($item->vendor_coupon_cost > 0)
+                                                            <br>
+                                                            <span class="text-gray-400">{{ __('admin.orders.vendor_coupon_cost') }}:
+                                                                −{{ $fmt($item->vendor_coupon_cost) }}</span>
+                                                        @endif
+                                                        @if($item->warranty_purchase_id)
+                                                            <br>
+                                                            <a href="{{ route('admin.warranty-purchases.show', $item->warranty_purchase_id) }}"
+                                                                class="text-primary-600 underline">
+                                                                {{ __('admin.orders.warranty_purchased') }}
+                                                            </a>
+                                                        @endif
                                                     </td>
                                                     <td class="px-4 py-3 text-center">
                                                         <x-badge color="gray" class="text-xs">
@@ -363,6 +375,14 @@
                                 {{-- Financial breakdown (admin-only) --}}
                                 <div class="px-4 py-3 border-t border-gray-100 space-y-1 text-xs">
                                     <div class="flex items-center justify-between">
+                                        <span class="text-gray-500">{{ __('common.subtotal') }}</span>
+                                        <span>{{ $fmt($subOrder->subtotal) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-500">{{ __('admin.orders.shipping') }}</span>
+                                        <span>{{ $fmt($subOrder->shipping) }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
                                         <span class="text-gray-500">{{ __('admin.orders.platform_commission') }}</span>
                                         <span class="text-danger-600">−{{ $fmt($subOrder->platform_commission) }}</span>
                                     </div>
@@ -372,11 +392,71 @@
                                             <span class="text-danger-600">−{{ $fmt($subOrder->gateway_fee) }}</span>
                                         </div>
                                     @endif
+                                    @if($subOrder->vendor_coupon_cost > 0)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.vendor_coupon_cost') }}</span>
+                                            <span class="text-danger-600">−{{ $fmt($subOrder->vendor_coupon_cost) }}</span>
+                                        </div>
+                                    @endif
+                                    @if($subOrder->marketer_commission > 0)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">
+                                                {{ __('admin.orders.marketer_commission') }}
+                                                <span class="text-gray-400">({{ __('admin.orders.paid_by') }}: {{ $subOrder->marketer_commission_owner }})</span>
+                                            </span>
+                                            <span class="text-danger-600">−{{ $fmt($subOrder->marketer_commission) }}</span>
+                                        </div>
+                                    @endif
                                     <div class="flex items-center justify-between font-medium text-gray-700">
                                         <span>{{ __('admin.orders.vendor_payout') }}</span>
                                         <span>{{ $fmt($subOrder->vendor_payout) }}</span>
                                     </div>
                                 </div>
+
+                                {{-- Exceptional delivery zone subsidy split --}}
+                                @if($subOrder->shipping_gap > 0 || $subOrder->admin_subsidy_amount > 0 || $subOrder->vendor_contribution_amount > 0)
+                                    <div class="px-4 py-3 border-t border-gray-100 space-y-1 text-xs bg-amber-50/40">
+                                        <p class="font-medium text-amber-700">{{ __('admin.orders.exceptional_zone_subsidy') }}</p>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.shipping_gap') }}</span>
+                                            <span>{{ $fmt($subOrder->shipping_gap) }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.admin_subsidy_amount') }}</span>
+                                            <span>{{ $fmt($subOrder->admin_subsidy_amount) }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.vendor_contribution_amount') }}</span>
+                                            <span>{{ $fmt($subOrder->vendor_contribution_amount) }}</span>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- International fulfillment / FX --}}
+                                @if($subOrder->origin_country_id && $subOrder->origin_country_id !== $order->country_id)
+                                    <div class="px-4 py-3 border-t border-gray-100 space-y-1 text-xs bg-blue-50/40">
+                                        <p class="font-medium text-blue-700">{{ __('admin.orders.international_fulfillment') }}</p>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.origin_country') }}</span>
+                                            <span>{{ $subOrder->originCountry->name ?? $subOrder->origin_country_id }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.delivery_country') }}</span>
+                                            <span>{{ $order->country->name ?? $order->country_id }}</span>
+                                        </div>
+                                        @if($subOrder->fx_rate_numerator && $subOrder->fx_rate_denominator)
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-500">{{ __('admin.orders.fx_rate') }}</span>
+                                                <span class="font-mono">{{ $subOrder->fx_rate_numerator }} / {{ $subOrder->fx_rate_denominator }}
+                                                    ({{ number_format($subOrder->fx_rate_numerator / $subOrder->fx_rate_denominator, 4) }})</span>
+                                            </div>
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-gray-500">{{ __('admin.orders.fx_rate_captured_at') }}</span>
+                                                <span>{{ $subOrder->fx_rate_captured_at ? \Carbon\Carbon::parse($subOrder->fx_rate_captured_at)->format('M j, Y H:i') : '—' }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
 
                             </div>{{-- /sub-order-body --}}
                         </div>

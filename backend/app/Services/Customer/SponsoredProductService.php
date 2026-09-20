@@ -2,7 +2,9 @@
 
 namespace App\Services\Customer;
 
+use App\Enums\AdCampaignType;
 use App\Models\AdCampaign;
+use App\Models\AdDailyStat;
 use App\Models\AdImpression;
 use App\Models\Country;
 use App\Models\Product;
@@ -147,6 +149,9 @@ class SponsoredProductService
         $qualityScore = $listing->_quality_score;
 
         dispatch(function () use ($listing, $country, $customerId, $sessionId, $impressionId, $campaignId, $bid, $qualityScore) {
+            $campaign = AdCampaign::find($campaignId);
+            $cost     = $campaign ? $this->cpmCostForImpression($campaign) : 0;
+
             AdImpression::create([
                 'id'                          => $impressionId,
                 'ad_campaign_id'              => $campaignId,
@@ -160,11 +165,15 @@ class SponsoredProductService
                 'quality_score_at_impression' => $qualityScore ?? 0,
                 'was_clicked'                 => false,
                 'was_converted'               => false,
-                'cost_charged'                => 0,
+                'cost_charged'                => $cost,
                 'country_id'                  => $country->id,
                 'device_type'                 => 'desktop',
                 'shown_at'                    => now(),
             ]);
+
+            if ($cost > 0 && $campaign) {
+                $this->chargeCpmImpression($campaign, $listing->id, $country->id, $cost);
+            }
         })->afterResponse();
 
         $variant  = $listing->productVariant;
@@ -264,33 +273,93 @@ class SponsoredProductService
     ): void {
         // Fire-and-forget — don't block response
         dispatch(function () use ($listing, $country, $placement, $position, $query) {
-            $campaign = \App\Models\AdCampaignProduct::where('vendor_listing_id', $listing->id)
+            $campaignProduct = \App\Models\AdCampaignProduct::where('vendor_listing_id', $listing->id)
                 ->where('is_active', true)
                 ->with('campaign')
                 ->first();
 
-            if (!$campaign) {
+            if (!$campaignProduct) {
                 return;
             }
 
+            $campaign = $campaignProduct->campaign;
+            $cost     = $campaign ? $this->cpmCostForImpression($campaign) : 0;
+
             AdImpression::create([
                 'id'                            => Str::uuid(),
-                'ad_campaign_id'                => $campaign->ad_campaign_id,
+                'ad_campaign_id'                => $campaignProduct->ad_campaign_id,
                 'vendor_listing_id'             => $listing->id,
                 'customer_id'                   => auth('customer')->id(),
                 'session_id'                    => request()->hasSession() ? request()->session()->getId() : Str::random(26),
                 'placement_code'                => $placement,
                 'search_query'                  => $query,
                 'position_shown'                => $position,
-                'bid_at_impression'       => $campaign->campaign->bid ?? 0,
-                'quality_score_at_impression'   => $campaign->campaign->quality_score ?? 0,
+                'bid_at_impression'       => $campaignProduct->campaign->bid ?? 0,
+                'quality_score_at_impression'   => $campaignProduct->campaign->quality_score ?? 0,
                 'was_clicked'                   => false,
                 'was_converted'                 => false,
-                'cost_charged'            => 0,
+                'cost_charged'            => $cost,
                 'country_id'                    => $country->id,
                 'device_type'                   => 'desktop',
                 'shown_at'                      => now(),
             ]);
+
+            if ($cost > 0 && $campaign) {
+                $this->chargeCpmImpression($campaign, $listing->id, $country->id, $cost);
+            }
         })->afterResponse();
+    }
+
+    /**
+     * CPM billing: cost_per_impression = FLOOR(bid / 1000), charged at impression
+     * time (unlike CPC, which charges at click time). Returns 0 for non-CPM
+     * campaigns, a zero bid, or when charging would exceed the campaign's
+     * remaining total/daily budget — in which case the impression is still
+     * recorded (for reporting) but left unbilled, mirroring how the CPC click
+     * path always records the click and only charges when cost > 0.
+     */
+    private function cpmCostForImpression(AdCampaign $campaign): int
+    {
+        if ($campaign->type !== AdCampaignType::Cpm) {
+            return 0;
+        }
+
+        $cost = (int) floor($campaign->bid / 1000);
+
+        if ($cost <= 0) {
+            return 0;
+        }
+
+        if ($campaign->budget_spent_total + $cost > $campaign->budget_total) {
+            return 0;
+        }
+
+        if ($campaign->budget_daily !== null && $campaign->budget_spent_today + $cost > $campaign->budget_daily) {
+            return 0;
+        }
+
+        return $cost;
+    }
+
+    /**
+     * Applies a CPM charge: increments the campaign's spend counters (same
+     * atomic ->increment() convention the CPC click path uses) and rolls the
+     * spend/impression count into today's ad_daily_stats row for this
+     * campaign/listing/country.
+     */
+    private function chargeCpmImpression(AdCampaign $campaign, string $vendorListingId, string $countryId, int $cost): void
+    {
+        $campaign->increment('budget_spent_total', $cost);
+        $campaign->increment('budget_spent_today', $cost);
+
+        $stat = AdDailyStat::firstOrCreate([
+            'ad_campaign_id'    => $campaign->id,
+            'vendor_listing_id' => $vendorListingId,
+            'country_id'        => $countryId,
+            'date'              => now()->toDateString(),
+        ]);
+
+        $stat->increment('impressions');
+        $stat->increment('spend', $cost);
     }
 }

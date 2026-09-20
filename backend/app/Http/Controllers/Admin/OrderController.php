@@ -182,15 +182,18 @@ class OrderController extends Controller
             'subOrders.items.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
             'subOrders.items.customAttributeValues',
             'subOrders.items.vendor',
+            'subOrders.items.warrantyPurchase',
             'subOrders.vendor',
             'subOrders.carrier',
             'subOrders.shippingMethod',
+            'subOrders.originCountry',
             'subOrders.codSettlement.agent',
             'subOrders.statusHistories.changedByAdmin',
             'statusHistories.changedByAdmin',
             'disputes.messages',
             'refunds.approvedByAdmin',
             'customer',
+            'country',
         ])->whereNull('deleted_at')->findOrFail($id);
 
         return view('admin.orders.show', [

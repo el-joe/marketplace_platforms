@@ -512,11 +512,21 @@ class CheckoutController extends Controller
             now()->addMinutes(30),
         );
 
+        // docs/plans/international_product_shipping.md Phase 3 / design
+        // decision #4: COD is prepaid-only for international lines. Beyond
+        // rejecting a COD placeOrder attempt (codValidationService->validate()
+        // above), COD must not even be offered as a selectable option here
+        // when the cart contains a cross-border line — otherwise the
+        // customer can select it in the UI only to have it rejected later.
+        $hasInternationalLine = collect($cartLineSources)
+            ->contains(fn (CartLineSource $source) => $source->isInternational($country->id));
+
         $availableGateways = CountryPaymentGateway::where('country_id', $country->id)
             ->where('is_active', true)
             ->with('gateway')
             ->orderBy('sort_order')
             ->get()
+            ->reject(fn ($cpg) => $hasInternationalLine && $cpg->gateway?->code === 'cod')
             ->map(fn ($cpg) => [
                 'id'            => $cpg->id,
                 'gateway_code'  => $cpg->gateway?->code,
@@ -970,6 +980,22 @@ class CheckoutController extends Controller
         $moneySplitByGroup = $moneySplit['sub_orders'];
 
         if ($isWallet) {
+            // Guard against gateway_code=wallet with a resolved wallet
+            // amount of 0 (e.g. an explicit wallet_amount_used=0, which
+            // passes validation since that field allows min:0) — without
+            // this check the order would be created inside the
+            // transaction below, the wallet-debit block would be skipped
+            // (walletAmountToUse > 0 is false), and settlement would then
+            // cancel/rollback the order after it was already committed,
+            // leaving an orphaned cancelled order. Reject before any DB
+            // transaction begins instead.
+            if ($walletAmountForGatewayCents <= 0) {
+                return ApiResponse::error(
+                    __('common.exceptions.checkout.wallet_amount_required', [], 'A wallet amount greater than zero is required for the wallet payment method.'),
+                    [], 422
+                );
+            }
+
             $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
                 ->where('owner_id', $customer->id)
                 ->where('currency', $summary['currency'])
