@@ -95,6 +95,12 @@ function initFilePond(input) {
         acceptedFileTypes: input.accept !== '*' ? input.accept.split(',').map((s) => s.trim()) : null,
         allowImagePreview: true,
         imagePreviewHeight: 100,
+        // AVIF decoding via createImageBitmap() in a Worker (this plugin's preview
+        // path) is unreliable across browsers even where <img>/canvas support AVIF
+        // natively, leaving the thumbnail blank. Skip preview generation for AVIF
+        // so it falls back to the generic file icon instead of a broken preview;
+        // the upload itself is unaffected.
+        imagePreviewFilterItem: (item) => !/avif/i.test(item.file.type || item.file.name || ''),
         labelIdle: t('shared.upload.drop_files_label'),
         server: uploadUrl ? buildServerConfig(uploadUrl, deleteUrl) : null,
         files: buildExistingFiles(existing),
