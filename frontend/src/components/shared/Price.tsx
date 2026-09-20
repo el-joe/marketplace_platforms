@@ -69,7 +69,7 @@ const Price = ({
               {oldPrice?.toLocaleString()}
             </p>
           )}
-          {discountPercent && (
+          {!!discountPercent && (
             <p
               className={`text-green font-semibold ${discountPercentSize[size]}`}
             >
@@ -80,7 +80,7 @@ const Price = ({
       )}
       {variant === "cart" && (
         <div className="flex flex-row-reverse gap-1">
-          {oldPrice && (
+          {!!oldPrice && (
             <p
               className={`font-semibold line-through text-gray ${oldPriceSize[size]}`}
             >

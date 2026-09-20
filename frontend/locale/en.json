@@ -766,6 +766,9 @@
     "readyToMakeAWishDescription": "Start adding items you love to your wishlist by tapping on the heart icon"
   },
   "checkout": {
+    "yourCartIsEmpty": "Your cart is empty",
+    "whatWouldYouLikeToDo": "What would you like to do?",
+    "ReturnToCart": "Return to cart",
     "secureCheckout": "Secure Checkout",
     "cart": "Cart",
     "footerAssistanceNumber$": "For assistance, call {number}",

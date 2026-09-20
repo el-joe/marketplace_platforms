@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import { Spinner } from "@/src/components/ui/spinner";
 import MarketerContractModal from "./marketer-contract-modal";
 import { PlacementBanner } from "@/src/components/shared/placement-banner";
+import EmptyCartDialog from "./dialogs/empty-cart-dialog";
 
 export default function Checkout() {
   const t = useTranslations("checkout");
@@ -43,7 +44,18 @@ export default function Checkout() {
     setOfflineProofNote,
     isPlacingOrder,
     isUploadingProof,
+    emptyCart,
   } = useCheckout();
+  if (emptyCart) {
+    return (
+      <div className="h-screen overflow-hidden flex flex-col container py-12 gap-4">
+        {Array.from({ length: 8 }).map((e, i) => (
+          <Skeleton key={i} className="min-h-60" />
+        ))}
+        <EmptyCartDialog open />
+      </div>
+    );
+  }
   if (
     (isPreparingCheckout && !checkoutData) ||
     !checkoutData ||

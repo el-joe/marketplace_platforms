@@ -6,7 +6,6 @@ import {
   uploadBankTransferProofService,
 } from "../api/post";
 import { useEffect, useMemo, useState } from "react";
-import { getAddresses } from "@/src/services/address";
 import { getPaymentGateways } from "@/src/services/payment-gateways";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "@/i18n/navigation";
@@ -14,7 +13,6 @@ import { IPrepareCheckout } from "../types/checkout.type";
 import { getMarketerContract } from "../api/get";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
-import { ApiRequestError } from "@/src/lib/utils";
 import { useAddressesContext } from "@/src/providers/addresses-provider";
 
 export const useCheckout = () => {
@@ -106,6 +104,7 @@ export const useCheckout = () => {
     onMutate: () => toast.dismiss(),
     onSuccess: (data) => setCheckoutData(data.data),
     onError: (error) => {
+      console.log("error", error.message);
       toast.error(error?.message);
     },
   });
@@ -229,7 +228,7 @@ export const useCheckout = () => {
       receiver_id: selectedReceiverId ?? undefined,
       delivery_instruction: !!selectedInstruction
         ? Object.entries(selectedInstruction)
-            .map(([key, val]) => val)
+            .map(([, val]) => val)
             .join(", ")
         : undefined,
       coupon_code: checkoutData?.coupon?.code ?? null,
@@ -256,13 +255,14 @@ export const useCheckout = () => {
   return {
     createPrepareCheckout: prepareCheckout.mutateAsync,
     checkoutData,
+    emptyCart: prepareCheckout.error?.message
+      .toLowerCase()
+      .includes("cart is empty"),
     isPreparingCheckout: prepareCheckout.isPending,
     prepareCheckoutError: prepareCheckout.error,
 
     addressesData: addresses,
     isGettingAddresses,
-    // addressesError: addresses.error,
-    // selectedAddress,
 
     gatewaysData: gateways.data,
     isGettingGateways: gateways.isPending,

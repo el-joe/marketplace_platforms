@@ -763,6 +763,9 @@
     "readyToMakeAWishDescription": "ابدأ بإضافة المنتجات التي تحبها إلى قائمة المفضلة بالنقر على أيقونة القلب"
   },
   "checkout": {
+    "yourCartIsEmpty": "سلة التسوق فارغة",
+    "whatWouldYouLikeToDo": "ماذا تريد أن تفعل؟",
+    "ReturnToCart": "العودة إلى سلة التسوق",
     "deliverTo": "التوصيل إلى",
     "editAddress": "تعديل العنوان",
     "whoWillReceiveThisOrder": "كيف سيتم استلام هذا الطلب",
