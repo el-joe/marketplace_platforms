@@ -227,6 +227,7 @@ return [
             'transfer_not_draft'                   => 'Transfer is not in draft status.',
             'insufficient_stock_items'              => 'Insufficient stock for one or more items.',
             'transfer_cannot_be_cancelled'          => 'Transfer cannot be cancelled in its current state.',
+            'warehouse_type_owner_mismatch'         => 'Vendor-owned warehouses must be seller-owned or third-party; platform FBN warehouses cannot have an owner vendor.',
             'negative_quantity_on_hand'             => 'Adjustment would result in negative quantity on hand (:qty).',
             'damaged_exceeds_on_hand'                => 'Cannot mark :qty unit(s) as damaged; only :available on hand.',
             'only_draft_can_be_shipped'              => 'Only draft transfers can be shipped.',

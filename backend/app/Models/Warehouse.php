@@ -47,6 +47,34 @@ class Warehouse extends Model
         'daily_fee_per_unit' => 'integer',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (Warehouse $warehouse) {
+            if (!self::isValidTypeOwner($warehouse->type, $warehouse->owner_vendor_id)) {
+                throw new \InvalidArgumentException(__('common.exceptions.warehouse.warehouse_type_owner_mismatch'));
+            }
+        });
+    }
+
+    /**
+     * Invariant: platform_fbn ⇒ no owner vendor; seller_owned ⇒ owner vendor required;
+     * any owner vendor ⇒ type is seller_owned or third_party.
+     */
+    public static function isValidTypeOwner(WarehouseType|string|null $type, ?string $ownerVendorId): bool
+    {
+        $type = $type instanceof WarehouseType ? $type : WarehouseType::tryFrom((string) $type);
+
+        if ($type === WarehouseType::PlatformFbn) {
+            return $ownerVendorId === null;
+        }
+
+        if ($type === WarehouseType::SellerOwned) {
+            return $ownerVendorId !== null;
+        }
+
+        return true;
+    }
+
     // ─── Relationships ─────────────────────────────────────────────────────────
 
     public function country(): BelongsTo

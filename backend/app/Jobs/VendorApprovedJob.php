@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\WarehouseType;
 use App\Models\Vendor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -49,6 +50,7 @@ class VendorApprovedJob implements ShouldQueue
                 'id' => $warehouseId,
                 'name' => $vendor->store_name . ' — Default Warehouse',
                 'code' => $warehouseCode,
+                'type' => WarehouseType::SellerOwned->value,
                 'owner_vendor_id' => $vendor->id,
                 'country_id' => $vendor->country_id,
                 'is_active' => true,

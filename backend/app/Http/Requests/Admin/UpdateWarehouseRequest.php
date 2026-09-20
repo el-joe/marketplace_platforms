@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\WarehouseType;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,6 +39,19 @@ class UpdateWarehouseRequest extends FormRequest
             'daily_fee_per_unit' => ['nullable', 'integer', 'min:0'],
             'daily_fee_currency' => ['nullable', 'string', 'size:3'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($validator->errors()->has('type') || $validator->errors()->has('owner_vendor_id')) {
+                return;
+            }
+
+            if (!Warehouse::isValidTypeOwner($this->input('type'), $this->input('owner_vendor_id') ?: null)) {
+                $validator->errors()->add('type', __('common.exceptions.warehouse.warehouse_type_owner_mismatch'));
+            }
+        });
     }
 
     protected function prepareForValidation(): void

@@ -227,6 +227,7 @@ return [
             'transfer_not_draft'                   => 'عملية النقل ليست في حالة مسودة.',
             'insufficient_stock_items'              => 'المخزون غير كافٍ لعنصر واحد أو أكثر.',
             'transfer_cannot_be_cancelled'          => 'لا يمكن إلغاء عملية النقل في حالتها الحالية.',
+            'warehouse_type_owner_mismatch'         => 'يجب أن تكون مستودعات البائعين مملوكة للبائع أو تابعة لطرف ثالث، ولا يمكن أن يكون لمستودعات FBN التابعة للمنصة بائع مالك.',
             'negative_quantity_on_hand'             => 'سيؤدي هذا التعديل إلى كمية سالبة في المخزون (:qty).',
             'damaged_exceeds_on_hand'                => 'لا يمكن تحديد :qty وحدة كتالفة؛ يوجد فقط :available في المخزون.',
             'only_draft_can_be_shipped'              => 'يمكن شحن عمليات النقل في حالة المسودة فقط.',

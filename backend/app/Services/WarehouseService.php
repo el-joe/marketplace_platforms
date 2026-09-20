@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\InventoryTransferStatus;
+use App\Enums\WarehouseType;
 use App\Models\InventoryMovement;
 use App\Models\InventoryTransfer;
 use App\Models\InventoryTransferItem;
@@ -10,6 +11,7 @@ use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WarehouseService
 {
@@ -17,11 +19,18 @@ class WarehouseService
 
     public function create(array $data): Warehouse
     {
+        $this->assertTypeOwnerConsistent($data['type'] ?? null, $data['owner_vendor_id'] ?? null);
+
         return Warehouse::create($data);
     }
 
     public function update(Warehouse $warehouse, array $data): Warehouse
     {
+        $this->assertTypeOwnerConsistent(
+            $data['type'] ?? $warehouse->type,
+            array_key_exists('owner_vendor_id', $data) ? $data['owner_vendor_id'] : $warehouse->owner_vendor_id,
+        );
+
         $warehouse->update($data);
 
         return $warehouse->refresh();
@@ -334,6 +343,15 @@ class WarehouseService
     }
 
     // ─── Private Helpers ─────────────────────────────────────────────────────
+
+    private function assertTypeOwnerConsistent(WarehouseType|string|null $type, ?string $ownerVendorId): void
+    {
+        if (!Warehouse::isValidTypeOwner($type, $ownerVendorId)) {
+            throw ValidationException::withMessages([
+                'type' => __('common.exceptions.warehouse.warehouse_type_owner_mismatch'),
+            ]);
+        }
+    }
 
     private function generateTransferNumber(): string
     {
