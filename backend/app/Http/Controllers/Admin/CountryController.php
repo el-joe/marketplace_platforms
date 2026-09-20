@@ -59,6 +59,8 @@ class CountryController extends Controller
                 'countries.is_active',
                 'countries.is_launched',
                 'countries.cod_available',
+                'countries.cod_max_amount',
+                'countries.cod_supermall_max_amount',
                 'countries.launched_at',
                 'countries.deleted_at',
             ])
@@ -91,6 +93,8 @@ class CountryController extends Controller
                 'is_launched' => (bool) $row->is_launched,
                 'is_active' => (bool) $row->is_active,
                 'cod_available' => (bool) $row->cod_available,
+                'cod_max_amount' => $row->cod_max_amount,
+                'cod_supermall_max_amount' => $row->cod_supermall_max_amount,
                 'is_deleted' => !is_null($row->deleted_at),
                 'edit_url' => route('admin.countries.edit', $row->id),
             ];
@@ -107,6 +111,7 @@ class CountryController extends Controller
             'currencies' => Currency::where('is_active', true)->orderBy('code')->pluck('name', 'code'),
             'timezones' => $this->timezoneList(),
             'locales' => $this->localeList(),
+            'categories' => Category::where('is_active', true)->pluck('name_en', 'id'),
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Countries', 'url' => route('admin.countries.index')],
@@ -131,6 +136,9 @@ class CountryController extends Controller
             'timezone' => ['nullable', 'timezone'],
             'vat_rate' => ['required', 'numeric', 'between:0,50'],
             'cod_available' => ['boolean'],
+            'cod_max_amount' => ['nullable', 'integer', 'min:0'],
+            'cod_supermall_max_amount' => ['nullable', 'integer', 'min:0'],
+            'cod_supermall_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
         ]);
 
         $country = Country::create(array_merge(
@@ -163,6 +171,7 @@ class CountryController extends Controller
             'currencies' => Currency::where('is_active', true)->orderBy('code')->pluck('name', 'code'),
             'timezones' => $this->timezoneList(),
             'locales' => $this->localeList(),
+            'categories' => Category::where('is_active', true)->pluck('name_en', 'id'),
             'allShippingMethods' => $allShippingMethods,
             'launchErrors' => $this->countryService->validateForLaunch($country),
             'canDelete' => $this->countryService->canDelete($country),
@@ -194,6 +203,9 @@ class CountryController extends Controller
             'timezone' => ['nullable', 'timezone'],
             'vat_rate' => ['required', 'numeric', 'between:0,50'],
             'cod_available' => ['boolean'],
+            'cod_max_amount' => ['nullable', 'integer', 'min:0'],
+            'cod_supermall_max_amount' => ['nullable', 'integer', 'min:0'],
+            'cod_supermall_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
         ]);
 
         $country->update($data);
@@ -515,6 +527,15 @@ class CountryController extends Controller
                 'searchable' => false,
                 'className' => 'text-center',
                 'render' => 'function(data){return data?\'<span class="text-success-600 font-bold">✓</span>\':\'<span class="text-gray-300">—</span>\';}',
+            ],
+            [
+                'title' => 'COD Max',
+                'data' => 'cod_max_amount',
+                'name' => 'cod_max_amount',
+                'orderable' => false,
+                'searchable' => false,
+                'className' => 'text-center',
+                'render' => 'function(data){return data ? data : "Unlimited";}',
             ],
             [
                 'title' => 'Status',

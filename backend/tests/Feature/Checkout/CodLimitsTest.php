@@ -4,7 +4,6 @@ namespace Tests\Feature\Checkout;
 
 use App\Models\CartItem;
 use App\Models\Country;
-use App\Models\Setting;
 use App\Services\Customer\CodValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -43,12 +42,6 @@ class CodLimitsTest extends TestCase
             'quantity' => 1, 'unit_price' => $price, 'added_at' => now()]);
     }
 
-    private function set(string $key, $value): void
-    {
-        Setting::updateOrCreate(['key' => $key], ['value' => $value, 'category' => 'orders', 'is_encrypted' => false, 'is_public' => false]);
-        \Illuminate\Support\Facades\Cache::forget('setting:'.$key);
-    }
-
     private function errors($cart, $s): array
     {
         return app(CodValidationService::class)->validate($cart->fresh()->items()->get()->all(), $s->country->id);
@@ -57,7 +50,7 @@ class CodLimitsTest extends TestCase
     public function test_boundary_equal_ok_and_plus_one_blocked(): void
     {
         $s = $this->scenario();
-        $this->set('cod_global_max_amount', 50000);
+        $s->country->update(['cod_max_amount' => 50000]);
         $cart = $this->cart($s);
         $item = $this->vendorItem($cart, $s->vendorListingFbp, 50000);
         $this->assertSame([], $this->errors($cart, $s));
@@ -70,17 +63,14 @@ class CodLimitsTest extends TestCase
         $s = $this->scenario();
         $cart = $this->cart($s);
         $this->vendorItem($cart, $s->vendorListingFbp, 99999999);
-        $this->set('cod_global_max_amount', 0);
-        $this->assertSame([], $this->errors($cart, $s));
-        Setting::where('key', 'cod_global_max_amount')->delete();
-        \Illuminate\Support\Facades\Cache::forget('setting:cod_global_max_amount');
+        $s->country->update(['cod_max_amount' => 0]);
         $this->assertSame([], $this->errors($cart, $s));
     }
 
     public function test_nawi_items_exempt_and_mixed_cart_counts_only_partner_subtotal(): void
     {
         $s = $this->scenario();
-        $this->set('cod_global_max_amount', 1000);
+        $s->country->update(['cod_max_amount' => 1000]);
         $cart = $this->cart($s);
         $this->adminItem($cart, $s, 900000);
         $this->assertSame([], $this->errors($cart, $s));
@@ -93,9 +83,11 @@ class CodLimitsTest extends TestCase
     public function test_supermall_category_has_separate_limit(): void
     {
         $s = $this->scenario();
-        $this->set('cod_global_max_amount', 100);
-        $this->set('cod_supermall_max_amount', 5000);
-        $this->set('cod_supermall_category_id', $s->category->id);
+        $s->country->update([
+            'cod_max_amount' => 100,
+            'cod_supermall_max_amount' => 5000,
+            'cod_supermall_category_id' => $s->category->id,
+        ]);
         $cart = $this->cart($s);
         // product is in the supermall category: uses supermall limit, not global
         $item = $this->vendorItem($cart, $s->vendorListingFbp, 5000);
@@ -118,7 +110,7 @@ class CodLimitsTest extends TestCase
     public function test_place_order_cod_over_limit_rejected_server_side(): void
     {
         $s = $this->scenario();
-        $this->set('cod_global_max_amount', 500);
+        $s->country->update(['cod_max_amount' => 500]);
         $cart = $this->cart($s);
         $this->vendorItem($cart, $s->vendorListingFbp, 501);
         $r = $this->postJson("/api/customer/v1/{$s->country->site_code}/checkout/place-order", [
@@ -133,7 +125,7 @@ class CodLimitsTest extends TestCase
     public function test_payment_options_marks_cod_unavailable_over_limit(): void
     {
         $s = $this->scenario();
-        $this->set('cod_global_max_amount', 500);
+        $s->country->update(['cod_max_amount' => 500]);
         $cart = $this->cart($s);
         $this->vendorItem($cart, $s->vendorListingFbp, 501);
         $r = $this->getJson("/api/customer/v1/{$s->country->site_code}/checkout/payment-options");
@@ -142,14 +134,5 @@ class CodLimitsTest extends TestCase
             ->first(fn ($g) => ($g['gateway_code'] ?? null) === 'cod');
         $this->assertNotNull($cod, $r->getContent());
         $this->assertFalse($cod['is_available']);
-    }
-
-    public function test_settings_service_validates_cod_keys(): void
-    {
-        $this->set('cod_global_max_amount', 0);
-        $svc = app(\App\Services\SettingsService::class);
-        $this->assertArrayHasKey('cod_global_max_amount', $svc->validateGroup('orders', ['cod_global_max_amount' => '-5']));
-        $this->assertArrayHasKey('cod_global_max_amount', $svc->validateGroup('orders', ['cod_global_max_amount' => 'abc']));
-        $this->assertSame([], $svc->validateGroup('orders', ['cod_global_max_amount' => '50000']));
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Services\Customer;
 
 use App\Models\Category;
-use App\Models\Setting;
+use App\Models\Country;
 use App\Services\Checkout\CartLineSource;
 
 class CodValidationService
@@ -23,24 +23,24 @@ class CodValidationService
      * @param  array<\App\Models\CartItem>  $cartItems
      * @return array<int, string> Validation error messages; empty when COD is allowed.
      */
-    public function validate(array $cartItems, ?string $destinationCountryId = null): array
+    public function validate(array $cartItems, string $destinationCountryId): array
     {
         $errors = [];
 
-        if ($destinationCountryId !== null) {
-            foreach ($cartItems as $item) {
-                $source = CartLineSource::resolve($item);
-                if ($source !== null && $source->isInternational($destinationCountryId)) {
-                    $errors[] = __('common.exceptions.checkout.cod_international_not_allowed');
-                    break;
-                }
+        foreach ($cartItems as $item) {
+            $source = CartLineSource::resolve($item);
+            if ($source !== null && $source->isInternational($destinationCountryId)) {
+                $errors[] = __('common.exceptions.checkout.cod_international_not_allowed');
+                break;
             }
         }
+
+        $country = Country::find($destinationCountryId);
 
         $regularTotal = 0;
         $supermallTotal = 0;
 
-        $supermallRange = $this->supermallLftRgtRange();
+        $supermallRange = $this->supermallLftRgtRange($country);
 
         foreach ($cartItems as $item) {
             // Nawi/platform (and by extension global) products are exempt from COD limits.
@@ -57,12 +57,12 @@ class CodValidationService
             }
         }
 
-        $globalLimit = (int) Setting::get('cod_global_max_amount', 0);
+        $globalLimit = (int) ($country?->cod_max_amount ?? 0);
         if ($globalLimit > 0 && $regularTotal > $globalLimit) {
             $errors[] = __('common.exceptions.checkout.cod_limit_exceeded', ['limit' => $globalLimit]);
         }
 
-        $supermallLimit = (int) Setting::get('cod_supermall_max_amount', 0);
+        $supermallLimit = (int) ($country?->cod_supermall_max_amount ?? 0);
         if ($supermallLimit > 0 && $supermallTotal > $supermallLimit) {
             $errors[] = __('common.exceptions.checkout.cod_supermall_limit_exceeded', ['limit' => $supermallLimit]);
         }
@@ -73,9 +73,9 @@ class CodValidationService
     /**
      * @return array{0: int, 1: int}|null [lft, rgt] of the configured Super Mall category, or null when unset.
      */
-    private function supermallLftRgtRange(): ?array
+    private function supermallLftRgtRange(?Country $country): ?array
     {
-        $categoryId = Setting::get('cod_supermall_category_id', '');
+        $categoryId = $country?->cod_supermall_category_id;
 
         if (empty($categoryId)) {
             return null;

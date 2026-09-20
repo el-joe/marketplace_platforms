@@ -211,19 +211,6 @@ class SettingsService
 
             $original = $setting->value;
 
-            if (in_array($key, ['cod_global_max_amount', 'cod_supermall_max_amount'], true)) {
-                if (!is_numeric($value) || (float) $value < 0 || floor((float) $value) != (float) $value) {
-                    $errors[$key] = 'Must be a non-negative whole number (0 = unlimited).';
-                }
-                continue;
-            }
-            if ($key === 'cod_supermall_category_id') {
-                if ($value !== '' && $value !== null && !\App\Models\Category::whereKey($value)->exists()) {
-                    $errors[$key] = 'Must be an existing category.';
-                }
-                continue;
-            }
-
             if (is_bool($original)) {
                 if (!in_array($value, ['0', '1', 0, 1, true, false], true)) {
                     $errors[$key] = 'Must be a boolean (0 or 1).';

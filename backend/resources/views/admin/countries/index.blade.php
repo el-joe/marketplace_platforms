@@ -25,6 +25,15 @@
                 'render' => 'function(data){return data?"<span class=\"text-success-600 font-bold\">✓</span>":"<span class=\"text-gray-300\">—</span>";}'
             ],
             [
+                'title' => __('admin.geography.cod_max_col'),
+                'data' => 'cod_max_amount',
+                'name' => 'cod_max_amount',
+                'orderable' => false,
+                'searchable' => false,
+                'className' => 'text-center w-20',
+                'render' => 'function(data){return data ? data : "' . __('admin.geography.unlimited_placeholder') . '";}'
+            ],
+            [
                 'title' => __('admin.geography.status_col'),
                 'data' => 'is_launched',
                 'name' => 'is_launched',

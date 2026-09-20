@@ -32,6 +32,9 @@ class Country extends Model
         'is_active',
         'is_launched',
         'cod_available',
+        'cod_max_amount',
+        'cod_supermall_max_amount',
+        'cod_supermall_category_id',
         'launched_at',
     ];
 
@@ -39,6 +42,9 @@ class Country extends Model
         'is_active' => 'boolean',
         'is_launched' => 'boolean',
         'cod_available' => 'boolean',
+        'cod_max_amount' => 'integer',
+        'cod_supermall_max_amount' => 'integer',
+        'cod_supermall_category_id' => 'string',
         'vat_rate' => 'decimal:2',
         'launched_at' => 'datetime',
     ];
@@ -61,6 +67,11 @@ class Country extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code', 'code');
+    }
+
+    public function codSupermallCategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'cod_supermall_category_id');
     }
 
 

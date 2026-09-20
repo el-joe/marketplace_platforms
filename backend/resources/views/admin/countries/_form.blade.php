@@ -300,6 +300,39 @@
                 :checked="$bool('is_active', true)"
             />
         </div>
+
+        <div class="grid grid-cols-3 gap-4">
+            <x-form.input
+                name="cod_max_amount"
+                label="{{ __('admin.geography.cod_max_amount') }}"
+                type="number"
+                step="1"
+                min="0"
+                :value="$val('cod_max_amount')"
+                placeholder="{{ __('admin.geography.unlimited_placeholder') }}"
+                help-text="{{ __('admin.geography.cod_max_amount_hint') }}"
+            />
+            <x-form.input
+                name="cod_supermall_max_amount"
+                label="{{ __('admin.geography.cod_supermall_max_amount') }}"
+                type="number"
+                step="1"
+                min="0"
+                :value="$val('cod_supermall_max_amount')"
+                placeholder="{{ __('admin.geography.unlimited_placeholder') }}"
+                help-text="{{ __('admin.geography.cod_supermall_max_amount_hint') }}"
+            />
+            <x-form.async-select
+                name="cod_supermall_category_id"
+                label="{{ __('admin.geography.cod_supermall_category') }}"
+                search-url="{{ route('admin.categories.search') }}"
+                :min-length="0"
+                :value="$val('cod_supermall_category_id')"
+                :value-label="$val('cod_supermall_category_id') ? ($categories[$val('cod_supermall_category_id')] ?? '') : null"
+                placeholder="{{ __('admin.geography.select_category') }}"
+                help-text="{{ __('admin.geography.cod_supermall_category_hint') }}"
+            />
+        </div>
     </div>
 
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
