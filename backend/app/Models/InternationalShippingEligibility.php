@@ -10,6 +10,8 @@ class InternationalShippingEligibility extends Model
 {
     use HasUuids;
 
+    protected $table = 'international_shipping_eligibility';
+
     protected $keyType = 'string';
     public $incrementing = false;
 
