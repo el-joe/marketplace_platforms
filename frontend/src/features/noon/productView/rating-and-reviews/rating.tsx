@@ -1,4 +1,4 @@
-import { RatingStars } from "@/src/components/ui/RatingStars";
+import { ProductDetailsRate } from "@/src/components/ui/rating/product-details-rate";
 
 import { StarIcon } from "lucide-react";
 import { Reviews } from "../types/product-details";
@@ -21,7 +21,7 @@ export default async function Rating({
     <div>
       <div className="flex flex-col gap-3 lg:border-e border-border pe-3 lg:mb-7">
         <p className="text-4xl font-bold">{ratingAVG}</p>
-        <RatingStars rating={ratingAVG} />
+        <ProductDetailsRate rating={ratingAVG} />
         <p className="text-sm">
           {t("basedOn$ratingsFromTrustedSources", { count: ratingCount })}
         </p>

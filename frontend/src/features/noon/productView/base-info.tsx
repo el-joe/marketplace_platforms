@@ -1,7 +1,7 @@
 "use client";
 import { Link } from "@/i18n/navigation";
 import Price from "@/src/components/shared/Price";
-import { RatingStars } from "@/src/components/ui/RatingStars";
+import { ProductDetailsRate } from "@/src/components/ui/rating/product-details-rate";
 import {
   // BadgeCheckIcon,
   ChevronLeft,
@@ -123,7 +123,7 @@ export default function BaseInfo({ product }: Props) {
       {/* rate */}
       <div className="flex items-center gap-2">
         <p>{product?.product?.rating_avg}</p>
-        <RatingStars rating={product?.product?.rating_avg} />
+        <ProductDetailsRate rating={product?.product?.rating_avg} />
         <Link
           href={"#reviews"}
           className="text-blue! font-semibold border-s ps-2"

@@ -1,23 +1,24 @@
 import { Star } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { getRatingStarColor } from "./helpers/get-rating-star-color";
 
-interface RatingStarsProps {
+interface ProductDetailsRateProps {
   rating: number;
   maxStars?: number;
   size?: "xs" | "sm" | "md" | "lg";
 }
 
-export function RatingStars({
+export function ProductDetailsRate({
   rating,
   maxStars = 5,
   size = "md",
-}: RatingStarsProps) {
+}: ProductDetailsRateProps) {
   const iconSize = {
     xs: "h-3 w-3",
     sm: "h-4 w-4",
     md: "h-5 w-5",
     lg: "h-7 w-7",
   };
+  const starColor = getRatingStarColor(rating);
   return (
     <div className="flex items-center gap-1">
       {Array.from({ length: maxStars }).map((_, index) => {
@@ -31,7 +32,7 @@ export function RatingStars({
           <div key={index} className={`relative ${iconSize[size]}`}>
             {/* Empty star */}
             <Star
-              className={`${iconSize[size]} fill-muted stroke-muted-foreground`}
+              className={`${iconSize[size]} fill-[#DADDE3] stroke-transparent`}
             />
 
             {/* Filled portion */}
@@ -40,36 +41,13 @@ export function RatingStars({
               style={{ width: `${fillPercentage}%` }}
             >
               <Star
-                className={`${iconSize[size]} fill-green-3 stroke-green-3`}
+                className={iconSize[size]}
+                style={{ fill: starColor, stroke: starColor }}
               />
             </div>
           </div>
         );
       })}
-    </div>
-  );
-}
-
-interface RatingBadgeProps {
-  rating: number;
-  reviewCount?: number;
-  className?: string;
-}
-
-/** Compact "⭐ 4.9 (128)" pill — reuses the same star iconography as RatingStars. */
-export function RatingBadge({ rating, reviewCount, className }: RatingBadgeProps) {
-  return (
-    <div
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-xs font-bold text-primary shadow-sm",
-        className,
-      )}
-    >
-      <Star className="size-3.5 fill-yellow stroke-yellow" />
-      {rating.toFixed(1)}
-      {reviewCount !== undefined && (
-        <span className="font-medium text-gray">({reviewCount})</span>
-      )}
     </div>
   );
 }

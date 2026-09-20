@@ -10,7 +10,6 @@ import {
   ChevronRight,
   ChevronRightIcon,
   HeartIcon,
-  StarIcon,
 } from "lucide-react";
 import Price from "./Price";
 import { Link } from "@/i18n/navigation";
@@ -27,6 +26,7 @@ import AnimatedBadge from "./animated-badge";
 import { mapPromoBadges } from "@/src/lib/promo-badges";
 import useCountDown from "@/src/hooks/useCountDown";
 import InternationalShippingIndicator from "./international-shipping-indicator";
+import { ProductCardRate } from "../ui/rating/product-card-rate";
 
 type Props = {
   productData: Product | IProduct;
@@ -185,9 +185,9 @@ const ProductCard = ({ productData }: Props) => {
       {/* card body (title, rate, price, bottom badge) */}
       {/* <Link href={`/products/${productData.id}`}> */}
       <Link href={`/products/${productData.url_param}`} className="flex-1">
-        <div className="flex flex-col justify-start p-1 lg:p-2.5 h-full">
+        <div className="flex flex-col justify-start p-1 lg:p-2.5 h-full gap-3">
           {/* title */}
-          <h3 className="text-[10px] font-semibold md:text-xs lg:text-base line-clamp-3 mb-1">
+          <h3 className="text-[10px] font-semibold md:text-xs lg:text-base line-clamp-3">
             {locale === "ar" ? productData.name_ar : productData.name_en}
           </h3>
           {!!productData.variant_name?.[locale] && (
@@ -196,17 +196,11 @@ const ProductCard = ({ productData }: Props) => {
             </p>
           )}
           {/* rating */}
-          {productData.rating_avg && (
-            <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px md:py-0.5 mb-1">
-              <StarIcon className="size-2 md:size-3 text-green fill-green" />
-              <p className="font-semibold text-[8px] md:text-xs ">
-                {productData.rating_avg}
-              </p>
-              <p className="text-gray text-[8px] md:text-xs lg:text-sm">
-                ({productData.rating_count})
-              </p>
-            </div>
-          )}
+          <ProductCardRate
+            rating={productData.rating_avg}
+            reviewCount={productData.rating_count}
+            className="w-fit mb-1"
+          />
           <Price
             currentPrice={productData.price}
             currency={productData.currency}

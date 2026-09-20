@@ -16,9 +16,9 @@ export default async function Returns() {
       <p className="text-sm text-gray mt-1">{t("returnsSubtitle")}</p>
 
       <div className="mt-3 flex items-center justify-between">
-        <Button className="bg-blue-3 text-white uppercase font-semibold px-6 h-11 rounded-md">
+        {/* <Button className="bg-blue-3 text-white uppercase font-semibold px-6 h-11 rounded-md">
           {t("createNewReturn")}
-        </Button>
+        </Button> */}
 
         <ReturnsFilter />
       </div>

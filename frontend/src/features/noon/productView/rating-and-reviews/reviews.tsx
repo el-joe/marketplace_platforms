@@ -2,7 +2,7 @@
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Field, FieldLabel } from "@/src/components/ui/field";
-import { RatingStars } from "@/src/components/ui/RatingStars";
+import { ProductDetailsRate } from "@/src/components/ui/rating/product-details-rate";
 import { Select } from "@/src/components/ui/base-inputs/select";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -164,7 +164,7 @@ export default function Reviews({ reviews }: Props) {
               </div>
             </div>
             {/* rating */}
-            <RatingStars rating={review.rating} size="xs" />
+            <ProductDetailsRate rating={review.rating} size="xs" />
             {/* images */}
             {/* {!!review.images?.length && (
               <div className="flex flex-wrap gap-2 items-center">

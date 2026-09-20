@@ -58,7 +58,12 @@ export default function CreateWarrantyClaim() {
   if (!orderItemId) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
-        <Image src="/images/profile/claims.svg" alt="" width={321} height={231} />
+        <Image
+          src="/images/profile/claims.svg"
+          alt=""
+          width={321}
+          height={231}
+        />
 
         <h2 className="mt-6 text-2xl font-bold">{t("noClaimableItems")}</h2>
         <p className="mt-1 text-sm text-gray">{t("noClaimableItemsMessage")}</p>
