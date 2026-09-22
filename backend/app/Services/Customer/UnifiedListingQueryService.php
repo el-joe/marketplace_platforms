@@ -2,7 +2,10 @@
 
 namespace App\Services\Customer;
 
+use App\Models\AdminListing;
 use App\Models\Country;
+use App\Models\MarketerListing;
+use App\Models\VendorListing;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -78,6 +81,7 @@ class UnifiedListingQueryService
             $existing = $bestByVariant[$row->product_variant_id] ?? null;
             if ($existing === null) {
                 $bestByVariant[$row->product_variant_id] = $row;
+
                 continue;
             }
             $existingPriority = $priority[$existing->listing_type] ?? 99;
@@ -88,8 +92,8 @@ class UnifiedListingQueryService
         }
 
         // Collect IDs by type for batch hydration
-        $adminIds    = collect($bestByVariant)->where('listing_type', 'admin')->pluck('listing_id')->all();
-        $vendorIds   = collect($bestByVariant)->where('listing_type', 'vendor')->pluck('listing_id')->all();
+        $adminIds = collect($bestByVariant)->where('listing_type', 'admin')->pluck('listing_id')->all();
+        $vendorIds = collect($bestByVariant)->where('listing_type', 'vendor')->pluck('listing_id')->all();
         $marketerIds = collect($bestByVariant)->where('listing_type', 'marketer')->pluck('listing_id')->all();
 
         $sharedWith = [
@@ -99,25 +103,25 @@ class UnifiedListingQueryService
             'productVariant.product.brand',
         ];
 
-        $hydratedAdmin    = !empty($adminIds)    ? \App\Models\AdminListing::whereIn('id', $adminIds)->with($sharedWith)->get()->keyBy('id') : collect();
-        $hydratedVendor   = !empty($vendorIds)   ? \App\Models\VendorListing::whereIn('id', $vendorIds)->with(array_merge($sharedWith, ['vendor:id,store_name,store_rating_avg']))->get()->keyBy('id') : collect();
-        $hydratedMarketer = !empty($marketerIds) ? \App\Models\MarketerListing::whereIn('id', $marketerIds)->with(array_merge($sharedWith, ['marketer:id,name,marketer_type']))->get()->keyBy('id') : collect();
+        $hydratedAdmin = ! empty($adminIds) ? AdminListing::whereIn('id', $adminIds)->with($sharedWith)->get()->keyBy('id') : collect();
+        $hydratedVendor = ! empty($vendorIds) ? VendorListing::whereIn('id', $vendorIds)->with(array_merge($sharedWith, ['vendor:id,store_name,store_rating_avg']))->get()->keyBy('id') : collect();
+        $hydratedMarketer = ! empty($marketerIds) ? MarketerListing::whereIn('id', $marketerIds)->with(array_merge($sharedWith, ['marketer:id,name', 'marketer.marketerJobs']))->get()->keyBy('id') : collect();
 
         // Build result keyed by product_id
         $result = array_fill_keys($products->pluck('id')->all(), null);
 
         foreach ($products as $product) {
             foreach ($product->variants as $variant) {
-                if (!isset($bestByVariant[$variant->id])) {
+                if (! isset($bestByVariant[$variant->id])) {
                     continue;
                 }
 
-                $row     = $bestByVariant[$variant->id];
+                $row = $bestByVariant[$variant->id];
                 $listing = match ($row->listing_type) {
-                    'admin'    => $hydratedAdmin->get($row->listing_id),
-                    'vendor'   => $hydratedVendor->get($row->listing_id),
+                    'admin' => $hydratedAdmin->get($row->listing_id),
+                    'vendor' => $hydratedVendor->get($row->listing_id),
                     'marketer' => $hydratedMarketer->get($row->listing_id),
-                    default    => null,
+                    default => null,
                 };
 
                 if ($listing && $result[$product->id] === null) {

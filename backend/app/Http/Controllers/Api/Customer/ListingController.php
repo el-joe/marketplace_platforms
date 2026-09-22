@@ -38,15 +38,14 @@ class ListingController extends Controller
         private readonly AppContextService $appContext,
         private readonly ProductDetailEnrichmentService $enrichment,
         private readonly ListingQueryService $listings,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         $isNawyNow = $this->appContext->isNawyNow();
         $country = $this->resolveCountry($request);
 
-        if (!$country) {
+        if (! $country) {
             return ApiResponse::error(__('customer_api.listing.country_not_found'), [], 404);
         }
 
@@ -73,7 +72,8 @@ class ListingController extends Controller
                 ->where('status', 'active')
                 ->whereHas('productVariant.product')
                 ->with([
-                    'marketer:id,name,marketer_type',
+                    'marketer:id,name',
+                    'marketer.marketerJobs',
                     'productVariant.images',
                     'productVariant.product.images',
                     'productVariant.product.category',
@@ -111,14 +111,14 @@ class ListingController extends Controller
         $isNawyNow = $this->appContext->isNawyNow();
         $country = $this->resolveCountry($request);
 
-        if (!$country) {
+        if (! $country) {
             return ApiResponse::error(__('customer_api.listing.country_not_found'), [], 404);
         }
 
         if ($isNawyNow) {
             $listing = $this->resolveAdminListing($identifier, $country);
 
-            if (!$listing) {
+            if (! $listing) {
                 return ApiResponse::error(__('customer_api.listing.not_found'), [], 404);
             }
 
@@ -136,7 +136,7 @@ class ListingController extends Controller
         $type = $this->identifiers->detectType($identifier);
         $listing = $this->identifiers->resolve($identifier, $type, $country);
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('customer_api.listing.not_found'), [], 404);
         }
 
@@ -168,7 +168,7 @@ class ListingController extends Controller
 
         $country = $this->resolveCountry($request);
 
-        if (!$country) {
+        if (! $country) {
             return ApiResponse::error(__('customer_api.listing.country_not_found'), [], 404);
         }
 
@@ -179,7 +179,7 @@ class ListingController extends Controller
             ->with(['vendor', 'productVariant'])
             ->first();
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('customer_api.listing.not_found'), [], 404);
         }
 
@@ -188,13 +188,13 @@ class ListingController extends Controller
             ? ShippingZone::find($address->city->shipping_zone_id)
             : null;
 
-        if (!$zone) {
+        if (! $zone) {
             return ApiResponse::error(__('customer_api.listing.shipping_zone_unresolvable'), [], 422);
         }
 
         $method = ShippingMethod::find($request->input('shipping_method_id'));
 
-        if (!$method) {
+        if (! $method) {
             return ApiResponse::error(__('customer_api.listing.shipping_method_not_found'), [], 404);
         }
 
@@ -357,7 +357,7 @@ class ListingController extends Controller
     {
         $product = $listing->productVariant->product;
 
-        if (!$product->category_id) {
+        if (! $product->category_id) {
             return [];
         }
 
@@ -421,7 +421,7 @@ class ListingController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (!$customer) {
+        if (! $customer) {
             return null;
         }
 

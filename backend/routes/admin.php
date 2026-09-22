@@ -1,79 +1,119 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AdCampaignController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminGiftCardController;
+use App\Http\Controllers\Admin\AdminListingController;
+use App\Http\Controllers\Admin\AdminListingInventoryController;
+use App\Http\Controllers\Admin\AdminListingReviewController;
+use App\Http\Controllers\Admin\AdminVoucherController;
+use App\Http\Controllers\Admin\AdSlotController;
+use App\Http\Controllers\Admin\AdSupportArticleController;
+use App\Http\Controllers\Admin\AdSupportCollectionController;
+use App\Http\Controllers\Admin\AiDashboardController;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\AppContextController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\BestsellerController;
+use App\Http\Controllers\Admin\BlogCategoryController;
+use App\Http\Controllers\Admin\BlogPostController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\CarrierClaimController;
+use App\Http\Controllers\Admin\CarrierScorecardController;
+use App\Http\Controllers\Admin\CartCardOfferController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CategoryShippingMethodController;
+use App\Http\Controllers\Admin\CityController;
+use App\Http\Controllers\Admin\ClassifiedCategoryController;
+use App\Http\Controllers\Admin\ClassifiedContractTemplateController;
+use App\Http\Controllers\Admin\ClassifiedListingController;
+use App\Http\Controllers\Admin\CodSettlementController;
+use App\Http\Controllers\Admin\ContentSettingsController;
+use App\Http\Controllers\Admin\CountryController;
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CurrencyController;
+use App\Http\Controllers\Admin\CurrencyExchangeRateController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\CustomPageController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DeliveryAgentController;
+use App\Http\Controllers\Admin\DeliveryAssignmentController;
+use App\Http\Controllers\Admin\DeliveryPayoutController;
+use App\Http\Controllers\Admin\DeliveryZoneController;
+use App\Http\Controllers\Admin\DisputeController;
+use App\Http\Controllers\Admin\DocsController;
+use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\FbnController;
+use App\Http\Controllers\Admin\FbtController;
+use App\Http\Controllers\Admin\FinancialReportController;
+use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\FooterSettingsController;
+use App\Http\Controllers\Admin\HelpCenterArticleController;
+use App\Http\Controllers\Admin\HelpCenterCategoryController;
+use App\Http\Controllers\Admin\InternationalShippingEligibilityController;
+use App\Http\Controllers\Admin\InternationalShippingRateController;
+use App\Http\Controllers\Admin\LedgerController;
 use App\Http\Controllers\Admin\LiveStreamController;
+use App\Http\Controllers\Admin\MarketerCampaignController;
+use App\Http\Controllers\Admin\MarketerContractController;
+use App\Http\Controllers\Admin\MarketerController;
+use App\Http\Controllers\Admin\MarketerJobController;
+use App\Http\Controllers\Admin\MarketerSettingsController;
+use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PackagingSupplyController;
+use App\Http\Controllers\Admin\PageBuilderController;
+use App\Http\Controllers\Admin\PaidAdBookingController;
+use App\Http\Controllers\Admin\PaymentGatewayController;
+use App\Http\Controllers\Admin\PayoutController;
+use App\Http\Controllers\Admin\PortalContentController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\ProductHighlightController;
-use App\Http\Controllers\Admin\BestsellerController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\CustomPageController;
-use App\Http\Controllers\Admin\CategoryShippingMethodController;
-use App\Http\Controllers\Admin\AttributeController;
-use App\Http\Controllers\Admin\BrandController;
-use App\Http\Controllers\Admin\WarrantyPlanController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\PayoutController;
-use App\Http\Controllers\Admin\FlashSaleController;
-use App\Http\Controllers\Admin\PageBuilderController;
-use App\Http\Controllers\Admin\VendorController;
-use App\Http\Controllers\Admin\VendorSectionLockController;
-use App\Http\Controllers\Admin\VendorChangeRequestController;
-use App\Http\Controllers\Admin\VendorProductCertificationController;
-use App\Http\Controllers\Admin\CountryController;
-use App\Http\Controllers\Admin\CityController;
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\CartCardOfferController;
-use App\Http\Controllers\Admin\FbtController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\AdminGiftCardController;
-use App\Http\Controllers\Admin\AdminVoucherController;
-use App\Http\Controllers\Admin\SupportTicketController;
-use App\Http\Controllers\Admin\DisputeController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\RadioChannelController;
 use App\Http\Controllers\Admin\ReturnController;
-use App\Http\Controllers\Admin\WarrantyClaimController;
-use App\Http\Controllers\Admin\WarrantyPurchaseController;
-use App\Http\Controllers\Admin\CurrencyController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\WishlistOverviewController;
-use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
-use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\AdCampaignController;
-use App\Http\Controllers\Admin\MarketerCampaignController;
-use App\Http\Controllers\Admin\MarketerSettingsController;
-use App\Http\Controllers\Admin\AdSlotController;
-use App\Http\Controllers\Admin\PaidAdBookingController;
-use App\Http\Controllers\Admin\VendorApplicationController;
-use App\Http\Controllers\Admin\VendorAcquisitionController;
 use App\Http\Controllers\Admin\ReviewController;
-use App\Http\Controllers\Admin\TransactionController;
-use App\Http\Controllers\Admin\LedgerController;
-use App\Http\Controllers\Admin\FaqController;
-use App\Http\Controllers\Admin\PortalContentController;
-use App\Http\Controllers\Admin\ContentSettingsController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Admin\CurrencyExchangeRateController;
-use App\Http\Controllers\Admin\InternationalShippingRateController;
-use App\Http\Controllers\Admin\ShippingSubsidyController;
-use App\Http\Controllers\Admin\ShippingZoneController;
-use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Admin\WarehouseShippingSurchargeController;
-use App\Http\Controllers\Admin\AnalyticsController;
-use App\Http\Controllers\Admin\SystemToolsController;
-use App\Http\Controllers\Admin\FinancialReportController;
+use App\Http\Controllers\Admin\ShippingCompanyController;
 use App\Http\Controllers\Admin\ShippingMethodController;
 use App\Http\Controllers\Admin\ShippingSettingController;
+use App\Http\Controllers\Admin\ShippingSubsidyController;
 use App\Http\Controllers\Admin\ShippingWeightSlabController;
-use App\Http\Controllers\Admin\DeliveryAgentController;
-use App\Http\Controllers\Admin\DeliveryZoneController;
-use App\Http\Controllers\Admin\DeliveryAssignmentController;
-use App\Http\Controllers\Admin\DeliveryPayoutController;
+use App\Http\Controllers\Admin\ShippingZoneController;
 use App\Http\Controllers\Admin\SubscriptionController;
-use App\Http\Controllers\Admin\FbnController;
-use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\SupportTicketController;
+use App\Http\Controllers\Admin\SystemToolsController;
+use App\Http\Controllers\Admin\TransactionController;
+use App\Http\Controllers\Admin\TravelAgencyChangeRequestController;
+use App\Http\Controllers\Admin\TravelAgencyController;
+use App\Http\Controllers\Admin\TravelBookingController;
+use App\Http\Controllers\Admin\TravelCategoryController;
+use App\Http\Controllers\Admin\TravelCityController;
+use App\Http\Controllers\Admin\TravelCountryController;
+use App\Http\Controllers\Admin\TravelInclusionController;
+use App\Http\Controllers\Admin\TravelPackageController;
+use App\Http\Controllers\Admin\TravelPackageInquiryController;
+use App\Http\Controllers\Admin\VendorAcquisitionController;
+use App\Http\Controllers\Admin\VendorApplicationController;
+use App\Http\Controllers\Admin\VendorChangeRequestController;
+use App\Http\Controllers\Admin\VendorController;
+use App\Http\Controllers\Admin\VendorDocumentTypeController;
+use App\Http\Controllers\Admin\VendorListingController;
+use App\Http\Controllers\Admin\VendorProductCertificationController;
+use App\Http\Controllers\Admin\VendorSectionLockController;
+use App\Http\Controllers\Admin\WalletController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\WarehouseShippingSurchargeController;
+use App\Http\Controllers\Admin\WarrantyClaimController;
+use App\Http\Controllers\Admin\WarrantyPlanController;
+use App\Http\Controllers\Admin\WarrantyPurchaseController;
+use App\Http\Controllers\Admin\WishlistOverviewController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
@@ -99,6 +139,7 @@ Route::post('/set-locale', function (Request $request) {
     if (in_array($locale, config('app.supported_locales', ['en', 'ar']), true)) {
         session(['locale' => $locale]);
     }
+
     return response()->json(['success' => true]);
 })->name('set-locale');
 
@@ -220,9 +261,9 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
         Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
-        Route::post('/{brand}/upload-logo',  [\App\Http\Controllers\Admin\BrandController::class, 'uploadLogo'])
+        Route::post('/{brand}/upload-logo', [BrandController::class, 'uploadLogo'])
             ->name('upload-logo');
-        Route::delete('/{brand}/delete-logo', [\App\Http\Controllers\Admin\BrandController::class, 'deleteLogo'])
+        Route::delete('/{brand}/delete-logo', [BrandController::class, 'deleteLogo'])
             ->name('delete-logo');
     });
 
@@ -250,7 +291,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/{id}/read', 'markRead')->name('mark-read');
         });
 
-
     // ─── Categories (CRUD) ────────────────────────────────────────────────────────
     Route::prefix('categories')->name('categories.')->middleware('admin.permission:categories.view')->group(function () {
         Route::get('/create', [CategoryController::class, 'create'])->name('create');
@@ -262,7 +302,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::put('/{category}', [CategoryController::class, 'update'])->name('update');
         Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
         Route::post('/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('toggle-featured');
-        Route::post('/{category}/toggle-visible',  [CategoryController::class, 'toggleVisible'])->name('toggle-visible');
+        Route::post('/{category}/toggle-visible', [CategoryController::class, 'toggleVisible'])->name('toggle-visible');
         Route::post('/{category}/toggle-footer-visible', [CategoryController::class, 'toggleFooterVisible'])->name('toggle-footer-visible');
         Route::post('/{category}/sync-attributes', [CategoryController::class, 'syncAttributes'])->name('sync-attributes');
         Route::post('/{category}/marketer-commission', [CategoryController::class, 'updateMarketerCommission'])->name('marketer-commission.update');
@@ -277,7 +317,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/reorder', [CategoryShippingMethodController::class, 'reorder'])->name('reorder');
         });
 
-
         Route::get('/search', function (Request $request) {
             $term = trim($request->input('q', ''));
             $results = DB::table('categories')
@@ -288,6 +327,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
                 })
                 ->limit(30)
                 ->get(['id', 'name_en as text']);
+
             return response()->json(['results' => $results]);
         })->name('search');
 
@@ -364,11 +404,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         if ($code && preg_match('/^[A-Z]{2,3}$/', $code)) {
             session(['admin_country' => $code]);
         }
+
         return response()->json(['success' => true]);
     })->name('country');
 
     // ─── Placeholders ─────────────────────────────────────────────────────────────
-// ─── Orders ───────────────────────────────────────────────────────────────────
+    // ─── Orders ───────────────────────────────────────────────────────────────────
 
     Route::prefix('orders')->name('orders.')->middleware('admin.permission:orders.view')->group(function () {
         Route::post('/datatable', [OrderController::class, 'datatable'])->name('datatable');
@@ -847,7 +888,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
     });
 
-
     // ─── Customers ───────────────────────────────────────────────────────────────
     Route::prefix('customers')->name('customers.')->middleware('admin.permission:customers.view')->group(function () {
         Route::post('/datatable', [CustomerController::class, 'datatable'])->name('datatable');
@@ -931,35 +971,54 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
     // ── Marketer Management ────────────────────────────────────────────────
     Route::prefix('marketers')->name('marketers.')->middleware('admin.permission:marketers.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\MarketerController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\MarketerController::class, 'store'])
+        Route::get('/', [MarketerController::class, 'index'])->name('index');
+        Route::post('/', [MarketerController::class, 'store'])
             ->name('store')->middleware('admin.permission:marketers.manage');
-        Route::get('/{marketer}', [\App\Http\Controllers\Admin\MarketerController::class, 'show'])->name('show');
-        Route::post('/{marketer}/approve', [\App\Http\Controllers\Admin\MarketerController::class, 'approve'])
+        Route::get('/{marketer}', [MarketerController::class, 'show'])->name('show');
+        Route::post('/{marketer}/approve', [MarketerController::class, 'approve'])
             ->name('approve')->middleware('admin.permission:marketers.manage');
-        Route::post('/{marketer}/reject', [\App\Http\Controllers\Admin\MarketerController::class, 'reject'])
+        Route::post('/{marketer}/reject', [MarketerController::class, 'reject'])
             ->name('reject')->middleware('admin.permission:marketers.manage');
-        Route::post('/{marketer}/suspend', [\App\Http\Controllers\Admin\MarketerController::class, 'suspend'])
+        Route::post('/{marketer}/suspend', [MarketerController::class, 'suspend'])
             ->name('suspend')->middleware('admin.permission:marketers.manage');
-        Route::post('/{marketer}/activate', [\App\Http\Controllers\Admin\MarketerController::class, 'activate'])
+        Route::post('/{marketer}/activate', [MarketerController::class, 'activate'])
             ->name('activate')->middleware('admin.permission:marketers.manage');
-        Route::put('/{marketer}/profile', [\App\Http\Controllers\Admin\MarketerController::class, 'updateProfile'])
+        Route::put('/{marketer}/profile', [MarketerController::class, 'updateProfile'])
             ->name('profile.update')->middleware('admin.permission:marketers.manage');
-        Route::post('/{marketer}/category-commissions', [\App\Http\Controllers\Admin\MarketerController::class, 'storeCategoryCommission'])
+        Route::post('/{marketer}/category-commissions', [MarketerController::class, 'storeCategoryCommission'])
             ->name('category-commissions.store')->middleware('admin.permission:marketers.manage');
-        Route::delete('/{marketer}/category-commissions/{commission}', [\App\Http\Controllers\Admin\MarketerController::class, 'destroyCategoryCommission'])
+        Route::delete('/{marketer}/category-commissions/{commission}', [MarketerController::class, 'destroyCategoryCommission'])
             ->name('category-commissions.destroy')->middleware('admin.permission:marketers.manage');
 
-        Route::get('/{marketer}/contract', [\App\Http\Controllers\Admin\MarketerContractController::class, 'show'])
+        Route::get('/{marketer}/contract', [MarketerContractController::class, 'show'])
             ->name('contract.show');
-        Route::post('/{marketer}/contract/upload', [\App\Http\Controllers\Admin\MarketerContractController::class, 'upload'])
+        Route::post('/{marketer}/contract/upload', [MarketerContractController::class, 'upload'])
             ->name('contract.upload')->middleware('admin.permission:marketers.manage');
-        Route::post('/{marketer}/contract/required', [\App\Http\Controllers\Admin\MarketerContractController::class, 'toggleRequired'])
+        Route::post('/{marketer}/contract/required', [MarketerContractController::class, 'toggleRequired'])
             ->name('contract.required')->middleware('admin.permission:marketers.manage');
-        Route::get('/{marketer}/contract/acceptances', [\App\Http\Controllers\Admin\MarketerContractController::class, 'acceptances'])
+        Route::get('/{marketer}/contract/acceptances', [MarketerContractController::class, 'acceptances'])
             ->name('contract.acceptances');
-        Route::get('/{marketer}/contract/versions/{version}/download', [\App\Http\Controllers\Admin\MarketerContractController::class, 'download'])
+        Route::get('/{marketer}/contract/versions/{version}/download', [MarketerContractController::class, 'download'])
             ->name('contract.download');
+
+        Route::post('/{marketer}/job-categories/sync', [MarketerController::class, 'syncJobCategories'])
+            ->name('job-categories.sync')->middleware('admin.permission:marketers.manage');
+    });
+
+    // ── Marketer Jobs (lookup CRUD) ────────────────────────────────────────
+    Route::prefix('marketer-jobs')->name('marketer-jobs.')->middleware('admin.permission:marketers.view')->group(function () {
+        Route::get('/', [MarketerJobController::class, 'index'])->name('index');
+        Route::post('/', [MarketerJobController::class, 'store'])
+            ->name('store')->middleware('admin.permission:marketers.manage');
+        Route::get('/{marketerJob}/edit', [MarketerJobController::class, 'edit'])->name('edit');
+        Route::put('/{marketerJob}', [MarketerJobController::class, 'update'])
+            ->name('update')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketerJob}/toggle-active', [MarketerJobController::class, 'toggleActive'])
+            ->name('toggle-active')->middleware('admin.permission:marketers.manage');
+        Route::delete('/{marketerJob}', [MarketerJobController::class, 'destroy'])
+            ->name('destroy')->middleware('admin.permission:marketers.manage');
+        Route::post('/{marketerJob}/category-types/sync', [MarketerJobController::class, 'syncCategoryTypes'])
+            ->name('category-types.sync')->middleware('admin.permission:marketers.manage');
     });
 
     // ─── Marketer Campaigns ────────────────────────────────────────────────────────
@@ -986,7 +1045,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/', [MarketerSettingsController::class, 'index'])->name('index');
         Route::post('/fee', [MarketerSettingsController::class, 'updateInfluencerFee'])->name('update-fee');
     });
-
 
     // ─── Ad Slots ──────────────────────────────────────────────────────────────────
     Route::prefix('ad-slots')->name('ad-slots.')->middleware('admin.permission:ad_slots.view')->group(function () {
@@ -1072,10 +1130,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
     // ─── Newsletter ───────────────────────────────────────────────────────────
     Route::prefix('newsletter')->name('newsletter.')->middleware('admin.permission:settings.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\NewsletterController::class, 'index'])->name('index');
-        Route::post('/datatable', [\App\Http\Controllers\Admin\NewsletterController::class, 'datatable'])->name('datatable');
-        Route::get('/export', [\App\Http\Controllers\Admin\NewsletterController::class, 'export'])->name('export');
-        Route::delete('/{subscriber}', [\App\Http\Controllers\Admin\NewsletterController::class, 'destroy'])->name('destroy');
+        Route::get('/', [NewsletterController::class, 'index'])->name('index');
+        Route::post('/datatable', [NewsletterController::class, 'datatable'])->name('datatable');
+        Route::get('/export', [NewsletterController::class, 'export'])->name('export');
+        Route::delete('/{subscriber}', [NewsletterController::class, 'destroy'])->name('destroy');
     });
 
     // ─── Content Settings ─────────────────────────────────────────────────────
@@ -1087,11 +1145,11 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
     // ─── Footer Settings ──────────────────────────────────────────────────────
     Route::prefix('footer-settings')->name('footer-settings.')->middleware('admin.permission:settings.content')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'store'])->name('store');
-        Route::put('/{footerLink}', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'update'])->name('update');
-        Route::delete('/{footerLink}', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'destroy'])->name('destroy');
-        Route::post('/{footerLink}/toggle-active', [\App\Http\Controllers\Admin\FooterSettingsController::class, 'toggleActive'])->name('toggle-active');
+        Route::get('/', [FooterSettingsController::class, 'index'])->name('index');
+        Route::post('/', [FooterSettingsController::class, 'store'])->name('store');
+        Route::put('/{footerLink}', [FooterSettingsController::class, 'update'])->name('update');
+        Route::delete('/{footerLink}', [FooterSettingsController::class, 'destroy'])->name('destroy');
+        Route::post('/{footerLink}/toggle-active', [FooterSettingsController::class, 'toggleActive'])->name('toggle-active');
     });
 
     // ─── Portal Content ───────────────────────────────────────────────────────
@@ -1298,26 +1356,26 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         ->name('payment-gateways.')
         ->middleware('admin.permission:settings.view')
         ->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'store'])->name('store')->middleware('admin.permission:settings.edit');
-            Route::put('/{countryGateway}', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'update'])->name('update')->middleware('admin.permission:settings.edit');
-            Route::delete('/{countryGateway}', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'destroy'])->name('destroy')->middleware('admin.permission:settings.edit');
-            Route::post('/{countryGateway}/toggle', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:settings.edit');
-            Route::post('/{countryGateway}/test-connection', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'testConnection'])->name('test-connection')->middleware('admin.permission:settings.edit');
-            Route::get('/{countryGateway}/webhook-logs', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'webhookLogs'])->name('webhook-logs');
-            Route::post('/sort-order', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'updateSortOrder'])->name('sort-order')->middleware('admin.permission:settings.edit');
-            Route::post('/gateways/{gateway}/image', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'uploadImage'])->name('gateways.upload-image')->middleware('admin.permission:settings.edit');
-            Route::delete('/gateways/{gateway}/image', [\App\Http\Controllers\Admin\PaymentGatewayController::class, 'deleteImage'])->name('gateways.delete-image')->middleware('admin.permission:settings.edit');
+            Route::get('/', [PaymentGatewayController::class, 'index'])->name('index');
+            Route::post('/', [PaymentGatewayController::class, 'store'])->name('store')->middleware('admin.permission:settings.edit');
+            Route::put('/{countryGateway}', [PaymentGatewayController::class, 'update'])->name('update')->middleware('admin.permission:settings.edit');
+            Route::delete('/{countryGateway}', [PaymentGatewayController::class, 'destroy'])->name('destroy')->middleware('admin.permission:settings.edit');
+            Route::post('/{countryGateway}/toggle', [PaymentGatewayController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:settings.edit');
+            Route::post('/{countryGateway}/test-connection', [PaymentGatewayController::class, 'testConnection'])->name('test-connection')->middleware('admin.permission:settings.edit');
+            Route::get('/{countryGateway}/webhook-logs', [PaymentGatewayController::class, 'webhookLogs'])->name('webhook-logs');
+            Route::post('/sort-order', [PaymentGatewayController::class, 'updateSortOrder'])->name('sort-order')->middleware('admin.permission:settings.edit');
+            Route::post('/gateways/{gateway}/image', [PaymentGatewayController::class, 'uploadImage'])->name('gateways.upload-image')->middleware('admin.permission:settings.edit');
+            Route::delete('/gateways/{gateway}/image', [PaymentGatewayController::class, 'deleteImage'])->name('gateways.delete-image')->middleware('admin.permission:settings.edit');
         });
 
     // ─── Vendor Document Types ────────────────────────────────────────────────
     Route::prefix('vendor-document-types')->name('vendor-document-types.')->middleware('admin.permission:settings.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\VendorDocumentTypeController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\VendorDocumentTypeController::class, 'store'])->name('store')->middleware('admin.permission:settings.edit');
-        Route::post('/requirements', [\App\Http\Controllers\Admin\VendorDocumentTypeController::class, 'updateRequirement'])->name('requirements.update')->middleware('admin.permission:settings.edit');
-        Route::put('/{type}', [\App\Http\Controllers\Admin\VendorDocumentTypeController::class, 'update'])->name('update')->middleware('admin.permission:settings.edit');
-        Route::delete('/{type}', [\App\Http\Controllers\Admin\VendorDocumentTypeController::class, 'destroy'])->name('destroy')->middleware('admin.permission:settings.edit');
-        Route::post('/{type}/toggle', [\App\Http\Controllers\Admin\VendorDocumentTypeController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:settings.edit');
+        Route::get('/', [VendorDocumentTypeController::class, 'index'])->name('index');
+        Route::post('/', [VendorDocumentTypeController::class, 'store'])->name('store')->middleware('admin.permission:settings.edit');
+        Route::post('/requirements', [VendorDocumentTypeController::class, 'updateRequirement'])->name('requirements.update')->middleware('admin.permission:settings.edit');
+        Route::put('/{type}', [VendorDocumentTypeController::class, 'update'])->name('update')->middleware('admin.permission:settings.edit');
+        Route::delete('/{type}', [VendorDocumentTypeController::class, 'destroy'])->name('destroy')->middleware('admin.permission:settings.edit');
+        Route::post('/{type}/toggle', [VendorDocumentTypeController::class, 'toggleActive'])->name('toggle')->middleware('admin.permission:settings.edit');
     });
 
     // ─── Shipping Methods (resource CRUD) ─────────────────────────────────────
@@ -1406,11 +1464,11 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/payouts/{payout}/process', [DeliveryPayoutController::class, 'process'])->name('payouts.process');
         // COD Settlements
         Route::prefix('cod-settlements')->name('cod-settlements.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\CodSettlementController::class, 'index'])->name('index');
-            Route::post('/generate', [\App\Http\Controllers\Admin\CodSettlementController::class, 'generate'])->name('generate');
-            Route::get('/{settlement}', [\App\Http\Controllers\Admin\CodSettlementController::class, 'show'])->name('show');
-            Route::post('/{settlement}/settle', [\App\Http\Controllers\Admin\CodSettlementController::class, 'markSettled'])->name('settle');
-            Route::post('/{settlement}/dispute', [\App\Http\Controllers\Admin\CodSettlementController::class, 'dispute'])->name('dispute');
+            Route::get('/', [CodSettlementController::class, 'index'])->name('index');
+            Route::post('/generate', [CodSettlementController::class, 'generate'])->name('generate');
+            Route::get('/{settlement}', [CodSettlementController::class, 'show'])->name('show');
+            Route::post('/{settlement}/settle', [CodSettlementController::class, 'markSettled'])->name('settle');
+            Route::post('/{settlement}/dispute', [CodSettlementController::class, 'dispute'])->name('dispute');
         });
     });
 
@@ -1471,32 +1529,32 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         // Categories
         Route::prefix('categories')->name('categories.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'store'])->name('store');
-            Route::put('/{category}', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'update'])->name('update');
-            Route::delete('/{category}', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'destroy'])->name('destroy');
-            Route::post('/{category}/toggle', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'toggleActive'])->name('toggle');
-            Route::post('/reorder', [\App\Http\Controllers\Admin\ClassifiedCategoryController::class, 'reorder'])->name('reorder');
+            Route::get('/', [ClassifiedCategoryController::class, 'index'])->name('index');
+            Route::post('/', [ClassifiedCategoryController::class, 'store'])->name('store');
+            Route::put('/{category}', [ClassifiedCategoryController::class, 'update'])->name('update');
+            Route::delete('/{category}', [ClassifiedCategoryController::class, 'destroy'])->name('destroy');
+            Route::post('/{category}/toggle', [ClassifiedCategoryController::class, 'toggleActive'])->name('toggle');
+            Route::post('/reorder', [ClassifiedCategoryController::class, 'reorder'])->name('reorder');
         });
 
         // Contract Templates
         Route::prefix('contract-templates')->name('contract-templates.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ClassifiedContractTemplateController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\ClassifiedContractTemplateController::class, 'store'])->name('store');
-            Route::put('/{contractTemplate}', [\App\Http\Controllers\Admin\ClassifiedContractTemplateController::class, 'update'])->name('update');
-            Route::delete('/{contractTemplate}', [\App\Http\Controllers\Admin\ClassifiedContractTemplateController::class, 'destroy'])->name('destroy');
+            Route::get('/', [ClassifiedContractTemplateController::class, 'index'])->name('index');
+            Route::post('/', [ClassifiedContractTemplateController::class, 'store'])->name('store');
+            Route::put('/{contractTemplate}', [ClassifiedContractTemplateController::class, 'update'])->name('update');
+            Route::delete('/{contractTemplate}', [ClassifiedContractTemplateController::class, 'destroy'])->name('destroy');
         });
 
         // Listings (review queue)
         Route::prefix('listings')->name('listings.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ClassifiedListingController::class, 'index'])->name('index');
-            Route::get('/{listing}', [\App\Http\Controllers\Admin\ClassifiedListingController::class, 'show'])->name('show');
-            Route::post('/{listing}/approve', [\App\Http\Controllers\Admin\ClassifiedListingController::class, 'approve'])->name('approve');
-            Route::post('/{listing}/reject', [\App\Http\Controllers\Admin\ClassifiedListingController::class, 'reject'])->name('reject');
+            Route::get('/', [ClassifiedListingController::class, 'index'])->name('index');
+            Route::get('/{listing}', [ClassifiedListingController::class, 'show'])->name('show');
+            Route::post('/{listing}/approve', [ClassifiedListingController::class, 'approve'])->name('approve');
+            Route::post('/{listing}/reject', [ClassifiedListingController::class, 'reject'])->name('reject');
         });
 
         // Attachment verification
-        Route::post('/attachments/{attachment}/verify', [\App\Http\Controllers\Admin\ClassifiedListingController::class, 'verifyAttachment'])
+        Route::post('/attachments/{attachment}/verify', [ClassifiedListingController::class, 'verifyAttachment'])
             ->name('attachments.verify');
     });
 
@@ -1504,404 +1562,402 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('admin-listings')->name('admin-listings.')
         ->middleware('admin.permission:admin_listings.view')
         ->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\AdminListingController::class, 'index'])->name('index');
-            Route::post('/datatable', [\App\Http\Controllers\Admin\AdminListingController::class, 'datatable'])->name('datatable');
-            Route::post('/bulk', [\App\Http\Controllers\Admin\AdminListingController::class, 'bulkAction'])
+            Route::get('/', [AdminListingController::class, 'index'])->name('index');
+            Route::post('/datatable', [AdminListingController::class, 'datatable'])->name('datatable');
+            Route::post('/bulk', [AdminListingController::class, 'bulkAction'])
                 ->middleware('admin.permission:admin_listings.edit')->name('bulk');
-            Route::get('/create', [\App\Http\Controllers\Admin\AdminListingController::class, 'create'])
+            Route::get('/create', [AdminListingController::class, 'create'])
                 ->middleware('admin.permission:admin_listings.create')->name('create');
-            Route::get('/search/variants', [\App\Http\Controllers\Admin\AdminListingController::class, 'searchVariants'])->name('search-variants');
-            Route::post('/', [\App\Http\Controllers\Admin\AdminListingController::class, 'store'])
+            Route::get('/search/variants', [AdminListingController::class, 'searchVariants'])->name('search-variants');
+            Route::post('/', [AdminListingController::class, 'store'])
                 ->middleware('admin.permission:admin_listings.create')->name('store');
-            Route::get('/{adminListing}/edit', [\App\Http\Controllers\Admin\AdminListingController::class, 'edit'])
+            Route::get('/{adminListing}/edit', [AdminListingController::class, 'edit'])
                 ->middleware('admin.permission:admin_listings.edit')->name('edit');
-            Route::put('/{adminListing}', [\App\Http\Controllers\Admin\AdminListingController::class, 'update'])
+            Route::put('/{adminListing}', [AdminListingController::class, 'update'])
                 ->middleware('admin.permission:admin_listings.edit')->name('update');
-            Route::delete('/{adminListing}', [\App\Http\Controllers\Admin\AdminListingController::class, 'destroy'])
+            Route::delete('/{adminListing}', [AdminListingController::class, 'destroy'])
                 ->middleware('admin.permission:admin_listings.delete')->name('destroy');
-            Route::post('/{adminListing}/activate', [\App\Http\Controllers\Admin\AdminListingController::class, 'activate'])
+            Route::post('/{adminListing}/activate', [AdminListingController::class, 'activate'])
                 ->middleware('admin.permission:admin_listings.toggle_status')->name('activate');
-            Route::post('/{adminListing}/toggle-status', [\App\Http\Controllers\Admin\AdminListingController::class, 'toggleStatus'])
+            Route::post('/{adminListing}/toggle-status', [AdminListingController::class, 'toggleStatus'])
                 ->middleware('admin.permission:admin_listings.toggle_status')->name('toggle-status');
-            Route::put('/{adminListing}/promo-badges', [\App\Http\Controllers\Admin\AdminListingController::class, 'updatePromoBadges'])
+            Route::put('/{adminListing}/promo-badges', [AdminListingController::class, 'updatePromoBadges'])
                 ->middleware('admin.permission:admin_listings.edit')->name('promo-badges.update');
-            Route::post('/{adminListing}/reference', [\App\Http\Controllers\Admin\AdminListingController::class, 'saveReference'])
+            Route::post('/{adminListing}/reference', [AdminListingController::class, 'saveReference'])
                 ->middleware('admin.permission:admin_listings.edit')->name('save-reference');
-            Route::patch('/{adminListing}/status', [\App\Http\Controllers\Admin\AdminListingController::class, 'updateStatus'])
+            Route::patch('/{adminListing}/status', [AdminListingController::class, 'updateStatus'])
                 ->middleware('admin.permission:admin_listings.toggle_status')->name('update-status');
-            Route::post('/{adminListing}/adjust-stock', [\App\Http\Controllers\Admin\AdminListingController::class, 'adjustStock'])
+            Route::post('/{adminListing}/adjust-stock', [AdminListingController::class, 'adjustStock'])
                 ->middleware('admin.permission:admin_listings.edit')->name('adjust-stock');
-            Route::post('/{adminListing}/clear-cache', [\App\Http\Controllers\Admin\AdminListingController::class, 'clearCache'])
+            Route::post('/{adminListing}/clear-cache', [AdminListingController::class, 'clearCache'])
                 ->middleware('admin.permission:admin_listings.edit')
                 ->name('clear-cache');
-            Route::post('/{adminListing}/ships-to', [\App\Http\Controllers\Admin\InternationalShippingEligibilityController::class, 'updateForAdminListing'])
+            Route::post('/{adminListing}/ships-to', [InternationalShippingEligibilityController::class, 'updateForAdminListing'])
                 ->middleware('admin.permission:admin_listings.edit')
                 ->name('ships-to.update');
-            Route::get('/{adminListing}/inventory', [\App\Http\Controllers\Admin\AdminListingInventoryController::class, 'index'])
+            Route::get('/{adminListing}/inventory', [AdminListingInventoryController::class, 'index'])
                 ->name('inventory.index');
-            Route::post('/{adminListing}/inventory', [\App\Http\Controllers\Admin\AdminListingInventoryController::class, 'store'])
+            Route::post('/{adminListing}/inventory', [AdminListingInventoryController::class, 'store'])
                 ->middleware('admin.permission:admin_listings.edit')->name('inventory.store');
-            Route::put('/{adminListing}/inventory/{inventory}', [\App\Http\Controllers\Admin\AdminListingInventoryController::class, 'update'])
+            Route::put('/{adminListing}/inventory/{inventory}', [AdminListingInventoryController::class, 'update'])
                 ->middleware('admin.permission:admin_listings.edit')->name('inventory.update');
-            Route::post('/{adminListing}/shipping-rule', [\App\Http\Controllers\Admin\AdminListingController::class, 'saveShippingRule'])
+            Route::post('/{adminListing}/shipping-rule', [AdminListingController::class, 'saveShippingRule'])
                 ->middleware('admin.permission:admin_listings.edit')->name('save-shipping-rule');
-            Route::post('/{adminListing}/cost-references/datatable', [\App\Http\Controllers\Admin\AdminListingController::class, 'costReferences'])
+            Route::post('/{adminListing}/cost-references/datatable', [AdminListingController::class, 'costReferences'])
                 ->name('cost-references.datatable');
-            Route::post('/{adminListing}/cost-references', [\App\Http\Controllers\Admin\AdminListingController::class, 'storeCostReference'])
+            Route::post('/{adminListing}/cost-references', [AdminListingController::class, 'storeCostReference'])
                 ->name('cost-references.store');
-            Route::put('/{adminListing}/cost-references/{costReference}', [\App\Http\Controllers\Admin\AdminListingController::class, 'updateCostReference'])
+            Route::put('/{adminListing}/cost-references/{costReference}', [AdminListingController::class, 'updateCostReference'])
                 ->name('cost-references.update');
-            Route::delete('/{adminListing}/cost-references/{costReference}', [\App\Http\Controllers\Admin\AdminListingController::class, 'destroyCostReference'])
+            Route::delete('/{adminListing}/cost-references/{costReference}', [AdminListingController::class, 'destroyCostReference'])
                 ->name('cost-references.destroy');
-            Route::get('/{adminListing}/reviews', [\App\Http\Controllers\Admin\AdminListingReviewController::class, 'index'])
+            Route::get('/{adminListing}/reviews', [AdminListingReviewController::class, 'index'])
                 ->name('reviews.index');
-            Route::get('/{adminListing}', [\App\Http\Controllers\Admin\AdminListingController::class, 'show'])->name('show');
+            Route::get('/{adminListing}', [AdminListingController::class, 'show'])->name('show');
         });
 
     // ─── Vendor Listings ──────────────────────────────────────────────────────
     Route::prefix('vendor-listings')->name('vendor-listings.')
         ->middleware('admin.permission:vendors.view')
         ->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\VendorListingController::class, 'index'])->name('index');
-            Route::post('/datatable', [\App\Http\Controllers\Admin\VendorListingController::class, 'datatable'])->name('datatable');
-            Route::get('/{vendorListing}/edit', [\App\Http\Controllers\Admin\VendorListingController::class, 'edit'])->name('edit');
-            Route::put('/{vendorListing}', [\App\Http\Controllers\Admin\VendorListingController::class, 'update'])->name('update');
-            Route::post('/{vendorListing}/clear-cache', [\App\Http\Controllers\Admin\VendorListingController::class, 'clearCache'])
+            Route::get('/', [VendorListingController::class, 'index'])->name('index');
+            Route::post('/datatable', [VendorListingController::class, 'datatable'])->name('datatable');
+            Route::get('/{vendorListing}/edit', [VendorListingController::class, 'edit'])->name('edit');
+            Route::put('/{vendorListing}', [VendorListingController::class, 'update'])->name('update');
+            Route::post('/{vendorListing}/clear-cache', [VendorListingController::class, 'clearCache'])
                 ->name('clear-cache');
-            Route::post('/{vendorListing}/ships-to', [\App\Http\Controllers\Admin\InternationalShippingEligibilityController::class, 'updateForVendorListing'])
+            Route::post('/{vendorListing}/ships-to', [InternationalShippingEligibilityController::class, 'updateForVendorListing'])
                 ->name('ships-to.update');
-            Route::get('/{vendorListing}', [\App\Http\Controllers\Admin\VendorListingController::class, 'show'])->name('show');
+            Route::get('/{vendorListing}', [VendorListingController::class, 'show'])->name('show');
         });
 
     // ─── Travel Agencies & Packages ───────────────────────────────────────────
     Route::prefix('travel')->name('travel.')->group(function () {
 
         Route::prefix('agencies')->name('agencies.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'index'])->name('index');
-            Route::get('/datatable', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'datatable'])->name('datatable');
-            Route::get('/{travelAgency}', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'show'])->name('show');
-            Route::post('/{travelAgency}/approve', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'approve'])->name('approve');
-            Route::post('/{travelAgency}/suspend', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'suspend'])->name('suspend');
-            Route::post('/{travelAgency}/reactivate', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'reactivate'])->name('reactivate');
-            Route::post('/{travelAgency}/reject', [\App\Http\Controllers\Admin\TravelAgencyController::class, 'reject'])->name('reject');
+            Route::get('/', [TravelAgencyController::class, 'index'])->name('index');
+            Route::get('/datatable', [TravelAgencyController::class, 'datatable'])->name('datatable');
+            Route::get('/{travelAgency}', [TravelAgencyController::class, 'show'])->name('show');
+            Route::post('/{travelAgency}/approve', [TravelAgencyController::class, 'approve'])->name('approve');
+            Route::post('/{travelAgency}/suspend', [TravelAgencyController::class, 'suspend'])->name('suspend');
+            Route::post('/{travelAgency}/reactivate', [TravelAgencyController::class, 'reactivate'])->name('reactivate');
+            Route::post('/{travelAgency}/reject', [TravelAgencyController::class, 'reject'])->name('reject');
         });
 
         Route::prefix('change-requests')->name('change-requests.')
             ->middleware('admin.permission:travel_agency_change_requests.view')
             ->group(function () {
-                Route::get('/', [\App\Http\Controllers\Admin\TravelAgencyChangeRequestController::class, 'index'])->name('index');
-                Route::get('/{changeRequest}', [\App\Http\Controllers\Admin\TravelAgencyChangeRequestController::class, 'show'])->name('show');
-                Route::post('/{changeRequest}/approve', [\App\Http\Controllers\Admin\TravelAgencyChangeRequestController::class, 'approve'])
+                Route::get('/', [TravelAgencyChangeRequestController::class, 'index'])->name('index');
+                Route::get('/{changeRequest}', [TravelAgencyChangeRequestController::class, 'show'])->name('show');
+                Route::post('/{changeRequest}/approve', [TravelAgencyChangeRequestController::class, 'approve'])
                     ->name('approve')
                     ->middleware('admin.permission:travel_agency_change_requests.approve');
-                Route::post('/{changeRequest}/reject', [\App\Http\Controllers\Admin\TravelAgencyChangeRequestController::class, 'reject'])
+                Route::post('/{changeRequest}/reject', [TravelAgencyChangeRequestController::class, 'reject'])
                     ->name('reject')
                     ->middleware('admin.permission:travel_agency_change_requests.approve');
             });
 
         Route::prefix('packages')->name('packages.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelPackageController::class, 'index'])->name('index');
-            Route::post('/datatable', [\App\Http\Controllers\Admin\TravelPackageController::class, 'datatable'])->name('datatable');
-            Route::get('/{travelPackage}', [\App\Http\Controllers\Admin\TravelPackageController::class, 'show'])->name('show');
-            Route::post('/{travelPackage}/approve', [\App\Http\Controllers\Admin\TravelPackageController::class, 'approve'])->name('approve');
-            Route::post('/{travelPackage}/reject', [\App\Http\Controllers\Admin\TravelPackageController::class, 'reject'])->name('reject');
-            Route::post('/{travelPackage}/expire', [\App\Http\Controllers\Admin\TravelPackageController::class, 'expire'])->name('expire');
-            Route::get('/{travelPackage}/contract', [\App\Http\Controllers\Admin\TravelPackageController::class, 'downloadContract'])->name('contract.download');
-            Route::post('/{travelPackage}/categories', [\App\Http\Controllers\Admin\TravelPackageController::class, 'syncCategories'])->name('categories.sync');
+            Route::get('/', [TravelPackageController::class, 'index'])->name('index');
+            Route::post('/datatable', [TravelPackageController::class, 'datatable'])->name('datatable');
+            Route::get('/{travelPackage}', [TravelPackageController::class, 'show'])->name('show');
+            Route::post('/{travelPackage}/approve', [TravelPackageController::class, 'approve'])->name('approve');
+            Route::post('/{travelPackage}/reject', [TravelPackageController::class, 'reject'])->name('reject');
+            Route::post('/{travelPackage}/expire', [TravelPackageController::class, 'expire'])->name('expire');
+            Route::get('/{travelPackage}/contract', [TravelPackageController::class, 'downloadContract'])->name('contract.download');
+            Route::post('/{travelPackage}/categories', [TravelPackageController::class, 'syncCategories'])->name('categories.sync');
         });
 
         Route::prefix('bookings')->name('bookings.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelBookingController::class, 'index'])->name('index');
-            Route::post('/datatable', [\App\Http\Controllers\Admin\TravelBookingController::class, 'datatable'])->name('datatable');
-            Route::get('/{travelBooking}', [\App\Http\Controllers\Admin\TravelBookingController::class, 'show'])->name('show');
-            Route::get('/{travelBooking}/passport', [\App\Http\Controllers\Admin\TravelBookingController::class, 'downloadPassport'])->name('passport.download');
+            Route::get('/', [TravelBookingController::class, 'index'])->name('index');
+            Route::post('/datatable', [TravelBookingController::class, 'datatable'])->name('datatable');
+            Route::get('/{travelBooking}', [TravelBookingController::class, 'show'])->name('show');
+            Route::get('/{travelBooking}/passport', [TravelBookingController::class, 'downloadPassport'])->name('passport.download');
         });
 
         Route::prefix('countries')->name('countries.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelCountryController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\TravelCountryController::class, 'store'])->name('store');
-            Route::put('/{travelCountry}', [\App\Http\Controllers\Admin\TravelCountryController::class, 'update'])->name('update');
-            Route::delete('/{travelCountry}', [\App\Http\Controllers\Admin\TravelCountryController::class, 'destroy'])->name('destroy');
+            Route::get('/', [TravelCountryController::class, 'index'])->name('index');
+            Route::post('/', [TravelCountryController::class, 'store'])->name('store');
+            Route::put('/{travelCountry}', [TravelCountryController::class, 'update'])->name('update');
+            Route::delete('/{travelCountry}', [TravelCountryController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('cities')->name('cities.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelCityController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\TravelCityController::class, 'store'])->name('store');
-            Route::put('/{travelCity}', [\App\Http\Controllers\Admin\TravelCityController::class, 'update'])->name('update');
-            Route::delete('/{travelCity}', [\App\Http\Controllers\Admin\TravelCityController::class, 'destroy'])->name('destroy');
+            Route::get('/', [TravelCityController::class, 'index'])->name('index');
+            Route::post('/', [TravelCityController::class, 'store'])->name('store');
+            Route::put('/{travelCity}', [TravelCityController::class, 'update'])->name('update');
+            Route::delete('/{travelCity}', [TravelCityController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('inquiries')->name('inquiries.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelPackageInquiryController::class, 'index'])->name('index');
-            Route::post('/{inquiry}/convert', [\App\Http\Controllers\Admin\TravelPackageInquiryController::class, 'convertToBooking'])->name('convert');
+            Route::get('/', [TravelPackageInquiryController::class, 'index'])->name('index');
+            Route::post('/{inquiry}/convert', [TravelPackageInquiryController::class, 'convertToBooking'])->name('convert');
         });
 
         Route::prefix('inclusions')->name('inclusions.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'store'])->name('store');
-            Route::put('/{travelInclusion}', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'update'])->name('update');
-            Route::delete('/{travelInclusion}', [\App\Http\Controllers\Admin\TravelInclusionController::class, 'destroy'])->name('destroy');
+            Route::get('/', [TravelInclusionController::class, 'index'])->name('index');
+            Route::post('/', [TravelInclusionController::class, 'store'])->name('store');
+            Route::put('/{travelInclusion}', [TravelInclusionController::class, 'update'])->name('update');
+            Route::delete('/{travelInclusion}', [TravelInclusionController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('categories')->name('categories.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'store'])->name('store');
-            Route::put('/{travelCategory}', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'update'])->name('update');
-            Route::delete('/{travelCategory}', [\App\Http\Controllers\Admin\TravelCategoryController::class, 'destroy'])->name('destroy');
+            Route::get('/', [TravelCategoryController::class, 'index'])->name('index');
+            Route::post('/', [TravelCategoryController::class, 'store'])->name('store');
+            Route::put('/{travelCategory}', [TravelCategoryController::class, 'update'])->name('update');
+            Route::delete('/{travelCategory}', [TravelCategoryController::class, 'destroy'])->name('destroy');
         });
     });
 
     // ─── Shipping Companies (Carrier Portal) ─────────────────────────────────
     Route::prefix('shipping-companies')->name('shipping-companies.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'index'])->name('index');
+        Route::get('/', [ShippingCompanyController::class, 'index'])->name('index');
 
-        Route::get('/create', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'create'])
+        Route::get('/create', [ShippingCompanyController::class, 'create'])
             ->name('create')
             ->middleware('admin.permission:settings.edit');
 
-        Route::post('/', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'store'])
+        Route::post('/', [ShippingCompanyController::class, 'store'])
             ->name('store')
             ->middleware('admin.permission:settings.edit');
 
-        Route::get('/fallback-rules', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'fallbackRules'])->name('fallback-rules.index');
-        Route::post('/fallback-rules', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'storeFallbackRule'])->name('fallback-rules.store');
-        Route::delete('/fallback-rules/{rule}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroyFallbackRule'])->name('fallback-rules.destroy');
+        Route::get('/fallback-rules', [ShippingCompanyController::class, 'fallbackRules'])->name('fallback-rules.index');
+        Route::post('/fallback-rules', [ShippingCompanyController::class, 'storeFallbackRule'])->name('fallback-rules.store');
+        Route::delete('/fallback-rules/{rule}', [ShippingCompanyController::class, 'destroyFallbackRule'])->name('fallback-rules.destroy');
 
-        Route::post('/supervisors/{supervisor}/toggle-notifications', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'toggleSupervisorNotifications'])->name('supervisors.toggle-notifications');
+        Route::post('/supervisors/{supervisor}/toggle-notifications', [ShippingCompanyController::class, 'toggleSupervisorNotifications'])->name('supervisors.toggle-notifications');
 
-        Route::post('/supervisors', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'storeSupervisor'])
+        Route::post('/supervisors', [ShippingCompanyController::class, 'storeSupervisor'])
             ->name('supervisors.store')
             ->middleware('admin.permission:settings.edit');
 
-        Route::put('/supervisors/{supervisor}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'updateSupervisor'])
+        Route::put('/supervisors/{supervisor}', [ShippingCompanyController::class, 'updateSupervisor'])
             ->name('supervisors.update')
             ->middleware('admin.permission:settings.edit');
 
-        Route::post('/supervisors/{supervisor}/reset-password', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'resetSupervisorPassword'])
+        Route::post('/supervisors/{supervisor}/reset-password', [ShippingCompanyController::class, 'resetSupervisorPassword'])
             ->name('supervisors.reset-password')
             ->middleware('admin.permission:settings.edit');
 
-        Route::delete('/supervisors/{supervisor}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroySupervisor'])
+        Route::delete('/supervisors/{supervisor}', [ShippingCompanyController::class, 'destroySupervisor'])
             ->name('supervisors.destroy')
             ->middleware('admin.permission:settings.edit');
 
-        Route::get('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'show'])->name('show');
-        Route::put('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'update'])
+        Route::get('/{shippingCompany}', [ShippingCompanyController::class, 'show'])->name('show');
+        Route::put('/{shippingCompany}', [ShippingCompanyController::class, 'update'])
             ->name('update')
             ->middleware('admin.permission:settings.edit');
-        Route::delete('/{shippingCompany}', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'destroy'])
+        Route::delete('/{shippingCompany}', [ShippingCompanyController::class, 'destroy'])
             ->name('destroy')
             ->middleware('admin.permission:settings.edit');
-        Route::post('/{shippingCompany}/approve', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'approve'])->name('approve');
-        Route::post('/{shippingCompany}/suspend', [\App\Http\Controllers\Admin\ShippingCompanyController::class, 'suspend'])->name('suspend');
+        Route::post('/{shippingCompany}/approve', [ShippingCompanyController::class, 'approve'])->name('approve');
+        Route::post('/{shippingCompany}/suspend', [ShippingCompanyController::class, 'suspend'])->name('suspend');
     });
 
     // ─── Wallets ──────────────────────────────────────────────────────────────
     Route::prefix('wallets')->name('wallets.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\WalletController::class, 'index'])->name('index');
-        Route::post('/datatable', [\App\Http\Controllers\Admin\WalletController::class, 'datatable'])->name('datatable');
-        Route::get('/{wallet}', [\App\Http\Controllers\Admin\WalletController::class, 'show'])->name('show');
-        Route::post('/{wallet}/adjust', [\App\Http\Controllers\Admin\WalletController::class, 'adjustBalance'])->name('adjust');
-        Route::patch('/{wallet}/freeze', [\App\Http\Controllers\Admin\WalletController::class, 'freezeWallet'])->name('freeze');
-        Route::patch('/{wallet}/unfreeze', [\App\Http\Controllers\Admin\WalletController::class, 'unfreezeWallet'])->name('unfreeze');
+        Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::post('/datatable', [WalletController::class, 'datatable'])->name('datatable');
+        Route::get('/{wallet}', [WalletController::class, 'show'])->name('show');
+        Route::post('/{wallet}/adjust', [WalletController::class, 'adjustBalance'])->name('adjust');
+        Route::patch('/{wallet}/freeze', [WalletController::class, 'freezeWallet'])->name('freeze');
+        Route::patch('/{wallet}/unfreeze', [WalletController::class, 'unfreezeWallet'])->name('unfreeze');
 
         // Withdrawal requests
-        Route::get('/withdrawals/queue', [\App\Http\Controllers\Admin\WalletController::class, 'withdrawalRequests'])->name('withdrawals');
-        Route::patch('/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WalletController::class, 'approveWithdrawal'])->name('withdrawals.approve');
-        Route::patch('/withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WalletController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
-        Route::patch('/withdrawals/{withdrawal}/processed', [\App\Http\Controllers\Admin\WalletController::class, 'markWithdrawalProcessed'])->name('withdrawals.processed');
+        Route::get('/withdrawals/queue', [WalletController::class, 'withdrawalRequests'])->name('withdrawals');
+        Route::patch('/withdrawals/{withdrawal}/approve', [WalletController::class, 'approveWithdrawal'])->name('withdrawals.approve');
+        Route::patch('/withdrawals/{withdrawal}/reject', [WalletController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+        Route::patch('/withdrawals/{withdrawal}/processed', [WalletController::class, 'markWithdrawalProcessed'])->name('withdrawals.processed');
 
         // COD settlements
-        Route::get('/cod/settlements', [\App\Http\Controllers\Admin\WalletController::class, 'codSettlements'])->name('cod-settlements');
-        Route::post('/cod/settlements/run', [\App\Http\Controllers\Admin\WalletController::class, 'runCodSettlement'])->name('cod-settlements.run');
-        Route::patch('/cod/settlements/{settlement}/settle', [\App\Http\Controllers\Admin\WalletController::class, 'markSettlementSettled'])->name('cod-settlements.settle');
+        Route::get('/cod/settlements', [WalletController::class, 'codSettlements'])->name('cod-settlements');
+        Route::post('/cod/settlements/run', [WalletController::class, 'runCodSettlement'])->name('cod-settlements.run');
+        Route::patch('/cod/settlements/{settlement}/settle', [WalletController::class, 'markSettlementSettled'])->name('cod-settlements.settle');
     });
 
     // ── AI Features Dashboard ─────────────────────────────────────────────
     Route::prefix('ai')->name('ai.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\AiDashboardController::class, 'index'])->name('index');
-        Route::post('/credits/allocate', [\App\Http\Controllers\Admin\AiDashboardController::class, 'allocateCredits'])->name('credits.allocate');
+        Route::get('/', [AiDashboardController::class, 'index'])->name('index');
+        Route::post('/credits/allocate', [AiDashboardController::class, 'allocateCredits'])->name('credits.allocate');
     });
 
     // ── Radio ─────────────────────────────────────────────────────────────────
     // ── Live Streams ──────────────────────────────────────────────────────────
     Route::prefix('live-streams')->name('live-streams.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::get('/',                                   [LiveStreamController::class, 'index'])->name('index');
-        Route::get('/create',                             [LiveStreamController::class, 'create'])->name('create');
-        Route::post('/',                                  [LiveStreamController::class, 'store'])->name('store');
-        Route::get('/{liveStream}',                       [LiveStreamController::class, 'show'])->name('show');
-        Route::get('/{liveStream}/edit',                  [LiveStreamController::class, 'edit'])->name('edit');
-        Route::put('/{liveStream}',                       [LiveStreamController::class, 'update'])->name('update');
-        Route::delete('/{liveStream}',                    [LiveStreamController::class, 'destroy'])->name('destroy');
-        Route::post('/{liveStream}/go-live',              [LiveStreamController::class, 'goLive'])->name('go-live');
-        Route::post('/{liveStream}/end',                  [LiveStreamController::class, 'endStream'])->name('end');
-        Route::post('/{liveStream}/signal',               [LiveStreamController::class, 'signal'])->name('signal');
-        Route::get('/{liveStream}/comments',              [LiveStreamController::class, 'comments'])->name('comments');
+        Route::get('/', [LiveStreamController::class, 'index'])->name('index');
+        Route::get('/create', [LiveStreamController::class, 'create'])->name('create');
+        Route::post('/', [LiveStreamController::class, 'store'])->name('store');
+        Route::get('/{liveStream}', [LiveStreamController::class, 'show'])->name('show');
+        Route::get('/{liveStream}/edit', [LiveStreamController::class, 'edit'])->name('edit');
+        Route::put('/{liveStream}', [LiveStreamController::class, 'update'])->name('update');
+        Route::delete('/{liveStream}', [LiveStreamController::class, 'destroy'])->name('destroy');
+        Route::post('/{liveStream}/go-live', [LiveStreamController::class, 'goLive'])->name('go-live');
+        Route::post('/{liveStream}/end', [LiveStreamController::class, 'endStream'])->name('end');
+        Route::post('/{liveStream}/signal', [LiveStreamController::class, 'signal'])->name('signal');
+        Route::get('/{liveStream}/comments', [LiveStreamController::class, 'comments'])->name('comments');
         Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy');
     });
 
     Route::prefix('radio')->name('radio.')->group(function () {
-        Route::resource('channels', \App\Http\Controllers\Admin\RadioChannelController::class)
+        Route::resource('channels', RadioChannelController::class)
             ->names('channels')
             ->except(['show']);
 
-        Route::get('/channels/{channel}/schedule', [\App\Http\Controllers\Admin\RadioChannelController::class, 'schedule'])->name('schedule');
-        Route::get('/channels/{channel}/schedule/events', [\App\Http\Controllers\Admin\RadioChannelController::class, 'scheduleEvents'])->name('schedule.events');
-        Route::post('/channels/{channel}/slots', [\App\Http\Controllers\Admin\RadioChannelController::class, 'storeSlot'])->name('slots.store');
-        Route::put('/channels/{channel}/slots/{slot}', [\App\Http\Controllers\Admin\RadioChannelController::class, 'updateSlot'])->name('slots.update');
-        Route::delete('/channels/{channel}/slots/{slot}', [\App\Http\Controllers\Admin\RadioChannelController::class, 'destroySlot'])->name('slots.destroy');
+        Route::get('/channels/{channel}/schedule', [RadioChannelController::class, 'schedule'])->name('schedule');
+        Route::get('/channels/{channel}/schedule/events', [RadioChannelController::class, 'scheduleEvents'])->name('schedule.events');
+        Route::post('/channels/{channel}/slots', [RadioChannelController::class, 'storeSlot'])->name('slots.store');
+        Route::put('/channels/{channel}/slots/{slot}', [RadioChannelController::class, 'updateSlot'])->name('slots.update');
+        Route::delete('/channels/{channel}/slots/{slot}', [RadioChannelController::class, 'destroySlot'])->name('slots.destroy');
     });
 
     // ─── Carrier Claims ───────────────────────────────────────────────────────
     Route::prefix('carrier-claims')->name('carrier-claims.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\CarrierClaimController::class, 'index'])->name('index');
-        Route::get('/{carrierClaim}', [\App\Http\Controllers\Admin\CarrierClaimController::class, 'show'])->name('show');
-        Route::patch('/{carrierClaim}/resolve', [\App\Http\Controllers\Admin\CarrierClaimController::class, 'resolve'])->name('resolve');
-        Route::patch('/{carrierClaim}/under-review', [\App\Http\Controllers\Admin\CarrierClaimController::class, 'markUnderReview'])->name('under-review');
+        Route::get('/', [CarrierClaimController::class, 'index'])->name('index');
+        Route::get('/{carrierClaim}', [CarrierClaimController::class, 'show'])->name('show');
+        Route::patch('/{carrierClaim}/resolve', [CarrierClaimController::class, 'resolve'])->name('resolve');
+        Route::patch('/{carrierClaim}/under-review', [CarrierClaimController::class, 'markUnderReview'])->name('under-review');
     });
 
     // ─── Carrier Scorecard ────────────────────────────────────────────────────
     Route::prefix('carrier-scorecard')->name('carrier-scorecard.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\CarrierScorecardController::class, 'index'])->name('index');
-        Route::get('/{shippingCompany}', [\App\Http\Controllers\Admin\CarrierScorecardController::class, 'show'])->name('show');
-        Route::get('/{shippingCompany}/trend', [\App\Http\Controllers\Admin\CarrierScorecardController::class, 'trendData'])->name('trend');
+        Route::get('/', [CarrierScorecardController::class, 'index'])->name('index');
+        Route::get('/{shippingCompany}', [CarrierScorecardController::class, 'show'])->name('show');
+        Route::get('/{shippingCompany}/trend', [CarrierScorecardController::class, 'trendData'])->name('trend');
     });
 
     // ─── Packaging Supplies ───────────────────────────────────────────────────
     Route::prefix('packaging')->name('packaging.')->middleware('admin.permission:packaging.manage')->group(function () {
-        Route::get('/catalog', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'catalog'])->name('catalog');
-        Route::post('/catalog/datatable', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'datatableCatalog'])->name('catalog.datatable');
-        Route::post('/catalog', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'storeCatalogItem'])->name('catalog.store');
-        Route::get('/catalog/{supply}', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'getCatalogItem'])->name('catalog.show');
-        Route::put('/catalog/{supply}', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'updateCatalogItem'])->name('catalog.update');
-        Route::delete('/catalog/{supply}', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'destroyCatalogItem'])->name('catalog.destroy');
-        Route::patch('/catalog/{supply}/toggle', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'toggleActive'])->name('catalog.toggle');
+        Route::get('/catalog', [PackagingSupplyController::class, 'catalog'])->name('catalog');
+        Route::post('/catalog/datatable', [PackagingSupplyController::class, 'datatableCatalog'])->name('catalog.datatable');
+        Route::post('/catalog', [PackagingSupplyController::class, 'storeCatalogItem'])->name('catalog.store');
+        Route::get('/catalog/{supply}', [PackagingSupplyController::class, 'getCatalogItem'])->name('catalog.show');
+        Route::put('/catalog/{supply}', [PackagingSupplyController::class, 'updateCatalogItem'])->name('catalog.update');
+        Route::delete('/catalog/{supply}', [PackagingSupplyController::class, 'destroyCatalogItem'])->name('catalog.destroy');
+        Route::patch('/catalog/{supply}/toggle', [PackagingSupplyController::class, 'toggleActive'])->name('catalog.toggle');
 
-        Route::get('/requests', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'requests'])->name('requests');
-        Route::post('/requests/datatable', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'datatableRequests'])->name('requests.datatable');
-        Route::get('/requests/{request}', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'showRequest'])->name('requests.show');
-        Route::post('/requests/{request}/approve', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'approve'])->name('requests.approve');
-        Route::post('/requests/{request}/reject', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'reject'])->name('requests.reject');
-        Route::post('/requests/{request}/ship', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'markShipped'])->name('requests.ship');
-        Route::post('/requests/{request}/deliver', [\App\Http\Controllers\Admin\PackagingSupplyController::class, 'markDelivered'])->name('requests.deliver');
+        Route::get('/requests', [PackagingSupplyController::class, 'requests'])->name('requests');
+        Route::post('/requests/datatable', [PackagingSupplyController::class, 'datatableRequests'])->name('requests.datatable');
+        Route::get('/requests/{request}', [PackagingSupplyController::class, 'showRequest'])->name('requests.show');
+        Route::post('/requests/{request}/approve', [PackagingSupplyController::class, 'approve'])->name('requests.approve');
+        Route::post('/requests/{request}/reject', [PackagingSupplyController::class, 'reject'])->name('requests.reject');
+        Route::post('/requests/{request}/ship', [PackagingSupplyController::class, 'markShipped'])->name('requests.ship');
+        Route::post('/requests/{request}/deliver', [PackagingSupplyController::class, 'markDelivered'])->name('requests.deliver');
     });
-
 
     // ─── Blog Categories ──────────────────────────────────────────────────────
     Route::prefix('blog/categories')->name('blog.categories.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/reorder', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'reorder'])->name('reorder');
-        Route::get('/', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'store'])->name('store');
-        Route::put('/{category}', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'update'])->name('update');
-        Route::delete('/{category}', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'destroy'])->name('destroy');
-        Route::post('/{category}/toggle', [\App\Http\Controllers\Admin\BlogCategoryController::class, 'toggleActive'])->name('toggle');
+        Route::post('/reorder', [BlogCategoryController::class, 'reorder'])->name('reorder');
+        Route::get('/', [BlogCategoryController::class, 'index'])->name('index');
+        Route::post('/', [BlogCategoryController::class, 'store'])->name('store');
+        Route::put('/{category}', [BlogCategoryController::class, 'update'])->name('update');
+        Route::delete('/{category}', [BlogCategoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{category}/toggle', [BlogCategoryController::class, 'toggleActive'])->name('toggle');
     });
 
     // ─── Blog Posts ───────────────────────────────────────────────────────────
     Route::prefix('blog/posts')->name('blog.posts.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/datatable', [\App\Http\Controllers\Admin\BlogPostController::class, 'datatable'])->name('datatable');
-        Route::get('/create', [\App\Http\Controllers\Admin\BlogPostController::class, 'create'])->name('create');
-        Route::get('/', [\App\Http\Controllers\Admin\BlogPostController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\BlogPostController::class, 'store'])->name('store');
-        Route::get('/{post}/edit', [\App\Http\Controllers\Admin\BlogPostController::class, 'edit'])->name('edit');
-        Route::put('/{post}', [\App\Http\Controllers\Admin\BlogPostController::class, 'update'])->name('update');
-        Route::delete('/{post}', [\App\Http\Controllers\Admin\BlogPostController::class, 'destroy'])->name('destroy');
-        Route::post('/{post}/archive', [\App\Http\Controllers\Admin\BlogPostController::class, 'archive'])->name('archive');
-        Route::post('/{post}/feature', [\App\Http\Controllers\Admin\BlogPostController::class, 'feature'])->name('feature');
-        Route::delete('/{post}/attachments/{file}', [\App\Http\Controllers\Admin\BlogPostController::class, 'deleteAttachment'])->name('attachments.delete');
+        Route::post('/datatable', [BlogPostController::class, 'datatable'])->name('datatable');
+        Route::get('/create', [BlogPostController::class, 'create'])->name('create');
+        Route::get('/', [BlogPostController::class, 'index'])->name('index');
+        Route::post('/', [BlogPostController::class, 'store'])->name('store');
+        Route::get('/{post}/edit', [BlogPostController::class, 'edit'])->name('edit');
+        Route::put('/{post}', [BlogPostController::class, 'update'])->name('update');
+        Route::delete('/{post}', [BlogPostController::class, 'destroy'])->name('destroy');
+        Route::post('/{post}/archive', [BlogPostController::class, 'archive'])->name('archive');
+        Route::post('/{post}/feature', [BlogPostController::class, 'feature'])->name('feature');
+        Route::delete('/{post}/attachments/{file}', [BlogPostController::class, 'deleteAttachment'])->name('attachments.delete');
     });
 
     // ─── Ad Support Collections (Knowledge Hub) ──────────────────────────────
     Route::prefix('adsupport/collections')->name('adsupport.collections.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/reorder', [\App\Http\Controllers\Admin\AdSupportCollectionController::class, 'reorder'])->name('reorder');
-        Route::get('/', [\App\Http\Controllers\Admin\AdSupportCollectionController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\AdSupportCollectionController::class, 'store'])->name('store');
-        Route::put('/{collection:id}', [\App\Http\Controllers\Admin\AdSupportCollectionController::class, 'update'])->name('update');
-        Route::delete('/{collection:id}', [\App\Http\Controllers\Admin\AdSupportCollectionController::class, 'destroy'])->name('destroy');
-        Route::post('/{collection:id}/toggle', [\App\Http\Controllers\Admin\AdSupportCollectionController::class, 'toggleActive'])->name('toggle');
+        Route::post('/reorder', [AdSupportCollectionController::class, 'reorder'])->name('reorder');
+        Route::get('/', [AdSupportCollectionController::class, 'index'])->name('index');
+        Route::post('/', [AdSupportCollectionController::class, 'store'])->name('store');
+        Route::put('/{collection:id}', [AdSupportCollectionController::class, 'update'])->name('update');
+        Route::delete('/{collection:id}', [AdSupportCollectionController::class, 'destroy'])->name('destroy');
+        Route::post('/{collection:id}/toggle', [AdSupportCollectionController::class, 'toggleActive'])->name('toggle');
     });
 
     // ─── Ad Support Articles (Knowledge Hub) ─────────────────────────────────
     Route::prefix('adsupport/articles')->name('adsupport.articles.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/datatable', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'datatable'])->name('datatable');
-        Route::get('/create', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'create'])->name('create');
-        Route::get('/', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'store'])->name('store');
-        Route::get('/{article:id}/edit', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article:id}', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'update'])->name('update');
-        Route::delete('/{article:id}', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'destroy'])->name('destroy');
-        Route::post('/{article:id}/feature', [\App\Http\Controllers\Admin\AdSupportArticleController::class, 'feature'])->name('feature');
+        Route::post('/datatable', [AdSupportArticleController::class, 'datatable'])->name('datatable');
+        Route::get('/create', [AdSupportArticleController::class, 'create'])->name('create');
+        Route::get('/', [AdSupportArticleController::class, 'index'])->name('index');
+        Route::post('/', [AdSupportArticleController::class, 'store'])->name('store');
+        Route::get('/{article:id}/edit', [AdSupportArticleController::class, 'edit'])->name('edit');
+        Route::put('/{article:id}', [AdSupportArticleController::class, 'update'])->name('update');
+        Route::delete('/{article:id}', [AdSupportArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/{article:id}/feature', [AdSupportArticleController::class, 'feature'])->name('feature');
     });
 
     // ─── Help Center Categories (Portal) ─────────────────────────────────────
     Route::prefix('helpcenter/categories')->name('helpcenter.categories.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/reorder', [\App\Http\Controllers\Admin\HelpCenterCategoryController::class, 'reorder'])->name('reorder');
-        Route::get('/', [\App\Http\Controllers\Admin\HelpCenterCategoryController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\HelpCenterCategoryController::class, 'store'])->name('store');
-        Route::put('/{category:id}', [\App\Http\Controllers\Admin\HelpCenterCategoryController::class, 'update'])->name('update');
-        Route::delete('/{category:id}', [\App\Http\Controllers\Admin\HelpCenterCategoryController::class, 'destroy'])->name('destroy');
-        Route::post('/{category:id}/toggle', [\App\Http\Controllers\Admin\HelpCenterCategoryController::class, 'toggleActive'])->name('toggle');
+        Route::post('/reorder', [HelpCenterCategoryController::class, 'reorder'])->name('reorder');
+        Route::get('/', [HelpCenterCategoryController::class, 'index'])->name('index');
+        Route::post('/', [HelpCenterCategoryController::class, 'store'])->name('store');
+        Route::put('/{category:id}', [HelpCenterCategoryController::class, 'update'])->name('update');
+        Route::delete('/{category:id}', [HelpCenterCategoryController::class, 'destroy'])->name('destroy');
+        Route::post('/{category:id}/toggle', [HelpCenterCategoryController::class, 'toggleActive'])->name('toggle');
     });
 
     // ─── Help Center Articles (Portal) ───────────────────────────────────────
     Route::prefix('helpcenter/articles')->name('helpcenter.articles.')->middleware('admin.permission:pages.view')->group(function () {
-        Route::post('/datatable', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'datatable'])->name('datatable');
-        Route::get('/create', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'create'])->name('create');
-        Route::get('/', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'store'])->name('store');
-        Route::get('/{article:id}/edit', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'edit'])->name('edit');
-        Route::put('/{article:id}', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'update'])->name('update');
-        Route::delete('/{article:id}', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'destroy'])->name('destroy');
-        Route::post('/{article:id}/feature', [\App\Http\Controllers\Admin\HelpCenterArticleController::class, 'feature'])->name('feature');
+        Route::post('/datatable', [HelpCenterArticleController::class, 'datatable'])->name('datatable');
+        Route::get('/create', [HelpCenterArticleController::class, 'create'])->name('create');
+        Route::get('/', [HelpCenterArticleController::class, 'index'])->name('index');
+        Route::post('/', [HelpCenterArticleController::class, 'store'])->name('store');
+        Route::get('/{article:id}/edit', [HelpCenterArticleController::class, 'edit'])->name('edit');
+        Route::put('/{article:id}', [HelpCenterArticleController::class, 'update'])->name('update');
+        Route::delete('/{article:id}', [HelpCenterArticleController::class, 'destroy'])->name('destroy');
+        Route::post('/{article:id}/feature', [HelpCenterArticleController::class, 'feature'])->name('feature');
     });
 
     // ─── App Contexts (Platform Navigation) ──────────────────────────────────
     Route::prefix('app-contexts')->name('app-contexts.')->middleware('admin.permission:app_contexts.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\AppContextController::class, 'index'])->name('index');
-        Route::get('/{context}', [\App\Http\Controllers\Admin\AppContextController::class, 'show'])->name('show');
-        Route::put('/{context}', [\App\Http\Controllers\Admin\AppContextController::class, 'update'])->name('update');
-        Route::post('/{context}/countries', [\App\Http\Controllers\Admin\AppContextController::class, 'saveCountryAssignment'])->name('countries.save');
-        Route::post('/{context}/nav', [\App\Http\Controllers\Admin\AppContextController::class, 'saveNavItem'])->name('nav.save');
-        Route::put('/{context}/nav/{item}', [\App\Http\Controllers\Admin\AppContextController::class, 'updateNavItem'])->name('nav.update');
+        Route::get('/', [AppContextController::class, 'index'])->name('index');
+        Route::get('/{context}', [AppContextController::class, 'show'])->name('show');
+        Route::put('/{context}', [AppContextController::class, 'update'])->name('update');
+        Route::post('/{context}/countries', [AppContextController::class, 'saveCountryAssignment'])->name('countries.save');
+        Route::post('/{context}/nav', [AppContextController::class, 'saveNavItem'])->name('nav.save');
+        Route::put('/{context}/nav/{item}', [AppContextController::class, 'updateNavItem'])->name('nav.update');
     });
 
     // ─── Documentation ────────────────────────────────────────────────────────
     Route::prefix('docs')->name('docs.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\DocsController::class, 'index'])->name('index');
+        Route::get('/', [DocsController::class, 'index'])->name('index');
 
         // Panels
-        Route::get('/panels/admin', [\App\Http\Controllers\Admin\DocsController::class, 'adminPanel'])->name('panels.admin');
-        Route::get('/panels/partner', [\App\Http\Controllers\Admin\DocsController::class, 'partnerPanel'])->name('panels.partner');
-        Route::get('/panels/marketer', [\App\Http\Controllers\Admin\DocsController::class, 'marketerPanel'])->name('panels.marketer');
-        Route::get('/panels/travel', [\App\Http\Controllers\Admin\DocsController::class, 'travelPanel'])->name('panels.travel');
-        Route::get('/panels/delivery', [\App\Http\Controllers\Admin\DocsController::class, 'deliveryPanel'])->name('panels.delivery');
-        Route::get('/panels/carrier', [\App\Http\Controllers\Admin\DocsController::class, 'carrierPanel'])->name('panels.carrier');
+        Route::get('/panels/admin', [DocsController::class, 'adminPanel'])->name('panels.admin');
+        Route::get('/panels/partner', [DocsController::class, 'partnerPanel'])->name('panels.partner');
+        Route::get('/panels/marketer', [DocsController::class, 'marketerPanel'])->name('panels.marketer');
+        Route::get('/panels/travel', [DocsController::class, 'travelPanel'])->name('panels.travel');
+        Route::get('/panels/delivery', [DocsController::class, 'deliveryPanel'])->name('panels.delivery');
+        Route::get('/panels/carrier', [DocsController::class, 'carrierPanel'])->name('panels.carrier');
 
         // Features
-        Route::get('/features/order-lifecycle', [\App\Http\Controllers\Admin\DocsController::class, 'orderLifecycle'])->name('features.order-lifecycle');
-        Route::get('/features/shipping', [\App\Http\Controllers\Admin\DocsController::class, 'shipping'])->name('features.shipping');
-        Route::get('/features/warehouses', [\App\Http\Controllers\Admin\DocsController::class, 'warehouses'])->name('features.warehouses');
-        Route::get('/features/payments', [\App\Http\Controllers\Admin\DocsController::class, 'payments'])->name('features.payments');
-        Route::get('/features/page-builder', [\App\Http\Controllers\Admin\DocsController::class, 'pageBuilder'])->name('features.page-builder');
-        Route::get('/features/banners', [\App\Http\Controllers\Admin\DocsController::class, 'banners'])->name('features.banners');
-        Route::get('/features/ad-campaigns', [\App\Http\Controllers\Admin\DocsController::class, 'adCampaigns'])->name('features.ad-campaigns');
-        Route::get('/features/vendor-campaigns', [\App\Http\Controllers\Admin\DocsController::class, 'vendorCampaigns'])->name('features.vendor-campaigns');
-        Route::get('/features/marketer-campaigns', [\App\Http\Controllers\Admin\DocsController::class, 'marketerCampaigns'])->name('features.marketer-campaigns');
-        Route::get('/features/influencer-deals', [\App\Http\Controllers\Admin\DocsController::class, 'influencerDeals'])->name('features.influencer-deals');
-        Route::get('/features/secret-promotions', [\App\Http\Controllers\Admin\DocsController::class, 'secretPromotions'])->name('features.secret-promotions');
-        Route::get('/features/affiliate-codes', [\App\Http\Controllers\Admin\DocsController::class, 'affiliateCodes'])->name('features.affiliate-codes');
-        Route::get('/features/flash-sales', [\App\Http\Controllers\Admin\DocsController::class, 'flashSales'])->name('features.flash-sales');
-        Route::get('/features/finance', [\App\Http\Controllers\Admin\DocsController::class, 'finance'])->name('features.finance');
-        Route::get('/features/subsidy', [\App\Http\Controllers\Admin\DocsController::class, 'subsidy'])->name('features.subsidy');
-        Route::get('/features/packaging', [\App\Http\Controllers\Admin\DocsController::class, 'packaging'])->name('features.packaging');
-        Route::get('/features/content-pages', [\App\Http\Controllers\Admin\DocsController::class, 'contentPages'])->name('features.content-pages');
-        Route::get('/features/system-pages', [\App\Http\Controllers\Admin\DocsController::class, 'systemPages'])->name('features.system-pages');
-        Route::get('/features/roles', [\App\Http\Controllers\Admin\DocsController::class, 'roles'])->name('features.roles');
-        Route::get('/features/warranties', [\App\Http\Controllers\Admin\DocsController::class, 'warranties'])->name('features.warranties');
-        Route::get('/features/classifieds', [\App\Http\Controllers\Admin\DocsController::class, 'classifieds'])->name('features.classifieds');
-        Route::get('/features/travel', [\App\Http\Controllers\Admin\DocsController::class, 'travelFeature'])->name('features.travel');
-        Route::get('/features/radio', [\App\Http\Controllers\Admin\DocsController::class, 'radioFeature'])->name('features.radio');
+        Route::get('/features/order-lifecycle', [DocsController::class, 'orderLifecycle'])->name('features.order-lifecycle');
+        Route::get('/features/shipping', [DocsController::class, 'shipping'])->name('features.shipping');
+        Route::get('/features/warehouses', [DocsController::class, 'warehouses'])->name('features.warehouses');
+        Route::get('/features/payments', [DocsController::class, 'payments'])->name('features.payments');
+        Route::get('/features/page-builder', [DocsController::class, 'pageBuilder'])->name('features.page-builder');
+        Route::get('/features/banners', [DocsController::class, 'banners'])->name('features.banners');
+        Route::get('/features/ad-campaigns', [DocsController::class, 'adCampaigns'])->name('features.ad-campaigns');
+        Route::get('/features/vendor-campaigns', [DocsController::class, 'vendorCampaigns'])->name('features.vendor-campaigns');
+        Route::get('/features/marketer-campaigns', [DocsController::class, 'marketerCampaigns'])->name('features.marketer-campaigns');
+        Route::get('/features/influencer-deals', [DocsController::class, 'influencerDeals'])->name('features.influencer-deals');
+        Route::get('/features/secret-promotions', [DocsController::class, 'secretPromotions'])->name('features.secret-promotions');
+        Route::get('/features/affiliate-codes', [DocsController::class, 'affiliateCodes'])->name('features.affiliate-codes');
+        Route::get('/features/flash-sales', [DocsController::class, 'flashSales'])->name('features.flash-sales');
+        Route::get('/features/finance', [DocsController::class, 'finance'])->name('features.finance');
+        Route::get('/features/subsidy', [DocsController::class, 'subsidy'])->name('features.subsidy');
+        Route::get('/features/packaging', [DocsController::class, 'packaging'])->name('features.packaging');
+        Route::get('/features/content-pages', [DocsController::class, 'contentPages'])->name('features.content-pages');
+        Route::get('/features/system-pages', [DocsController::class, 'systemPages'])->name('features.system-pages');
+        Route::get('/features/roles', [DocsController::class, 'roles'])->name('features.roles');
+        Route::get('/features/warranties', [DocsController::class, 'warranties'])->name('features.warranties');
+        Route::get('/features/classifieds', [DocsController::class, 'classifieds'])->name('features.classifieds');
+        Route::get('/features/travel', [DocsController::class, 'travelFeature'])->name('features.travel');
+        Route::get('/features/radio', [DocsController::class, 'radioFeature'])->name('features.radio');
     });
 
 }); // end auth.admin middleware group
-

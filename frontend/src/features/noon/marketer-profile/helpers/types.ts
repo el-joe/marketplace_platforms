@@ -2,10 +2,24 @@ import type { PromoBadge } from "@/types/globals";
 export interface MarketerProfileMarketer {
   id: string;
   name: string;
-  marketer_type: "influencer" | "affiliate";
+  marketer_type: "influencer" | "affiliate" | string;
   country?: { name_en: string; name_ar: string } | null;
   total_campaigns: number;
   total_conversions: number;
+}
+
+export interface MarketerBrokerCategory {
+  category_id: string;
+  category_name_en: string | null;
+  category_name_ar: string | null;
+}
+
+export interface MarketerBrokerSpecialization {
+  categories: MarketerBrokerCategory[];
+  city_id: string | null;
+  city_name_en: string | null;
+  city_name_ar: string | null;
+  serves_all_cities: boolean;
 }
 
 export interface MarketerProfileInfo {
@@ -21,6 +35,7 @@ export interface MarketerProfileInfo {
   profile_url: string;
   ad_price?: number | null;
   ad_price_currency?: string | null;
+  broker_specialization?: MarketerBrokerSpecialization | null;
 }
 
 export interface CampaignContext {

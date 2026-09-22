@@ -6,24 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreFlashSaleRequest;
 use App\Http\Requests\Admin\StoreFlashSaleSubmissionRequest;
 use App\Http\Requests\Admin\UpdateFlashSaleRequest;
+use App\Jobs\FlashSaleInviteBulkJob;
 use App\Models\AdminListing;
 use App\Models\Category;
 use App\Models\Country;
 use App\Models\FlashSale;
 use App\Models\FlashSaleAnalytic;
+use App\Models\FlashSaleMarketerInvitation;
 use App\Models\FlashSalePriceHistory;
 use App\Models\FlashSaleSubmission;
 use App\Models\FlashSaleVendorInvitition;
+use App\Models\Marketer;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Notifications\Marketer\FlashSaleInvitationNotification;
 use App\Services\FakeDiscountDetectionService;
 use App\Services\FlashSaleService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FlashSaleController extends Controller
 {
@@ -33,14 +41,13 @@ class FlashSaleController extends Controller
     public function __construct(
         private readonly FlashSaleService $flashSaleService,
         private readonly FakeDiscountDetectionService $fakeDiscountService
-    ) {
-    }
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index / Listing
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportFlashSales($request);
@@ -67,7 +74,7 @@ class FlashSaleController extends Controller
      * Search matches both. Likewise there is no generic `starts_at`; the real column is
      * `sale_starts_at` (submission windows are separate), used below for date_from/date_to.
      */
-    private function buildFlashSalesQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildFlashSalesQuery(Request $request): Builder
     {
         $query = FlashSale::query()
             ->leftJoin('countries as c', 'c.id', '=', 'flash_sales.country_id')
@@ -94,18 +101,18 @@ class FlashSaleController extends Controller
             ]);
 
         return $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('flash_sales.status', $v),
-            'country_id' => fn($q, $v) => $q->where('flash_sales.country_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('flash_sales.sale_starts_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('flash_sales.sale_ends_at', '<=', $v),
-            'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
+            'status' => fn ($q, $v) => $q->where('flash_sales.status', $v),
+            'country_id' => fn ($q, $v) => $q->where('flash_sales.country_id', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('flash_sales.sale_starts_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('flash_sales.sale_ends_at', '<=', $v),
+            'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('flash_sales.name_en', 'like', "%{$v}%")
                     ->orWhere('flash_sales.name_ar', 'like', "%{$v}%");
             }),
         ]);
     }
 
-    private function exportFlashSales(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportFlashSales(Request $request): StreamedResponse
     {
         $sales = $this->buildFlashSalesQuery($request)->orderByDesc('flash_sales.sale_starts_at')->get();
 
@@ -117,7 +124,7 @@ class FlashSaleController extends Controller
 
         $headers = ['Name', 'Status', 'Start', 'End', 'Submissions', 'Active Listings'];
 
-        $rows = $sales->map(fn($row) => [
+        $rows = $sales->map(fn ($row) => [
             $row->name_en,
             $row->status?->value,
             optional($row->sale_starts_at)->format('d M Y H:i'),
@@ -140,10 +147,10 @@ class FlashSaleController extends Controller
 
         return $this->dataTableResponse($request, $query, $this->indexColumns(), function ($row) {
             $submissionPeriod = $row->submission_opens_at && $row->submission_closes_at
-                ? \Carbon\Carbon::parse($row->submission_opens_at)->format('M j') . '–' . \Carbon\Carbon::parse($row->submission_closes_at)->format('j')
+                ? Carbon::parse($row->submission_opens_at)->format('M j').'–'.Carbon::parse($row->submission_closes_at)->format('j')
                 : '—';
             $salePeriod = $row->sale_starts_at && $row->sale_ends_at
-                ? \Carbon\Carbon::parse($row->sale_starts_at)->format('M j H:i') . ' – ' . \Carbon\Carbon::parse($row->sale_ends_at)->format('H:i')
+                ? Carbon::parse($row->sale_starts_at)->format('M j H:i').' – '.Carbon::parse($row->sale_ends_at)->format('H:i')
                 : '—';
 
             return [
@@ -153,8 +160,8 @@ class FlashSaleController extends Controller
                 'status' => $row->status?->value,
                 'submission_period' => $submissionPeriod,
                 'sale_period' => $salePeriod,
-                'slots' => ($row->approved_slots_count ?? 0) . '/' . ($row->max_total_slots ?? '∞'),
-                'min_discount_pct' => $row->min_discount_pct . '%+',
+                'slots' => ($row->approved_slots_count ?? 0).'/'.($row->max_total_slots ?? '∞'),
+                'min_discount_pct' => $row->min_discount_pct.'%+',
                 'units_sold' => (int) $row->units_sold,
                 'edit_url' => route('admin.flash-sales.edit', $row->id),
                 'show_url' => route('admin.flash-sales.show', $row->id),
@@ -219,7 +226,7 @@ class FlashSaleController extends Controller
             ->pluck('cnt', 'status');
 
         $invitationStats = collect($invitationStatuses)
-            ->mapWithKeys(fn($s) => [$s => (int) ($invitationCounts[$s] ?? 0)]);
+            ->mapWithKeys(fn ($s) => [$s => (int) ($invitationCounts[$s] ?? 0)]);
 
         $invitationCount = $invitationStats->sum();
 
@@ -248,7 +255,7 @@ class FlashSaleController extends Controller
             ->groupBy('status')
             ->pluck('cnt', 'status');
         $invitationStats = collect($invitationStatuses)
-            ->mapWithKeys(fn($s) => [$s => (int) ($invitationCounts[$s] ?? 0)]);
+            ->mapWithKeys(fn ($s) => [$s => (int) ($invitationCounts[$s] ?? 0)]);
         $invitationCount = $invitationStats->sum();
 
         $submissionStats = FlashSaleSubmission::where('flash_sale_id', $flashSale->id)
@@ -279,6 +286,7 @@ class FlashSaleController extends Controller
             return response()->json(['message' => __('admin.flash_sales.only_draft_deletable')], 422);
         }
         $flashSale->delete();
+
         return response()->json(['success' => true, 'message' => __('admin.flash_sales.deleted_message')]);
     }
 
@@ -306,14 +314,14 @@ class FlashSaleController extends Controller
         $newStatus = $actionToStatus[$request->action];
         $admin = auth('admin')->user();
         $statusLabels = [
-            'draft'             => __('admin.flash_sales.status_draft'),
-            'submission_open'   => __('admin.flash_sales.status_submission_open'),
+            'draft' => __('admin.flash_sales.status_draft'),
+            'submission_open' => __('admin.flash_sales.status_submission_open'),
             'submission_closed' => __('admin.flash_sales.status_submission_closed'),
-            'under_review'      => __('admin.flash_sales.status_under_review'),
-            'approved'          => __('admin.flash_sales.status_approved'),
-            'live'              => __('admin.flash_sales.status_live'),
-            'ended'             => __('admin.flash_sales.status_ended'),
-            'cancelled'         => __('admin.flash_sales.status_cancelled'),
+            'under_review' => __('admin.flash_sales.status_under_review'),
+            'approved' => __('admin.flash_sales.status_approved'),
+            'live' => __('admin.flash_sales.status_live'),
+            'ended' => __('admin.flash_sales.status_ended'),
+            'cancelled' => __('admin.flash_sales.status_cancelled'),
         ];
 
         try {
@@ -348,9 +356,10 @@ class FlashSaleController extends Controller
             $invited = 0;
             $skipped = 0;
             foreach ($request->vendor_ids as $vendorId) {
-                $vendor = \App\Models\Vendor::find($vendorId);
-                if (!$vendor) {
+                $vendor = Vendor::find($vendorId);
+                if (! $vendor) {
                     $skipped++;
+
                     continue;
                 }
                 $this->flashSaleService->inviteVendorManually($flashSale, $vendorId);
@@ -367,6 +376,7 @@ class FlashSaleController extends Controller
         }
 
         $count = $this->flashSaleService->inviteEligibleVendors($flashSale);
+
         return response()->json([
             'success' => true,
             'count' => $count,
@@ -377,6 +387,7 @@ class FlashSaleController extends Controller
     public function eligibleVendorCount(FlashSale $flashSale): JsonResponse
     {
         $count = $this->flashSaleService->countEligibleVendors($flashSale);
+
         return response()->json(['data' => ['count' => $count]]);
     }
 
@@ -424,12 +435,12 @@ class FlashSaleController extends Controller
             return response()->json(['message' => __('admin.flash_sales.invitation_not_belong')], 403);
         }
 
-        if (!in_array($invitation->status?->value, ['pending', 'declined'], true)) {
+        if (! in_array($invitation->status?->value, ['pending', 'declined'], true)) {
             return response()->json(['message' => __('admin.flash_sales.notifications_resend_restricted')], 422);
         }
 
         $invitation->update(['notified_at' => now()]);
-        \App\Jobs\FlashSaleInviteBulkJob::dispatch($flashSale->id, [$invitation->vendor_id]);
+        FlashSaleInviteBulkJob::dispatch($flashSale->id, [$invitation->vendor_id]);
 
         return response()->json(['success' => true, 'message' => __('admin.flash_sales.notification_queued_resend')]);
     }
@@ -477,8 +488,8 @@ class FlashSaleController extends Controller
                 'product_image_url' => $productImage?->url ?? null,
                 'vendor_store_name' => $isAdminListing ? null : e($row->vendor_store_name),
                 'vendor_id' => $row->vendor_id,
-                'original_price_formatted' => number_format($row->original_price, 2) . ' ' . $row->flash_price_currency,
-                'flash_price_formatted' => number_format($row->flash_price, 2) . ' ' . $row->flash_price_currency,
+                'original_price_formatted' => number_format($row->original_price, 2).' '.$row->flash_price_currency,
+                'flash_price_formatted' => number_format($row->flash_price, 2).' '.$row->flash_price_currency,
                 'flash_price_raw' => $row->flash_price,
                 'calculated_discount_pct' => $discountPct,
                 'discount_ok' => $discountPct >= $minPct,
@@ -575,7 +586,7 @@ class FlashSaleController extends Controller
         $listings = VendorListing::query()
             ->join('product_variants as pv', 'pv.id', '=', 'vendor_listings.product_variant_id')
             ->join('products as p', 'p.id', '=', 'pv.product_id')
-            ->when($vendorId, fn($q) => $q->where('vendor_listings.vendor_id', $vendorId))
+            ->when($vendorId, fn ($q) => $q->where('vendor_listings.vendor_id', $vendorId))
             ->where(function ($q) use ($term) {
                 $q->where('p.name_en', 'like', "%{$term}%")
                     ->orWhere('pv.sku', 'like', "%{$term}%");
@@ -591,7 +602,7 @@ class FlashSaleController extends Controller
             ]);
 
         return response()->json([
-            'results' => $listings->map(fn($l) => [
+            'results' => $listings->map(fn ($l) => [
                 'id' => $l->id,
                 'text' => "{$l->name_en} — {$l->sku}",
                 'price' => $l->price,
@@ -611,7 +622,7 @@ class FlashSaleController extends Controller
             ->get(['id', 'store_name']);
 
         return response()->json([
-            'results' => $vendors->map(fn($v) => ['id' => $v->id, 'text' => $v->store_name]),
+            'results' => $vendors->map(fn ($v) => ['id' => $v->id, 'text' => $v->store_name]),
         ]);
     }
 
@@ -619,15 +630,16 @@ class FlashSaleController extends Controller
     {
         $term = $request->input('q', '');
 
-        $marketers = \App\Models\Marketer::query()
+        $marketers = Marketer::query()
             ->where('name', 'like', "%{$term}%")
             ->where('global_status', 'active')
             ->orderBy('name')
+            ->with('marketerJobs')
             ->limit(30)
-            ->get(['id', 'name', 'marketer_type']);
+            ->get(['id', 'name']);
 
         return response()->json([
-            'results' => $marketers->map(fn ($m) => ['id' => $m->id, 'text' => "{$m->name} ({$m->marketer_type})"]),
+            'results' => $marketers->map(fn ($m) => ['id' => $m->id, 'text' => "{$m->name} ({$m->marketerJobs->pluck('key')->implode(', ')})"]),
         ]);
     }
 
@@ -643,16 +655,16 @@ class FlashSaleController extends Controller
             'extra_commission_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $admin = \Illuminate\Support\Facades\Auth::guard('admin')->user();
+        $admin = Auth::guard('admin')->user();
         $invited = 0;
 
         foreach ($request->marketer_ids as $marketerId) {
-            $marketer = \App\Models\Marketer::find($marketerId);
+            $marketer = Marketer::find($marketerId);
             if (! $marketer) {
                 continue;
             }
 
-            $invitation = \App\Models\FlashSaleMarketerInvitation::firstOrCreate(
+            $invitation = FlashSaleMarketerInvitation::firstOrCreate(
                 ['flash_sale_id' => $flashSale->id, 'marketer_id' => $marketerId],
                 [
                     'status' => 'pending',
@@ -662,7 +674,7 @@ class FlashSaleController extends Controller
             );
 
             $marketer->marketerAdmins->each(
-                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\FlashSaleInvitationNotification($invitation, $ma->id))
+                fn ($ma) => $ma->notify(new FlashSaleInvitationNotification($invitation, $ma->id))
             );
 
             $invited++;
@@ -677,8 +689,8 @@ class FlashSaleController extends Controller
 
     public function marketerInvitations(FlashSale $flashSale): JsonResponse
     {
-        $invitations = \App\Models\FlashSaleMarketerInvitation::where('flash_sale_id', $flashSale->id)
-            ->with('marketer:id,name,marketer_type')
+        $invitations = FlashSaleMarketerInvitation::where('flash_sale_id', $flashSale->id)
+            ->with('marketer:id,name')
             ->latest()
             ->get();
 
@@ -713,7 +725,7 @@ class FlashSaleController extends Controller
             ]);
 
         return response()->json([
-            'results' => $listings->map(fn($l) => [
+            'results' => $listings->map(fn ($l) => [
                 'id' => $l->id,
                 'text' => $l->name_en,
                 'price' => $l->price,
@@ -736,7 +748,7 @@ class FlashSaleController extends Controller
                 'approved' => (int) ($counts['approved'] ?? 0),
                 'rejected' => (int) ($counts['rejected'] ?? 0),
                 'pending' => (int) (($counts['submitted'] ?? 0) + ($counts['under_review'] ?? 0)),
-            ]
+            ],
         ]);
     }
 
@@ -806,13 +818,13 @@ class FlashSaleController extends Controller
         $priceHistory = FlashSalePriceHistory::query()
             ->when(
                 $isAdminListing,
-                fn($q) => $q->where('admin_listing_id', $submission->admin_listing_id),
-                fn($q) => $q->where('vendor_listing_id', $submission->vendor_listing_id)
+                fn ($q) => $q->where('admin_listing_id', $submission->admin_listing_id),
+                fn ($q) => $q->where('vendor_listing_id', $submission->vendor_listing_id)
             )
             ->where('recorded_at', '>=', now()->subDays(30))
             ->orderBy('recorded_at')
             ->get()
-            ->map(fn($r) => [
+            ->map(fn ($r) => [
                 'date' => $r->recorded_at->toDateString(),
                 'price_raw' => $r->price,
                 'price_formatted' => number_format($r->price, 2),
@@ -841,8 +853,8 @@ class FlashSaleController extends Controller
                 'admin_listing_id' => $submission->admin_listing_id,
                 'flash_price_raw' => $submission->flash_price,
                 'original_price_raw' => $submission->original_price,
-                'flash_price_formatted' => number_format($submission->flash_price, 2) . ' ' . $submission->flash_price_currency,
-                'original_price_formatted' => number_format($submission->original_price, 2) . ' ' . $submission->flash_price_currency,
+                'flash_price_formatted' => number_format($submission->flash_price, 2).' '.$submission->flash_price_currency,
+                'original_price_formatted' => number_format($submission->original_price, 2).' '.$submission->flash_price_currency,
                 'calculated_discount_pct' => (float) $submission->calculated_discount_pct,
                 'admin_notes' => $submission->admin_notes,
                 'vendor_notes' => $submission->vendor_notes,
@@ -851,7 +863,7 @@ class FlashSaleController extends Controller
                 'analysis' => $analysis,
                 'price_history' => $priceHistory,
                 'stock' => $stockLevels,
-            ]
+            ],
         ]);
     }
 
@@ -869,19 +881,19 @@ class FlashSaleController extends Controller
         $rows = FlashSalePriceHistory::query()
             ->when(
                 $request->filled('admin_listing_id'),
-                fn($q) => $q->where('admin_listing_id', $request->admin_listing_id),
-                fn($q) => $q->where('vendor_listing_id', $request->vendor_listing_id)
+                fn ($q) => $q->where('admin_listing_id', $request->admin_listing_id),
+                fn ($q) => $q->where('vendor_listing_id', $request->vendor_listing_id)
             )
             ->where('recorded_at', '>=', now()->subDays(30))
             ->orderBy('recorded_at')
             ->get();
 
         return response()->json([
-            'data' => $rows->map(fn($r) => [
+            'data' => $rows->map(fn ($r) => [
                 'date' => $r->recorded_at->toDateString(),
                 'price_raw' => $r->price,
                 'price_formatted' => number_format($r->price, 2),
-            ])
+            ]),
         ]);
     }
 
@@ -906,8 +918,8 @@ class FlashSaleController extends Controller
 
         // Collapse to a single row (expected exactly one currency per flash sale).
         $totals = (object) [
-            'units'    => $totalsRows->sum('units'),
-            'revenue'  => $totalsRows->sum('revenue'),
+            'units' => $totalsRows->sum('units'),
+            'revenue' => $totalsRows->sum('revenue'),
             'sold_out' => $totalsRows->sum('sold_out'),
         ];
 
@@ -916,7 +928,7 @@ class FlashSaleController extends Controller
             ->orderByDesc('quantity_sold')
             ->limit(5)
             ->get()
-            ->map(fn($s) => [
+            ->map(fn ($s) => [
                 'id' => $s->id,
                 'product_name' => e($s->listing()?->productVariant?->product?->name_en ?? 'Unknown'),
                 'vendor_name' => '',
@@ -932,7 +944,7 @@ class FlashSaleController extends Controller
                 'sold_out_count' => (int) ($totals->sold_out ?? 0),
                 'time_remaining_seconds' => max(0, now()->diffInSeconds($flashSale->sale_ends_at, false)),
                 'top_submissions' => $top,
-            ]
+            ],
         ]);
     }
 
@@ -942,7 +954,7 @@ class FlashSaleController extends Controller
 
     public function analyticsData(FlashSale $flashSale): JsonResponse
     {
-        if (!in_array($flashSale->status?->value, ['live', 'ended'])) {
+        if (! in_array($flashSale->status?->value, ['live', 'ended'])) {
             return response()->json(['message' => __('admin.flash_sales.analytics_available_after_live')], 422);
         }
 
@@ -962,13 +974,13 @@ class FlashSaleController extends Controller
         return response()->json([
             'data' => [
                 'summary' => $summary,
-                'by_day' => $byDay->map(fn($r) => [
+                'by_day' => $byDay->map(fn ($r) => [
                     'date' => $r->date->toDateString(),
                     'units_sold' => $r->units_sold,
                     'gross_revenue' => $r->gross_revenue,
                     'discount_given' => $r->discount_given,
                 ]),
-            ]
+            ],
         ]);
     }
 }

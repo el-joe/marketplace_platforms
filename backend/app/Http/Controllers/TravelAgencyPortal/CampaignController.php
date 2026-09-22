@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
+use App\Enums\CampaignType;
+use App\Enums\CommissionType;
 use App\Enums\VendorCampaignInvitationStatus;
 use App\Enums\VendorCampaignOfferStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
 use App\Models\Admin;
+use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\TravelAgencyCampaignInvitation;
 use App\Models\TravelAgencyCampaignOffer;
@@ -22,12 +25,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CampaignController extends Controller
 {
-    use ResolvesTravelAgency;
     use HasExport;
+    use ResolvesTravelAgency;
 
     private function filteredOffersQuery(Request $request)
     {
@@ -57,15 +61,15 @@ class CampaignController extends Controller
         $agencyId = $this->agencyId();
 
         $offers = $this->filteredOffersQuery($request)
-            ->withCount(['invitations', 'invitations as accepted_count' => fn($q) => $q->where('status', VendorCampaignInvitationStatus::Accepted->value)])
+            ->withCount(['invitations', 'invitations as accepted_count' => fn ($q) => $q->where('status', VendorCampaignInvitationStatus::Accepted->value)])
             ->latest()
             ->get();
 
         $stats = [
-            'draft'       => $offers->where('status', VendorCampaignOfferStatus::Draft)->count(),
-            'active'      => $offers->where('status', VendorCampaignOfferStatus::Active)->count(),
-            'invited'     => $offers->sum('invitations_count'),
-            'accepted'    => $offers->sum('accepted_count'),
+            'draft' => $offers->where('status', VendorCampaignOfferStatus::Draft)->count(),
+            'active' => $offers->where('status', VendorCampaignOfferStatus::Active)->count(),
+            'invited' => $offers->sum('invitations_count'),
+            'accepted' => $offers->sum('accepted_count'),
             'conversions' => TravelAgencyCampaignOffer::where('travel_agency_id', $agencyId)
                 ->join('travel_agency_campaign_invitations', 'travel_agency_campaign_offers.id', '=', 'travel_agency_campaign_invitations.travel_agency_campaign_offer_id')
                 ->join('marketer_campaigns', 'travel_agency_campaign_invitations.resulting_campaign_id', '=', 'marketer_campaigns.id')
@@ -101,13 +105,13 @@ class CampaignController extends Controller
             $offer->ends_at?->toDateString(),
         ]);
 
-        $filename = 'campaigns-' . now()->toDateString();
+        $filename = 'campaigns-'.now()->toDateString();
         $format = $request->input('format', 'csv');
 
         return match ($format) {
             'excel' => $this->exportExcel($filename, $headers, $rows),
-            'word'  => $this->exportWord($filename, __('travel.campaigns.export.sheet_title'), $rows),
-            'csv'   => $this->exportCsv($filename, $headers, $rows),
+            'word' => $this->exportWord($filename, __('travel.campaigns.export.sheet_title'), $rows),
+            'csv' => $this->exportCsv($filename, $headers, $rows),
             default => abort(400, __('travel.export.invalid_format')),
         };
     }
@@ -122,24 +126,24 @@ class CampaignController extends Controller
         $agencyId = $this->agencyId();
 
         $validated = $request->validate([
-            'name'                                  => 'required|string|max:255',
-            'description'                           => 'nullable|string|max:2000',
-            'requirements'                          => 'nullable|string|max:2000',
-            'campaign_type'                         => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\CampaignType::class)],
-            'offered_commission_rate'               => 'required|numeric|min:0|max:100',
-            'commission_type'                       => ['required', \Illuminate\Validation\Rule::enum(\App\Enums\CommissionType::class)],
-            'budget_per_marketer_display'           => 'nullable|numeric|min:0',
-            'total_budget_display'                  => 'nullable|numeric|min:0',
-            'starts_at'                             => 'required|date|after_or_equal:today',
-            'ends_at'                               => 'required|date|after:starts_at',
-            'invitation_deadline'                   => 'nullable|date|before:starts_at',
-            'attribution_model'                     => 'required|in:last_click,first_click,linear',
-            'whatsapp_sharing_enabled'              => 'boolean',
-            'package_ids'                           => 'required|array|min:1',
-            'package_ids.*'                         => 'uuid',
-            'commission_overrides'                  => 'nullable|array',
-            'commission_overrides.*.package_id'     => 'uuid',
-            'commission_overrides.*.rate'           => 'numeric|min:0|max:100',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:2000',
+            'requirements' => 'nullable|string|max:2000',
+            'campaign_type' => ['required', Rule::enum(CampaignType::class)],
+            'offered_commission_rate' => 'required|numeric|min:0|max:100',
+            'commission_type' => ['required', Rule::enum(CommissionType::class)],
+            'budget_per_marketer_display' => 'nullable|numeric|min:0',
+            'total_budget_display' => 'nullable|numeric|min:0',
+            'starts_at' => 'required|date|after_or_equal:today',
+            'ends_at' => 'required|date|after:starts_at',
+            'invitation_deadline' => 'nullable|date|before:starts_at',
+            'attribution_model' => 'required|in:last_click,first_click,linear',
+            'whatsapp_sharing_enabled' => 'boolean',
+            'package_ids' => 'required|array|min:1',
+            'package_ids.*' => 'uuid',
+            'commission_overrides' => 'nullable|array',
+            'commission_overrides.*.package_id' => 'uuid',
+            'commission_overrides.*.rate' => 'numeric|min:0|max:100',
         ]);
 
         // Validate all package_ids belong to this travel agency
@@ -151,6 +155,7 @@ class CampaignController extends Controller
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => __('travel.campaigns.package_not_owned')], 422);
             }
+
             return back()->withErrors(['package_ids' => __('travel.campaigns.package_not_owned')])->withInput();
         }
 
@@ -161,31 +166,31 @@ class CampaignController extends Controller
 
         DB::transaction(function () use ($validated, $agencyId, $overridesMap, &$offer) {
             $offer = TravelAgencyCampaignOffer::create([
-                'travel_agency_id'           => $agencyId,
-                'name'                       => $validated['name'],
-                'description'                => $validated['description'] ?? null,
-                'requirements'               => $validated['requirements'] ?? null,
-                'campaign_type'              => $validated['campaign_type'],
-                'offered_commission_rate'    => $validated['offered_commission_rate'],
-                'commission_type'            => $validated['commission_type'],
-                'budget_per_marketer'  => isset($validated['budget_per_marketer_display'])
+                'travel_agency_id' => $agencyId,
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'requirements' => $validated['requirements'] ?? null,
+                'campaign_type' => $validated['campaign_type'],
+                'offered_commission_rate' => $validated['offered_commission_rate'],
+                'commission_type' => $validated['commission_type'],
+                'budget_per_marketer' => isset($validated['budget_per_marketer_display'])
                     ? (int) $validated['budget_per_marketer_display'] : null,
-                'total_budget'         => isset($validated['total_budget_display'])
+                'total_budget' => isset($validated['total_budget_display'])
                     ? (int) $validated['total_budget_display'] : null,
-                'starts_at'                  => $validated['starts_at'],
-                'ends_at'                    => $validated['ends_at'],
-                'invitation_deadline'        => $validated['invitation_deadline'] ?? null,
-                'attribution_model'          => $validated['attribution_model'],
-                'whatsapp_sharing_enabled'   => $validated['whatsapp_sharing_enabled'] ?? false,
-                'status'                     => VendorCampaignOfferStatus::Draft,
+                'starts_at' => $validated['starts_at'],
+                'ends_at' => $validated['ends_at'],
+                'invitation_deadline' => $validated['invitation_deadline'] ?? null,
+                'attribution_model' => $validated['attribution_model'],
+                'whatsapp_sharing_enabled' => $validated['whatsapp_sharing_enabled'] ?? false,
+                'status' => VendorCampaignOfferStatus::Draft,
             ]);
 
             foreach ($validated['package_ids'] as $i => $packageId) {
                 TravelAgencyCampaignOfferPackage::create([
                     'travel_agency_campaign_offer_id' => $offer->id,
-                    'travel_package_id'               => $packageId,
-                    'position'                         => $i + 1,
-                    'commission_override'              => $overridesMap->get($packageId)['rate'] ?? null,
+                    'travel_package_id' => $packageId,
+                    'position' => $i + 1,
+                    'commission_override' => $overridesMap->get($packageId)['rate'] ?? null,
                 ]);
             }
         });
@@ -205,7 +210,7 @@ class CampaignController extends Controller
         ]);
 
         $invitationStats = [
-            'invited'  => $offer->invitations->count(),
+            'invited' => $offer->invitations->count(),
             'accepted' => $offer->invitations->where('status', VendorCampaignInvitationStatus::Accepted)->count(),
             'declined' => $offer->invitations->whereIn('status', [VendorCampaignInvitationStatus::Declined, VendorCampaignInvitationStatus::Expired, VendorCampaignInvitationStatus::Revoked])->count(),
         ];
@@ -281,17 +286,17 @@ class CampaignController extends Controller
     {
         abort_if($offer->travel_agency_id !== $this->agencyId(), 404);
 
-        if (!in_array($offer->status, [VendorCampaignOfferStatus::Active, VendorCampaignOfferStatus::Draft, VendorCampaignOfferStatus::PendingAdmin], true)) {
+        if (! in_array($offer->status, [VendorCampaignOfferStatus::Active, VendorCampaignOfferStatus::Draft, VendorCampaignOfferStatus::PendingAdmin], true)) {
             return response()->json(['success' => false, 'message' => __('travel.campaigns.invite_forbidden_status')], 422);
         }
 
         $validated = $request->validate([
-            'marketer_ids'   => 'required|array|min:1|max:50',
+            'marketer_ids' => 'required|array|min:1|max:50',
             'marketer_ids.*' => 'uuid|exists:marketers,id',
-            'vendor_note'    => 'nullable|string|max:1000',
+            'vendor_note' => 'nullable|string|max:1000',
         ]);
 
-        $activeMarketers = \App\Models\Marketer::whereIn('id', $validated['marketer_ids'])
+        $activeMarketers = Marketer::whereIn('id', $validated['marketer_ids'])
             ->where('global_status', 'active')
             ->pluck('id')
             ->all();
@@ -303,9 +308,9 @@ class CampaignController extends Controller
             $invitation = TravelAgencyCampaignInvitation::firstOrCreate(
                 ['travel_agency_campaign_offer_id' => $offer->id, 'marketer_id' => $marketerId],
                 [
-                    'status'      => VendorCampaignInvitationStatus::Pending,
+                    'status' => VendorCampaignInvitationStatus::Pending,
                     'vendor_note' => $validated['vendor_note'] ?? null,
-                    'expires_at'  => $offer->invitation_deadline,
+                    'expires_at' => $offer->invitation_deadline,
                 ]
             );
 
@@ -341,22 +346,23 @@ class CampaignController extends Controller
 
     public function searchMarketers(Request $request): JsonResponse
     {
-        $q    = $request->input('q', '');
+        $q = $request->input('q', '');
         $type = $request->input('type');
 
         return response()->json(
-            \App\Models\Marketer::where('global_status', 'active')
+            Marketer::where('global_status', 'active')
                 ->where(fn ($query) => $query
                     ->where('name', 'like', "%{$q}%")
                     ->orWhere('email', 'like', "%{$q}%"))
-                ->when($type, fn ($query, $t) => $query->where('marketer_type', $t))
-                ->select(['id', 'name', 'email', 'marketer_type'])
+                ->when($type, fn ($query, $t) => $query->whereHas('marketerJobs', fn ($j) => $j->where('key', $t)))
+                ->select(['id', 'name', 'email'])
+                ->with('marketerJobs')
                 ->limit(20)
                 ->get()
                 ->map(fn ($m) => [
-                    'id'             => $m->id,
-                    'name'           => $m->name,
-                    'type'           => $m->isInfluencer() ? 'مؤثر' : 'أفيليت',
+                    'id' => $m->id,
+                    'name' => $m->name,
+                    'type' => $m->isInfluencer() ? 'مؤثر' : 'أفيليت',
                     'avatar_initial' => mb_substr($m->name, 0, 1),
                 ])
         );
@@ -367,7 +373,7 @@ class CampaignController extends Controller
         $q = trim((string) $request->input('q', ''));
 
         $packages = TravelPackage::where('travel_agency_id', $this->agencyId())
-            ->when($q !== '', fn($query) => $query->where(fn($sub) => $sub
+            ->when($q !== '', fn ($query) => $query->where(fn ($sub) => $sub
                 ->where('title_en', 'like', "%{$q}%")
                 ->orWhere('title_ar', 'like', "%{$q}%")
                 ->orWhere('destination_country', 'like', "%{$q}%")
@@ -376,12 +382,12 @@ class CampaignController extends Controller
             ->limit(20)
             ->get(['id', 'title_ar', 'title_en', 'destination_country', 'destination_city', 'price', 'currency', 'departure_date', 'return_date']);
 
-        return response()->json($packages->map(fn($p) => [
-            'id'          => $p->id,
-            'name'        => $p->title_ar ?: $p->title_en,
-            'destination' => trim(($p->destination_city ? $p->destination_city . '، ' : '') . $p->destination_country),
-            'price'       => $p->priceFormatted(),
-            'dates'       => $p->departure_date?->format('d M Y') . ' — ' . $p->return_date?->format('d M Y'),
+        return response()->json($packages->map(fn ($p) => [
+            'id' => $p->id,
+            'name' => $p->title_ar ?: $p->title_en,
+            'destination' => trim(($p->destination_city ? $p->destination_city.'، ' : '').$p->destination_country),
+            'price' => $p->priceFormatted(),
+            'dates' => $p->departure_date?->format('d M Y').' — '.$p->return_date?->format('d M Y'),
         ]));
     }
 }

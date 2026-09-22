@@ -30,14 +30,13 @@ class DatabaseSeeder extends Seeder
                 VendorPermissionSeeder::class,
                 VendorAdminRoleMigrationSeeder::class,
 
-
             ]);
 
             return;
         }
 
         $this->call([
-                // ── Core reference data ────────────────────────────────────────
+            // ── Core reference data ────────────────────────────────────────
             BlockTypeSeeder::class,
             BlockTypeDescriptionSeeder::class,
             CountrySeeder::class,
@@ -54,7 +53,7 @@ class DatabaseSeeder extends Seeder
             SubscriptionPlanSeeder::class,
             BannerPlacementDefinitionsSeeder::class,
 
-                // ── Admin accounts (creates the 4 base rows) ──────────────────
+            // ── Admin accounts (creates the 4 base rows) ──────────────────
             AdminSeeder::class,
 
             PermissionSeeder::class,
@@ -62,63 +61,64 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             AdminRoleAssignmentSeeder::class,
 
-                // ── Nawi Ads slot tiers (needs countries + admins; idempotent) ──
+            // ── Nawi Ads slot tiers (needs countries + admins; idempotent) ──
             NawiAdsSlotSeeder::class,
 
-                // ── Cart card cashback offers (needs countries + admins) ────────
+            // ── Cart card cashback offers (needs countries + admins) ────────
             CartCardOfferSeeder::class,
 
-                // ── All guard user accounts ────────────────────────────────────
+            // ── All guard user accounts ────────────────────────────────────
             VendorSeeder::class,
 
-                // ── Vendor guard permissions & role migration ──────────────────
+            // ── Vendor guard permissions & role migration ──────────────────
             VendorPermissionSeeder::class,
             VendorAdminRoleMigrationSeeder::class,
 
             CustomerSeeder::class,
+            MarketerJobSeeder::class,
             MarketerSeeder::class,
             ShippingCompanySeeder::class,
             DeliveryAgentSeeder::class,
 
-                // ── Travel agency guard permissions & role migration (before
-                //    TravelAgencySeeder so member roles can be assigned) ─────────
+            // ── Travel agency guard permissions & role migration (before
+            //    TravelAgencySeeder so member roles can be assigned) ─────────
             TravelAgencyPermissionSeeder::class,
             TravelAgencyMemberRoleMigrationSeeder::class,
 
             TravelAgencySeeder::class,
 
-                // ── Products (needs vendor data from VendorSeeder above) ───────
+            // ── Products (needs vendor data from VendorSeeder above) ───────
             ProductSeeder::class,
 
-                // ── Delivery assignment test fixtures (Phase 2 Playwright tests) ─
+            // ── Delivery assignment test fixtures (Phase 2 Playwright tests) ─
             DeliveryAssignmentSeeder::class,
 
-                // ── Travel categories starter set ─────────────────────────────
+            // ── Travel categories starter set ─────────────────────────────
             TravelCategorySeeder::class,
 
-                // ── Blog module starter content ────────────────────────────────
+            // ── Blog module starter content ────────────────────────────────
             BlogSeeder::class,
 
-                // ── Knowledge Hub (Ad Support) starter content ─────────────────
+            // ── Knowledge Hub (Ad Support) starter content ─────────────────
             AdSupportSeeder::class,
 
-                // ── Seller Help Center starter content ──────────────────────────
+            // ── Seller Help Center starter content ──────────────────────────
             HelpCenterSeeder::class,
 
-                // ── FAQ CRUD module starter content ─────────────────────────────
+            // ── FAQ CRUD module starter content ─────────────────────────────
             FaqSeeder::class,
 
-                // ── Portal Content CMS (admin-editable bilingual marketing text) ─
+            // ── Portal Content CMS (admin-editable bilingual marketing text) ─
             PortalContentSeeder::class,
             PortalContentSeederBatch1::class,
             PortalContentSeederBatch2::class,
             PortalContentSeederBatch3::class,
             PortalContentSeederBatch4::class,
 
-                // ── Light cross-reference demo data (run last) ─────────────────
+            // ── Light cross-reference demo data (run last) ─────────────────
             DemoDataSeeder::class,
 
-                // ── Home page CMS blocks (per-country) ──────────────────────────
+            // ── Home page CMS blocks (per-country) ──────────────────────────
             HomePageSeeder::class,
         ]);
 

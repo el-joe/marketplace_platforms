@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerAdmin;
+use App\Models\MarketerJob;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,51 +22,57 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    private const MAX_ATTEMPTS  = 5;
+    private const MAX_ATTEMPTS = 5;
+
     private const DECAY_SECONDS = 900; // 15 minutes
 
     // ── Registration ──────────────────────────────────────────────────────
 
     public function showRegister(): View
     {
-        $countries = \App\Models\Country::where('is_active', true)->orderBy('name_ar')->get();
+        $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
+
         return view('marketer.auth.register', compact('countries'));
     }
 
     public function register(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'email'         => ['required', 'email', 'max:255', 'unique:marketer_admins,email'],
-            'password'      => ['required', 'confirmed', PasswordRule::min(8)],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:marketer_admins,email'],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)],
             'marketer_type' => ['required', 'in:influencer,affiliate'],
-            'phone'         => ['nullable', 'string', 'max:30'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'whatsapp_for_campaigns' => ['nullable', 'string', 'max:30'],
-            'country_id'    => ['required', 'exists:countries,id'],
+            'country_id' => ['required', 'exists:countries,id'],
         ], [
-            'email.unique'         => 'البريد الإلكتروني مسجّل مسبقاً.',
-            'marketer_type.in'     => 'نوع الماركتر غير صحيح.',
-            'country_id.exists'    => 'الدولة غير صحيحة.',
+            'email.unique' => 'البريد الإلكتروني مسجّل مسبقاً.',
+            'marketer_type.in' => 'نوع الماركتر غير صحيح.',
+            'country_id.exists' => 'الدولة غير صحيحة.',
         ]);
 
         DB::transaction(function () use ($request) {
             $marketer = Marketer::create([
-                'name'                   => $request->name,
-                'email'                  => $request->email,
-                'phone'                  => $request->phone,
-                'marketer_type'          => $request->marketer_type,
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
                 'whatsapp_for_campaigns' => $request->whatsapp_for_campaigns,
-                'country_id'             => $request->country_id,
-                'global_status'          => 'pending',
+                'country_id' => $request->country_id,
+                'global_status' => 'pending',
             ]);
+
+            $marketerJobId = MarketerJob::where('key', $request->marketer_type)->value('id');
+            if ($marketerJobId) {
+                $marketer->marketerJobs()->sync([$marketerJobId]);
+            }
 
             MarketerAdmin::create([
                 'marketer_id' => $marketer->id,
-                'name'        => $request->name,
-                'email'       => $request->email,
-                'password'    => $request->password, // cast hashes automatically
-                'is_owner'    => true,
-                'is_active'   => true,
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => $request->password, // cast hashes automatically
+                'is_owner' => true,
+                'is_active' => true,
             ]);
         });
 
@@ -82,11 +90,11 @@ class AuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        $throttleKey = Str::lower($request->input('email')) . '|' . $request->ip();
+        $throttleKey = Str::lower($request->input('email')).'|'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -96,8 +104,8 @@ class AuthController extends Controller
         }
 
         $credentials = [
-            'email'     => $request->input('email'),
-            'password'  => $request->input('password'),
+            'email' => $request->input('email'),
+            'password' => $request->input('password'),
             'is_active' => 1,
         ];
 
@@ -105,7 +113,7 @@ class AuthController extends Controller
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
-            /** @var \App\Models\MarketerAdmin $marketerAdmin */
+            /** @var MarketerAdmin $marketerAdmin */
             $marketerAdmin = Auth::guard('marketer')->user();
             $marketerAdmin->update([
                 'last_login_at' => now(),
@@ -164,8 +172,8 @@ class AuthController extends Controller
     public function updatePassword(Request $request): RedirectResponse
     {
         $request->validate([
-            'token'    => ['required'],
-            'email'    => ['required', 'email'],
+            'token' => ['required'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'min:8', 'confirmed'],
         ]);
 

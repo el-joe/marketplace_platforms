@@ -50,7 +50,7 @@
 
         <x-card title="{{ __('admin.marketer_campaigns.marketers') }}">
             <x-form.select name="marketer_ids" label="{{ __('admin.marketer_campaigns.select_marketers') }}" :select2="true" :multiple="true" required
-                :options="$marketers->mapWithKeys(fn($m) => [$m->id => $m->name . ' (' . ($m->marketer_type === 'influencer' ? __('admin.marketer_campaigns.type_influencer') : __('admin.marketer_campaigns.type_affiliate')) . ')'])->toArray()" />
+                :options="$marketers->mapWithKeys(fn($m) => [$m->id => $m->name . ' (' . ($m->isInfluencer() ? __('admin.marketer_campaigns.type_influencer') : __('admin.marketer_campaigns.type_affiliate')) . ')'])->toArray()" />
         </x-card>
 
         <x-card title="{{ __('admin.marketer_campaigns.commission_terms') }}">

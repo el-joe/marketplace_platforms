@@ -5,23 +5,25 @@ namespace App\Http\Controllers\Api\Marketer;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
 use App\Models\MarketerAdmin;
+use App\Models\MarketerJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
         $credentials = [
-            'email'     => $request->email,
-            'password'  => $request->password,
+            'email' => $request->email,
+            'password' => $request->password,
             'is_active' => 1,
         ];
 
@@ -30,10 +32,11 @@ class AuthController extends Controller
         }
 
         $marketerAdmin = Auth::guard('marketer_api')->user();
-        $marketer      = $marketerAdmin->marketer;
+        $marketer = $marketerAdmin->marketer;
 
         if (! $marketer->isActive()) {
             Auth::guard('marketer_api')->logout();
+
             return response()->json(['success' => false, 'message' => 'حسابك غير مفعّل بعد.'], 403);
         }
 
@@ -41,14 +44,14 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'token'   => $token,
+            'token' => $token,
             'marketer' => [
-                'id'             => $marketer->id,
-                'name'           => $marketer->name,
-                'email'          => $marketer->email,
-                'marketer_type'  => $marketer->marketer_type,
-                'global_status'  => $marketer->global_status?->value,
-                'country_id'     => $marketer->country_id,
+                'id' => $marketer->id,
+                'name' => $marketer->name,
+                'email' => $marketer->email,
+                'marketer_type' => $marketer->marketerJobs->first()?->key,
+                'global_status' => $marketer->global_status?->value,
+                'country_id' => $marketer->country_id,
             ],
         ]);
     }
@@ -56,33 +59,39 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $request->validate([
-            'name'           => 'required|string|max:255',
-            'email'          => 'required|email|unique:marketer_admins,email',
-            'password'       => 'required|min:8',
-            'marketer_type'  => 'required|in:influencer,affiliate',
-            'country_id'     => 'required|exists:countries,id',
-            'phone'          => 'nullable|string|max:30',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:marketer_admins,email',
+            'password' => 'required|min:8',
+            'marketer_type' => 'required|in:influencer,affiliate',
+            'country_id' => 'required|exists:countries,id',
+            'phone' => 'nullable|string|max:30',
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
         ]);
 
         $marketer = DB::transaction(function () use ($request) {
             $m = Marketer::create([
-                'name'                   => $request->name,
-                'email'                  => $request->email,
-                'phone'                  => $request->phone,
-                'marketer_type'          => $request->marketer_type,
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
                 'whatsapp_for_campaigns' => $request->whatsapp_for_campaigns,
-                'country_id'             => $request->country_id,
-                'global_status'          => 'pending',
+                'country_id' => $request->country_id,
+                'global_status' => 'pending',
             ]);
+
+            $marketerJobId = MarketerJob::where('key', $request->marketer_type)->value('id');
+            if ($marketerJobId) {
+                $m->marketerJobs()->sync([$marketerJobId]);
+            }
+
             MarketerAdmin::create([
                 'marketer_id' => $m->id,
-                'name'        => $request->name,
-                'email'       => $request->email,
-                'password'    => $request->password,
-                'is_owner'    => true,
-                'is_active'   => true,
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => $request->password,
+                'is_owner' => true,
+                'is_active' => true,
             ]);
+
             return $m;
         });
 
@@ -95,12 +104,14 @@ class AuthController extends Controller
     public function logout(): JsonResponse
     {
         Auth::guard('marketer_api')->logout();
+
         return response()->json(['success' => true, 'message' => 'تم تسجيل الخروج.']);
     }
 
     public function refresh(): JsonResponse
     {
         $token = Auth::guard('marketer_api')->refresh();
+
         return response()->json(['success' => true, 'token' => $token]);
     }
 
@@ -108,14 +119,15 @@ class AuthController extends Controller
     {
         $marketerAdmin = Auth::guard('marketer_api')->user();
         $marketer = $marketerAdmin->marketer;
+
         return response()->json([
-            'success'  => true,
+            'success' => true,
             'marketer' => [
-                'id'             => $marketer->id,
-                'name'           => $marketer->name,
-                'email'          => $marketer->email,
-                'marketer_type'  => $marketer->marketer_type,
-                'global_status'  => $marketer->global_status?->value,
+                'id' => $marketer->id,
+                'name' => $marketer->name,
+                'email' => $marketer->email,
+                'marketer_type' => $marketer->marketerJobs->first()?->key,
+                'global_status' => $marketer->global_status?->value,
             ],
         ]);
     }
@@ -123,8 +135,9 @@ class AuthController extends Controller
     public function forgotPassword(Request $request): JsonResponse
     {
         $request->validate(['email' => 'required|email']);
-        \Illuminate\Support\Facades\Password::broker('marketer_admins')
+        Password::broker('marketer_admins')
             ->sendResetLink($request->only('email'));
+
         return response()->json(['success' => true, 'message' => 'إذا كان البريد مسجلاً، سيصلك رابط الاستعادة.']);
     }
 }

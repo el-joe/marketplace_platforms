@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Marketer;
 use App\Models\MarketerCampaign;
+use App\Models\MarketerCampaignSample;
+use App\Models\ProductCustomAttribute;
+use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
@@ -17,16 +21,14 @@ class MarketerCampaignController extends Controller
 {
     use AuthorizesRequests;
 
-    public function __construct(private readonly MarketerCampaignService $marketerCampaignService)
-    {
-    }
+    public function __construct(private readonly MarketerCampaignService $marketerCampaignService) {}
 
     private function vendorId(): string
     {
         return Auth::guard('vendor')->user()->vendor_id;
     }
 
-    private function vendor(): \App\Models\Vendor
+    private function vendor(): Vendor
     {
         return Auth::guard('vendor')->user()->vendor;
     }
@@ -56,10 +58,11 @@ class MarketerCampaignController extends Controller
 
         $vendorListing->load('productVariant.product');
 
-        $marketerVendors = \App\Models\Marketer::where('global_status', 'active')
+        $marketerVendors = Marketer::where('global_status', 'active')
             ->where('country_id', $vendorListing->country_id)
             ->orderBy('name')
-            ->get(['id', 'name', 'marketer_type']);
+            ->with('marketerJobs')
+            ->get(['id', 'name']);
 
         return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors'));
     }
@@ -69,12 +72,12 @@ class MarketerCampaignController extends Controller
         $vendor = $this->vendor();
 
         $request->validate([
-            'vendor_listing_id'     => ['required', 'uuid', 'exists:vendor_listings,id'],
-            'commission_type'       => ['required', 'in:fixed,tiered,last_click'],
+            'vendor_listing_id' => ['required', 'uuid', 'exists:vendor_listings,id'],
+            'commission_type' => ['required', 'in:fixed,tiered,last_click'],
             'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'marketer_ids'          => ['required', 'array', 'min:1'],
-            'marketer_ids.*'        => ['uuid', 'distinct', 'exists:marketers,id'],
-            'tiered_rules'          => ['nullable', 'array'],
+            'marketer_ids' => ['required', 'array', 'min:1'],
+            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
+            'tiered_rules' => ['nullable', 'array'],
         ]);
 
         $listing = VendorListing::where('id', $request->vendor_listing_id)
@@ -92,15 +95,15 @@ class MarketerCampaignController extends Controller
                 array_merge(
                     $request->only(['commission_type', 'max_commission_budget']),
                     [
-                        'country_id'   => $listing->country_id,
-                        'currency'     => $listing->currency,
+                        'country_id' => $listing->country_id,
+                        'currency' => $listing->currency,
                         'marketer_ids' => $request->input('marketer_ids', []),
                         'tiered_rules' => $request->input('tiered_rules', []),
                     ]
                 )
             );
         } catch (\Throwable $e) {
-            return back()->withInput()->with('error', 'تعذر إنشاء حملة الماركتر: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'تعذر إنشاء حملة الماركتر: '.$e->getMessage());
         }
 
         return redirect()
@@ -155,7 +158,7 @@ class MarketerCampaignController extends Controller
     public function saveSampleCustomAttributes(
         Request $request,
         MarketerCampaign $marketerCampaign,
-        \App\Models\MarketerCampaignSample $sample
+        MarketerCampaignSample $sample
     ) {
         abort_unless(
             auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.create'),
@@ -181,7 +184,7 @@ class MarketerCampaignController extends Controller
         $sample->customAttributeValues()->delete();
 
         foreach ($validated['values'] as $val) {
-            $attribute = \App\Models\ProductCustomAttribute::find($val['product_custom_attribute_id']);
+            $attribute = ProductCustomAttribute::find($val['product_custom_attribute_id']);
             $sample->customAttributeValues()->create([
                 'product_custom_attribute_id' => $attribute->id,
                 'label' => $attribute->label,
@@ -202,7 +205,7 @@ class MarketerCampaignController extends Controller
         abort_unless($marketerCampaign->vendor_id === $this->vendorId(), 403);
 
         $request->validate([
-            'marketer_ids'   => ['required', 'array', 'min:1'],
+            'marketer_ids' => ['required', 'array', 'min:1'],
             'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
         ]);
 
@@ -210,9 +213,9 @@ class MarketerCampaignController extends Controller
             $marketerCampaign, $request->input('marketer_ids', [])
         );
 
-        $message = count($result['invited']) . ' ماركتر تمت دعوته.';
-        if (!empty($result['skipped'])) {
-            $message .= ' تم تجاهل ' . count($result['skipped']) . ' (مدعو بالفعل أو غير نشط).';
+        $message = count($result['invited']).' ماركتر تمت دعوته.';
+        if (! empty($result['skipped'])) {
+            $message .= ' تم تجاهل '.count($result['skipped']).' (مدعو بالفعل أو غير نشط).';
         }
 
         return back()->with('success', $message);
@@ -239,27 +242,28 @@ class MarketerCampaignController extends Controller
             403
         );
 
-        $vendor    = Auth::guard('vendor')->user()->vendor;
+        $vendor = Auth::guard('vendor')->user()->vendor;
         $countryId = $request->input('country_id', $vendor->country_id);
-        $search    = $request->input('q', '');
-        $type      = $request->input('type'); // 'influencer' | 'affiliate' | null = all
+        $search = $request->input('q', '');
+        $type = $request->input('type'); // 'influencer' | 'affiliate' | null = all
 
-        $marketers = \App\Models\Marketer::where('global_status', 'active')
+        $marketers = Marketer::where('global_status', 'active')
             ->where('country_id', $countryId)
             ->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             })
-            ->when($type, fn ($q) => $q->where('marketer_type', $type))
+            ->when($type, fn ($q) => $q->whereHas('marketerJobs', fn ($j) => $j->where('key', $type)))
+            ->with('marketerJobs')
             ->limit(20)
-            ->get(['id', 'name', 'email', 'marketer_type']);
+            ->get(['id', 'name', 'email']);
 
         return response()->json($marketers->map(fn ($m) => [
-            'id'            => $m->id,
-            'name'          => $m->name,
-            'email'         => $m->email,
-            'marketer_type' => $m->marketer_type,
-            'type_label'    => $m->marketer_type === 'influencer' ? 'مؤثر' : 'أفيليت',
+            'id' => $m->id,
+            'name' => $m->name,
+            'email' => $m->email,
+            'marketer_type' => $m->marketerJobs->first()?->key,
+            'type_label' => $m->isInfluencer() ? 'مؤثر' : 'أفيليت',
         ]));
     }
 }

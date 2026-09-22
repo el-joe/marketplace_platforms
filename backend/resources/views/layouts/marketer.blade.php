@@ -24,7 +24,7 @@
             ? \App\Models\FlashSaleMarketerInvitation::where('marketer_id', $marketer->id)->where('status', 'pending')->count()
             : 0;
         $openSpecialRequests = 0;
-        if ($marketer && $marketer->marketer_type === 'affiliate') {
+        if ($marketer && $marketer->isAffiliate()) {
             $openSpecialRequests = \Illuminate\Support\Facades\Cache::remember('marketer:special-requests-count:' . $marketer->id, 60, function () use ($marketer) {
                 $bp = $marketer->marketerProfile;
                 return $bp ? \App\Models\CustomerSpecialRequest::matchingBroker($bp)->count() : 0;
@@ -66,7 +66,7 @@
                     الإحصائيات
                 </a>
 
-                @if($marketer && $marketer->marketer_type === 'affiliate')
+                @if($marketer && $marketer->isAffiliate())
                 <a href="{{ route('marketer.special-requests.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.special-requests.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

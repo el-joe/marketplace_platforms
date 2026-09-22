@@ -8,22 +8,25 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\ListingDetailResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\AdminListing;
-use App\Models\MarketerListing;
 use App\Models\Country;
-use App\Models\VendorListing;
-use App\Models\Wishlist;
+use App\Models\MarketerListing;
 use App\Models\Product;
+use App\Models\ProductView;
+use App\Models\Vendor;
+use App\Models\VendorListing;
+use App\Models\WishlistItem;
+use App\Services\Ads\PlacementAdService;
 use App\Services\AppContextService;
 use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ProductViewService;
+use App\Services\Customer\PromoBadgeResolver;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\UnifiedListingQueryService;
 use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Services\Shipping\ListingOriginShippingIndicator;
-use App\Models\ProductView;
 use App\Services\WarrantyPlanService;
 use App\Support\Bilingual;
 use App\Support\Concerns\BuildsProductAttributeSelector;
@@ -46,16 +49,15 @@ class ListingDetailController extends Controller
         private readonly PageBuilderService $pageBuilder,
         private readonly FlashSaleService $flashSale,
         private readonly ListingOriginShippingIndicator $originShippingIndicator,
-        private readonly \App\Services\Ads\PlacementAdService $placementAds,
-    ) {
-    }
+        private readonly PlacementAdService $placementAds,
+    ) {}
 
     public function show(Request $request, $country, string $identifier): JsonResponse
     {
         $country = $request->attributes->get('country');
         $listing = $this->resolveListing($identifier, $country);
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('common.exceptions.listing_detail.not_found'), [], 404);
         }
 
@@ -84,7 +86,7 @@ class ListingDetailController extends Controller
     {
         $country = $request->attributes->get('country');
 
-        if (!preg_match('/^(v|p)-([0-9a-f\-]{36})$/i', $typeAndId, $m)) {
+        if (! preg_match('/^(v|p)-([0-9a-f\-]{36})$/i', $typeAndId, $m)) {
             return ApiResponse::error(__('common.exceptions.listing_detail.not_found'), [], 404);
         }
 
@@ -125,7 +127,7 @@ class ListingDetailController extends Controller
                 ->first();
         }
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('common.exceptions.listing_detail.not_found'), [], 404);
         }
 
@@ -153,7 +155,7 @@ class ListingDetailController extends Controller
                 $listing instanceof MarketerListing => 'marketer_listing_id',
                 default => 'vendor_listing_id',
             };
-            $isWishlisted = \App\Models\WishlistItem::where('customer_id', $customerId)
+            $isWishlisted = WishlistItem::where('customer_id', $customerId)
                 ->where($wishlistColumn, $listing->id)
                 ->exists();
         }
@@ -215,16 +217,16 @@ class ListingDetailController extends Controller
             'variant' => $this->variantShape($listing->productVariant),
             'other_sellers' => ($listing instanceof VendorListing ? $siblings['same_variant']->push($listing) : $siblings['same_variant'])
                 ->sortBy('price')
-                ->map(fn(VendorListing $l) => $this->otherSellerShape($l, $country, $l->id === $listing->id))
+                ->map(fn (VendorListing $l) => $this->otherSellerShape($l, $country, $l->id === $listing->id))
                 ->values()
                 ->all(),
-            'other_variants' => $siblings['other_variants']->map(fn(VendorListing $l) => $this->otherVariantShape($l))->values()->all(),
+            'other_variants' => $siblings['other_variants']->map(fn (VendorListing $l) => $this->otherVariantShape($l))->values()->all(),
             'reviews' => [
                 'rating_avg' => (float) $listing->rating_avg,
                 'rating_count' => (int) $listing->rating_count,
                 'rating_percentage' => ($listing->rating_avg / 5) * 100,
                 'rating_breakdown' => $this->reviewService->ratingBreakdown($product),
-                'items' => $reviews->map(fn($review) => $this->reviewShape($review))->values()->all(),
+                'items' => $reviews->map(fn ($review) => $this->reviewShape($review))->values()->all(),
             ],
             'frequently_bought_together' => $this->frequentlyBoughtTogetherShape($product, $listing, $country),
             'related_products' => $this->relatedProductsShape($product, $country),
@@ -244,12 +246,12 @@ class ListingDetailController extends Controller
         if (str_contains($identifier, '--')) {
             $parsed = $this->identifiers->parseListingRef($identifier);
 
-            if (!$parsed) {
+            if (! $parsed) {
                 return null;
             }
 
-            $result = VendorListing::whereHas('productVariant', fn($q) => $q->where('id', $parsed['product_variant_id']))
-                ->where('id', 'like', $parsed['listing_id_prefix'] . '%')
+            $result = VendorListing::whereHas('productVariant', fn ($q) => $q->where('id', $parsed['product_variant_id']))
+                ->where('id', 'like', $parsed['listing_id_prefix'].'%')
                 ->where('country_id', $country->id)
                 ->where('status', 'active')
                 ->with([
@@ -266,9 +268,9 @@ class ListingDetailController extends Controller
                 ])
                 ->first();
 
-            if (!$result) {
-                $result = MarketerListing::whereHas('productVariant', fn($q) => $q->where('id', $parsed['product_variant_id']))
-                    ->where('id', 'like', $parsed['listing_id_prefix'] . '%')
+            if (! $result) {
+                $result = MarketerListing::whereHas('productVariant', fn ($q) => $q->where('id', $parsed['product_variant_id']))
+                    ->where('id', 'like', $parsed['listing_id_prefix'].'%')
                     ->where('country_id', $country->id)
                     ->where('status', 'active')
                     ->with([
@@ -363,10 +365,10 @@ class ListingDetailController extends Controller
                 'marketer' => $marketer ? [
                     'id' => $marketer->id,
                     'name' => $marketer->name,
-                    'marketer_type' => $marketer->marketer_type,
+                    'marketer_type' => $marketer->marketerJobs->first()?->key,
                     'profile_slug' => $profile?->profile_slug,
                     'profile_url' => $profile?->profile_slug
-                        ? rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug
+                        ? rtrim(config('app.frontend_url', config('app.url')), '/').'/marketer/'.$profile->profile_slug
                         : null,
                 ] : null,
                 'referral_code' => $listing->referral_code,
@@ -434,9 +436,9 @@ class ListingDetailController extends Controller
         ];
     }
 
-    private function vendorDetailsShape(?\App\Models\Vendor $vendor): ?array
+    private function vendorDetailsShape(?Vendor $vendor): ?array
     {
-        if (!$vendor) {
+        if (! $vendor) {
             return null;
         }
 
@@ -478,19 +480,19 @@ class ListingDetailController extends Controller
                 'slug' => $product->category->slug,
             ] : null,
             'breadcrumbs' => $product->category ? $this->breadcrumbs($product->category) : [],
-            'images' => $product->images->map(fn($img) => [
+            'images' => $product->images->map(fn ($img) => [
                 'url' => $img->url,
                 'is_primary' => $img->is_primary,
             ])->values()->all(),
             'rating_avg' => (float) $listing->rating_avg,
             'rating_count' => (int) $listing->rating_count,
             'attributes_summary' => $this->attributesSummary($product),
-            'highlights' => $product->highlights->map(fn($h) => [
+            'highlights' => $product->highlights->map(fn ($h) => [
                 'id' => $h->id,
                 'text' => Bilingual::pair($h, 'text'),
                 'position' => $h->position,
             ])->values()->all(),
-            'specifications' => $product->specifications->map(fn($s) => [
+            'specifications' => $product->specifications->map(fn ($s) => [
                 'id' => $s->id,
                 'key' => Bilingual::pair($s, 'key'),
                 'value' => Bilingual::pair($s, 'value'),
@@ -503,14 +505,14 @@ class ListingDetailController extends Controller
             'is_mega_deal' => $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country),
             'is_flash_sale' => $flashSaleEndsAt !== null,
             'flash_sale_ends_at' => $flashSaleEndsAt?->toISOString(),
-            'promo_badges' => \App\Services\Customer\PromoBadgeResolver::instance()->forOne(
+            'promo_badges' => PromoBadgeResolver::instance()->forOne(
                 $listing instanceof VendorListing ? 'vendor' : ($listing instanceof AdminListing ? 'admin' : 'marketer'),
                 $listing->id,
                 $product->id,
             ),
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
             'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
-                ? $product->customAttributes->map(fn($a) => [
+                ? $product->customAttributes->map(fn ($a) => [
                     'id' => $a->id,
                     'label' => $a->label,
                     'unit' => $a->unit,
@@ -546,16 +548,16 @@ class ListingDetailController extends Controller
     {
         $variant = $product->variants->first();
 
-        if (!$variant || $variant->variantAttributes->isEmpty()) {
+        if (! $variant || $variant->variantAttributes->isEmpty()) {
             return null;
         }
 
         return [
             'ar' => $variant->variantAttributes
-                ->map(fn($va) => ($va->attribute?->name_ar) . ': ' . ($va->attributeValue?->value_ar ?? $va->value_text_ar))
+                ->map(fn ($va) => ($va->attribute?->name_ar).': '.($va->attributeValue?->value_ar ?? $va->value_text_ar))
                 ->implode(', '),
             'en' => $variant->variantAttributes
-                ->map(fn($va) => ($va->attribute?->name_en) . ': ' . ($va->attributeValue?->value_en ?? $va->value_text_en))
+                ->map(fn ($va) => ($va->attribute?->name_en).': '.($va->attributeValue?->value_en ?? $va->value_text_en))
                 ->implode(', '),
         ];
     }
@@ -589,7 +591,7 @@ class ListingDetailController extends Controller
         }
 
         return $listings
-            ->map(fn($group) => [
+            ->map(fn ($group) => [
                 'listing_id' => $group->first()->id,
                 'listing_ref' => $this->identifiers->buildListingRef($group->first()),
             ])
@@ -604,7 +606,7 @@ class ListingDetailController extends Controller
             'barcode' => $variant->barcode,
             'variant_name' => $variant->displayNamePair(),
             'is_default' => $variant->is_default,
-            'attributes' => $variant->variantAttributes->map(fn($va) => [
+            'attributes' => $variant->variantAttributes->map(fn ($va) => [
                 'attribute_name' => [
                     'ar' => $va->attribute?->name_ar,
                     'en' => $va->attribute?->name_en,
@@ -623,7 +625,7 @@ class ListingDetailController extends Controller
             'listing_id' => $listing->id,
             'is_selected' => $isSelected,
             'listing_ref' => $this->identifiers->buildListingRef($listing),
-            'url' => route('customer.listing.show', [$country->site_code, $listing->product_variant_id . '--' . $listing->id]),
+            'url' => route('customer.listing.show', [$country->site_code, $listing->product_variant_id.'--'.$listing->id]),
             'seller_name' => $listing->vendor->store_name,
             'seller_rating' => $listing->vendor->store_rating_avg,
             'price' => $listing->price,
@@ -654,7 +656,7 @@ class ListingDetailController extends Controller
             'price_formatted' => number_format($listing->price, 2),
             'currency' => $listing->currency,
             'is_admin_listing' => $listing->global_system_type === GlobalSystemType::ExpressFbn,
-            'attributes' => $listing->productVariant->variantAttributes->map(fn($va) => [
+            'attributes' => $listing->productVariant->variantAttributes->map(fn ($va) => [
                 'attribute_name' => [
                     'ar' => $va->attribute?->name_ar,
                     'en' => $va->attribute?->name_en,
@@ -691,7 +693,7 @@ class ListingDetailController extends Controller
             foreach ($relatedProducts as $relatedProduct) {
                 $relatedListing = $buyBox[$relatedProduct->id] ?? null;
 
-                if (!$relatedListing) {
+                if (! $relatedListing) {
                     continue;
                 }
 
@@ -729,7 +731,7 @@ class ListingDetailController extends Controller
      */
     private function moreFromBrandShape($product, $country): array
     {
-        if (!$product->brand_id) {
+        if (! $product->brand_id) {
             return [];
         }
 
@@ -758,8 +760,8 @@ class ListingDetailController extends Controller
         $productIds = ProductView::query()
             ->when(
                 $customerId,
-                fn($q) => $q->where('customer_id', $customerId),
-                fn($q) => $q->where('session_id', $sessionId)
+                fn ($q) => $q->where('customer_id', $customerId),
+                fn ($q) => $q->where('session_id', $sessionId)
             )
             ->where('product_id', '!=', $product->id)
             ->orderByDesc('created_at')
@@ -777,7 +779,7 @@ class ListingDetailController extends Controller
             ->where('status', 'active')
             ->with(['variants', 'images', 'customAttributes'])
             ->get()
-            ->sortBy(fn($p) => $productIds->search($p->id))
+            ->sortBy(fn ($p) => $productIds->search($p->id))
             ->values();
 
         return $this->productsToBuyBoxCards($candidates, $country);
@@ -798,8 +800,8 @@ class ListingDetailController extends Controller
         $viewedCategoryIds = ProductView::query()
             ->when(
                 $customerId,
-                fn($q) => $q->where('customer_id', $customerId),
-                fn($q) => $q->where('session_id', $sessionId)
+                fn ($q) => $q->where('customer_id', $customerId),
+                fn ($q) => $q->where('session_id', $sessionId)
             )
             ->join('products', 'products.id', '=', 'product_views.product_id')
             ->distinct()
@@ -832,16 +834,16 @@ class ListingDetailController extends Controller
 
         $buyBox = $this->unifiedQuery->getBuyBoxForProducts($candidates, $country);
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(
+        PromoBadgeResolver::instance()->prime(
             collect($candidates)->map(fn ($p) => ($buyBox[$p->id] ?? null)
-                ? [\App\Services\Customer\PromoBadgeResolver::typeOf($buyBox[$p->id]), $buyBox[$p->id]->id, $p->id]
+                ? [PromoBadgeResolver::typeOf($buyBox[$p->id]), $buyBox[$p->id]->id, $p->id]
                 : null)->filter()->values()
         );
 
         return $candidates
-            ->map(fn($p) => [$p, $buyBox[$p->id] ?? null])
-            ->filter(fn(array $pair) => $pair[1] !== null)
-            ->map(fn(array $pair) => $this->listings->toMixedCardShape(
+            ->map(fn ($p) => [$p, $buyBox[$p->id] ?? null])
+            ->filter(fn (array $pair) => $pair[1] !== null)
+            ->map(fn (array $pair) => $this->listings->toMixedCardShape(
                 $pair[1],
                 $pair[0],
                 $country,
@@ -884,7 +886,7 @@ class ListingDetailController extends Controller
             'reviewer_name' => $review->customer?->name,
             'helpful_count' => $review->helpful_count,
             'created_at' => $review->created_at?->toIso8601String(),
-            'images' => $review->files->map(fn($f) => $f->full_path)->values()->all(),
+            'images' => $review->files->map(fn ($f) => $f->full_path)->values()->all(),
             'listing_id' => $review->vendor_listing_id ?? $review->admin_listing_id,
             'listing_type' => $isAdminListing ? 'admin' : 'vendor',
             'seller' => $isAdminListing
@@ -900,11 +902,11 @@ class ListingDetailController extends Controller
             'variant' => $resolvedListing?->productVariant ? [
                 'id' => $resolvedListing->productVariant->id,
                 'variant_name' => $resolvedListing->productVariant->displayNamePair(),
-                'attributes' => $resolvedListing->productVariant->variantAttributes->map(fn($va) => [
+                'attributes' => $resolvedListing->productVariant->variantAttributes->map(fn ($va) => [
                     'name' => ['ar' => $va->attribute?->name_ar, 'en' => $va->attribute?->name_en],
                     'value' => [
                         'ar' => $va->attributeValue?->value_ar ?? $va->value_text_ar,
-                        'en' => $va->attributeValue?->value_en ?? $va->value_text_en
+                        'en' => $va->attributeValue?->value_en ?? $va->value_text_en,
                     ],
                 ])->values()->all(),
             ] : null,

@@ -4,7 +4,7 @@ import { apiPublicBaseUrlGlobal } from "@/src/lib/utils";
 export interface MarketerCard {
   id: string;
   name: string;
-  marketer_type: "influencer" | "affiliate";
+  marketer_type: "influencer" | "affiliate" | string;
   profile_slug: string;
   profile_url: string;
   banner_url: string | null;

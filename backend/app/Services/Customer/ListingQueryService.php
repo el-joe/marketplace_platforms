@@ -9,27 +9,32 @@ use App\Enums\TravelPackageStatus;
 use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorListingStatus;
 use App\Models\AdminListing;
+use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\Customer;
 use App\Models\MarketerListing;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
-use App\Models\Wishlist;
-use App\Models\WishlistItem;
+use App\Services\Media\ListingImageResolver;
+use App\Support\Bilingual;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ListingQueryService
 {
     public function __construct(
-        private readonly \App\Services\Media\ListingImageResolver $imageResolver,
-    ) {
-    }
+        private readonly ListingImageResolver $imageResolver,
+    ) {}
 
     /**
      * Base listing query for a category (+ descendants) grid: active listings,
@@ -92,7 +97,7 @@ class ListingQueryService
         $tokens = preg_split('/\s+/', mb_strtolower(trim($query)), -1, PREG_SPLIT_NO_EMPTY);
 
         foreach ($tokens as $token) {
-            $pattern = '%' . addcslashes($token, '%_\\') . '%';
+            $pattern = '%'.addcslashes($token, '%_\\').'%';
             $builder->where(function ($q) use ($pattern) {
                 $q->where('p.name_en', 'like', $pattern)
                     ->orWhere('p.name_ar', 'like', $pattern)
@@ -110,39 +115,39 @@ class ListingQueryService
      *
      * @param  array<string,mixed>  $filters
      * @param  list<string>|null  $categoryIds  Pre-resolved category IDs (category subtree, or
-     *                                           union of subtrees for a custom page). When omitted,
-     *                                           resolved from $filters['category'] (id or slug).
+     *                                          union of subtrees for a custom page). When omitted,
+     *                                          resolved from $filters['category'] (id or slug).
      */
     public function applyFilters($builder, array $filters, ?array $categoryIds = null)
     {
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $categoryIds ??= app(CategoryService::class)->getCategoryScopeForFilter($filters['category']);
             if ($categoryIds !== null) { // null = all-categories custom page
                 $builder->whereIn('p.category_id', $categoryIds);
             }
         }
-        if (!empty($filters['brand'])) {
+        if (! empty($filters['brand'])) {
             $builder->where('p.brand_id', $filters['brand']);
         }
-        if (!empty($filters['price_min'])) {
+        if (! empty($filters['price_min'])) {
             $builder->where('vendor_listings.price', '>=', (int) $filters['price_min']);
         }
-        if (!empty($filters['price_max'])) {
+        if (! empty($filters['price_max'])) {
             $builder->where('vendor_listings.price', '<=', (int) $filters['price_max']);
         }
-        if (!empty($filters['rating_min'])) {
+        if (! empty($filters['rating_min'])) {
             $builder->where('vendor_listings.rating_avg', '>=', $filters['rating_min']);
         }
-        if (!empty($filters['condition'])) {
+        if (! empty($filters['condition'])) {
             $builder->where('vendor_listings.condition', $filters['condition']);
         }
-        if (!empty($filters['fulfillment_model'])) {
+        if (! empty($filters['fulfillment_model'])) {
             $builder->where('vendor_listings.fulfillment_model', $filters['fulfillment_model']);
         }
         if (empty($filters['include_oos'])) {
-            $builder->whereHas('warehouseInventories', fn($q) => $q->where('quantity_available', '>', 0));
+            $builder->whereHas('warehouseInventories', fn ($q) => $q->where('quantity_available', '>', 0));
         }
-        if (!empty($filters['attributes']) && is_array($filters['attributes'])) {
+        if (! empty($filters['attributes']) && is_array($filters['attributes'])) {
             foreach ($filters['attributes'] as $attrCode => $values) {
                 $values = (array) $values;
                 $builder->whereExists(function ($sub) use ($attrCode, $values) {
@@ -240,6 +245,7 @@ class ListingQueryService
             ->map(function (AdminListing $al) {
                 $al->setAttribute('listing_type', 'admin');
                 $al->setAttribute('vendor', null);
+
                 return $al;
             });
 
@@ -252,7 +258,7 @@ class ListingQueryService
             ->where('product_variant_id', $productVariantId)
             ->where('country_id', $country->id)
             ->where('status', VendorListingStatus::Active->value)
-            ->whereHas('vendor', fn($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
+            ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
             ->with([
                 'vendor:id,store_name,store_rating_avg,store_rating_count',
                 'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type',
@@ -266,6 +272,7 @@ class ListingQueryService
             ->get()
             ->map(function (VendorListing $vl) {
                 $vl->setAttribute('listing_type', 'vendor');
+
                 return $vl;
             });
     }
@@ -338,7 +345,8 @@ class ListingQueryService
             ->where('status', 'active')
             ->whereHas('marketer', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
             ->with([
-                'marketer:id,name,marketer_type',
+                'marketer:id,name',
+                'marketer.marketerJobs',
                 'marketer.marketerProfile:id,marketer_id,profile_slug,qr_code_path',
                 'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
@@ -401,9 +409,9 @@ class ListingQueryService
 
         foreach ($listings as $listing) {
             $vid = $listing->product_variant_id;
-            $p   = $priority[get_class($listing)] ?? 99;
+            $p = $priority[get_class($listing)] ?? 99;
 
-            if (!isset($best[$vid])) {
+            if (! isset($best[$vid])) {
                 $best[$vid] = [$p, $listing];
             } else {
                 [$existingP, $existingL] = $best[$vid];
@@ -431,14 +439,13 @@ class ListingQueryService
         $imagesSlider = $this->buildImagesSlider($variant, $product);
         $variantImage = $imagesSlider[0]['url'] ?? null;
 
-        $url = route('customer.listing.show', [$country->site_code, $variant->id .'--' . $listing->id]);
-        $url_param = $variant->id .'--' . $listing->id;
-
+        $url = route('customer.listing.show', [$country->site_code, $variant->id.'--'.$listing->id]);
+        $url_param = $variant->id.'--'.$listing->id;
 
         return [
             'listing_id' => $listing->id,
             'listing_type' => $listing->global_system_type === GlobalSystemType::ExpressFbn ? 'admin' : 'vendor',
-            'listing_ref' => app(\App\Services\Customer\ListingIdentifierService::class)->buildListingRef($listing),
+            'listing_ref' => app(ListingIdentifierService::class)->buildListingRef($listing),
             'sku' => $variant->sku,
             'vendor_sku' => $listing->vendor_sku,
             'product_id' => $product->id,
@@ -461,9 +468,9 @@ class ListingQueryService
                 'ar' => $product->category?->name_ar,
             ],
             'brand' => $product->brand ? [
-                'id'       => $product->brand->id,
-                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
-                'slug'     => $product->brand->slug,
+                'id' => $product->brand->id,
+                'name' => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug' => $product->brand->slug,
                 'logo_url' => $product->brand->logo_url,
             ] : null,
             'price' => $listing->price,
@@ -480,16 +487,16 @@ class ListingQueryService
                 'rating' => $listing->vendor->store_rating_avg,
             ],
             'shipping_badge' => $listing->primaryShippingMethod ? [
-                'label'            => [
+                'label' => [
                     'ar' => $listing->primaryShippingMethod->badge_label_ar,
                     'en' => $listing->primaryShippingMethod->badge_label_en,
                 ],
-                'color_hex'        => $listing->primaryShippingMethod->badge_color_hex,
-                'text_color_hex'   => $listing->primaryShippingMethod->badge_text_color_hex,
-                'badge_image_url'  => $listing->primaryShippingMethod->badge_image_url,
+                'color_hex' => $listing->primaryShippingMethod->badge_color_hex,
+                'text_color_hex' => $listing->primaryShippingMethod->badge_text_color_hex,
+                'badge_image_url' => $listing->primaryShippingMethod->badge_image_url,
                 'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
-                'is_express'       => (bool) $listing->primaryShippingMethod->is_express_type,
+                'is_express' => (bool) $listing->primaryShippingMethod->is_express_type,
             ] : null,
             'rating_avg' => $listing->rating_avg,
             'rating_count' => $listing->rating_count,
@@ -500,11 +507,11 @@ class ListingQueryService
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
             'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
                 ? $product->customAttributes->map(fn ($a) => [
-                    'id'          => $a->id,
-                    'label'       => $a->label,
-                    'unit'        => $a->unit,
+                    'id' => $a->id,
+                    'label' => $a->label,
+                    'unit' => $a->unit,
                     'is_required' => (bool) $a->is_required,
-                    'sort_order'  => $a->sort_order,
+                    'sort_order' => $a->sort_order,
                 ])->values()->all()
                 : [],
         ];
@@ -521,7 +528,7 @@ class ListingQueryService
         }
 
         if (config('app.env') !== 'local' && str_starts_with($url, 'http://')) {
-            return 'https://' . substr($url, 7);
+            return 'https://'.substr($url, 7);
         }
 
         return $url;
@@ -552,75 +559,75 @@ class ListingQueryService
         $variantImage = $imagesSlider[0]['url'] ?? null;
 
         return [
-            'listing_id'       => $listing->id,
-            'listing_type'     => 'admin',
-            'listing_ref'      => app(ListingIdentifierService::class)->buildListingRef($listing),
-            'sku'              => $variant->sku,
-            'vendor_sku'       => null,
-            'admin_sku'        => $listing->platform_sku ?? $variant->sku,
-            'product_id'       => $product->id,
-            'product_slug'     => $product->slug,
-            'slug'             => $product->slug,
-            'variant_id'       => $variant->id,
-            'variant_slug'     => $variant->slug,
-            'variant_name'     => $this->customerVariantNamePair($variant, $product),
-            'variant_image'    => $variantImage,
-            'primary_image'    => $variantImage,
-            'image'            => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
-            'images'           => $imagesSlider,
-            'product_url'      => "/products/p-{$listing->id}",
-            'url_param'        => "p-{$listing->id}",
-            'name'             => ['ar' => $product->name_ar, 'en' => $product->name_en],
-            'name_ar'          => $product->name_ar,
-            'name_en'          => $product->name_en,
-            'category_name'    => [
+            'listing_id' => $listing->id,
+            'listing_type' => 'admin',
+            'listing_ref' => app(ListingIdentifierService::class)->buildListingRef($listing),
+            'sku' => $variant->sku,
+            'vendor_sku' => null,
+            'admin_sku' => $listing->platform_sku ?? $variant->sku,
+            'product_id' => $product->id,
+            'product_slug' => $product->slug,
+            'slug' => $product->slug,
+            'variant_id' => $variant->id,
+            'variant_slug' => $variant->slug,
+            'variant_name' => $this->customerVariantNamePair($variant, $product),
+            'variant_image' => $variantImage,
+            'primary_image' => $variantImage,
+            'image' => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
+            'images' => $imagesSlider,
+            'product_url' => "/products/p-{$listing->id}",
+            'url_param' => "p-{$listing->id}",
+            'name' => ['ar' => $product->name_ar, 'en' => $product->name_en],
+            'name_ar' => $product->name_ar,
+            'name_en' => $product->name_en,
+            'category_name' => [
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
             ],
-            'brand'            => $product->brand ? [
-                'id'       => $product->brand->id,
-                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
-                'slug'     => $product->brand->slug,
+            'brand' => $product->brand ? [
+                'id' => $product->brand->id,
+                'name' => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug' => $product->brand->slug,
                 'logo_url' => $product->brand->logo_url,
             ] : null,
-            'price'            => $listing->price,
-            'price_formatted'  => number_format($listing->price, 2),
+            'price' => $listing->price,
+            'price_formatted' => number_format($listing->price, 2),
             'compare_at_price' => $listing->compare_at_price ?? null,
-            'currency'         => $country->currency_code,
-            'condition'        => $listing->condition,
+            'currency' => $country->currency_code,
+            'condition' => $listing->condition,
             'is_admin_listing' => true,
-            'is_express_fbn'   => true,
-            'fulfillment_model'=> $listing->fulfillment_model ?? 'fbn',
-            'express_badge'    => [
+            'is_express_fbn' => true,
+            'fulfillment_model' => $listing->fulfillment_model ?? 'fbn',
+            'express_badge' => [
                 'label' => ['ar' => $listing->express_badge_label_ar, 'en' => $listing->express_badge_label_en],
             ],
-            'sold_by'          => ['ar' => $listing->sold_by_label_ar, 'en' => $listing->sold_by_label_en],
-            'vendor'           => null,
-            'rating_avg'       => (float) $listing->rating_avg,
-            'rating_count'     => (int) $listing->rating_count,
-            'promo_badges'     => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
-            'is_wishlisted'    => $isWishlisted,
-            'is_sponsored'     => false,
-            'shipping_badge'   => $listing->primaryShippingMethod ? [
-                'label'            => [
+            'sold_by' => ['ar' => $listing->sold_by_label_ar, 'en' => $listing->sold_by_label_en],
+            'vendor' => null,
+            'rating_avg' => (float) $listing->rating_avg,
+            'rating_count' => (int) $listing->rating_count,
+            'promo_badges' => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
+            'is_wishlisted' => $isWishlisted,
+            'is_sponsored' => false,
+            'shipping_badge' => $listing->primaryShippingMethod ? [
+                'label' => [
                     'ar' => $listing->primaryShippingMethod->badge_label_ar,
                     'en' => $listing->primaryShippingMethod->badge_label_en,
                 ],
-                'color_hex'        => $listing->primaryShippingMethod->badge_color_hex,
-                'text_color_hex'   => $listing->primaryShippingMethod->badge_text_color_hex,
-                'badge_image_url'  => $listing->primaryShippingMethod->badge_image_url,
+                'color_hex' => $listing->primaryShippingMethod->badge_color_hex,
+                'text_color_hex' => $listing->primaryShippingMethod->badge_text_color_hex,
+                'badge_image_url' => $listing->primaryShippingMethod->badge_image_url,
                 'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
-                'is_express'       => (bool) $listing->primaryShippingMethod->is_express_type,
+                'is_express' => (bool) $listing->primaryShippingMethod->is_express_type,
             ] : null,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
             'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
                 ? $product->customAttributes->map(fn ($a) => [
-                    'id'          => $a->id,
-                    'label'       => $a->label,
-                    'unit'        => $a->unit,
+                    'id' => $a->id,
+                    'label' => $a->label,
+                    'unit' => $a->unit,
                     'is_required' => (bool) $a->is_required,
-                    'sort_order'  => $a->sort_order,
+                    'sort_order' => $a->sort_order,
                 ])->values()->all()
                 : [],
         ];
@@ -636,81 +643,81 @@ class ListingQueryService
         Country $country,
         bool $isWishlisted = false,
     ): array {
-        $variant      = $listing->productVariant;
+        $variant = $listing->productVariant;
         $imagesSlider = $this->buildImagesSlider($variant, $product);
         $variantImage = $imagesSlider[0]['url'] ?? null;
-        $marketer     = $listing->marketer;
-        $profile      = $marketer?->marketerProfile;
+        $marketer = $listing->marketer;
+        $profile = $marketer?->marketerProfile;
 
-        $url      = route('customer.listing.show', [$country->site_code, $variant->id . '--' . $listing->id]);
-        $urlParam = $variant->id . '--' . $listing->id;
+        $url = route('customer.listing.show', [$country->site_code, $variant->id.'--'.$listing->id]);
+        $urlParam = $variant->id.'--'.$listing->id;
 
         return [
-            'listing_id'        => $listing->id,
-            'listing_type'      => 'marketer',
-            'listing_ref'       => $listing->referral_code ?? $listing->id,
-            'sku'               => $variant->sku,
-            'vendor_sku'        => null,
-            'product_id'        => $product->id,
-            'product_slug'      => $product->slug,
-            'slug'              => $product->slug,
-            'variant_id'        => $variant->id,
-            'variant_slug'      => $variant->slug,
-            'product_url'       => $url,
-            'url_param'         => $urlParam,
-            'variant_name'      => $this->customerVariantNamePair($variant, $product),
-            'variant_image'     => $variantImage,
-            'primary_image'     => $variantImage,
-            'image'             => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
-            'images'            => $imagesSlider,
-            'name_en'           => $product->name_en,
-            'name_ar'           => $product->name_ar,
-            'thumbnail'         => $variantImage,
-            'category_name'     => [
+            'listing_id' => $listing->id,
+            'listing_type' => 'marketer',
+            'listing_ref' => $listing->referral_code ?? $listing->id,
+            'sku' => $variant->sku,
+            'vendor_sku' => null,
+            'product_id' => $product->id,
+            'product_slug' => $product->slug,
+            'slug' => $product->slug,
+            'variant_id' => $variant->id,
+            'variant_slug' => $variant->slug,
+            'product_url' => $url,
+            'url_param' => $urlParam,
+            'variant_name' => $this->customerVariantNamePair($variant, $product),
+            'variant_image' => $variantImage,
+            'primary_image' => $variantImage,
+            'image' => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
+            'images' => $imagesSlider,
+            'name_en' => $product->name_en,
+            'name_ar' => $product->name_ar,
+            'thumbnail' => $variantImage,
+            'category_name' => [
                 'en' => $product->category?->name_en,
                 'ar' => $product->category?->name_ar,
             ],
-            'brand'             => $product->brand ? [
-                'id'       => $product->brand->id,
-                'name'     => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
-                'slug'     => $product->brand->slug,
+            'brand' => $product->brand ? [
+                'id' => $product->brand->id,
+                'name' => ['ar' => $product->brand->name_ar, 'en' => $product->brand->name_en],
+                'slug' => $product->brand->slug,
                 'logo_url' => $product->brand->logo_url,
             ] : null,
-            'price'             => $listing->price,
-            'price_formatted'   => number_format($listing->price, 2),
-            'compare_at_price'  => $listing->compare_at_price ?? null,
-            'currency'          => $country->currency_code,
-            'condition'         => $listing->condition,
-            'is_admin_listing'  => false,
-            'is_express_fbn'    => false,
+            'price' => $listing->price,
+            'price_formatted' => number_format($listing->price, 2),
+            'compare_at_price' => $listing->compare_at_price ?? null,
+            'currency' => $country->currency_code,
+            'condition' => $listing->condition,
+            'is_admin_listing' => false,
+            'is_express_fbn' => false,
             'fulfillment_model' => 'marketer',
-            'vendor'            => null,
-            'marketer'          => $marketer ? [
-                'id'            => $marketer->id,
-                'name'          => $marketer->name,
-                'marketer_type' => $marketer->marketer_type,
-                'profile_slug'  => $profile?->profile_slug,
-                'profile_url'   => $profile?->profile_slug
-                    ? rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug
+            'vendor' => null,
+            'marketer' => $marketer ? [
+                'id' => $marketer->id,
+                'name' => $marketer->name,
+                'marketer_type' => $marketer->marketerJobs->first()?->key,
+                'profile_slug' => $profile?->profile_slug,
+                'profile_url' => $profile?->profile_slug
+                    ? rtrim(config('app.frontend_url', config('app.url')), '/').'/marketer/'.$profile->profile_slug
                     : null,
             ] : null,
-            'referral_code'     => $listing->referral_code,
-            'referral_link'     => $listing->referral_link,
-            'shipping_badge'    => null, // Marketer listings use campaign vendor shipping
-            'rating_avg'        => $listing->rating_avg,
-            'rating_count'      => $listing->rating_count,
-            'total_sold'        => $listing->total_sold,
-            'promo_badges'      => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
-            'is_wishlisted'     => $isWishlisted,
-            'is_sponsored'      => false,
+            'referral_code' => $listing->referral_code,
+            'referral_link' => $listing->referral_link,
+            'shipping_badge' => null, // Marketer listings use campaign vendor shipping
+            'rating_avg' => $listing->rating_avg,
+            'rating_count' => $listing->rating_count,
+            'total_sold' => $listing->total_sold,
+            'promo_badges' => PromoBadgeResolver::instance()->lookup(PromoBadgeResolver::typeOf($listing), $listing->id, $product->id),
+            'is_wishlisted' => $isWishlisted,
+            'is_sponsored' => false,
             'has_custom_attributes' => (bool) $product->has_custom_attributes,
             'custom_attributes' => $product->has_custom_attributes && $product->relationLoaded('customAttributes')
                 ? $product->customAttributes->map(fn ($a) => [
-                    'id'          => $a->id,
-                    'label'       => $a->label,
-                    'unit'        => $a->unit,
+                    'id' => $a->id,
+                    'label' => $a->label,
+                    'unit' => $a->unit,
                     'is_required' => (bool) $a->is_required,
-                    'sort_order'  => $a->sort_order,
+                    'sort_order' => $a->sort_order,
                 ])->values()->all()
                 : [],
         ];
@@ -718,8 +725,6 @@ class ListingQueryService
 
     /**
      * Dispatch to the correct card shape based on listing type.
-     *
-     * @param VendorListing|AdminListing|MarketerListing $listing
      */
     public function toMixedCardShape(
         VendorListing|AdminListing|MarketerListing $listing,
@@ -779,19 +784,19 @@ class ListingQueryService
             });
         }
 
-        if (!empty($filters['listing_purpose'])) {
+        if (! empty($filters['listing_purpose'])) {
             $query->where('listing_purpose', $filters['listing_purpose']);
         }
 
-        if (!empty($filters['seller_type'])) {
-            $query->where('seller_type', $filters['seller_type'] === 'vendor' ? Vendor::class : \App\Models\Customer::class);
+        if (! empty($filters['seller_type'])) {
+            $query->where('seller_type', $filters['seller_type'] === 'vendor' ? Vendor::class : Customer::class);
         }
 
-        if (!empty($filters['min_price'])) {
+        if (! empty($filters['min_price'])) {
             $query->where('price', '>=', (int) $filters['min_price']);
         }
 
-        if (!empty($filters['max_price'])) {
+        if (! empty($filters['max_price'])) {
             $query->where('price', '<=', (int) $filters['max_price']);
         }
 
@@ -811,13 +816,13 @@ class ListingQueryService
             'title_ar' => $listing->title_ar,
             'slug' => $listing->listing_number,
             'thumbnail' => $listing->images->first()?->file_path
-                ? \Illuminate\Support\Facades\Storage::url($listing->images->first()->file_path)
+                ? Storage::url($listing->images->first()->file_path)
                 : null,
             'images' => $listing->images->map(fn ($img) => [
-                'id'         => $img->id,
-                'url'        => \Illuminate\Support\Facades\Storage::url($img->file_path),
+                'id' => $img->id,
+                'url' => Storage::url($img->file_path),
                 'is_primary' => (bool) ($img->is_primary ?? false),
-                'position'   => (int) ($img->position ?? 0),
+                'position' => (int) ($img->position ?? 0),
             ])->values()->all(),
             'price' => $listing->price,
             'price_formatted' => number_format($listing->price, 2),
@@ -845,21 +850,21 @@ class ListingQueryService
         ?string $dateTo = null,
     ): LengthAwarePaginator {
         return TravelPackage::where('status', TravelPackageStatus::Active->value)
-            ->where('departure_date', '>=', \Illuminate\Support\Carbon::today())
-            ->when($travelCategoryId, fn($q) => $q->whereHas(
+            ->where('departure_date', '>=', Carbon::today())
+            ->when($travelCategoryId, fn ($q) => $q->whereHas(
                 'categories',
-                fn($q2) => $q2->where('travel_categories.id', $travelCategoryId),
+                fn ($q2) => $q2->where('travel_categories.id', $travelCategoryId),
             ))
-            ->when($travelCountryId, fn($q) => $q->where('destination_travel_country_id', $travelCountryId))
-            ->when($travelCityId, fn($q) => $q->where('destination_travel_city_id', $travelCityId))
-            ->when($dateFrom, fn($q) => $q->where('departure_date', '>=', $dateFrom))
-            ->when($dateTo, fn($q) => $q->where('departure_date', '<=', $dateTo))
+            ->when($travelCountryId, fn ($q) => $q->where('destination_travel_country_id', $travelCountryId))
+            ->when($travelCityId, fn ($q) => $q->where('destination_travel_city_id', $travelCityId))
+            ->when($dateFrom, fn ($q) => $q->where('departure_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->where('departure_date', '<=', $dateTo))
             ->with([
                 'agency:id,name',
                 'categories:id,name_en,name_ar,slug',
                 'destinationCountry:id,name_en,name_ar',
                 'destinationCity:id,name_en,name_ar',
-                'media' => fn($q) => $q->orderBy('position')->limit(1),
+                'media' => fn ($q) => $q->orderBy('position')->limit(1),
             ])
             ->orderBy('departure_date')
             ->paginate($perPage);
@@ -878,8 +883,8 @@ class ListingQueryService
             'slug' => $package->slug,
             'thumbnail' => $package->media->first()?->url(),
             'images' => $package->media->map(fn ($m) => [
-                'id'       => $m->id,
-                'url'      => $m->url(),
+                'id' => $m->id,
+                'url' => $m->url(),
                 'position' => (int) ($m->order_column ?? $m->position ?? 0),
             ])->values()->all(),
             'destination_country' => $package->destination_country,
@@ -902,7 +907,7 @@ class ListingQueryService
             'available_seats' => $package->available_seats,
             'seats_remaining' => $package->seatsRemaining(),
             'agency_name' => $package->agency?->name,
-            'categories' => $package->categories->map(fn($c) => [
+            'categories' => $package->categories->map(fn ($c) => [
                 'name_en' => $c->name_en,
                 'slug' => $c->slug,
             ])->toArray(),
@@ -915,7 +920,7 @@ class ListingQueryService
      * distinguishing detail, resolved for the current locale, e.g.
      * "Samsung Galaxy Book4 Pro 16 Moon Gray / 512GB".
      */
-    private function customerVariantName(\App\Models\ProductVariant $variant, Product $product): string
+    private function customerVariantName(ProductVariant $variant, Product $product): string
     {
         $locale = app()->getLocale();
         $productName = $locale === 'ar' ? $product->name_ar : $product->name_en;
@@ -932,7 +937,7 @@ class ListingQueryService
      * {"ar": ..., "en": ...} so card shapes carry a locale-aware name that the
      * frontend can pick from directly, instead of one baked to app()->getLocale().
      */
-    private function customerVariantNamePair(\App\Models\ProductVariant $variant, Product $product): array
+    private function customerVariantNamePair(ProductVariant $variant, Product $product): array
     {
         $build = function (string $locale) use ($variant, $product): string {
             $productName = $locale === 'ar' ? $product->name_ar : $product->name_en;
@@ -957,14 +962,14 @@ class ListingQueryService
      * and paginated/sorted in the database (total, last_page and items stay
      * consistent across blocks; no unbounded load of the admin catalogue).
      *
-     * @param  list<string>       $types
+     * @param  list<string>  $types
      * @param  list<string>|null  $categoryIds  null = no category restriction
      */
-    public function mixedIdQuery(Country $country, array $types, ?array $categoryIds, array $filters): ?\Illuminate\Database\Query\Builder
+    public function mixedIdQuery(Country $country, array $types, ?array $categoryIds, array $filters): ?Builder
     {
         $union = null;
         foreach (['admin', 'vendor', 'marketer'] as $type) {
-            if (!in_array($type, $types, true)) {
+            if (! in_array($type, $types, true)) {
                 continue;
             }
             $q = $this->mixedTypeQuery($type, $country, $categoryIds, $filters);
@@ -976,7 +981,7 @@ class ListingQueryService
 
     private function mixedTypeQuery(string $type, Country $country, ?array $categoryIds, array $filters)
     {
-        $table = $type . '_listings';
+        $table = $type.'_listings';
         $q = DB::table("$table as l")
             ->join('product_variants as pv', 'pv.id', '=', 'l.product_variant_id')
             ->join('products as p', 'p.id', '=', 'pv.product_id')
@@ -1010,24 +1015,24 @@ class ListingQueryService
         if ($categoryIds !== null) {
             $q->whereIn('p.category_id', $categoryIds);
         }
-        if (!empty($filters['brand'])) {
+        if (! empty($filters['brand'])) {
             $q->where('p.brand_id', $filters['brand']);
         }
-        if (!empty($filters['price_min'])) {
+        if (! empty($filters['price_min'])) {
             $q->where('l.price', '>=', (int) $filters['price_min']);
         }
-        if (!empty($filters['price_max'])) {
+        if (! empty($filters['price_max'])) {
             $q->where('l.price', '<=', (int) $filters['price_max']);
         }
-        if (!empty($filters['rating_min'])) {
+        if (! empty($filters['rating_min'])) {
             $q->where('l.rating_avg', '>=', $filters['rating_min']);
         }
-        if (!empty($filters['condition'])) {
+        if (! empty($filters['condition'])) {
             $q->where('l.condition', $filters['condition']);
         }
-        if (!empty($filters['fulfillment_model']) && $type !== 'marketer') {
+        if (! empty($filters['fulfillment_model']) && $type !== 'marketer') {
             $q->where('l.fulfillment_model', $filters['fulfillment_model']);
-        } elseif (!empty($filters['fulfillment_model'])) {
+        } elseif (! empty($filters['fulfillment_model'])) {
             $q->whereRaw('1 = 0'); // marketer listings have no fulfillment model
         }
         if (empty($filters['include_oos']) && $type !== 'admin') {
@@ -1044,7 +1049,7 @@ class ListingQueryService
                 }
             });
         }
-        if (!empty($filters['attributes']) && is_array($filters['attributes'])) {
+        if (! empty($filters['attributes']) && is_array($filters['attributes'])) {
             foreach ($filters['attributes'] as $attrCode => $values) {
                 $values = (array) $values;
                 $q->whereExists(function ($sub) use ($attrCode, $values) {
@@ -1069,7 +1074,7 @@ class ListingQueryService
     public function paginateMixed(Country $country, array $types, ?array $categoryIds, array $filters, int $page, int $perPage, array $wishlistIds): array
     {
         $union = $categoryIds === [] ? null : $this->mixedIdQuery($country, $types, $categoryIds, $filters);
-        if (!$union) {
+        if (! $union) {
             return [['total' => 0, 'last_page' => 1, 'current_page' => $page, 'per_page' => $perPage], []];
         }
 
@@ -1116,7 +1121,7 @@ class ListingQueryService
         $cards = [];
         foreach ($rows as $r) {
             $m = $models[$r->ltype][$r->lid] ?? null;
-            if (!$m) {
+            if (! $m) {
                 continue;
             }
             $cards[] = $this->toMixedCardShape($m, $m->productVariant->product, $country, in_array($m->id, $wishlistIds));
@@ -1135,7 +1140,7 @@ class ListingQueryService
     {
         $empty = ['price_range' => ['min' => 0, 'max' => 0], 'attributes' => []];
         $union = $categoryIds === [] ? null : $this->mixedIdQuery($country, $types, $categoryIds, $filters);
-        if (!$union) {
+        if (! $union) {
             return $empty;
         }
         $range = DB::query()->fromSub($union, 'u')->selectRaw('MIN(price) as low, MAX(price) as high')->first();
@@ -1151,18 +1156,18 @@ class ListingQueryService
 
         $attributes = [];
         if ($rows->isNotEmpty()) {
-            $attrs = \App\Models\Attribute::query()->whereIn('id', $rows->pluck('attribute_id')->unique())
+            $attrs = Attribute::query()->whereIn('id', $rows->pluck('attribute_id')->unique())
                 ->with('values')->orderBy('sort_order')->get();
             $counts = $rows->groupBy('attribute_id');
             foreach ($attrs as $attribute) {
                 $c = ($counts->get($attribute->id) ?? collect())->pluck('cnt', 'attribute_value_id');
                 $values = $attribute->values->filter(fn ($v) => isset($c[$v->id]))->map(fn ($v) => [
-                    'id' => $v->id, 'value' => \App\Support\Bilingual::pair($v, 'value'),
+                    'id' => $v->id, 'value' => Bilingual::pair($v, 'value'),
                     'color_hex' => $v->color_hex, 'count' => (int) $c[$v->id],
                 ])->values()->all();
                 $attributes[] = [
                     'id' => $attribute->id, 'code' => $attribute->code,
-                    'name' => \App\Support\Bilingual::pair($attribute, 'name'),
+                    'name' => Bilingual::pair($attribute, 'name'),
                     'type' => $attribute->type->value, 'unit' => $attribute->unit, 'values' => $values,
                 ];
             }

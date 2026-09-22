@@ -7,8 +7,10 @@ use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 
 class Marketer extends Model
 {
@@ -19,7 +21,6 @@ class Marketer extends Model
         'email',
         'email_verified_at',
         'phone',
-        'marketer_type',
         'whatsapp_for_campaigns',
         'global_status',
         'country_id',
@@ -37,12 +38,12 @@ class Marketer extends Model
     protected function casts(): array
     {
         return [
-            'email_verified_at'       => 'datetime',
-            'approved_at'             => 'datetime',
+            'email_verified_at' => 'datetime',
+            'approved_at' => 'datetime',
             'onboarding_completed_at' => 'datetime',
-            'last_login_at'           => 'datetime',
-            'total_earnings'          => 'integer',
-            'global_status'           => VendorGlobalStatus::class,
+            'last_login_at' => 'datetime',
+            'total_earnings' => 'integer',
+            'global_status' => VendorGlobalStatus::class,
         ];
     }
 
@@ -128,12 +129,51 @@ class Marketer extends Model
 
     public function isInfluencer(): bool
     {
-        return $this->marketer_type === 'influencer';
+        return $this->marketerJobs()->where('key', 'influencer')->exists();
     }
 
     public function isAffiliate(): bool
     {
-        return $this->marketer_type === 'affiliate';
+        return $this->marketerJobs()->where('key', 'affiliate')->exists();
+    }
+
+    /**
+     * Categories this marketer is scoped to for the given job + category source.
+     * No scope rows means "all categories of that source".
+     *
+     * @return Collection<int, Model>
+     */
+    public function categoriesFor(string $jobKey, string $categoryType): Collection
+    {
+        $assignment = $this->marketerJobAssignments()
+            ->whereHas('marketerJob', fn ($q) => $q->where('key', $jobKey))
+            ->with('marketerJob')
+            ->first();
+
+        if (! $assignment) {
+            return collect();
+        }
+
+        // The job itself may restrict which categories of this source are eligible at all.
+        $jobEligible = $assignment->marketerJob->eligibleCategories($categoryType);
+
+        $scopeIds = $assignment->categoryScopes()->where('category_type', $categoryType)->pluck('category_id');
+
+        if ($scopeIds->isEmpty()) {
+            return $jobEligible;
+        }
+
+        return $jobEligible->whereIn('id', $scopeIds)->values();
+    }
+
+    public function marketerJobs(): BelongsToMany
+    {
+        return $this->belongsToMany(MarketerJob::class, 'marketer_marketer_job')->withTimestamps();
+    }
+
+    public function marketerJobAssignments(): HasMany
+    {
+        return $this->hasMany(MarketerMarketerJob::class, 'marketer_id');
     }
 
     public function isActive(): bool
@@ -150,7 +190,7 @@ class Marketer extends Model
     protected static function booted(): void
     {
         static::saved(function (self $marketer) {
-            if ($marketer->wasChanged(['name', 'marketer_type', 'global_status', 'total_campaigns', 'total_conversions'])) {
+            if ($marketer->wasChanged(['name', 'global_status', 'total_campaigns', 'total_conversions'])) {
                 MarketerProfileCache::bump($marketer->marketerProfile()->value('profile_slug'));
             }
         });

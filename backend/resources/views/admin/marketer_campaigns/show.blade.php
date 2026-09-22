@@ -432,7 +432,7 @@
                                     :multiple="true"
                                     :select2="true"
                                     :options="$availableMarketers->mapWithKeys(fn ($m) =>
-                                        [$m->id => $m->name . ' (' . ucfirst($m->marketer_type) . ')'])->toArray()"
+                                        [$m->id => $m->name . ' (' . ucfirst($m->marketerJobs->first()?->key ?? '') . ')'])->toArray()"
                                 />
                             @endif
 
@@ -600,7 +600,7 @@
                             @php
                                 $sampleMarketer = $sample->invitation?->marketer;
                                 $sampleProfile  = $sampleMarketer?->marketerProfile;
-                                $isInfluencer   = $sampleMarketer?->marketer_type === 'influencer';
+                                $isInfluencer   = $sampleMarketer?->isInfluencer() ?? false;
                             @endphp
                             @if ($isInfluencer && $sampleProfile)
                                 <tr>

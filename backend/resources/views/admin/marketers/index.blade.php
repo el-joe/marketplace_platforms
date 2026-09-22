@@ -2,6 +2,10 @@
 @section('title', 'الماركترز')
 @section('page-title', 'إدارة الماركترز')
 
+@push('styles')
+    @vite(['resources/js/components/select2.js'])
+@endpush
+
 @section('content')
 <div class="space-y-4" x-data="{ showCreateModal: {{ $errors->any() ? 'true' : 'false' }} }">
 
@@ -17,8 +21,9 @@
                 <label class="block text-xs text-gray-500 mb-1">النوع</label>
                 <select name="type" class="border rounded-lg px-3 py-2 text-sm">
                     <option value="">الكل</option>
-                    <option value="influencer" {{ request('type') === 'influencer' ? 'selected' : '' }}>مؤثر</option>
-                    <option value="affiliate" {{ request('type') === 'affiliate' ? 'selected' : '' }}>أفيليت</option>
+                    @foreach($marketerJobs as $job)
+                        <option value="{{ $job->key }}" {{ request('type') === $job->key ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>
@@ -76,10 +81,13 @@
                            class="border rounded-lg px-3 py-2 text-sm w-full">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">النوع</label>
-                    <select name="marketer_type" required class="border rounded-lg px-3 py-2 text-sm w-full">
-                        <option value="influencer" {{ old('marketer_type') === 'influencer' ? 'selected' : '' }}>مؤثر</option>
-                        <option value="affiliate" {{ old('marketer_type') === 'affiliate' ? 'selected' : '' }}>أفيليت</option>
+                    <label class="block text-xs text-gray-500 mb-1">الوظائف</label>
+                    <select name="marketer_jobs[]" multiple required data-select2-init class="border rounded-lg px-3 py-2 text-sm w-full">
+                        @foreach($marketerJobs as $job)
+                            <option value="{{ $job->id }}" {{ collect(old('marketer_jobs', []))->contains($job->id) ? 'selected' : '' }}>
+                                {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
@@ -141,9 +149,13 @@
                         <div class="text-xs text-gray-400">{{ $marketer->email }}</div>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $marketer->marketer_type === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                            {{ $marketer->marketer_type === 'influencer' ? 'مؤثر' : 'أفيليت' }}
-                        </span>
+                        @forelse($marketer->marketerJobs as $job)
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->key === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                                {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
+                            </span>
+                        @empty
+                            <span class="text-gray-300 text-xs">-</span>
+                        @endforelse
                     </td>
                     <td class="px-4 py-3 text-center text-gray-500 text-xs">{{ $marketer->country?->name_ar ?? '-' }}</td>
                     <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded text-xs {{ $statusCls }}">{{ $marketer->global_status?->value }}</span></td>

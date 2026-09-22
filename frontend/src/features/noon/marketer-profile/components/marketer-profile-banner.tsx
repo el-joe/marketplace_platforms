@@ -6,7 +6,7 @@ interface Props {
   bannerUrl: string | null;
   avatarUrl: string | null;
   marketerName: string;
-  marketerType: "influencer" | "affiliate";
+  marketerType: "influencer" | "affiliate" | string;
   profileUrl: string;
   qrCodeUrl: string | null;
 }

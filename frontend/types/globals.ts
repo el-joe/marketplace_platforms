@@ -8,7 +8,7 @@ export interface Name {
 export interface MarketerSeller {
   id: string;
   name: string;
-  marketer_type: "influencer" | "affiliate";
+  marketer_type: "influencer" | "affiliate" | string;
   profile_slug: string | null;
   profile_url: string | null;
 }

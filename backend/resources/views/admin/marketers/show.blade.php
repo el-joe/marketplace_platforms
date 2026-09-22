@@ -2,6 +2,10 @@
 @section('title', $marketer->name)
 @section('page-title', $marketer->name)
 
+@push('styles')
+    @vite(['resources/js/components/select2.js'])
+@endpush
+
 @section('content')
 <div class="max-w-3xl space-y-6">
 
@@ -14,9 +18,15 @@
                 @if($marketer->phone)<div class="text-gray-400 text-sm">{{ $marketer->phone }}</div>@endif
             </div>
             <div class="flex flex-col gap-2 items-end">
-                <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $marketer->marketer_type === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                    {{ $marketer->marketer_type === 'influencer' ? '🎬 مؤثر' : '🔗 أفيليت' }}
-                </span>
+                <div class="flex flex-wrap gap-1 justify-end">
+                    @forelse($marketer->marketerJobs as $job)
+                        <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->key === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                            {{ $job->key === 'influencer' ? '🎬' : '🔗' }} {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
+                        </span>
+                    @empty
+                        <span class="text-gray-300 text-xs">-</span>
+                    @endforelse
+                </div>
                 <span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">{{ $marketer->global_status?->value }}</span>
             </div>
         </div>
@@ -247,6 +257,54 @@
             <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">حفظ</button>
         </form>
     </div>
+
+    {{-- Job categories --}}
+    @if($marketer->marketerJobAssignments->isNotEmpty())
+    <div class="bg-white rounded-xl border p-6 space-y-5">
+        <h3 class="font-bold text-gray-800">أقسام الوظائف (Job Categories)</h3>
+        @foreach($marketer->marketerJobAssignments as $assignment)
+            @php
+                $job = $assignment->marketerJob;
+                $scopableTypes = $job->categories->pluck('category_type')->intersect(['product', 'classified']);
+            @endphp
+            <div class="border-t pt-4 first:border-t-0 first:pt-0">
+                <h4 class="text-sm font-bold text-gray-700 mb-2">
+                    {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
+                </h4>
+
+                @if($scopableTypes->isEmpty())
+                    <p class="text-xs text-gray-400">تنطبق هذه الوظيفة على كل الأقسام دون قيود.</p>
+                @else
+                    @foreach($scopableTypes as $categoryType)
+                        @php
+                            $sourceOptions = $job->eligibleCategories($categoryType);
+                            $selectedIds = $assignment->categoryScopes
+                                ->where('category_type', $categoryType)
+                                ->pluck('category_id');
+                        @endphp
+                        <form method="POST" action="{{ route('admin.marketers.job-categories.sync', $marketer) }}" class="mb-3">
+                            @csrf
+                            <input type="hidden" name="marketer_job_id" value="{{ $job->id }}">
+                            <input type="hidden" name="category_type" value="{{ $categoryType }}">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">
+                                {{ $categoryType === 'product' ? 'أقسام المنتجات' : 'أقسام المصنفات (opensouq)' }}
+                            </label>
+                            <select name="category_ids[]" multiple data-select2-init class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                @foreach($sourceOptions as $option)
+                                    <option value="{{ $option->id }}" {{ $selectedIds->contains($option->id) ? 'selected' : '' }}>
+                                        {{ app()->getLocale() === 'ar' ? $option->name_ar : $option->name_en }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">اترك التحديد فارغًا ليشمل كل الأقسام.</p>
+                            <button class="mt-2 px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">حفظ</button>
+                        </form>
+                    @endforeach
+                @endif
+            </div>
+        @endforeach
+    </div>
+    @endif
 
     {{-- Category commission overrides --}}
     <div class="bg-white rounded-xl border overflow-hidden">

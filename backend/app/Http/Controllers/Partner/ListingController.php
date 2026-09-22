@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Enums\GlobalSystemType;
 use App\Enums\InventoryMovementReferenceType;
 use App\Enums\InventoryMovementType;
 use App\Enums\ProductStatus;
@@ -11,23 +12,35 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Country;
 use App\Models\InventoryMovement;
+use App\Models\Marketer;
+use App\Models\MarketerCampaign;
+use App\Models\MarketerCommissionCountrySetting;
+use App\Models\MarketerInfluencerFeeCountrySetting;
+use App\Models\PlatformShippingSubsidy;
 use App\Models\Product;
+use App\Models\ProductCountry;
 use App\Models\ProductCustomAttribute;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
+use App\Models\ShippingRate;
+use App\Models\ShippingZone;
+use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Models\VendorProductCertification;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
-use App\Models\PlatformShippingSubsidy;
-use App\Models\ShippingZone;
 use App\Notifications\Admin\ListingResubmittedNotification;
 use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignService;
 use App\Services\Shared\PageCacheService;
+use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
+use App\Support\Marketer\CampaignOwner;
+use App\Support\Marketer\CampaignSource;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,7 +51,9 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListingController extends Controller
 {
@@ -49,8 +64,7 @@ class ListingController extends Controller
         private readonly ListingShippingResolver $shippingResolver,
         private readonly ShippingWeightService $weightService,
         private readonly MarketerCampaignService $marketerCampaignService,
-    ) {
-    }
+    ) {}
 
     private const HANDLING_CLASSES = ['standard', 'refrigerated', 'fragile', 'special_tech'];
 
@@ -63,7 +77,7 @@ class ListingController extends Controller
         return Auth::guard('vendor')->user()->vendor_id;
     }
 
-    private function vendor(): \App\Models\Vendor
+    private function vendor(): Vendor
     {
         return Auth::guard('vendor')->user()->vendor;
     }
@@ -79,7 +93,7 @@ class ListingController extends Controller
     // Index
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportListings($request);
@@ -108,7 +122,7 @@ class ListingController extends Controller
     // Shared query builder
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildListingsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildListingsQuery(Request $request): Builder
     {
         $vendorId = $this->vendorId();
 
@@ -148,11 +162,11 @@ class ListingController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $v === 'low_stock'
+            'status' => fn ($q, $v) => $v === 'low_stock'
                 ? $q->whereRaw('vendor_listings.id IN (SELECT vendor_listing_id FROM warehouse_inventories WHERE quantity_on_hand - quantity_reserved <= vendor_listings.low_stock_threshold AND quantity_on_hand > 0)')
                 : $q->where('vendor_listings.status', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('vendor_listings.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('vendor_listings.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('vendor_listings.created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('vendor_listings.created_at', '<=', $v),
         ]);
 
         if ($request->filled('search_term')) {
@@ -172,13 +186,13 @@ class ListingController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function exportListings(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportListings(Request $request): StreamedResponse
     {
         $items = $this->buildListingsQuery($request)->orderByDesc('vendor_listings.created_at')->get();
 
         $headers = ['SKU', 'Name', 'Price', 'Currency', 'Fulfillment', 'Status', 'Stock'];
 
-        $rows = $items->map(fn($row) => [
+        $rows = $items->map(fn ($row) => [
             $row->sku,
             $row->name_en,
             number_format($row->price, 2),
@@ -262,15 +276,15 @@ class ListingController extends Controller
         $products = Product::query()
             ->where('status', ProductStatus::Active->value)
             ->where(function ($query) use ($q) {
-                $query->where('name_en', 'like', '%' . $q . '%')
-                    ->orWhere('name_ar', 'like', '%' . $q . '%')
-                    ->orWhere('model_number', 'like', '%' . $q . '%')
-                    ->orWhere('gtin', 'like', $q . '%');
+                $query->where('name_en', 'like', '%'.$q.'%')
+                    ->orWhere('name_ar', 'like', '%'.$q.'%')
+                    ->orWhere('model_number', 'like', '%'.$q.'%')
+                    ->orWhere('gtin', 'like', $q.'%');
             })
             ->with([
                 'variants' => function ($vq) {
                     $vq->where('is_active', true)->orderBy('position');
-                }
+                },
             ])
             ->addSelect([
                 'primary_image' => ProductImage::select('path')
@@ -310,7 +324,7 @@ class ListingController extends Controller
                 'model' => $product->model_number,
                 'image_url' => $imageUrl,
                 'has_variants' => (bool) $product->has_variants,
-                'variants' => $product->variants->map(fn($v) => [
+                'variants' => $product->variants->map(fn ($v) => [
                     'id' => $v->id,
                     'variant_name' => $v->variant_name ?: 'النسخة الافتراضية',
                     'sku' => $v->sku,
@@ -327,7 +341,7 @@ class ListingController extends Controller
     public function categorySamples(Request $request): JsonResponse
     {
         $productId = $request->input('product_id');
-        if (!$productId) {
+        if (! $productId) {
             return response()->json(['influencer' => 0, 'affiliate' => 0, 'platform' => 0]);
         }
 
@@ -335,8 +349,8 @@ class ListingController extends Controller
 
         return response()->json([
             'influencer' => $category?->influencer_sample_qty ?? 0,
-            'affiliate'  => $category?->affiliate_sample_qty ?? 0,
-            'platform'   => $category?->platform_sample_qty ?? 0,
+            'affiliate' => $category?->affiliate_sample_qty ?? 0,
+            'platform' => $category?->platform_sample_qty ?? 0,
         ]);
     }
 
@@ -349,22 +363,22 @@ class ListingController extends Controller
         $productId = $request->input('product_id');
         $countryId = $request->input('country_id');
 
-        if (!$productId || !$countryId) {
+        if (! $productId || ! $countryId) {
             return response()->json([
-                'fee_per_influencer'           => 0,
+                'fee_per_influencer' => 0,
                 'influencer_commission_amount' => 0,
-                'affiliate_commission_amount'  => 0,
-                'currency'                     => '',
-                'affiliate_fee_is_free'        => true,
+                'affiliate_commission_amount' => 0,
+                'currency' => '',
+                'affiliate_fee_is_free' => true,
             ]);
         }
 
         $category = Product::find($productId)?->category;
 
-        $feeSetting = \App\Models\MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
+        $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
 
         $commissionSetting = $category
-            ? \App\Models\MarketerCommissionCountrySetting::where('category_id', $category->id)
+            ? MarketerCommissionCountrySetting::where('category_id', $category->id)
                 ->where('country_id', $countryId)
                 ->first()
             : null;
@@ -372,12 +386,12 @@ class ListingController extends Controller
         $currency = Country::find($countryId)?->currency_code ?? '';
 
         return response()->json([
-            'fee_per_influencer'           => $feeSetting?->fee_per_influencer ?? 0,
+            'fee_per_influencer' => $feeSetting?->fee_per_influencer ?? 0,
             'influencer_commission_amount' => $commissionSetting?->influencer_commission_amount ?? 0,
-            'affiliate_commission_amount'  => $commissionSetting?->affiliate_commission_amount ?? 0,
-            'currency'                     => $currency,
-            'affiliate_fee_is_free'        => true,
-            'category_name'                => $category?->name_ar ?? $category?->name_en ?? '',
+            'affiliate_commission_amount' => $commissionSetting?->affiliate_commission_amount ?? 0,
+            'currency' => $currency,
+            'affiliate_fee_is_free' => true,
+            'category_name' => $category?->name_ar ?? $category?->name_en ?? '',
         ]);
     }
 
@@ -387,16 +401,16 @@ class ListingController extends Controller
      */
     public function getInfluencerFee(): JsonResponse
     {
-        $vendor    = auth()->guard('vendor')->user()->vendor;
+        $vendor = auth()->guard('vendor')->user()->vendor;
         $countryId = $vendor->country_id;
 
-        $feeSetting = \App\Models\MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
+        $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
 
         $currency = Country::find($countryId)?->currency_code ?? '';
 
         return response()->json([
             'fee_per_influencer' => $feeSetting?->fee_per_influencer ?? 0,
-            'currency'           => $currency,
+            'currency' => $currency,
         ]);
     }
 
@@ -491,7 +505,7 @@ class ListingController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'type']);
 
-        return response()->json($warehouses->map(fn($w) => [
+        return response()->json($warehouses->map(fn ($w) => [
             'id' => $w->id,
             'name' => $w->name,
             'code' => $w->code,
@@ -511,7 +525,7 @@ class ListingController extends Controller
             $request->fulfillment_model ?? 'fbm',
         );
 
-        return response()->json($methods->map(fn($m) => [
+        return response()->json($methods->map(fn ($m) => [
             'id' => $m->id,
             'name' => $m->name,
             'code' => $m->code,
@@ -550,7 +564,7 @@ class ListingController extends Controller
             ? null
             : $this->shippingResolver->resolvePrimary($listing);
 
-        $marketerCampaign = \App\Models\MarketerCampaign::where('vendor_listing_id', $listing->id)
+        $marketerCampaign = MarketerCampaign::where('vendor_listing_id', $listing->id)
             ->with([
                 'invitations.marketer',
                 'tieredRules',
@@ -720,10 +734,11 @@ class ListingController extends Controller
             'refurbished' => 'مُجدَّد',
         ];
 
-        $marketerVendors = \App\Models\Marketer::where('global_status', 'active')
+        $marketerVendors = Marketer::where('global_status', 'active')
             ->where('country_id', $countryId)
             ->orderBy('name')
-            ->get(['id', 'name', 'marketer_type']);
+            ->with('marketerJobs')
+            ->get(['id', 'name']);
 
         return view('partner.listings.create', compact(
             'warehouses',
@@ -765,7 +780,7 @@ class ListingController extends Controller
             'declared_length_cm' => ['nullable', 'numeric', 'min:0.1'],
             'declared_width_cm' => ['nullable', 'numeric', 'min:0.1'],
             'declared_height_cm' => ['nullable', 'numeric', 'min:0.1'],
-            'handling_class' => ['required', 'in:' . implode(',', self::HANDLING_CLASSES)],
+            'handling_class' => ['required', 'in:'.implode(',', self::HANDLING_CLASSES)],
             'primary_shipping_method_id' => ['nullable', 'uuid', 'exists:shipping_methods,id'],
             'campaign_enabled' => ['nullable', 'boolean'],
             'commission_type' => ['nullable', 'required_if:campaign_enabled,1', 'in:fixed,tiered,last_click'],
@@ -778,7 +793,7 @@ class ListingController extends Controller
         ]);
 
         $warehouse = Warehouse::findOrFail($request->warehouse_id);
-        if (!$this->warehouseMatchesFulfillmentModel($warehouse, $request->fulfillment_model, $vendor)) {
+        if (! $this->warehouseMatchesFulfillmentModel($warehouse, $request->fulfillment_model, $vendor)) {
             return response()->json([
                 'success' => false,
                 'message' => 'المستودع المختار غير متوافق مع نموذج التنفيذ المحدد.',
@@ -801,7 +816,7 @@ class ListingController extends Controller
                 ->where('is_default', true)
                 ->where('is_active', true)
                 ->first();
-            if (!$defaultVariant) {
+            if (! $defaultVariant) {
                 return response()->json([
                     'success' => false,
                     'message' => 'هذا المنتج غير متاح للبيع حالياً — يرجى التواصل مع الإدارة.',
@@ -812,7 +827,7 @@ class ListingController extends Controller
 
         if ($request->filled('primary_shipping_method_id')) {
             $availableMethods = $this->shippingResolver->resolveForVariant($resolvedVariantId, $request->fulfillment_model);
-            if (!$availableMethods->contains('id', $request->primary_shipping_method_id)) {
+            if (! $availableMethods->contains('id', $request->primary_shipping_method_id)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'طريقة الشحن المختارة غير متاحة لهذه الفئة.',
@@ -844,7 +859,7 @@ class ListingController extends Controller
 
             try {
                 ListingCertificationGate::assertCanGoLiveFor($vendorId, $productIdForCertCheck, $request->country_id);
-            } catch (\Illuminate\Validation\ValidationException $e) {
+            } catch (ValidationException $e) {
                 $status = VendorListingStatus::PendingReview->value;
             }
         }
@@ -853,7 +868,7 @@ class ListingController extends Controller
 
         // Pre-fill dimensions from the product variant when the vendor left them blank
         // (but never overwrite what the vendor explicitly entered).
-        $variantForDefaults = \App\Models\ProductVariant::find($resolvedVariantId);
+        $variantForDefaults = ProductVariant::find($resolvedVariantId);
         $length = $request->filled('declared_length_cm') ? (float) $request->declared_length_cm : $variantForDefaults?->length_cm;
         $width = $request->filled('declared_width_cm') ? (float) $request->declared_width_cm : $variantForDefaults?->width_cm;
         $height = $request->filled('declared_height_cm') ? (float) $request->declared_height_cm : $variantForDefaults?->height_cm;
@@ -868,7 +883,7 @@ class ListingController extends Controller
 
         // try {
         $listing = null;
-        DB::transaction(function () use ($request, $vendorId, $status, $currency, &$listing, $vendor, $resolvedVariantId, $length, $width, $height, $weightClass) {
+        DB::transaction(function () use ($request, $vendorId, $status, $currency, &$listing, $resolvedVariantId, $length, $width, $height, $weightClass) {
             $listing = VendorListing::create([
                 'id' => (string) Str::uuid(),
                 'vendor_id' => $vendorId,
@@ -932,13 +947,13 @@ class ListingController extends Controller
         if ($request->boolean('campaign_enabled')) {
             try {
                 $this->marketerCampaignService->createCampaign(
-                    \App\Support\Marketer\CampaignOwner::vendor($vendor),
-                    \App\Support\Marketer\CampaignSource::vendorListing($listing->id),
+                    CampaignOwner::vendor($vendor),
+                    CampaignSource::vendorListing($listing->id),
                     array_merge($request->only([
                         'commission_type', 'max_commission_budget',
                     ]), [
-                        'country_id'   => $listing->country_id,
-                        'currency'     => $listing->currency,
+                        'country_id' => $listing->country_id,
+                        'currency' => $listing->currency,
                         'marketer_ids' => $request->input('marketer_ids', []),
                         'tiered_rules' => $request->input('tiered_rules', []),
                     ])
@@ -947,7 +962,7 @@ class ListingController extends Controller
                 $message .= ' تم إنشاء حملة الماركتر بنجاح.';
             } catch (\Throwable $e) {
                 Log::warning('Listing created but marketer campaign failed', ['listing_id' => $listing->id, 'error' => $e->getMessage()]);
-                $message .= ' تعذر إنشاء حملة الماركتر: ' . $e->getMessage();
+                $message .= ' تعذر إنشاء حملة الماركتر: '.$e->getMessage();
             }
         }
 
@@ -990,18 +1005,19 @@ class ListingController extends Controller
         $availableShippingMethods = $this->shippingResolver->resolveForListing($listing);
 
         $vendor = $this->vendor();
-        $marketerVendors = \App\Models\Marketer::where('global_status', 'active')
+        $marketerVendors = Marketer::where('global_status', 'active')
             ->where('country_id', $listing->country_id)
             ->orderBy('name')
-            ->get(['id', 'name', 'marketer_type']);
+            ->with('marketerJobs')
+            ->get(['id', 'name']);
 
         $productId = $listing->productVariant->product_id;
-        $requiresLocalCert = \App\Models\ProductCountry::where('product_id', $productId)
+        $requiresLocalCert = ProductCountry::where('product_id', $productId)
             ->where('country_id', $listing->country_id)
             ->where('requires_local_cert', 1)
             ->exists();
 
-        $hasApprovedCert = $requiresLocalCert && \App\Models\VendorProductCertification::where('vendor_id', $vendor->id)
+        $hasApprovedCert = $requiresLocalCert && VendorProductCertification::where('vendor_id', $vendor->id)
             ->where('product_id', $productId)
             ->where('country_id', $listing->country_id)
             ->where('status', 'approved')
@@ -1044,7 +1060,7 @@ class ListingController extends Controller
             'declared_length_cm' => ['nullable', 'numeric', 'min:0.1'],
             'declared_width_cm' => ['nullable', 'numeric', 'min:0.1'],
             'declared_height_cm' => ['nullable', 'numeric', 'min:0.1'],
-            'handling_class' => ['required', 'in:' . implode(',', self::HANDLING_CLASSES)],
+            'handling_class' => ['required', 'in:'.implode(',', self::HANDLING_CLASSES)],
             'primary_shipping_method_id' => ['nullable', 'uuid', 'exists:shipping_methods,id'],
             'campaign_enabled' => ['nullable', 'boolean'],
             'commission_type' => ['nullable', 'required_if:campaign_enabled,1', 'in:fixed,tiered,last_click'],
@@ -1056,9 +1072,9 @@ class ListingController extends Controller
             'tiered_rules.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        if (!empty($validated['primary_shipping_method_id'])) {
+        if (! empty($validated['primary_shipping_method_id'])) {
             $availableMethods = $this->shippingResolver->resolveForListing($listing);
-            if (!$availableMethods->contains('id', $validated['primary_shipping_method_id'])) {
+            if (! $availableMethods->contains('id', $validated['primary_shipping_method_id'])) {
                 return back()->withErrors(['primary_shipping_method_id' => 'طريقة الشحن المختارة غير متاحة لهذه الفئة.'])->withInput();
             }
         }
@@ -1100,13 +1116,13 @@ class ListingController extends Controller
         if ($request->boolean('campaign_enabled')) {
             try {
                 $this->marketerCampaignService->createCampaign(
-                    \App\Support\Marketer\CampaignOwner::vendor($this->vendor()),
-                    \App\Support\Marketer\CampaignSource::vendorListing($listing->id),
+                    CampaignOwner::vendor($this->vendor()),
+                    CampaignSource::vendorListing($listing->id),
                     array_merge($request->only([
                         'commission_type', 'max_commission_budget',
                     ]), [
-                        'country_id'   => $listing->country_id,
-                        'currency'     => $listing->currency,
+                        'country_id' => $listing->country_id,
+                        'currency' => $listing->currency,
                         'marketer_ids' => $request->input('marketer_ids', []),
                         'tiered_rules' => $request->input('tiered_rules', []),
                     ])
@@ -1115,7 +1131,7 @@ class ListingController extends Controller
                 $successMessage .= ' تم إنشاء حملة الماركتر بنجاح.';
             } catch (\Throwable $e) {
                 Log::warning('Listing updated but marketer campaign failed', ['listing_id' => $listing->id, 'error' => $e->getMessage()]);
-                $successMessage .= ' تعذر إنشاء حملة الماركتر: ' . $e->getMessage();
+                $successMessage .= ' تعذر إنشاء حملة الماركتر: '.$e->getMessage();
             }
         }
 
@@ -1182,9 +1198,9 @@ class ListingController extends Controller
         // vendor can fix them before resubmitting (badges are never public until approval).
         abort_if($listing->status === VendorListingStatus::Archived, 403);
 
-        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+        $data = $request->validate(PromoBadgeSyncService::rules());
 
-        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+        app(PromoBadgeSyncService::class)->sync(
             $listing->productVariant->product_id, 'vendor_listing_id', $listing->id, $data['promo_badges'] ?? [],
         );
 
@@ -1201,7 +1217,7 @@ class ListingController extends Controller
 
         $availableMethods = $this->shippingResolver->resolveForListing($listing);
 
-        if (!$availableMethods->contains('id', $request->primary_shipping_method_id)) {
+        if (! $availableMethods->contains('id', $request->primary_shipping_method_id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'طريقة الشحن هذه غير متاحة لهذه القائمة.',
@@ -1227,7 +1243,7 @@ class ListingController extends Controller
     {
         $this->authoriseListing($listing);
 
-        if (!in_array($listing->status, [VendorListingStatus::Active, VendorListingStatus::Paused], true)) {
+        if (! in_array($listing->status, [VendorListingStatus::Active, VendorListingStatus::Paused], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'لا يمكن تغيير حالة هذه القائمة.',
@@ -1249,7 +1265,7 @@ class ListingController extends Controller
 
             try {
                 ListingCertificationGate::assertCanGoLive($listing);
-            } catch (\Illuminate\Validation\ValidationException $e) {
+            } catch (ValidationException $e) {
                 return response()->json([
                     'success' => false,
                     'message' => 'هذا المنتج يتطلب شهادة اعتماد محلية معتمدة في هذا البلد قبل تفعيل القائمة. يرجى رفع الشهادة من قسم شهادات المنتجات.',
@@ -1278,7 +1294,7 @@ class ListingController extends Controller
     {
         $this->authoriseListing($listing);
 
-        if ($listing->global_system_type !== \App\Enums\GlobalSystemType::MerchantFbp) {
+        if ($listing->global_system_type !== GlobalSystemType::MerchantFbp) {
             return response()->json([
                 'success' => false,
                 'message' => 'هذا الخيار متاح فقط لقوائم FBP.',
@@ -1344,6 +1360,7 @@ class ListingController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
             Log::error('adjustStock failed', ['error' => $e->getMessage()]);
+
             return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء التعديل.'], 500);
         }
 
@@ -1367,7 +1384,7 @@ class ListingController extends Controller
             'declared_length_cm' => ['nullable', 'numeric', 'min:0.1'],
             'declared_width_cm' => ['nullable', 'numeric', 'min:0.1'],
             'declared_height_cm' => ['nullable', 'numeric', 'min:0.1'],
-            'handling_class' => ['required', 'in:' . implode(',', self::HANDLING_CLASSES)],
+            'handling_class' => ['required', 'in:'.implode(',', self::HANDLING_CLASSES)],
             'vendor_covers_delivery' => ['nullable', 'boolean'],
         ]);
 
@@ -1427,14 +1444,14 @@ class ListingController extends Controller
 
         foreach ($zones as $zone) {
             foreach ($methods as $method) {
-                $rate = \App\Models\ShippingRate::where('destination_zone_id', $zone->id)
+                $rate = ShippingRate::where('destination_zone_id', $zone->id)
                     ->where('shipping_method_id', $method->id)
                     ->whereNull('origin_zone_id')
                     ->where('is_active', true)
                     ->orderBy('base_fee')
                     ->first();
 
-                if (!$rate) {
+                if (! $rate) {
                     continue;
                 }
 
@@ -1489,16 +1506,17 @@ class ListingController extends Controller
         $vendor = $this->vendor();
         $q = $request->input('q', '');
 
-        $marketers = \App\Models\Marketer::where('global_status', 'active')
+        $marketers = Marketer::where('global_status', 'active')
             ->where('country_id', $vendor->country_id)
             ->when($q, fn ($query, $q) => $query->where('name', 'like', "%{$q}%"))
+            ->with('marketerJobs')
             ->limit(20)
-            ->get(['id', 'name', 'marketer_type']);
+            ->get(['id', 'name']);
 
         return response()->json(
             $marketers->map(fn ($m) => [
-                'id'   => $m->id,
-                'text' => $m->name . ' — ' . ($m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت'),
+                'id' => $m->id,
+                'text' => $m->name.' — '.($m->isInfluencer() ? 'مؤثر' : 'أفلييت'),
             ])
         );
     }

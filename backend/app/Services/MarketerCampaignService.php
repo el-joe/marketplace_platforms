@@ -6,28 +6,40 @@ use App\Jobs\ProcessCampaignAutoApproveJob;
 use App\Jobs\ProcessInvitationTimeoutJob;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
 use App\Models\Admin;
+use App\Models\AdminListing;
+use App\Models\ClassifiedListing;
+use App\Models\Marketer;
 use App\Models\MarketerCampaign;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCampaignTieredRule;
-use App\Models\Marketer;
+use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionCountrySetting;
+use App\Models\MarketerInfluencerFeeCountrySetting;
+use App\Models\MarketerListing;
+use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Admin\NewCampaignPendingNotification;
 use App\Notifications\Marketer\CampaignInvitationAcceptedNotification;
 use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
 use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
-use App\Notifications\Marketer\MarketerReplacedNotification;
 use App\Notifications\Vendor\CampaignApprovedNotification;
 use App\Notifications\Vendor\CampaignAutoApprovedNotification;
 use App\Notifications\Vendor\CampaignDoneNotification;
 use App\Notifications\Vendor\CampaignPendingAdminNotification;
 use App\Notifications\Vendor\CampaignRejectedNotification;
 use App\Notifications\Vendor\MarketerReplacedNotification as VendorMarketerReplacedNotification;
+use App\Services\Inventory\InventoryService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MarketerCampaignService
@@ -45,15 +57,15 @@ class MarketerCampaignService
      */
     public function markConversionsPaid(array $conversionIds, string $payoutId): void
     {
-        DB::transaction(function () use ($conversionIds, $payoutId) {
-            \App\Models\MarketerCampaignConversion::whereIn('id', $conversionIds)
+        DB::transaction(function () use ($conversionIds) {
+            MarketerCampaignConversion::whereIn('id', $conversionIds)
                 ->where('commissioned', false)
                 ->update([
                     'commissioned' => true,
-                    'paid_at'      => now(),
+                    'paid_at' => now(),
                 ]);
 
-            $conversions = \App\Models\MarketerCampaignConversion::whereIn('id', $conversionIds)
+            $conversions = MarketerCampaignConversion::whereIn('id', $conversionIds)
                 ->with('invitation.marketer')
                 ->get();
 
@@ -104,10 +116,10 @@ class MarketerCampaignService
 
         return DB::transaction(function () use ($owner, $source, $data) {
             $category = null;
-            $listing  = null;
+            $listing = null;
 
             if ($source->isVendorListing()) {
-                if (!$owner->isVendor() && !$owner->isMarketer()) {
+                if (! $owner->isVendor() && ! $owner->isMarketer()) {
                     throw new \RuntimeException('A vendor-listing campaign source must be owned by a vendor (or requested by a marketer).');
                 }
 
@@ -116,28 +128,28 @@ class MarketerCampaignService
                     : VendorListing::where('id', $source->vendorListingId)->firstOrFail();
 
                 $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
-                if (!in_array($listing->fulfillment_model, $allowedModels, true)) {
+                if (! in_array($listing->fulfillment_model, $allowedModels, true)) {
                     throw new \RuntimeException("Campaigns are not allowed for {$listing->fulfillment_model} listings.");
                 }
 
                 $category = $listing->productVariant?->product?->category;
 
-                $minStock       = (int) ($category?->min_stock_for_campaign ?? 10);
-                $availableStock = app(\App\Services\Inventory\InventoryService::class)->availableStock($listing);
+                $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
+                $availableStock = app(InventoryService::class)->availableStock($listing);
                 if ($availableStock < $minStock) {
                     throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units required to start a campaign.");
                 }
             } elseif ($source->isAdminListing()) {
-                if (!$owner->isPlatform() && !$owner->isMarketer()) {
+                if (! $owner->isPlatform() && ! $owner->isMarketer()) {
                     throw new \RuntimeException('An admin-listing campaign source must be platform-owned (or requested by a marketer).');
                 }
 
-                $listing = \App\Models\AdminListing::where('id', $source->adminListingId)->firstOrFail();
+                $listing = AdminListing::where('id', $source->adminListingId)->firstOrFail();
 
                 $category = $listing->productVariant?->product?->category;
 
-                $minStock       = (int) ($category?->min_stock_for_campaign ?? 10);
-                $availableStock = app(\App\Services\Inventory\InventoryService::class)->availableStock($listing);
+                $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
+                $availableStock = app(InventoryService::class)->availableStock($listing);
                 if ($availableStock < $minStock) {
                     throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units required to start a campaign.");
                 }
@@ -155,7 +167,7 @@ class MarketerCampaignService
             $platformSampleQty = 0;
             if ($category) {
                 $hasInfluencer = $marketerVendors->contains(fn ($m) => $m->isInfluencer());
-                $hasAffiliate  = $marketerVendors->contains(fn ($m) => $m->isAffiliate());
+                $hasAffiliate = $marketerVendors->contains(fn ($m) => $m->isAffiliate());
                 if ($hasInfluencer) {
                     $perMarketerSampleQty = max($perMarketerSampleQty, $category->influencer_sample_qty);
                 }
@@ -170,41 +182,41 @@ class MarketerCampaignService
             $status = $owner->isMarketer() ? 'marketer_requested' : 'pending_admin';
 
             $campaign = MarketerCampaign::create([
-                'vendor_id'                        => $owner->isVendor() ? $owner->id : null,
-                'owner_type'                        => $owner->isMarketer() ? 'marketer' : $owner->type,
-                'owner_id'                          => $owner->id,
-                'requested_by_marketer_id'          => $owner->isMarketer() ? $owner->id : null,
-                'vendor_listing_id'                 => $source->vendorListingId,
-                'admin_listing_id'                  => $source->adminListingId,
-                'travel_package_id'                 => $source->travelPackageId,
-                'classified_listing_id'             => $source->classifiedListingId,
-                'campaign_category'                 => $source->category,
-                'country_id'                        => $data['country_id'],
-                'currency'                           => $data['currency'],
-                'commission_type'                   => $data['commission_type'],
-                'max_commission_budget'             => $data['max_commission_budget'],
-                'platform_commission_amount'        => $data['platform_commission_amount'] ?? 0,
-                'marketer_commission_amount'        => $data['marketer_commission_amount'] ?? 0,
-                'status'                             => $status,
-                'auto_approve_at'                    => $owner->isMarketer() ? null : now()->addHours($autoApproveHours),
-                'auto_approved'                      => false,
-                'platform_sample_qty_snapshot'       => $platformSampleQty,
-                'per_marketer_sample_qty_snapshot'   => $perMarketerSampleQty,
-                'requested_marketer_vendor_ids'      => $owner->isMarketer()
+                'vendor_id' => $owner->isVendor() ? $owner->id : null,
+                'owner_type' => $owner->isMarketer() ? 'marketer' : $owner->type,
+                'owner_id' => $owner->id,
+                'requested_by_marketer_id' => $owner->isMarketer() ? $owner->id : null,
+                'vendor_listing_id' => $source->vendorListingId,
+                'admin_listing_id' => $source->adminListingId,
+                'travel_package_id' => $source->travelPackageId,
+                'classified_listing_id' => $source->classifiedListingId,
+                'campaign_category' => $source->category,
+                'country_id' => $data['country_id'],
+                'currency' => $data['currency'],
+                'commission_type' => $data['commission_type'],
+                'max_commission_budget' => $data['max_commission_budget'],
+                'platform_commission_amount' => $data['platform_commission_amount'] ?? 0,
+                'marketer_commission_amount' => $data['marketer_commission_amount'] ?? 0,
+                'status' => $status,
+                'auto_approve_at' => $owner->isMarketer() ? null : now()->addHours($autoApproveHours),
+                'auto_approved' => false,
+                'platform_sample_qty_snapshot' => $platformSampleQty,
+                'per_marketer_sample_qty_snapshot' => $perMarketerSampleQty,
+                'requested_marketer_vendor_ids' => $owner->isMarketer()
                     ? [$owner->id]
                     : $marketerVendors->pluck('id')->values()->all(),
-                'title'                               => $data['title'] ?? null,
-                'notes'                               => $data['notes'] ?? null,
+                'title' => $data['title'] ?? null,
+                'notes' => $data['notes'] ?? null,
             ]);
 
-            if ($data['commission_type'] === 'tiered' && !empty($data['tiered_rules'])) {
+            if ($data['commission_type'] === 'tiered' && ! empty($data['tiered_rules'])) {
                 foreach ($data['tiered_rules'] as $i => $rule) {
                     MarketerCampaignTieredRule::create([
-                        'campaign_id'       => $campaign->id,
-                        'from_sale_number'  => $rule['from_sale_number'],
+                        'campaign_id' => $campaign->id,
+                        'from_sale_number' => $rule['from_sale_number'],
                         'commission_amount' => $rule['commission_amount'],
-                        'currency'          => $data['currency'],
-                        'sort_order'        => $i,
+                        'currency' => $data['currency'],
+                        'sort_order' => $i,
                     ]);
                 }
             }
@@ -217,11 +229,11 @@ class MarketerCampaignService
             // campaign's promotional lifecycle, independent of admin review.
             if ($platformSampleQty > 0) {
                 MarketerCampaignSample::create([
-                    'campaign_id'   => $campaign->id,
+                    'campaign_id' => $campaign->id,
                     'invitation_id' => null,
-                    'sample_owner'  => 'platform',
-                    'quantity'      => $platformSampleQty,
-                    'status'        => 'pending',
+                    'sample_owner' => 'platform',
+                    'quantity' => $platformSampleQty,
+                    'status' => 'pending',
                 ]);
             }
 
@@ -281,16 +293,16 @@ class MarketerCampaignService
 
         DB::transaction(function () use ($campaign, $commission) {
             $ownerType = $campaign->admin_listing_id ? 'platform' : 'vendor';
-            $ownerId   = $ownerType === 'vendor' ? $campaign->vendorListing?->vendor_id : null;
+            $ownerId = $ownerType === 'vendor' ? $campaign->vendorListing?->vendor_id : null;
 
             $campaign->update([
-                'owner_type'                  => $ownerType,
-                'owner_id'                    => $ownerId,
-                'vendor_id'                   => $ownerId,
-                'marketer_commission_amount'  => $commission['marketer_commission_amount'] ?? $campaign->marketer_commission_amount,
-                'platform_commission_amount'  => $commission['platform_commission_amount'] ?? $campaign->platform_commission_amount,
-                'status'                      => 'active',
-                'reviewed_at'                 => now(),
+                'owner_type' => $ownerType,
+                'owner_id' => $ownerId,
+                'vendor_id' => $ownerId,
+                'marketer_commission_amount' => $commission['marketer_commission_amount'] ?? $campaign->marketer_commission_amount,
+                'platform_commission_amount' => $commission['platform_commission_amount'] ?? $campaign->platform_commission_amount,
+                'status' => 'active',
+                'reviewed_at' => now(),
             ]);
 
             if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
@@ -327,9 +339,9 @@ class MarketerCampaignService
 
         DB::transaction(function () use ($campaign, $admin) {
             $campaign->update([
-                'status'                => 'active',
-                'reviewed_by_admin_id'  => $admin->id,
-                'reviewed_at'           => now(),
+                'status' => 'active',
+                'reviewed_by_admin_id' => $admin->id,
+                'reviewed_at' => now(),
             ]);
 
             // enhancement.md P-14 task 4: invitations are dispatched only
@@ -357,10 +369,10 @@ class MarketerCampaignService
     {
         DB::transaction(function () use ($campaign, $admin, $reason) {
             $campaign->update([
-                'status'               => 'rejected',
+                'status' => 'rejected',
                 'reviewed_by_admin_id' => $admin->id,
-                'reviewed_at'          => now(),
-                'rejection_reason'     => $reason,
+                'reviewed_at' => now(),
+                'rejection_reason' => $reason,
             ]);
 
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
@@ -394,7 +406,7 @@ class MarketerCampaignService
             $invitation->update(['status' => 'cancelled', 'responded_at' => now()]);
         });
 
-        \App\Models\MarketerListing::whereIn(
+        MarketerListing::whereIn(
             'invitation_id',
             $campaign->invitations()->pluck('id')
         )->where('status', '!=', 'archived')->get()->each(
@@ -413,7 +425,7 @@ class MarketerCampaignService
         DB::transaction(function () use ($campaign) {
             $campaign->update(['status' => 'paused']);
 
-            \App\Models\MarketerListing::whereIn('invitation_id', $campaign->invitations()->pluck('id'))
+            MarketerListing::whereIn('invitation_id', $campaign->invitations()->pluck('id'))
                 ->where('status', 'active')
                 ->update(['status' => 'paused']);
         });
@@ -429,7 +441,7 @@ class MarketerCampaignService
         DB::transaction(function () use ($campaign) {
             $campaign->update(['status' => $campaign->auto_approved ? 'auto_approved' : 'active']);
 
-            \App\Models\MarketerListing::whereIn('invitation_id', $campaign->invitations()->pluck('id'))
+            MarketerListing::whereIn('invitation_id', $campaign->invitations()->pluck('id'))
                 ->where('status', 'paused')
                 ->update(['status' => 'active']);
         });
@@ -456,7 +468,7 @@ class MarketerCampaignService
             ->where('auto_approved', false)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             return;
         }
 
@@ -510,7 +522,7 @@ class MarketerCampaignService
             return null;
         }
 
-        $categoryRate = \App\Models\MarketerCategoryCommission::where('category_id', $category->id)
+        $categoryRate = MarketerCategoryCommission::where('category_id', $category->id)
             ->whereNull('marketer_id')
             ->first();
 
@@ -548,13 +560,13 @@ class MarketerCampaignService
         $referralCode = strtoupper(Str::random(10));
 
         $invitation = MarketerCampaignInvitation::create([
-            'campaign_id'             => $campaign->id,
-            'marketer_id'             => $marketerId,
-            'status'                  => 'pending',
+            'campaign_id' => $campaign->id,
+            'marketer_id' => $marketerId,
+            'status' => 'pending',
             'acceptance_window_hours' => $timeoutHours,
-            'expires_at'              => now()->addHours($timeoutHours),
-            'referral_code'           => $referralCode,
-            'referral_link' => rtrim(config('app.frontend_url'), '/') . "/r/{$referralCode}"
+            'expires_at' => now()->addHours($timeoutHours),
+            'referral_code' => $referralCode,
+            'referral_link' => rtrim(config('app.frontend_url'), '/')."/r/{$referralCode}",
         ]);
 
         // Generate QR code for this invitation's referral link
@@ -582,18 +594,19 @@ class MarketerCampaignService
      * so this is the only safe entry point for bulk/repeated invites.
      *
      * @return array{invited: array<string>, skipped: array<string,string>}
-     *   invited = marketer IDs successfully invited
-     *   skipped = marketer ID => reason (e.g. 'already_pending', 'already_accepted', 'inactive')
+     *                                                                      invited = marketer IDs successfully invited
+     *                                                                      skipped = marketer ID => reason (e.g. 'already_pending', 'already_accepted', 'inactive')
      */
     public function inviteMarketers(MarketerCampaign $campaign, array $marketerIds): array
     {
         $invited = [];
         $skipped = [];
 
-        if (!in_array($campaign->status, ['pending_admin', 'active'])) {
+        if (! in_array($campaign->status, ['pending_admin', 'active'])) {
             foreach ($marketerIds as $id) {
                 $skipped[$id] = 'campaign_not_open';
             }
+
             return ['invited' => $invited, 'skipped' => $skipped];
         }
 
@@ -606,13 +619,15 @@ class MarketerCampaignService
 
         foreach ($marketerIds as $marketerId) {
             if ($existingInvitations->has($marketerId)) {
-                $skipped[$marketerId] = 'already_' . $existingInvitations[$marketerId];
+                $skipped[$marketerId] = 'already_'.$existingInvitations[$marketerId];
+
                 continue;
             }
 
             $marketer = $marketers->get($marketerId);
-            if (!$marketer || $marketer->global_status !== 'active') {
+            if (! $marketer || $marketer->global_status !== 'active') {
                 $skipped[$marketerId] = 'inactive';
+
                 continue;
             }
 
@@ -626,21 +641,22 @@ class MarketerCampaignService
     private function generateQrCode(string $url, string $invitationId): ?string
     {
         try {
-            $result = (new \Endroid\QrCode\Builder\Builder(
-                writer: new \Endroid\QrCode\Writer\PngWriter(),
+            $result = (new Builder(
+                writer: new PngWriter,
                 data: $url,
                 size: 400,
                 margin: 15,
             ))->build();
 
-            $path = 'qrcodes/invitations/' . $invitationId . '.png';
-            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $result->getString());
+            $path = 'qrcodes/invitations/'.$invitationId.'.png';
+            Storage::disk('public')->put($path, $result->getString());
 
             return $path;
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning(
-                'QR generation failed for invitation ' . $invitationId . ': ' . $e->getMessage()
+            Log::warning(
+                'QR generation failed for invitation '.$invitationId.': '.$e->getMessage()
             );
+
             return null;
         }
     }
@@ -651,7 +667,7 @@ class MarketerCampaignService
      */
     public function acceptInvitation(MarketerCampaignInvitation $invitation, ?string $marketerNote = null): void
     {
-        if (!$invitation->isPending()) {
+        if (! $invitation->isPending()) {
             throw new \RuntimeException('Invitation is no longer pending.');
         }
 
@@ -675,7 +691,7 @@ class MarketerCampaignService
             $feeStatus = 'not_applicable';
 
             if ($marketer->isInfluencer()) {
-                $feeSetting = \App\Models\MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
+                $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
                     ->first();
 
                 $feeAmount = $feeSetting?->fee_per_influencer ?? 0;
@@ -683,12 +699,12 @@ class MarketerCampaignService
             }
 
             $invitation->update([
-                'status'                   => 'accepted',
-                'responded_at'             => now(),
-                'marketer_note'            => $marketerNote,
-                'platform_fee_amount'      => $feeAmount,
-                'platform_fee_currency'    => $campaign->currency,
-                'platform_fee_status'      => $feeStatus,
+                'status' => 'accepted',
+                'responded_at' => now(),
+                'marketer_note' => $marketerNote,
+                'platform_fee_amount' => $feeAmount,
+                'platform_fee_currency' => $campaign->currency,
+                'platform_fee_status' => $feeStatus,
                 'platform_fee_recorded_at' => now(),
             ]);
 
@@ -698,7 +714,7 @@ class MarketerCampaignService
             // otherwise it is only ever settled if an admin later remembers
             // to call markInvitationFeePaid() manually.
             if ($feeStatus === 'pending' && $feeAmount > 0) {
-                $walletService = app(\App\Services\WalletService::class);
+                $walletService = app(WalletService::class);
                 $wallet = $walletService->getOrCreateWallet('marketer', $marketer->id, $campaign->currency);
                 $walletService->debit(
                     $wallet,
@@ -722,11 +738,11 @@ class MarketerCampaignService
 
             if ($sampleQty > 0) {
                 MarketerCampaignSample::create([
-                    'campaign_id'   => $campaign->id,
+                    'campaign_id' => $campaign->id,
                     'invitation_id' => $invitation->id,
-                    'sample_owner'  => 'marketer',
-                    'quantity'      => $sampleQty,
-                    'status'        => 'pending',
+                    'sample_owner' => 'marketer',
+                    'quantity' => $sampleQty,
+                    'status' => 'pending',
                 ]);
             }
 
@@ -747,37 +763,37 @@ class MarketerCampaignService
         $marketer = $invitation->marketer;
 
         match ($campaign->campaign_category ?? 'product') {
-            'travel'     => $this->createTravelListing($campaign, $marketer, $invitation),
+            'travel' => $this->createTravelListing($campaign, $marketer, $invitation),
             'classified' => $this->createClassifiedListing($campaign, $marketer, $invitation),
-            default      => $this->createProductListing($campaign, $marketer, $invitation),
+            default => $this->createProductListing($campaign, $marketer, $invitation),
         };
     }
 
     private function createProductListing(MarketerCampaign $campaign, Marketer $marketer, MarketerCampaignInvitation $invitation): void
     {
-        $sourcePrice     = null;
-        $sourceCurrency  = $campaign->currency;
+        $sourcePrice = null;
+        $sourceCurrency = $campaign->currency;
         $sourceCondition = 'new';
-        $variantId       = null;
-        $sourceType      = null;
+        $variantId = null;
+        $sourceType = null;
         $sourceListingId = null;
 
         if ($campaign->vendor_listing_id) {
-            $source          = VendorListing::find($campaign->vendor_listing_id);
-            $sourcePrice     = $source?->price;
+            $source = VendorListing::find($campaign->vendor_listing_id);
+            $sourcePrice = $source?->price;
             $sourceCondition = $source?->condition ?? 'new';
-            $variantId       = $source?->product_variant_id;
-            $sourceType      = 'vendor_listing';
+            $variantId = $source?->product_variant_id;
+            $sourceType = 'vendor_listing';
             $sourceListingId = $source?->id;
         } elseif ($campaign->admin_listing_id) {
-            $source          = \App\Models\AdminListing::find($campaign->admin_listing_id);
-            $sourcePrice     = $source?->price;
-            $variantId       = $source?->product_variant_id;
-            $sourceType      = 'admin_listing';
+            $source = AdminListing::find($campaign->admin_listing_id);
+            $sourcePrice = $source?->price;
+            $variantId = $source?->product_variant_id;
+            $sourceType = 'admin_listing';
             $sourceListingId = $source?->id;
         }
 
-        if (!$variantId || !$sourcePrice) {
+        if (! $variantId || ! $sourcePrice) {
             return; // Can't create listing without product/price
         }
 
@@ -786,77 +802,77 @@ class MarketerCampaignService
         // same as independent listings — CartLineSource and the
         // availability observers no longer need to walk
         // invitation->campaign->listing at checkout/sync time.
-        \App\Models\MarketerListing::firstOrCreate(
+        MarketerListing::firstOrCreate(
             ['invitation_id' => $invitation->id],
             [
-                'marketer_id'        => $marketer->id,
+                'marketer_id' => $marketer->id,
                 'product_variant_id' => $variantId,
-                'country_id'         => $campaign->country_id,
-                'listing_category'   => 'product',
-                'source_type'        => $sourceType,
-                'source_listing_id'  => $sourceListingId,
-                'price'              => $sourcePrice,
-                'currency'           => $sourceCurrency,
-                'condition'          => $sourceCondition,
-                'status'             => 'active',
-                'referral_code'      => $invitation->referral_code,
-                'referral_link'      => $invitation->referral_link,
+                'country_id' => $campaign->country_id,
+                'listing_category' => 'product',
+                'source_type' => $sourceType,
+                'source_listing_id' => $sourceListingId,
+                'price' => $sourcePrice,
+                'currency' => $sourceCurrency,
+                'condition' => $sourceCondition,
+                'status' => 'active',
+                'referral_code' => $invitation->referral_code,
+                'referral_link' => $invitation->referral_link,
             ]
         );
     }
 
     private function createTravelListing(MarketerCampaign $campaign, Marketer $marketer, MarketerCampaignInvitation $invitation): void
     {
-        if (!$campaign->travel_package_id) {
+        if (! $campaign->travel_package_id) {
             return;
         }
 
-        $package = \App\Models\TravelPackage::find($campaign->travel_package_id);
-        if (!$package) {
+        $package = TravelPackage::find($campaign->travel_package_id);
+        if (! $package) {
             return;
         }
 
-        \App\Models\MarketerListing::firstOrCreate(
+        MarketerListing::firstOrCreate(
             ['invitation_id' => $invitation->id],
             [
-                'marketer_id'       => $marketer->id,
+                'marketer_id' => $marketer->id,
                 'travel_package_id' => $campaign->travel_package_id,
-                'country_id'        => $campaign->country_id,
-                'listing_category'  => 'travel',
-                'price'             => $package->price,
-                'currency'          => $package->currency,
-                'condition'         => 'new',
-                'status'            => 'active',
-                'referral_code'     => $invitation->referral_code,
-                'referral_link'     => $invitation->referral_link,
+                'country_id' => $campaign->country_id,
+                'listing_category' => 'travel',
+                'price' => $package->price,
+                'currency' => $package->currency,
+                'condition' => 'new',
+                'status' => 'active',
+                'referral_code' => $invitation->referral_code,
+                'referral_link' => $invitation->referral_link,
             ]
         );
     }
 
     private function createClassifiedListing(MarketerCampaign $campaign, Marketer $marketer, MarketerCampaignInvitation $invitation): void
     {
-        if (!$campaign->classified_listing_id) {
+        if (! $campaign->classified_listing_id) {
             return;
         }
 
-        $classified = \App\Models\ClassifiedListing::find($campaign->classified_listing_id);
-        if (!$classified) {
+        $classified = ClassifiedListing::find($campaign->classified_listing_id);
+        if (! $classified) {
             return;
         }
 
-        \App\Models\MarketerListing::firstOrCreate(
+        MarketerListing::firstOrCreate(
             ['invitation_id' => $invitation->id],
             [
-                'marketer_id'           => $marketer->id,
+                'marketer_id' => $marketer->id,
                 'classified_listing_id' => $campaign->classified_listing_id,
-                'country_id'            => $campaign->country_id,
-                'listing_category'      => 'classified',
-                'price'                 => $classified->price,
-                'currency'              => $classified->currency,
-                'condition'             => 'new',
-                'status'                => 'active',
-                'referral_code'         => $invitation->referral_code,
-                'referral_link'         => $invitation->referral_link,
+                'country_id' => $campaign->country_id,
+                'listing_category' => 'classified',
+                'price' => $classified->price,
+                'currency' => $classified->currency,
+                'condition' => 'new',
+                'status' => 'active',
+                'referral_code' => $invitation->referral_code,
+                'referral_link' => $invitation->referral_link,
             ]
         );
     }
@@ -866,13 +882,13 @@ class MarketerCampaignService
      */
     public function rejectInvitation(MarketerCampaignInvitation $invitation, ?string $reason = null): void
     {
-        if (!$invitation->isPending()) {
+        if (! $invitation->isPending()) {
             throw new \RuntimeException('Invitation is no longer pending.');
         }
 
         $invitation->update([
-            'status'         => 'rejected',
-            'responded_at'   => now(),
+            'status' => 'rejected',
+            'responded_at' => now(),
             'decline_reason' => $reason,
         ]);
 
@@ -885,7 +901,7 @@ class MarketerCampaignService
     public function handleInvitationTimeout(string $invitationId): void
     {
         $invitation = MarketerCampaignInvitation::find($invitationId);
-        if (!$invitation || !$invitation->isPending()) {
+        if (! $invitation || ! $invitation->isPending()) {
             return;
         }
 
@@ -898,13 +914,15 @@ class MarketerCampaignService
      */
     protected function replaceMarketer(MarketerCampaignInvitation $oldInvitation): void
     {
-        $campaign    = $oldInvitation->campaign;
+        $campaign = $oldInvitation->campaign;
         $oldMarketer = $oldInvitation->marketer;
 
         $alreadyInvited = $campaign->invitations()->pluck('marketer_id')->toArray();
-        $minAccepted    = (int) setting('marketer_replacement_min_accepted_campaigns', 0);
+        $minAccepted = (int) setting('marketer_replacement_min_accepted_campaigns', 0);
 
-        $replacement = Marketer::where('marketer_type', $oldMarketer->marketer_type)
+        $oldJobKeys = $oldMarketer->marketerJobs->pluck('key');
+
+        $replacement = Marketer::whereHas('marketerJobs', fn ($q) => $q->whereIn('key', $oldJobKeys))
             ->whereNotIn('id', $alreadyInvited)
             ->where('global_status', 'active')
             ->withCount(['campaignInvitations as accepted_count' => fn ($q) => $q->where('status', 'accepted')])
@@ -916,7 +934,7 @@ class MarketerCampaignService
             fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation))
         );
 
-        if (!$replacement) {
+        if (! $replacement) {
             return; // No replacement available
         }
 
@@ -940,8 +958,8 @@ class MarketerCampaignService
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
         });
 
-        $totalConversions       = (int) $campaign->conversions()->count();
-        $totalCommissionEarned  = (float) $campaign->conversions()->sum('commission_amount');
+        $totalConversions = (int) $campaign->conversions()->count();
+        $totalCommissionEarned = (float) $campaign->conversions()->sum('commission_amount');
 
         $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new CampaignDoneNotification($campaign, $totalConversions, $totalCommissionEarned))
@@ -977,17 +995,19 @@ class MarketerCampaignService
 
         $category = $listing->productVariant?->product?->category;
         $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
-        $stock    = app(\App\Services\Inventory\InventoryService::class)->availableStock($listing);
+        $stock = app(InventoryService::class)->availableStock($listing);
 
         if ($stock <= 0) {
             if (in_array($campaign->status, ['active', 'auto_approved', 'paused'], true)) {
                 $this->markCampaignDone($campaign);
             }
+
             return;
         }
 
         if ($stock < $minStock && in_array($campaign->status, ['active', 'auto_approved'], true)) {
             $this->pauseCampaignForLowStock($campaign);
+
             return;
         }
 
@@ -999,16 +1019,17 @@ class MarketerCampaignService
     /**
      * Search active marketers by name/email (used by vendor panel to search available marketers).
      */
-    public function searchMarketers(string $query, ?string $type = null): \Illuminate\Database\Eloquent\Collection
+    public function searchMarketers(string $query, ?string $type = null): Collection
     {
         return Marketer::query()
             ->where('global_status', 'active')
-            ->when($type, fn ($q) => $q->where('marketer_type', $type))
+            ->when($type, fn ($q) => $q->whereHas('marketerJobs', fn ($j) => $j->where('key', $type)))
             ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
+                    ->orWhere('email', 'like', "%{$query}%");
             })
+            ->with('marketerJobs')
             ->limit(20)
-            ->get(['id', 'name', 'email', 'marketer_type']);
+            ->get(['id', 'name', 'email']);
     }
 }

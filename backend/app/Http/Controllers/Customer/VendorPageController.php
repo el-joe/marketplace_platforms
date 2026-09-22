@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\VendorPageVendorResource;
 use App\Http\Responses\ApiResponse;
-use App\Models\Country;
 use App\Models\MarketerListing;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\Customer\ListingQueryService;
+use App\Services\Customer\PromoBadgeResolver;
 use App\Services\Shared\PageBuilderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +54,7 @@ class VendorPageController extends Controller
      * GET /vendors/{vendor_id}
      * Vendor storefront page: vendor metadata, page_builder, and live listing grid.
      */
-    public function show(Request $request,$country, string $vendorId): JsonResponse
+    public function show(Request $request, $country, string $vendorId): JsonResponse
     {
         $country = $request->attributes->get('country');
         $vendor = Vendor::where('id', $vendorId)
@@ -100,7 +100,8 @@ class VendorPageController extends Controller
             ->with([
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
-                'marketer:id,name,marketer_type',
+                'marketer:id,name',
+                'marketer.marketerJobs',
                 'marketer.marketerProfile:id,marketer_id,profile_slug',
             ])
             ->get();
@@ -109,7 +110,7 @@ class VendorPageController extends Controller
             $paginator->getCollection()->concat($marketerListings)->all()
         );
 
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings($deduped));
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($deduped));
         $items = collect($deduped)->map(function ($listing) use ($country, $wishlistListingIds) {
             $product = $listing->productVariant->product;
 

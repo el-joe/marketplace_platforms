@@ -62,8 +62,8 @@
                     x-on:change="updateSelectedMarketers($event)"
                 >
                     @foreach($marketerVendors as $m)
-                        <option value="{{ $m->id }}" data-type="{{ $m->marketer_type }}" data-name="{{ $m->name }}">
-                            {{ $m->name }} — {{ $m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت' }}
+                        <option value="{{ $m->id }}" data-type="{{ $m->marketerJobs->first()?->key }}" data-name="{{ $m->name }}">
+                            {{ $m->name }} — {{ $m->isInfluencer() ? 'مؤثر' : 'أفلييت' }}
                         </option>
                     @endforeach
                 </x-form.select>

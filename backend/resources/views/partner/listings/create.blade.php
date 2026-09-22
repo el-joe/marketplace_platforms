@@ -359,9 +359,9 @@
                                 placeholder="ابحث واختر الماركترز..."
                             >
                                 @foreach($marketerVendors as $m)
-                                    <option value="{{ $m->id }}" data-type="{{ $m->marketer_type }}"
+                                    <option value="{{ $m->id }}" data-type="{{ $m->marketerJobs->first()?->key }}"
                                             data-name="{{ $m->name }}">
-                                        {{ $m->name }} — {{ $m->marketer_type === 'influencer' ? 'مؤثر' : 'أفلييت' }}
+                                        {{ $m->name }} — {{ $m->isInfluencer() ? 'مؤثر' : 'أفلييت' }}
                                     </option>
                                 @endforeach
                             </x-form.select>

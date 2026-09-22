@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Enums\MarketerCommissionDiscountType;
 use App\Services\Customer\MarketerProfileCache;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -60,18 +60,18 @@ class MarketerProfile extends Model
     ];
 
     protected $casts = [
-        'social_links'             => 'array',
-        'contact_details'          => 'array',
-        'ad_price'                 => 'integer',
-        'can_self_edit_ad_price'   => 'boolean',
-        'chest_cm'                 => 'float',
-        'waist_cm'                 => 'float',
-        'hip_cm'                   => 'float',
-        'height_cm'                => 'float',
-        'item_length_cm'           => 'float',
-        'sleeve_from_neck_cm'      => 'float',
-        'sleeve_from_shoulder_cm'  => 'float',
-        'sleeve_width_cm'          => 'float',
+        'social_links' => 'array',
+        'contact_details' => 'array',
+        'ad_price' => 'integer',
+        'can_self_edit_ad_price' => 'boolean',
+        'chest_cm' => 'float',
+        'waist_cm' => 'float',
+        'hip_cm' => 'float',
+        'height_cm' => 'float',
+        'item_length_cm' => 'float',
+        'sleeve_from_neck_cm' => 'float',
+        'sleeve_from_shoulder_cm' => 'float',
+        'sleeve_width_cm' => 'float',
         'broker_serves_all_cities' => 'boolean',
         'commission_discount_type' => MarketerCommissionDiscountType::class,
         'commission_discount_flat' => 'integer',
@@ -125,7 +125,7 @@ class MarketerProfile extends Model
             if (empty($profile->profile_slug)) {
                 $marketer = $profile->marketer ?? Marketer::find($profile->marketer_id);
                 $base = Str::slug($marketer?->name ?? 'marketer');
-                $profile->profile_slug = $base . '-' . Str::lower(Str::random(6));
+                $profile->profile_slug = $base.'-'.Str::lower(Str::random(6));
             }
         });
 
@@ -147,7 +147,7 @@ class MarketerProfile extends Model
      */
     public function scopeMatchingRequest(Builder $q, CustomerSpecialRequest $r): Builder
     {
-        return $q->whereHas('marketer', fn ($m) => $m->where('marketer_type', 'affiliate')->where('global_status', 'active'))
+        return $q->whereHas('marketer', fn ($m) => $m->whereHas('marketerJobs', fn ($j) => $j->where('key', 'affiliate'))->where('global_status', 'active'))
             ->where('broker_category_id', $r->category_id)
             ->when($r->city_id, fn ($w) => $w->where(function ($c) use ($r) {
                 $c->where('broker_serves_all_cities', true)->orWhere('broker_city_id', $r->city_id);

@@ -208,7 +208,8 @@
                                 @endphp
                                 <tr>
                                     <td class="px-4 py-3 font-medium text-gray-900">{{ $invitation->marketer?->name ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ $invitation->marketer?->marketer_type ? __('partner.marketer_types.' . $invitation->marketer->marketer_type) : '—' }}</td>
+                                    @php($invitationMarketerType = $invitation->marketer?->marketerJobs->first()?->key)
+                                    <td class="px-4 py-3 text-gray-600">{{ $invitationMarketerType ? __('partner.marketer_types.' . $invitationMarketerType) : '—' }}</td>
                                     <td class="px-4 py-3">
                                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $ist['cls'] }}">
                                             {{ $ist['label'] }}
@@ -275,7 +276,7 @@
                                 :multiple="true"
                                 :select2="true"
                                 :options="$availableMarketers->mapWithKeys(fn ($m) =>
-                                    [$m->id => $m->name . ' (' . __('partner.marketer_types.' . $m->marketer_type) . ')'])->toArray()"
+                                    [$m->id => $m->name . ' (' . __('partner.marketer_types.' . $m->marketerJobs->first()?->key) . ')'])->toArray()"
                             />
                         @endif
 
@@ -392,7 +393,7 @@
                             @php
                                 $sampleMarketer = $sample->invitation?->marketer;
                                 $sampleProfile  = $sampleMarketer?->marketerProfile;
-                                $isInfluencer   = $sampleMarketer?->marketer_type === 'influencer';
+                                $isInfluencer   = $sampleMarketer?->isInfluencer() ?? false;
                             @endphp
                             @if ($isInfluencer && $sampleProfile)
                                 <tr>

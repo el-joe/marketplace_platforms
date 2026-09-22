@@ -12,9 +12,9 @@ use App\Models\AdminListing;
 use App\Models\Attribute;
 use App\Models\MarketerListing;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\VendorListing;
+use App\Services\Ads\PlacementAdService;
 use App\Services\AppContextService;
 use App\Services\BannerService;
 use App\Services\Customer\ListingQueryService;
@@ -23,6 +23,7 @@ use App\Services\ShippingMethodResolverService;
 use App\Services\VariantResolutionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ProductDetailController extends Controller
 {
@@ -32,9 +33,8 @@ class ProductDetailController extends Controller
         private readonly ShippingMethodResolverService $shippingMethodResolver,
         private readonly ListingQueryService $listings,
         private readonly BannerService $bannerService,
-        private readonly \App\Services\Ads\PlacementAdService $placementAds,
-    ) {
-    }
+        private readonly PlacementAdService $placementAds,
+    ) {}
 
     public function show(string $variantId, string $listingId, Request $request): JsonResponse
     {
@@ -45,19 +45,19 @@ class ProductDetailController extends Controller
             ->whereNull('deleted_at')
             ->first();
 
-        if (!$variant) {
+        if (! $variant) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
         $product = $variant->product;
 
-        if (!$product || $product->status !== ProductStatus::Active || $product->is_hidden) {
+        if (! $product || $product->status !== ProductStatus::Active || $product->is_hidden) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
         $countryId = $this->resolveCountryId($request);
 
-        if (!$countryId) {
+        if (! $countryId) {
             return ApiResponse::error(__('customer_api.product_detail.country_not_found'), [], 404);
         }
 
@@ -65,19 +65,18 @@ class ProductDetailController extends Controller
 
         [$listing, $listingType] = $this->resolveListing($variantId, $listingId, $countryId, $isNawyNow);
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('customer_api.product_detail.listing_not_found'), [], 404);
         }
 
-        $url = route('customer.listing.show', [$request->attributes->get('country')->site_code, $variant->id .'--' . $listing->id]);
-        $url_param = $variant->id .'--' . $listing->id;
+        $url = route('customer.listing.show', [$request->attributes->get('country')->site_code, $variant->id.'--'.$listing->id]);
+        $url_param = $variant->id.'--'.$listing->id;
 
         $shippingListingType = $listingType === 'vendor' ? 'vendor_listing' : 'admin_listing';
 
         $shippingMethods = $this->shippingMethodResolver->getAvailableForListing($listing->id, $shippingListingType, $countryId);
 
-        $shippingMethodsData = $shippingMethods->map(fn ($method) =>
-            $this->shippingMethodResolver->buildMethodResponse($method, $countryId, $method->is_default)
+        $shippingMethodsData = $shippingMethods->map(fn ($method) => $this->shippingMethodResolver->buildMethodResponse($method, $countryId, $method->is_default)
         )->values()->all();
 
         $selectedShippingMethodId = $this->resolveSelectedShippingMethodId($request, $shippingMethods);
@@ -86,7 +85,7 @@ class ProductDetailController extends Controller
 
         $otherSellers = $isNawyNow
             ? []
-            : array_values(array_filter($unifiedListings, fn (array $l) => !$l['is_current_listing']));
+            : array_values(array_filter($unifiedListings, fn (array $l) => ! $l['is_current_listing']));
 
         $customerId = auth('customer')->id();
         $isWishlisted = $customerId
@@ -122,7 +121,7 @@ class ProductDetailController extends Controller
         ]);
     }
 
-    private function resolveSelectedShippingMethodId(Request $request, \Illuminate\Support\Collection $shippingMethods): ?string
+    private function resolveSelectedShippingMethodId(Request $request, Collection $shippingMethods): ?string
     {
         $requestedId = $request->query('shipping_method_id');
 
@@ -144,13 +143,13 @@ class ProductDetailController extends Controller
             ->where('is_hidden', false)
             ->first();
 
-        if (!$product) {
+        if (! $product) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
         $variant = $this->resolveDefaultVariant($product->id);
 
-        if (!$variant) {
+        if (! $variant) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
@@ -167,7 +166,7 @@ class ProductDetailController extends Controller
             ->where('is_hidden', false)
             ->first();
 
-        if (!$product) {
+        if (! $product) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
@@ -178,11 +177,11 @@ class ProductDetailController extends Controller
             ->whereNull('deleted_at')
             ->first();
 
-        if (!$variant) {
+        if (! $variant) {
             $variant = $this->resolveDefaultVariant($product->id);
         }
 
-        if (!$variant) {
+        if (! $variant) {
             return ApiResponse::error(__('customer_api.product_detail.not_found'), [], 404);
         }
 
@@ -214,7 +213,7 @@ class ProductDetailController extends Controller
     {
         $countryId = $this->resolveCountryId($request);
 
-        if (!$countryId) {
+        if (! $countryId) {
             return ApiResponse::error(__('customer_api.product_detail.country_not_found'), [], 404);
         }
 
@@ -224,13 +223,12 @@ class ProductDetailController extends Controller
             ? $this->variantResolutionService->bestAdminListing($variant->id, $countryId)
             : $this->variantResolutionService->bestVendorListing($variant->id, $countryId);
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('customer_api.product_detail.listing_not_found'), [], 404);
         }
 
-        $url = route('customer.listing.show', [$request->attributes->get('country')->site_code, $variant->id .'--' . $listing->id]);
-        $url_param = $variant->id .'--' . $listing->id;
-
+        $url = route('customer.listing.show', [$request->attributes->get('country')->site_code, $variant->id.'--'.$listing->id]);
+        $url_param = $variant->id.'--'.$listing->id;
 
         if ($request->wantsJson() || $request->header('X-Requested-From') === 'mobile-app') {
             return ApiResponse::success(['redirect_url' => $url, 'url_param' => $url_param]);
@@ -250,7 +248,7 @@ class ProductDetailController extends Controller
                 ->where('status', AdminListingStatus::Active)
                 ->first();
 
-            if (!$listing) {
+            if (! $listing) {
                 $listing = $this->variantResolutionService->bestAdminListing($variantId, $countryId);
             }
 
@@ -262,7 +260,7 @@ class ProductDetailController extends Controller
             ->whereIn('status', [VendorListingStatus::Active, VendorListingStatus::OutOfStock])
             ->first();
 
-        if (!$listing) {
+        if (! $listing) {
             $listing = $this->variantResolutionService->bestVendorListing($variantId, $countryId);
         }
 
@@ -292,9 +290,9 @@ class ProductDetailController extends Controller
             'short_desc_en' => $product->short_desc_en,
             'short_desc_ar' => $product->short_desc_ar,
             'brand' => $product->brand ? [
-                'id'       => $product->brand->id,
-                'name_en'  => $product->brand->name_en,
-                'name_ar'  => $product->brand->name_ar,
+                'id' => $product->brand->id,
+                'name_en' => $product->brand->name_en,
+                'name_ar' => $product->brand->name_ar,
                 'logo_url' => $product->brand->logo_url,
             ] : null,
             'category' => $product->category ? [
@@ -419,8 +417,8 @@ class ProductDetailController extends Controller
                         : $this->variantResolutionService->bestVendorListing($targetVariant->id, $countryId);
                 }
 
-                $url = route('customer.listing.show', [request()->attributes->get('country')->site_code,$targetVariant->id .'--' . $targetListing->id]);
-                $url_param = $targetVariant->id .'--' . $targetListing->id;
+                $url = route('customer.listing.show', [request()->attributes->get('country')->site_code, $targetVariant->id.'--'.$targetListing->id]);
+                $url_param = $targetVariant->id.'--'.$targetListing->id;
 
                 return [
                     'attribute_value_id' => $attributeValue->id,
@@ -471,7 +469,7 @@ class ProductDetailController extends Controller
             ->orderByDesc('score')
             ->get();
 
-        $marketerListings = MarketerListing::with(['marketer:id,name,marketer_type'])
+        $marketerListings = MarketerListing::with(['marketer:id,name', 'marketer.marketerJobs'])
             ->where('product_variant_id', $variantId)
             ->where('country_id', $countryId)
             ->where('status', 'active')

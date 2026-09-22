@@ -9,6 +9,7 @@ use App\Models\MarketerListing;
 use App\Models\MarketerProfile;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\MarketerProfileCache;
+use App\Services\Customer\PromoBadgeResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -32,12 +33,13 @@ class MarketerProfileController extends Controller
             ->whereNotNull('profile_slug')
             ->whereHas('marketer', fn ($q) => $q->where('global_status', 'active'))
             ->with([
-                'marketer:id,name,marketer_type,country_id,total_campaigns,total_conversions',
+                'marketer:id,name,country_id,total_campaigns,total_conversions',
+                'marketer.marketerJobs',
                 'bannerFile',
                 'avatarFile',
             ])
             ->addSelect(['marketer_profiles.*', 'ad_price', 'ad_price_currency'])
-            ->when($request->type, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('marketer_type', $request->type)))
+            ->when($request->type, fn ($q) => $q->whereHas('marketer.marketerJobs', fn ($s) => $s->where('key', $request->type)))
             ->when($countryId, fn ($q) => $q->whereHas('marketer', fn ($s) => $s->where('country_id', $countryId)))
             ->orderByDesc('total_conversions')
             ->paginate((int) $request->query('per_page', 24));
@@ -48,30 +50,30 @@ class MarketerProfileController extends Controller
             $marketer = $profile->marketer;
 
             return [
-                'id'                => $marketer->id,
-                'name'              => $marketer->name,
-                'marketer_type'     => $marketer->marketer_type,
-                'profile_slug'      => $profile->profile_slug,
-                'profile_url'       => $frontendUrl . '/marketer/' . $profile->profile_slug,
-                'banner_url'        => $profile->bannerFile?->url,
-                'avatar_url'        => $profile->avatarFile?->url,
-                'total_campaigns'   => $marketer->total_campaigns,
+                'id' => $marketer->id,
+                'name' => $marketer->name,
+                'marketer_type' => $marketer->marketerJobs->first()?->key,
+                'profile_slug' => $profile->profile_slug,
+                'profile_url' => $frontendUrl.'/marketer/'.$profile->profile_slug,
+                'banner_url' => $profile->bannerFile?->url,
+                'avatar_url' => $profile->avatarFile?->url,
+                'total_campaigns' => $marketer->total_campaigns,
                 'total_conversions' => $marketer->total_conversions,
-                'avatar_initial'    => mb_substr($marketer->name, 0, 1),
-                'specialty_ar'      => $profile->specialty_ar,
-                'specialty_en'      => $profile->specialty_en,
-                'ad_price'          => $profile->ad_price,
+                'avatar_initial' => mb_substr($marketer->name, 0, 1),
+                'specialty_ar' => $profile->specialty_ar,
+                'specialty_en' => $profile->specialty_en,
+                'ad_price' => $profile->ad_price,
                 'ad_price_currency' => $profile->ad_price_currency,
             ];
         })->values()->all();
 
         return ApiResponse::success([
             'items' => $items,
-            'meta'  => [
+            'meta' => [
                 'current_page' => $profiles->currentPage(),
-                'last_page'    => $profiles->lastPage(),
-                'per_page'     => $profiles->perPage(),
-                'total'        => $profiles->total(),
+                'last_page' => $profiles->lastPage(),
+                'per_page' => $profiles->perPage(),
+                'total' => $profiles->total(),
             ],
         ]);
     }
@@ -88,19 +90,19 @@ class MarketerProfileController extends Controller
         $marketerType = $type === 'brokers' ? 'affiliate' : 'influencer';
         $rows = MarketerProfile::query()
             ->whereNotNull('profile_slug')
-            ->whereHas('marketer', fn ($q) => $q->where('marketer_type', $marketerType)->where('global_status', 'active'))
-            ->with(['marketer:id,name,marketer_type', 'avatarFile', 'brokerCategory', 'brokerCity'])
+            ->whereHas('marketer', fn ($q) => $q->whereHas('marketerJobs', fn ($j) => $j->where('key', $marketerType))->where('global_status', 'active'))
+            ->with(['marketer:id,name', 'avatarFile', 'brokerCategory', 'brokerCity'])
             ->orderBy('id')
             ->paginate(min(48, max(1, (int) $request->query('per_page', 12))));
 
         return ApiResponse::success($rows->through(fn ($p) => [
-            'slug'         => $p->profile_slug,
-            'name'         => $p->marketer?->name,
-            'bio_ar'       => $p->bio_ar,
-            'bio_en'       => $p->bio_en,
+            'slug' => $p->profile_slug,
+            'name' => $p->marketer?->name,
+            'bio_ar' => $p->bio_ar,
+            'bio_en' => $p->bio_en,
             'specialty_ar' => $p->specialty_ar,
             'specialty_en' => $p->specialty_en,
-            'avatar_url'   => $p->avatarFile?->url,
+            'avatar_url' => $p->avatarFile?->url,
             'category_name_ar' => $p->brokerCategory?->name_ar,
             'category_name_en' => $p->brokerCategory?->name_en,
         ]));
@@ -110,12 +112,12 @@ class MarketerProfileController extends Controller
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
 
-        $ownPage      = max(1, (int) $request->query('own_page', 1));
+        $ownPage = max(1, (int) $request->query('own_page', 1));
         $campaignPage = max(1, (int) $request->query('campaign_page', 1));
-        $perPage      = min(24, max(1, (int) $request->query('per_page', 12)));
+        $perPage = min(24, max(1, (int) $request->query('per_page', 12)));
 
-        $headerKey = MarketerProfileCache::key($slug, $countryId) . ':header';
-        $header    = Cache::get($headerKey);
+        $headerKey = MarketerProfileCache::key($slug, $countryId).':header';
+        $header = Cache::get($headerKey);
 
         if ($header === null) {
             $header = $this->buildHeader($request, $slug);
@@ -129,7 +131,7 @@ class MarketerProfileController extends Controller
 
         $country = Country::find($header['_country_id']);
 
-        if (!$country) {
+        if (! $country) {
             return ApiResponse::error('Marketer not found.', [], 404);
         }
 
@@ -146,7 +148,7 @@ class MarketerProfileController extends Controller
 
         $response = $header;
         unset($response['_marketer_id'], $response['_country_id']);
-        $response['own_listings']      = $ownListings;
+        $response['own_listings'] = $ownListings;
         $response['campaign_listings'] = $campaignListings;
 
         return ApiResponse::success($response);
@@ -156,7 +158,8 @@ class MarketerProfileController extends Controller
     {
         $profile = MarketerProfile::where('profile_slug', $slug)
             ->with([
-                'marketer:id,name,marketer_type,country_id,global_status,total_campaigns,total_conversions',
+                'marketer:id,name,country_id,global_status,total_campaigns,total_conversions',
+                'marketer.marketerJobs',
                 'marketer.country:id,name_en,name_ar,currency_code',
                 'bannerFile',
                 'avatarFile',
@@ -165,7 +168,7 @@ class MarketerProfileController extends Controller
             ])
             ->first();
 
-        if (!$profile || !$profile->marketer || ($profile->marketer->global_status?->value ?? $profile->marketer->global_status) !== 'active') {
+        if (! $profile || ! $profile->marketer || ($profile->marketer->global_status?->value ?? $profile->marketer->global_status) !== 'active') {
             return null;
         }
 
@@ -175,41 +178,43 @@ class MarketerProfileController extends Controller
             ?? Country::find($marketer->country_id)
             ?? Country::where('is_active', true)->first();
 
-        if (!$country) {
+        if (! $country) {
             return null;
         }
 
         $measurements = null;
         if ($marketer->isInfluencer()) {
             $measurements = [
-                'clothing_size'     => $profile->clothing_size,
-                'shirt_size'        => $profile->shirt_size,
-                'pants_size'        => $profile->pants_size,
-                'dress_size'        => $profile->dress_size,
-                'abaya_size'        => $profile->abaya_size,
-                'shoe_size'         => $profile->shoe_size,
-                'shoe_size_system'  => $profile->shoe_size_system,
-                'chest_cm'                  => $profile->chest_cm,
-                'waist_cm'                  => $profile->waist_cm,
-                'hip_cm'                    => $profile->hip_cm,
-                'height_cm'                 => $profile->height_cm,
-                'item_length_cm'            => $profile->item_length_cm,
-                'sleeve_from_neck_cm'       => $profile->sleeve_from_neck_cm,
-                'sleeve_from_shoulder_cm'   => $profile->sleeve_from_shoulder_cm,
-                'sleeve_width_cm'           => $profile->sleeve_width_cm,
-                'notes'                     => $profile->measurements_notes,
+                'clothing_size' => $profile->clothing_size,
+                'shirt_size' => $profile->shirt_size,
+                'pants_size' => $profile->pants_size,
+                'dress_size' => $profile->dress_size,
+                'abaya_size' => $profile->abaya_size,
+                'shoe_size' => $profile->shoe_size,
+                'shoe_size_system' => $profile->shoe_size_system,
+                'chest_cm' => $profile->chest_cm,
+                'waist_cm' => $profile->waist_cm,
+                'hip_cm' => $profile->hip_cm,
+                'height_cm' => $profile->height_cm,
+                'item_length_cm' => $profile->item_length_cm,
+                'sleeve_from_neck_cm' => $profile->sleeve_from_neck_cm,
+                'sleeve_from_shoulder_cm' => $profile->sleeve_from_shoulder_cm,
+                'sleeve_width_cm' => $profile->sleeve_width_cm,
+                'notes' => $profile->measurements_notes,
             ];
         }
 
         $brokerSpecialization = null;
         if ($marketer->isAffiliate()) {
             $brokerSpecialization = [
-                'category_id'       => $profile->broker_category_id,
-                'category_name_en'  => $profile->brokerCategory?->name_en,
-                'category_name_ar'  => $profile->brokerCategory?->name_ar,
-                'city_id'           => $profile->broker_city_id,
-                'city_name_en'      => $profile->brokerCity?->name_en,
-                'city_name_ar'      => $profile->brokerCity?->name_ar,
+                'categories' => $marketer->categoriesFor('affiliate', 'product')->map(fn ($c) => [
+                    'category_id' => $c->id,
+                    'category_name_en' => $c->name_en,
+                    'category_name_ar' => $c->name_ar,
+                ])->values()->all(),
+                'city_id' => $profile->broker_city_id,
+                'city_name_en' => $profile->brokerCity?->name_en,
+                'city_name_ar' => $profile->brokerCity?->name_ar,
                 'serves_all_cities' => $profile->broker_serves_all_cities,
             ];
         }
@@ -222,36 +227,36 @@ class MarketerProfileController extends Controller
 
         return [
             'marketer' => [
-                'id'                => $marketer->id,
-                'name'              => $marketer->name,
-                'marketer_type'     => $marketer->marketer_type,
-                'country'           => $marketer->country ? [
+                'id' => $marketer->id,
+                'name' => $marketer->name,
+                'marketer_type' => $marketer->marketerJobs->first()?->key,
+                'country' => $marketer->country ? [
                     'name_en' => $marketer->country->name_en,
                     'name_ar' => $marketer->country->name_ar,
                 ] : null,
-                'total_campaigns'   => $marketer->total_campaigns,
+                'total_campaigns' => $marketer->total_campaigns,
                 'total_conversions' => $marketer->total_conversions,
             ],
             'profile' => [
-                'slug'            => $profile->profile_slug,
-                'bio_ar'          => $profile->bio_ar,
-                'bio_en'          => $profile->bio_en,
-                'specialty_ar'    => $profile->specialty_ar,
-                'specialty_en'    => $profile->specialty_en,
-                'video_url'       => $profile->video_url,
-                'social_links'    => $profile->social_links ?? [],
+                'slug' => $profile->profile_slug,
+                'bio_ar' => $profile->bio_ar,
+                'bio_en' => $profile->bio_en,
+                'specialty_ar' => $profile->specialty_ar,
+                'specialty_en' => $profile->specialty_en,
+                'video_url' => $profile->video_url,
+                'social_links' => $profile->social_links ?? [],
                 'contact_details' => $profile->contact_details ?? [],
-                'banner_url'      => $profile->bannerFile?->url,
-                'avatar_url'      => $profile->avatarFile?->url,
-                'qr_code_url'     => $qrUrl,
-                'profile_url'     => $frontendUrl . '/marketer/' . $profile->profile_slug,
-                'ad_price'        => $profile->ad_price,
+                'banner_url' => $profile->bannerFile?->url,
+                'avatar_url' => $profile->avatarFile?->url,
+                'qr_code_url' => $qrUrl,
+                'profile_url' => $frontendUrl.'/marketer/'.$profile->profile_slug,
+                'ad_price' => $profile->ad_price,
                 'ad_price_currency' => $profile->ad_price_currency,
-                'measurements'    => $measurements,
+                'measurements' => $measurements,
                 'broker_specialization' => $brokerSpecialization,
             ],
             '_marketer_id' => $marketer->id,
-            '_country_id'  => $country->id,
+            '_country_id' => $country->id,
         ];
     }
 
@@ -269,7 +274,7 @@ class MarketerProfileController extends Controller
         int $perPage,
         array $wishlistIds,
     ): array {
-        $ownOffset      = ($ownPage - 1) * $perPage;
+        $ownOffset = ($ownPage - 1) * $perPage;
         $campaignOffset = ($campaignPage - 1) * $perPage;
 
         $eagerLoads = [
@@ -279,7 +284,8 @@ class MarketerProfileController extends Controller
             'productVariant.product.images',
             'productVariant.product.category:id,name_en,name_ar,slug',
             'productVariant.product.brand:id,name_en,name_ar,slug,logo_media_id',
-            'marketer:id,name,marketer_type',
+            'marketer:id,name',
+            'marketer.marketerJobs',
             'marketer.marketerProfile:id,marketer_id,profile_slug',
         ];
 
@@ -321,7 +327,7 @@ class MarketerProfileController extends Controller
 
         $campaignTotal = $campaignBaseQuery()->count();
 
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings(collect($ownListings)->concat($campaignListings)));
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings(collect($ownListings)->concat($campaignListings)));
         $ownCards = collect($ownListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
             $card = $this->listings->toMarketerCardShape(
                 listing: $listing,
@@ -330,6 +336,7 @@ class MarketerProfileController extends Controller
                 isWishlisted: in_array($listing->id, $wishlistIds, true),
             );
             $card['campaign'] = null;
+
             return $card;
         })->values()->all();
 
@@ -341,33 +348,34 @@ class MarketerProfileController extends Controller
                 isWishlisted: in_array($listing->id, $wishlistIds, true),
             );
             $card['campaign'] = $listing->invitation?->campaign ? [
-                'id'          => $listing->invitation->campaign->id,
-                'title'       => $listing->invitation->campaign->title,
+                'id' => $listing->invitation->campaign->id,
+                'title' => $listing->invitation->campaign->title,
                 'vendor_name' => $listing->invitation->campaign->vendor?->store_name,
             ] : null;
+
             return $card;
         })->values()->all();
 
-        $ownLastPage      = (int) max(1, ceil($ownTotal / $perPage));
+        $ownLastPage = (int) max(1, ceil($ownTotal / $perPage));
         $campaignLastPage = (int) max(1, ceil($campaignTotal / $perPage));
 
         return [
             [
                 'items' => $ownCards,
-                'meta'  => [
+                'meta' => [
                     'current_page' => $ownPage,
-                    'last_page'    => $ownLastPage,
-                    'per_page'     => $perPage,
-                    'total'        => $ownTotal,
+                    'last_page' => $ownLastPage,
+                    'per_page' => $perPage,
+                    'total' => $ownTotal,
                 ],
             ],
             [
                 'items' => $campaignCards,
-                'meta'  => [
+                'meta' => [
                     'current_page' => $campaignPage,
-                    'last_page'    => $campaignLastPage,
-                    'per_page'     => $perPage,
-                    'total'        => $campaignTotal,
+                    'last_page' => $campaignLastPage,
+                    'per_page' => $perPage,
+                    'total' => $campaignTotal,
                 ],
             ],
         ];

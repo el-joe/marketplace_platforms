@@ -19,13 +19,13 @@ class CampaignInvitationAcceptedNotification extends BaseDatabaseBroadcastNotifi
         $marketerName = $this->invitation->marketer?->name;
 
         return [
-            'title'          => 'قبول دعوة الحملة',
-            'message'        => "قبل الماركتر {$marketerName} دعوة حملتك.",
-            'url'            => route('partner.marketer-campaigns.show', $this->invitation->campaign_id),
-            'campaign_id'    => $this->invitation->campaign_id,
-            'invitation_id'  => $this->invitation->id,
-            'marketer_name'  => $marketerName,
-            'marketer_type'  => $this->invitation->marketer?->marketer_type,
+            'title' => 'قبول دعوة الحملة',
+            'message' => "قبل الماركتر {$marketerName} دعوة حملتك.",
+            'url' => route('partner.marketer-campaigns.show', $this->invitation->campaign_id),
+            'campaign_id' => $this->invitation->campaign_id,
+            'invitation_id' => $this->invitation->id,
+            'marketer_name' => $marketerName,
+            'marketer_type' => $this->invitation->marketer?->marketerJobs->first()?->key,
         ];
     }
 
