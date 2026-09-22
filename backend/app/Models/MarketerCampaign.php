@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MarketerCampaign extends Model
@@ -16,6 +17,7 @@ class MarketerCampaign extends Model
         'vendor_id', 'owner_type', 'owner_id', 'requested_by_marketer_id',
         'vendor_listing_id', 'admin_listing_id',
         'travel_package_id', 'classified_listing_id', 'campaign_category',
+        'product_category_selection_mode', 'classified_category_selection_mode',
         'country_id', 'currency', 'commission_type',
         'max_commission_budget', 'commission_budget_spent', 'platform_commission_amount', 'marketer_commission_amount',
         'requested_marketer_vendor_ids', // Now stores Marketer UUIDs (previously vendor UUIDs with marketer_type)
@@ -83,6 +85,15 @@ class MarketerCampaign extends Model
         return $this->hasMany(MarketerCampaignTieredRule::class, 'campaign_id')->orderBy('from_sale_number');
     }
 
+    /**
+     * Include/exclude category entries for this campaign's
+     * product_category_selection_mode / classified_category_selection_mode.
+     */
+    public function categoryRules(): HasMany
+    {
+        return $this->hasMany(MarketerCampaignCategoryRule::class, 'marketer_campaign_id');
+    }
+
     public function conversions(): HasMany
     {
         return $this->hasMany(MarketerCampaignConversion::class, 'campaign_id');
@@ -93,7 +104,7 @@ class MarketerCampaign extends Model
         return $this->hasMany(MarketerCampaignSample::class, 'campaign_id');
     }
 
-    public function invitedMarketers(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    public function invitedMarketers(): HasManyThrough
     {
         return $this->hasManyThrough(
             Marketer::class,
@@ -149,18 +160,18 @@ class MarketerCampaign extends Model
     public function getPromotedItem(): VendorListing|AdminListing|TravelPackage|ClassifiedListing|null
     {
         return match ($this->campaign_category) {
-            'travel'     => $this->travelPackage,
+            'travel' => $this->travelPackage,
             'classified' => $this->classifiedListing,
-            default      => $this->vendor_listing_id ? $this->vendorListing : $this->adminListing,
+            default => $this->vendor_listing_id ? $this->vendorListing : $this->adminListing,
         };
     }
 
     public function getPromotedTitle(): string
     {
         return match ($this->campaign_category) {
-            'travel'     => $this->travelPackage?->title_ar ?? $this->title ?? '—',
+            'travel' => $this->travelPackage?->title_ar ?? $this->title ?? '—',
             'classified' => $this->classifiedListing?->title_ar ?? $this->title ?? '—',
-            default      => $this->vendorListing?->productVariant?->product?->name_ar
+            default => $this->vendorListing?->productVariant?->product?->name_ar
                          ?? $this->adminListing?->productVariant?->product?->name_ar
                          ?? $this->title ?? '—',
         };

@@ -50,9 +50,20 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach($listings as $listing)
                     @php
-                        $product = $listing->productVariant->product;
-                        $img = $listing->productVariant->images->first()?->url
-                            ?? $product->images->first()?->url;
+                        $isClassified = ($listing->listing_category ?? 'product') === 'classified';
+                        $product = $isClassified ? null : $listing->productVariant?->product;
+                        $img = $isClassified
+                            ? null
+                            : ($listing->productVariant?->images->first()?->url ?? $product?->images->first()?->url);
+
+                        $priceEditable = true;
+                        if ($isClassified) {
+                            $classifiedCategoryId = $listing->classifiedListing?->classified_category_id;
+                            $listingPrice = $classifiedCategoryId
+                                ? \App\Models\OpenMarketListingPrice::where('classified_category_id', $classifiedCategoryId)->first()
+                                : null;
+                            $priceEditable = (bool) $listingPrice?->allow_marketer_override;
+                        }
                     @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3">
@@ -61,8 +72,13 @@
                                     <img src="{{ $img }}" alt="" class="w-10 h-10 object-cover rounded-lg border">
                                 @endif
                                 <div>
-                                    <div class="font-semibold text-gray-900 text-xs">{{ Str::limit($product->name_ar, 40) }}</div>
-                                    <div class="text-gray-400 text-xs">{{ $listing->productVariant->sku }}</div>
+                                    @if($isClassified)
+                                        <div class="font-semibold text-gray-900 text-xs">{{ Str::limit($listing->classifiedListing?->title_ar ?? '—', 40) }}</div>
+                                        <div class="text-gray-400 text-xs">إعلان سوق مفتوح</div>
+                                    @else
+                                        <div class="font-semibold text-gray-900 text-xs">{{ Str::limit($product?->name_ar ?? '—', 40) }}</div>
+                                        <div class="text-gray-400 text-xs">{{ $listing->productVariant?->sku }}</div>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -104,7 +120,8 @@
                                 <a href="{{ route('marketer.listings.promo-badges.edit', $listing) }}"
                                    class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 hover:opacity-80">{{ __('marketer.promo_badges_button') }}</a>
 
-                                {{-- Update price inline --}}
+                                {{-- Update price inline — for a classified listing, only when the admin allowed marketer price override for that category --}}
+                                @if($priceEditable)
                                 <form method="POST" action="{{ route('marketer.listings.update-price', $listing) }}"
                                       x-data="{ open: false }" class="relative">
                                     @csrf @method('PATCH')
@@ -115,10 +132,13 @@
                                     <div x-show="open" x-cloak
                                          class="absolute left-0 top-8 z-20 bg-white border rounded-lg shadow p-3 w-44 space-y-2">
                                         <input type="number" name="price" value="{{ $listing->price }}" min="1"
+                                               @if($isClassified && $listingPrice?->min_price) min="{{ $listingPrice->min_price }}" @endif
+                                               @if($isClassified && $listingPrice?->max_price) max="{{ $listingPrice->max_price }}" @endif
                                                placeholder="السعر" class="w-full border rounded px-2 py-1 text-xs">
                                         <button type="submit" class="w-full bg-yellow-400 text-gray-900 text-xs font-bold py-1 rounded">حفظ</button>
                                     </div>
                                 </form>
+                                @endif
 
                                 {{-- Delete --}}
                                 @if(!$listing->invitation_id)

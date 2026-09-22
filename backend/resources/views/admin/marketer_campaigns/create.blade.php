@@ -80,6 +80,26 @@
             </div>
         </x-card>
 
+        <x-card title="نطاق الأقسام (منتجات / سوق مفتوح)">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="space-y-2">
+                    <x-form.select name="product_category_selection_mode" id="product_category_selection_mode"
+                        label="أقسام المنتجات"
+                        :options="['all' => 'كل الأقسام', 'include' => 'أقسام محددة (تضمين)', 'exclude' => 'كل الأقسام باستثناء']" />
+                    <x-form.select name="product_category_ids" id="product_category_ids" label="اختر الأقسام" :select2="true" :multiple="true"
+                        :options="$categories->mapWithKeys(fn($c) => [$c->id => $c->name_ar])->toArray()" />
+                </div>
+
+                <div class="space-y-2">
+                    <x-form.select name="classified_category_selection_mode" id="classified_category_selection_mode"
+                        label="أقسام السوق المفتوح"
+                        :options="['all' => 'كل الأقسام', 'include' => 'أقسام محددة (تضمين)', 'exclude' => 'كل الأقسام باستثناء']" />
+                    <x-form.select name="classified_category_ids" id="classified_category_ids" label="اختر الأقسام" :select2="true" :multiple="true"
+                        :options="$classifiedCategories->mapWithKeys(fn($c) => [$c->id => $c->name_ar])->toArray()" />
+                </div>
+            </div>
+        </x-card>
+
         <x-card title="{{ __('admin.marketer_campaigns.notes') }}">
             <div class="grid grid-cols-1 gap-5">
                 <x-form-input name="title" label="{{ __('admin.marketer_campaigns.campaign_title') }}" />

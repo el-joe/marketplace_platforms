@@ -1038,6 +1038,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->middleware('admin.permission:marketer_campaigns.create');
         Route::patch('/{marketerCampaign}/samples/{sample}', [MarketerCampaignController::class, 'updateSampleStatus'])->name('samples.update');
         Route::patch('/{marketerCampaign}/invitations/{invitation}/mark-fee-paid', [MarketerCampaignController::class, 'markInvitationFeePaid'])->name('invitations.mark-fee-paid');
+        Route::post('/{marketerCampaign}/category-rules/sync', [MarketerCampaignController::class, 'syncCategoryRules'])->name('category-rules.sync')
+            ->middleware('admin.permission:marketer_campaigns.create');
     });
 
     // ─── Marketer Settings (Commission & Fees) ────────────────────────────────────

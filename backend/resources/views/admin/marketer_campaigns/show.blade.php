@@ -184,6 +184,31 @@
                 @endif
             </div>
         </x-card>
+
+        <x-card title="نطاق الأقسام (منتجات / سوق مفتوح)">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                @foreach([['product', 'category', 'أقسام المنتجات', $categories], ['classified', 'classifiedCategory', 'أقسام السوق المفتوح', $classifiedCategories]] as [$type, $relation, $label, $options])
+                <form method="POST" action="{{ route('admin.marketer-campaigns.category-rules.sync', $marketerCampaign) }}" class="space-y-2 border rounded-lg p-3">
+                    @csrf
+                    <input type="hidden" name="category_type" value="{{ $type }}">
+                    <div class="text-sm font-semibold text-gray-700">{{ $label }}</div>
+                    <select name="selection_mode" class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
+                        @php($currentMode = $type === 'product' ? $marketerCampaign->product_category_selection_mode : $marketerCampaign->classified_category_selection_mode)
+                        <option value="all" @selected($currentMode === 'all')>كل الأقسام</option>
+                        <option value="include" @selected($currentMode === 'include')>أقسام محددة (تضمين)</option>
+                        <option value="exclude" @selected($currentMode === 'exclude')>كل الأقسام باستثناء</option>
+                    </select>
+                    <select name="category_ids[]" multiple data-select2-init class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
+                        @php($selectedIds = $marketerCampaign->categoryRules->pluck($relation)->filter()->pluck('id')->all())
+                        @foreach($options as $option)
+                            <option value="{{ $option->id }}" @selected(in_array($option->id, $selectedIds, true))>{{ $option->name_ar }}</option>
+                        @endforeach
+                    </select>
+                    <button class="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">حفظ</button>
+                </form>
+                @endforeach
+            </div>
+        </x-card>
     </div>
 
     {{-- ── Approval ──────────────────────────────────────────────────────── --}}

@@ -548,7 +548,14 @@ class MarketerCampaignService
             return null;
         }
 
-        $platformCommission = $categoryRate ? $categoryRate->resolveAmount($marketerCommission) : 0;
+        $platformCommission = $categoryRate
+            ? $this->computeCommissionAmount(
+                $categoryRate->commission_mode,
+                $categoryRate->commission_flat_amount,
+                (float) $categoryRate->commission_rate,
+                $marketerCommission
+            )
+            : 0;
 
         return [
             'marketer_commission_amount' => $marketerCommission,
@@ -588,12 +595,37 @@ class MarketerCampaignService
             return null;
         }
 
-        $platformCommission = $categoryRate ? $categoryRate->resolveAmount($marketerCommission) : 0;
+        $platformCommission = $categoryRate
+            ? $this->computeCommissionAmount(
+                $categoryRate->commission_mode,
+                $categoryRate->commission_flat_amount,
+                (float) $categoryRate->commission_rate,
+                $marketerCommission
+            )
+            : 0;
 
         return [
             'marketer_commission_amount' => $marketerCommission,
             'platform_commission_amount' => $platformCommission,
         ];
+    }
+
+    /**
+     * Shared commission computation used by both the product-category and
+     * open-market-category commission resolution paths above, mirroring
+     * MarketerCategoryCommission::resolveAmount() /
+     * OpenMarketCategoryCommission::resolveAmount() so all three stay
+     * consistent.
+     *
+     * @param  string  $mode  fixed | percentage | both
+     */
+    private function computeCommissionAmount(string $mode, ?int $flat, float $rate, int $base): int
+    {
+        return match ($mode) {
+            'fixed' => (int) ($flat ?? 0),
+            'both' => (int) ($flat ?? 0) + (int) round($base * ($rate / 100)),
+            default => (int) round($base * ($rate / 100)),
+        };
     }
 
     /**

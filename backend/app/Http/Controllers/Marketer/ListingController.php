@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Country;
+use App\Models\Marketer;
 use App\Models\MarketerListing;
+use App\Models\OpenMarketListingPrice;
 use App\Models\ProductVariant;
 use App\Services\Marketer\MarketerListingAvailabilityService;
+use App\Services\Shared\PromoBadgeSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +18,7 @@ use Illuminate\View\View;
 
 class ListingController extends Controller
 {
-    private function marketer(): \App\Models\Marketer
+    private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
     }
@@ -32,6 +35,7 @@ class ListingController extends Controller
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_ar,name_en',
                 'productVariant.product.brand:id,name_en,name_ar',
+                'classifiedListing:id,classified_category_id,title_ar',
                 'invitation.campaign.vendor:id,store_name',
                 'country:id,name_ar,name_en,currency_code',
             ])
@@ -63,20 +67,20 @@ class ListingController extends Controller
             ->where('product_variants.is_hidden', false)
             ->where(function ($sq) use ($q) {
                 $sq->where('p.name_en', 'like', "%{$q}%")
-                   ->orWhere('p.name_ar', 'like', "%{$q}%")
-                   ->orWhere('product_variants.sku', 'like', "%{$q}%");
+                    ->orWhere('p.name_ar', 'like', "%{$q}%")
+                    ->orWhere('product_variants.sku', 'like', "%{$q}%");
             })
             ->select('product_variants.id', 'product_variants.sku', 'product_variants.variant_name', 'p.name_en', 'p.name_ar')
             ->limit(15)
             ->get();
 
         return response()->json($variants->map(fn ($v) => [
-            'id'           => $v->id,
-            'sku'          => $v->sku,
+            'id' => $v->id,
+            'sku' => $v->sku,
             'variant_name' => $v->variant_name,
-            'name_ar'      => $v->name_ar,
-            'name_en'      => $v->name_en,
-            'display_name' => trim($v->name_en . ' ' . $v->variant_name),
+            'name_ar' => $v->name_ar,
+            'name_en' => $v->name_en,
+            'display_name' => trim($v->name_en.' '.$v->variant_name),
         ]));
     }
 
@@ -85,7 +89,7 @@ class ListingController extends Controller
      */
     public function create(): View
     {
-        $marketer  = $this->marketer();
+        $marketer = $this->marketer();
         $countries = Country::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en', 'currency_code']);
 
         return view('marketer.listings.create', compact('marketer', 'countries'));
@@ -100,10 +104,10 @@ class ListingController extends Controller
 
         $request->validate([
             'product_variant_id' => ['required', 'uuid', 'exists:product_variants,id'],
-            'country_id'         => ['required', 'uuid', 'exists:countries,id'],
-            'price'              => ['required', 'integer', 'min:1'],
-            'compare_at_price'   => ['nullable', 'integer', 'min:1'],
-            'condition'          => ['required', 'in:new,like_new,good,acceptable,refurbished'],
+            'country_id' => ['required', 'uuid', 'exists:countries,id'],
+            'price' => ['required', 'integer', 'min:1'],
+            'compare_at_price' => ['nullable', 'integer', 'min:1'],
+            'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
         ]);
 
         $country = Country::findOrFail($request->country_id);
@@ -143,16 +147,16 @@ class ListingController extends Controller
         }
 
         MarketerListing::create([
-            'marketer_id'        => $marketer->id,
+            'marketer_id' => $marketer->id,
             'product_variant_id' => $request->product_variant_id,
-            'country_id'         => $request->country_id,
-            'source_type'        => $sourceType,
-            'source_listing_id'  => $sourceListing->id,
-            'price'              => (int) $request->price,
-            'compare_at_price'   => $request->compare_at_price ? (int) $request->compare_at_price : null,
-            'currency'           => $country->currency_code,
-            'condition'          => $request->condition,
-            'status'             => 'active',
+            'country_id' => $request->country_id,
+            'source_type' => $sourceType,
+            'source_listing_id' => $sourceListing->id,
+            'price' => (int) $request->price,
+            'compare_at_price' => $request->compare_at_price ? (int) $request->compare_at_price : null,
+            'currency' => $country->currency_code,
+            'condition' => $request->condition,
+            'status' => 'active',
         ]);
 
         return redirect()->route('marketer.listings.index')
@@ -168,7 +172,7 @@ class ListingController extends Controller
         abort_unless($listing->marketer_id === $marketer->id, 403);
 
         $listing->update([
-            'status'        => $listing->status === 'active' ? 'paused' : 'active',
+            'status' => $listing->status === 'active' ? 'paused' : 'active',
             'paused_reason' => $listing->status === 'active' ? 'manual' : null,
         ]);
 
@@ -184,9 +188,38 @@ class ListingController extends Controller
         abort_unless($listing->marketer_id === $marketer->id, 403);
 
         $request->validate([
-            'price'            => ['required', 'integer', 'min:1'],
+            'price' => ['required', 'integer', 'min:1'],
             'compare_at_price' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        // Open-market (classified) listings price against
+        // OpenMarketListingPrice for the listing's classified category
+        // instead of the product-listing bounds below — and only allow the
+        // edit at all when the category's admin-set price allows override.
+        if (($listing->listing_category ?? 'product') === 'classified') {
+            $classifiedCategoryId = $listing->classifiedListing?->classified_category_id;
+
+            $listingPrice = $classifiedCategoryId
+                ? OpenMarketListingPrice::where('classified_category_id', $classifiedCategoryId)->first()
+                : null;
+
+            if (! $listingPrice || ! $listingPrice->allow_marketer_override) {
+                return back()->withErrors(['price' => 'لا يمكن تعديل سعر هذا الإعلان — السعر مثبّت من الإدارة.']);
+            }
+
+            if (! $listingPrice->isPriceInBounds((int) $request->price)) {
+                $bounds = collect([$listingPrice->min_price, $listingPrice->max_price])->filter()->implode(' - ');
+
+                return back()->withErrors(['price' => 'السعر يجب أن يكون ضمن الحدود المسموح بها'.($bounds ? " ({$bounds})" : '').'.']);
+            }
+
+            $listing->update([
+                'price' => (int) $request->price,
+                'compare_at_price' => $request->compare_at_price ? (int) $request->compare_at_price : null,
+            ]);
+
+            return back()->with('success', 'تم تحديث السعر.');
+        }
 
         $source = $availability->loadSource($listing);
         if ($source && ! $availability->isPriceInBounds((int) $request->price, (int) $source->getRawOriginal('price'))) {
@@ -196,7 +229,7 @@ class ListingController extends Controller
         }
 
         $listing->update([
-            'price'            => (int) $request->price,
+            'price' => (int) $request->price,
             'compare_at_price' => $request->compare_at_price ? (int) $request->compare_at_price : null,
         ]);
 
@@ -216,9 +249,9 @@ class ListingController extends Controller
     {
         abort_unless($listing->marketer_id === $this->marketer()->id && $listing->product_variant_id, 403);
 
-        $data = $request->validate(\App\Services\Shared\PromoBadgeSyncService::rules());
+        $data = $request->validate(PromoBadgeSyncService::rules());
 
-        app(\App\Services\Shared\PromoBadgeSyncService::class)->sync(
+        app(PromoBadgeSyncService::class)->sync(
             $listing->productVariant->product_id, 'marketer_listing_id', $listing->id, $data['promo_badges'] ?? [],
         );
 
