@@ -18,6 +18,7 @@ use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerListing;
+use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
@@ -515,6 +516,10 @@ class MarketerCampaignService
      */
     private function resolveDefaultCommission(MarketerCampaign $campaign): ?array
     {
+        if (($campaign->campaign_category ?? 'product') === 'classified') {
+            return $this->resolveDefaultOpenMarketCommission($campaign);
+        }
+
         $category = $campaign->vendorListing?->productVariant?->product?->category
             ?? $campaign->adminListing?->productVariant?->product?->category;
 
@@ -543,7 +548,47 @@ class MarketerCampaignService
             return null;
         }
 
-        $platformCommission = $categoryRate ? (int) round($marketerCommission * ((float) $categoryRate->commission_rate / 100)) : 0;
+        $platformCommission = $categoryRate ? $categoryRate->resolveAmount($marketerCommission) : 0;
+
+        return [
+            'marketer_commission_amount' => $marketerCommission,
+            'platform_commission_amount' => $platformCommission,
+        ];
+    }
+
+    /**
+     * Resolve default commission for an open-market (classified listing)
+     * campaign, using the classified listing's own category tree and the
+     * marketer-agnostic OpenMarketCategoryCommission rules.
+     *
+     * @return array{marketer_commission_amount: int, platform_commission_amount: int}|null
+     */
+    private function resolveDefaultOpenMarketCommission(MarketerCampaign $campaign): ?array
+    {
+        $category = $campaign->classifiedListing?->classifiedCategory;
+
+        if (! $category) {
+            return null;
+        }
+
+        $categoryRate = OpenMarketCategoryCommission::where('classified_category_id', $category->id)
+            ->whereNull('marketer_id')
+            ->first();
+
+        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
+            ->where('category_id', $category->id)
+            ->first();
+
+        $marketerCommission = 0;
+        if ($countrySetting) {
+            $marketerCommission = (int) $countrySetting->affiliate_commission_amount;
+        }
+
+        if ($marketerCommission <= 0) {
+            return null;
+        }
+
+        $platformCommission = $categoryRate ? $categoryRate->resolveAmount($marketerCommission) : 0;
 
         return [
             'marketer_commission_amount' => $marketerCommission,

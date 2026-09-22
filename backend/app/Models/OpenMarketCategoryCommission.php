@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MarketerCategoryCommission extends Model
+class OpenMarketCategoryCommission extends Model
 {
     use HasUuids;
 
     protected $fillable = [
         'marketer_id',
-        'category_id',
+        'classified_category_id',
         'commission_mode',
         'commission_rate',
         'commission_flat_amount',
@@ -23,6 +23,21 @@ class MarketerCategoryCommission extends Model
         'commission_rate' => 'decimal:2',
         'commission_flat_amount' => 'integer',
     ];
+
+    public function marketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class);
+    }
+
+    public function classifiedCategory(): BelongsTo
+    {
+        return $this->belongsTo(ClassifiedCategory::class);
+    }
+
+    public function updatedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'updated_by_admin_id');
+    }
 
     /**
      * Resolve the commission amount owed on a given base amount, according
@@ -36,20 +51,5 @@ class MarketerCategoryCommission extends Model
                 + (int) round($baseAmount * ((float) $this->commission_rate / 100)),
             default => (int) round($baseAmount * ((float) $this->commission_rate / 100)),
         };
-    }
-
-    public function marketer(): BelongsTo
-    {
-        return $this->belongsTo(Marketer::class);
-    }
-
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
-    }
-
-    public function updatedBy(): BelongsTo
-    {
-        return $this->belongsTo(Admin::class, 'updated_by_admin_id');
     }
 }
