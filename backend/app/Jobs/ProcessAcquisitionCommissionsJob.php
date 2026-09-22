@@ -51,7 +51,10 @@ class ProcessAcquisitionCommissionsJob implements ShouldQueue
                 $orderCount = 0;
                 foreach ($orders as $order) {
                     $orderCount++;
-                    $amount = intdiv($order->subtotal * $commission->commission_rate, 10000);
+                    // subtotal is a decimal:4 string (DECIMAL(19,4) column) — use bcmath
+                    // rather than intdiv() to avoid a TypeError on non-int operands and
+                    // to avoid float precision loss on money math.
+                    $amount = bcdiv(bcmul($order->subtotal, (string) $commission->commission_rate, 4), '10000', 4);
 
                     $earning = VendorAcquisitionCommissionEarning::firstOrCreate(
                         ['commission_id' => $commission->id, 'sub_order_id' => $order->id],

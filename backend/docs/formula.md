@@ -175,6 +175,10 @@ shipping_gap = carrier_shipping_cost - shipping_fee   // sub_orders.shipping_gap
 ```
 Only relevant on "exceptional lane" rates. Subsidy rule lookup: `platform_shipping_subsidies`, scoped by zone + method (+ optional warehouse/carrier, most specific wins), **skipped entirely** if parcel weight exceeds `max_subsidy_weight_grams` (gap then falls 100% on vendor — see §12 "no rule" case).
 
+> ⚠️ There are **two separate, non-composing subsidy implementations** — don't confuse them:
+> - `ShippingFeeCalculator.php` (lines 220-298) is the one that produces the **actually persisted** `sub_orders.shipping_gap` / `admin_subsidy_amount` / `vendor_contribution_amount` used everywhere in this doc (§10-12) and in `CheckoutPricingEngine`.
+> - `app/Services/ShippingSubsidyService.php::resolve()` is a **separate class** used only by `CheckoutController` for pre-order-lock, checkout-time display (cart-level fee preview / free-shipping messaging), with its own field names (`raw_fee`, `subsidy_cap`, `platform_subsidy`, `customer_pays`). It does not call, and is not called by, `ShippingFeeCalculator`. Confirm both stay in sync if either is changed — they're not guaranteed to today.
+
 ## 11. Admin subsidy — `sub_orders.admin_subsidy_amount`
 
 ```
@@ -225,6 +229,26 @@ commission = floor(base_amount * rate / 100)
 
 Enum: `CommissionType` = `Percentage | FlatPerOrder | FlatPerClick`.
 
+## 13b. Commission discounts & rate reductions (affect vendor/marketer payout, missing from §7/§13)
+
+Three separate, real mechanisms — all reduce what's owed to the platform, i.e. increase vendor/marketer payout. Not to be confused with §13's marketer-commission-owed formulas.
+
+**a) Vendor commission discount** — admin-granted, ad-hoc. `Vendor.php:120-122`, applied against `grossCommission` (the raw platform commission before discount, → `order_items.platform_commission_after_discount`, schema comment confirms this column exists specifically for this):
+```
+Flat:       discount = min(vendors.commission_discount_flat, grossCommission)
+Percentage: discount = floor(grossCommission * vendors.commission_discount_percentage / 100)
+
+commission_after_discount = grossCommission - discount
+```
+
+**b) Marketer commission discount** — identical shape, `MarketerProfile.php:113-115`, against `marketer_profiles.commission_discount_type/_flat/_percentage`.
+
+**c) Subscription-plan commission-rate reduction** — different mechanism: reduces the **rate**, not a computed amount. `SubscriptionService.php:173-177`:
+```
+effective_commission_pct = round(base_commission_pct * (1 - subscription_plan.commission_discount_pct / 100), 4)
+```
+This feeds into §7's `resolveCommission()` rate resolution *before* the commission amount is computed — so (a)/(b) discount an already-computed amount, while (c) discounts the rate itself. Both can apply to the same vendor; verify whether they stack multiplicatively or whether one supersedes the other before using in finance calculations (not confirmed in this pass).
+
 ## 14. Payment fee / gateway fee — `sub_orders.gateway_fee`
 
 ```
@@ -238,6 +262,19 @@ Charged **once per order** (fixed component not duplicated per vendor), then spl
 
 Config source: `country_payment_gateways.fee_pct` / `fee_fixed`, `is_cod ? 0 : rate`.
 `sub_orders.gateway_fee_rate` stores the effective rate snapshot for audit.
+
+### Refund gateway-fee deduction (real fee, not in §14 originally)
+
+`RefundService.php` (~line 79, 153) — for **customer-fault** refunds only, routed back to the gateway:
+```
+gateway_fee_deducted = original_transaction.gateway_fee * (refund_gross_amount / original_transaction.amount)
+vat_on_fee_share      = gateway_fee_deducted * GATEWAY_FEE_TAX_RATE   // = 0.05, hardcoded constant
+```
+Both amounts are withheld from the refund (customer gets back less than the line total). **Seller/platform/carrier-fault refunds get zero deduction** — the fee is only passed through when the customer caused the return. No restocking fee exists anywhere in the schema (confirmed absent, not merely unimplemented — `RefundService.php:36-39` docblock explicitly notes this). Refunds otherwise **reverse persisted values, they do not recompute** — partial refunds proportionally scale every capture-time account via `reversePartialCapture()`, which is documented as an approximation.
+
+## 14b. FX conversion — recorded for audit, never changes a charged amount
+
+`sub_orders.fx_rate_numerator` / `fx_rate_denominator` / `fx_rate_captured_at` — for international sub-orders, `CurrencyConversionService::convert()` is called and the resulting rate is snapshotted (`CheckoutController.php:1249-1301`). This is **audit/recalculation transparency only** — the customer is always charged in the order's own currency using the listing's normal price; nothing reads these columns back into any pricing formula in this doc. Don't re-investigate this as a missing formula — it's confirmed out of scope for charged amounts.
 
 ## 15. Flash sale & mega deal pricing
 
@@ -273,7 +310,83 @@ Data model exists and is real:
 - Enforce `max_quantity_per_customer` and atomically increment `quantity_sold` (currently a pure race condition even if wired up naively).
 - Decide funding: is the flash discount 100% vendor-absorbed (implied by the schema having no funding-split columns), or should platform be able to co-fund it like `coupons.funded_by`?
 
-## 16. Packaging fee — **does not exist yet**
+## 16. Vendor monthly payout — `payouts.net_amount`
+
+`PayoutCalculationService::calculateForVendor()` (`app/Services/PayoutCalculationService.php:84-206`). This is the settlement layer on top of everything above — it does not recompute order pricing, it aggregates already-persisted `sub_orders.vendor_payout` and nets out post-order deductions.
+
+Eligibility per sub_order: `status = 'completed'`, OR (`delivered` AND return window has passed for all items); COD sub_orders additionally require `cod_remittance_confirmed = true`; excluded if already claimed by a prior `payout_items` row.
+
+```
+gross_sales          = Σ sub_orders.subtotal
+vendor_payout_total   = Σ sub_orders.vendor_payout        // already nets coupon cost, commission, gateway fee, shipping contribution, vendor-owed marketer commission
+
+refunds_deducted      = Σ refunds.amount WHERE vendor_charged_back = true AND status = 'completed'
+chargebacks_deducted  = Σ payment_transactions.amount WHERE type = 'chargeback'
+storage_fees          = Σ fbn_storage_fees + fbn_daily_overage_fees (unsettled)
+packaging_total       = Σ packaging_supply_requests.(total_cost + delivery_fee)
+subscription_total    = Σ vendor_subscription_invoices.amount WHERE status = 'Open'
+
+net_before_ads = vendor_payout_total - refunds_deducted - chargebacks_deducted
+               - storage_fees - packaging_total - subscription_total
+```
+
+**Ad fees are not a simple subtraction** — `selectAdCharges()` (lines 216-245):
+```
+cap = max(0, net_before_ads)
+1. Apply all negative (refund-type) PaidAdCharge rows first, unconditionally.
+2. Apply positive ad charges oldest-first, but only up to `cap`.
+3. Any ad charges that would push the payout negative are left unsettled — they roll forward to the NEXT payout run, not deducted now.
+
+net_amount = max(0, net_before_ads - ad_fees_applied)
+```
+
+## 17. Marketer commission → wallet flow (settlement layer on top of §13)
+
+Two-stage clearing, confirmed accurate end-to-end:
+
+```
+1. Purchase happens → marketer_campaign_conversions row created, status = 'pending'.
+
+2. ApproveMarketerConversionsJob (daily) — app/Jobs/ApproveMarketerConversionsJob.php:36-80
+   Picks conversions where the sub_order is delivered/completed AND
+   (return window passed for all returnable items OR nothing returnable).
+   wallet.pending_balance += commission_amount + flash_sale_bonus_amount
+   conversion.status = 'approved'; wallet_credited_at = now()
+
+3. ReleaseMarketerPendingCommissionJob (daily) — app/Jobs/ReleaseMarketerPendingCommissionJob.php:27-67
+   After `marketer_payout_clearing_days` (setting, default 3) have passed since approved_at:
+   wallet.pending_balance -= amount
+   wallet.balance         += amount   ← now withdrawable
+```
+
+**Tiered commission** (an alternative to §13's flat/percentage): `marketer_campaign_tiered_rules`, ordered by `from_sale_number` — commission amount depends on the marketer's cumulative sale count within the campaign, via `MarketerCampaignConversion belongsTo MarketerCampaignTieredRule`.
+
+**One-time influencer campaign acceptance fee** — `MarketerCampaignService.php:681-710`: when an influencer accepts a campaign invitation, `fee_per_influencer` (from `marketer_influencer_fee_country_settings`, scoped by country) is deducted immediately from the marketer's wallet balance (not pending — real balance), recorded as a `marketer_campaign_invitation_platform_fee` transaction, `invitation.platform_fee_status = 'paid'`.
+
+## 18. Sponsored ads & paid ad slots — vendor/marketer-paid, platform revenue
+
+Two independent systems, both ultimately deducted from vendor payout via §16's `selectAdCharges()`.
+
+**a) Sponsored Products (self-serve CPC/CPM campaigns)** — `app/Services/Customer/SponsoredProductService.php`:
+```
+Auction ranking: ORDER BY quality_score DESC, bid DESC   (lines 131-132, 261-262)
+
+CPM: cost_per_impression = floor(bid / 1000)             (line 327)
+     charged to AdImpression.cost_charged, campaign.budget_spent_total/_today incremented
+     when cost > 0 and budget caps aren't exceeded (chargeCpmImpression, lines 333-353)
+
+Budget guard before any charge: budget_spent_total + charge <= budget_total
+                                  budget_spent_today + charge <= budget_daily (if set)
+```
+> Note: an earlier pass of this doc flagged "CPM always charges 0" as a known bug — **that's incorrect**, verified against current code. CPM billing is implemented exactly as above; `cost_charged = 0` only occurs legitimately for non-CPM campaigns, zero-bid campaigns, or when a charge would exceed budget. CPC's own per-click charge function wasn't pinned to an exact line in this pass — if you need it, grep `PaidAdChargeType::Cpc` usage in `AdBillingService.php` (confirmed present around line 164) as a starting point.
+
+**b) Paid Ad Slots** (banner/placement bookings, separate from self-serve campaigns) — `PaidAdSlot`, `PaidAdBooking`, `PaidAdCharge` models, `app/Jobs/Ads/PaidAdSchedulerJob.php` drives `AdBookingService` (activate/expire/complete) and `AdBillingService.php:40-270` (Fixed/Cpm/Cpc/BudgetReserve charge types) writes `PaidAdCharge` rows.
+
+```
+payout.ad_fees = AdBillingService::unsettledForPayout()   // feeds §16's selectAdCharges() cap logic
+```
+
+## 19. Packaging fee — **does not exist yet**
 
 Grepped the full backend: no `packaging_fee` column or calculation anywhere in order pricing. `PackagingSupply*` models exist but are inventory/procurement (vendors requesting physical packaging materials), unrelated to order-level charges.
 
@@ -296,12 +409,16 @@ This needs a product decision before implementation — flagging here rather tha
 
 ## Admin: Order / Order Details / Finance
 
-Everything in §1–15 above, ungrouped and grouped by vendor/marketer/admin (§7). Specifically the full `orders` + all `sub_orders` rows + all `order_items` rows for that order, including:
+Everything in §1–19 above, ungrouped and grouped by vendor/marketer/admin (§7). Specifically the full `orders` + all `sub_orders` rows + all `order_items` rows for that order, including:
 - Full coupon funding split (vendor vs platform cost)
 - Full shipping breakdown: charged fee, carrier cost, gap, admin subsidy, vendor contribution
 - Gateway fee total and its per-group allocation
-- Marketer commission and its owner (vendor-funded vs platform-funded)
+- Marketer commission and its owner (vendor-funded vs platform-funded), including which of §13's two commission models actually fired
+- Commission discounts/rate reductions applied (§13b: vendor, marketer, subscription-tier)
+- Refund gateway-fee deductions (§14) when applicable
 - Platform net (derived — not a stored column today; compute from §7 formula for the finance view)
+- Vendor payout settlement view (§16) and marketer wallet clearing status (§17) for orders that have reached that stage
+- Ad fees (§18) charged against this order's vendor, if any
 
 ## Vendor / Marketer / Admin listing-scoped views: Order / Order Details / Reports
 

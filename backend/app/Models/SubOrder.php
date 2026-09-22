@@ -8,40 +8,39 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\DeliveryAgentCodSettlement;
 
 class SubOrder extends Model
 {
-    use HasUuids, HasStateMachine;
+    use HasStateMachine, HasUuids;
 
     // ── State machine ─────────────────────────────────────────────────────────
 
     public const STATUS_TRANSITIONS = [
-        'placed'           => ['confirmed', 'cancelled'],
-        'confirmed'        => ['processing', 'cancelled'],
-        'processing'       => ['packed', 'cancelled'],
-        'packed'           => ['shipped', 'cancelled'],
-        'shipped'          => ['out_for_delivery', 'delivered'],
+        'placed' => ['confirmed', 'cancelled'],
+        'confirmed' => ['processing', 'cancelled'],
+        'processing' => ['packed', 'cancelled'],
+        'packed' => ['shipped', 'cancelled'],
+        'shipped' => ['out_for_delivery', 'delivered'],
         'out_for_delivery' => ['delivered'],
-        'delivered'        => ['completed', 'returned'],
-        'completed'        => [],
-        'cancelled'        => [],
-        'returned'         => ['refunded'],
-        'refunded'         => [],
+        'delivered' => ['completed', 'returned'],
+        'completed' => [],
+        'cancelled' => [],
+        'returned' => ['refunded'],
+        'refunded' => [],
     ];
 
     public const STATUS_LABELS = [
-        'placed'           => 'Placed',
-        'confirmed'        => 'Confirmed',
-        'processing'       => 'Processing',
-        'packed'           => 'Packed',
-        'shipped'          => 'Shipped',
+        'placed' => 'Placed',
+        'confirmed' => 'Confirmed',
+        'processing' => 'Processing',
+        'packed' => 'Packed',
+        'shipped' => 'Shipped',
         'out_for_delivery' => 'Out for Delivery',
-        'delivered'        => 'Delivered',
-        'completed'        => 'Completed',
-        'cancelled'        => 'Cancelled',
-        'returned'         => 'Returned',
-        'refunded'         => 'Refunded',
+        'delivered' => 'Delivered',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+        'returned' => 'Returned',
+        'refunded' => 'Refunded',
     ];
 
     /** Sub-orders in these statuses block force-cancel unless overridden. */
@@ -67,15 +66,25 @@ class SubOrder extends Model
             'cod_remittance_confirmed' => 'boolean',
             'cod_remittance_confirmed_at' => 'datetime',
             'status' => SubOrderStatus::class,
-            'admin_subsidy_amount' => 'integer',
-            'vendor_contribution_amount' => 'integer',
-            'carrier_shipping_cost' => 'integer',
-            'shipping_gap' => 'integer',
+            'admin_subsidy_amount' => 'decimal:4',
+            'vendor_contribution_amount' => 'decimal:4',
+            'carrier_shipping_cost' => 'decimal:4',
+            'shipping_gap' => 'decimal:4',
             'billable_weight_grams' => 'integer',
             'subsidy_ledgered' => 'boolean',
             'fx_rate_numerator' => 'integer',
             'fx_rate_denominator' => 'integer',
             'fx_rate_captured_at' => 'datetime',
+            'subtotal' => 'decimal:4',
+            'shipping' => 'decimal:4',
+            'tax' => 'decimal:4',
+            'platform_commission' => 'decimal:4',
+            'vendor_coupon_cost' => 'decimal:4',
+            'platform_coupon_cost' => 'decimal:4',
+            'marketer_commission' => 'decimal:4',
+            'warranty_revenue' => 'decimal:4',
+            'gateway_fee' => 'decimal:4',
+            'vendor_payout' => 'decimal:4',
         ];
     }
 

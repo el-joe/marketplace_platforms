@@ -6,6 +6,7 @@ use App\Enums\OrderItemFulfillmentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class OrderItem extends Model
@@ -19,6 +20,17 @@ class OrderItem extends Model
             'shipping_method_snapshot' => 'array',
             'return_eligible_until' => 'date',
             'fulfillment_status' => OrderItemFulfillmentStatus::class,
+            'unit_price' => 'decimal:4',
+            'unit_cost_price' => 'decimal:4',
+            'line_subtotal' => 'decimal:4',
+            'line_discount' => 'decimal:4',
+            'vendor_coupon_cost' => 'decimal:4',
+            'line_tax' => 'decimal:4',
+            'line_total' => 'decimal:4',
+            'commission_fixed' => 'decimal:4',
+            'commission_amount' => 'decimal:4',
+            'marketer_commission' => 'decimal:4',
+            'platform_commission_after_discount' => 'decimal:4',
         ];
     }
 
@@ -110,7 +122,7 @@ class OrderItem extends Model
         return $this->hasOne(FlashSaleOrder::class);
     }
 
-    public function returnRequestItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function returnRequestItems(): HasMany
     {
         return $this->hasMany(ReturnRequestItem::class);
     }
@@ -120,7 +132,7 @@ class OrderItem extends Model
         return $this->belongsTo(WarrantyPurchase::class);
     }
 
-    public function customAttributeValues(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function customAttributeValues(): HasMany
     {
         return $this->hasMany(OrderItemCustomAttributeValue::class);
     }
@@ -129,9 +141,8 @@ class OrderItem extends Model
      * enhancement.md P-13: the exact warehouse_inventory row(s) this
      * item's stock was reserved from.
      */
-    public function allocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function allocations(): HasMany
     {
         return $this->hasMany(OrderItemAllocation::class);
     }
-
 }
