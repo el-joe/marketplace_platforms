@@ -8,27 +8,29 @@ use App\Http\Requests\Customer\Travel\CreateBookingRequest;
 use App\Http\Requests\Customer\Travel\SignContractRequest;
 use App\Http\Resources\Customer\ClassifiedListingDetailResource;
 use App\Http\Resources\Customer\ListingInquiryResource;
+use App\Http\Resources\Customer\ProductDetailResource;
 use App\Http\Resources\Customer\TravelBookingSubmittedResource;
 use App\Http\Resources\Customer\TravelContractResource;
 use App\Http\Resources\Customer\TravelPackageDetailResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\AdminListing;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\Customer;
+use App\Models\Product;
+use App\Models\TravelPackage;
+use App\Models\WishlistItem;
+use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\ClassifiedDetailService;
 use App\Services\Customer\ClassifiedInquiryService;
 use App\Services\Customer\ListingQueryService;
+use App\Services\Customer\ProductDetailEnrichmentService;
+use App\Services\Customer\ProductViewService;
+use App\Services\Customer\ReviewService;
 use App\Services\Customer\TravelBookingService;
 use App\Services\Customer\TravelPackageDetailService;
-use App\Services\Customer\BuyBoxService;
-use App\Services\Customer\ProductViewService;
-use App\Services\Customer\ProductDetailEnrichmentService;
-use App\Services\Customer\ReviewService;
 use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
-use App\Models\Product;
-use App\Models\Wishlist;
-use App\Models\WishlistItem;
-use App\Http\Resources\Customer\ProductDetailResource;
 use App\Support\SafeCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,15 +52,15 @@ class ListingController extends Controller
         private readonly FlashSaleService $flashSale,
     ) {}
 
-    public function show(Request $request,$country, string $type, string $slug): JsonResponse
+    public function show(Request $request, $country, string $type, string $slug): JsonResponse
     {
-        $country = $request->attributes->get("country");
+        $country = $request->attributes->get('country');
 
         return match ($type) {
-            'product'    => $this->showProduct($request, $country, $slug),
+            'product' => $this->showProduct($request, $country, $slug),
             'classified' => $this->showClassified($request, $country, $slug),
-            'travel'     => $this->showTravel($request, $country, $slug),
-            default      => throw new NotFoundHttpException(__('common.exceptions.listing.unknown_type')),
+            'travel' => $this->showTravel($request, $country, $slug),
+            default => throw new NotFoundHttpException(__('common.exceptions.listing.unknown_type')),
         };
     }
 
@@ -72,9 +74,9 @@ class ListingController extends Controller
 
         abort_if(! $listing, 404, __('common.exceptions.listing.not_found'));
 
-        /** @var \App\Models\Customer $customer */
+        /** @var Customer $customer */
         $customer = auth('customer')->user();
-        $inquiry  = $this->inquiryService->create($listing, $customer, $request->validated());
+        $inquiry = $this->inquiryService->create($listing, $customer, $request->validated());
 
         $resource = new ListingInquiryResource($inquiry);
         $resource->listingSlug = $slug;
@@ -94,9 +96,9 @@ class ListingController extends Controller
             abort(404, __('common.exceptions.listing.travel_package_not_found_expired'));
         }
 
-        /** @var \App\Models\Customer $customer */
+        /** @var Customer $customer */
         $customer = auth('customer')->user();
-        $booking  = $this->bookingService->book($package, $customer, $request->validated());
+        $booking = $this->bookingService->book($package, $customer, $request->validated());
 
         $resource = new TravelBookingSubmittedResource($booking);
         $resource->currency = $package->currency;
@@ -113,12 +115,12 @@ class ListingController extends Controller
     ): JsonResponse {
         $_country = $request->attributes->get('country');
         // Verify the package still exists (even if expired — contract signing can happen post-departure)
-        $packageExists = \App\Models\TravelPackage::where('slug', $slug)->exists();
+        $packageExists = TravelPackage::where('slug', $slug)->exists();
         abort_if(! $packageExists, 404, __('common.exceptions.listing.travel_package_not_found'));
 
-        /** @var \App\Models\Customer $customer */
+        /** @var Customer $customer */
         $customer = auth('customer')->user();
-        $booking  = $this->bookingService->signContract($customer, $bookingNumber, $request->validated()['signature_data']);
+        $booking = $this->bookingService->signContract($customer, $bookingNumber, $request->validated()['signature_data']);
 
         return ApiResponse::success(new TravelContractResource($booking), __('common.exceptions.listing.contract_signed'));
     }
@@ -193,7 +195,7 @@ class ListingController extends Controller
         $listings = $this->buyBox->getListings($product, $country);
         $product->setRelation('activeListings', $listings);
 
-        $adminListing = \App\Models\AdminListing::where('country_id', $country->id)
+        $adminListing = AdminListing::where('country_id', $country->id)
             ->where('status', 'active')
             ->whereHas('productVariant', fn ($q) => $q->where('product_id', $product->id))
             ->with([
@@ -212,7 +214,7 @@ class ListingController extends Controller
 
         // Admin listing wins the buy-box; redirect detail to it.
         if ($adminListing) {
-            return app(\App\Http\Controllers\Customer\ListingDetailController::class)
+            return app(ListingDetailController::class)
                 ->showFromListing($request, $country, $adminListing);
         }
 
@@ -232,7 +234,7 @@ class ListingController extends Controller
         $product->setRelation('topReviews', $reviews);
 
         $buyBoxPrice = $listings->first()?->price;
-        $related     = Product::where('category_id', $product->category_id)
+        $related = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'active')
             ->whereHas('countrySettings', fn ($q) => $q
@@ -267,19 +269,19 @@ class ListingController extends Controller
         );
 
         $buyBoxListing = $listings->first();
-        $customer      = auth('customer')->user();
+        $customer = auth('customer')->user();
 
-        $resource                  = new ProductDetailResource($product);
-        $resource->isWishlisted    = $isWishlisted;
-        $flashSaleEndsAt           = $this->flashSale->activeFlashSaleEndsAtForProduct($product->id, $country);
-        $resource->isFlashSale     = $flashSaleEndsAt !== null;
+        $resource = new ProductDetailResource($product);
+        $resource->isWishlisted = $isWishlisted;
+        $flashSaleEndsAt = $this->flashSale->activeFlashSaleEndsAtForProduct($product->id, $country);
+        $resource->isFlashSale = $flashSaleEndsAt !== null;
         $resource->flashSaleEndsAt = $flashSaleEndsAt?->toISOString();
         // Flash sale takes precedence over mega deal when both apply.
-        $resource->isMegaDeal      = $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
+        $resource->isMegaDeal = $flashSaleEndsAt === null && $this->pageBuilder->isProductInActiveMegaDeal($product->id, $country);
         $resource->ratingBreakdown = $this->reviewService->ratingBreakdown($product);
-        $resource->enrichment      = [
+        $resource->enrichment = [
             'best_seller_badge' => $this->enrichment->getBestSellerBadge($product, $country),
-            'delivery_options'  => $this->enrichment->getDeliveryOptions(
+            'delivery_options' => $this->enrichment->getDeliveryOptions(
                 $product,
                 $country,
                 $request->query('address_id'),
@@ -311,8 +313,9 @@ class ListingController extends Controller
 
         $this->classifiedDetail->incrementViews($listing);
 
-        $resource             = new ClassifiedListingDetailResource($listing);
+        $resource = new ClassifiedListingDetailResource($listing);
         $resource->sellerInfo = $this->classifiedDetail->sellerInfo($listing);
+        $resource->exclusiveContract = $this->classifiedDetail->activeExclusiveContract($listing);
 
         return ApiResponse::success($resource->toArray($request));
     }

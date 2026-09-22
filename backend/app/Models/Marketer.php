@@ -94,6 +94,11 @@ class Marketer extends Model
         return $this->hasMany(MarketerCategoryCommission::class);
     }
 
+    public function exclusiveContracts(): HasMany
+    {
+        return $this->hasMany(ExclusiveContract::class);
+    }
+
     public function contract(): HasOne
     {
         return $this->hasOne(MarketerContract::class, 'marketer_id');

@@ -18,6 +18,15 @@ export interface IClassified {
   views_count: number;
   expires_at: null;
   created_at: Date;
+  exclusive_contract?: ExclusiveContract | null;
+}
+
+export interface ExclusiveContract {
+  marketer: {
+    id: string | null;
+    name: string | null;
+  };
+  expires_at: string | null;
 }
 
 export interface Category {

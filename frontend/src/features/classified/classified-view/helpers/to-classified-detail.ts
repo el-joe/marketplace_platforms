@@ -63,6 +63,12 @@ export function toClassifiedDetail(
     rating: 0,
     reviewsCount: 0,
     promotedBadge: undefined,
+    exclusiveContract: listing.exclusive_contract
+      ? {
+          marketerName: listing.exclusive_contract.marketer?.name ?? "",
+          expiresAt: listing.exclusive_contract.expires_at ?? null,
+        }
+      : null,
     quickSpecs: attributeEntries.slice(0, 4).map(([label, value]) => ({
       type: "tag" as const,
       label: `${label}: ${value}`,

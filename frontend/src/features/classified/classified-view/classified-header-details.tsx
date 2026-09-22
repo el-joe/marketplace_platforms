@@ -127,6 +127,24 @@ export default function ClassifiedHeaderDetails({
 
   return (
     <div className="w-full bg-white pt-4 pb-2 border-b border-gray-100">
+      {listing.exclusiveContract && (
+        <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700">
+          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+          <span>
+            Exclusive contract{listing.exclusiveContract.marketerName
+              ? ` — ${listing.exclusiveContract.marketerName}`
+              : ""}
+          </span>
+          {listing.exclusiveContract.expiresAt && (
+            <span className="text-amber-500">
+              · until{" "}
+              {new Date(
+                listing.exclusiveContract.expiresAt,
+              ).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      )}
       {/* Top Row: Price, Price Drop Link & Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
         {/* Left: Price and notification link */}

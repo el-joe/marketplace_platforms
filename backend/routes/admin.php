@@ -45,6 +45,7 @@ use App\Http\Controllers\Admin\DeliveryPayoutController;
 use App\Http\Controllers\Admin\DeliveryZoneController;
 use App\Http\Controllers\Admin\DisputeController;
 use App\Http\Controllers\Admin\DocsController;
+use App\Http\Controllers\Admin\ExclusiveContractController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\FbnController;
 use App\Http\Controllers\Admin\FbtController;
@@ -1003,6 +1004,13 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         Route::post('/{marketer}/job-categories/sync', [MarketerController::class, 'syncJobCategories'])
             ->name('job-categories.sync')->middleware('admin.permission:marketers.manage');
+
+        Route::post('/{marketer}/exclusive-contracts', [ExclusiveContractController::class, 'store'])
+            ->name('exclusive-contracts.store')->middleware('admin.permission:marketers.manage');
+        Route::put('/{marketer}/exclusive-contracts/{exclusiveContract}', [ExclusiveContractController::class, 'update'])
+            ->name('exclusive-contracts.update')->middleware('admin.permission:marketers.manage');
+        Route::delete('/{marketer}/exclusive-contracts/{exclusiveContract}', [ExclusiveContractController::class, 'destroy'])
+            ->name('exclusive-contracts.destroy')->middleware('admin.permission:marketers.manage');
     });
 
     // ── Marketer Jobs (lookup CRUD) ────────────────────────────────────────

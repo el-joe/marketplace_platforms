@@ -358,6 +358,98 @@
         </form>
     </div>
 
+    {{-- Exclusive contracts (open-market) --}}
+    <div class="bg-white rounded-xl border overflow-hidden">
+        <div class="px-5 py-4 border-b flex items-center justify-between">
+            <h3 class="font-bold text-gray-800">العقود الحصرية (السوق المفتوح)</h3>
+        </div>
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs">
+                <tr>
+                    <th class="px-4 py-3 text-start">النطاق</th>
+                    <th class="px-4 py-3 text-center">من</th>
+                    <th class="px-4 py-3 text-center">إلى</th>
+                    <th class="px-4 py-3 text-center">الحالة</th>
+                    <th class="px-4 py-3 text-center"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($marketer->exclusiveContracts as $contract)
+                <tr>
+                    <td class="px-4 py-3 font-medium">
+                        @if($contract->classifiedListing)
+                            إعلان: {{ $contract->classifiedListing->listing_number }}
+                        @elseif($contract->classifiedCategory)
+                            قسم: {{ $contract->classifiedCategory->name_ar }}
+                        @else
+                            كل الأقسام
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{{ $contract->status }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        @if(in_array($contract->status, ['pending', 'active']))
+                        <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.destroy', [$marketer, $contract]) }}"
+                              onsubmit="return confirm('إلغاء العقد الحصري؟');">
+                            @csrf
+                            @method('DELETE')
+                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">إلغاء</button>
+                        </form>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">لا توجد عقود حصرية بعد.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+        <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.store', $marketer) }}"
+              enctype="multipart/form-data" class="p-4 border-t bg-gray-50 flex flex-wrap items-end gap-3">
+            @csrf
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">القسم (اختياري)</label>
+                <select name="classified_category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[160px]">
+                    <option value="">كل الأقسام</option>
+                    @foreach($classifiedCategories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name_ar }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">رقم إعلان محدد (اختياري)</label>
+                <input type="text" name="classified_listing_id" placeholder="UUID الإعلان"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">من</label>
+                <input type="date" name="starts_at" required class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">إلى</label>
+                <input type="date" name="ends_at" required class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">الحالة</label>
+                <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="pending">قيد الانتظار</option>
+                    <option value="active">نشط</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">ملف العقد (اختياري)</label>
+                <input type="file" name="contract_file" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            </div>
+            <div class="flex-1 min-w-[160px]">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
+                <input type="text" name="notes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
+            </div>
+            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">إضافة عقد حصري</button>
+        </form>
+    </div>
+
     {{-- Campaign invitations --}}
     @if($marketer->invitations->isNotEmpty())
     <div class="bg-white rounded-xl border overflow-hidden">

@@ -1,20 +1,27 @@
 <?php
 
+use App\Jobs\Ads\PaidAdSchedulerJob;
+use App\Jobs\AggregateAnalyticsCacheJob;
+use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\AutoCompleteOrdersJob;
-use App\Jobs\GenerateCodSettlementsJob;
-use App\Jobs\ReleaseExpiredLocksJob;
-use App\Jobs\CheckSlaBreachJob;
-use App\Jobs\GenerateVendorPayoutsJob;
 use App\Jobs\BannerSchedulerJob;
-use App\Jobs\FlashSaleSchedulerJob;
-use App\Jobs\TransitionFlashSaleStatusJob;
-use App\Jobs\GenerateFbnStorageFeesJob;
+use App\Jobs\CheckSlaBreachJob;
+use App\Jobs\ExpirePendingPaymentsJob;
+use App\Jobs\ExpireWarrantyPurchasesJob;
 use App\Jobs\FbnInboundReminderJob;
+use App\Jobs\FlashSaleSchedulerJob;
+use App\Jobs\GenerateCodSettlementsJob;
+use App\Jobs\GenerateFbnStorageFeesJob;
+use App\Jobs\GenerateVendorPayoutsJob;
+use App\Jobs\MonitorCampaignStockJob;
+use App\Jobs\PageSchedulerJob;
+use App\Jobs\ProcessAcquisitionCommissionsJob;
 use App\Jobs\PublishScheduledBlogPostsJob;
 use App\Jobs\RecalculateBestSellerRankingsJob;
-use App\Jobs\ProcessAcquisitionCommissionsJob;
-use App\Jobs\MonitorCampaignStockJob;
-use App\Jobs\Ads\PaidAdSchedulerJob;
+use App\Jobs\ReleaseExpiredLocksJob;
+use App\Jobs\ReleaseMarketerPendingCommissionJob;
+use App\Jobs\ResetAdCampaignDailyBudgetJob;
+use App\Jobs\TransitionFlashSaleStatusJob;
 use Carbon\Carbon;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -30,26 +37,26 @@ Schedule::job(new AutoCompleteOrdersJob)->dailyAt('02:00');
 Schedule::job(new TransitionFlashSaleStatusJob)->everyFiveMinutes();
 Schedule::job(new FlashSaleSchedulerJob)->everyFiveMinutes()->withoutOverlapping()->name('flash-sale-scheduler');
 Schedule::job(new BannerSchedulerJob)->everyFiveMinutes();
-Schedule::job(new \App\Jobs\PageSchedulerJob)->everyFiveMinutes()->name('page-scheduler');
+Schedule::job(new PageSchedulerJob)->everyFiveMinutes()->name('page-scheduler');
 Schedule::job(new PublishScheduledBlogPostsJob)->everyFiveMinutes()->name('publish-scheduled-blog-posts');
 Schedule::job(new MonitorCampaignStockJob)->hourly()->name('monitor-campaign-stock');
 
 // Reset ad_campaigns.budget_spent_today at midnight — was missing entirely,
 // so campaigns that hit budget_daily stayed capped forever (CPC click
 // billing and the new CPM impression billing both gate on this column).
-Schedule::job(new \App\Jobs\ResetAdCampaignDailyBudgetJob)->dailyAt('00:00')->name('reset-ad-campaign-daily-budget');
+Schedule::job(new ResetAdCampaignDailyBudgetJob)->dailyAt('00:00')->name('reset-ad-campaign-daily-budget');
 Schedule::job(new PaidAdSchedulerJob)->everyFiveMinutes()->withoutOverlapping()->name('paid-ad-scheduler');
 // enhancement.md P-05 task 5: roll back gateway orders stuck 'pending'
 // because the customer never returned and no webhook arrived.
-Schedule::job(new \App\Jobs\ExpirePendingPaymentsJob)->everyFiveMinutes()->withoutOverlapping()->name('expire-pending-payments');
+Schedule::job(new ExpirePendingPaymentsJob)->everyFiveMinutes()->withoutOverlapping()->name('expire-pending-payments');
 // enhancement.md P-09 task 3: active -> expired past coverage_ends_at.
-Schedule::job(new \App\Jobs\ExpireWarrantyPurchasesJob)->dailyAt('03:00')->name('expire-warranty-purchases');
+Schedule::job(new ExpireWarrantyPurchasesJob)->dailyAt('03:00')->name('expire-warranty-purchases');
 
 // enhancement.md P-12 task 3: pending -> approved (credits marketer wallet
 // pending_balance) once delivered + return window passed, then pending_balance
 // -> balance once the payout-clearing window has also passed.
-Schedule::job(new \App\Jobs\ApproveMarketerConversionsJob)->dailyAt('03:15')->name('approve-marketer-conversions');
-Schedule::job(new \App\Jobs\ReleaseMarketerPendingCommissionJob)->dailyAt('03:30')->name('release-marketer-pending-commission');
+Schedule::job(new ApproveMarketerConversionsJob)->dailyAt('03:15')->name('approve-marketer-conversions');
+Schedule::job(new ReleaseMarketerPendingCommissionJob)->dailyAt('03:30')->name('release-marketer-pending-commission');
 
 // Process vendor acquisition agent commissions for the previous month
 Schedule::job(new ProcessAcquisitionCommissionsJob)->monthlyOn(1, '02:00')->name('process-acquisition-commissions');
@@ -61,7 +68,7 @@ Schedule::call(function () {
     GenerateVendorPayoutsJob::dispatch($periodStart->startOfDay(), $periodEnd);
 })->weeklyOn(Carbon::MONDAY, '06:00');
 
-Schedule::job(new \App\Jobs\AggregateAnalyticsCacheJob)->hourly()->name('aggregate-analytics-cache');
+Schedule::job(new AggregateAnalyticsCacheJob)->hourly()->name('aggregate-analytics-cache');
 
 // FBN: generate storage fees on the 1st of each month at 07:00
 Schedule::call(function () {
@@ -90,6 +97,13 @@ Schedule::command('coupons:deactivate-expired')
     ->withoutOverlapping()
     ->runInBackground()
     ->name('deactivate-expired-coupons');
+
+// Activate pending exclusive contracts whose start date arrived, and expire those past ends_at
+Schedule::command('exclusive-contracts:expire')
+    ->dailyAt('00:45')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->name('expire-exclusive-contracts');
 
 // Recalculate best-seller rankings per category/country
 Schedule::job(new RecalculateBestSellerRankingsJob, 'rankings')

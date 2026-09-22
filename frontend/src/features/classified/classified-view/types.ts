@@ -58,6 +58,10 @@ export interface ClassifiedDetail {
   rating: number;
   reviewsCount: number;
   promotedBadge?: string;
+  exclusiveContract?: {
+    marketerName: string;
+    expiresAt: string | null;
+  } | null;
   quickSpecs: Array<{
     type: "tag" | "speedometer" | "gas" | "dealership";
     label: string;

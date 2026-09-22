@@ -124,6 +124,9 @@ class MarketerController extends Controller
             'marketerJobs',
             'marketerJobAssignments.marketerJob.categories',
             'marketerJobAssignments.categoryScopes',
+            'exclusiveContracts' => fn ($q) => $q->latest('starts_at'),
+            'exclusiveContracts.classifiedCategory',
+            'exclusiveContracts.classifiedListing',
         ]);
 
         $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
