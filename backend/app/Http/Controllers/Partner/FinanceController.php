@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Payout;
 use App\Models\Refund;
 use App\Models\SubOrder;
+use App\Models\VendorListing;
 use App\Traits\HasExport;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
 class FinanceController extends Controller
@@ -17,17 +20,17 @@ class FinanceController extends Controller
     public function transactions(Request $request)
     {
         $vendorAdmin = Auth::guard('vendor')->user();
-        $vendor      = $vendorAdmin->vendor;
-        $vendorId    = $vendor->id;
-        $currency    = $vendor->country?->currency_code ?? '';
+        $vendor = $vendorAdmin->vendor;
+        $vendorId = $vendor->id;
+        $currency = $vendor->country?->currency_code ?? '';
 
         // ── Date range ────────────────────────────────────────────────────────
         $dateFrom = $request->input('date_from')
-            ? \Carbon\Carbon::parse($request->input('date_from'))->startOfDay()
+            ? Carbon::parse($request->input('date_from'))->startOfDay()
             : now()->startOfMonth();
 
         $dateTo = $request->input('date_to')
-            ? \Carbon\Carbon::parse($request->input('date_to'))->endOfDay()
+            ? Carbon::parse($request->input('date_to'))->endOfDay()
             : now()->endOfDay();
 
         $type = $request->input('type', 'all'); // all | sales | refunds | payouts
@@ -55,7 +58,7 @@ class FinanceController extends Controller
         // volume is modest, so PHP-merge + paginate is acceptable.
 
         $perPage = 30;
-        $page    = max(1, (int) $request->input('page', 1));
+        $page = max(1, (int) $request->input('page', 1));
 
         $rows = collect();
 
@@ -68,16 +71,16 @@ class FinanceController extends Controller
                 ->each(function ($so) use (&$rows) {
                     $payoutItem = $so->payoutItems->first();
                     $rows->push([
-                        'type'          => 'sale',
-                        'date'          => $so->created_at,
-                        'reference'     => $so->sub_order_number,
-                        'description'   => 'مبيعات – ' . ($so->order?->order_number ?? ''),
-                        'amount'        => $so->vendor_payout,
-                        'gross'         => $so->subtotal,
-                        'commission'    => $so->platform_commission,
-                        'net'           => $so->vendor_payout,
+                        'type' => 'sale',
+                        'date' => $so->created_at,
+                        'reference' => $so->sub_order_number,
+                        'description' => 'مبيعات – '.($so->order?->order_number ?? ''),
+                        'amount' => $so->vendor_payout,
+                        'gross' => $so->subtotal,
+                        'commission' => $so->platform_commission,
+                        'net' => $so->vendor_payout,
                         'payout_number' => $payoutItem?->payout?->payout_number,
-                        'receipt_url'   => null,
+                        'receipt_url' => null,
                     ]);
                 });
         }
@@ -91,16 +94,16 @@ class FinanceController extends Controller
                 ->get()
                 ->each(function ($ref) use (&$rows) {
                     $rows->push([
-                        'type'          => 'refund',
-                        'date'          => $ref->created_at,
-                        'reference'     => $ref->subOrder?->sub_order_number ?? ('REF-' . $ref->id),
-                        'description'   => 'مرتجع – ' . ($ref->subOrder?->order?->order_number ?? ''),
-                        'amount'        => -$ref->amount,
-                        'gross'         => null,
-                        'commission'    => null,
-                        'net'           => null,
+                        'type' => 'refund',
+                        'date' => $ref->created_at,
+                        'reference' => $ref->subOrder?->sub_order_number ?? ('REF-'.$ref->id),
+                        'description' => 'مرتجع – '.($ref->subOrder?->order?->order_number ?? ''),
+                        'amount' => -$ref->amount,
+                        'gross' => null,
+                        'commission' => null,
+                        'net' => null,
                         'payout_number' => null,
-                        'receipt_url'   => null,
+                        'receipt_url' => null,
                     ]);
                 });
         }
@@ -112,24 +115,24 @@ class FinanceController extends Controller
                 ->get()
                 ->each(function ($po) use (&$rows) {
                     $rows->push([
-                        'type'          => 'payout',
-                        'date'          => $po->processed_at ?? $po->created_at,
-                        'reference'     => $po->payout_number,
-                        'description'   => 'تحويل بنكي',
-                        'amount'        => -$po->net_amount,
-                        'gross'         => null,
-                        'commission'    => null,
-                        'net'           => null,
+                        'type' => 'payout',
+                        'date' => $po->processed_at ?? $po->created_at,
+                        'reference' => $po->payout_number,
+                        'description' => 'تحويل بنكي',
+                        'amount' => -$po->net_amount,
+                        'gross' => null,
+                        'commission' => null,
+                        'net' => null,
                         'payout_number' => $po->payout_number,
-                        'receipt_url'   => $po->receipt_url,
+                        'receipt_url' => $po->receipt_url,
                     ]);
                 });
         }
 
         // Sort newest first then paginate manually
-        $sorted     = $rows->sortByDesc('date')->values();
-        $total      = $sorted->count();
-        $transactions = new \Illuminate\Pagination\LengthAwarePaginator(
+        $sorted = $rows->sortByDesc('date')->values();
+        $total = $sorted->count();
+        $transactions = new LengthAwarePaginator(
             $sorted->forPage($page, $perPage),
             $total,
             $perPage,
@@ -153,16 +156,16 @@ class FinanceController extends Controller
     public function salesReport(Request $request)
     {
         $vendorAdmin = Auth::guard('vendor')->user();
-        $vendor      = $vendorAdmin->vendor;
-        $vendorId    = $vendor->id;
-        $currency    = $vendor->country?->currency_code ?? '';
+        $vendor = $vendorAdmin->vendor;
+        $vendorId = $vendor->id;
+        $currency = $vendor->country?->currency_code ?? '';
 
         $dateFrom = $request->input('date_from')
-            ? \Carbon\Carbon::parse($request->input('date_from'))->startOfDay()
+            ? Carbon::parse($request->input('date_from'))->startOfDay()
             : now()->startOfMonth();
 
         $dateTo = $request->input('date_to')
-            ? \Carbon\Carbon::parse($request->input('date_to'))->endOfDay()
+            ? Carbon::parse($request->input('date_to'))->endOfDay()
             : now()->endOfDay();
 
         $baseQuery = SubOrder::where('vendor_id', $vendorId)
@@ -172,13 +175,13 @@ class FinanceController extends Controller
         $totals = (clone $baseQuery)
             ->selectRaw('
                 COALESCE(SUM(shipping), 0) as total_shipping_charged,
-                COALESCE(SUM(admin_subsidy_amount), 0) as total_platform_subsidy,
+                COALESCE(SUM(vendor_contribution_amount), 0) as total_shipping_contribution,
                 COALESCE(SUM(vendor_contribution_amount), 0) as total_vendor_contribution,
-                COALESCE(SUM(shipping + admin_subsidy_amount + vendor_contribution_amount), 0) as total_actual_shipping_cost
+                COALESCE(SUM(shipping + vendor_contribution_amount), 0) as total_actual_shipping_cost
             ')
             ->first();
 
-        $hasVendorContribution = \App\Models\VendorListing::where('vendor_id', $vendorId)
+        $hasVendorContribution = VendorListing::where('vendor_id', $vendorId)
             ->where('vendor_covers_delivery', true)
             ->exists();
 
@@ -214,16 +217,16 @@ class FinanceController extends Controller
     public function exportSalesReport(Request $request)
     {
         $vendorAdmin = Auth::guard('vendor')->user();
-        $vendor      = $vendorAdmin->vendor;
-        $vendorId    = $vendor->id;
-        $currency    = $vendor->country?->currency_code ?? '';
+        $vendor = $vendorAdmin->vendor;
+        $vendorId = $vendor->id;
+        $currency = $vendor->country?->currency_code ?? '';
 
         $dateFrom = $request->input('date_from')
-            ? \Carbon\Carbon::parse($request->input('date_from'))->startOfDay()
+            ? Carbon::parse($request->input('date_from'))->startOfDay()
             : now()->startOfMonth();
 
         $dateTo = $request->input('date_to')
-            ? \Carbon\Carbon::parse($request->input('date_to'))->endOfDay()
+            ? Carbon::parse($request->input('date_to'))->endOfDay()
             : now()->endOfDay();
 
         $shipments = SubOrder::where('vendor_id', $vendorId)
@@ -235,25 +238,25 @@ class FinanceController extends Controller
 
         $headers = [
             'Date', 'Sub-order Number', 'Order Number',
-            'Shipping Charged', 'Delivery Subsidy', 'Your Delivery Contribution',
+            'Shipping Charged', 'Shipping Contribution', 'Your Delivery Contribution',
             'Exceptional Zone Deduction', 'Currency',
         ];
 
-        $rows = $shipments->map(fn($shipment) => [
+        $rows = $shipments->map(fn ($shipment) => [
             $shipment->created_at->format('Y-m-d'),
             $shipment->sub_order_number,
             $shipment->order?->order_number,
-            number_format($shipment->shipping , 2, '.', ''),
-            number_format($shipment->admin_subsidy_amount , 2, '.', ''),
-            number_format($shipment->vendor_contribution_amount , 2, '.', ''),
-            $shipment->shipping_gap > 0 ? number_format($shipment->vendor_contribution_amount , 2, '.', '') : '',
+            number_format($shipment->shipping, 2, '.', ''),
+            number_format($shipment->vendor_contribution_amount, 2, '.', ''),
+            number_format($shipment->vendor_contribution_amount, 2, '.', ''),
+            $shipment->shipping_gap > 0 ? number_format($shipment->vendor_contribution_amount, 2, '.', '') : '',
             $currency,
         ]);
 
         $totalExceptionalDeduction = $shipments->where('shipping_gap', '>', 0)->sum('vendor_contribution_amount');
-        $rows->push(['', '', '', '', '', '', 'Exceptional Zone Deduction Subtotal (' . $currency . ')', number_format($totalExceptionalDeduction , 2, '.', '')]);
+        $rows->push(['', '', '', '', '', '', 'Exceptional Zone Deduction Subtotal ('.$currency.')', number_format($totalExceptionalDeduction, 2, '.', '')]);
 
-        $filename = 'sales-report-' . $dateFrom->toDateString() . '-to-' . $dateTo->toDateString();
+        $filename = 'sales-report-'.$dateFrom->toDateString().'-to-'.$dateTo->toDateString();
         $format = $request->input('format', 'csv');
 
         return match ($format) {

@@ -9,6 +9,8 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Notifications\Marketer\NewConversionNotification;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -42,7 +44,7 @@ class LastClickAttributionService
     public const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 7;
 
     public function __construct(
-        private readonly MarketerCommissionRateService $commissionRates = new MarketerCommissionRateService(),
+        private readonly MarketerCommissionRateService $commissionRates = new MarketerCommissionRateService,
     ) {}
 
     /**
@@ -53,7 +55,7 @@ class LastClickAttributionService
     {
         Cache::put("referral_click:{$sessionId}", [
             'referral_code' => $referralCode,
-            'clicked_at'    => now()->toISOString(),
+            'clicked_at' => now()->toISOString(),
         ], now()->addDays((int) setting('marketer_attribution_window_days', self::DEFAULT_ATTRIBUTION_WINDOW_DAYS)));
     }
 
@@ -72,7 +74,7 @@ class LastClickAttributionService
         $windowDays = (int) setting('marketer_attribution_window_days', self::DEFAULT_ATTRIBUTION_WINDOW_DAYS);
 
         $lastClickInvitation = null;
-        if ($click && now()->diffInDays(\Illuminate\Support\Carbon::parse($click['clicked_at'])) <= $windowDays) {
+        if ($click && now()->diffInDays(Carbon::parse($click['clicked_at'])) <= $windowDays) {
             $lastClickInvitation = MarketerCampaignInvitation::where('referral_code', $click['referral_code'])
                 ->where('status', 'accepted')
                 ->with(['campaign.tieredRules', 'marketer.marketerProfile'])
@@ -172,7 +174,7 @@ class LastClickAttributionService
                         $commissionAmount = $this->commissionRates->calculateCommissionAmount(
                             $invitation->marketer_id,
                             $item->commission_category_id,
-                            (int) $item->line_total
+                            $item->line_total
                         );
                     }
                     break;
@@ -203,18 +205,18 @@ class LastClickAttributionService
             $totalCommission = $commissionAmount + (int) ($flashSaleBonusAmount ?? 0);
 
             $conversion = MarketerCampaignConversion::create([
-                'campaign_id'             => $campaign->id,
-                'invitation_id'           => $invitation->id,
-                'order_id'                => $order->id,
-                'order_item_id'           => $item->id,
-                'referral_clicked_at'     => $click['clicked_at'] ?? null,
-                'commission_amount'       => $commissionAmount,
-                'currency'                => $campaign->currency,
-                'status'                  => 'pending',
-                'commissioned'            => false,
+                'campaign_id' => $campaign->id,
+                'invitation_id' => $invitation->id,
+                'order_id' => $order->id,
+                'order_item_id' => $item->id,
+                'referral_clicked_at' => $click['clicked_at'] ?? null,
+                'commission_amount' => $commissionAmount,
+                'currency' => $campaign->currency,
+                'status' => 'pending',
+                'commissioned' => false,
                 'sale_number_in_campaign' => $saleNumber,
-                'tiered_rule_id'          => $campaign->commission_type === 'tiered' ? $applicableTierId : null,
-                'flash_sale_id'           => $flashSaleId,
+                'tiered_rule_id' => $campaign->commission_type === 'tiered' ? $applicableTierId : null,
+                'flash_sale_id' => $flashSaleId,
                 'flash_sale_bonus_amount' => $flashSaleBonusAmount,
             ]);
 
@@ -236,13 +238,13 @@ class LastClickAttributionService
                 $campaign->update(['status' => 'paused']);
                 Log::info('MarketerCampaign auto-paused: commission budget exhausted.', [
                     'campaign_id' => $campaign->id,
-                    'spent'       => $campaign->commission_budget_spent,
-                    'budget'      => $campaign->max_commission_budget,
+                    'spent' => $campaign->commission_budget_spent,
+                    'budget' => $campaign->max_commission_budget,
                 ]);
             }
 
             $invitation->marketer->marketerAdmins->each(
-                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\NewConversionNotification($conversion, $ma->id))
+                fn ($ma) => $ma->notify(new NewConversionNotification($conversion, $ma->id))
             );
         });
     }

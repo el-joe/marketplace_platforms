@@ -39,11 +39,12 @@ class MarketerCommissionRateService
     }
 
     /**
-     * Resolve the rate and apply it to a base-currency integer amount, preserving
-     * the codebase convention of storing money as integer minor units computed
-     * via floor() (see CouponService, CheckoutCalculationService, etc.).
+     * Resolve the rate and apply it to a base-currency amount, preserving the
+     * codebase convention of returning money as integer minor units. Accepts
+     * a decimal string (e.g. a Slice-1 `line_total`) so the fractional cents
+     * aren't truncated before the rate is applied.
      */
-    public function calculateCommissionAmount(Marketer|string $marketer, ?string $categoryId, int $baseAmount): int
+    public function calculateCommissionAmount(Marketer|string $marketer, ?string $categoryId, int|string $baseAmount): int
     {
         $rate = $this->resolveRate($marketer, $categoryId);
 
@@ -51,6 +52,6 @@ class MarketerCommissionRateService
             return 0;
         }
 
-        return (int) floor($baseAmount * $rate / 100);
+        return (int) floor((float) bcdiv(bcmul((string) $baseAmount, (string) $rate, 4), '100', 4));
     }
 }

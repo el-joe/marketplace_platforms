@@ -14,9 +14,9 @@ use App\Models\Payout;
 use App\Models\SubOrder;
 use App\Models\Vendor;
 use App\Models\VendorBankAccount;
-use App\Models\VendorListing;
 use App\Services\Vendor\FinanceService;
 use App\Services\Vendor\TransactionFeedService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,8 +28,15 @@ class FinanceController extends Controller
         private TransactionFeedService $transactionFeedService,
     ) {}
 
-    private function vendor(): Vendor { return Auth::guard('vendor_api')->user()->vendor; }
-    private function vendorId(): string { return Auth::guard('vendor_api')->user()->vendor_id; }
+    private function vendor(): Vendor
+    {
+        return Auth::guard('vendor_api')->user()->vendor;
+    }
+
+    private function vendorId(): string
+    {
+        return Auth::guard('vendor_api')->user()->vendor_id;
+    }
 
     public function summary(): JsonResponse
     {
@@ -38,8 +45,8 @@ class FinanceController extends Controller
 
     public function transactions(Request $request): JsonResponse
     {
-        $type    = $request->query('type');
-        $feed    = $this->transactionFeedService->getFeed(
+        $type = $request->query('type');
+        $feed = $this->transactionFeedService->getFeed(
             $this->vendor(), $type,
             $request->query('date_from'), $request->query('date_to'),
             max(1, (int) $request->query('page', 1)),
@@ -47,8 +54,8 @@ class FinanceController extends Controller
         );
 
         return ApiResponse::success([
-            'items'   => TransactionFeedItemResource::collection($feed['items'])->resolve(),
-            'meta'    => $feed['meta'],
+            'items' => TransactionFeedItemResource::collection($feed['items'])->resolve(),
+            'meta' => $feed['meta'],
             'summary' => $feed['summary'],
         ]);
     }
@@ -74,11 +81,11 @@ class FinanceController extends Controller
         $currency = $this->vendor()->country?->currency_code ?? '';
 
         $dateFrom = $request->filled('date_from')
-            ? \Carbon\Carbon::parse($request->date_from)->startOfDay()
+            ? Carbon::parse($request->date_from)->startOfDay()
             : now()->startOfMonth();
 
         $dateTo = $request->filled('date_to')
-            ? \Carbon\Carbon::parse($request->date_to)->endOfDay()
+            ? Carbon::parse($request->date_to)->endOfDay()
             : now()->endOfDay();
 
         $baseQuery = SubOrder::where('vendor_id', $vendorId)
@@ -87,7 +94,7 @@ class FinanceController extends Controller
 
         $totals = (clone $baseQuery)->selectRaw('
             COALESCE(SUM(shipping), 0) as total_shipping_charged_to_customers,
-            COALESCE(SUM(admin_subsidy_amount), 0) as total_platform_subsidy,
+            COALESCE(SUM(vendor_contribution_amount), 0) as total_shipping_contribution,
             COALESCE(SUM(vendor_contribution_amount), 0) as total_vendor_shipping_contribution
         ')->first();
 
@@ -96,20 +103,20 @@ class FinanceController extends Controller
             ->paginate(min(100, (int) $request->query('per_page', 30)));
 
         return ApiResponse::success([
-            'currency'  => $currency,
+            'currency' => $currency,
             'date_from' => $dateFrom->toDateString(),
-            'date_to'   => $dateTo->toDateString(),
-            'totals'    => [
+            'date_to' => $dateTo->toDateString(),
+            'totals' => [
                 'total_shipping_charged_to_customers' => (int) $totals->total_shipping_charged_to_customers,
-                'total_platform_subsidy'              => (int) $totals->total_platform_subsidy,
-                'total_vendor_shipping_contribution'  => (int) $totals->total_vendor_shipping_contribution,
+                'total_shipping_contribution' => (int) $totals->total_shipping_contribution,
+                'total_vendor_shipping_contribution' => (int) $totals->total_vendor_shipping_contribution,
             ],
             'shipments' => $shipments->through(fn (SubOrder $s) => [
-                'sub_order_number'           => $s->sub_order_number,
-                'order_number'               => $s->order?->order_number,
-                'date'                       => $s->created_at->toDateString(),
-                'shipping_charged'           => (int) $s->shipping,
-                'delivery_subsidy'           => (int) $s->admin_subsidy_amount,
+                'sub_order_number' => $s->sub_order_number,
+                'order_number' => $s->order?->order_number,
+                'date' => $s->created_at->toDateString(),
+                'shipping_charged' => (int) $s->shipping,
+                'shipping_contribution' => (int) $s->vendor_contribution_amount,
                 'your_delivery_contribution' => (int) $s->vendor_contribution_amount,
             ]),
         ]);
@@ -118,9 +125,9 @@ class FinanceController extends Controller
     public function payouts(Request $request): JsonResponse
     {
         $query = Payout::where('vendor_id', $this->vendorId())
-            ->when($request->filled('status'),    fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->filled('date_to'),   fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->latest();
 
         return ApiResponse::paginated($query->paginate((int) ($request->query('per_page', 20))), PayoutResource::class);
@@ -138,6 +145,7 @@ class FinanceController extends Controller
     public function bankAccounts(): JsonResponse
     {
         $accounts = VendorBankAccount::where('vendor_id', $this->vendorId())->get();
+
         return ApiResponse::success(BankAccountResource::collection($accounts)->resolve());
     }
 }

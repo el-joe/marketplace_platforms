@@ -76,6 +76,6 @@ return new class extends Migration
             default => '',
         };
 
-        return "{$type}{$unsigned}{$nullable}{$default}";
+        return "{$type}{$unsigned} {$nullable}{$default}";
     }
 };

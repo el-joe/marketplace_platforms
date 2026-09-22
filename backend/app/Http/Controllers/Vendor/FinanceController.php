@@ -9,15 +9,17 @@ use App\Http\Resources\Vendor\LedgerEntryResource;
 use App\Http\Resources\Vendor\PayoutDetailResource;
 use App\Http\Resources\Vendor\PayoutResource;
 use App\Http\Resources\Vendor\TransactionFeedItemResource;
-use App\Services\Vendor\TransactionFeedService;
 use App\Http\Responses\ApiResponse;
 use App\Models\LedgerEntry;
 use App\Models\Payout;
 use App\Models\SubOrder;
 use App\Models\Vendor;
+use App\Models\VendorAdmin;
 use App\Models\VendorBankAccount;
 use App\Models\VendorListing;
 use App\Services\Vendor\FinanceService;
+use App\Services\Vendor\TransactionFeedService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,29 +32,31 @@ class FinanceController extends Controller
 
     private function vendor(): Vendor
     {
-        /** @var \App\Models\VendorAdmin $auth */
+        /** @var VendorAdmin $auth */
         $auth = auth('vendor')->user();
         /** @var Vendor $vendor */
         $vendor = $auth->vendor;
+
         return $vendor;
     }
 
     private function vendorId(): string
     {
-        /** @var \App\Models\VendorAdmin $auth */
+        /** @var VendorAdmin $auth */
         $auth = auth('vendor')->user();
+
         return $auth->vendor_id;
     }
 
     public function transactions(Request $request): JsonResponse
     {
-        $type     = $request->query('type');
+        $type = $request->query('type');
         $dateFrom = $request->query('date_from');
-        $dateTo   = $request->query('date_to');
-        $page     = max(1, (int) $request->query('page', 1));
-        $perPage  = min(100, max(1, (int) $request->query('per_page', 20)));
+        $dateTo = $request->query('date_to');
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = min(100, max(1, (int) $request->query('per_page', 20)));
 
-        if ($type && !in_array($type, ['sale', 'refund', 'payout'], true)) {
+        if ($type && ! in_array($type, ['sale', 'refund', 'payout'], true)) {
             return ApiResponse::error('Invalid type filter. Must be sale, refund, or payout.', [], 422);
         }
 
@@ -61,8 +65,8 @@ class FinanceController extends Controller
         );
 
         return ApiResponse::success([
-            'items'   => TransactionFeedItemResource::collection($feed['items'])->resolve(),
-            'meta'    => $feed['meta'],
+            'items' => TransactionFeedItemResource::collection($feed['items'])->resolve(),
+            'meta' => $feed['meta'],
             'summary' => $feed['summary'],
         ]);
     }
@@ -74,7 +78,7 @@ class FinanceController extends Controller
 
     public function payouts(Request $request): JsonResponse
     {
-        if (!auth('vendor')->user()->can('finance.payouts.view')) {
+        if (! auth('vendor')->user()->can('finance.payouts.view')) {
             return ApiResponse::error('You do not have permission to view payouts.', [], 403);
         }
 
@@ -93,7 +97,7 @@ class FinanceController extends Controller
 
     public function showPayout(int $id): JsonResponse
     {
-        if (!auth('vendor')->user()->can('finance.payouts.view')) {
+        if (! auth('vendor')->user()->can('finance.payouts.view')) {
             return ApiResponse::error('You do not have permission to view payouts.', [], 403);
         }
 
@@ -106,13 +110,13 @@ class FinanceController extends Controller
 
     public function payoutInvoice(int $id): JsonResponse
     {
-        if (!auth('vendor')->user()->can('finance.payouts.view')) {
+        if (! auth('vendor')->user()->can('finance.payouts.view')) {
             return ApiResponse::error('You do not have permission to view payouts.', [], 403);
         }
 
         $payout = Payout::where('vendor_id', $this->vendorId())->findOrFail($id);
 
-        if (!$payout->receipt_url) {
+        if (! $payout->receipt_url) {
             return ApiResponse::error('Invoice not yet available for this payout. It is generated after the payout completes.', [], 404);
         }
 
@@ -144,11 +148,11 @@ class FinanceController extends Controller
         $currency = $this->vendor()->country?->currency_code ?? '';
 
         $dateFrom = $request->query('date_from')
-            ? \Carbon\Carbon::parse($request->query('date_from'))->startOfDay()
+            ? Carbon::parse($request->query('date_from'))->startOfDay()
             : now()->startOfMonth();
 
         $dateTo = $request->query('date_to')
-            ? \Carbon\Carbon::parse($request->query('date_to'))->endOfDay()
+            ? Carbon::parse($request->query('date_to'))->endOfDay()
             : now()->endOfDay();
 
         $baseQuery = SubOrder::where('vendor_id', $vendorId)
@@ -158,9 +162,9 @@ class FinanceController extends Controller
         $totals = (clone $baseQuery)
             ->selectRaw('
                 COALESCE(SUM(shipping), 0) as total_shipping_charged_to_customers,
-                COALESCE(SUM(admin_subsidy_amount), 0) as total_platform_subsidy,
+                COALESCE(SUM(vendor_contribution_amount), 0) as total_shipping_contribution,
                 COALESCE(SUM(vendor_contribution_amount), 0) as total_vendor_shipping_contribution,
-                COALESCE(SUM(shipping + admin_subsidy_amount + vendor_contribution_amount), 0) as total_actual_shipping_cost
+                COALESCE(SUM(shipping + vendor_contribution_amount), 0) as total_actual_shipping_cost
             ')
             ->first();
 
@@ -176,22 +180,22 @@ class FinanceController extends Controller
             ->paginate($perPage);
 
         return ApiResponse::success([
-            'currency'                 => $currency,
-            'date_from'                => $dateFrom->toDateString(),
-            'date_to'                  => $dateTo->toDateString(),
-            'has_vendor_contribution'  => $hasVendorContribution,
-            'totals'                   => [
-                'total_shipping_charged_to_customers'  => (int) $totals->total_shipping_charged_to_customers,
-                'total_platform_subsidy'                => (int) $totals->total_platform_subsidy,
-                'total_vendor_shipping_contribution'    => (int) $totals->total_vendor_shipping_contribution,
-                'total_actual_shipping_cost'            => (int) $totals->total_actual_shipping_cost,
+            'currency' => $currency,
+            'date_from' => $dateFrom->toDateString(),
+            'date_to' => $dateTo->toDateString(),
+            'has_vendor_contribution' => $hasVendorContribution,
+            'totals' => [
+                'total_shipping_charged_to_customers' => (int) $totals->total_shipping_charged_to_customers,
+                'total_shipping_contribution' => (int) $totals->total_shipping_contribution,
+                'total_vendor_shipping_contribution' => (int) $totals->total_vendor_shipping_contribution,
+                'total_actual_shipping_cost' => (int) $totals->total_actual_shipping_cost,
             ],
             'shipments' => $shipments->through(fn (SubOrder $s) => [
-                'sub_order_number'          => $s->sub_order_number,
-                'order_number'              => $s->order?->order_number,
-                'date'                      => $s->created_at->toDateString(),
-                'shipping_charged'          => (int) $s->shipping,
-                'delivery_subsidy'          => (int) $s->admin_subsidy_amount,
+                'sub_order_number' => $s->sub_order_number,
+                'order_number' => $s->order?->order_number,
+                'date' => $s->created_at->toDateString(),
+                'shipping_charged' => (int) $s->shipping,
+                'shipping_contribution' => (int) $s->vendor_contribution_amount,
                 'your_delivery_contribution' => (int) $s->vendor_contribution_amount,
             ]),
         ]);
@@ -224,7 +228,7 @@ class FinanceController extends Controller
 
     public function deleteBankAccount(string $id): JsonResponse
     {
-        $vendor  = $this->vendor();
+        $vendor = $this->vendor();
         $account = VendorBankAccount::where('vendor_id', $vendor->id)->findOrFail($id);
 
         $this->financeService->deleteBankAccount($vendor, $account);

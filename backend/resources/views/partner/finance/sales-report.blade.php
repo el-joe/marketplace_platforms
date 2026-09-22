@@ -20,12 +20,12 @@
         </div>
 
         <div class="bg-white rounded-2xl border border-gray-200 p-5">
-            <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.platform_delivery_subsidy') }}</p>
+            <p class="text-xs text-gray-500 mb-1">{{ __('partner.finance.shipping_contribution') }}</p>
             <p class="text-2xl font-bold text-green-600">
-                {{ number_format($totals->total_platform_subsidy, 2) }}
+                {{ number_format($totals->total_shipping_contribution, 2) }}
                 <span class="text-sm font-normal text-gray-400">{{ $currency }}</span>
             </p>
-            <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.platform_delivery_subsidy_desc') }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ __('partner.finance.shipping_contribution_desc') }}</p>
         </div>
 
         @if($hasVendorContribution)
@@ -85,7 +85,7 @@
                             <th class="text-right py-3 px-5 font-medium">{{ __('common.date') }}</th>
                             <th class="text-right py-3 px-4 font-medium">{{ __('partner.finance.shipment_reference') }}</th>
                             <th class="py-3 px-4 text-left font-medium">{{ __('partner.finance.shipping_charged_to_customers') }}</th>
-                            <th class="py-3 px-4 text-left font-medium">{{ __('partner.finance.delivery_subsidy') }}</th>
+                            <th class="py-3 px-4 text-left font-medium">{{ __('partner.finance.shipping_contribution') }}</th>
                             @if($hasVendorContribution)
                                 <th class="py-3 px-4 text-left font-medium">{{ __('partner.finance.your_delivery_contribution') }}</th>
                             @endif
@@ -108,7 +108,7 @@
                                     {{ number_format($shipment->shipping, 2) }} {{ $currency }}
                                 </td>
                                 <td class="py-3 px-4 text-left text-green-600 whitespace-nowrap">
-                                    {{ number_format($shipment->admin_subsidy_amount, 2) }} {{ $currency }}
+                                    {{ number_format($shipment->vendor_contribution_amount, 2) }} {{ $currency }}
                                 </td>
                                 @if($hasVendorContribution)
                                     <td class="py-3 px-4 text-left text-red-500 whitespace-nowrap">

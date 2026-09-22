@@ -2,15 +2,20 @@
 
 namespace App\Services\Checkout;
 
+use App\Enums\CouponCustomerEligibility;
 use App\Enums\CouponScope;
+use App\Enums\CouponShippingTypeRestriction;
 use App\Enums\CouponType;
+use App\Enums\OrderStatus;
+use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Commission;
-use App\Models\Coupon;
-use App\Models\CouponUsage;
 use App\Models\Country;
 use App\Models\CountryCategory;
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use App\Models\Customer;
+use App\Models\Order;
 use App\Models\Vendor;
 use App\Models\WarrantyPlan;
 use App\Services\WarrantyPlanService;
@@ -181,7 +186,7 @@ class CheckoutPricingEngine
     /**
      * @param  array<int, mixed>  $items
      * @param  array<int|string, array{listing_id?: string, warranty_plan_id: string}>  $warrantySelections  keyed either
-     *                                                                                                        by cart item id (Customer\CheckoutCalculationService shape) or numeric index (Api\CheckoutCalculationService shape)
+     *                                                                                                       by cart item id (Customer\CheckoutCalculationService shape) or numeric index (Api\CheckoutCalculationService shape)
      * @return array{selections: array<string, array{plan: WarrantyPlan, price: int}>, total: int}
      */
     public function resolveWarrantySelections(array $items, array $warrantySelections, Country $country, string $currency): array
@@ -205,7 +210,7 @@ class CheckoutPricingEngine
             $line = $byKey[$lineKey] ?? null;
             if (! $line) {
                 throw ValidationException::withMessages([
-                    'warranty_selections' => "No cart item found for this warranty selection.",
+                    'warranty_selections' => 'No cart item found for this warranty selection.',
                 ]);
             }
 
@@ -299,7 +304,14 @@ class CheckoutPricingEngine
             $warrantyPrice = $warranty['price'] ?? 0;
             $warrantyTax = $this->calculateTax($warrantyPrice, $country);
 
-            $lineTotal = $taxable + $lineTax + $warrantyPrice + $warrantyTax;
+            // Kept consistent with what CheckoutController::placeOrder() persists to
+            // order_items.line_total (line_subtotal - line_discount + line_tax); loyalty
+            // and warranty are intentionally NOT folded in here even though they are
+            // computed above — they are surfaced separately (lineLoyaltyDiscount,
+            // warrantyPrice/warrantyTax, and the order/sub-order level totals) so the
+            // frontend can still show them, without this specific field diverging from
+            // the persisted value (see docs/formula.md §1).
+            $lineTotal = $lineSubtotal - $lineDiscount + $lineTax;
 
             $pricedLines[] = new PricedLine(
                 id: $key,
@@ -753,7 +765,7 @@ class CheckoutPricingEngine
             return __('common.exceptions.checkout.coupon.not_stackable');
         }
 
-        $eligibility = $coupon->customer_eligibility instanceof \App\Enums\CouponCustomerEligibility
+        $eligibility = $coupon->customer_eligibility instanceof CouponCustomerEligibility
             ? $coupon->customer_eligibility->value
             : (string) $coupon->customer_eligibility;
 
@@ -773,8 +785,8 @@ class CheckoutPricingEngine
         }
 
         if ($eligibility === 'new_customers') {
-            $hasCompletedOrder = \App\Models\Order::where('customer_id', $customer->id)
-                ->where('status', \App\Enums\OrderStatus::Completed)
+            $hasCompletedOrder = Order::where('customer_id', $customer->id)
+                ->where('status', OrderStatus::Completed)
                 ->exists();
             if ($hasCompletedOrder) {
                 return __('common.exceptions.checkout.coupon.new_customers_only');
@@ -817,7 +829,7 @@ class CheckoutPricingEngine
         }
 
         if ($coupon->shipping_type_restriction !== null
-            && $coupon->shipping_type_restriction !== \App\Enums\CouponShippingTypeRestriction::All) {
+            && $coupon->shipping_type_restriction !== CouponShippingTypeRestriction::All) {
             $lines = $this->normalizeAll($items);
             $mismatched = collect($lines)->contains(fn (array $l) => $l['shipping_type'] !== $coupon->shipping_type_restriction->value);
 
@@ -913,7 +925,7 @@ class CheckoutPricingEngine
         // directly, so vendor/admin/campaign-marketer/independent-marketer
         // lines are all normalized correctly (enhancement.md P-02 — P-01
         // left this engine assuming vendor-listing-only cart items).
-        $source = $item instanceof \App\Models\CartItem ? CartLineSource::resolve($item) : null;
+        $source = $item instanceof CartItem ? CartLineSource::resolve($item) : null;
         $listing = $source?->fulfilmentListing;
         $variant = $listing?->productVariant;
         $product = $variant?->product;
@@ -924,7 +936,7 @@ class CheckoutPricingEngine
         $marketerOwner = null;
         $marketerCommissionType = null;
         $marketerCommissionRaw = 0;
-        if ($isMarketer && $item instanceof \App\Models\CartItem) {
+        if ($isMarketer && $item instanceof CartItem) {
             $campaign = $item->marketerListing?->invitation?->campaign;
             if ($campaign) {
                 $marketerOwner = $campaign->vendor_listing_id ? 'vendor' : 'platform';

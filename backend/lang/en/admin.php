@@ -678,6 +678,8 @@ return [
         'carrier'                   => 'Carrier',
         'est_delivery'              => 'Est. Delivery',
         'platform_commission'       => 'Platform Commission',
+        'after_discounts'           => 'after discounts',
+        'line_subtotal'             => 'Subtotal',
         'vendor_payout'             => 'Vendor Payout',
         'shipping'                  => 'Shipping',
         'vendor_coupon_cost'        => 'Vendor Coupon Cost',

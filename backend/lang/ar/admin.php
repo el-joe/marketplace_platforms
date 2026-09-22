@@ -682,6 +682,8 @@ return [
         'carrier'                   => 'شركة الشحن',
         'est_delivery'              => 'التسليم المتوقع',
         'platform_commission'       => 'عمولة المنصة',
+        'after_discounts'           => 'بعد الخصومات',
+        'line_subtotal'             => 'المجموع الفرعي',
         'vendor_payout'             => 'دفعة التاجر',
         'shipping'                  => 'الشحن',
         'vendor_coupon_cost'        => 'تكلفة الكوبون على التاجر',

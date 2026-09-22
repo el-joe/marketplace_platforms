@@ -245,6 +245,8 @@
                                                 <th class="px-4 py-2.5 text-end text-xs font-semibold text-gray-500 uppercase">
                                                     {{ __('admin.orders.unit_price') }}</th>
                                                 <th class="px-4 py-2.5 text-end text-xs font-semibold text-gray-500 uppercase">
+                                                    {{ __('admin.orders.line_subtotal') }}</th>
+                                                <th class="px-4 py-2.5 text-end text-xs font-semibold text-gray-500 uppercase">
                                                     {{ __('common.total') }}</th>
                                                 <th class="px-4 py-2.5 text-end text-xs font-semibold text-gray-500 uppercase">
                                                     {{ __('admin.orders.commission_amount') }}</th>
@@ -303,6 +305,7 @@
                                                     <td class="px-4 py-3 text-xs text-gray-500 font-mono">{{ $item->sku }}</td>
                                                     <td class="px-4 py-3 text-center font-medium">{{ $item->quantity }}</td>
                                                     <td class="px-4 py-3 text-end text-sm">{{ $fmt($item->unit_price) }}</td>
+                                                    <td class="px-4 py-3 text-end text-sm text-gray-500">{{ $fmt($item->line_subtotal) }}</td>
                                                     <td class="px-4 py-3 text-end font-medium">{{ $fmt($item->line_total) }}</td>
                                                     <td class="px-4 py-3 text-end text-xs text-gray-500">
                                                         @php
@@ -383,7 +386,7 @@
                                         <span>{{ $fmt($subOrder->shipping) }}</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-gray-500">{{ __('admin.orders.platform_commission') }}</span>
+                                        <span class="text-gray-500">{{ __('admin.orders.platform_commission') }} <span class="text-gray-400">({{ __('admin.orders.after_discounts') }})</span></span>
                                         <span class="text-danger-600">−{{ $fmt($subOrder->platform_commission) }}</span>
                                     </div>
                                     @if($subOrder->gateway_fee > 0)
@@ -405,6 +408,12 @@
                                                 <span class="text-gray-400">({{ __('admin.orders.paid_by') }}: {{ $subOrder->marketer_commission_owner }})</span>
                                             </span>
                                             <span class="text-danger-600">−{{ $fmt($subOrder->marketer_commission) }}</span>
+                                        </div>
+                                    @endif
+                                    @if($subOrder->vendor_contribution_amount > 0)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.vendor_contribution_amount') }}</span>
+                                            <span class="text-danger-600">−{{ $fmt($subOrder->vendor_contribution_amount) }}</span>
                                         </div>
                                     @endif
                                     <div class="flex items-center justify-between font-medium text-gray-700">

@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\DTOs\Refund\RefundScope;
 use App\Enums\RefundReason;
+use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentTransaction;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Services\Customer\CheckoutWalletService;
-use App\Services\MarketerConversionReversalService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -92,22 +93,22 @@ class RefundService
     ];
 
     public function __construct(
-        private readonly PaymentService $paymentService = new PaymentService(),
-        private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService(),
-        private readonly LedgerService $ledgerService = new LedgerService(),
-        private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService(),
+        private readonly PaymentService $paymentService = new PaymentService,
+        private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService,
+        private readonly LedgerService $ledgerService = new LedgerService,
+        private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService,
     ) {}
 
     /**
      * @param  string  $reason  A RefundReason value, or a ReturnRequestReason
-     *      value (mapped via self::RETURN_REASON_MAP) — the original string
-     *      is always preserved in reason_notes.
+     *                          value (mapped via self::RETURN_REASON_MAP) — the original string
+     *                          is always preserved in reason_notes.
      * @param  string  $liability  App\Enums\ReturnRequestLiability value:
-     *      customer|seller|platform|carrier.
+     *                             customer|seller|platform|carrier.
      * @param  string  $destination  original|wallet|bank.
      * @param  array{type: string, id: ?string}|null  $initiatedBy  e.g.
-     *      ['type' => 'admin', 'id' => $admin->id] or ['type' => 'system'].
-     *      Defaults to the order's customer.
+     *                                                              ['type' => 'admin', 'id' => $admin->id] or ['type' => 'system'].
+     *                                                              Defaults to the order's customer.
      */
     public function refund(
         Order $order,
@@ -204,9 +205,9 @@ class RefundService
      * the settlement logic.
      *
      * @param  bool  $reverseLedger  Pass false when the caller (e.g.
-     *      OrderCancellationService for a whole-order cancel) will post
-     *      its own full LedgerService::reverseOrderCapture() afterwards —
-     *      posting both would double-reverse the capture group.
+     *                               OrderCancellationService for a whole-order cancel) will post
+     *                               its own full LedgerService::reverseOrderCapture() afterwards —
+     *                               posting both would double-reverse the capture group.
      */
     public function settle(Refund $refund, Order $order, string $resolvedDestination, ?PaymentTransaction $originalTransaction = null, bool $reverseLedger = true): void
     {
@@ -255,7 +256,7 @@ class RefundService
 
                 return;
             }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             // Transient network failure talking to the gateway — leave the
             // refund 'processing' and let the caller (RefundProcessingJob)
             // retry with backoff instead of marking it permanently failed.
@@ -365,7 +366,7 @@ class RefundService
             return (int) $item->line_total;
         }
 
-        return (int) round(((int) $item->line_total) * ($qty / (int) $item->quantity));
+        return (int) round((float) bcdiv(bcmul($item->line_total, (string) $qty, 4), (string) $item->quantity, 4));
     }
 
     private function mapReason(string $reason): string
@@ -379,7 +380,7 @@ class RefundService
 
     private function updateOrderPaymentStatus(Order $order): void
     {
-        $totalRefunded = (int) \App\Models\Refund::where('order_id', $order->id)
+        $totalRefunded = (int) Refund::where('order_id', $order->id)
             ->where('status', 'completed')
             ->sum('amount');
 
@@ -393,7 +394,7 @@ class RefundService
 
     private function postLedgerReversal(Refund $refund, Order $order): void
     {
-        $hasCapture = \App\Models\LedgerEntry::where('transaction_group_id', $order->id)
+        $hasCapture = LedgerEntry::where('transaction_group_id', $order->id)
             ->where('reference_type', 'order_capture')
             ->exists();
 
@@ -401,7 +402,7 @@ class RefundService
             return;
         }
 
-        $alreadyReversedForThisRefund = \App\Models\LedgerEntry::where('reference_type', 'refund_reversal')
+        $alreadyReversedForThisRefund = LedgerEntry::where('reference_type', 'refund_reversal')
             ->where('reference_id', (string) $refund->id)
             ->exists();
 
