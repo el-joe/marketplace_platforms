@@ -940,14 +940,14 @@ class CheckoutPricingEngine
                 'unit_price' => (int) $item['unit_price'],
                 'quantity' => (int) $item['quantity'],
                 'line_subtotal' => (int) $item['unit_price'] * (int) $item['quantity'],
-                'shipping_type' => ($item['is_admin'] ?? false) ? 'fbn' : match ($listing?->fulfillment_model ?? null) {
+                'shipping_type' => ($item['is_admin'] ?? false) ? 'fbn' : match ($listing?->fulfillment_model?->value ?? $listing?->fulfillment_model ?? null) {
                     'fbn' => 'fbn',
                     'cross_dock' => 'fbp',
                     default => 'fbm',
                 },
                 'product' => $product,
                 'listing_id' => $listing?->id,
-                'fulfillment_model' => ($item['is_admin'] ?? false) ? 'fbn' : (string) ($listing?->fulfillment_model ?? 'fbm'),
+                'fulfillment_model' => ($item['is_admin'] ?? false) ? 'fbn' : (string) ($listing?->fulfillment_model?->value ?? $listing?->fulfillment_model ?? 'fbm'),
                 'commission_base_unit_price' => (int) $item['unit_price'],
                 'is_marketer' => false,
                 'marketer_id' => null,

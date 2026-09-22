@@ -129,8 +129,8 @@ class MarketerCampaignService
                     : VendorListing::where('id', $source->vendorListingId)->firstOrFail();
 
                 $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
-                if (! in_array($listing->fulfillment_model, $allowedModels, true)) {
-                    throw new \RuntimeException("Campaigns are not allowed for {$listing->fulfillment_model} listings.");
+                if (! in_array($listing->fulfillment_model?->value, $allowedModels, true)) {
+                    throw new \RuntimeException("Campaigns are not allowed for {$listing->fulfillment_model?->value} listings.");
                 }
 
                 $category = $listing->productVariant?->product?->category;

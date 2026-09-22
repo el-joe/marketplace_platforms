@@ -6,6 +6,7 @@ use App\Exceptions\InternationalShippingIneligibleException;
 use App\Models\AdminListing;
 use App\Models\CartItem;
 use App\Models\InternationalShippingEligibility;
+use App\Models\MarketerListing;
 use App\Models\ProductCountry;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
@@ -33,7 +34,7 @@ class CartLineSource
      */
     private function __construct(
         public readonly CartItem $cartItem,
-        public readonly VendorListing|AdminListing|\App\Models\MarketerListing $sellable,
+        public readonly VendorListing|AdminListing|MarketerListing $sellable,
         public readonly VendorListing|AdminListing $fulfilmentListing,
         public readonly string $sellerParty,
         public readonly int $price,
@@ -60,7 +61,7 @@ class CartLineSource
                 sellerParty: $listing->vendor_id,
                 price: (int) $item->unit_price,
                 quantity: (int) $item->quantity,
-                fulfillmentModel: (string) ($listing->fulfillment_model ?? 'fbm'),
+                fulfillmentModel: $listing->fulfillment_model?->value ?? 'fbm',
                 warehouseInventories: $listing->relationLoaded('warehouseInventories')
                     ? $listing->warehouseInventories
                     : $listing->warehouseInventories()->get(),
@@ -127,7 +128,7 @@ class CartLineSource
                     sellerParty: $sourceVendorListing->vendor_id,
                     price: (int) $item->unit_price,
                     quantity: (int) $item->quantity,
-                    fulfillmentModel: (string) ($sourceVendorListing->fulfillment_model ?? 'fbm'),
+                    fulfillmentModel: $sourceVendorListing->fulfillment_model?->value ?? 'fbm',
                     warehouseInventories: $sourceVendorListing->relationLoaded('warehouseInventories')
                         ? $sourceVendorListing->warehouseInventories
                         : $sourceVendorListing->warehouseInventories()->get(),

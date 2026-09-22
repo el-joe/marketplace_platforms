@@ -25,16 +25,17 @@ class ShippingCompany extends Model
         'can_supervisors_receive_all_notifications',
         'approved_by_admin_id',
         'approved_at',
+        'owner_vendor_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'served_countries'                          => 'array',
-            'served_cities'                             => 'array',
+            'served_countries' => 'array',
+            'served_cities' => 'array',
             'can_supervisors_receive_all_notifications' => 'boolean',
-            'approved_at'                               => 'datetime',
-            'status'                                     => ShippingCompanyStatus::class,
+            'approved_at' => 'datetime',
+            'status' => ShippingCompanyStatus::class,
         ];
     }
 
@@ -70,10 +71,27 @@ class ShippingCompany extends Model
         return $this->hasMany(ShippingCarrier::class);
     }
 
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'owner_vendor_id');
+    }
+
     // ── Scopes ─────────────────────────────────────────────────────────────
 
     public function scopeActive($query)
     {
         return $query->where('status', ShippingCompanyStatus::Active);
+    }
+
+    /**
+     * FBM (vendor-owned shipping) — a shipping company is visible to a
+     * vendor when it is public (no owner) or privately owned by that vendor.
+     */
+    public function scopeVisibleTo($query, $vendorId)
+    {
+        return $query->where(function ($q) use ($vendorId) {
+            $q->whereNull('owner_vendor_id')
+                ->orWhere('owner_vendor_id', $vendorId);
+        });
     }
 }

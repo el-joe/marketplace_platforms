@@ -44,7 +44,7 @@ class MarketerCampaignController extends Controller
     {
         abort_unless($vendorListing->vendor_id === $this->vendorId(), 403);
         $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
-        abort_unless(in_array($vendorListing->fulfillment_model, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
+        abort_unless(in_array($vendorListing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
 
         $existing = MarketerCampaign::where('vendor_listing_id', $vendorListing->id)
             ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
@@ -85,7 +85,7 @@ class MarketerCampaignController extends Controller
             ->firstOrFail();
 
         $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
-        abort_unless(in_array($listing->fulfillment_model, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
+        abort_unless(in_array($listing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
         abort_if($this->hasActiveCampaign($listing->id), 403, 'هذه القائمة لديها حملة نشطة أو قيد المراجعة بالفعل.');
 
         try {

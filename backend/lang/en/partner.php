@@ -669,6 +669,41 @@ return [
         'submit_account' => 'Add Account',
     ],
 
+    'shipping_companies' => [
+        'title' => 'Shipping Companies',
+        'description' => 'Public companies are managed by the platform. Add a private shipping company (e.g. your own in-house delivery staff) that only you can use.',
+        'add_company' => 'Add Private Shipping Company',
+        'edit_company' => 'Edit Shipping Company',
+        'name' => 'Name',
+        'contact' => 'Contact Email',
+        'phone' => 'Phone',
+        'visibility' => 'Visibility',
+        'status' => 'Status',
+        'actions' => 'Actions',
+        'public' => 'Public',
+        'private' => 'Private',
+        'read_only' => 'Read-only',
+        'no_companies' => 'No shipping companies yet.',
+        'confirm_delete' => 'Delete this shipping company?',
+        'messages' => [
+            'created' => 'Shipping company added.',
+            'updated' => 'Shipping company updated.',
+            'deleted' => 'Shipping company deleted.',
+            'in_use' => 'This shipping company has agents or carriers and cannot be deleted.',
+        ],
+    ],
+
+    'payment_methods' => [
+        'title' => 'Payment Methods',
+        'description' => 'Choose which payment methods your customers can use at checkout.',
+        'fbm_only_notice' => 'Only vendors using their own shipping (FBM) can enable or disable payment methods. This page is read-only for you.',
+        'no_gateways' => 'No payment gateways available.',
+        'messages' => [
+            'updated' => 'Payment method updated.',
+            'fbm_only' => 'Only FBM vendors can change payment methods.',
+        ],
+    ],
+
     'marketer_types' => [
         'influencer' => 'Influencer',
         'celebrity' => 'Celebrity',

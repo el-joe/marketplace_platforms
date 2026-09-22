@@ -17,7 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Vendor extends Model
 {
-    use HasFactory, HasUuids/*, SoftDeletes*/ ;
+    use HasFactory, HasUuids/* , SoftDeletes */ ;
+
     protected $fillable = [
         'name',
         'email',
@@ -183,7 +184,7 @@ class Vendor extends Model
 
     public function subOrders(): HasMany
     {
-        return $this->hasMany(\App\Models\SubOrder::class);
+        return $this->hasMany(SubOrder::class);
     }
 
     public function acquisitionCommissions(): HasMany
@@ -221,6 +222,18 @@ class Vendor extends Model
         return $this->hasMany(VendorCityShippingSurcharge::class);
     }
 
+    /** FBM (vendor-owned shipping) — shipping companies this vendor added privately. */
+    public function ownedShippingCompanies(): HasMany
+    {
+        return $this->hasMany(ShippingCompany::class, 'owner_vendor_id');
+    }
+
+    /** FBM (vendor-owned shipping) — payment gateways this vendor has toggled at checkout. */
+    public function paymentMethods(): HasMany
+    {
+        return $this->hasMany(VendorPaymentMethod::class);
+    }
+
     public function addresses(): MorphMany
     {
         return $this->morphMany(Address::class, 'addressable');
@@ -255,5 +268,4 @@ class Vendor extends Model
     {
         return $this->hasMany(MarketerCampaign::class);
     }
-
 }

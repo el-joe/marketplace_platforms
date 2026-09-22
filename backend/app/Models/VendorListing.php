@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FulfillmentModel;
 use App\Enums\GlobalSystemType;
 use App\Enums\VendorListingStatus;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ class VendorListing extends Model
     use SoftDeletes;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected function casts(): array
@@ -23,6 +25,7 @@ class VendorListing extends Model
         return [
             'status' => VendorListingStatus::class,
             'global_system_type' => GlobalSystemType::class,
+            'fulfillment_model' => FulfillmentModel::class,
             'vendor_covers_delivery' => 'boolean',
             // enhancement.md P-03 task 4: price/compare_at_price/cost_price were
             // DECIMAL(12,2), the only money columns in the schema that weren't

@@ -103,6 +103,8 @@
         {{-- GROUP 8: الحساب --}}
         <x-partner-nav-group label="{{ __('partner.nav.settings') }}">
             <x-partner-nav-item route="partner.profile.index" icon="building-storefront" label="{{ __('partner.nav.my_profile') }}" />
+            <x-partner-nav-item route="partner.shipping-companies.index" icon="truck" label="{{ __('partner.shipping_companies.title') }}" />
+            <x-partner-nav-item route="partner.payment-methods.index" icon="credit-card" label="{{ __('partner.payment_methods.title') }}" />
             @if ($vendorAdmin?->can('team.view'))
                 <x-partner-nav-item route="partner.team.index" icon="users" label="{{ __('partner.nav.team') }}" />
             @endif
