@@ -83,6 +83,14 @@ class UpdateCouponRequest extends FormRequest
                 Rule::when(fn () => $this->input('funded_by') === 'shared', ['required'], ['nullable']),
                 'integer', 'min:0', 'max:100',
             ],
+            // Client feature request #3.1: multi-vendor/marketer targeting.
+            // Empty/omitted = applies to everyone (legacy default behavior).
+            'vendor_ids' => ['nullable', 'array'],
+            'vendor_ids.*' => ['uuid', 'exists:vendors,id'],
+            'marketer_ids' => ['nullable', 'array'],
+            'marketer_ids.*' => ['uuid', 'exists:marketers,id'],
+            'product_ids' => ['nullable', 'array'],
+            'product_ids.*' => ['uuid', 'exists:products,id'],
         ];
     }
 }

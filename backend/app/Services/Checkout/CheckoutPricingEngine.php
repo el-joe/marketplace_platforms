@@ -845,6 +845,10 @@ class CheckoutPricingEngine
 
     private function lineMatchesScope(array $line, Coupon $coupon): bool
     {
+        if (! $this->lineMatchesMultiTargeting($line, $coupon)) {
+            return false;
+        }
+
         $scope = $coupon->scope instanceof CouponScope ? $coupon->scope->value : $coupon->scope;
 
         return match ($scope) {
@@ -855,6 +859,39 @@ class CheckoutPricingEngine
                 && $coupon->products()->where('products.id', $line['product_id'])->exists(),
             default => true,
         };
+    }
+
+    /**
+     * Client feature request #3.1: multi-vendor/marketer targeting via the
+     * `coupon_vendors`/`coupon_marketers` pivot tables, layered on top of
+     * (and independent from) the existing single vendor_id/scope system.
+     * If a coupon has rows in either pivot, it is restricted to those
+     * vendors/marketers; if both are empty, legacy/default behavior
+     * (applies to everyone) is preserved.
+     */
+    private function lineMatchesMultiTargeting(array $line, Coupon $coupon): bool
+    {
+        $allowedVendorIds = $coupon->relationLoaded('vendors')
+            ? $coupon->vendors->pluck('id')
+            : $coupon->vendors()->pluck('vendors.id');
+
+        if ($allowedVendorIds->isNotEmpty() && ! in_array($line['vendor_id'], $allowedVendorIds->all(), true)) {
+            return false;
+        }
+
+        $allowedMarketerIds = $coupon->relationLoaded('marketers')
+            ? $coupon->marketers->pluck('id')
+            : $coupon->marketers()->pluck('marketers.id');
+
+        if ($allowedMarketerIds->isNotEmpty()) {
+            $marketerId = $line['marketer_id'] ?? null;
+
+            if ($marketerId === null || ! in_array($marketerId, $allowedMarketerIds->all(), true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function categoryMatches(string $itemCategoryId, ?string $couponCategoryId): bool
@@ -913,6 +950,7 @@ class CheckoutPricingEngine
                 'fulfillment_model' => ($item['is_admin'] ?? false) ? 'fbn' : (string) ($listing?->fulfillment_model ?? 'fbm'),
                 'commission_base_unit_price' => (int) $item['unit_price'],
                 'is_marketer' => false,
+                'marketer_id' => null,
                 'marketer_owner' => null,
                 'marketer_commission_type' => null,
                 'marketer_commission_raw' => 0,
@@ -966,6 +1004,7 @@ class CheckoutPricingEngine
             'fulfillment_model' => $source?->isAdminSeller() ? 'fbn' : (string) ($source?->fulfillmentModel ?? 'fbm'),
             'commission_base_unit_price' => (int) ($listing?->price ?? $item->unit_price),
             'is_marketer' => $isMarketer,
+            'marketer_id' => ($isMarketer && $item instanceof CartItem) ? $item->marketerListing?->marketer_id : null,
             'marketer_owner' => $marketerOwner,
             'marketer_commission_type' => $marketerCommissionType,
             'marketer_commission_raw' => $marketerCommissionRaw,

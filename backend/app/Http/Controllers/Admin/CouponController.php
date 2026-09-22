@@ -7,11 +7,17 @@ use App\Http\Requests\Admin\StoreCouponRequest;
 use App\Http\Requests\Admin\UpdateCouponRequest;
 use App\Http\Resources\Admin\CouponResource;
 use App\Http\Resources\Admin\CouponUsageResource;
+use App\Models\Admin;
 use App\Models\Category;
+use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
-use App\Models\Country;
 use App\Models\Customer;
+use App\Models\Marketer;
+use App\Models\MarketerListing;
+use App\Models\Product;
+use App\Models\Vendor;
+use App\Models\VendorListing;
 use App\Services\Admin\CouponService;
 use App\Traits\HasDataTable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -27,11 +33,9 @@ use Illuminate\View\View;
 
 class CouponController extends Controller
 {
-    use HasDataTable, AuthorizesRequests;
+    use AuthorizesRequests, HasDataTable;
 
-    public function __construct(private readonly CouponService $coupons)
-    {
-    }
+    public function __construct(private readonly CouponService $coupons) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index
@@ -85,9 +89,9 @@ class CouponController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'is_active' => fn($q, $v) => $q->where('coupons.is_active', (bool) $v),
-            'type' => fn($q, $v) => $q->where('coupons.type', $v),
-            'scope' => fn($q, $v) => $q->where('coupons.scope', $v),
+            'is_active' => fn ($q, $v) => $q->where('coupons.is_active', (bool) $v),
+            'type' => fn ($q, $v) => $q->where('coupons.type', $v),
+            'scope' => fn ($q, $v) => $q->where('coupons.scope', $v),
             'expired' => function ($q, $v) {
                 if ($v === '1') {
                     $q->where('coupons.valid_until', '<', now());
@@ -141,6 +145,9 @@ class CouponController extends Controller
             'categories' => Category::query()->where('is_active', true)->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
             'countries' => Country::query()->whereNull('deleted_at')->orderBy('name_en')->get(['id', 'name_en']),
             'selectedCustomers' => collect(),
+            'selectedVendors' => collect(),
+            'selectedMarketers' => collect(),
+            'selectedProducts' => collect(),
         ]);
     }
 
@@ -148,7 +155,7 @@ class CouponController extends Controller
     {
         Gate::forUser(Auth::guard('admin')->user())->authorize('create', Coupon::class);
 
-        /** @var \App\Models\Admin $admin */
+        /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
 
         try {
@@ -157,6 +164,7 @@ class CouponController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withInput()->withErrors($e->errors());
         } catch (\Throwable $e) {
             Log::error('CouponController@store failed', ['error' => $e->getMessage()]);
@@ -164,6 +172,7 @@ class CouponController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => __('admin.coupons_section.create_failed')], 500);
             }
+
             return back()->withInput()->withErrors(['error' => __('admin.coupons_section.create_failed')]);
         }
 
@@ -244,6 +253,8 @@ class CouponController extends Controller
 
         $usageCount = CouponUsage::query()->where('coupon_id', $model->id)->count();
 
+        $model->load(['vendors:id,store_name,name', 'marketers:id,name,email', 'products:id,name_en,name_ar']);
+
         return view('admin.coupons.edit', [
             'coupon' => $model,
             'usageCount' => $usageCount,
@@ -257,6 +268,9 @@ class CouponController extends Controller
             'selectedCustomers' => $model->eligible_customer_ids
                 ? Customer::query()->whereIn('id', $model->eligible_customer_ids)->get(['id', 'name', 'email'])
                 : collect(),
+            'selectedVendors' => $model->vendors,
+            'selectedMarketers' => $model->marketers,
+            'selectedProducts' => $model->products,
         ]);
     }
 
@@ -272,6 +286,7 @@ class CouponController extends Controller
             return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (\Throwable $e) {
             Log::error('CouponController@update failed', ['coupon' => $coupon, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => __('admin.coupons_section.update_failed')], 500);
         }
 
@@ -282,7 +297,7 @@ class CouponController extends Controller
     {
         Gate::forUser(Auth::guard('admin')->user())->authorize('toggleActive', $coupon);
 
-        $coupon->update(['is_active' => !$coupon->is_active]);
+        $coupon->update(['is_active' => ! $coupon->is_active]);
 
         return response()->json(['success' => true, 'is_active' => $coupon->is_active]);
     }
@@ -334,12 +349,12 @@ class CouponController extends Controller
         $action = $request->input('action');
         $ids = $request->input('ids', []);
 
-        if (empty($ids) || !is_array($ids)) {
+        if (empty($ids) || ! is_array($ids)) {
             return response()->json(['message' => __('admin.coupons_section.no_coupons_selected')], 422);
         }
 
         $allowed = ['activate', 'deactivate', 'delete'];
-        if (!in_array($action, $allowed, true)) {
+        if (! in_array($action, $allowed, true)) {
             return response()->json(['message' => __('admin.coupons_section.invalid_action')], 422);
         }
 
@@ -395,7 +410,86 @@ class CouponController extends Controller
             ->get(['id', 'name', 'email']);
 
         return response()->json([
-            'results' => $customers->map(fn($c) => ['id' => $c->id, 'text' => "{$c->name} ({$c->email})"]),
+            'results' => $customers->map(fn ($c) => ['id' => $c->id, 'text' => "{$c->name} ({$c->email})"]),
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Search (Select2 AJAX) — multi-vendor/marketer targeting (#3.1)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function searchVendors(Request $request): JsonResponse
+    {
+        $term = $request->input('q', '');
+
+        $vendors = Vendor::query()
+            ->where(function ($q) use ($term) {
+                $q->where('store_name', 'like', "%{$term}%")
+                    ->orWhere('name', 'like', "%{$term}%");
+            })
+            ->orderBy('store_name')
+            ->limit(30)
+            ->get(['id', 'store_name', 'name']);
+
+        return response()->json([
+            'results' => $vendors->map(fn ($v) => ['id' => $v->id, 'text' => $v->store_name ?: $v->name]),
+        ]);
+    }
+
+    public function searchMarketers(Request $request): JsonResponse
+    {
+        $term = $request->input('q', '');
+
+        $marketers = Marketer::query()
+            ->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('name')
+            ->limit(30)
+            ->get(['id', 'name', 'email']);
+
+        return response()->json([
+            'results' => $marketers->map(fn ($m) => ['id' => $m->id, 'text' => "{$m->name} ({$m->email})"]),
+        ]);
+    }
+
+    /**
+     * Product picker for the "products this coupon applies to" (CouponProduct)
+     * field, filtered by the vendor(s)/marketer(s) selected in the form so
+     * the admin only sees products that are actually reachable by the
+     * chosen targeting (plan #3.1).
+     */
+    public function searchProducts(Request $request): JsonResponse
+    {
+        $term = $request->input('q', '');
+        $vendorIds = array_filter((array) $request->input('vendor_ids', []));
+        $marketerIds = array_filter((array) $request->input('marketer_ids', []));
+
+        $query = Product::query()
+            ->where(function ($q) use ($term) {
+                $q->where('name_en', 'like', "%{$term}%")
+                    ->orWhere('name_ar', 'like', "%{$term}%");
+            });
+
+        if (! empty($vendorIds)) {
+            $query->whereIn('id', VendorListing::query()
+                ->whereIn('vendor_id', $vendorIds)
+                ->join('product_variants', 'vendor_listings.product_variant_id', '=', 'product_variants.id')
+                ->pluck('product_variants.product_id'));
+        }
+
+        if (! empty($marketerIds)) {
+            $query->whereIn('id', MarketerListing::query()
+                ->whereIn('marketer_id', $marketerIds)
+                ->join('product_variants', 'marketer_listings.product_variant_id', '=', 'product_variants.id')
+                ->pluck('product_variants.product_id'));
+        }
+
+        $products = $query->orderBy('name_en')->limit(30)->get(['id', 'name_en', 'name_ar']);
+
+        return response()->json([
+            'results' => $products->map(fn ($p) => ['id' => $p->id, 'text' => $p->name_en ?: $p->name_ar]),
         ]);
     }
 

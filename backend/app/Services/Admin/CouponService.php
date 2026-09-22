@@ -22,7 +22,7 @@ class CouponService
         $data['code'] = strtoupper(trim($data['code']));
         $this->validateCodeUnique($data['code']);
 
-        if (!in_array($data['scope'], self::ADMIN_MANAGEABLE_SCOPES, true)) {
+        if (! in_array($data['scope'], self::ADMIN_MANAGEABLE_SCOPES, true)) {
             throw ValidationException::withMessages([
                 'scope' => __('admin.coupons_section.scope_not_admin_manageable'),
             ]);
@@ -33,14 +33,27 @@ class CouponService
         $data['created_by_user_id'] = $admin->id;
         $data['vendor_id'] = null;
         $data['category_id'] = $data['scope'] === 'category' ? ($data['category_id'] ?? null) : null;
-        $data['country_ids'] = !empty($data['country_ids']) ? $data['country_ids'] : null;
+        $data['country_ids'] = ! empty($data['country_ids']) ? $data['country_ids'] : null;
         $data['eligible_customer_ids'] = $data['customer_eligibility'] === 'specific_users' ? ($data['eligible_customer_ids'] ?? []) : null;
         $data['vendor_share_pct'] = $data['funded_by'] === 'shared' ? $data['vendor_share_pct'] : null;
 
-        $coupon = DB::transaction(fn () => Coupon::query()->create(array_merge(
-            ['id' => Str::uuid()->toString()],
-            $data
-        )));
+        $vendorIds = $data['vendor_ids'] ?? [];
+        $marketerIds = $data['marketer_ids'] ?? [];
+        $productIds = $data['product_ids'] ?? [];
+        unset($data['vendor_ids'], $data['marketer_ids'], $data['product_ids']);
+
+        $coupon = DB::transaction(function () use ($data, $vendorIds, $marketerIds, $productIds) {
+            $coupon = Coupon::query()->create(array_merge(
+                ['id' => Str::uuid()->toString()],
+                $data
+            ));
+
+            $coupon->vendors()->sync($vendorIds);
+            $coupon->marketers()->sync($marketerIds);
+            $coupon->products()->sync($productIds);
+
+            return $coupon;
+        });
 
         return $coupon;
     }
@@ -50,7 +63,7 @@ class CouponService
         $data['code'] = strtoupper(trim($data['code']));
         $this->validateCodeUnique($data['code'], $coupon->id);
 
-        if (!in_array($data['scope'], self::ADMIN_MANAGEABLE_SCOPES, true)) {
+        if (! in_array($data['scope'], self::ADMIN_MANAGEABLE_SCOPES, true)) {
             throw ValidationException::withMessages([
                 'scope' => __('admin.coupons_section.scope_not_admin_manageable'),
             ]);
@@ -60,11 +73,21 @@ class CouponService
         $data['is_stackable'] = (bool) ($data['is_stackable'] ?? false);
         $data['vendor_id'] = null;
         $data['category_id'] = $data['scope'] === 'category' ? ($data['category_id'] ?? null) : null;
-        $data['country_ids'] = !empty($data['country_ids']) ? $data['country_ids'] : null;
+        $data['country_ids'] = ! empty($data['country_ids']) ? $data['country_ids'] : null;
         $data['eligible_customer_ids'] = $data['customer_eligibility'] === 'specific_users' ? ($data['eligible_customer_ids'] ?? []) : null;
         $data['vendor_share_pct'] = $data['funded_by'] === 'shared' ? $data['vendor_share_pct'] : null;
 
-        DB::transaction(fn () => $coupon->update($data));
+        $vendorIds = $data['vendor_ids'] ?? [];
+        $marketerIds = $data['marketer_ids'] ?? [];
+        $productIds = $data['product_ids'] ?? [];
+        unset($data['vendor_ids'], $data['marketer_ids'], $data['product_ids']);
+
+        DB::transaction(function () use ($coupon, $data, $vendorIds, $marketerIds, $productIds) {
+            $coupon->update($data);
+            $coupon->vendors()->sync($vendorIds);
+            $coupon->marketers()->sync($marketerIds);
+            $coupon->products()->sync($productIds);
+        });
 
         return $coupon->refresh();
     }

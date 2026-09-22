@@ -474,6 +474,77 @@
                 </div>
             </div>
 
+            {{-- Multi-vendor/marketer targeting ──────────────────────────
+                 Client feature #3.1: restricts the coupon to specific
+                 vendors/marketers on top of scope. Empty = applies to
+                 everyone (legacy default). The product picker below is
+                 filtered by whichever vendors/marketers are selected. --}}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.coupons_section.targeting') }}</h2>
+                    <p class="text-xs text-gray-400 mt-1">{{ __('admin.coupons_section.targeting_hint') }}</p>
+                </div>
+                <div class="px-5 py-5 grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="vendor_ids" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupons_section.targeted_vendors') }}</label>
+                        <select
+                            id="vendor_ids"
+                            name="vendor_ids[]"
+                            multiple
+                            class="input w-full @error('vendor_ids') border-red-400 @enderror"
+                            data-async-select
+                            data-config="{{ json_encode(['url' => route('admin.coupons.search-vendors'), 'param' => 'q', 'minLength' => 2], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                            placeholder="{{ __('admin.coupons_section.select_vendors') }}"
+                        >
+                            @foreach($selectedVendors as $vendor)
+                                <option value="{{ $vendor->id }}" selected>{{ e($vendor->store_name ?: $vendor->name) }}</option>
+                            @endforeach
+                        </select>
+                        @error('vendor_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('vendor_ids.*') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="marketer_ids" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupons_section.targeted_marketers') }}</label>
+                        <select
+                            id="marketer_ids"
+                            name="marketer_ids[]"
+                            multiple
+                            class="input w-full @error('marketer_ids') border-red-400 @enderror"
+                            data-async-select
+                            data-config="{{ json_encode(['url' => route('admin.coupons.search-marketers'), 'param' => 'q', 'minLength' => 2], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                            placeholder="{{ __('admin.coupons_section.select_marketers') }}"
+                        >
+                            @foreach($selectedMarketers as $marketer)
+                                <option value="{{ $marketer->id }}" selected>{{ e($marketer->name) }} ({{ e($marketer->email) }})</option>
+                            @endforeach
+                        </select>
+                        @error('marketer_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('marketer_ids.*') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="col-span-2">
+                        <label for="product_ids" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupons_section.targeted_products') }}</label>
+                        <select
+                            id="product_ids"
+                            name="product_ids[]"
+                            multiple
+                            class="input w-full @error('product_ids') border-red-400 @enderror"
+                            data-async-select
+                            data-config="{{ json_encode(['url' => route('admin.coupons.search-products'), 'param' => 'q', 'minLength' => 2, 'vendor_ids' => [], 'marketer_ids' => []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                            placeholder="{{ __('admin.coupons_section.select_products') }}"
+                        >
+                            @foreach($selectedProducts as $product)
+                                <option value="{{ $product->id }}" selected>{{ e($product->name_en ?: $product->name_ar) }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('admin.coupons_section.targeted_products_hint') }}</p>
+                        @error('product_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        @error('product_ids.*') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
+
             {{-- Restrictions ────────────────────────────────────────────── --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
                 <div class="px-5 py-4 border-b border-gray-100">
@@ -687,3 +758,30 @@
 
     </div>
 </div>
+
+<script>
+    // Keeps the "targeted products" async picker (#product_ids) scoped to
+    // whichever vendors/marketers are currently selected, so the admin can't
+    // pick a product no selected vendor/marketer actually sells (#3.1).
+    document.addEventListener('DOMContentLoaded', function () {
+        const $ = window.$ || window.jQuery;
+        if (!$) return;
+
+        const $vendorIds = $('#vendor_ids');
+        const $marketerIds = $('#marketer_ids');
+        const $productIds = $('#product_ids');
+        if (!$productIds.length) return;
+
+        function syncProductFilter() {
+            let config = {};
+            try { config = JSON.parse($productIds.attr('data-config') || '{}'); } catch (_) { }
+            config.vendor_ids = $vendorIds.val() || [];
+            config.marketer_ids = $marketerIds.val() || [];
+            $productIds.attr('data-config', JSON.stringify(config));
+        }
+
+        $vendorIds.on('change', syncProductFilter);
+        $marketerIds.on('change', syncProductFilter);
+        syncProductFilter();
+    });
+</script>

@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\CouponCustomerEligibility;
+use App\Enums\CouponScope;
+use App\Enums\CouponShippingTypeRestriction;
+use App\Enums\CouponType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Coupon extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
+
     protected $fillable = [
         'code',
         'name',
@@ -47,10 +52,10 @@ class Coupon extends Model
     ];
 
     protected $casts = [
-        'type' => \App\Enums\CouponType::class,
-        'scope' => \App\Enums\CouponScope::class,
-        'shipping_type_restriction' => \App\Enums\CouponShippingTypeRestriction::class,
-        'customer_eligibility' => \App\Enums\CouponCustomerEligibility::class,
+        'type' => CouponType::class,
+        'scope' => CouponScope::class,
+        'shipping_type_restriction' => CouponShippingTypeRestriction::class,
+        'customer_eligibility' => CouponCustomerEligibility::class,
         'terms_ar' => 'array',
         'terms_en' => 'array',
         'country_ids' => 'array',
@@ -87,6 +92,27 @@ class Coupon extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'coupon_products');
+    }
+
+    /**
+     * Multi-vendor targeting (client feature request #3.1). When this
+     * relation has rows, the coupon is restricted to these vendors; when
+     * empty, it applies to everyone (legacy `vendor_id` behavior is kept
+     * for backward compatibility and is checked separately).
+     */
+    public function vendors(): BelongsToMany
+    {
+        return $this->belongsToMany(Vendor::class, 'coupon_vendors');
+    }
+
+    /**
+     * Multi-marketer targeting (client feature request #3.1). When this
+     * relation has rows, the coupon is restricted to those marketers'
+     * listings; when empty, it applies to everyone.
+     */
+    public function marketers(): BelongsToMany
+    {
+        return $this->belongsToMany(Marketer::class, 'coupon_marketers');
     }
 
     public function couponProducts(): HasMany

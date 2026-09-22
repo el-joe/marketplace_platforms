@@ -3,6 +3,7 @@
 use App\Http\Controllers\Marketer\AuthController;
 use App\Http\Controllers\Marketer\CampaignController;
 use App\Http\Controllers\Marketer\ContractController;
+use App\Http\Controllers\Marketer\CouponParticipationController;
 use App\Http\Controllers\Marketer\DashboardController;
 use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
@@ -14,8 +15,12 @@ use App\Http\Controllers\Marketer\PromoteBookingController;
 use App\Http\Controllers\Marketer\PromoteController;
 use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
+use App\Http\Controllers\Marketer\SpecialRequestController;
 use App\Http\Controllers\Marketer\SupportController;
 use App\Http\Controllers\NotificationController;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
@@ -23,7 +28,7 @@ Broadcast::routes(['middleware' => ['web', 'auth.marketer']]);
 
 // ── Locale switcher ───────────────────────────────────────────────────────
 Route::middleware('web')
-    ->post('/locale/switch', function (\Illuminate\Http\Request $request) {
+    ->post('/locale/switch', function (Request $request) {
         $locale = $request->input('locale');
         abort_unless(in_array($locale, config('app.available_locales', ['ar', 'en'])), 422);
         $request->session()->put([
@@ -31,8 +36,9 @@ Route::middleware('web')
             'locale_override' => $locale,
             'dir' => $locale === 'ar' ? 'rtl' : 'ltr',
         ]);
-        \Carbon\Carbon::setLocale($locale);
-        \Illuminate\Support\Facades\App::setLocale($locale);
+        Carbon::setLocale($locale);
+        App::setLocale($locale);
+
         return back();
     })->name('locale.switch');
 
@@ -64,9 +70,9 @@ Route::middleware('web')->group(function () {
 
         // Special requests (broker specialization matches)
         Route::prefix('special-requests')->name('special-requests.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'index'])->name('index');
-            Route::patch('{id}/start', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'start'])->name('start');
-            Route::get('{id}', [\App\Http\Controllers\Marketer\SpecialRequestController::class, 'show'])->name('show');
+            Route::get('/', [SpecialRequestController::class, 'index'])->name('index');
+            Route::patch('{id}/start', [SpecialRequestController::class, 'start'])->name('start');
+            Route::get('{id}', [SpecialRequestController::class, 'show'])->name('show');
         });
 
         // Notifications
@@ -91,6 +97,12 @@ Route::middleware('web')->group(function () {
             Route::get('/', [InvitationController::class, 'index'])->name('index');
             Route::post('/{invitation}/accept', [InvitationController::class, 'accept'])->name('accept');
             Route::post('/{invitation}/reject', [InvitationController::class, 'reject'])->name('reject');
+        });
+
+        // Coupon participation invitations (client feature #3.2)
+        Route::prefix('coupon-participation')->name('coupon-participation.')->group(function () {
+            Route::get('/', [CouponParticipationController::class, 'index'])->name('index');
+            Route::post('/{invitation}', [CouponParticipationController::class, 'store'])->name('store');
         });
 
         // Active campaigns (accepted invitations)

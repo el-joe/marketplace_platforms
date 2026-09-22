@@ -98,6 +98,14 @@ Schedule::command('coupons:deactivate-expired')
     ->runInBackground()
     ->name('deactivate-expired-coupons');
 
+// Close/fulfill coupon participation invitations that hit max participants
+// or passed their registration deadline, and link approved participants.
+Schedule::command('coupons:close-expired-participation-invitations')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->name('close-expired-coupon-participation-invitations');
+
 // Activate pending exclusive contracts whose start date arrived, and expire those past ends_at
 Schedule::command('exclusive-contracts:expire')
     ->dailyAt('00:45')

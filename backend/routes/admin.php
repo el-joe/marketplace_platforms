@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\CodSettlementController;
 use App\Http\Controllers\Admin\ContentSettingsController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CouponParticipationInvitationController;
 use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CurrencyExchangeRateController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -733,6 +734,9 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/create', [CouponController::class, 'create'])->name('create');
         Route::get('/generate-code', [CouponController::class, 'generateCode'])->name('generate-code');
         Route::get('/search/customers', [CouponController::class, 'searchCustomers'])->name('search-customers');
+        Route::get('/search/vendors', [CouponController::class, 'searchVendors'])->name('search-vendors');
+        Route::get('/search/marketers', [CouponController::class, 'searchMarketers'])->name('search-marketers');
+        Route::get('/search/products', [CouponController::class, 'searchProducts'])->name('search-products');
         Route::post('/datatable', [CouponController::class, 'datatable'])->name('datatable');
         Route::post('/bulk', [CouponController::class, 'bulkAction'])->name('bulk');
         Route::post('/clear-cache', [CouponController::class, 'clearCache'])->name('clear-cache');
@@ -745,6 +749,18 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::put('/{coupon}', [CouponController::class, 'update'])->name('update');
         Route::put('/{coupon}/toggle-active', [CouponController::class, 'toggleActive'])->name('toggle-active');
         Route::delete('/{coupon}', [CouponController::class, 'destroy'])->name('destroy');
+    });
+
+    // ─── Coupon Participation Invitations (client feature #3.2) ────────────────
+    Route::prefix('coupon-participation-invitations')->name('coupon-participation-invitations.')->middleware('admin.permission:coupons.view')->group(function () {
+        Route::get('/', [CouponParticipationInvitationController::class, 'index'])->name('index');
+        Route::get('/create', [CouponParticipationInvitationController::class, 'create'])->name('create');
+        Route::post('/', [CouponParticipationInvitationController::class, 'store'])->name('store');
+        Route::get('/{invitation}', [CouponParticipationInvitationController::class, 'show'])->name('show');
+        Route::post('/{invitation}/cancel', [CouponParticipationInvitationController::class, 'cancel'])->name('cancel');
+        Route::post('/{invitation}/requests/{request}/approve', [CouponParticipationInvitationController::class, 'approveRequest'])->name('requests.approve');
+        Route::post('/{invitation}/requests/{request}/reject', [CouponParticipationInvitationController::class, 'rejectRequest'])->name('requests.reject');
+        Route::post('/{invitation}/requests/{request}/mark-paid', [CouponParticipationInvitationController::class, 'markRequestPaid'])->name('requests.mark-paid');
     });
 
     // ─── Vouchers ────────────────────────────────────────────────────────────────
