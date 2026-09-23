@@ -13,6 +13,9 @@
     <form method="POST" action="{{ route('marketer.classified-inquiries.close', $inquiry->id) }}">@csrf @method('PATCH')
         <button class="px-4 py-2 bg-gray-800 text-white rounded-lg text-xs">{{ __('marketer.close_inquiry') }}</button></form>
     @endif
+    <form method="POST" action="{{ route('marketer.conversations.store') }}">@csrf
+        <input type="hidden" name="inquiry_id" value="{{ $inquiry->id }}">
+        <button class="px-4 py-2 bg-teal-600 text-white rounded-lg text-xs">{{ __('marketer.start_conversation') }}</button></form>
     <a href="{{ route('marketer.classified-inquiries.index') }}" class="text-blue-600 text-xs">{{ __('marketer.back') }}</a>
 </div>
 @endsection

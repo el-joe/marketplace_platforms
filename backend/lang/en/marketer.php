@@ -92,4 +92,10 @@ return [
     'status_cancelled' => 'Cancelled',
     'view' => 'View',
     'back' => 'Back',
+    'conversations' => 'Conversations',
+    'start_conversation' => 'Start Conversation',
+    'type_message' => 'Type here...',
+    'no_conversations' => 'No conversations yet.',
+    'customer_service' => 'Customer Service',
+    'send' => 'Send',
 ];

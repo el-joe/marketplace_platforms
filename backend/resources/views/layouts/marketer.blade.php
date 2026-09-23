@@ -157,6 +157,12 @@
                     {{ __('marketer.classified_listings') }}
                 </a>
 
+                <a href="{{ route('marketer.conversations.index') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          {{ request()->routeIs('marketer.conversations.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                    {{ __('marketer.conversations') }}
+                </a>
+
                 <a href="{{ route('marketer.exclusive-contracts.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.exclusive-contracts.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

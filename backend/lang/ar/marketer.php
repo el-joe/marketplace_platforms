@@ -92,4 +92,10 @@ return [
     'status_cancelled' => 'ملغي',
     'view' => 'عرض',
     'back' => 'رجوع',
+    'conversations' => 'المحادثات',
+    'start_conversation' => 'بدء محادثة',
+    'type_message' => 'اكتب هنا...',
+    'no_conversations' => 'لا توجد محادثات حتى الآن.',
+    'customer_service' => 'خدمة عملاء ناوي',
+    'send' => 'إرسال',
 ];

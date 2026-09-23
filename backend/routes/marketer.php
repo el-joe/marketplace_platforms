@@ -5,6 +5,7 @@ use App\Http\Controllers\Marketer\CampaignController;
 use App\Http\Controllers\Marketer\ContractController;
 use App\Http\Controllers\Marketer\ClassifiedInquiryController;
 use App\Http\Controllers\Marketer\ClassifiedListingController;
+use App\Http\Controllers\Marketer\ConversationController;
 use App\Http\Controllers\Marketer\CouponParticipationController;
 use App\Http\Controllers\Marketer\ExclusiveContractController;
 use App\Http\Controllers\Marketer\WantedListingController;
@@ -126,6 +127,13 @@ Route::middleware('web')->group(function () {
             Route::get('/', [ClassifiedInquiryController::class, 'index'])->name('index');
             Route::get('/{inquiry}', [ClassifiedInquiryController::class, 'show'])->name('show');
             Route::patch('/{inquiry}/close', [ClassifiedInquiryController::class, 'close'])->name('close');
+        });
+
+        Route::prefix('conversations')->name('conversations.')->group(function () {
+            Route::get('/', [ConversationController::class, 'index'])->name('index');
+            Route::post('/', [ConversationController::class, 'store'])->name('store');
+            Route::get('/{conversation}', [ConversationController::class, 'show'])->name('show');
+            Route::post('/{conversation}/messages', [ConversationController::class, 'sendMessage'])->name('message');
         });
 
         // Wanted listings
