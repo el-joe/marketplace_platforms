@@ -51,6 +51,17 @@ class ShippingMethod extends Model
         'order_cutoff_time'    => 'string',
     ];
 
+    /** Delivery text for the card badge; falls back to the badge label when empty. */
+    public function getBadgeDeliveryTextResolvedArAttribute(): ?string
+    {
+        return $this->badge_delivery_text_ar ?: $this->badge_label_ar;
+    }
+
+    public function getBadgeDeliveryTextResolvedEnAttribute(): ?string
+    {
+        return $this->badge_delivery_text_en ?: $this->badge_label_en;
+    }
+
     public function rates(): HasMany
     {
         return $this->hasMany(ShippingRate::class);

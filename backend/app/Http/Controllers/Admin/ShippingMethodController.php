@@ -128,7 +128,7 @@ class ShippingMethodController extends Controller
             'delivery_label_en' => ['nullable', 'string', 'max:100'],
             'delivery_label_ar' => ['nullable', 'string', 'max:100'],
             'badge_show_delivery_time' => ['boolean'],
-            'badge_delivery_text_en' => ['nullable', 'string', 'max:100', \Illuminate\Validation\Rule::requiredIf(fn () => $request->boolean('badge_show_delivery_time') && ! $request->filled('badge_delivery_text_ar'))],
+            'badge_delivery_text_en' => ['nullable', 'string', 'max:100'],
             'badge_delivery_text_ar' => ['nullable', 'string', 'max:100'],
             'is_express_type' => ['boolean'],
             'show_estimated_price' => ['boolean'],
