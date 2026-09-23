@@ -110,16 +110,16 @@
     {{-- Price History (client feature request doc, section 6) --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-700">Price History</h3>
+            <h3 class="text-sm font-semibold text-gray-700">{{ __('admin.price_history_section.price_history') }}</h3>
             @if($listing->disposable_by_admin)
                 <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                    Disposable by Admin — unpaid storage fees exceed first price
+                    ⚠ {{ __('admin.price_history_section.disposable_by_admin') }} — {{ __('admin.price_history_section.disposable_hint') }}
                 </span>
             @endif
         </div>
         <dl class="grid grid-cols-2 gap-4 text-sm mb-4">
             <div>
-                <dt class="text-gray-400 text-xs uppercase tracking-wide">First Price (locked)</dt>
+                <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.price_history_section.first_price') }}</dt>
                 <dd class="mt-1 text-gray-800">
                     @if($listing->first_price !== null)
                         {{ number_format($listing->first_price, 2) }} {{ $listing->currency }}
@@ -129,7 +129,7 @@
                 </dd>
             </div>
             <div>
-                <dt class="text-gray-400 text-xs uppercase tracking-wide">First Price Locked At</dt>
+                <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.price_history_section.first_price_locked_at') }}</dt>
                 <dd class="mt-1 text-gray-800">{{ $listing->first_price_locked_at?->format('Y-m-d H:i') ?? '—' }}</dd>
             </div>
         </dl>
@@ -137,10 +137,10 @@
         <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead>
                 <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Recorded At</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Price</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Source</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Recorded By</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.recorded_at') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.price') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.source') }}</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">{{ __('admin.price_history_section.recorded_by') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">

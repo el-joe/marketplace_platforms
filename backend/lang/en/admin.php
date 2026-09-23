@@ -5849,6 +5849,20 @@ return [
     ],
 
     // ─── Shipping ────────────────────────────────────────────────────────────
+    'price_history_section' => [
+        'first_price' => 'Initial Price (Locked)',
+        'price_history' => 'Price History',
+        'disposable_by_admin' => 'Admin Disposable',
+        'disposable_hint' => 'Unpaid storage fees exceed first price',
+        'first_price_locked_at' => 'First Price Locked At',
+        'recorded_at' => 'Recorded At',
+        'price' => 'Price',
+        'source' => 'Source',
+        'recorded_by' => 'Recorded By',
+        'source_initial' => 'Initial',
+        'source_update' => 'Update',
+    ],
+
     'shipping_section' => [
         'private_shipping_company' => 'Private Shipping Company',
         'private_to_vendor' => 'Private to vendor',

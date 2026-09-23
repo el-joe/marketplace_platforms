@@ -5816,6 +5816,20 @@ return [
     ],
 
     // ─── Shipping ────────────────────────────────────────────────────────────
+    'price_history_section' => [
+        'first_price' => 'السعر الأولي (مثبّت)',
+        'price_history' => 'تاريخ الأسعار',
+        'disposable_by_admin' => 'قابل للتصرف من الأدمن',
+        'disposable_hint' => 'رسوم التخزين غير المدفوعة تتجاوز السعر الأولي',
+        'first_price_locked_at' => 'وقت تثبيت السعر الأولي',
+        'recorded_at' => 'وقت التسجيل',
+        'price' => 'السعر',
+        'source' => 'المصدر',
+        'recorded_by' => 'سُجل بواسطة',
+        'source_initial' => 'أولي',
+        'source_update' => 'تحديث',
+    ],
+
     'shipping_section' => [
         'private_shipping_company' => 'شركة شحن خاصة',
         'private_to_vendor' => 'خاص بالبائع',
