@@ -162,6 +162,11 @@ Route::prefix('bookable-units')->name('customer.bookable-units.')->group(functio
     )->middleware('auth:customer')->name('reservations.store');
 });
 
+// Unified "My Bookings": travel packages + bookable units + flights.
+Route::get('my-bookings', [\App\Http\Controllers\Api\Customer\MyBookingsController::class, 'index'])
+    ->middleware('auth:customer')
+    ->name('customer.my-bookings');
+
 // ── Unified listing type shortcuts ────────────────────────────────────────────
 // travel/{id}    → TravelPackage detail
 // classified/{id} → ClassifiedListing detail
