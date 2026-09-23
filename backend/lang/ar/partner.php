@@ -251,6 +251,7 @@ return [
         'initial_quantity' => 'الكمية الأولية',
         'initial_quantity_hint' => 'يمكنك إضافة المخزون لاحقا في صفحة المنتج',
         'create_listing_button' => 'إنشاء القائمة',
+        'marketer_commission_label' => 'عمولة المسوّق',
         'marketing_commissions' => 'عمولة المؤثرين والمسوقين بالعمولة',
         'marketing_commissions_hint' => 'اختياري — حدد نسبة العمولة إذا رغبت بأن يقوم المؤثرون أو المسوقون بالعمولة بتسويق هذا المنتج',
         'influencer_commission_percentage' => 'عمولة المؤثر',

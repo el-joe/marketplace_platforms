@@ -19,8 +19,8 @@
                         <p class="text-xs text-gray-500 mt-1">
                             {{ $invitation->flashSale->sale_starts_at?->format('Y-m-d H:i') }} → {{ $invitation->flashSale->sale_ends_at?->format('Y-m-d H:i') }}
                         </p>
-                        @if($invitation->extra_commission_rate)
-                            <p class="text-xs text-purple-600 font-semibold mt-1">عمولة إضافية: {{ $invitation->extra_commission_rate }}%</p>
+                        @if($invitation->hasExtraCommission())
+                            <p class="text-xs text-purple-600 font-semibold mt-1">عمولة إضافية: {{ $invitation->commissionLabel() }}</p>
                         @endif
                     </div>
                     <div class="flex gap-2">
@@ -50,8 +50,8 @@
                 <div class="bg-white rounded-xl border p-5">
                     <p class="font-semibold text-gray-900">{{ $invitation->flashSale->name_ar ?? $invitation->flashSale->name_en }}</p>
                     <p class="text-xs text-gray-500 mt-1">ينتهي في {{ $invitation->flashSale->sale_ends_at?->format('Y-m-d H:i') }}</p>
-                    @if($invitation->extra_commission_rate)
-                        <p class="text-xs text-purple-600 font-semibold mt-1">عمولة إضافية أثناء الحملة: {{ $invitation->extra_commission_rate }}%</p>
+                    @if($invitation->hasExtraCommission())
+                        <p class="text-xs text-purple-600 font-semibold mt-1">عمولة إضافية أثناء الحملة: {{ $invitation->commissionLabel() }}</p>
                     @endif
                     <p class="text-xs text-gray-400 mt-2">استخدم روابط الإحالة الخاصة بحملاتك النشطة للمنتجات المشاركة في هذا العرض لتحصيل المكافأة.</p>
                 </div>

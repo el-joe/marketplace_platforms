@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const countryId = countryInput?.value;
         if (!productId || !countryId || !url) return;
         try {
-            const res = await fetch(`${url}?product_id=${productId}&country_id=${countryId}`, {
+            const res = await fetch(`${url}?product_id=${productId}&country_id=${countryId}&price=${encodeURIComponent(document.querySelector('[name="price"]')?.value || 0)}&quantity=${encodeURIComponent(document.querySelector('[name="quantity"]')?.value || 1)}`, {
                 headers: { 'Accept': 'application/json' },
             });
             const data = await res.json();
@@ -205,6 +205,18 @@ document.addEventListener('DOMContentLoaded', function () {
             state.affiliateCommission = data.affiliate_commission_amount ?? 0;
             state.currency = data.currency ?? '';
             state.pricingLoaded = true;
+            const info = document.getElementById('marketer-commission-info');
+            if (info) {
+                if (data.commission_mode) {
+                    const parts = [];
+                    if (['percentage', 'both'].includes(data.commission_mode)) parts.push(`${data.commission_rate}%`);
+                    if (['fixed', 'both'].includes(data.commission_mode)) parts.push(`${data.commission_flat_amount} ${state.currency}`);
+                    info.textContent = `${info.dataset.label}: ${parts.join(' + ')} ≈ ${data.estimated_amount} ${state.currency}`;
+                    info.classList.remove('hidden');
+                } else {
+                    info.classList.add('hidden');
+                }
+            }
             renderPricing();
             renderMarketerFeeTable();
         } catch (e) {
@@ -270,9 +282,20 @@ document.addEventListener('DOMContentLoaded', function () {
         state.tieredRules.push({ from_sale_number: '', commission_amount: '' });
         renderTieredRules();
     });
+    let selectedProductId = null;
     document.addEventListener('listing:product-selected', (e) => {
-        fetchCategorySamples(e.detail?.productId);
-        fetchCampaignPricing(e.detail?.productId);
+        selectedProductId = e.detail?.productId;
+        fetchCategorySamples(selectedProductId);
+        fetchCampaignPricing(selectedProductId);
+    });
+
+    // Re-estimate the marketer commission when price/quantity change.
+    let pricingTimer;
+    ['price', 'quantity'].forEach((name) => {
+        document.querySelector(`[name="${name}"]`)?.addEventListener('input', () => {
+            clearTimeout(pricingTimer);
+            pricingTimer = setTimeout(() => fetchCampaignPricing(selectedProductId), 400);
+        });
     });
 
     renderVisibility();

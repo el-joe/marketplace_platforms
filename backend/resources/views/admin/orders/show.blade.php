@@ -314,7 +314,7 @@
                                                         <span
                                                             class="font-mono">{{ number_format((float) $item->commission_rate_pct, 2) }}%</span>
                                                         @if($fixed > 0)
-                                                            <span class="text-gray-400"> + {{ $fmt($fixed) }}</span>
+                                                            <span class="text-gray-400"> + {{ $fmt($fixed) }} × {{ $item->quantity }}</span>
                                                         @endif
                                                         <br>
                                                         <span class="text-danger-600 font-medium">=

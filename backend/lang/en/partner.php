@@ -279,6 +279,7 @@ return [
         'initial_quantity' => 'Initial Quantity',
         'initial_quantity_hint' => 'You can add stock later on the product page',
         'create_listing_button' => 'Create Listing',
+        'marketer_commission_label' => 'Marketer commission',
         'marketing_commissions' => 'Influencer & Affiliate Commissions',
         'marketing_commissions_hint' => 'Optional — set a commission if you want influencers or affiliate marketers to promote this listing',
         'influencer_commission_percentage' => 'Influencer Commission',

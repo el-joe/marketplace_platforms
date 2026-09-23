@@ -45,7 +45,9 @@ class FinanceController extends Controller
         $pendingEarnings = MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
             ->where('commissioned', false)->sum('commission_amount');
 
-        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings'));
+        $commissionRules = \App\Http\Controllers\Api\Marketer\CommissionRuleController::rulesFor($marketer);
+
+        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules'));
     }
 
     public function wallet(): View

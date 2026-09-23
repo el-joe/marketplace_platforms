@@ -4758,6 +4758,8 @@ return [
         'marketer_ids' => 'معرّفات المسوّقين',
         'marketer_ids_placeholder' => 'الصق المعرّفات (UUID)، واحد لكل سطر…',
         'extra_commission_rate' => 'نسبة عمولة إضافية (%)',
+        'extra_commission_flat' => 'عمولة إضافية ثابتة (لكل وحدة، بعملة المسوّق)',
+        'extra_commission_flat_hint' => 'اختياري. يمكن الجمع مع النسبة.',
         'discount_check_min' => 'الحد الأدنى المطلوب: :pct%',
         '30d_avg_price' => 'متوسط السعر خلال 30 يومًا: :price — السعر السريع هو :diff',
         '30d_price_history' => 'سجل الأسعار لـ 30 يومًا',
@@ -10790,4 +10792,13 @@ return [
         'viewers_count' => ':count يشاهدون',
         'stream_ended_msg' => 'انتهى البث.',
     ],
+
+    'marketer_commission_required' => 'أدخل نسبة أو مبلغًا ثابتًا أو كليهما.',
+    'marketer_commission_flat' => 'مبلغ ثابت',
+    'marketer_commission_type' => 'النوع',
+    'marketer_commission_type_products' => 'المنتجات',
+    'marketer_commission_type_open_market' => 'السوق المفتوح',
+    'marketer_commission_type_travel' => 'السفر',
+    'marketer_commission_default_all' => 'افتراضي (كل الأقسام)',
+    'marketer_commission_default_all_type' => 'افتراضي (كل أقسام هذا النوع)',
 ];

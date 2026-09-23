@@ -25,6 +25,7 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/me',              [AuthController::class, 'me']);
 
     Route::get('/dashboard',       [DashboardController::class, 'index']);
+    Route::get('/commission-rules', [\App\Http\Controllers\Api\Marketer\CommissionRuleController::class, 'index']);
     Route::get('/profile',         [ProfileController::class, 'show']);
     Route::post('/profile',        [ProfileController::class, 'update']);
 

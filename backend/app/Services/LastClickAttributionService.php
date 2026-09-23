@@ -174,7 +174,8 @@ class LastClickAttributionService
                         $commissionAmount = $this->commissionRates->calculateCommissionAmount(
                             $invitation->marketer_id,
                             $item->commission_category_id,
-                            $item->line_total
+                            $item->line_total,
+                            (int) $item->quantity
                         );
                     }
                     break;
@@ -195,10 +196,11 @@ class LastClickAttributionService
                 ->with('flashSale')
                 ->first();
 
-            if ($liveFlashSaleInvitation && $liveFlashSaleInvitation->extra_commission_rate) {
+            if ($liveFlashSaleInvitation && $liveFlashSaleInvitation->hasExtraCommission()) {
                 $flashSaleId = $liveFlashSaleInvitation->flash_sale_id;
-                $flashSaleBonusAmount = (int) round(
-                    $item->line_total * ((float) $liveFlashSaleInvitation->extra_commission_rate / 100)
+                $flashSaleBonusAmount = $liveFlashSaleInvitation->calculateBonus(
+                    (int) $item->line_total,
+                    (int) $item->quantity
                 );
             }
 

@@ -4799,6 +4799,8 @@ return [
         'marketer_ids' => 'Marketer IDs',
         'marketer_ids_placeholder' => 'Paste UUIDs, one per line…',
         'extra_commission_rate' => 'Extra Commission Rate (%)',
+        'extra_commission_flat' => 'Extra Fixed Commission (per unit, marketer currency)',
+        'extra_commission_flat_hint' => 'Optional. Combine with the percentage for both.',
         'discount_check_min' => 'Required min: :pct%',
         '30d_avg_price' => '30-day avg price: :price — Flash price is :diff',
         '30d_price_history' => '30-day Price History',
@@ -10833,4 +10835,13 @@ return [
         'viewers_count' => ':count watching',
         'stream_ended_msg' => 'Stream ended.',
     ],
+
+    'marketer_commission_required' => 'Enter a percentage, a fixed amount, or both.',
+    'marketer_commission_flat' => 'Fixed amount',
+    'marketer_commission_type' => 'Type',
+    'marketer_commission_type_products' => 'Products',
+    'marketer_commission_type_open_market' => 'Open market (classified)',
+    'marketer_commission_type_travel' => 'Travel',
+    'marketer_commission_default_all' => 'Default (all categories)',
+    'marketer_commission_default_all_type' => 'Default (all categories of this type)',
 ];

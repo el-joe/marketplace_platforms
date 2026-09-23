@@ -26,8 +26,11 @@ class FlashSaleInvitationNotification extends BaseDatabaseBroadcastNotification
             'invitation_id'         => $this->invitation->id,
             'flash_sale_id'         => $this->invitation->flash_sale_id,
             'extra_commission_rate' => $this->invitation->extra_commission_rate,
+            'extra_commission_mode' => $this->invitation->extra_commission_mode,
+            'extra_commission_flat_amount' => $this->invitation->extra_commission_flat_amount,
+            'extra_commission_label' => $this->invitation->commissionLabel(),
             'title'                 => 'دعوة تخفيضات سريعة',
-            'message'               => 'تمت دعوتك للترويج لتخفيضات "' . ($flashSale?->name_ar ?? '') . '" بعمولة إضافية ' . $this->invitation->extra_commission_rate . '%.',
+            'message'               => 'تمت دعوتك للترويج لتخفيضات "' . ($flashSale?->name_ar ?? '') . '" بعمولة إضافية ' . $this->invitation->commissionLabel() . '.',
             'url'                   => route('marketer.flash-sales.index'),
         ];
     }

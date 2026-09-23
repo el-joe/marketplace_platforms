@@ -133,7 +133,17 @@ class MarketerController extends Controller
         $cities = City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
         $classifiedCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
-        return view('admin.marketers.show', compact('marketer', 'categories', 'cities', 'classifiedCategories'));
+        $travelCategories = \App\Models\TravelCategory::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $commissionRules = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)
+            ->with('category')->orderBy('scope')->get();
+        $commissionCategories = collect([
+            'products' => $categories,
+            'open_market' => ClassifiedCategory::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']),
+            'travel' => $travelCategories,
+        ]);
+        $commissionCurrency = $marketer->country?->currency_code ?: config('app.currency', 'SAR');
+
+        return view('admin.marketers.show', compact('marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
     }
 
     /**
@@ -256,26 +266,68 @@ class MarketerController extends Controller
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
 
         $validated = $request->validate([
-            'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
-            'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'scope' => ['nullable', 'in:products,open_market,travel'],
+            'category_id' => ['nullable', 'uuid'],
+            'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_flat_amount' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $rate = (float) ($validated['commission_rate'] ?? 0);
+        $flat = (int) ($validated['commission_flat_amount'] ?? 0);
+        if ($rate <= 0 && $flat <= 0) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'commission_rate' => __('admin.marketer_commission_required'),
+            ]);
+        }
+        $mode = ($rate > 0 && $flat > 0) ? 'both' : ($flat > 0 ? 'fixed' : 'percentage');
+        $payload = [
+            'commission_mode' => $mode,
+            'commission_rate' => $rate,
+            'commission_flat_amount' => $flat > 0 ? $flat : null,
+        ];
+
         $categoryId = $validated['category_id'] ?? null;
+        $scope = $validated['scope'] ?? 'products';
+        $catClass = \App\Models\MarketerCommissionRule::categoryClassFor($scope);
+        if ($categoryId && ! $catClass::whereKey($categoryId)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['category_id' => __('validation.exists', ['attribute' => 'category_id'])]);
+        }
+
+        $ruleQuery = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', $scope)
+            ->when($categoryId, fn ($q) => $q->where('category_type', $catClass)->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'));
+        $rule = $ruleQuery->first();
+        $ruleData = $payload + ['updated_by_admin_id' => auth('admin')->id()];
+        if ($rule) {
+            $rule->update($ruleData);
+        } else {
+            \App\Models\MarketerCommissionRule::create($ruleData + [
+                'marketer_id' => $marketer->id, 'scope' => $scope,
+                'category_type' => $categoryId ? $catClass : null, 'category_id' => $categoryId,
+            ]);
+        }
+
+        if ($scope === 'travel') {
+            return back()->with('success', 'تم حفظ نسبة العمولة.');
+        }
+        if ($scope === 'open_market') {
+            \App\Models\OpenMarketCategoryCommission::updateOrCreate(
+                ['marketer_id' => $marketer->id, 'classified_category_id' => $categoryId],
+                $ruleData
+            );
+
+            return back()->with('success', 'تم حفظ نسبة العمولة.');
+        }
 
         $existing = MarketerCategoryCommission::where('marketer_id', $marketer->id)
             ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'))
             ->first();
 
         if ($existing) {
-            $existing->update([
-                'commission_rate' => $validated['commission_rate'],
-                'updated_by_admin_id' => auth('admin')->id(),
-            ]);
+            $existing->update($payload + ['updated_by_admin_id' => auth('admin')->id()]);
         } else {
-            MarketerCategoryCommission::create([
+            MarketerCategoryCommission::create($payload + [
                 'marketer_id' => $marketer->id,
                 'category_id' => $categoryId,
-                'commission_rate' => $validated['commission_rate'],
                 'updated_by_admin_id' => auth('admin')->id(),
             ]);
         }
@@ -283,12 +335,30 @@ class MarketerController extends Controller
         return back()->with('success', 'تم حفظ نسبة العمولة.');
     }
 
-    public function destroyCategoryCommission(Marketer $marketer, MarketerCategoryCommission $commission)
+    public function destroyCategoryCommission(Marketer $marketer, string $commission)
     {
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
-        abort_unless($commission->marketer_id === $marketer->id, 404);
 
-        $commission->delete();
+        $rule = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->find($commission);
+        if ($rule) {
+            $catId = $rule->category_id;
+            if ($rule->scope === 'products') {
+                MarketerCategoryCommission::where('marketer_id', $marketer->id)
+                    ->when($catId, fn ($q) => $q->where('category_id', $catId), fn ($q) => $q->whereNull('category_id'))->delete();
+            } elseif ($rule->scope === 'open_market') {
+                \App\Models\OpenMarketCategoryCommission::where('marketer_id', $marketer->id)
+                    ->when($catId, fn ($q) => $q->where('classified_category_id', $catId), fn ($q) => $q->whereNull('classified_category_id'))->delete();
+            }
+            $rule->delete();
+
+            return back()->with('success', 'تم حذف نسبة العمولة.');
+        }
+
+        // Backward compatible: legacy row id.
+        $legacy = MarketerCategoryCommission::where('marketer_id', $marketer->id)->findOrFail($commission);
+        \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', 'products')
+            ->when($legacy->category_id, fn ($q) => $q->where('category_id', $legacy->category_id), fn ($q) => $q->whereNull('category_id'))->delete();
+        $legacy->delete();
 
         return back()->with('success', 'تم حذف نسبة العمولة.');
     }

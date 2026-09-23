@@ -163,8 +163,8 @@ class DeliveryAssignmentSeeder extends Seeder
                 'subtotal' => 2500,
                 'shipping' => 250,
                 'tax' => 375,
-                'vendor_payout' => 2000,
-                'platform_commission' => 500,
+                'vendor_payout' => 2250,
+                'platform_commission' => 250,
             ]
         );
 

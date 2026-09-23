@@ -34,15 +34,22 @@
 
 ### 1.2 تغييرات قاعدة البيانات (migrations جديدة فقط — لا حذف)
 ```
-2026_xx_xx_add_commission_mode_to_marketer_category_commissions.php
+2026_09_22_203939_add_commission_mode_to_marketer_category_commissions_table.php   -- منفّذ (الجدول القديم، بقي كما هو)
   - commission_mode enum('fixed','percentage','both') default 'percentage'
-  - commission_flat_amount decimal(10,2) nullable
-  - (commission_rate الموجود يُستخدم كنسبة عند mode=percentage|both)
-  - category_selection_mode enum('all','include','exclude') default 'include'  -- على مستوى الحملة/الإعداد وليس السطر نفسه
+  - commission_flat_amount unsigned bigint nullable (مبلغ ثابت لكل وحدة × الكمية)
+  - commission_rate يُستخدم كنسبة عند mode=percentage|both
 
-2026_xx_xx_create_open_market_category_commissions_table.php
-  - نفس بنية marketer_category_commissions لكن FK إلى classified_categories بدل categories
-  - marketer_id, classified_category_id (nullable=default), commission_mode, commission_flat_amount, commission_rate
+2026_09_22_203939_create_open_market_category_commissions_table.php   -- منفّذ (الجدول القديم، بقي كما هو)
+
+2026_09_23_000001_create_marketer_commission_rules_table.php   -- الجدول الموحّد الجديد (يحل محل الجدولين أعلاه في القراءة)
+  - marketer_id (nullable = افتراضي المنصة), scope enum(products|open_market|travel)
+  - category_type + category_id (morph: Category | ClassifiedCategory | TravelCategory) — category_id فارغ = افتراضي للنوع كله
+  - commission_mode, commission_rate, commission_flat_amount, updated_by_admin_id
+  - backfill من الجدولين القديمين دون حذفهما
+2026_09_23_000003_add_rule_key_to_marketer_commission_rules.php   -- منع التكرار
+  - rule_key = sha1(marketer|scope|category_type|category_id) وعليه unique، لأن unique المركّب لا يمنع تكرار الصفوف التي فيها NULL
+  - يُملأ تلقائيًا من الموديل عند الحفظ، وتُحذف التكرارات القديمة (يُبقى الأحدث)
+  - ملاحظة: الحفظ حاليًا يكتب في الجدول الجديد وفي القديم معًا (dual-write) حتى اكتمال الانتقال
 
 2026_xx_xx_create_open_market_listing_prices_table.php
   - classified_category_id, base_price, allow_marketer_override (bool), min_price/max_price (nullable حدود إن سمح بالتعديل)

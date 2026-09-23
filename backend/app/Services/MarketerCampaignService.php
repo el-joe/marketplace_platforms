@@ -527,9 +527,8 @@ class MarketerCampaignService
             return null;
         }
 
-        $categoryRate = MarketerCategoryCommission::where('category_id', $category->id)
-            ->whereNull('marketer_id')
-            ->first();
+        $categoryRate = app(\App\Services\CommissionRuleResolver::class)
+            ->resolve(null, 'products', $category);
 
         $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
             ->where('category_id', $category->id)
@@ -578,9 +577,8 @@ class MarketerCampaignService
             return null;
         }
 
-        $categoryRate = OpenMarketCategoryCommission::where('classified_category_id', $category->id)
-            ->whereNull('marketer_id')
-            ->first();
+        $categoryRate = app(\App\Services\CommissionRuleResolver::class)
+            ->resolve(null, 'open_market', $category);
 
         $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
             ->where('category_id', $category->id)
@@ -621,11 +619,11 @@ class MarketerCampaignService
      */
     private function computeCommissionAmount(string $mode, ?int $flat, float $rate, int $base): int
     {
-        return match ($mode) {
-            'fixed' => (int) ($flat ?? 0),
-            'both' => (int) ($flat ?? 0) + (int) round($base * ($rate / 100)),
-            default => (int) round($base * ($rate / 100)),
-        };
+        return (new \App\Models\MarketerCommissionRule([
+            'commission_mode' => $mode,
+            'commission_rate' => $rate,
+            'commission_flat_amount' => $flat,
+        ]))->resolveAmount($base, 1, true);
     }
 
     /**

@@ -368,14 +368,20 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-                @forelse($marketer->categoryCommissions as $cc)
+                @forelse($commissionRules as $cc)
                 <tr class="hover:bg-gray-50/60 transition-colors">
-                    <td class="px-6 py-3 font-medium">{{ $cc->category?->name_ar ?? 'افتراضي (كل الأقسام)' }}</td>
-                    <td class="px-6 py-3 text-center">
-                        <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">{{ number_format($cc->commission_rate, 2) }}%</span>
+                    <td class="px-6 py-3 font-medium">
+                        <span class="text-xs text-gray-500">{{ __('admin.marketer_commission_type_'.$cc->scope) }}</span>
+                        · {{ $cc->category ? ($cc->category->name_ar ?: $cc->category->name_en) : __('admin.marketer_commission_default_all') }}
                     </td>
                     <td class="px-6 py-3 text-center">
-                        <form method="POST" action="{{ route('admin.marketers.category-commissions.destroy', [$marketer, $cc]) }}"
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">{{ collect([
+                            (float) $cc->commission_rate > 0 ? number_format($cc->commission_rate, 2).'%' : null,
+                            (int) $cc->commission_flat_amount > 0 ? number_format($cc->commission_flat_amount).' '.$commissionCurrency : null,
+                        ])->filter()->implode(' + ') ?: '0%' }}</span>
+                    </td>
+                    <td class="px-6 py-3 text-center">
+                        <form method="POST" action="{{ route('admin.marketers.category-commissions.destroy', [$marketer, $cc->id]) }}"
                               onsubmit="return confirm('حذف نسبة العمولة؟');">
                             @csrf
                             @method('DELETE')
@@ -389,21 +395,34 @@
             </tbody>
         </table>
         </div>
-        <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3">
+        <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3"
+              x-data='{ scope: "products", cats: @json($commissionCategories->map(fn ($c) => $c->map(fn ($x) => ["id" => $x->id, "name" => $x->name_ar ?: $x->name_en])->values())) }'>
             @csrf
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
-                <select name="category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
-                    <option value="">افتراضي (كل الأقسام)</option>
-                    @foreach($categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name_ar }}</option>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_type') }}</label>
+                <select name="scope" x-model="scope" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[160px]">
+                    @foreach(['products', 'open_market', 'travel'] as $sc)
+                    <option value="{{ $sc }}">{{ __('admin.marketer_commission_type_'.$sc) }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
+                <select name="category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
+                    <option value="">{{ __('admin.marketer_commission_default_all_type') }}</option>
+                    <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
+                </select>
+            </div>
+            <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">نسبة العمولة %</label>
-                <input type="number" step="0.01" min="0" max="100" name="commission_rate" required
+                <input type="number" step="0.01" min="0" max="100" name="commission_rate" value="{{ old('commission_rate') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_flat') }} ({{ $commissionCurrency }})</label>
+                <input type="number" step="1" min="0" name="commission_flat_amount" value="{{ old('commission_flat_amount') }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
+                @error('commission_rate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
             <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">إضافة / تحديث</button>
         </form>

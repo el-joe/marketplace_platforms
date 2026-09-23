@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Marketer;
-use App\Models\MarketerCategoryCommission;
+use App\Models\MarketerCommissionRule;
 
 /**
  * Resolves the post-sale commission rate for a marketer × category pair.
@@ -16,42 +16,32 @@ use App\Models\MarketerCategoryCommission;
 class MarketerCommissionRateService
 {
     /**
-     * @return float Percentage rate, e.g. 8.00 = 8%.
+     * Resolve the marketer-specific rule (category override, then the
+     * marketer default), or null when none exists.
      */
-    public function resolveRate(Marketer|string $marketer, ?string $categoryId): float
+    public function resolveRule(Marketer|string $marketer, ?string $categoryId, string $scope = 'products'): ?MarketerCommissionRule
     {
         $marketerId = $marketer instanceof Marketer ? $marketer->id : $marketer;
 
-        $rows = MarketerCategoryCommission::where('marketer_id', $marketerId)
-            ->when($categoryId, fn ($q) => $q->whereIn('category_id', [$categoryId, null]), fn ($q) => $q->whereNull('category_id'))
-            ->get()
-            ->keyBy('category_id');
-
-        if ($categoryId && $rows->has($categoryId)) {
-            return (float) $rows->get($categoryId)->commission_rate;
-        }
-
-        if ($rows->has(null)) {
-            return (float) $rows->get(null)->commission_rate;
-        }
-
-        return 0.0;
+        return app(CommissionRuleResolver::class)->resolve($marketerId, $scope, $categoryId);
     }
 
     /**
-     * Resolve the rate and apply it to a base-currency amount, preserving the
-     * codebase convention of returning money as integer minor units. Accepts
-     * a decimal string (e.g. a Slice-1 `line_total`) so the fractional cents
-     * aren't truncated before the rate is applied.
+     * @return float Percentage rate, e.g. 8.00 = 8%. Flat amounts are ignored here.
      */
-    public function calculateCommissionAmount(Marketer|string $marketer, ?string $categoryId, int|string $baseAmount): int
+    public function resolveRate(Marketer|string $marketer, ?string $categoryId, string $scope = 'products'): float
     {
-        $rate = $this->resolveRate($marketer, $categoryId);
+        return (float) ($this->resolveRule($marketer, $categoryId, $scope)?->commission_rate ?? 0);
+    }
 
-        if ($rate <= 0) {
-            return 0;
-        }
-
-        return (int) floor((float) bcdiv(bcmul((string) $baseAmount, (string) $rate, 4), '100', 4));
+    /**
+     * Apply the resolved rule (fixed | percentage | both) to a base-currency
+     * line total. The flat part is per unit, so it is multiplied by $quantity
+     * (open-market ads use quantity 1). "both" = percentage of base + flat.
+     * Accepts a decimal string so fractional cents aren't truncated first.
+     */
+    public function calculateCommissionAmount(Marketer|string $marketer, ?string $categoryId, int|string $baseAmount, int $quantity = 1, string $scope = 'products'): int
+    {
+        return $this->resolveRule($marketer, $categoryId, $scope)?->resolveAmount($baseAmount, $quantity) ?? 0;
     }
 }

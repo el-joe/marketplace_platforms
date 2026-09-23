@@ -367,6 +367,8 @@
                             </x-form.select>
                             @endif
 
+                            <div class="text-sm text-gray-700 hidden" id="marketer-commission-info"
+                                 data-label="{{ __('partner.listings.marketer_commission_label') }}"></div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="campaign-pricing-cards">
                                 <div class="p-4 rounded-lg border bg-gray-50 border-gray-200" id="fee-card">
                                     <div class="flex items-center gap-2 mb-1">

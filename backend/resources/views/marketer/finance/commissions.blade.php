@@ -5,6 +5,23 @@
 @section('content')
 <div class="space-y-5">
 
+    @if(!empty($commissionRules))
+    <div class="bg-white rounded-xl border p-5">
+        <div class="font-bold mb-3">{{ __('marketer.my_commission_rates') }}</div>
+        <ul class="text-sm divide-y">
+            @foreach($commissionRules as $r)
+            <li class="py-2 flex justify-between gap-3">
+                <span>{{ __('marketer.commission_scope_' . $r['scope']) }} — {{ $r['category']['name'] ?? __('marketer.commission_default') }}</span>
+                <span class="font-semibold">{{ collect([
+                    in_array($r['commission_mode'], ['percentage','both']) ? rtrim(rtrim($r['commission_rate'],'0'),'.').'%' : null,
+                    in_array($r['commission_mode'], ['fixed','both']) ? number_format($r['commission_flat_amount']).' '.$r['currency'] : null,
+                ])->filter()->implode(' + ') }}</span>
+            </li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <div class="grid grid-cols-2 lg:grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border p-5">
             <div class="text-xs text-gray-400 mb-1">إجمالي العمولات المحصّلة</div>

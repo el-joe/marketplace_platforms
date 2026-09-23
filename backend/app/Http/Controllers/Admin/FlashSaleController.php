@@ -653,7 +653,12 @@ class FlashSaleController extends Controller
             'marketer_ids' => 'required|array',
             'marketer_ids.*' => 'string',
             'extra_commission_rate' => 'nullable|numeric|min:0|max:100',
+            'extra_commission_flat_amount' => 'nullable|integer|min:0',
         ]);
+
+        $rate = (float) $request->input('extra_commission_rate', 0);
+        $flat = (int) $request->input('extra_commission_flat_amount', 0);
+        $mode = ($rate > 0 && $flat > 0) ? 'both' : ($flat > 0 ? 'fixed' : 'percentage');
 
         $admin = Auth::guard('admin')->user();
         $invited = 0;
@@ -668,7 +673,9 @@ class FlashSaleController extends Controller
                 ['flash_sale_id' => $flashSale->id, 'marketer_id' => $marketerId],
                 [
                     'status' => 'pending',
-                    'extra_commission_rate' => $request->extra_commission_rate,
+                    'extra_commission_rate' => $rate > 0 ? $rate : $request->extra_commission_rate,
+                    'extra_commission_mode' => $mode,
+                    'extra_commission_flat_amount' => $flat > 0 ? $flat : null,
                     'invited_by_admin_id' => $admin?->id,
                 ]
             );
@@ -690,7 +697,7 @@ class FlashSaleController extends Controller
     public function marketerInvitations(FlashSale $flashSale): JsonResponse
     {
         $invitations = FlashSaleMarketerInvitation::where('flash_sale_id', $flashSale->id)
-            ->with('marketer:id,name')
+            ->with('marketer:id,name,country_id', 'marketer.country:id,currency_code')
             ->latest()
             ->get();
 
@@ -701,6 +708,9 @@ class FlashSaleController extends Controller
                 'marketer_name' => $i->marketer?->name,
                 'status' => $i->status?->value,
                 'extra_commission_rate' => $i->extra_commission_rate,
+                'extra_commission_mode' => $i->extra_commission_mode,
+                'extra_commission_flat_amount' => $i->extra_commission_flat_amount,
+                'extra_commission_label' => $i->commissionLabel(),
                 'responded_at' => $i->responded_at?->toDateTimeString(),
             ]),
         ]);

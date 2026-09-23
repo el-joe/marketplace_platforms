@@ -385,7 +385,22 @@ class ListingController extends Controller
 
         $currency = Country::find($countryId)?->currency_code ?? '';
 
+        $resolver = app(\App\Services\CommissionRuleResolver::class);
+        if ($request->input('scope') === 'open_market') {
+            $rule = $request->filled('classified_category_id')
+                ? $resolver->resolve(null, 'open_market', (string) $request->input('classified_category_id'))
+                : $resolver->resolve(null, 'open_market');
+        } else {
+            $rule = $category ? $resolver->resolve(null, 'products', $category) : null;
+        }
+        $price = (int) round((float) ($request->input('price') ?? 0));
+        $quantity = max(1, (int) ($request->input('quantity') ?? 1));
+
         return response()->json([
+            'commission_mode' => $rule?->commission_mode,
+            'commission_rate' => $rule?->commission_rate,
+            'commission_flat_amount' => $rule?->commission_flat_amount,
+            'estimated_amount' => $rule ? $rule->resolveAmount($price, $quantity) : 0,
             'fee_per_influencer' => $feeSetting?->fee_per_influencer ?? 0,
             'influencer_commission_amount' => $commissionSetting?->influencer_commission_amount ?? 0,
             'affiliate_commission_amount' => $commissionSetting?->affiliate_commission_amount ?? 0,
