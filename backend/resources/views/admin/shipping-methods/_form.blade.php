@@ -23,6 +23,7 @@
          badgeLabel: {{ json_encode($val('badge_label_en')) }},
          badgeColor: {{ json_encode($val('badge_color_hex', '#1a1a2e')) }},
          badgeTextColor: {{ json_encode($val('badge_text_color_hex', '#FFFFFF')) }},
+         badgeIconColor: {{ json_encode($val('badge_icon_color_hex') ?: $val('badge_text_color_hex', '#FFFFFF')) }},
          badgeIcon: {{ json_encode($val('badge_icon', 'bolt') ?: 'none') }},
          iconPaths: {{ json_encode($__badgeIcons) }},
          showDelivery: {{ $bool('badge_show_delivery_time') ? 'true' : 'false' }},
@@ -183,6 +184,15 @@
                             </div>
                             @error('badge_text_color_hex') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
+                        <div>
+                            <label for="badge_icon_color_hex" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.badge_icon_color') }}</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="badge_icon_color_hex" name="badge_icon_color_hex" x-model="badgeIconColor"
+                                       class="h-9 w-16 rounded border border-gray-300 p-0.5 cursor-pointer">
+                                <span class="text-xs text-gray-400 font-mono" x-text="badgeIconColor"></span>
+                            </div>
+                            @error('badge_icon_color_hex') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
                     </div>
 
                     <div class="pt-2 space-y-3">
@@ -243,7 +253,7 @@
                             <span x-show="!pimg && (showDelivery ? deliveryText : badgeLabel)"
                                   :style="`background-color: ${badgeColor}; color: ${badgeTextColor};`"
                                   class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold">
-                                <svg x-show="badgeIcon !== 'none' && iconPaths[badgeIcon]" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="iconPaths[badgeIcon]"></svg>
+                                <svg x-show="badgeIcon !== 'none' && iconPaths[badgeIcon]" class="w-3.5 h-3.5" :style="`color: ${badgeIconColor}`" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="iconPaths[badgeIcon]"></svg>
                                 <span x-text="showDelivery ? deliveryText : badgeLabel"></span>
                                 <svg class="w-3 h-3 rtl:-scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
                             </span>

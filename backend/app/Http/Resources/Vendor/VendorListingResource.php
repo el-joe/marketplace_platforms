@@ -66,6 +66,7 @@ class VendorListingResource extends JsonResource
                 'badge_label_ar'       => $this->primaryShippingMethod->badge_label_ar,
                 'badge_color_hex'      => $this->primaryShippingMethod->badge_color_hex,
                 'badge_text_color_hex' => $this->primaryShippingMethod->badge_text_color_hex,
+                'badge_icon_color_hex' => $this->primaryShippingMethod->badge_icon_color_hex,
                 'is_express_type'      => (bool) $this->primaryShippingMethod->is_express_type,
             ] : null),
             'created_at'           => $this->created_at->toIso8601String(),

@@ -3575,7 +3575,7 @@ return [
         'hint' => 'Messages rotated on the product card and product page, in the order shown. Max :max.',
         'listing_hint' => 'Shown on this listing only. When empty, the product-level badges are used.',
         'add' => '+ Add badge', 'label_en' => 'Label (EN)', 'label_ar' => 'Label (AR)',
-        'icon' => 'Icon (Lucide name)', 'active' => 'Active', 'up' => 'Up', 'remove' => 'Remove',
+        'icon' => 'Icon', 'icon_color' => 'Icon color', 'active' => 'Active', 'up' => 'Up', 'remove' => 'Remove',
         'empty' => 'No badges yet.',
     ],
     'products' => [
@@ -6282,6 +6282,7 @@ return [
         'shipping_tabs_aria_label' => 'Shipping tabs',
         'code_immutable_note' => 'Code cannot be changed after creation.',
         'badge_text_color' => 'Badge text color',
+        'badge_icon_color' => 'Badge icon color',
         'free_shipping_threshold_currency_units' => 'Free shipping threshold in currency units',
         'shipping_settings_title' => 'Shipping Settings',
         'settings_desc' => 'Manage carriers, rates and per-country shipping settings.',

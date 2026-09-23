@@ -26,6 +26,7 @@ class ShippingMethod extends Model
         'badge_label_ar',
         'badge_color_hex',
         'badge_text_color_hex',
+        'badge_icon_color_hex',
         'badge_image_path',
         'badge_show_delivery_time',
         'badge_delivery_text_en',

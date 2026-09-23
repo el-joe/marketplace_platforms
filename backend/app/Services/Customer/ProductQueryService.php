@@ -284,6 +284,7 @@ class ProductQueryService
             'sm.badge_label_ar as buy_box_shipping_label_ar',
             'sm.badge_color_hex as buy_box_shipping_color_hex',
             'sm.badge_text_color_hex as buy_box_shipping_text_color_hex',
+            'sm.badge_icon_color_hex as buy_box_shipping_icon_color_hex',
             'sm.badge_show_delivery_time as buy_box_shipping_show_delivery_time',
             'sm.badge_delivery_text_en as buy_box_shipping_delivery_text_en',
             'sm.badge_delivery_text_ar as buy_box_shipping_delivery_text_ar',

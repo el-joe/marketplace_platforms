@@ -32,6 +32,7 @@ class SellerListingResource extends JsonResource
                 ],
                 'color_hex' => $this->primaryShippingMethod->badge_color_hex,
                 'text_color_hex' => $this->primaryShippingMethod->badge_text_color_hex,
+                'icon_color_hex' => $this->primaryShippingMethod->badge_icon_color_hex,
                 'show_delivery_time' => (bool) $this->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $this->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $this->primaryShippingMethod->badge_delivery_text_resolved_en],
                 'icon' => (($this->primaryShippingMethod->badge_icon ?? 'bolt') === 'none') ? null : ($this->primaryShippingMethod->badge_icon ?? 'bolt'),

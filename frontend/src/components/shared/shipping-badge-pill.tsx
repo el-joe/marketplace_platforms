@@ -38,6 +38,7 @@ type Badge = ShippingBadgeLike & {
   badge_image_url?: string | null;
   color_hex?: string;
   text_color_hex?: string;
+  icon_color_hex?: string | null;
 };
 
 export function ShippingBadgePill({
@@ -69,6 +70,7 @@ export function ShippingBadgePill({
   }
   return (
     <div
+      dir={locale.startsWith("ar") ? "rtl" : "ltr"}
       className={cn(
         "flex w-fit max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[9px] lg:text-xs font-semibold",
         className,
@@ -77,6 +79,7 @@ export function ShippingBadgePill({
     >
       {Icon && (
         <Icon
+          style={{ color: badge.icon_color_hex || badge.text_color_hex }}
           className={cn(
             "size-3 lg:size-4 shrink-0",
             key && FILLED.has(key) && "fill-current",

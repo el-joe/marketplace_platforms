@@ -197,6 +197,7 @@ class SponsoredProductService
                 'label'             => ['en' => $shipping->badge_label_en, 'ar' => $shipping->badge_label_ar],
                 'color_hex'         => $shipping->badge_color_hex,
                 'text_color_hex'    => $shipping->badge_text_color_hex,
+                'icon_color_hex' => $shipping->badge_icon_color_hex,
                 'show_delivery_time' => (bool) $shipping->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $shipping->badge_delivery_text_resolved_ar, 'en' => $shipping->badge_delivery_text_resolved_en],
                 'icon' => (($shipping->badge_icon ?? 'bolt') === 'none') ? null : ($shipping->badge_icon ?? 'bolt'),

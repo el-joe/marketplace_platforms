@@ -80,7 +80,7 @@ class VendorPageController extends Controller
             ->with([
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'vendor:id,store_name,store_rating_avg',
             ])
             ->orderByRaw("FIELD(global_system_type,'express_fbn','merchant_fbp','marketplace')")

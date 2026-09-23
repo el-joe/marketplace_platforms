@@ -28,6 +28,7 @@ class CheckoutShippingMethodResource extends JsonResource
             'badge_label_ar' => $this->badge_label_ar,
             'badge_color_hex' => $this->badge_color_hex,
             'badge_text_color_hex' => $this->badge_text_color_hex,
+            'badge_icon_color_hex' => $this->badge_icon_color_hex,
             'delivery_days_min' => $this->min_delivery_days,
             'delivery_days_max' => $this->max_delivery_days,
             'fee' => $this->calc['fee'],

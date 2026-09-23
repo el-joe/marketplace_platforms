@@ -476,7 +476,7 @@ class PageRendererService
             ->where('status', 'active')
             ->whereNull('deleted_at')
             ->with([
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'productVariant:id,sku,slug,variant_name',
                 'productVariant.images',
             ])
@@ -491,7 +491,7 @@ class PageRendererService
             ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
             ->with([
                 'vendor:id,store_name,store_rating_avg',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'productVariant:id,sku,slug,variant_name',
                 'productVariant.images',
             ])
@@ -580,7 +580,7 @@ class PageRendererService
             ->whereIn('status', ['approved', 'live'])
             ->with([
                 'vendorListing.vendor:id,store_name,store_rating_avg',
-                'vendorListing.primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
+                'vendorListing.primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'vendorListing.productVariant.product.images',
                 'vendorListing.productVariant.product.customAttributes',
                 'vendorListing.productVariant.images',

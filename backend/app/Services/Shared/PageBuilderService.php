@@ -223,7 +223,7 @@ class PageBuilderService
                 ->where('status', 'active')
                 ->whereNull('deleted_at')
                 ->with([
-                    'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
+                    'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                     'productVariant:id,sku',
                 ])
                 ->orderBy('price')
@@ -242,7 +242,7 @@ class PageBuilderService
                 ->whereHas('vendor', fn ($q) => $q->where('global_status', \App\Enums\VendorGlobalStatus::Active->value))
                 ->with([
                     'vendor:id,store_name,store_rating_avg,store_rating_count',
-                    'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
+                    'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_icon_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                     'productVariant:id,sku',
                 ])
                 ->orderByRaw('score IS NULL, score DESC')

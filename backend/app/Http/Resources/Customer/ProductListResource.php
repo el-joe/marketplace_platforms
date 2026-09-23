@@ -79,6 +79,7 @@ class ProductListResource extends JsonResource
                     ],
                     'color_hex'        => $this->buy_box_shipping_color_hex,
                     'text_color_hex'   => $this->buy_box_shipping_text_color_hex,
+                    'icon_color_hex'   => $this->buy_box_shipping_icon_color_hex,
                     'show_delivery_time' => (bool) $this->buy_box_shipping_show_delivery_time,
                     'delivery_text' => ['ar' => ($this->buy_box_shipping_delivery_text_ar ?: $this->buy_box_shipping_label_ar), 'en' => ($this->buy_box_shipping_delivery_text_en ?: $this->buy_box_shipping_label_en)],
                     'icon' => ($this->buy_box_shipping_icon ?? 'bolt') === 'none' ? null : ($this->buy_box_shipping_icon ?? 'bolt'),

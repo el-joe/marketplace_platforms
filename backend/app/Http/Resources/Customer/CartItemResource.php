@@ -60,6 +60,7 @@ class CartItemResource extends JsonResource
                 'label'             => Bilingual::pairFromKeys($listing->primaryShippingMethod, 'badge_label_ar', 'badge_label_en'),
                 'color_hex'         => $listing->primaryShippingMethod->badge_color_hex,
                 'text_color_hex'    => $listing->primaryShippingMethod->badge_text_color_hex,
+                'icon_color_hex' => $listing->primaryShippingMethod->badge_icon_color_hex,
                 'show_delivery_time' => (bool) $listing->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $listing->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $listing->primaryShippingMethod->badge_delivery_text_resolved_en],
                 'icon' => (($listing->primaryShippingMethod->badge_icon ?? 'bolt') === 'none') ? null : ($listing->primaryShippingMethod->badge_icon ?? 'bolt'),

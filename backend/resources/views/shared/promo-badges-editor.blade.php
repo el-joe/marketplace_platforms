@@ -7,7 +7,7 @@
     $pbL = fn (string $k) => __('admin.promo_badges.' . $k);
     $pbLabels = array_merge([
         'title' => $pbL('title'), 'hint' => __('admin.promo_badges.hint', ['max' => config('promo_badges.max_per_owner', 10)]), 'add' => $pbL('add'),
-        'label_en' => $pbL('label_en'), 'label_ar' => $pbL('label_ar'), 'icon' => $pbL('icon'),
+        'label_en' => $pbL('label_en'), 'label_ar' => $pbL('label_ar'), 'icon' => $pbL('icon'), 'icon_color' => $pbL('icon_color'),
         'active' => $pbL('active'), 'up' => $pbL('up'), 'remove' => $pbL('remove'), 'empty' => $pbL('empty'),
     ], $labels ?? []);
 @endphp
@@ -53,9 +53,9 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <input type="color" :name="`promo_badges[${i}][color_hex]`" x-model="b.color_hex" title="Icon colour" class="h-8 w-10 p-0 border rounded">
-                            <input type="color" :name="`promo_badges[${i}][text_color_hex]`" x-model="b.text_color_hex" title="Text colour" class="h-8 w-10 p-0 border rounded">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">{{ $pbLabels['icon_color'] }}</label>
+                            <input type="color" :name="`promo_badges[${i}][color_hex]`" x-model="b.color_hex" class="h-8 w-full p-0 border rounded">
                         </div>
                         <div class="md:col-span-6 flex items-center justify-between">
                             <label class="flex items-center gap-2 text-sm text-gray-600">

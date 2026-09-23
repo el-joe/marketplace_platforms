@@ -91,6 +91,7 @@ class MiscController extends Controller
                 'badge_label_ar'       => $method->badge_label_ar,
                 'badge_color_hex'      => $method->badge_color_hex,
                 'badge_text_color_hex' => $method->badge_text_color_hex,
+                'badge_icon_color_hex' => $method->badge_icon_color_hex,
                 'delivery_days_min'    => $method->min_delivery_days,
                 'delivery_days_max'    => $method->max_delivery_days,
             ]);

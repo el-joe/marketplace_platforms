@@ -28,6 +28,7 @@ class ShippingMethodController extends Controller
         $shippingMethod = new ShippingMethod([
             'badge_color_hex' => '#1a1a2e',
             'badge_text_color_hex' => '#FFFFFF',
+            'badge_icon_color_hex' => '#FFFFFF',
             'handling_time_hours' => 24,
             'display_priority' => 0,
             'is_active' => true,
@@ -126,6 +127,7 @@ class ShippingMethodController extends Controller
             'badge_label_ar' => ['nullable', 'string', 'max:50'],
             'badge_color_hex' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'badge_text_color_hex' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'badge_icon_color_hex' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'badge_show_delivery_time' => ['boolean'],
             'badge_delivery_text_en' => ['nullable', 'string', 'max:100'],
             'badge_delivery_text_ar' => ['nullable', 'string', 'max:100'],
