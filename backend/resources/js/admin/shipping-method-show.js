@@ -58,8 +58,6 @@ function initMethodDetailForm() {
             badge_label_ar: $form.find('[name="badge_label_ar"]').val() || null,
             badge_color_hex: $form.find('[name="badge_color_hex"]').val() || null,
             badge_text_color_hex: $form.find('[name="badge_text_color_hex"]').val() || null,
-            delivery_label_en: $form.find('[name="delivery_label_en"]').val() || null,
-            delivery_label_ar: $form.find('[name="delivery_label_ar"]').val() || null,
             is_express_type: $form.find('[name="is_express_type"]').is(':checked') ? 1 : 0,
             show_estimated_price: $form.find('[name="show_estimated_price"]').is(':checked') ? 1 : 0,
             is_active: $form.find('[name="is_active"]').is(':checked') ? 1 : 0,

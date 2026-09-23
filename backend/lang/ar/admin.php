@@ -6240,8 +6240,6 @@ return [
         'badge_image' => 'صورة الشارة',
         'badge_image_hint' => 'أيقونة اختيارية تظهر بجانب نص الشارة. PNG/SVG، الحد الأقصى 1 ميجابايت.',
         'save_first_for_image' => 'احفظ طريقة الشحن أولاً لرفع الصورة.',
-        'delivery_panel_label_en' => 'نص لوحة التوصيل (إنجليزي)',
-        'delivery_panel_label_ar' => 'نص لوحة التوصيل (عربي)',
         'shipping_rates' => 'أسعار الشحن',
         'new_rate' => 'سعر جديد',
         'origin_zone_col' => 'منطقة المنشأ',

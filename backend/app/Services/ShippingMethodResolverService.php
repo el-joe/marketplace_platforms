@@ -93,8 +93,6 @@ class ShippingMethodResolverService
             'badge_color_hex' => $method->badge_color_hex,
             'badge_text_color_hex' => $method->badge_text_color_hex,
             'badge_image_url' => $method->badge_image_url,
-            'delivery_label_en' => $method->delivery_label_en,
-            'delivery_label_ar' => $method->delivery_label_ar,
             'is_express_type' => (bool) $method->is_express_type,
             'is_default' => $isDefault,
             'min_delivery_days' => $method->min_delivery_days,
@@ -113,7 +111,7 @@ class ShippingMethodResolverService
         $max = $method->max_delivery_days;
 
         if ($min === null && $max === null) {
-            return [$method->delivery_label_en, $method->delivery_label_ar];
+            return [$method->displayLabel('en'), $method->displayLabel('ar')];
         }
 
         if ($min === $max) {

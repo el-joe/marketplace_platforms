@@ -6273,8 +6273,6 @@ return [
         'badge_image' => 'Badge Image',
         'badge_image_hint' => 'Optional icon shown alongside the badge label. PNG/SVG, max 1 MB.',
         'save_first_for_image' => 'Save the shipping method first to upload an image.',
-        'delivery_panel_label_en' => 'Delivery panel label (EN)',
-        'delivery_panel_label_ar' => 'Delivery panel label (AR)',
         'shipping_rates' => 'Shipping Rates',
         'new_rate' => 'New Rate',
         'origin_zone_col' => 'Origin Zone',

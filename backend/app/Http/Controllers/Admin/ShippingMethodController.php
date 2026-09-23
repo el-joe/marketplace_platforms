@@ -112,7 +112,7 @@ class ShippingMethodController extends Controller
 
     private function validateData(Request $request, ?ShippingMethod $shippingMethod = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'code' => [
                 'required', 'string', 'max:50', 'regex:/^[a-z_]+$/',
@@ -126,8 +126,6 @@ class ShippingMethodController extends Controller
             'badge_label_ar' => ['nullable', 'string', 'max:50'],
             'badge_color_hex' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'badge_text_color_hex' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'delivery_label_en' => ['nullable', 'string', 'max:100'],
-            'delivery_label_ar' => ['nullable', 'string', 'max:100'],
             'badge_show_delivery_time' => ['boolean'],
             'badge_delivery_text_en' => ['nullable', 'string', 'max:100'],
             'badge_delivery_text_ar' => ['nullable', 'string', 'max:100'],
@@ -138,5 +136,13 @@ class ShippingMethodController extends Controller
             'order_cutoff_time' => ['nullable', 'date_format:H:i'],
             'handling_time_hours' => ['nullable', 'integer', 'min:0', 'max:72'],
         ]);
+
+        foreach (['badge_label_en', 'badge_label_ar'] as $key) {
+            if (blank($data[$key] ?? null)) {
+                $data[$key] = $data['name'];
+            }
+        }
+
+        return $data;
     }
 }

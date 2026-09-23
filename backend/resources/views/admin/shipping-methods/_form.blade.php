@@ -236,15 +236,18 @@
                     {{-- Live badge preview — reflects exactly how the badge appears to customers --}}
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.preview') }}</label>
-                        <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 flex items-center">
-                            <span x-show="showDelivery ? deliveryText : badgeLabel"
+                        <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 flex items-center"
+                             x-data="{ pimg: '{{ $shippingMethod->badge_image_url ?? '' }}' }"
+                             @badge-image.window="pimg = $event.detail || ''">
+                            <img x-show="pimg" :src="pimg" alt="" class="max-h-5 object-contain" />
+                            <span x-show="!pimg && (showDelivery ? deliveryText : badgeLabel)"
                                   :style="`background-color: ${badgeColor}; color: ${badgeTextColor};`"
                                   class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold">
                                 <svg x-show="badgeIcon !== 'none' && iconPaths[badgeIcon]" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="iconPaths[badgeIcon]"></svg>
                                 <span x-text="showDelivery ? deliveryText : badgeLabel"></span>
                                 <svg class="w-3 h-3 rtl:-scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
                             </span>
-                            <span x-show="!(showDelivery ? deliveryText : badgeLabel)" class="text-xs text-gray-400">{{ __('admin.shipping_section.no_badge_configured') }}</span>
+                            <span x-show="!pimg && !(showDelivery ? deliveryText : badgeLabel)" class="text-xs text-gray-400">{{ __('admin.shipping_section.no_badge_configured') }}</span>
                         </div>
                     </div>
 
@@ -267,7 +270,7 @@
                                 try {
                                     const res  = await fetch(this.uploadUrl, { method: 'POST', body: fd });
                                     const data = await res.json();
-                                    if (res.ok) { this.imageUrl = data.badge_image_url; }
+                                    if (res.ok) { this.imageUrl = data.badge_image_url; $dispatch('badge-image', this.imageUrl); }
                                     else { alert(data.message || 'Upload failed'); }
                                 } catch(e) { alert('Network error'); }
                                 this.uploading = false;
@@ -282,7 +285,7 @@
                                         'Accept': 'application/json',
                                     },
                                 });
-                                if (res.ok) { this.imageUrl = ''; }
+                                if (res.ok) { this.imageUrl = ''; $dispatch('badge-image', ''); }
                                 else { alert('Delete failed'); }
                             }
                         }"
@@ -327,19 +330,6 @@
                             <p class="text-xs text-gray-400">{{ __('admin.shipping_section.save_first_for_image') }}</p>
                         @endif
                     </div>
-
-                    <div>
-                        <label for="delivery_label_en" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.delivery_panel_label_en') }}</label>
-                            <input type="text" id="delivery_label_en" name="delivery_label_en" value="{{ $val('delivery_label_en') }}" maxlength="100"
-                                   placeholder="Delivered within 2-4 days" class="input w-full @error('delivery_label_en') border-red-400 @enderror">
-                            @error('delivery_label_en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="delivery_label_ar" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.delivery_panel_label_ar') }}</label>
-                            <input type="text" id="delivery_label_ar" name="delivery_label_ar" value="{{ $val('delivery_label_ar') }}" maxlength="100"
-                                   dir="rtl" placeholder="يتم التوصيل خلال 2-4 أيام" class="input w-full @error('delivery_label_ar') border-red-400 @enderror">
-                            @error('delivery_label_ar') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                        </div>
                     </div>
                 </div>
             </div>

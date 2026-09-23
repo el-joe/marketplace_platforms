@@ -704,8 +704,6 @@ class CartService
                     'badge_label_en' => $method->badge_label_en,
                     'badge_label_ar' => $method->badge_label_ar,
                     'badge_color_hex' => $method->badge_color_hex,
-                    'delivery_label_en' => $method->delivery_label_en,
-                    'delivery_label_ar' => $method->delivery_label_ar,
                     'is_express_type' => (bool) $method->is_express_type,
                 ] : null,
                 'is_free_shipping' => $isFreeShipping,

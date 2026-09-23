@@ -35,6 +35,7 @@ class SellerListingResource extends JsonResource
                 'show_delivery_time' => (bool) $this->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $this->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $this->primaryShippingMethod->badge_delivery_text_resolved_en],
                 'icon' => (($this->primaryShippingMethod->badge_icon ?? 'bolt') === 'none') ? null : ($this->primaryShippingMethod->badge_icon ?? 'bolt'),
+                'badge_image_url' => $this->primaryShippingMethod->badge_image_url,
                 'min_delivery_days' => $this->primaryShippingMethod->min_delivery_days,
                 'max_delivery_days' => $this->primaryShippingMethod->max_delivery_days,
             ] : null),

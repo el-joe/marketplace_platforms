@@ -31,8 +31,6 @@ class ShippingMethod extends Model
         'badge_delivery_text_en',
         'badge_delivery_text_ar',
         'badge_icon',
-        'delivery_label_en',
-        'delivery_label_ar',
         'is_express_type',
         'show_estimated_price',
         'display_priority',
@@ -61,6 +59,13 @@ class ShippingMethod extends Model
     public function getBadgeDeliveryTextResolvedEnAttribute(): ?string
     {
         return $this->badge_delivery_text_en ?: $this->badge_label_en;
+    }
+
+    public function displayLabel(string $locale): string
+    {
+        $key = $locale === 'ar' ? 'badge_label_ar' : 'badge_label_en';
+
+        return (string) ($this->{$key} ?: $this->name);
     }
 
     public function rates(): HasMany

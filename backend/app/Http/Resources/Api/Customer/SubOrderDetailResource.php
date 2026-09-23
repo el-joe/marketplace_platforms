@@ -76,7 +76,6 @@ class SubOrderDetailResource extends JsonResource
                 'code' => $snapshot['code'] ?? null,
                 'badge_label_en' => $snapshot['badge_label_en'] ?? null,
                 'badge_color_hex' => $snapshot['badge_color_hex'] ?? null,
-                'delivery_label_en' => $snapshot['delivery_label_en'] ?? null,
             ];
         }
 
@@ -95,7 +94,6 @@ class SubOrderDetailResource extends JsonResource
             'code' => $method->code,
             'badge_label_en' => $method->badge_label_en,
             'badge_color_hex' => $method->badge_color_hex,
-            'delivery_label_en' => $method->delivery_label_en,
         ];
     }
 

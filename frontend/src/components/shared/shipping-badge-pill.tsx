@@ -35,6 +35,7 @@ const FILLED = new Set(["bolt", "star"]);
 
 type Badge = ShippingBadgeLike & {
   icon?: string | null;
+  badge_image_url?: string | null;
   color_hex?: string;
   text_color_hex?: string;
 };
@@ -55,6 +56,16 @@ export function ShippingBadgePill({
   if (!text) {
     const days = badge.delivery_days_min ?? badge.delivery_days_max;
     text = `${t("getIn")} ${days != null ? t("$day", { value: days }) : ""}`;
+  }
+  if (badge.badge_image_url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={badge.badge_image_url}
+        alt={text}
+        className={cn("max-h-4 lg:max-h-5 w-auto max-w-full object-contain", className)}
+      />
+    );
   }
   return (
     <div

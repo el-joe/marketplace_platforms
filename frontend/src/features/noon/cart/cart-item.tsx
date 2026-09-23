@@ -121,8 +121,7 @@ export default function CartItem({
             className="lg:hidden"
           />
           {/* delivery date */}
-          {shippingMethod?.delivery_label_ar ||
-            (shippingMethod?.delivery_label_en && (
+          {(shippingMethod?.badge_label_ar || shippingMethod?.badge_label_en) && (
               <p
                 className={`text-sm rounded-md p-1 w-fit text-light`}
                 style={{
@@ -130,10 +129,10 @@ export default function CartItem({
                 }}
               >
                 {locale === "ar"
-                  ? shippingMethod?.delivery_label_ar
-                  : shippingMethod?.delivery_label_en}
+                  ? shippingMethod?.badge_label_ar || shippingMethod?.badge_label_en
+                  : shippingMethod?.badge_label_en || shippingMethod?.badge_label_ar}
               </p>
-            ))}
+            )}
           <p className="text-sm text-gray">
             {t("orderIn")}
             18 hrs 12 mins (dummy data)

@@ -253,8 +253,6 @@ export interface ShippingMethod {
   badge_label_en: string;
   badge_label_ar: string;
   badge_color_hex: string;
-  delivery_label_en: null | string;
-  delivery_label_ar: null | string;
   is_express_type: boolean;
 }
 
