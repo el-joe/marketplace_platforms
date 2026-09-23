@@ -42,6 +42,11 @@ export function toProductCard(
     })),
     category_name: item.category_name,
     price: item.price,
+    oldPrice: item.compare_at_price ?? item.price,
+    discountPercent:
+      item.compare_at_price && item.compare_at_price > item.price
+        ? Math.round(((item.compare_at_price - item.price) / item.compare_at_price) * 100)
+        : 0,
     price_formatted: item.price_formatted,
     compare_at_price: item.compare_at_price,
     currency: item.currency as CurrencyCode,
