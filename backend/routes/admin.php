@@ -988,6 +988,22 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     });
 
     // ── Marketer Management ────────────────────────────────────────────────
+    Route::prefix('marketer-ad-packages')->name('marketer-ad-packages.')->group(function () {
+        Route::middleware('admin.permission:marketers.view')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'index'])->name('index');
+            Route::get('/subscriptions/{subscription}/proof', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'proof'])->name('proof');
+        });
+        Route::middleware('admin.permission:marketers.manage')->group(function () {
+            Route::get('/create', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'store'])->name('store');
+            Route::post('/subscriptions/{subscription}/approve', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'approve'])->name('approve');
+            Route::post('/subscriptions/{subscription}/reject', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'reject'])->name('reject');
+            Route::get('/{marketerAdPackage}/edit', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'edit'])->name('edit');
+            Route::put('/{marketerAdPackage}', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'update'])->name('update');
+            Route::delete('/{marketerAdPackage}', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'destroy'])->name('destroy');
+        });
+    });
+
     Route::prefix('marketers')->name('marketers.')->middleware('admin.permission:marketers.view')->group(function () {
         Route::get('/', [MarketerController::class, 'index'])->name('index');
         Route::post('/', [MarketerController::class, 'store'])

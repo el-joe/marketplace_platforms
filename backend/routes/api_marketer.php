@@ -111,6 +111,11 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
         Route::get('/', [ExclusiveContractController::class, 'index'])->name('index');
         Route::get('/{id}', [ExclusiveContractController::class, 'show'])->name('show');
     });
+    Route::prefix('ad-packages')->name('marketer.api.packages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\Marketer\AdPackageController::class, 'index'])->name('index');
+        Route::get('/my-subscription', [\App\Http\Controllers\Api\Marketer\AdPackageController::class, 'mySubscription'])->name('current');
+        Route::post('/{id}/subscribe', [\App\Http\Controllers\Api\Marketer\AdPackageController::class, 'subscribe'])->name('subscribe');
+    });
     Route::prefix('coupon-participation')->name('marketer.api.coupon.')->group(function () {
         Route::get('/', [CouponParticipationController::class, 'index'])->name('index');
         Route::post('/{invitation}', [CouponParticipationController::class, 'store'])->name('store');

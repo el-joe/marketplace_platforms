@@ -151,6 +151,14 @@ Route::middleware('web')->group(function () {
             Route::get('/{contract}/download', [ExclusiveContractController::class, 'download'])->name('download');
         });
 
+        // Ad packages (Nawy packages)
+        Route::prefix('ad-packages')->name('ad-packages.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Marketer\AdPackageController::class, 'index'])->name('index');
+            Route::get('/success', [\App\Http\Controllers\Marketer\AdPackageController::class, 'success'])->name('success');
+            Route::get('/contract/{package}', [\App\Http\Controllers\Marketer\AdPackageController::class, 'contract'])->name('contract');
+            Route::post('/{package}/subscribe', [\App\Http\Controllers\Marketer\AdPackageController::class, 'subscribe'])->name('subscribe');
+        });
+
         // Active campaigns (accepted invitations)
         Route::get('/campaigns/active', [CampaignController::class, 'active'])->name('campaigns.active');
 

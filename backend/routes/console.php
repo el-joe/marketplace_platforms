@@ -108,6 +108,9 @@ Schedule::command('coupons:close-expired-participation-invitations')
 
 Schedule::job(new \App\Jobs\ActivateFulfilledCouponInvitationJob)->dailyAt('00:30')->name('activate-fulfilled-coupon-invitations');
 
+// Expire marketer ad package subscriptions past expires_at (reads also filter by expires_at)
+Schedule::command('ad-packages:expire')->hourly()->withoutOverlapping()->name('expire-ad-package-subscriptions');
+
 // Activate pending exclusive contracts whose start date arrived, and expire those past ends_at
 Schedule::command('exclusive-contracts:expire')
     ->dailyAt('00:45')
