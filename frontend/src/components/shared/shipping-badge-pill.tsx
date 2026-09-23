@@ -18,6 +18,7 @@ import {
   type ShippingBadgeLike,
 } from "@/src/lib/shipping-badge";
 import { cn } from "@/src/lib/utils";
+import Image from "next/image";
 
 const ICONS: Record<string, LucideIcon> = {
   bolt: Zap,
@@ -60,11 +61,15 @@ export function ShippingBadgePill({
   }
   if (badge.badge_image_url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={badge.badge_image_url}
         alt={text}
-        className={cn("max-h-4 lg:max-h-5 w-auto max-w-full object-contain", className)}
+        className={cn(
+          "max-h-4 lg:max-h-5 w-auto max-w-full object-contain w-fit",
+          className,
+        )}
+        width={260}
+        height={92}
       />
     );
   }

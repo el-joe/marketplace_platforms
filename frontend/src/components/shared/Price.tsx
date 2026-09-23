@@ -57,9 +57,9 @@ const Price = ({
     >
       {/* current price */}
       <div className={`flex items-center ${currentPriceSize[size]}`}>
-        <span className="font-[currency-font]">
-          <CurrencySymbol code={currency} />
-        </span>
+        {/* <span className="font-[currency-font]"> */}
+        <CurrencySymbol code={currency} />
+        {/* </span> */}
         <p>{(currentPrice ?? 0).toLocaleString()}</p>
       </div>
       {variant === "default" && (
