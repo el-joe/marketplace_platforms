@@ -6267,6 +6267,8 @@ return [
         'badge_color' => 'Badge color',
         'text_color' => 'Text color',
         'preview' => 'Preview',
+        'badge_icon' => 'Badge icon',
+        'badge_icons' => ['bolt' => 'Bolt', 'truck' => 'Truck', 'clock' => 'Clock', 'rocket' => 'Rocket', 'box' => 'Box', 'plane' => 'Plane', 'star' => 'Star', 'gift' => 'Gift', 'shield-check' => 'Shield', 'tag' => 'Tag', 'none' => 'None'],
         'no_badge_configured' => 'No badge configured',
         'badge_image' => 'Badge Image',
         'badge_image_hint' => 'Optional icon shown alongside the badge label. PNG/SVG, max 1 MB.',

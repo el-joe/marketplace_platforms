@@ -204,7 +204,7 @@ class ListingQueryService
                 'productVariant.images',
                 'productVariant.product.images',
                 'productVariant.product.category:id,name_en,name_ar,slug',
-                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar',
+                'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
             ]);
 
         $builder = $this->applyFilters($builder, $filters);
@@ -237,7 +237,7 @@ class ListingQueryService
             ->where('status', 'active')
             ->whereNull('deleted_at')
             ->with([
-                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar',
+                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'productVariant:id,sku',
             ])
             ->orderBy('price')
@@ -261,7 +261,7 @@ class ListingQueryService
             ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
             ->with([
                 'vendor:id,store_name,store_rating_avg,store_rating_count',
-                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar',
+                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'productVariant:id,sku',
             ])
             ->orderByRaw('score IS NULL, score DESC')
@@ -309,7 +309,7 @@ class ListingQueryService
             ->where('status', 'active')
             ->whereNull('deleted_at')
             ->with([
-                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar',
+                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
                 'productVariant.product.brand',
@@ -325,7 +325,7 @@ class ListingQueryService
             ->where('status', VendorListingStatus::Active->value)
             ->whereHas('vendor', fn ($q) => $q->where('global_status', VendorGlobalStatus::Active->value))
             ->with([
-                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar',
+                'primaryShippingMethod:id,name,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon',
                 'vendor:id,store_name,store_rating_avg',
                 'productVariant:id,sku,slug,variant_name,variant_name_ar,product_id',
                 'productVariant.images',
@@ -495,6 +495,7 @@ class ListingQueryService
                 'text_color_hex' => $listing->primaryShippingMethod->badge_text_color_hex,
                 'show_delivery_time' => (bool) $listing->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $listing->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $listing->primaryShippingMethod->badge_delivery_text_resolved_en],
+                'icon' => (($listing->primaryShippingMethod->badge_icon ?? 'bolt') === 'none') ? null : ($listing->primaryShippingMethod->badge_icon ?? 'bolt'),
                 'badge_image_url' => $listing->primaryShippingMethod->badge_image_url,
                 'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
@@ -619,6 +620,7 @@ class ListingQueryService
                 'text_color_hex' => $listing->primaryShippingMethod->badge_text_color_hex,
                 'show_delivery_time' => (bool) $listing->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $listing->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $listing->primaryShippingMethod->badge_delivery_text_resolved_en],
+                'icon' => (($listing->primaryShippingMethod->badge_icon ?? 'bolt') === 'none') ? null : ($listing->primaryShippingMethod->badge_icon ?? 'bolt'),
                 'badge_image_url' => $listing->primaryShippingMethod->badge_image_url,
                 'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
@@ -1110,8 +1112,8 @@ class ListingQueryService
         ];
         $models = [];
         foreach ([
-            'admin' => [AdminListing::class, ['primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar']],
-            'vendor' => [VendorListing::class, ['vendor:id,store_name,store_rating_avg', 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar']],
+            'admin' => [AdminListing::class, ['primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon']],
+            'vendor' => [VendorListing::class, ['vendor:id,store_name,store_rating_avg', 'primaryShippingMethod:id,badge_label_en,badge_label_ar,badge_color_hex,badge_text_color_hex,badge_image_path,min_delivery_days,max_delivery_days,is_express_type,badge_show_delivery_time,badge_delivery_text_en,badge_delivery_text_ar,badge_icon']],
             'marketer' => [MarketerListing::class, ['marketer.marketerProfile', 'productVariant.product.brand']],
         ] as $type => [$class, $extra]) {
             $ids = $rows->where('ltype', $type)->pluck('lid')->all();

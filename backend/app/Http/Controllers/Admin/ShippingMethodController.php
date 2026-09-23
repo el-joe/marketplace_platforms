@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
 class ShippingMethodController extends Controller
@@ -130,6 +131,7 @@ class ShippingMethodController extends Controller
             'badge_show_delivery_time' => ['boolean'],
             'badge_delivery_text_en' => ['nullable', 'string', 'max:100'],
             'badge_delivery_text_ar' => ['nullable', 'string', 'max:100'],
+            'badge_icon' => ['nullable', Rule::in(config('shipping_badge.badge_icons'))],
             'is_express_type' => ['boolean'],
             'show_estimated_price' => ['boolean'],
             'display_priority' => ['nullable', 'integer', 'min:0'],

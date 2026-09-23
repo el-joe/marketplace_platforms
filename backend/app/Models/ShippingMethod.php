@@ -30,6 +30,7 @@ class ShippingMethod extends Model
         'badge_show_delivery_time',
         'badge_delivery_text_en',
         'badge_delivery_text_ar',
+        'badge_icon',
         'delivery_label_en',
         'delivery_label_ar',
         'is_express_type',

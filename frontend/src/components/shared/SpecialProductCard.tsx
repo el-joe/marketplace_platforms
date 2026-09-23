@@ -1,5 +1,5 @@
 "use client";
-import { getShippingBadgeText } from "@/src/lib/shipping-badge";
+import { ShippingBadgePill } from "./shipping-badge-pill";
 
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
@@ -84,17 +84,10 @@ const SpecialProductCard = ({ productData }: Props) => {
           />
         )}
         {!!productData.shipping_badge && (
-          <div
-            className="flex w-fit font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1"
-            style={{
-              background: productData.shipping_badge.color_hex,
-              color: productData.shipping_badge.text_color_hex,
-            }}
-          >
-            <span>
-              {getShippingBadgeText(productData.shipping_badge, locale)}
-            </span>
-          </div>
+          <ShippingBadgePill
+            badge={productData.shipping_badge}
+            locale={locale}
+          />
         )}
       </div>
     </Link>

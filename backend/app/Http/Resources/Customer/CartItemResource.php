@@ -62,6 +62,7 @@ class CartItemResource extends JsonResource
                 'text_color_hex'    => $listing->primaryShippingMethod->badge_text_color_hex,
                 'show_delivery_time' => (bool) $listing->primaryShippingMethod->badge_show_delivery_time,
                 'delivery_text' => ['ar' => $listing->primaryShippingMethod->badge_delivery_text_resolved_ar, 'en' => $listing->primaryShippingMethod->badge_delivery_text_resolved_en],
+                'icon' => (($listing->primaryShippingMethod->badge_icon ?? 'bolt') === 'none') ? null : ($listing->primaryShippingMethod->badge_icon ?? 'bolt'),
                 'delivery_days_min' => $listing->primaryShippingMethod->min_delivery_days,
                 'delivery_days_max' => $listing->primaryShippingMethod->max_delivery_days,
             ] : null,

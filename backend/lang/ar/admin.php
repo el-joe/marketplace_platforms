@@ -6234,6 +6234,8 @@ return [
         'badge_color' => 'لون الشارة',
         'text_color' => 'لون النص',
         'preview' => 'معاينة',
+        'badge_icon' => 'أيقونة الشارة',
+        'badge_icons' => ['bolt' => 'صاعقة', 'truck' => 'شاحنة', 'clock' => 'ساعة', 'rocket' => 'صاروخ', 'box' => 'صندوق', 'plane' => 'طائرة', 'star' => 'نجمة', 'gift' => 'هدية', 'shield-check' => 'درع', 'tag' => 'وسم', 'none' => 'بدون'],
         'no_badge_configured' => 'لم يتم تكوين شارة',
         'badge_image' => 'صورة الشارة',
         'badge_image_hint' => 'أيقونة اختيارية تظهر بجانب نص الشارة. PNG/SVG، الحد الأقصى 1 ميجابايت.',

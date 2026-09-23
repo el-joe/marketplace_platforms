@@ -1,4 +1,4 @@
-import { getShippingBadgeText } from "@/src/lib/shipping-badge";
+import { ShippingBadgePill } from "@/src/components/shared/shipping-badge-pill";
 import { Button } from "@/src/components/ui/button";
 import {
   Sheet,
@@ -115,14 +115,7 @@ const SheetSellerCard = ({
           {isSelected && <Badge variant={"blue"}>{t("selected")}</Badge>}
           <Price currentPrice={seller.price} currency={seller.currency} />
           {seller.shipping_badge && (
-            <Badge
-              style={{
-                background: seller?.shipping_badge?.color_hex,
-                color: seller?.shipping_badge?.text_color_hex,
-              }}
-            >
-              {getShippingBadgeText(seller.shipping_badge, locale)}
-            </Badge>
+            <ShippingBadgePill badge={seller.shipping_badge} locale={locale} />
           )}
         </div>
         <Button>{locale === "ar" ? <ChevronLeft /> : <ChevronRight />}</Button>

@@ -79,6 +79,7 @@ export interface PromoBadge {
   label: Name;
   icon_key: string;
   color_hex: string;
+  icon?: string | null;
   text_color_hex: string;
   sort_order: number;
 }
@@ -124,6 +125,7 @@ export interface ShippingBadge {
   label_en?: string;
   label_ar?: string;
   color_hex: string;
+  icon?: string | null;
   text_color_hex: string;
   delivery_days_min: number | null;
   delivery_days_max: number | null;

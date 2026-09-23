@@ -287,6 +287,7 @@ class ProductQueryService
             'sm.badge_show_delivery_time as buy_box_shipping_show_delivery_time',
             'sm.badge_delivery_text_en as buy_box_shipping_delivery_text_en',
             'sm.badge_delivery_text_ar as buy_box_shipping_delivery_text_ar',
+            'sm.badge_icon as buy_box_shipping_icon',
             'sm.min_delivery_days as buy_box_shipping_days_min',
             'sm.max_delivery_days as buy_box_shipping_days_max',
             'sm.badge_image_path as buy_box_shipping_badge_image_path',

@@ -1,3 +1,4 @@
+@php $__badgeIcons = json_decode('{"bolt": "<path d=\"M13 2 4 14h7l-1 8 9-12h-7z\"/>", "truck": "<path d=\"M1 6h13v10H1zM14 9h4l3 3v4h-7zM6 19a2 2 0 1 0 0-.01M17 19a2 2 0 1 0 0-.01\"/>", "clock": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>", "rocket": "<path d=\"M5 15c-1 1-2 4-2 6 2 0 5-1 6-2M14 4c3-2 6-2 7-2 0 1 0 4-2 7l-6 6-5-5zM9 14l-3-1 2-3 3-1M10 18l1 3 3-2 1-3\"/>", "box": "<path d=\"M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8\"/>", "plane": "<path d=\"M2 12l20-9-6 18-4-8z\"/>", "star": "<path d=\"m12 2 3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z\"/>", "gift": "<path d=\"M3 8h18v4H3zM5 12v9h14v-9M12 8v13M12 8S8 8 8 5a2 2 0 0 1 4 0M12 8s4 0 4-3a2 2 0 0 0-4 0\"/>", "shield-check": "<path d=\"M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z\"/><path d=\"m9 12 2 2 4-4\"/>", "tag": "<path d=\"M3 3h8l10 10-8 8L3 11z\"/><circle cx=\"7.5\" cy=\"7.5\" r=\"1\"/>"}', true); @endphp
 {{--
     Shared Shipping Method form partial.
     Include with: @include('admin.shipping-methods._form', ['mode' => 'create'])
@@ -22,6 +23,8 @@
          badgeLabel: {{ json_encode($val('badge_label_en')) }},
          badgeColor: {{ json_encode($val('badge_color_hex', '#1a1a2e')) }},
          badgeTextColor: {{ json_encode($val('badge_text_color_hex', '#FFFFFF')) }},
+         badgeIcon: {{ json_encode($val('badge_icon', 'bolt') ?: 'none') }},
+         iconPaths: {{ json_encode($__badgeIcons) }},
          showDelivery: {{ $bool('badge_show_delivery_time') ? 'true' : 'false' }},
          deliveryText: {{ json_encode($val('badge_delivery_text_en') ?: $val('badge_delivery_text_ar')) }},
      }">
@@ -208,14 +211,39 @@
                         </div>
                     </div>
 
+                    {{-- Badge icon picker --}}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.badge_icon') }}</label>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            @foreach (config('shipping_badge.badge_icons') as $key)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="badge_icon" value="{{ $key }}" x-model="badgeIcon" class="sr-only">
+                                    <span class="flex flex-col items-center gap-1 rounded-lg border p-2 text-xs"
+                                          :class="badgeIcon === '{{ $key }}' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'">
+                                        @if ($key !== 'none')
+                                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $__badgeIcons[$key] !!}</svg>
+                                        @else
+                                            <span class="w-5 h-5 inline-flex items-center justify-center">&mdash;</span>
+                                        @endif
+                                        {{ __('admin.shipping_section.badge_icons.' . $key) }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error('badge_icon') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     {{-- Live badge preview — reflects exactly how the badge appears to customers --}}
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.preview') }}</label>
                         <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 flex items-center">
                             <span x-show="showDelivery ? deliveryText : badgeLabel"
-                                  x-text="showDelivery ? deliveryText : badgeLabel"
                                   :style="`background-color: ${badgeColor}; color: ${badgeTextColor};`"
-                                  class="rounded-full px-2 py-0.5 text-xs font-semibold"></span>
+                                  class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold">
+                                <svg x-show="badgeIcon !== 'none' && iconPaths[badgeIcon]" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" x-html="iconPaths[badgeIcon]"></svg>
+                                <span x-text="showDelivery ? deliveryText : badgeLabel"></span>
+                                <svg class="w-3 h-3 rtl:-scale-x-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                            </span>
                             <span x-show="!(showDelivery ? deliveryText : badgeLabel)" class="text-xs text-gray-400">{{ __('admin.shipping_section.no_badge_configured') }}</span>
                         </div>
                     </div>

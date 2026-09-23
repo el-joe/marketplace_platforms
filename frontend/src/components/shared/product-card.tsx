@@ -28,7 +28,7 @@ import useCountDown from "@/src/hooks/useCountDown";
 import InternationalShippingIndicator from "./international-shipping-indicator";
 import { ProductCardRate } from "../ui/rating/product-card-rate";
 import { cn } from "@/src/lib/utils";
-import { getShippingBadgeText } from "@/src/lib/shipping-badge";
+import { ShippingBadgePill } from "./shipping-badge-pill";
 
 type Props = {
   productData: Product | IProduct;
@@ -240,32 +240,11 @@ const ProductCard = ({ productData }: Props) => {
           )}
           {/* bottom badge */}
           {!!productData.shipping_badge && (
-            <div
-              className="flex w-fit max-w-full font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1 mt-auto"
-              style={{
-                background: productData?.shipping_badge?.color_hex,
-                color: productData?.shipping_badge?.text_color_hex,
-              }}
-            >
-              {(() => {
-                const text = getShippingBadgeText(
-                  productData.shipping_badge,
-                  locale,
-                );
-                if (text)
-                  return <span className="truncate min-w-0">{text}</span>;
-                const days =
-                  productData?.shipping_badge?.delivery_days_min ??
-                  productData?.shipping_badge?.delivery_days_max;
-                return (
-                  <span className="truncate min-w-0">
-                    ⚡{t("getIn")}{" "}
-                    {days != null ? t("$day", { value: days }) : ""}
-                  </span>
-                );
-              })()}
-              <ChevronRightIcon className="size-3 lg:size-5 rtl:rotate-180" />
-            </div>
+            <ShippingBadgePill
+              badge={productData.shipping_badge}
+              locale={locale}
+              className="mt-auto"
+            />
           )}
         </div>
       </Link>

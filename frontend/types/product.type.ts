@@ -79,6 +79,7 @@ export interface ShippingBadge {
     en: string;
   };
   color_hex: string;
+  icon?: string | null;
   text_color_hex: string;
   badge_image_url: string | null;
   delivery_days_min: number | null;

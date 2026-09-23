@@ -38,6 +38,7 @@ export interface PromoBadge {
   label: { ar: string; en: string };
   icon_key: string;
   color_hex: string;
+  icon?: string | null;
   text_color_hex: string;
   sort_order: number;
 }
@@ -45,6 +46,7 @@ export interface PromoBadge {
 export interface CrossSellAdShippingBadge {
   label: Locales;
   color_hex: string;
+  icon?: string | null;
   text_color_hex: string;
   delivery_days_min: number;
   delivery_days_max: number;
@@ -163,6 +165,7 @@ export interface OtherSeller {
 export interface ShippingBadge {
   label: Locales;
   color_hex: string;
+  icon?: string | null;
   text_color_hex: string;
   delivery_days_min: number;
   delivery_days_max: number;
