@@ -6,96 +6,137 @@
     @vite(['resources/js/components/select2.js'])
 @endpush
 
-@section('content')
-<div class="max-w-3xl space-y-6">
+@php
+    $statusStyles = [
+        'active' => 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200',
+        'pending' => 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200',
+        'suspended' => 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-200',
+        'rejected' => 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200',
+    ];
+    $statusLabels = [
+        'active' => 'نشط',
+        'pending' => 'قيد المراجعة',
+        'suspended' => 'معلّق',
+        'rejected' => 'مرفوض',
+    ];
+    $statusValue = $marketer->global_status?->value;
+@endphp
 
-    {{-- Info card --}}
-    <div class="bg-white rounded-xl border p-6 space-y-4">
-        <div class="flex items-start justify-between">
-            <div>
-                <h2 class="text-xl font-bold text-gray-900">{{ $marketer->name }}</h2>
-                <div class="text-gray-500 text-sm">{{ $marketer->email }}</div>
-                @if($marketer->phone)<div class="text-gray-400 text-sm">{{ $marketer->phone }}</div>@endif
-            </div>
-            <div class="flex flex-col gap-2 items-end">
-                <div class="flex flex-wrap gap-1 justify-end">
-                    @forelse($marketer->marketerJobs as $job)
-                        <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $job->key === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                            {{ $job->key === 'influencer' ? '🎬' : '🔗' }} {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
-                        </span>
-                    @empty
-                        <span class="text-gray-300 text-xs">-</span>
-                    @endforelse
+@section('content')
+<div class="w-full space-y-6">
+
+    {{-- Header --}}
+    <div class="bg-white rounded-xl border shadow-sm p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div class="flex items-start gap-4">
+                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white text-lg font-bold">
+                    {{ mb_substr($marketer->name, 0, 1) }}
                 </div>
-                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">{{ $marketer->global_status?->value }}</span>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-xl font-bold text-gray-900">{{ $marketer->name }}</h2>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusStyles[$statusValue] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ $statusLabels[$statusValue] ?? $statusValue }}
+                        </span>
+                    </div>
+                    <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                        <span class="inline-flex items-center gap-1">{{ $marketer->email }}</span>
+                        @if($marketer->phone)
+                            <span class="inline-flex items-center gap-1">{{ $marketer->phone }}</span>
+                        @endif
+                    </div>
+                    <div class="mt-3 flex flex-wrap gap-1.5">
+                        @forelse($marketer->marketerJobs as $job)
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $job->key === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                                {{ $job->key === 'influencer' ? '🎬' : '🔗' }} {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
+                            </span>
+                        @empty
+                            <span class="text-gray-300 text-xs">-</span>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            {{-- Actions --}}
+            <div class="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+                @if($statusValue === 'pending')
+                    <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}">
+                        @csrf
+                        <button class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-emerald-600 transition-colors">✓ موافقة وتفعيل</button>
+                    </form>
+                    <form method="POST" action="{{ route('admin.marketers.reject', $marketer) }}" x-data x-on:submit.prevent="
+                        const r = prompt('سبب الرفض:');
+                        if(r){ $el.querySelector('[name=reason]').value = r; $el.submit(); }">
+                        @csrf
+                        <input type="hidden" name="reason">
+                        <button class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-red-600 transition-colors">✕ رفض</button>
+                    </form>
+                @elseif($statusValue === 'active')
+                    <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" x-data x-on:submit.prevent="
+                        const r = prompt('سبب التعليق:');
+                        $el.querySelector('[name=reason]').value = r || '';
+                        $el.submit();">
+                        @csrf
+                        <input type="hidden" name="reason">
+                        <button class="px-4 py-2 bg-red-50 text-red-700 font-semibold rounded-lg text-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 transition-colors">تعليق الحساب</button>
+                    </form>
+                @elseif($statusValue === 'suspended')
+                    <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}">
+                        @csrf
+                        <button class="px-4 py-2 bg-emerald-50 text-emerald-700 font-semibold rounded-lg text-sm ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 transition-colors">إعادة تفعيل</button>
+                    </form>
+                @endif
             </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-4 text-sm">
-            <div><span class="text-gray-400">الدولة: </span><strong>{{ $marketer->country?->name_ar ?? '-' }}</strong></div>
-            <div><span class="text-gray-400">واتساب: </span><strong>{{ $marketer->whatsapp_for_campaigns ?? '-' }}</strong></div>
-            <div><span class="text-gray-400">تاريخ التسجيل: </span><strong>{{ $marketer->created_at->format('Y-m-d') }}</strong></div>
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-gray-100 pt-5 text-sm">
+            <div>
+                <div class="text-gray-400 text-xs mb-0.5">الدولة</div>
+                <div class="font-semibold text-gray-800">{{ $marketer->country?->name_ar ?? '-' }}</div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-xs mb-0.5">واتساب</div>
+                <div class="font-semibold text-gray-800" dir="ltr">{{ $marketer->whatsapp_for_campaigns ?? '-' }}</div>
+            </div>
+            <div>
+                <div class="text-gray-400 text-xs mb-0.5">تاريخ التسجيل</div>
+                <div class="font-semibold text-gray-800">{{ $marketer->created_at->format('Y-m-d') }}</div>
+            </div>
             @if($marketer->approved_at)
-            <div><span class="text-gray-400">تم الموافقة: </span><strong>{{ $marketer->approved_at->format('Y-m-d') }}</strong></div>
-            <div class="col-span-2"><span class="text-gray-400">بواسطة: </span><strong>{{ $marketer->approvedBy?->name ?? '-' }}</strong></div>
+            <div>
+                <div class="text-gray-400 text-xs mb-0.5">تمت الموافقة</div>
+                <div class="font-semibold text-gray-800">{{ $marketer->approved_at->format('Y-m-d') }} <span class="text-gray-400 font-normal">— {{ $marketer->approvedBy?->name ?? '-' }}</span></div>
+            </div>
             @endif
         </div>
 
         @if($marketer->rejection_reason)
-        <div class="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-            <strong>سبب الرفض/التعليق:</strong> {{ $marketer->rejection_reason }}
+        <div class="mt-5 flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+            <strong class="shrink-0">سبب الرفض/التعليق:</strong> <span>{{ $marketer->rejection_reason }}</span>
         </div>
         @endif
-
-        {{-- Actions --}}
-        <div class="flex gap-3 pt-2 border-t border-gray-100">
-            @if($marketer->global_status?->value === 'pending')
-                <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}">
-                    @csrf
-                    <button class="px-5 py-2 bg-green-500 text-white font-semibold rounded-lg text-sm hover:bg-green-600">✓ موافقة وتفعيل</button>
-                </form>
-                <form method="POST" action="{{ route('admin.marketers.reject', $marketer) }}" x-data x-on:submit.prevent="
-                    const r = prompt('سبب الرفض:');
-                    if(r){ $el.querySelector('[name=reason]').value = r; $el.submit(); }">
-                    @csrf
-                    <input type="hidden" name="reason">
-                    <button class="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg text-sm hover:bg-red-600">✕ رفض</button>
-                </form>
-            @elseif($marketer->global_status?->value === 'active')
-                <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" x-data x-on:submit.prevent="
-                    const r = prompt('سبب التعليق:');
-                    $el.querySelector('[name=reason]').value = r || '';
-                    $el.submit();">
-                    @csrf
-                    <input type="hidden" name="reason">
-                    <button class="px-5 py-2 bg-red-100 text-red-700 font-semibold rounded-lg text-sm hover:bg-red-200">تعليق الحساب</button>
-                </form>
-            @elseif($marketer->global_status?->value === 'suspended')
-                <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}">
-                    @csrf
-                    <button class="px-5 py-2 bg-green-100 text-green-700 font-semibold rounded-lg text-sm hover:bg-green-200">إعادة تفعيل</button>
-                </form>
-            @endif
-        </div>
     </div>
 
     {{-- Ad price & self-edit permission --}}
-    <div class="bg-white rounded-xl border p-6 space-y-4">
-        <h3 class="font-bold text-gray-800">سعر الإعلان المعروض (Ad Display Price)</h3>
+    <div class="bg-white rounded-xl border shadow-sm p-6 space-y-4">
+        <div class="flex items-center gap-2 border-b border-gray-100 pb-4">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">💰</span>
+            <h3 class="font-bold text-gray-800">سعر الإعلان المعروض (Ad Display Price)</h3>
+        </div>
         <form method="POST" action="{{ route('admin.marketers.profile.update', $marketer) }}" class="space-y-4">
             @csrf
             @method('PUT')
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">السعر</label>
                     <input type="number" min="0" name="ad_price" value="{{ old('ad_price', $marketer->marketerProfile?->ad_price) }}"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">العملة</label>
                     <input type="text" maxlength="3" name="ad_price_currency" value="{{ old('ad_price_currency', $marketer->marketerProfile?->ad_price_currency) }}"
-                           placeholder="SAR" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+                           placeholder="SAR" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                 </div>
             </div>
 
@@ -109,7 +150,7 @@
             @if($marketer->isInfluencer())
             <div class="pt-4 border-t border-gray-100 space-y-4">
                 <h4 class="font-bold text-gray-800">مقاسات المؤثر (Sample Sizes)</h4>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">المقاس العام</label>
                         <input type="text" name="clothing_size" value="{{ old('clothing_size', $marketer->marketerProfile?->clothing_size) }}"
@@ -152,7 +193,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الصدر (سم)</label>
                         <input type="number" step="0.1" name="chest_cm" value="{{ old('chest_cm', $marketer->marketerProfile?->chest_cm) }}"
@@ -179,7 +220,7 @@
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                 </div>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">الكم من الرقبة (سم)</label>
                         <input type="number" step="0.1" name="sleeve_from_neck_cm" value="{{ old('sleeve_from_neck_cm', $marketer->marketerProfile?->sleeve_from_neck_cm) }}"
@@ -260,14 +301,18 @@
 
     {{-- Job categories --}}
     @if($marketer->marketerJobAssignments->isNotEmpty())
-    <div class="bg-white rounded-xl border p-6 space-y-5">
-        <h3 class="font-bold text-gray-800">أقسام الوظائف (Job Categories)</h3>
+    <div class="bg-white rounded-xl border shadow-sm p-6 space-y-5">
+        <div class="flex items-center gap-2 border-b border-gray-100 pb-4">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">🗂️</span>
+            <h3 class="font-bold text-gray-800">أقسام الوظائف (Job Categories)</h3>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         @foreach($marketer->marketerJobAssignments as $assignment)
             @php
                 $job = $assignment->marketerJob;
                 $scopableTypes = $job->categories->pluck('category_type')->intersect(['product', 'classified']);
             @endphp
-            <div class="border-t pt-4 first:border-t-0 first:pt-0">
+            <div class="rounded-lg border border-gray-100 bg-gray-50/60 p-4">
                 <h4 class="text-sm font-bold text-gray-700 mb-2">
                     {{ app()->getLocale() === 'ar' ? $job->name_ar : $job->name_en }}
                 </h4>
@@ -303,28 +348,33 @@
                 @endif
             </div>
         @endforeach
+        </div>
     </div>
     @endif
 
     {{-- Category commission overrides --}}
-    <div class="bg-white rounded-xl border overflow-hidden">
-        <div class="px-5 py-4 border-b flex items-center justify-between">
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">%</span>
             <h3 class="font-bold text-gray-800">نسب العمولة حسب القسم</h3>
         </div>
+        <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-4 py-3 text-start">القسم</th>
-                    <th class="px-4 py-3 text-center">نسبة العمولة</th>
-                    <th class="px-4 py-3 text-center"></th>
+                    <th class="px-6 py-3 text-start">القسم</th>
+                    <th class="px-6 py-3 text-center">نسبة العمولة</th>
+                    <th class="px-6 py-3 text-center"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($marketer->categoryCommissions as $cc)
-                <tr>
-                    <td class="px-4 py-3 font-medium">{{ $cc->category?->name_ar ?? 'افتراضي (كل الأقسام)' }}</td>
-                    <td class="px-4 py-3 text-center">{{ number_format($cc->commission_rate, 2) }}%</td>
-                    <td class="px-4 py-3 text-center">
+                <tr class="hover:bg-gray-50/60 transition-colors">
+                    <td class="px-6 py-3 font-medium">{{ $cc->category?->name_ar ?? 'افتراضي (كل الأقسام)' }}</td>
+                    <td class="px-6 py-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">{{ number_format($cc->commission_rate, 2) }}%</span>
+                    </td>
+                    <td class="px-6 py-3 text-center">
                         <form method="POST" action="{{ route('admin.marketers.category-commissions.destroy', [$marketer, $cc]) }}"
                               onsubmit="return confirm('حذف نسبة العمولة؟');">
                             @csrf
@@ -334,11 +384,12 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">لا توجد نسب عمولة مخصصة بعد.</td></tr>
+                <tr><td colspan="3" class="px-6 py-8 text-center text-gray-400">لا توجد نسب عمولة مخصصة بعد.</td></tr>
                 @endforelse
             </tbody>
         </table>
-        <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t bg-gray-50 flex flex-wrap items-end gap-3">
+        </div>
+        <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3">
             @csrf
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
@@ -354,29 +405,31 @@
                 <input type="number" step="0.01" min="0" max="100" name="commission_rate" required
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
             </div>
-            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">إضافة / تحديث</button>
+            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">إضافة / تحديث</button>
         </form>
     </div>
 
     {{-- Exclusive contracts (open-market) --}}
-    <div class="bg-white rounded-xl border overflow-hidden">
-        <div class="px-5 py-4 border-b flex items-center justify-between">
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">📄</span>
             <h3 class="font-bold text-gray-800">العقود الحصرية (السوق المفتوح)</h3>
         </div>
+        <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-4 py-3 text-start">النطاق</th>
-                    <th class="px-4 py-3 text-center">من</th>
-                    <th class="px-4 py-3 text-center">إلى</th>
-                    <th class="px-4 py-3 text-center">الحالة</th>
-                    <th class="px-4 py-3 text-center"></th>
+                    <th class="px-6 py-3 text-start">النطاق</th>
+                    <th class="px-6 py-3 text-center">من</th>
+                    <th class="px-6 py-3 text-center">إلى</th>
+                    <th class="px-6 py-3 text-center">الحالة</th>
+                    <th class="px-6 py-3 text-center"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($marketer->exclusiveContracts as $contract)
-                <tr>
-                    <td class="px-4 py-3 font-medium">
+                <tr class="hover:bg-gray-50/60 transition-colors">
+                    <td class="px-6 py-3 font-medium">
                         @if($contract->classifiedListing)
                             إعلان: {{ $contract->classifiedListing->listing_number }}
                         @elseif($contract->classifiedCategory)
@@ -385,12 +438,12 @@
                             كل الأقسام
                         @endif
                     </td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{{ $contract->status }}</span>
+                    <td class="px-6 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
+                    <td class="px-6 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
+                    <td class="px-6 py-3 text-center">
+                        <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{{ $contract->status }}</span>
                     </td>
-                    <td class="px-4 py-3 text-center">
+                    <td class="px-6 py-3 text-center">
                         @if(in_array($contract->status, ['pending', 'active']))
                         <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.destroy', [$marketer, $contract]) }}"
                               onsubmit="return confirm('إلغاء العقد الحصري؟');">
@@ -402,12 +455,13 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">لا توجد عقود حصرية بعد.</td></tr>
+                <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">لا توجد عقود حصرية بعد.</td></tr>
                 @endforelse
             </tbody>
         </table>
+        </div>
         <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.store', $marketer) }}"
-              enctype="multipart/form-data" class="p-4 border-t bg-gray-50 flex flex-wrap items-end gap-3">
+              enctype="multipart/form-data" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3">
             @csrf
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">القسم (اختياري)</label>
@@ -446,32 +500,37 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
                 <input type="text" name="notes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
             </div>
-            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">إضافة عقد حصري</button>
+            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">إضافة عقد حصري</button>
         </form>
     </div>
 
     {{-- Campaign invitations --}}
     @if($marketer->invitations->isNotEmpty())
-    <div class="bg-white rounded-xl border overflow-hidden">
-        <div class="px-5 py-4 border-b"><h3 class="font-bold text-gray-800">الحملات ({{ $marketer->invitations->count() }})</h3></div>
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">📣</span>
+            <h3 class="font-bold text-gray-800">الحملات ({{ $marketer->invitations->count() }})</h3>
+        </div>
+        <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-4 py-3 text-start">الحملة</th>
-                    <th class="px-4 py-3 text-center">البائع</th>
-                    <th class="px-4 py-3 text-center">الحالة</th>
+                    <th class="px-6 py-3 text-start">الحملة</th>
+                    <th class="px-6 py-3 text-center">البائع</th>
+                    <th class="px-6 py-3 text-center">الحالة</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @foreach($marketer->invitations->take(10) as $inv)
-                <tr>
-                    <td class="px-4 py-3 font-medium">{{ $inv->campaign->title ?? substr($inv->campaign_id, 0, 8) }}</td>
-                    <td class="px-4 py-3 text-center text-gray-500">{{ $inv->campaign->vendor->name ?? '-' }}</td>
-                    <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{{ $inv->status }}</span></td>
+                <tr class="hover:bg-gray-50/60 transition-colors">
+                    <td class="px-6 py-3 font-medium">{{ $inv->campaign->title ?? substr($inv->campaign_id, 0, 8) }}</td>
+                    <td class="px-6 py-3 text-center text-gray-500">{{ $inv->campaign->vendor->name ?? '-' }}</td>
+                    <td class="px-6 py-3 text-center"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{{ $inv->status }}</span></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+        </div>
     </div>
     @endif
 

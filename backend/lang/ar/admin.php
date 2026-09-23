@@ -393,6 +393,7 @@ return [
         'marketer_campaigns' => 'حملات المسوّقين',
         'marketer_campaigns_financials' => 'الإيرادات المالية',
         'marketer_settings' => 'رسوم الإنفلوينسر',
+        'marketer_jobs' => 'وظائف المسوّقين',
         'all_marketers' => 'جميع المسوّقين',
         'campaigns' => 'الحملات',
         'conversions' => 'التحويلات',

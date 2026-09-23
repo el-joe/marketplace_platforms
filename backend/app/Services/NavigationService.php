@@ -2,12 +2,33 @@
 
 namespace App\Services;
 
+use App\Enums\AdminListingStatus;
 use App\Enums\ClassifiedListingStatus;
 use App\Enums\DisputeStatus;
 use App\Enums\ReturnRequestStatus;
 use App\Enums\SupportTicketStatus;
 use App\Enums\TravelPackageStatus;
 use App\Enums\VendorGlobalStatus;
+use App\Models\AdminListing;
+use App\Models\CartCardOffer;
+use App\Models\ClassifiedListing;
+use App\Models\Dispute;
+use App\Models\Marketer;
+use App\Models\MarketerCampaign;
+use App\Models\Order;
+use App\Models\PackagingSupplyRequest;
+use App\Models\ReturnRequest;
+use App\Models\SupportTicket;
+use App\Models\TravelPackage;
+use App\Models\Vendor;
+use App\Models\VendorAcquisitionCommission;
+use App\Models\VendorChangeRequest;
+use App\Models\VendorExceptionalZoneAlert;
+use App\Models\VendorProductCertification;
+use App\Models\WarrantyClaim;
+use App\Models\WarrantyPlan;
+use App\Models\WarrantyPurchase;
+use App\Models\WishlistGroup;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -70,7 +91,7 @@ class NavigationService
                         'route' => 'admin.admin-listings.index',
                         'icon' => 'sparkles',
                         'permission' => 'admin_listings.view',
-                        'badge' => $this->cachedBadge('out_of_stock_admin_listings', fn() => $this->countOutOfStockAdminListings(), 60),
+                        'badge' => $this->cachedBadge('out_of_stock_admin_listings', fn () => $this->countOutOfStockAdminListings(), 60),
                     ],
                     [
                         'label' => __('admin.nav.categories'),
@@ -105,7 +126,7 @@ class NavigationService
                         'route' => 'admin.warranty-plans.index',
                         'icon' => 'shield-check',
                         'permission' => 'warranty_plans.view',
-                        'badge' => $this->cachedBadge('active_warranty_plans', fn() => $this->countActiveWarrantyPlans(), 300),
+                        'badge' => $this->cachedBadge('active_warranty_plans', fn () => $this->countActiveWarrantyPlans(), 300),
                     ],
                 ],
             ],
@@ -174,7 +195,7 @@ class NavigationService
                         'route' => 'admin.packaging.requests',
                         'icon' => 'clipboard-document-list',
                         'permission' => 'packaging.manage',
-                        'badge' => $this->cachedBadge('packaging_pending_count', fn() => $this->countPendingPackagingRequests(), 60),
+                        'badge' => $this->cachedBadge('packaging_pending_count', fn () => $this->countPendingPackagingRequests(), 60),
                     ],
                 ],
             ],
@@ -187,28 +208,28 @@ class NavigationService
                         'route' => 'admin.orders.index',
                         'icon' => 'shopping-cart',
                         'permission' => 'orders.view',
-                        'badge' => $this->cachedBadge('pending_orders', fn() => $this->countPendingOrders()),
+                        'badge' => $this->cachedBadge('pending_orders', fn () => $this->countPendingOrders()),
                     ],
                     [
                         'label' => __('admin.nav.disputes'),
                         'route' => 'admin.disputes.index',
                         'icon' => 'exclamation-triangle',
                         'permission' => 'disputes.view',
-                        'badge' => $this->cachedBadge('open_disputes', fn() => $this->countOpenDisputes()),
+                        'badge' => $this->cachedBadge('open_disputes', fn () => $this->countOpenDisputes()),
                     ],
                     [
                         'label' => __('admin.nav.returns'),
                         'route' => 'admin.returns.index',
                         'icon' => 'arrow-uturn-left',
                         'permission' => 'returns.view',
-                        'badge' => $this->cachedBadge('pending_returns', fn() => $this->countPendingReturns()),
+                        'badge' => $this->cachedBadge('pending_returns', fn () => $this->countPendingReturns()),
                     ],
                     [
                         'label' => __('admin.nav.warranty_claims'),
                         'route' => 'admin.warranty-claims.index',
                         'icon' => 'shield-check',
                         'permission' => 'warranty_claims.view',
-                        'badge' => $this->cachedBadge('unresolved_warranty_claims', fn() => $this->countUnresolvedWarrantyClaims()),
+                        'badge' => $this->cachedBadge('unresolved_warranty_claims', fn () => $this->countUnresolvedWarrantyClaims()),
                     ],
                 ],
             ],
@@ -228,7 +249,7 @@ class NavigationService
                         'route' => 'admin.wishlist.index',
                         'icon' => 'heart',
                         'permission' => 'wishlists.view',
-                        'badge' => $this->cachedBadge('public_wishlist_groups', fn() => $this->countPublicWishlistGroups()),
+                        'badge' => $this->cachedBadge('public_wishlist_groups', fn () => $this->countPublicWishlistGroups()),
                     ],
                     [
                         'label' => __('admin.nav.notifications'),
@@ -256,21 +277,21 @@ class NavigationService
                         'route' => 'admin.vendor-applications.index',
                         'icon' => 'inbox-arrow-down',
                         'permission' => 'vendors.view',
-                        'badge' => $this->cachedBadge('pending_vendors', fn() => $this->countPendingVendors()),
+                        'badge' => $this->cachedBadge('pending_vendors', fn () => $this->countPendingVendors()),
                     ],
                     [
                         'label' => __('admin.nav.vendor_change_requests'),
                         'route' => 'admin.vendor-change-requests.index',
                         'icon' => 'lock-closed',
                         'permission' => 'vendor_change_requests.view',
-                        'badge' => $this->cachedBadge('pending_vendor_change_requests', fn() => $this->countPendingVendorChangeRequests()),
+                        'badge' => $this->cachedBadge('pending_vendor_change_requests', fn () => $this->countPendingVendorChangeRequests()),
                     ],
                     [
                         'label' => __('admin.nav.product_certifications'),
                         'route' => 'admin.vendor-product-certifications.index',
                         'icon' => 'document-check',
                         'permission' => 'vendor_product_certifications.view',
-                        'badge' => $this->cachedBadge('pending_product_certifications', fn() => $this->countPendingProductCertifications()),
+                        'badge' => $this->cachedBadge('pending_product_certifications', fn () => $this->countPendingProductCertifications()),
                     ],
                     [
                         'label' => __('admin.nav.acquisition_commissions'),
@@ -285,7 +306,7 @@ class NavigationService
                             'route' => 'admin.my-acquisition-commissions.index',
                             'icon' => 'banknotes',
                             'badge' => null,
-                        ]
+                        ],
                     ] : []),
                     [
                         'label' => __('admin.nav.admins'),
@@ -312,14 +333,14 @@ class NavigationService
                         'route' => 'admin.marketers.index',
                         'icon' => 'user-group',
                         'permission' => 'marketers.view',
-                        'badge' => $this->cachedBadge('pending_marketers', fn() => $this->countPendingMarketers()),
+                        'badge' => $this->cachedBadge('pending_marketers', fn () => $this->countPendingMarketers()),
                     ],
                     [
                         'label' => __('admin.nav.marketer_campaigns'),
                         'route' => 'admin.marketer-campaigns.index',
                         'icon' => 'user-group',
                         'permission' => 'marketer_campaigns.view',
-                        'badge' => $this->cachedBadge('pending_marketer_campaigns', fn() => $this->countPendingMarketerCampaigns()),
+                        'badge' => $this->cachedBadge('pending_marketer_campaigns', fn () => $this->countPendingMarketerCampaigns()),
                     ],
                     [
                         'label' => __('admin.nav.marketer_campaigns_financials'),
@@ -333,6 +354,13 @@ class NavigationService
                         'route' => 'admin.marketer-settings.index',
                         'icon' => 'cog-6-tooth',
                         'permission' => 'marketer_commission_settings.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => __('admin.nav.marketer_jobs'),
+                        'route' => 'admin.marketer-jobs.index',
+                        'icon' => 'briefcase',
+                        'permission' => 'marketers.view',
                         'badge' => null,
                     ],
                 ],
@@ -353,14 +381,14 @@ class NavigationService
                         'route' => 'admin.cart-card-offers.index',
                         'icon' => 'credit-card',
                         'permission' => 'cart_card_offers.view',
-                        'badge' => $this->cachedBadge('active_cart_card_offers', fn() => $this->countActiveCartCardOffers()),
+                        'badge' => $this->cachedBadge('active_cart_card_offers', fn () => $this->countActiveCartCardOffers()),
                     ],
                     [
-                        'label'      => __('admin.nav.live_streams'),
-                        'route'      => 'admin.live-streams.index',
-                        'icon'       => 'video-camera',
+                        'label' => __('admin.nav.live_streams'),
+                        'route' => 'admin.live-streams.index',
+                        'icon' => 'video-camera',
                         'permission' => 'pages.view',
-                        'badge'      => null,
+                        'badge' => null,
                     ],
                     [
                         'label' => __('admin.nav.ad_campaigns'),
@@ -436,7 +464,7 @@ class NavigationService
                         'route' => 'admin.classifieds.listings.index',
                         'icon' => 'list-bullet',
                         'permission' => 'classifieds.view',
-                        'badge' => $this->cachedBadge('pending_classifieds', fn() => $this->countPendingClassifieds()),
+                        'badge' => $this->cachedBadge('pending_classifieds', fn () => $this->countPendingClassifieds()),
                     ],
                 ],
             ],
@@ -456,7 +484,7 @@ class NavigationService
                         'route' => 'admin.travel.packages.index',
                         'icon' => 'briefcase',
                         'permission' => 'travel.view',
-                        'badge' => $this->cachedBadge('pending_travel_packages', fn() => $this->countPendingTravelPackages()),
+                        'badge' => $this->cachedBadge('pending_travel_packages', fn () => $this->countPendingTravelPackages()),
                     ],
                     [
                         'label' => __('admin.nav.bookings'),
@@ -601,7 +629,7 @@ class NavigationService
                         'route' => 'admin.warranty-purchases.index',
                         'icon' => 'shield-check',
                         'permission' => 'warranty_plans.view',
-                        'badge' => $this->cachedBadge('pending_warranty_purchases', fn() => $this->countPendingWarrantyPurchases(), 300),
+                        'badge' => $this->cachedBadge('pending_warranty_purchases', fn () => $this->countPendingWarrantyPurchases(), 300),
                     ],
                     [
                         'label' => __('admin.nav.wallets'),
@@ -802,7 +830,7 @@ class NavigationService
                         'route' => 'admin.shipping-subsidies.alerts.index',
                         'icon' => 'exclamation-triangle',
                         'permission' => 'settings.view',
-                        'badge' => $this->cachedBadge('pending_zone_alerts', fn() => \App\Models\VendorExceptionalZoneAlert::where('status', 'pending')->count()),
+                        'badge' => $this->cachedBadge('pending_zone_alerts', fn () => VendorExceptionalZoneAlert::where('status', 'pending')->count()),
                     ],
                     // [
                     //     'label' => __('admin.nav.settings'),
@@ -829,7 +857,7 @@ class NavigationService
                         'route' => 'admin.support-tickets.index',
                         'icon' => 'chat-bubble-left-right',
                         'permission' => 'support.view',
-                        'badge' => $this->cachedBadge('open_tickets', fn() => $this->countOpenTickets()),
+                        'badge' => $this->cachedBadge('open_tickets', fn () => $this->countOpenTickets()),
                     ],
                     [
                         'label' => __('admin.nav.helpcenter_categories'),
@@ -898,13 +926,14 @@ class NavigationService
                 if (empty($item['permission'])) {
                     return true;
                 }
-                if (!$user) {
+                if (! $user) {
                     return false;
                 }
+
                 return method_exists($user, 'can') ? $user->can($item['permission']) : false;
             }));
 
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $group['items'] = $items;
                 $filtered[] = $group;
             }
@@ -922,7 +951,8 @@ class NavigationService
         if (str_ends_with($routeName, '.*')) {
             return request()->routeIs($routeName);
         }
-        return request()->routeIs($routeName) || request()->routeIs(rtrim($routeName, '.index') . '.*');
+
+        return request()->routeIs($routeName) || request()->routeIs(rtrim($routeName, '.index').'.*');
     }
 
     /**
@@ -935,6 +965,7 @@ class NavigationService
                 return true;
             }
         }
+
         return false;
     }
 
@@ -944,14 +975,15 @@ class NavigationService
     protected function cachedBadge(string $key, \Closure $resolver, ?int $ttl = null): ?int
     {
         $count = Cache::remember("nav.badge.{$key}", $ttl ?? self::BADGE_CACHE_TTL, $resolver);
+
         return $count > 0 ? (int) $count : null;
     }
 
     protected function countOutOfStockAdminListings(): int
     {
         try {
-            return (int) \App\Models\AdminListing::query()
-                ->where('status', \App\Enums\AdminListingStatus::OutOfStock)
+            return (int) AdminListing::query()
+                ->where('status', AdminListingStatus::OutOfStock)
                 ->count();
         } catch (\Throwable) {
             return 0;
@@ -960,11 +992,11 @@ class NavigationService
 
     protected function countActiveWarrantyPlans(): int
     {
-        if (!class_exists(\App\Models\WarrantyPlan::class)) {
+        if (! class_exists(WarrantyPlan::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\WarrantyPlan::query()->where('is_active', true)->count();
+            return (int) WarrantyPlan::query()->where('is_active', true)->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -972,11 +1004,11 @@ class NavigationService
 
     protected function countPendingWarrantyPurchases(): int
     {
-        if (!class_exists(\App\Models\WarrantyPurchase::class)) {
+        if (! class_exists(WarrantyPurchase::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\WarrantyPurchase::query()->where('status', 'pending')->count();
+            return (int) WarrantyPurchase::query()->where('status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -984,11 +1016,11 @@ class NavigationService
 
     protected function countPendingPackagingRequests(): int
     {
-        if (!class_exists(\App\Models\PackagingSupplyRequest::class)) {
+        if (! class_exists(PackagingSupplyRequest::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\PackagingSupplyRequest::query()->where('status', 'pending')->count();
+            return (int) PackagingSupplyRequest::query()->where('status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -996,11 +1028,11 @@ class NavigationService
 
     protected function countPendingOrders(): int
     {
-        if (!class_exists(\App\Models\Order::class)) {
+        if (! class_exists(Order::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\Order::query()->where('status', 'pending')->count();
+            return (int) Order::query()->where('status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1008,11 +1040,11 @@ class NavigationService
 
     protected function countOpenDisputes(): int
     {
-        if (!class_exists(\App\Models\Dispute::class)) {
+        if (! class_exists(Dispute::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\Dispute::query()->where('status', DisputeStatus::Open->value)->count();
+            return (int) Dispute::query()->where('status', DisputeStatus::Open->value)->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1020,11 +1052,11 @@ class NavigationService
 
     protected function countPendingReturns(): int
     {
-        if (!class_exists(\App\Models\ReturnRequest::class)) {
+        if (! class_exists(ReturnRequest::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\ReturnRequest::query()
+            return (int) ReturnRequest::query()
                 ->where('status', ReturnRequestStatus::Requested->value)
                 ->count();
         } catch (\Throwable) {
@@ -1034,12 +1066,12 @@ class NavigationService
 
     protected function countUnresolvedWarrantyClaims(): int
     {
-        if (!class_exists(\App\Models\WarrantyClaim::class)) {
+        if (! class_exists(WarrantyClaim::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\WarrantyClaim::query()
-                ->whereNotIn('status', [\App\Models\WarrantyClaim::STATUS_RESOLVED, \App\Models\WarrantyClaim::STATUS_REJECTED])
+            return (int) WarrantyClaim::query()
+                ->whereNotIn('status', [WarrantyClaim::STATUS_RESOLVED, WarrantyClaim::STATUS_REJECTED])
                 ->count();
         } catch (\Throwable) {
             return 0;
@@ -1050,22 +1082,22 @@ class NavigationService
     {
         $adminId = Auth::guard('admin')->id();
 
-        if (!$adminId) {
+        if (! $adminId) {
             return false;
         }
 
-        return \App\Models\VendorAcquisitionCommission::where('admin_id', $adminId)
+        return VendorAcquisitionCommission::where('admin_id', $adminId)
             ->where('status', 'active')
             ->exists();
     }
 
     protected function countPublicWishlistGroups(): int
     {
-        if (!class_exists(\App\Models\WishlistGroup::class)) {
+        if (! class_exists(WishlistGroup::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\WishlistGroup::query()->where('is_public', true)->count();
+            return (int) WishlistGroup::query()->where('is_public', true)->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1073,11 +1105,11 @@ class NavigationService
 
     protected function countPendingVendors(): int
     {
-        if (!class_exists(\App\Models\Vendor::class)) {
+        if (! class_exists(Vendor::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\Vendor::query()->where('global_status', VendorGlobalStatus::Pending->value)->count();
+            return (int) Vendor::query()->where('global_status', VendorGlobalStatus::Pending->value)->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1085,11 +1117,11 @@ class NavigationService
 
     protected function countPendingProductCertifications(): int
     {
-        if (!class_exists(\App\Models\VendorProductCertification::class)) {
+        if (! class_exists(VendorProductCertification::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\VendorProductCertification::query()->where('status', 'pending')->count();
+            return (int) VendorProductCertification::query()->where('status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1097,11 +1129,11 @@ class NavigationService
 
     protected function countPendingVendorChangeRequests(): int
     {
-        if (!class_exists(\App\Models\VendorChangeRequest::class)) {
+        if (! class_exists(VendorChangeRequest::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\VendorChangeRequest::query()->where('status', 'pending')->count();
+            return (int) VendorChangeRequest::query()->where('status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1110,7 +1142,7 @@ class NavigationService
     protected function countOpenTickets(): int
     {
         try {
-            return (int) \App\Models\SupportTicket::query()->where('status', SupportTicketStatus::Open->value)->count();
+            return (int) SupportTicket::query()->where('status', SupportTicketStatus::Open->value)->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1119,7 +1151,7 @@ class NavigationService
     protected function countPendingMarketerCampaigns(): int
     {
         try {
-            return (int) \App\Models\MarketerCampaign::query()->where('status', 'pending_admin')->count();
+            return (int) MarketerCampaign::query()->where('status', 'pending_admin')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1128,7 +1160,7 @@ class NavigationService
     protected function countPendingMarketers(): int
     {
         try {
-            return (int) \App\Models\Marketer::query()->where('global_status', 'pending')->count();
+            return (int) Marketer::query()->where('global_status', 'pending')->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1136,11 +1168,11 @@ class NavigationService
 
     protected function countActiveCartCardOffers(): int
     {
-        if (!class_exists(\App\Models\CartCardOffer::class)) {
+        if (! class_exists(CartCardOffer::class)) {
             return 0;
         }
         try {
-            return (int) \App\Models\CartCardOffer::query()->active()->count();
+            return (int) CartCardOffer::query()->active()->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1149,7 +1181,7 @@ class NavigationService
     protected function countPendingClassifieds(): int
     {
         try {
-            return (int) \App\Models\ClassifiedListing::query()->where('status', ClassifiedListingStatus::PendingReview->value)->count();
+            return (int) ClassifiedListing::query()->where('status', ClassifiedListingStatus::PendingReview->value)->count();
         } catch (\Throwable) {
             return 0;
         }
@@ -1165,7 +1197,7 @@ class NavigationService
     protected function countPendingTravelPackages(): int
     {
         try {
-            return (int) \App\Models\TravelPackage::query()->where('status', TravelPackageStatus::PendingReview->value)->count();
+            return (int) TravelPackage::query()->where('status', TravelPackageStatus::PendingReview->value)->count();
         } catch (\Throwable) {
             return 0;
         }
