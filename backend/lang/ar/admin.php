@@ -5830,6 +5830,14 @@ return [
         'source_update' => 'تحديث',
     ],
 
+    'storage_fee_section' => [
+        'volumetric_weight' => 'الوزن الحجمي (غ)',
+        'chargeable_weight' => 'الوزن المحاسب (غ)',
+        'free_days_applied' => 'أيام مجانية مطبّقة',
+        'within_free_period' => 'ضمن الفترة المجانية',
+        'storage_fee_rules' => 'قواعد أيام التخزين المجانية',
+    ],
+
     'shipping_section' => [
         'private_shipping_company' => 'شركة شحن خاصة',
         'private_to_vendor' => 'خاص بالبائع',

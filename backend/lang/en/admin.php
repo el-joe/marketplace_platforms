@@ -5863,6 +5863,14 @@ return [
         'source_update' => 'Update',
     ],
 
+    'storage_fee_section' => [
+        'volumetric_weight' => 'Volumetric Weight (g)',
+        'chargeable_weight' => 'Chargeable Weight (g)',
+        'free_days_applied' => 'Free Days Applied',
+        'within_free_period' => 'Within Free Period',
+        'storage_fee_rules' => 'Storage Free Period Rules',
+    ],
+
     'shipping_section' => [
         'private_shipping_company' => 'Private Shipping Company',
         'private_to_vendor' => 'Private to vendor',

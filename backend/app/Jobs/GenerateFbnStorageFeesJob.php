@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -62,7 +63,7 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
             ->select([
                 'warehouse_inventories.id as inventory_id',
                 'warehouse_inventories.quantity_on_hand',
-                'warehouse_inventories.created_at as stored_since',
+                DB::raw('COALESCE(warehouse_inventories.first_stocked_at, warehouse_inventories.created_at) as stored_since'),
                 'vendor_listings.vendor_id',
                 'vendor_listings.declared_weight_grams',
                 'vendor_listings.declared_length_cm',
@@ -129,22 +130,17 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
 
             $freeDays = StorageFeeFreePeriodRule::freeDaysFor($chargeableWeightGrams);
 
-            if ($daysInStorage <= $freeDays) {
+            $withinFree = $daysInStorage <= $freeDays;
+            if ($withinFree) {
                 $freeOfCharge++;
-
-                continue;
             }
 
-            // storage_rate_per_m3_price is priced per cubic meter. We convert the
-            // chargeable weight (grams) to an m3-equivalent using the same
-            // volumetric divisor used above (industry convention: volumetric
-            // divisor 5000 assumes ~200kg per m3, i.e. 1 m3 <=> 200,000g of
-            // volumetric weight), so the rate's unit and the chargeable weight
-            // stay consistent with one another. This is the same assumption
-            // baked into the volumetric-weight formula itself.
-            $chargeableM3 = $chargeableWeightGrams / (self::VOLUMETRIC_DIVISOR * 200);
+            // Fee = physical volume (m3) x rate per m3 x units on hand.
+            $volumeM3 = ($inv->declared_length_cm && $inv->declared_width_cm && $inv->declared_height_cm)
+                ? ((float) $inv->declared_length_cm * (float) $inv->declared_width_cm * (float) $inv->declared_height_cm) / 1_000_000
+                : 0;
 
-            $totalCents = (int) round($chargeableM3 * $rateCents * $inv->quantity_on_hand);
+            $totalCents = $withinFree ? 0 : (int) round($volumeM3 * $rateCents * $inv->quantity_on_hand);
 
             try {
                 FbnStorageFee::updateOrCreate(
@@ -158,6 +154,12 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                         'rate_per_unit' => $rateCents,
                         'total_fee' => $totalCents,
                         'currency' => $inv->currency,
+                        'declared_weight_grams' => $actualWeightGrams,
+                        'volumetric_weight_grams' => $volumetricWeightGrams,
+                        'chargeable_weight_grams' => $chargeableWeightGrams,
+                        'free_days_applied' => $freeDays,
+                        'days_in_storage' => (int) $daysInStorage,
+                        'within_free_period' => $withinFree,
                         'status' => 'pending',
                     ]
                 );

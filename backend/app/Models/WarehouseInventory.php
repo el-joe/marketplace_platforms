@@ -25,11 +25,23 @@ class WarehouseInventory extends Model
         'bin_location',
         'reorder_point',
         'last_counted_at',
+        'first_stocked_at',
     ];
 
     protected $casts = [
         'last_counted_at' => 'datetime',
+        'first_stocked_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        // Free storage period starts the first time stock lands on hand.
+        static::saving(function (self $inv) {
+            if ($inv->first_stocked_at === null && (int) $inv->quantity_on_hand > 0) {
+                $inv->first_stocked_at = now();
+            }
+        });
+    }
 
     // ─── Relationships ─────────────────────────────────────────────────────────
 
