@@ -113,6 +113,14 @@ Schedule::command('exclusive-contracts:expire')
     ->runInBackground()
     ->name('expire-exclusive-contracts');
 
+// Client feature request doc, section 6: flag vendor listings disposable_by_admin
+// once unpaid storage fees exceed their locked-in first_price after a year in storage
+Schedule::command('products:flag-overstored-unpaid')
+    ->dailyAt('01:15')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->name('flag-overstored-unpaid-products');
+
 // Recalculate best-seller rankings per category/country
 Schedule::job(new RecalculateBestSellerRankingsJob, 'rankings')
     ->everySixHours()

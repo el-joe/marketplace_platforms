@@ -35,6 +35,11 @@ class VendorListing extends Model
             'price' => 'integer',
             'compare_at_price' => 'integer',
             'cost_price' => 'integer',
+            // Section 6 ("first price" snapshot): read-only after creation,
+            // never mass-assignable — intentionally left out of $fillable.
+            'first_price' => 'integer',
+            'first_price_locked_at' => 'datetime',
+            'disposable_by_admin' => 'boolean',
             'declared_weight_grams' => 'integer',
             'declared_length_cm' => 'decimal:2',
             'declared_width_cm' => 'decimal:2',
@@ -120,6 +125,12 @@ class VendorListing extends Model
     public function warehouseInventories(): HasMany
     {
         return $this->hasMany(WarehouseInventory::class);
+    }
+
+    /** Section 6: full price history log, newest first. */
+    public function priceHistory(): HasMany
+    {
+        return $this->hasMany(ProductPriceHistory::class)->latest('recorded_at');
     }
 
     public function cartItems(): HasMany

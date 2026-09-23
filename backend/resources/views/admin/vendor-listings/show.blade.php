@@ -106,5 +106,67 @@
             </dl>
         </div>
     </div>
+
+    {{-- Price History (client feature request doc, section 6) --}}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-700">Price History</h3>
+            @if($listing->disposable_by_admin)
+                <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                    Disposable by Admin — unpaid storage fees exceed first price
+                </span>
+            @endif
+        </div>
+        <dl class="grid grid-cols-2 gap-4 text-sm mb-4">
+            <div>
+                <dt class="text-gray-400 text-xs uppercase tracking-wide">First Price (locked)</dt>
+                <dd class="mt-1 text-gray-800">
+                    @if($listing->first_price !== null)
+                        {{ number_format($listing->first_price, 2) }} {{ $listing->currency }}
+                    @else
+                        —
+                    @endif
+                </dd>
+            </div>
+            <div>
+                <dt class="text-gray-400 text-xs uppercase tracking-wide">First Price Locked At</dt>
+                <dd class="mt-1 text-gray-800">{{ $listing->first_price_locked_at?->format('Y-m-d H:i') ?? '—' }}</dd>
+            </div>
+        </dl>
+
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead>
+                <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Recorded At</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Price</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Source</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wide">Recorded By</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($priceHistory as $entry)
+                    <tr>
+                        <td class="px-3 py-2 text-gray-800">{{ $entry->recorded_at?->format('Y-m-d H:i') }}</td>
+                        <td class="px-3 py-2 text-gray-800">{{ number_format($entry->price, 2) }} {{ $listing->currency }}</td>
+                        <td class="px-3 py-2">
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                                {{ $entry->source === 'initial' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700' }}">
+                                {{ ucfirst($entry->source) }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-gray-500">{{ $entry->recorded_by ?? '—' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="px-3 py-4 text-center text-gray-400">No price history recorded yet.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        <div class="mt-3">
+            {{ $priceHistory->onEachSide(1)->links() }}
+        </div>
+    </div>
 </div>
 @endsection

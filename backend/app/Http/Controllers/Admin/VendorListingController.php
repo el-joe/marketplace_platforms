@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\VendorListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
-use App\Models\ShippingMethod;
+use App\Models\InternationalShippingEligibility;
 use App\Models\VendorListing;
 use App\Models\Warehouse;
 use App\Services\ListingCertificationGate;
@@ -28,7 +28,7 @@ class VendorListingController extends Controller
         return view('admin.vendor-listings.index', [
             'countries' => Country::query()->orderBy('name_en')->pluck('name_en', 'id'),
             'statuses' => collect(VendorListingStatus::cases())
-                ->mapWithKeys(fn($status) => [$status->value => Str::headline($status->value)]),
+                ->mapWithKeys(fn ($status) => [$status->value => Str::headline($status->value)]),
             'breadcrumbs' => [
                 ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
                 ['label' => 'Vendor Listings'],
@@ -81,8 +81,8 @@ class VendorListingController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'country_id' => fn($q, $v) => $q->where('vendor_listings.country_id', $v),
-            'status' => fn($q, $v) => $q->where('vendor_listings.status', $v),
+            'country_id' => fn ($q, $v) => $q->where('vendor_listings.country_id', $v),
+            'status' => fn ($q, $v) => $q->where('vendor_listings.status', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
@@ -97,7 +97,7 @@ class VendorListingController extends Controller
                 'id' => $row->id,
                 'product_name' => e($row->product_name),
                 'variant_name' => e($row->variant_name),
-                'display_name' => e(trim($row->product_name . ' ' . $row->variant_name)),
+                'display_name' => e(trim($row->product_name.' '.$row->variant_name)),
                 'vendor_name' => e($row->vendor_name),
                 'country' => e($row->country_name),
                 'currency' => e($row->currency),
@@ -131,9 +131,12 @@ class VendorListingController extends Controller
         $availableShippingMethods = app(ShippingMethodResolverService::class)
             ->getAvailableForListing($vendorListing->id, 'vendor_listing', $vendorListing->country_id);
 
+        $priceHistory = $vendorListing->priceHistory()->paginate(15, pageName: 'price_history_page');
+
         return view('admin.vendor-listings.show', [
             'listing' => $vendorListing,
             'availableShippingMethods' => $availableShippingMethods,
+            'priceHistory' => $priceHistory,
             'categoryDefaultShippingMethod' => $vendorListing->productVariant->product->category
                 ?->defaultShippingMethod()->first(),
             'breadcrumbs' => [
@@ -152,12 +155,12 @@ class VendorListingController extends Controller
             'shippingMethods' => app(ShippingMethodResolverService::class)
                 ->getAvailableForListing($vendorListing->id, 'vendor_listing', $vendorListing->country_id),
             'statuses' => collect(VendorListingStatus::cases())
-                ->mapWithKeys(fn($status) => [$status->value => Str::headline($status->value)]),
+                ->mapWithKeys(fn ($status) => [$status->value => Str::headline($status->value)]),
             'shipsToCountries' => Country::where('is_active', true)
                 ->where('id', '!=', $vendorListing->country_id)
                 ->orderBy('name_en')
                 ->get(),
-            'selectedDestinationIds' => \App\Models\InternationalShippingEligibility::query()
+            'selectedDestinationIds' => InternationalShippingEligibility::query()
                 ->where('vendor_listing_id', $vendorListing->id)
                 ->where('is_active', true)
                 ->pluck('destination_country_id')
