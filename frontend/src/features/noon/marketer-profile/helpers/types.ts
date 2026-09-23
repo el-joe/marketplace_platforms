@@ -92,7 +92,34 @@ export interface ListingsMeta {
   total: number;
 }
 
+export interface MarketerExclusiveContract {
+  scope: "category" | "listing";
+  category_name?: string | null;
+  category_name_en?: string | null;
+  listing_title?: string | null;
+  listing_title_en?: string | null;
+  ends_at?: string | null;
+}
+
+export interface MarketerClassifiedListing {
+  id: string;
+  listing_number: string;
+  slug: string;
+  title_ar: string;
+  title_en?: string | null;
+  price: number;
+  currency: string;
+  price_negotiable: boolean;
+  category: { name_ar: string | null; name_en?: string | null };
+  first_image?: string | null;
+  listing_purpose: "sale" | "rent" | string;
+  views_count: number;
+}
+
 export interface MarketerProfileData {
+  exclusive_contracts?: MarketerExclusiveContract[];
+  classified_listings?: MarketerClassifiedListing[];
+  classified_count?: number;
   marketer: MarketerProfileMarketer;
   profile: MarketerProfileInfo;
   own_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };

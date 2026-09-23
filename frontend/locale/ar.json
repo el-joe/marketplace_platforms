@@ -1299,6 +1299,10 @@
     "messageSentTo": "تم إرسال رسالتك إلى {name}!",
     "sendFailed": "تعذر إرسال رسالتك. يرجى المحاولة مرة أخرى."
   },
+  "classifiedHeaderDetails": {
+    "exclusiveContract": "عقد حصري",
+    "until": "حتى"
+  },
   "classifiedGallery": {
     "promotedTurbo": "إعلان مميز",
     "mainImageAlt": "صورة السيارة المعروضة",
@@ -1372,6 +1376,9 @@
     "featuredBadge": "الأعلى أداءً"
   },
   "marketerProfile": {
+    "classifiedListings": "إعلانات السوق المفتوح",
+    "activeExclusiveContracts": "عقود حصرية نشطة",
+    "priceNegotiable": "قابل للتفاوض",
     "pageTitleFallback": "ماركتر | نون",
     "pageDescriptionFallback": "تسوّق منتجات مختارة من هذا الماركتر على نون",
     "brandName": "نون",

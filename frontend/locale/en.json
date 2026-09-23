@@ -1310,6 +1310,10 @@
     "messageSentTo": "Your message has been sent to {name}!",
     "sendFailed": "Couldn't send your message. Please try again."
   },
+  "classifiedHeaderDetails": {
+    "exclusiveContract": "Exclusive contract",
+    "until": "until"
+  },
   "classifiedGallery": {
     "promotedTurbo": "Promoted Turbo",
     "mainImageAlt": "Classified vehicle image",
@@ -1383,6 +1387,9 @@
     "featuredBadge": "Top performer"
   },
   "marketerProfile": {
+    "classifiedListings": "Open Market Listings",
+    "activeExclusiveContracts": "Active exclusive contracts",
+    "priceNegotiable": "Negotiable",
     "pageTitleFallback": "Marketer | noon",
     "pageDescriptionFallback": "Shop curated products from this marketer on noon",
     "brandName": "noon",

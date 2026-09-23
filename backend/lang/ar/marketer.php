@@ -119,4 +119,5 @@ return [
     'onboarding_incomplete' => 'لم يكتمل التسجيل بعد.',
     'onboarding_already_done' => 'تم إكمال التسجيل مسبقاً.',
     'onboarding_done' => 'تم إكمال بياناتك.',
+    'ad_packages' => 'باقات الإعلانات',
 ];

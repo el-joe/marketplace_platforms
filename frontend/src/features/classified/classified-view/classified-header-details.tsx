@@ -19,6 +19,7 @@ import {
   checkWishlistItemService,
   removeWishlistItemService,
 } from "@/src/services/wishlist";
+import { useTranslations } from "next-intl";
 import { ClassifiedDetail } from "./types";
 
 interface ClassifiedHeaderDetailsProps {
@@ -28,6 +29,7 @@ interface ClassifiedHeaderDetailsProps {
 export default function ClassifiedHeaderDetails({
   listing,
 }: ClassifiedHeaderDetailsProps) {
+  const t = useTranslations("classifiedHeaderDetails");
   const [isFavorite, setIsFavorite] = useState(listing.isFavorite);
   const [favCount, setFavCount] = useState(listing.favoritesCount);
   const [isNotified, setIsNotified] = useState(false);
@@ -131,13 +133,13 @@ export default function ClassifiedHeaderDetails({
         <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700">
           <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
           <span>
-            Exclusive contract{listing.exclusiveContract.marketerName
+            {t("exclusiveContract")}{listing.exclusiveContract.marketerName
               ? ` — ${listing.exclusiveContract.marketerName}`
               : ""}
           </span>
           {listing.exclusiveContract.expiresAt && (
             <span className="text-amber-500">
-              · until{" "}
+              · {t("until")}{" "}
               {new Date(
                 listing.exclusiveContract.expiresAt,
               ).toLocaleDateString()}

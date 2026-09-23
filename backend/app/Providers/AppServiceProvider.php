@@ -244,6 +244,21 @@ class AppServiceProvider extends ServiceProvider
             $view->with(compact('countries', 'currentCountry'));
         });
 
+        // Marketer sidebar badges: null-safe (no marketer => zeros), two indexed counts.
+        View::composer('layouts.marketer', function ($view): void {
+            $marketerId = auth('marketer')->user()?->marketer?->id;
+            $unreadMessages = 0;
+            $unreadInquiries = 0;
+            if ($marketerId) {
+                $unreadMessages = \App\Models\MarketerConversation::where('marketer_id', $marketerId)
+                    ->where('marketer_has_unread', true)->count();
+                $unreadInquiries = \App\Models\ClassifiedInquiry::where('status', 'new')
+                    ->whereHas('listing', fn ($q) => $q->where('seller_type', \App\Models\Marketer::class)->where('seller_id', $marketerId))
+                    ->count();
+            }
+            $view->with(compact('unreadMessages', 'unreadInquiries'));
+        });
+
         // Travel agency portal: shares the agency/owner-vs-member context and
         // pending-bookings / new-inquiries / open-tickets badge counts (cached 60s
         // per agency) with every view under the travel-agency.* namespace, including

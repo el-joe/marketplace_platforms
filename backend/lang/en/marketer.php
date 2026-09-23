@@ -119,4 +119,5 @@ return [
     'onboarding_incomplete' => 'Onboarding is not complete yet.',
     'onboarding_already_done' => 'Onboarding already completed.',
     'onboarding_done' => 'Your profile is complete.',
+    'ad_packages' => 'Ad Packages',
 ];
