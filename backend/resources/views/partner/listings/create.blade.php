@@ -162,6 +162,26 @@
                             </div>
                         </div>
 
+                        <div id="fbm-payment-wrap" class="hidden mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.fbm_payment_method') }}</label>
+                            <select name="fbm_payment_gateway_id"
+                                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
+                                <option value="">{{ __('partner.listings.fbm_payment_default') }}</option>
+                                @foreach($fbmGateways as $g)
+                                    <option value="{{ $g->id }}" {{ old('fbm_payment_gateway_id', null) === $g->id ? 'selected' : '' }}>{{ app()->getLocale() === 'ar' ? ($g->name_ar ?: $g->name) : $g->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <script>
+                            (function () {
+                                const fm = document.querySelector('select[name="fulfillment_model"]');
+                                const w = document.getElementById('fbm-payment-wrap');
+                                if (!fm || !w) return;
+                                const t = () => w.classList.toggle('hidden', fm.value !== 'fbm');
+                                fm.addEventListener('change', t); t();
+                            })();
+                        </script>
+
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.vendor_sku') }}</label>

@@ -63,6 +63,7 @@ class VendorListing extends Model
         'condition',
         'condition_notes',
         'fulfillment_model',
+        'fbm_payment_gateway_id',
         'vendor_sku',
         'vendor_notes',
         'status',

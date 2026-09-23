@@ -5850,6 +5850,10 @@ return [
 
     // ─── Shipping ────────────────────────────────────────────────────────────
     'shipping_section' => [
+        'private_shipping_company' => 'Private Shipping Company',
+        'private_to_vendor' => 'Private to vendor',
+        'public_company' => 'Public (all vendors)',
+        'owner_vendor_hint' => 'Leave empty for a public shipping company',
         'failed_to_duplicate' => 'Failed to duplicate. Please try again.',
         'failed_to_save' => 'Failed to save. Please check your input.',
         'title' => 'Shipping',

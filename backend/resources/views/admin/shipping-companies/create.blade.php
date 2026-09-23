@@ -44,6 +44,18 @@
                         </label>
                         <input type="text" name="contact_phone" class="form-input w-full">
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ __('admin.shipping_section.private_shipping_company') }}
+                        </label>
+                        <select name="owner_vendor_id"  class="form-input w-full">
+                            <option value="">— {{ __('admin.shipping_section.public_company') }} —</option>
+                            @foreach($vendors as $v)
+                                <option value="{{ $v->id }}">{{ $v->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('admin.shipping_section.owner_vendor_hint') }}</p>
+                    </div>
                 </div>
             </div>
 

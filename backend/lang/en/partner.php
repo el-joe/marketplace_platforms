@@ -225,6 +225,8 @@ return [
     ],
 
     'listings' => [
+        'fbm_payment_method' => 'Customer Payment Method (FBM)',
+        'fbm_payment_default' => 'Platform default',
         'title' => 'Listings',
         'custom_attributes' => [
             'title' => 'Custom Order Fields',

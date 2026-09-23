@@ -5817,6 +5817,10 @@ return [
 
     // ─── Shipping ────────────────────────────────────────────────────────────
     'shipping_section' => [
+        'private_shipping_company' => 'شركة شحن خاصة',
+        'private_to_vendor' => 'خاص بالبائع',
+        'public_company' => 'عامة (لكل البائعين)',
+        'owner_vendor_hint' => 'اتركه فارغًا لشركة شحن عامة',
         'failed_to_duplicate' => 'فشل التكرار.',
         'failed_to_save' => 'فشل الحفظ.',
         'title' => 'الشحن',

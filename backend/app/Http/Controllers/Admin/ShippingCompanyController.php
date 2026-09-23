@@ -27,21 +27,25 @@ class ShippingCompanyController extends Controller
             'suspended' => ShippingCompany::where('status', ShippingCompanyStatus::Suspended)->count(),
         ];
 
-        $companies = ShippingCompany::with('country')
+        $companies = ShippingCompany::with(['country', 'owner:id,name'])
             ->withCount(['supervisors', 'agents'])
             ->latest()
             ->paginate(20);
 
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'currency_code']);
 
-        return view('admin.shipping-companies.index', compact('companies', 'stats', 'countries'));
+        $vendors = \App\Models\Vendor::orderBy('name')->limit(500)->get(['id', 'name']);
+
+        return view('admin.shipping-companies.index', compact('companies', 'stats', 'countries', 'vendors'));
     }
 
     public function create(): View
     {
         $countries = Country::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'currency_code']);
 
-        return view('admin.shipping-companies.create', compact('countries'));
+        $vendors = \App\Models\Vendor::orderBy('name')->limit(500)->get(['id', 'name']);
+
+        return view('admin.shipping-companies.create', compact('countries', 'vendors'));
     }
 
     public function store(Request $request): JsonResponse
@@ -57,6 +61,7 @@ class ShippingCompanyController extends Controller
             'status'                                       => ['required', 'in:pending,active,suspended'],
             'can_supervisors_receive_all_notifications'    => ['boolean'],
             'logo'                                         => ['nullable', 'image', 'max:2048'],
+            'owner_vendor_id'                              => ['nullable', 'uuid', 'exists:vendors,id'],
         ]);
 
         $logoPath = null;
@@ -73,6 +78,7 @@ class ShippingCompanyController extends Controller
             'served_countries'                            => $data['served_countries'] ?? null,
             'status'                                       => $data['status'],
             'can_supervisors_receive_all_notifications'    => $data['can_supervisors_receive_all_notifications'] ?? true,
+            'owner_vendor_id'                             => $data['owner_vendor_id'] ?? null,
             'logo_path'                                   => $logoPath,
             'approved_by_admin_id'                        => $data['status'] === 'active' ? auth('admin')->id() : null,
             'approved_at'                                  => $data['status'] === 'active' ? now() : null,
@@ -98,6 +104,7 @@ class ShippingCompanyController extends Controller
             'served_countries.*'                          => ['exists:countries,id'],
             'can_supervisors_receive_all_notifications'    => ['boolean'],
             'logo'                                         => ['nullable', 'image', 'max:2048'],
+            'owner_vendor_id'                              => ['nullable', 'uuid', 'exists:vendors,id'],
             'remove_logo'                                 => ['boolean'],
         ]);
 
@@ -123,6 +130,7 @@ class ShippingCompanyController extends Controller
             'contact_phone'                               => $data['contact_phone'] ?? null,
             'served_countries'                            => $data['served_countries'] ?? null,
             'can_supervisors_receive_all_notifications'    => $data['can_supervisors_receive_all_notifications'] ?? true,
+            'owner_vendor_id'                             => $data['owner_vendor_id'] ?? null,
             'logo_path'                                   => $logoPath,
         ]);
 

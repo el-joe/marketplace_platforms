@@ -527,6 +527,7 @@ class CheckoutController extends Controller
             ->orderBy('sort_order')
             ->get()
             ->reject(fn ($cpg) => $hasInternationalLine && $cpg->gateway?->code === 'cod')
+            ->filter(fn ($cpg) => $this->gatewayAllowedByFbm($cpg->gateway_id, $cart->items))
             ->map(fn ($cpg) => [
                 'id'            => $cpg->id,
                 'gateway_code'  => $cpg->gateway?->code,
@@ -757,6 +758,10 @@ class CheckoutController extends Controller
 
         if (! $methodConfig) {
             return ApiResponse::error('Selected payment gateway is not available.', [], 422);
+        }
+
+        if (! $this->gatewayAllowedByFbm($methodConfig->gateway_id, $cart->items)) {
+            return ApiResponse::error('Selected payment gateway is not available for the FBM items in your cart.', [], 422);
         }
 
         $gatewayCode = $methodConfig->gateway?->code;
@@ -2019,5 +2024,26 @@ class CheckoutController extends Controller
         }
 
         return $date->addDays($method->min_delivery_days)->toDateString();
+    }
+
+    /**
+     * FBM listings may pin a payment gateway (vendor_listings.fbm_payment_gateway_id).
+     * When the cart contains such listings, only gateways allowed by every pinned
+     * listing are offered. Null = platform default (no restriction).
+     */
+    private function gatewayAllowedByFbm(?string $gatewayId, $items): bool
+    {
+        $listingIds = collect($items)->pluck('vendor_listing_id')->filter()->unique()->all();
+        if (empty($listingIds)) {
+            return true;
+        }
+
+        $pinned = \App\Models\VendorListing::whereIn('id', $listingIds)
+            ->where('fulfillment_model', 'fbm')
+            ->whereNotNull('fbm_payment_gateway_id')
+            ->pluck('fbm_payment_gateway_id')
+            ->unique();
+
+        return $pinned->isEmpty() || $pinned->every(fn ($id) => $id === $gatewayId);
     }
 }

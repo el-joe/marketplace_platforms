@@ -61,6 +61,9 @@
                         @if($company->legal_name)
                         <div class="text-xs text-gray-400">{{ $company->legal_name }}</div>
                         @endif
+                        @if($company->owner_vendor_id)
+                        <span class="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">{{ __('admin.shipping_section.private_to_vendor') }}: {{ $company->owner?->name ?? '—' }}</span>
+                        @endif
                     </td>
                     <td class="px-6 py-4 text-gray-600">{{ $company->country?->name_en ?? '—' }}</td>
                     <td class="px-6 py-4">
@@ -90,6 +93,7 @@
                                     data-legal-name="{{ $company->legal_name }}"
                                     data-country-id="{{ $company->country_id }}"
                                     data-contact-email="{{ $company->contact_email }}"
+                                    data-owner-vendor-id="{{ $company->owner_vendor_id }}"
                                     data-contact-phone="{{ $company->contact_phone }}"
                                     data-served-countries="{{ json_encode($company->served_countries ?? []) }}"
                                     data-can-notify="{{ $company->can_supervisors_receive_all_notifications ? '1' : '0' }}"
@@ -182,6 +186,18 @@
                             </label>
                             <input type="text" name="contact_phone" id="field-contact-phone" class="form-input w-full">
                         </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ __('admin.shipping_section.private_shipping_company') }}
+                        </label>
+                        <select name="owner_vendor_id" id="field-owner-vendor" class="form-input w-full">
+                            <option value="">— {{ __('admin.shipping_section.public_company') }} —</option>
+                            @foreach($vendors as $v)
+                                <option value="{{ $v->id }}">{{ $v->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('admin.shipping_section.owner_vendor_hint') }}</p>
+                    </div>
                     </div>
                 </div>
 
@@ -306,6 +322,7 @@ document.querySelectorAll('.btn-edit-company').forEach(btn => {
         document.getElementById('field-legal-name').value       = btn.dataset.legalName || '';
         document.getElementById('field-country').value          = btn.dataset.countryId || '';
         document.getElementById('field-contact-email').value    = btn.dataset.contactEmail;
+        document.getElementById('field-owner-vendor').value     = btn.dataset.ownerVendorId || '';
         document.getElementById('field-contact-phone').value    = btn.dataset.contactPhone || '';
         document.getElementById('field-can-notify').checked     = btn.dataset.canNotify === '1';
 

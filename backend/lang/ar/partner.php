@@ -200,6 +200,8 @@ return [
     ],
 
     'listings' => [
+        'fbm_payment_method' => 'طريقة دفع العميل (FBM)',
+        'fbm_payment_default' => 'افتراضي المنصة',
         'title' => 'قوائم المنتجات',
         'custom_attributes' => [
             'title' => 'حقول الطلب المخصصة',

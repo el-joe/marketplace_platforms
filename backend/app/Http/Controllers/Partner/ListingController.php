@@ -755,7 +755,10 @@ class ListingController extends Controller
             ->with('marketerJobs')
             ->get(['id', 'name']);
 
+        $fbmGateways = \App\Models\PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
+
         return view('partner.listings.create', compact(
+            'fbmGateways',
             'warehouses',
             'countries',
             'fulfillmentModels',
@@ -780,6 +783,7 @@ class ListingController extends Controller
             'price' => ['required', 'integer', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
+            'fbm_payment_gateway_id' => ['nullable', 'uuid', 'exists:payment_gateways,id'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
             'vendor_notes' => ['nullable', 'string', 'max:1000'],
             'max_order_quantity' => ['nullable', 'integer', 'min:1', 'max:9999'],
@@ -908,6 +912,7 @@ class ListingController extends Controller
                 'currency' => $currency,
                 'condition' => $request->condition,
                 'fulfillment_model' => $request->fulfillment_model,
+                'fbm_payment_gateway_id' => $request->fulfillment_model === 'fbm' ? ($request->fbm_payment_gateway_id ?: null) : null,
                 'vendor_sku' => $request->vendor_sku,
                 'vendor_notes' => $request->vendor_notes,
                 'status' => $status,
@@ -1043,7 +1048,9 @@ class ListingController extends Controller
 
         $missingCertification = $requiresLocalCert && ! $hasApprovedCert;
 
-        return view('partner.listings.edit', compact('listing', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'marketerVendors', 'missingCertification'));
+        $fbmGateways = \App\Models\PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
+
+        return view('partner.listings.edit', compact('listing', 'fbmGateways', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'marketerVendors', 'missingCertification'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1062,6 +1069,7 @@ class ListingController extends Controller
             'price' => ['required', 'integer', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
+            'fbm_payment_gateway_id' => ['nullable', 'uuid', 'exists:payment_gateways,id'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
             'vendor_notes' => ['nullable', 'string', 'max:1000'],
             'max_order_quantity' => ['nullable', 'integer', 'min:1', 'max:9999'],
@@ -1107,6 +1115,7 @@ class ListingController extends Controller
                 'price' => (int) round((float) $validated['price']),
                 'condition' => $validated['condition'],
                 'fulfillment_model' => $validated['fulfillment_model'],
+                'fbm_payment_gateway_id' => $validated['fulfillment_model'] === 'fbm' ? ($validated['fbm_payment_gateway_id'] ?? null) : null,
                 'vendor_sku' => $validated['vendor_sku'] ?? null,
                 'vendor_notes' => $validated['vendor_notes'] ?? null,
                 'max_order_quantity' => $validated['max_order_quantity'] ?? null,
