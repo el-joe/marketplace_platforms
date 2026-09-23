@@ -891,6 +891,21 @@ class CheckoutPricingEngine
             }
         }
 
+        // Admin-managed coupons (platform/category scope) can carry a product
+        // pivot from the form; it was previously never enforced because only
+        // the vendor-owned 'product' scope read it. Non-empty => only those products.
+        $scope = $coupon->scope instanceof CouponScope ? $coupon->scope->value : $coupon->scope;
+        if ($scope !== 'product') {
+            $allowedProductIds = $coupon->relationLoaded('products')
+                ? $coupon->products->pluck('id')
+                : $coupon->products()->pluck('products.id');
+
+            if ($allowedProductIds->isNotEmpty()
+                && ($line['product_id'] === null || ! in_array($line['product_id'], $allowedProductIds->all(), true))) {
+                return false;
+            }
+        }
+
         return true;
     }
 

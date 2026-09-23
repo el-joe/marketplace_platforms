@@ -11,6 +11,7 @@ use App\Http\Controllers\Partner\CityShippingSurchargeController;
 use App\Http\Controllers\Partner\ClaimController;
 use App\Http\Controllers\Partner\ClassifiedListingController;
 use App\Http\Controllers\Partner\CouponController;
+use App\Http\Controllers\Partner\CouponParticipationController;
 use App\Http\Controllers\Partner\DashboardController;
 use App\Http\Controllers\Partner\DeliveryRatingController;
 use App\Http\Controllers\Partner\DisputeController;
@@ -209,6 +210,12 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::post('/{account}/set-primary', 'setPrimary')->name('set-primary');
         Route::delete('/{account}', 'destroy')->name('destroy');
     });
+    // ── Coupon participation invitations (client feature #3.2) ─────────────────
+    Route::prefix('coupon-participation')->name('coupon-participation.')->controller(CouponParticipationController::class)->middleware('vendor.type:product_vendor')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/{invitation}', 'store')->name('store');
+    });
+
     // ── Flash Sales module ────────────────────────────────────────────────────
     Route::prefix('flash-sales')->name('flash-sales.')->controller(FlashSaleController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index');

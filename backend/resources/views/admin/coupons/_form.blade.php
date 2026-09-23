@@ -451,6 +451,20 @@
                         @error('customer_eligibility') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <div>
+                        @php $currentShippingType = old('shipping_type_restriction', $isEdit ? ($coupon->shipping_type_restriction?->value ?? 'all') : 'all'); @endphp
+                        <label for="shipping_type_restriction" class="block text-xs font-medium text-gray-700 mb-1">
+                            {{ __('admin.coupons_section.shipping_type_restriction') }}
+                        </label>
+                        <select id="shipping_type_restriction" name="shipping_type_restriction" class="input w-full @error('shipping_type_restriction') border-red-400 @enderror">
+                            @foreach(['all', 'fbn', 'fbp', 'fbm'] as $st)
+                                <option value="{{ $st }}" {{ $currentShippingType === $st ? 'selected' : '' }}>{{ __('admin.coupons_section.shipping_type_' . $st) }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('admin.coupons_section.shipping_type_restriction_hint') }}</p>
+                        @error('shipping_type_restriction') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     {{-- Eligible customers (specific_users only) --}}
                     <div x-show="eligibility === 'specific_users'" class="col-span-2">
                         <label for="eligible_customer_ids" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupons_section.eligible_customers') }}</label>
@@ -531,7 +545,7 @@
                             multiple
                             class="input w-full @error('product_ids') border-red-400 @enderror"
                             data-async-select
-                            data-config="{{ json_encode(['url' => route('admin.coupons.search-products'), 'param' => 'q', 'minLength' => 2, 'vendor_ids' => [], 'marketer_ids' => []], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                            data-config="{{ json_encode(['url' => route('admin.coupons.search-products'), 'param' => 'q', 'minLength' => 2, 'vendor_ids' => $selectedVendors->pluck('id')->values()->all(), 'marketer_ids' => $selectedMarketers->pluck('id')->values()->all()], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
                             placeholder="{{ __('admin.coupons_section.select_products') }}"
                         >
                             @foreach($selectedProducts as $product)
@@ -539,6 +553,7 @@
                             @endforeach
                         </select>
                         <p class="text-xs text-gray-400 mt-1">{{ __('admin.coupons_section.targeted_products_hint') }}</p>
+                        <p class="text-xs text-blue-600 mt-1">{{ __('admin.coupons_section.targeted_products_per_hint') }}</p>
                         @error('product_ids') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         @error('product_ids.*') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>

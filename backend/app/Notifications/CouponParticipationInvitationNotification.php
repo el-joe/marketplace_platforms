@@ -28,7 +28,7 @@ class CouponParticipationInvitationNotification extends BaseDatabaseBroadcastNot
         return [
             'title' => 'دعوة مشاركة في قسيمة',
             'message' => "دعوة جديدة للمشاركة في قسيمة برسوم اشتراك: {$this->invitation->title}",
-            'url' => $isVendor ? route('vendor.coupon-participation.index') : route('marketer.coupon-participation.index'),
+            'url' => $isVendor ? route('partner.coupon-participation.index') : route('marketer.coupon-participation.index'),
             'invitation_id' => $this->invitation->id,
             'min_fee_amount' => $this->invitation->min_fee_amount,
             'currency' => $this->invitation->currency,

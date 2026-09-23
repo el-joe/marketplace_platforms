@@ -70,6 +70,7 @@ class CouponController extends Controller
         $columns = $this->columnDefinitions();
 
         $query = Coupon::query()
+            ->withCount(['vendors', 'marketers', 'products'])
             ->select([
                 'coupons.id',
                 'coupons.code',
@@ -81,6 +82,7 @@ class CouponController extends Controller
                 'coupons.times_used',
                 'coupons.usage_limit_total',
                 'coupons.customer_eligibility',
+                'coupons.shipping_type_restriction',
                 'coupons.valid_from',
                 'coupons.valid_until',
                 'coupons.is_active',
@@ -112,9 +114,15 @@ class CouponController extends Controller
                 'value' => $row->value,
                 'scope' => $row->scope?->value,
                 'is_admin_managed' => $isAdminManaged,
+                'targeting' => [
+                    'vendors' => (int) $row->vendors_count,
+                    'marketers' => (int) $row->marketers_count,
+                    'products' => (int) $row->products_count,
+                ],
                 'times_used' => (int) $row->times_used,
                 'usage_limit_total' => $row->usage_limit_total ? (int) $row->usage_limit_total : null,
                 'customer_eligibility' => $row->customer_eligibility?->value,
+                'shipping_type_restriction' => $row->shipping_type_restriction?->value ?? 'all',
                 'valid_from' => $row->valid_from,
                 'valid_until' => $row->valid_until,
                 'is_active' => (bool) $row->is_active,
@@ -195,7 +203,7 @@ class CouponController extends Controller
     {
         Gate::forUser(Auth::guard('admin')->user())->authorize('view', $coupon);
 
-        $coupon->load(['vendor:id,store_name', 'category:id,name_en']);
+        $coupon->load(['vendor:id,store_name', 'category:id,name_en', 'vendors:id,store_name,name', 'marketers:id,name', 'products:id,name_en,name_ar']);
 
         $totalDiscountGranted = CouponUsage::query()->where('coupon_id', $coupon->id)->sum('discount_amount');
 

@@ -11,16 +11,17 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
  * Admin CRUD for coupon participation invitations, plus the request
  * review queue (approve/reject) — client feature request #3.2.
  *
- * NOTE — payment: "mark as paid" here is a manual admin action, not a real
- * payment-gateway/wallet integration (needs a further check against the
- * platform's billing system, per the plan — see class doc on
- * CouponParticipationRequest).
+ * Payment: approving a request debits offered_fee_amount from the
+ * participant's wallet (WalletService) and sets status=paid; rejecting a paid
+ * request refunds it. "mark as paid" remains only for legacy 'approved' rows
+ * (offline settlement).
  */
 class CouponParticipationInvitationController extends Controller
 {
@@ -115,13 +116,11 @@ class CouponParticipationInvitationController extends Controller
         $model = CouponParticipationInvitation::findOrFail($invitation);
         $participationRequest = CouponParticipationRequest::where('invitation_id', $model->id)->findOrFail($request);
 
-        if ($model->isFull()) {
-            return response()->json(['message' => 'اكتمل عدد المشاركين المقبولين بالفعل.'], 422);
+        try {
+            app(CouponParticipationInvitationService::class)->approve($participationRequest, Auth::guard('admin')->id());
+        } catch (ValidationException $e) {
+            return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
         }
-
-        $participationRequest->update(['status' => CouponParticipationRequest::STATUS_APPROVED]);
-
-        app(CouponParticipationInvitationService::class)->notifyRequestDecision($participationRequest);
 
         return response()->json(['success' => true]);
     }
@@ -131,9 +130,11 @@ class CouponParticipationInvitationController extends Controller
         $model = CouponParticipationInvitation::findOrFail($invitation);
         $participationRequest = CouponParticipationRequest::where('invitation_id', $model->id)->findOrFail($request);
 
-        $participationRequest->update(['status' => CouponParticipationRequest::STATUS_REJECTED]);
-
-        app(CouponParticipationInvitationService::class)->notifyRequestDecision($participationRequest);
+        try {
+            app(CouponParticipationInvitationService::class)->reject($participationRequest, Auth::guard('admin')->id());
+        } catch (ValidationException $e) {
+            return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
+        }
 
         return response()->json(['success' => true]);
     }

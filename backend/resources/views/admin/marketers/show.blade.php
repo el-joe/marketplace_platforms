@@ -438,31 +438,69 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-6 py-3 text-start">النطاق</th>
-                    <th class="px-6 py-3 text-center">من</th>
-                    <th class="px-6 py-3 text-center">إلى</th>
-                    <th class="px-6 py-3 text-center">الحالة</th>
-                    <th class="px-6 py-3 text-center"></th>
+                    <th class="px-4 py-3 text-start">النطاق</th>
+                    <th class="px-4 py-3 text-center">من</th>
+                    <th class="px-4 py-3 text-center">إلى</th>
+                    <th class="px-4 py-3 text-center">المدة / المتبقي</th>
+                    <th class="px-4 py-3 text-center">الحالة</th>
+                    <th class="px-4 py-3 text-center">ملف العقد</th>
+                    <th class="px-4 py-3 text-start">ملاحظات</th>
+                    <th class="px-4 py-3 text-center">أضافه</th>
+                    <th class="px-4 py-3 text-center"></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 @forelse($marketer->exclusiveContracts as $contract)
+                @php
+                    $statusMap = [
+                        'pending' => ['قيد الانتظار', 'bg-yellow-50 text-yellow-700'],
+                        'active' => ['نشط', 'bg-emerald-50 text-emerald-700'],
+                        'expired' => ['منتهي', 'bg-gray-100 text-gray-600'],
+                        'revoked' => ['ملغي', 'bg-red-50 text-red-600'],
+                    ];
+                    $isLapsed = $contract->status === 'active' && $contract->ends_at && $contract->ends_at->isPast();
+                    [$statusLabel, $statusClass] = $isLapsed ? $statusMap['expired'] : ($statusMap[$contract->status] ?? [$contract->status, 'bg-gray-100 text-gray-600']);
+                    $totalDays = ($contract->starts_at && $contract->ends_at) ? $contract->starts_at->diffInDays($contract->ends_at) + 1 : null;
+                    $daysLeft = ($contract->ends_at && ! $contract->ends_at->isPast()) ? (int) ceil(now()->diffInDays($contract->ends_at, false)) : 0;
+                @endphp
                 <tr class="hover:bg-gray-50/60 transition-colors">
-                    <td class="px-6 py-3 font-medium">
+                    <td class="px-4 py-3 font-medium">
                         @if($contract->classifiedListing)
                             إعلان: {{ $contract->classifiedListing->listing_number }}
+                            @if($contract->classifiedListing->title_ar ?? $contract->classifiedListing->title_en)
+                                <div class="text-xs text-gray-400 font-normal">{{ $contract->classifiedListing->title_ar ?: $contract->classifiedListing->title_en }}</div>
+                            @endif
                         @elseif($contract->classifiedCategory)
                             قسم: {{ $contract->classifiedCategory->name_ar }}
                         @else
                             كل الأقسام
                         @endif
                     </td>
-                    <td class="px-6 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
-                    <td class="px-6 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
-                    <td class="px-6 py-3 text-center">
-                        <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">{{ $contract->status }}</span>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500 text-xs">
+                        @if($totalDays !== null){{ $totalDays }} يوم @endif
+                        @if(in_array($contract->status, ['pending', 'active']) && ! $isLapsed && $contract->ends_at)
+                            <div class="text-emerald-600">متبقي {{ $daysLeft }} يوم</div>
+                        @endif
                     </td>
-                    <td class="px-6 py-3 text-center">
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-0.5 text-xs rounded-full {{ $statusClass }}">{{ $statusLabel }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        @if($contract->contract_file_path)
+                            <a href="{{ route('admin.marketers.exclusive-contracts.download', [$marketer, $contract]) }}"
+                               class="text-blue-600 hover:text-blue-800 text-xs font-semibold">تحميل</a>
+                        @else
+                            <span class="text-gray-300">—</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-xs text-gray-600 max-w-[200px]">{{ $contract->notes ?: '—' }}</td>
+                    <td class="px-4 py-3 text-center text-xs text-gray-500">
+                        {{ $contract->createdBy?->name ?? '—' }}
+                        <div class="text-gray-400">{{ $contract->created_at?->format('Y-m-d') }}</div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
                         @if(in_array($contract->status, ['pending', 'active']))
                         <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.destroy', [$marketer, $contract]) }}"
                               onsubmit="return confirm('إلغاء العقد الحصري؟');">
@@ -474,7 +512,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">لا توجد عقود حصرية بعد.</td></tr>
+                <tr><td colspan="9" class="px-6 py-8 text-center text-gray-400">لا توجد عقود حصرية بعد.</td></tr>
                 @endforelse
             </tbody>
         </table>

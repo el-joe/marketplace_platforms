@@ -52,6 +52,20 @@ class ExclusiveContractController extends Controller
         return back()->with('success', 'تم تحديث العقد الحصري.');
     }
 
+    public function download(Marketer $marketer, ExclusiveContract $exclusiveContract)
+    {
+        abort_unless($exclusiveContract->marketer_id === $marketer->id, 404);
+        abort_unless(
+            $exclusiveContract->contract_file_path && Storage::disk('private')->exists($exclusiveContract->contract_file_path),
+            404
+        );
+
+        return Storage::disk('private')->download(
+            $exclusiveContract->contract_file_path,
+            'exclusive-contract-'.$exclusiveContract->id.'.'.pathinfo($exclusiveContract->contract_file_path, PATHINFO_EXTENSION)
+        );
+    }
+
     public function destroy(Marketer $marketer, ExclusiveContract $exclusiveContract)
     {
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);

@@ -1027,7 +1027,18 @@
       "bookNow": "احجز الآن",
       "bookingInProgress": "جارٍ الحجز…",
       "bookingError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-      "soldOut": "نفدت المقاعد"
+      "soldOut": "نفدت المقاعد",
+      "unitsTitle": "احجز شاليه / غرفة باليوم",
+      "unitCapacity": "حتى {count} أشخاص",
+      "prevMonth": "الشهر السابق",
+      "nextMonth": "الشهر التالي",
+      "fullDay": "يوم كامل",
+      "includesOvernight": "مع المبيت",
+      "reserveUnit": "احجز",
+      "unitReserved": "تم إرسال الحجز.",
+      "slot_morning": "صباحي",
+      "slot_evening": "مسائي",
+      "slot_custom": "مخصص"
     },
     "myBookings": {
       "title": "حجوزاتي",

@@ -1038,7 +1038,18 @@
       "bookNow": "Book Now",
       "bookingInProgress": "Booking…",
       "bookingError": "Something went wrong. Please try again.",
-      "soldOut": "Sold Out"
+      "soldOut": "Sold Out",
+      "unitsTitle": "Book a chalet / room by the day",
+      "unitCapacity": "up to {count} guests",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "fullDay": "Full day",
+      "includesOvernight": "Include overnight stay",
+      "reserveUnit": "Reserve",
+      "unitReserved": "Reservation submitted.",
+      "slot_morning": "Morning",
+      "slot_evening": "Evening",
+      "slot_custom": "Custom"
     },
     "myBookings": {
       "title": "My Bookings",

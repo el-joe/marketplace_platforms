@@ -54,6 +54,7 @@ class CouponController extends Controller
             ['title' => 'Name', 'data' => 'name', 'name' => 'name', 'searchable' => false],
             ['title' => 'Type', 'data' => 'type', 'name' => 'type', 'orderable_column' => 'coupons.type', 'searchable' => false],
             ['title' => 'Scope', 'data' => 'scope', 'name' => 'scope', 'orderable_column' => 'coupons.scope', 'searchable' => false],
+            ['title' => 'Fulfillment', 'data' => 'shipping_type_restriction', 'name' => 'shipping_type_restriction', 'orderable' => false, 'searchable' => false],
             ['title' => 'Value', 'data' => 'value', 'name' => 'value', 'orderable_column' => 'coupons.value', 'searchable' => false],
             ['title' => 'Used', 'data' => 'times_used', 'name' => 'times_used', 'orderable_column' => 'coupons.times_used', 'searchable' => false],
             ['title' => 'Active', 'data' => 'is_active', 'name' => 'is_active', 'orderable_column' => 'coupons.is_active', 'searchable' => false],
@@ -75,6 +76,7 @@ class CouponController extends Controller
                 'coupons.usage_limit_total',
                 'coupons.valid_until',
                 'coupons.is_active',
+                'coupons.shipping_type_restriction',
             ]);
 
         $query = $this->applyFilters($query, $request, [
@@ -89,6 +91,7 @@ class CouponController extends Controller
                 'name' => e($row->name),
                 'type' => $row->type->value,
                 'scope' => $row->scope->value,
+                'shipping_type_restriction' => $row->shipping_type_restriction?->value ?? 'all',
                 'value' => $row->value,
                 'times_used' => (int) $row->times_used,
                 'usage_limit_total' => $row->usage_limit_total ? (int) $row->usage_limit_total : null,

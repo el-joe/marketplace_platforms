@@ -21,14 +21,14 @@ class CouponParticipationRequestDecisionNotification extends BaseDatabaseBroadca
     public function notificationData(object $notifiable): array
     {
         $isVendor = $notifiable instanceof VendorAdmin;
-        $approved = $this->participationRequest->status === CouponParticipationRequest::STATUS_APPROVED;
+        $approved = in_array($this->participationRequest->status, [CouponParticipationRequest::STATUS_APPROVED, CouponParticipationRequest::STATUS_PAID], true);
 
         return [
             'title' => $approved ? 'تم قبول طلب المشاركة' : 'تم رفض طلب المشاركة',
             'message' => $approved
                 ? 'تم قبول طلبك للمشاركة في قسيمة برسوم اشتراك.'
                 : 'تم رفض طلبك للمشاركة في قسيمة برسوم اشتراك.',
-            'url' => $isVendor ? route('vendor.coupon-participation.index') : route('marketer.coupon-participation.index'),
+            'url' => $isVendor ? route('partner.coupon-participation.index') : route('marketer.coupon-participation.index'),
             'invitation_id' => $this->participationRequest->invitation_id,
             'request_id' => $this->participationRequest->id,
             'status' => $this->participationRequest->status,

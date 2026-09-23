@@ -185,5 +185,43 @@ export type TravelPackageDetail = {
     contact_email: string | null;
     contact_phone: string | null;
   } | null;
+  bookable_units: BookableUnitSummary[];
+  status: string;
+};
+
+export type BookableUnitSummary = {
+  id: string;
+  name: string;
+  type: "chalet" | "hotel_room" | "other";
+  capacity: number;
+  description: string | null;
+};
+
+export type BookableUnitDay = {
+  date: string;
+  is_available: boolean;
+  capacity: number;
+  price_day_only: number | null;
+  price_with_overnight: number | null;
+};
+
+export type BookableUnitTimeSlot = {
+  id: string;
+  slot_type: "morning" | "evening" | "custom";
+  starts_at: string;
+  ends_at: string;
+  price: number;
+};
+
+export type BookableUnitCalendar = {
+  unit: { id: string; name: string; type: string; capacity: number };
+  month: string;
+  days: BookableUnitDay[];
+  time_slots: BookableUnitTimeSlot[];
+};
+
+export type BookableUnitReservation = {
+  id: string;
+  total_price: number;
   status: string;
 };

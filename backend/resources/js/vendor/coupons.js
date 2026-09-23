@@ -35,12 +35,13 @@ function initCouponsDataTable() {
             d.search_term = document.getElementById('coupon-search')?.value || '';
         },
         searchInputId: 'coupon-search',
-        order: [[7, 'desc']],
+        order: [[8, 'desc']],
         columns: [
             { data: 'code', render: (d) => `<span class="font-mono font-medium">${d}</span>` },
             { data: 'name' },
             { data: 'type' },
             { data: 'scope', render: (d) => scopeBadge(d) },
+            { data: 'shipping_type_restriction', orderable: false, render: (d) => `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">${d === 'all' || !d ? t('partner.coupons.create.shipping_type_all') : d.toUpperCase()}</span>` },
             { data: null, render: (row) => row.type === 'percentage' ? `${row.value}%` : row.value },
             { data: null, render: (row) => row.usage_limit_total ? `${row.times_used} / ${row.usage_limit_total}` : `${row.times_used}` },
             { data: null, render: (row) => activeBadge(row.is_active, row.is_expired) },

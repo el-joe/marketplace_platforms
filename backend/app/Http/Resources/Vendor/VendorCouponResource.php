@@ -20,6 +20,7 @@ class VendorCouponResource extends JsonResource
             'currency' => $this->currency,
             'scope' => $this->scope->value,
             'product_ids' => $this->whenLoaded('products', fn () => $this->products->pluck('id')->values()),
+            'shipping_type_restriction' => $this->shipping_type_restriction?->value ?? 'all',
             'min_order_amount' => $this->min_order_amount,
             'max_discount' => $this->max_discount,
             'usage_limit_total' => $this->usage_limit_total,

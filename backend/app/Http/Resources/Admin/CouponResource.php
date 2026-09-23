@@ -39,6 +39,7 @@ class CouponResource extends JsonResource
                 ? max(0, $this->usage_limit_total - $this->times_used)
                 : null,
             'customer_eligibility' => $this->customer_eligibility->value,
+            'shipping_type_restriction' => $this->shipping_type_restriction?->value ?? 'all',
             'valid_from' => $this->valid_from?->toIso8601String(),
             'valid_until' => $this->valid_until?->toIso8601String(),
             'is_active' => (bool) $this->is_active,

@@ -1023,6 +1023,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
         Route::post('/{marketer}/exclusive-contracts', [ExclusiveContractController::class, 'store'])
             ->name('exclusive-contracts.store')->middleware('admin.permission:marketers.manage');
+        Route::get('/{marketer}/exclusive-contracts/{exclusiveContract}/file', [ExclusiveContractController::class, 'download'])
+            ->name('exclusive-contracts.download')->middleware('admin.permission:marketers.view');
         Route::put('/{marketer}/exclusive-contracts/{exclusiveContract}', [ExclusiveContractController::class, 'update'])
             ->name('exclusive-contracts.update')->middleware('admin.permission:marketers.manage');
         Route::delete('/{marketer}/exclusive-contracts/{exclusiveContract}', [ExclusiveContractController::class, 'destroy'])

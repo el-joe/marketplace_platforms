@@ -56,6 +56,7 @@
                         <th>{{ __('partner.coupons.index.table_name') }}</th>
                         <th>{{ __('partner.coupons.index.table_type') }}</th>
                         <th>{{ __('partner.coupons.index.table_scope') }}</th>
+                        <th>{{ __('partner.coupons.index.table_shipping_type') }}</th>
                         <th>{{ __('partner.coupons.index.table_value') }}</th>
                         <th>{{ __('partner.coupons.index.table_used') }}</th>
                         <th>{{ __('partner.coupons.index.table_status') }}</th>

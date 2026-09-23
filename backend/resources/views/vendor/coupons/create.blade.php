@@ -141,6 +141,17 @@
                 </p>
             </div>
 
+            <div>
+                @php $currentShippingType = $isEdit ? ($coupon['shipping_type_restriction'] ?? 'all') : 'all'; @endphp
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.coupons.create.shipping_type_restriction') }}</label>
+                <select name="shipping_type_restriction" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    @foreach(['all', 'fbn', 'fbp', 'fbm'] as $st)
+                        <option value="{{ $st }}" @selected($currentShippingType === $st)>{{ __('partner.coupons.create.shipping_type_' . $st) }}</option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-500 mt-1">{{ __('partner.coupons.create.shipping_type_restriction_hint') }}</p>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.coupons.create.min_order_amount') }}</label>

@@ -49,6 +49,27 @@
                         })',
             ],
             [
+                'title' => __('admin.coupons_section.shipping_type_restriction_short'),
+                'data' => 'shipping_type_restriction',
+                'name' => 'shipping_type_restriction',
+                'orderable' => false,
+                'searchable' => false,
+                'render' => 'Renderers.badge({
+                            all: { label: "' . __('admin.coupons_section.shipping_type_all') . '", color: "gray"   },
+                            fbn: { label: "FBN", color: "blue"   },
+                            fbp: { label: "FBP", color: "purple" },
+                            fbm: { label: "FBM", color: "amber"  }
+                        })',
+            ],
+            [
+                'title' => __('admin.coupons_section.targeting'),
+                'data' => 'targeting',
+                'name' => 'targeting',
+                'orderable' => false,
+                'searchable' => false,
+                'render' => 'function(d){ if(!d||(!d.vendors&&!d.marketers&&!d.products)){return "<span class=\\"text-xs text-gray-400\\">"+"'.__('admin.coupons_section.targeting_all').'"+"</span>";} var o=[]; if(d.vendors)o.push(d.vendors+" '.__('admin.coupons_section.vendors_short').'"); if(d.marketers)o.push(d.marketers+" '.__('admin.coupons_section.marketers_short').'"); if(d.products)o.push(d.products+" '.__('admin.coupons_section.products_short').'"); return "<span class=\\"text-xs\\">"+o.join(" · ")+"</span>"; }',
+            ],
+            [
                 'title' => __('admin.coupons_section.status'),
                 'data' => 'is_admin_managed',
                 'name' => 'is_admin_managed',
@@ -164,7 +185,7 @@
 
     <x-table.datatable id="coupons-table" url="{{ route('admin.coupons.datatable') }}" :columns="$columns"
         :filters="$filters" :bulk-actions="$bulkActions" bulk-url="{{ route('admin.coupons.bulk') }}"
-        :create-action="['url' => route('admin.coupons.create'), 'label' => __('admin.coupons_section.add_coupon')]" :page-length="25" :order="[[7, 'desc']]" />
+        :create-action="['url' => route('admin.coupons.create'), 'label' => __('admin.coupons_section.add_coupon')]" :page-length="25" :order="[[8, 'desc']]" />
 @endsection
 
 @push('scripts')

@@ -24,6 +24,8 @@
                 <div class="flex items-center gap-2">
                     <code class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{{ $coupon['code'] }}</code>
                     <span class="badge {{ $scopeClass }}">{{ __('admin.coupons_section.' . $coupon['scope']) }}</span>
+                    @php $stRestriction = $coupon['shipping_type_restriction'] ?? 'all'; @endphp
+                    <span class="badge bg-gray-100 text-gray-700" title="{{ __('admin.coupons_section.shipping_type_restriction') }}">{{ __('admin.coupons_section.shipping_type_' . $stRestriction) }}</span>
                     @unless($isAdminManaged)
                         <span class="text-xs text-gray-400">{{ __('admin.coupons_section.vendor_owned') }} — {{ __('admin.coupons_section.view_only') }}</span>
                     @endunless
@@ -62,6 +64,26 @@
                     <p class="text-xl font-semibold text-gray-900 mt-1">
                         {{ $coupon['remaining_capacity'] !== null ? number_format($coupon['remaining_capacity']) : __('admin.coupons_section.unlimited') }}
                     </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.coupons_section.targeting') }}</h2>
+                </div>
+                <div class="px-5 py-4 text-sm text-gray-700 space-y-2">
+                    @php
+                        $tv = $couponModel->vendors->map(fn ($v) => $v->store_name ?: $v->name)->all();
+                        $tm = $couponModel->marketers->pluck('name')->all();
+                        $tp = $couponModel->products->map(fn ($p) => $p->name_en ?: $p->name_ar)->all();
+                    @endphp
+                    @if(! $tv && ! $tm && ! $tp)
+                        <p class="text-gray-400">{{ __('admin.coupons_section.targeting_all') }}</p>
+                    @else
+                        <p><span class="font-medium">{{ __('admin.coupons_section.targeted_vendors') }} ({{ count($tv) }}):</span> {{ $tv ? implode(', ', $tv) : __('admin.coupons_section.targeting_all') }}</p>
+                        <p><span class="font-medium">{{ __('admin.coupons_section.targeted_marketers') }} ({{ count($tm) }}):</span> {{ $tm ? implode(', ', $tm) : __('admin.coupons_section.targeting_all') }}</p>
+                        <p><span class="font-medium">{{ __('admin.coupons_section.targeted_products') }} ({{ count($tp) }}):</span> {{ $tp ? implode(', ', $tp) : __('admin.coupons_section.targeting_all') }}</p>
+                    @endif
                 </div>
             </div>
 

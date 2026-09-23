@@ -7,6 +7,7 @@ import { Breadcrumb } from "@/src/components/ui/breadcrumb";
 import HeroGallery from "./components/hero-gallery";
 import GuidelinesAccordion from "./components/guidelines-accordion";
 import PricingTiers from "./components/pricing-tiers";
+import BookableUnitsSection from "./components/bookable-units-section";
 import BookingSidebar from "./components/booking-sidebar";
 import type { TravelPackageDetail } from "../helpers/types";
 import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
@@ -62,6 +63,13 @@ export default async function PackageDetails({ pkg }: Props) {
           <p>{pkg.description[localeKey]}</p>
 
           <GuidelinesAccordion included={pkg.inclusions} />
+
+          {pkg.bookable_units?.length > 0 && (
+            <BookableUnitsSection
+              units={pkg.bookable_units}
+              currency={pkg.currency as CurrencyCode}
+            />
+          )}
 
           {pkg.agency && (
             <section>

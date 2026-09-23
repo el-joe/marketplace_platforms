@@ -52,12 +52,29 @@ class CloseExpiredCouponParticipationInvitations extends Command
                     }
 
                     DB::transaction(function () use ($invitation, $isFull) {
-                        $coupon = $invitation->coupon ?? $this->createDraftCoupon($invitation);
+                        $invitation = CouponParticipationInvitation::whereKey($invitation->id)->lockForUpdate()->first();
+                        if (! $invitation || $invitation->status !== CouponParticipationInvitation::STATUS_OPEN) {
+                            return; // already processed concurrently
+                        }
 
-                        $this->linkApprovedParticipants($invitation, $coupon);
+                        $hasApproved = $invitation->approvedRequests()->exists();
+                        $coupon = $invitation->coupon;
+
+                        // No participants: nothing to create/activate, just close.
+                        if ($hasApproved) {
+                            $coupon ??= $this->createDraftCoupon($invitation);
+                            if ($coupon) {
+                                $this->linkApprovedParticipants($invitation, $coupon);
+                            }
+                            // Activate an admin-prepared coupon (a generated
+                            // draft coupon stays inactive: value 0 needs admin terms).
+                            if ($coupon && $invitation->coupon_id !== null && ! $coupon->is_active) {
+                                $coupon->update(['is_active' => true]);
+                            }
+                        }
 
                         $invitation->update([
-                            'coupon_id' => $coupon->id,
+                            'coupon_id' => $coupon?->id,
                             'status' => $isFull
                                 ? CouponParticipationInvitation::STATUS_FULFILLED
                                 : CouponParticipationInvitation::STATUS_CLOSED,
@@ -73,8 +90,15 @@ class CloseExpiredCouponParticipationInvitations extends Command
         return self::SUCCESS;
     }
 
-    private function createDraftCoupon(CouponParticipationInvitation $invitation): Coupon
+    private function createDraftCoupon(CouponParticipationInvitation $invitation): ?Coupon
     {
+        // coupons.created_by_user_id is NOT NULL: use the invitation's creating admin.
+        if ($invitation->created_by_admin_id === null) {
+            $this->warn("Invitation {$invitation->id} has no coupon and no creating admin; closing without a coupon.");
+
+            return null;
+        }
+
         return Coupon::query()->create([
             'id' => Str::uuid()->toString(),
             'code' => strtoupper(Str::random(10)),
@@ -90,6 +114,7 @@ class CloseExpiredCouponParticipationInvitations extends Command
             'valid_from' => now(),
             'valid_until' => now()->addMonths(3),
             'is_active' => false,
+            'created_by_user_id' => $invitation->created_by_admin_id,
         ]);
     }
 

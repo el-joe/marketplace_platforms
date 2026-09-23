@@ -127,6 +127,7 @@ class MarketerController extends Controller
             'exclusiveContracts' => fn ($q) => $q->latest('starts_at'),
             'exclusiveContracts.classifiedCategory',
             'exclusiveContracts.classifiedListing',
+            'exclusiveContracts.createdBy',
         ]);
 
         $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
