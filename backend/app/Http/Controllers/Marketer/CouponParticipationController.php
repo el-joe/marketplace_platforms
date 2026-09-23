@@ -57,6 +57,6 @@ class CouponParticipationController extends Controller
             $request->hasFile('bank_transfer_proof') ? $request->file('bank_transfer_proof')->store('coupon-participation-proofs', 'local') : null
         );
 
-        return back()->with('success', 'تم إرسال طلب المشاركة بنجاح.');
+        return back()->with('success', __('partner.cp_request_sent'));
     }
 }

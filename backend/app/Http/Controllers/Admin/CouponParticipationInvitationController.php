@@ -37,7 +37,7 @@ class CouponParticipationInvitationController extends Controller
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
-                ['label' => 'دعوات مشاركة القسائم'],
+                ['label' => __('admin.coupon_participation_section.cps_title')],
             ],
         ]);
     }
@@ -45,10 +45,11 @@ class CouponParticipationInvitationController extends Controller
     public function create(): View
     {
         return view('admin.coupon-participation-invitations.create', [
+            'coupons' => \App\Models\Coupon::where('is_active', false)->where('value', '>', 0)->orderBy('code')->get(['id', 'code', 'value']),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
-                ['label' => 'دعوة جديدة'],
+                ['label' => __('admin.coupon_participation_section.cps_new')],
             ],
         ]);
     }
@@ -56,7 +57,18 @@ class CouponParticipationInvitationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'coupon_id' => ['nullable', 'uuid', 'exists:coupons,id'],
+            'coupon_id' => ['required', 'uuid', 'exists:coupons,id', function ($attr, $value, $fail) {
+                $coupon = \App\Models\Coupon::find($value);
+                if (! $coupon) {
+                    return $fail(__('admin.coupon_participation_section.coupon_not_found'));
+                }
+                if ($coupon->is_active) {
+                    return $fail(__('admin.coupon_participation_section.coupon_must_be_inactive'));
+                }
+                if ($coupon->value <= 0) {
+                    return $fail(__('admin.coupon_participation_section.coupon_value_zero'));
+                }
+            }],
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'max_participants' => ['required', 'integer', 'min:1'],
@@ -76,7 +88,7 @@ class CouponParticipationInvitationController extends Controller
         app(CouponParticipationInvitationService::class)->notifyNewInvitation($invitation);
 
         return redirect()->route('admin.coupon-participation-invitations.show', $invitation->id)
-            ->with('success', 'تم إنشاء الدعوة بنجاح.');
+            ->with('success', __('admin.coupon_participation_section.cps_created'));
     }
 
     public function show(string $invitation): View
@@ -108,7 +120,7 @@ class CouponParticipationInvitationController extends Controller
         $model = CouponParticipationInvitation::findOrFail($invitation);
         $model->update(['status' => CouponParticipationInvitation::STATUS_CANCELLED]);
 
-        return back()->with('success', 'تم إلغاء الدعوة.');
+        return back()->with('success', __('admin.coupon_participation_section.cps_cancelled'));
     }
 
     public function approveRequest(string $invitation, string $request): JsonResponse
