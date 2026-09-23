@@ -1,4 +1,5 @@
 "use client";
+import { getShippingBadgeText } from "@/src/lib/shipping-badge";
 
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
@@ -91,8 +92,7 @@ const SpecialProductCard = ({ productData }: Props) => {
             }}
           >
             <span>
-              {productData.shipping_badge.label?.[locale] ??
-                productData.shipping_badge.label?.en}
+              {getShippingBadgeText(productData.shipping_badge, locale)}
             </span>
           </div>
         )}

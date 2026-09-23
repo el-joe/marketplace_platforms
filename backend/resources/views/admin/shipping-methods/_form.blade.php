@@ -22,6 +22,8 @@
          badgeLabel: {{ json_encode($val('badge_label_en')) }},
          badgeColor: {{ json_encode($val('badge_color_hex', '#1a1a2e')) }},
          badgeTextColor: {{ json_encode($val('badge_text_color_hex', '#FFFFFF')) }},
+         showDelivery: {{ $bool('badge_show_delivery_time') ? 'true' : 'false' }},
+         deliveryText: {{ json_encode($val('badge_delivery_text_en') ?: $val('badge_delivery_text_ar')) }},
      }">
 
     <div class="flex items-center justify-between">
@@ -180,15 +182,41 @@
                         </div>
                     </div>
 
+                    <div class="pt-2 space-y-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <span class="relative inline-flex items-center" dir="ltr">
+                                <input type="hidden" name="badge_show_delivery_time" value="0">
+                                <input type="checkbox" name="badge_show_delivery_time" value="1" x-model="showDelivery" class="sr-only peer">
+                                <span class="relative w-10 h-5 bg-gray-200 peer-checked:bg-primary-600 rounded-full transition-colors duration-200 block"></span>
+                                <span class="absolute top-0.5 left-[2px] bg-white rounded-full h-4 w-4 transition-transform peer-checked:translate-x-5 pointer-events-none"></span>
+                            </span>
+                            <span class="text-sm text-gray-700">{{ __('admin.shipping_section.badge_show_delivery_time') }}</span>
+                        </label>
+                        <div x-show="showDelivery" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="badge_delivery_text_en" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.badge_delivery_text_en') }}</label>
+                                <input type="text" id="badge_delivery_text_en" name="badge_delivery_text_en" x-model="deliveryText" maxlength="100"
+                                       value="{{ $val('badge_delivery_text_en') }}" placeholder="Get it in 2 days" class="input w-full @error('badge_delivery_text_en') border-red-400 @enderror">
+                                @error('badge_delivery_text_en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="badge_delivery_text_ar" class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.badge_delivery_text_ar') }}</label>
+                                <input type="text" id="badge_delivery_text_ar" name="badge_delivery_text_ar" value="{{ $val('badge_delivery_text_ar') }}" maxlength="100"
+                                       dir="rtl" placeholder="يصلك خلال يومين" class="input w-full @error('badge_delivery_text_ar') border-red-400 @enderror">
+                                @error('badge_delivery_text_ar') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Live badge preview — reflects exactly how the badge appears to customers --}}
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.shipping_section.preview') }}</label>
                         <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 flex items-center">
-                            <span x-show="badgeLabel"
-                                  x-text="badgeLabel"
+                            <span x-show="showDelivery ? deliveryText : badgeLabel"
+                                  x-text="showDelivery ? deliveryText : badgeLabel"
                                   :style="`background-color: ${badgeColor}; color: ${badgeTextColor};`"
                                   class="rounded-full px-2 py-0.5 text-xs font-semibold"></span>
-                            <span x-show="!badgeLabel" class="text-xs text-gray-400">{{ __('admin.shipping_section.no_badge_configured') }}</span>
+                            <span x-show="!(showDelivery ? deliveryText : badgeLabel)" class="text-xs text-gray-400">{{ __('admin.shipping_section.no_badge_configured') }}</span>
                         </div>
                     </div>
 

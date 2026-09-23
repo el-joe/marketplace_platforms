@@ -84,6 +84,8 @@ export interface ShippingBadge {
   delivery_days_min: number | null;
   delivery_days_max: number | null;
   is_express: boolean;
+  show_delivery_time?: boolean;
+  delivery_text?: { ar?: string | null; en?: string | null };
 }
 
 export interface Vendor {

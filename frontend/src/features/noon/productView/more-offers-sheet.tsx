@@ -1,3 +1,4 @@
+import { getShippingBadgeText } from "@/src/lib/shipping-badge";
 import { Button } from "@/src/components/ui/button";
 import {
   Sheet,
@@ -120,7 +121,7 @@ const SheetSellerCard = ({
                 color: seller?.shipping_badge?.text_color_hex,
               }}
             >
-              {seller?.shipping_badge?.label[locale]}
+              {getShippingBadgeText(seller.shipping_badge, locale)}
             </Badge>
           )}
         </div>

@@ -49,6 +49,8 @@ export interface CrossSellAdShippingBadge {
   delivery_days_min: number;
   delivery_days_max: number;
   is_express: boolean;
+  show_delivery_time?: boolean;
+  delivery_text?: { ar?: string | null; en?: string | null };
 }
 
 export interface CrossSellAd {
@@ -164,6 +166,8 @@ export interface ShippingBadge {
   text_color_hex: string;
   delivery_days_min: number;
   delivery_days_max: number;
+  show_delivery_time?: boolean;
+  delivery_text?: { ar?: string | null; en?: string | null };
 }
 
 export interface PaymentOption {

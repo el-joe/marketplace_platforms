@@ -1,4 +1,5 @@
 "use client";
+import { getShippingBadgeText } from "@/src/lib/shipping-badge";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Navigation } from "swiper/modules";
@@ -104,7 +105,7 @@ const FlashSaleCard = ({ p }: { p: Product }) => {
       </div>
       <div className="text-center bg-black text-white">
         {!!p.shipping_badge
-          ? (p.shipping_badge?.label?.[locale] ?? p.shipping_badge?.label?.en)
+          ? getShippingBadgeText(p.shipping_badge, locale)
           : p.vendor?.store_name}
       </div>
     </div>

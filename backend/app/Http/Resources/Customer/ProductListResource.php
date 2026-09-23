@@ -79,6 +79,8 @@ class ProductListResource extends JsonResource
                     ],
                     'color_hex'        => $this->buy_box_shipping_color_hex,
                     'text_color_hex'   => $this->buy_box_shipping_text_color_hex,
+                    'show_delivery_time' => (bool) $this->buy_box_shipping_show_delivery_time,
+                    'delivery_text' => ['ar' => $this->buy_box_shipping_delivery_text_ar, 'en' => $this->buy_box_shipping_delivery_text_en],
                     'badge_image_url'  => $this->buy_box_shipping_badge_image_path
                         ? \Storage::disk('public')->url($this->buy_box_shipping_badge_image_path)
                         : null,

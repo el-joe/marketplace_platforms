@@ -5876,6 +5876,9 @@ return [
     ],
 
     'shipping_section' => [
+        'badge_show_delivery_time' => 'عرض وقت التوصيل المتوقع بدلاً من اسم طريقة الشحن',
+        'badge_delivery_text_en' => 'نص التوصيل (بالإنجليزية)',
+        'badge_delivery_text_ar' => 'نص التوصيل (بالعربية)',
         'private_shipping_company' => 'شركة شحن خاصة',
         'private_to_vendor' => 'خاص بالبائع',
         'public_company' => 'عامة (لكل البائعين)',

@@ -197,6 +197,8 @@ class SponsoredProductService
                 'label'             => ['en' => $shipping->badge_label_en, 'ar' => $shipping->badge_label_ar],
                 'color_hex'         => $shipping->badge_color_hex,
                 'text_color_hex'    => $shipping->badge_text_color_hex,
+                'show_delivery_time' => (bool) $shipping->badge_show_delivery_time,
+                'delivery_text' => ['ar' => $shipping->badge_delivery_text_ar, 'en' => $shipping->badge_delivery_text_en],
                 'delivery_days_min' => $shipping->min_delivery_days,
                 'delivery_days_max' => $shipping->max_delivery_days,
                 'is_express'        => (bool) $shipping->is_express_type,

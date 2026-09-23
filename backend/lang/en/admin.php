@@ -5909,6 +5909,9 @@ return [
     ],
 
     'shipping_section' => [
+        'badge_show_delivery_time' => 'Show estimated delivery time instead of method name',
+        'badge_delivery_text_en' => 'Delivery text (English)',
+        'badge_delivery_text_ar' => 'Delivery text (Arabic)',
         'private_shipping_company' => 'Private Shipping Company',
         'private_to_vendor' => 'Private to vendor',
         'public_company' => 'Public (all vendors)',
