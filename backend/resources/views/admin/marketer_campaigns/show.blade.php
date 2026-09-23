@@ -193,13 +193,13 @@
                     <input type="hidden" name="category_type" value="{{ $type }}">
                     <div class="text-sm font-semibold text-gray-700">{{ $label }}</div>
                     <select name="selection_mode" class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                        @php($currentMode = $type === 'product' ? $marketerCampaign->product_category_selection_mode : $marketerCampaign->classified_category_selection_mode)
+                        @php $currentMode = $type === 'product' ? $marketerCampaign->product_category_selection_mode : $marketerCampaign->classified_category_selection_mode; @endphp
                         <option value="all" @selected($currentMode === 'all')>كل الأقسام</option>
                         <option value="include" @selected($currentMode === 'include')>أقسام محددة (تضمين)</option>
                         <option value="exclude" @selected($currentMode === 'exclude')>كل الأقسام باستثناء</option>
                     </select>
                     <select name="category_ids[]" multiple data-select2-init class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                        @php($selectedIds = $marketerCampaign->categoryRules->pluck($relation)->filter()->pluck('id')->all())
+                        @php $selectedIds = $marketerCampaign->categoryRules->pluck($relation)->filter()->pluck('id')->all(); @endphp
                         @foreach($options as $option)
                             <option value="{{ $option->id }}" @selected(in_array($option->id, $selectedIds, true))>{{ $option->name_ar }}</option>
                         @endforeach
