@@ -10866,4 +10866,8 @@ return [
     'category_selection_exclude' => 'All Except',
     'open_market_commission' => 'Open Market Commission',
     'allow_marketer_price_override' => 'Allow Marketer to Set Own Price',
+    'exclusive_contract' => 'Exclusive Contract',
+    'exclusive_contracts' => 'Exclusive Contracts',
+    'add_exclusive_contract' => 'Add Exclusive Contract',
+    'contract_conflict_error' => 'A conflicting active exclusive contract exists for this listing.',
 ];

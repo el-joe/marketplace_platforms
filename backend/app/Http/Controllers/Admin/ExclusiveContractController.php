@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreExclusiveContractRequest;
+use App\Models\ClassifiedListing;
 use App\Models\ExclusiveContract;
 use App\Models\Marketer;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,8 @@ class ExclusiveContractController extends Controller
         }
 
         unset($validated['contract_file']);
+
+        $validated = $this->fillCategory($validated);
 
         ExclusiveContract::create([
             ...$validated,
@@ -47,9 +50,21 @@ class ExclusiveContractController extends Controller
 
         unset($validated['contract_file']);
 
+        $validated = $this->fillCategory($validated);
+
         $exclusiveContract->update($validated);
 
         return back()->with('success', 'تم تحديث العقد الحصري.');
+    }
+
+    private function fillCategory(array $validated): array
+    {
+        if (! empty($validated['classified_listing_id']) && empty($validated['classified_category_id'])) {
+            $validated['classified_category_id'] = ClassifiedListing::whereKey($validated['classified_listing_id'])
+                ->value('classified_category_id');
+        }
+
+        return $validated;
     }
 
     public function download(Marketer $marketer, ExclusiveContract $exclusiveContract)

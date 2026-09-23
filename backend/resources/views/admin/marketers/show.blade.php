@@ -432,7 +432,7 @@
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">📄</span>
-            <h3 class="font-bold text-gray-800">العقود الحصرية (السوق المفتوح)</h3>
+            <h3 class="font-bold text-gray-800">{{ __('admin.exclusive_contracts') }}</h3>
         </div>
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -557,7 +557,7 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
                 <input type="text" name="notes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
             </div>
-            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">إضافة عقد حصري</button>
+            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.add_exclusive_contract') }}</button>
         </form>
     </div>
 

@@ -30,6 +30,13 @@ class ExclusiveContract extends Model
         ];
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active')
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now());
+    }
+
     public function marketer(): BelongsTo
     {
         return $this->belongsTo(Marketer::class);

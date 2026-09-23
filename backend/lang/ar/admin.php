@@ -10823,4 +10823,8 @@ return [
     'category_selection_exclude' => 'كل الأقسام باستثناء',
     'open_market_commission' => 'عمولة السوق المفتوح',
     'allow_marketer_price_override' => 'السماح للماركتر بتعديل السعر',
+    'exclusive_contract' => 'عقد حصري',
+    'exclusive_contracts' => 'العقود الحصرية',
+    'add_exclusive_contract' => 'إضافة عقد حصري',
+    'contract_conflict_error' => 'يوجد عقد حصري نشط متعارض لهذا الإعلان.',
 ];

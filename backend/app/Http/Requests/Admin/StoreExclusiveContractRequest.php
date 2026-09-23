@@ -48,7 +48,7 @@ class StoreExclusiveContractRequest extends FormRequest
             if ($overlaps) {
                 $validator->errors()->add(
                     'classified_listing_id',
-                    __('هذا الإعلان لديه عقد حصري نشط آخر يتقاطع مع هذه الفترة.')
+                    __('admin.contract_conflict_error')
                 );
             }
         });
