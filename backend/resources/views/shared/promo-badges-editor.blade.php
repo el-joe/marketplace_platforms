@@ -47,7 +47,11 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">{{ $pbLabels['icon'] }}</label>
-                            <input type="text" list="promo-badge-icons" :name="`promo_badges[${i}][icon_key]`" x-model="b.icon_key" maxlength="50" class="form-input text-sm py-1.5 w-full">
+                            <select :name="`promo_badges[${i}][icon_key]`" x-model="b.icon_key" class="form-input text-sm py-1.5 w-full">
+                                @foreach(config('promo_badges.icons') as $ic)
+                                <option value="{{ $ic }}">{{ $ic }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="flex items-center gap-2">
                             <input type="color" :name="`promo_badges[${i}][color_hex]`" x-model="b.color_hex" title="Icon colour" class="h-8 w-10 p-0 border rounded">
