@@ -6,6 +6,7 @@ import {
   getCurrencySymbol,
 } from "@/src/helpers/get-currency-symbol";
 import Image from "next/image";
+import { cn } from "@/src/lib/utils";
 
 type Props = {
   code: CurrencyCode;
@@ -28,7 +29,7 @@ const CurrencySymbol = ({ code, className, imageClassName }: Props) => {
       <Image
         src={currency.symbol_image_url}
         alt={currency.code}
-        className={imageClassName ?? "inline-block h-3 w-auto align-middle"}
+        className={cn("inline-block w-auto align-middle", imageClassName)}
         width={32}
         height={32}
       />

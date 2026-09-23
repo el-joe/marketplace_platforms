@@ -58,7 +58,10 @@ const Price = ({
       {/* current price */}
       <div className={`flex items-center ${currentPriceSize[size]}`}>
         {/* <span className="font-[currency-font]"> */}
-        <CurrencySymbol code={currency} />
+        <CurrencySymbol
+          code={currency}
+          imageClassName={size === "lg" || size === "xl" ? "h-4" : "h-3"}
+        />
         {/* </span> */}
         <p>{(currentPrice ?? 0).toLocaleString()}</p>
       </div>
@@ -87,7 +90,7 @@ const Price = ({
               {oldPrice?.toLocaleString()}
             </p>
           )}
-          {discountPercent && (
+          {!!discountPercent && (
             <p
               className={`text-green font-semibold ${discountPercentSize[size]}`}
             >
