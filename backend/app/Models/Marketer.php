@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 
 class Marketer extends Model
@@ -92,6 +93,11 @@ class Marketer extends Model
     public function categoryCommissions(): HasMany
     {
         return $this->hasMany(MarketerCategoryCommission::class);
+    }
+
+    public function classifiedListings(): MorphMany
+    {
+        return $this->morphMany(ClassifiedListing::class, 'seller');
     }
 
     public function exclusiveContracts(): HasMany

@@ -33,7 +33,8 @@ class MarketerProfileController extends Controller
             ->whereNotNull('profile_slug')
             ->whereHas('marketer', fn ($q) => $q->where('global_status', 'active'))
             ->with([
-                'marketer:id,name,country_id,total_campaigns,total_conversions',
+                'marketer' => fn ($q) => $q->select('id', 'name', 'country_id', 'total_campaigns', 'total_conversions')
+                    ->withCount(['classifiedListings as classified_count' => fn ($c) => $c->where('status', 'active')]),
                 'marketer.marketerJobs',
                 'bannerFile',
                 'avatarFile',
@@ -64,6 +65,7 @@ class MarketerProfileController extends Controller
                 'specialty_en' => $profile->specialty_en,
                 'ad_price' => $profile->ad_price,
                 'ad_price_currency' => $profile->ad_price_currency,
+                'classified_count' => (int) ($marketer->classified_count ?? 0),
             ];
         })->values()->all();
 
@@ -150,8 +152,55 @@ class MarketerProfileController extends Controller
         unset($response['_marketer_id'], $response['_country_id']);
         $response['own_listings'] = $ownListings;
         $response['campaign_listings'] = $campaignListings;
+        $response['exclusive_contracts'] = $this->exclusiveContracts($header['_marketer_id']);
+        $classified = $this->classifiedListings($header['_marketer_id']);
+        $response['classified_listings'] = $classified;
+        $response['classified_count'] = count($classified);
 
         return ApiResponse::success($response);
+    }
+
+    /** Public-safe active exclusive contracts (no file paths / notes). */
+    private function exclusiveContracts(string $marketerId): array
+    {
+        return \App\Models\ExclusiveContract::active()
+            ->where('marketer_id', $marketerId)
+            ->with(['classifiedCategory:id,name_ar,name_en', 'classifiedListing:id,title_ar,title_en'])
+            ->get()
+            ->map(fn ($c) => [
+                'scope' => $c->classified_listing_id ? 'listing' : 'category',
+                'category_name' => $c->classifiedCategory?->name_ar,
+                'category_name_en' => $c->classifiedCategory?->name_en,
+                'listing_title' => $c->classifiedListing?->title_ar,
+                'listing_title_en' => $c->classifiedListing?->title_en,
+                'ends_at' => $c->ends_at?->toIso8601String(),
+            ])->values()->all();
+    }
+
+    private function classifiedListings(string $marketerId): array
+    {
+        return \App\Models\ClassifiedListing::query()
+            ->where('seller_type', \App\Models\Marketer::class)
+            ->where('seller_id', $marketerId)
+            ->where('status', \App\Enums\ClassifiedListingStatus::Active)
+            ->with(['classifiedCategory:id,name_ar,name_en', 'images'])
+            ->latest()
+            ->limit(12)
+            ->get()
+            ->map(fn ($l) => [
+                'id' => $l->id,
+                'listing_number' => $l->listing_number,
+                'slug' => $l->slug,
+                'title_ar' => $l->title_ar,
+                'title_en' => $l->title_en,
+                'price' => $l->price,
+                'currency' => $l->currency,
+                'price_negotiable' => (bool) $l->price_negotiable,
+                'category' => ['name_ar' => $l->classifiedCategory?->name_ar, 'name_en' => $l->classifiedCategory?->name_en],
+                'first_image' => $l->primary_image_url,
+                'listing_purpose' => $l->listing_purpose,
+                'views_count' => (int) $l->views_count,
+            ])->values()->all();
     }
 
     private function buildHeader(Request $request, string $slug): ?array
