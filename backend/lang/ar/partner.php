@@ -2777,4 +2777,13 @@ return [
     'promo_badges_hint' => 'رسائل تظهر بالتناوب على بطاقة المنتج وصفحته لهذه القائمة (بحد أقصى 10). إذا لم تضف شارات تظهر شارات المنتج الافتراضية.',
     'promo_badges_save' => 'حفظ',
     'promo_badges_saved' => 'تم حفظ شارات العروض.',
+    'coupon_participation' => 'الاشتراك في القسيمة',
+    'coupon_participation_invitations' => 'دعوات الاشتراك في القسائم',
+    'min_fee_amount' => 'الحد الأدنى للرسوم',
+    'offered_fee_amount' => 'الرسوم التي تعرضها',
+    'registration_deadline' => 'الموعد النهائي للتسجيل',
+    'wallet_balance' => 'رصيد المحفظة',
+    'insufficient_balance_warning' => 'رصيد محفظتك غير كافٍ للحد الأدنى للرسوم.',
+    'payment_method_wallet' => 'المحفظة',
+    'payment_method_bank_transfer' => 'التحويل البنكي',
 ];

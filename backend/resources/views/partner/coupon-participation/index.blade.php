@@ -36,8 +36,14 @@
                         طلبك: {{ number_format($myRequest->offered_fee_amount) }} {{ $invitation->currency }} — {{ $statusLabels[$myRequest->status] ?? $myRequest->status }}
                     </div>
                 @else
-                    <form method="POST" action="{{ route('partner.coupon-participation.store', $invitation->id) }}" class="flex gap-2">
+                    <form method="POST" action="{{ route('partner.coupon-participation.store', $invitation->id) }}" class="flex flex-col gap-2" enctype="multipart/form-data">
                         @csrf
+<div class="text-xs text-gray-600 mb-1">{{ __('partner.wallet_balance') }}: {{ number_format($balances[$invitation->id] ?? 0) }} {{ $invitation->currency }}</div>
+@if(($balances[$invitation->id] ?? 0) < $invitation->min_fee_amount)
+<div class="text-xs text-amber-700 bg-amber-50 rounded p-1 mb-1">{{ __('partner.insufficient_balance_warning') }}</div>
+@endif
+<select name="payment_method" class="w-full rounded border-gray-300 text-sm"><option value="wallet">{{ __('partner.payment_method_wallet') }}</option><option value="bank_transfer">{{ __('partner.payment_method_bank_transfer') }}</option></select>
+<input type="file" name="bank_transfer_proof" class="w-full text-xs" />
                         <input type="number" name="offered_fee_amount" min="{{ $invitation->min_fee_amount }}" value="{{ $invitation->min_fee_amount }}" class="w-full rounded border-gray-300 text-sm" required />
                         <button type="submit" class="px-3 py-2 rounded bg-blue-600 text-white text-sm whitespace-nowrap">إرسال طلب</button>
                     </form>

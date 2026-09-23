@@ -38,7 +38,10 @@ class CouponParticipationController extends Controller
             ->latest()
             ->paginate(20);
 
-        return view('marketer.coupon-participation.index', compact('marketer', 'invitations'));
+        $svc = app(CouponParticipationInvitationService::class);
+        $balances = $invitations->getCollection()->mapWithKeys(fn ($i) => [$i->id => (int) $svc->walletFor('marketer', $marketer->id, $i->currency)->balance]);
+
+        return view('marketer.coupon-participation.index', compact('marketer', 'invitations', 'balances'));
     }
 
     public function store(Request $request, CouponParticipationInvitation $invitation): RedirectResponse
@@ -49,7 +52,9 @@ class CouponParticipationController extends Controller
             $invitation,
             CouponParticipationRequest::TYPE_MARKETER,
             $marketer->id,
-            $request->input('offered_fee_amount')
+            $request->input('offered_fee_amount'),
+            $request->input('payment_method', 'wallet'),
+            $request->hasFile('bank_transfer_proof') ? $request->file('bank_transfer_proof')->store('coupon-participation-proofs', 'local') : null
         );
 
         return back()->with('success', 'تم إرسال طلب المشاركة بنجاح.');

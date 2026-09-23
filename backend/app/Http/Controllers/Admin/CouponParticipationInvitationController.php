@@ -131,7 +131,7 @@ class CouponParticipationInvitationController extends Controller
         $participationRequest = CouponParticipationRequest::where('invitation_id', $model->id)->findOrFail($request);
 
         try {
-            app(CouponParticipationInvitationService::class)->reject($participationRequest, Auth::guard('admin')->id());
+            app(CouponParticipationInvitationService::class)->reject($participationRequest, Auth::guard('admin')->id(), request()->boolean('refund_on_reject', true));
         } catch (ValidationException $e) {
             return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
         }
@@ -148,14 +148,11 @@ class CouponParticipationInvitationController extends Controller
         $model = CouponParticipationInvitation::findOrFail($invitation);
         $participationRequest = CouponParticipationRequest::where('invitation_id', $model->id)->findOrFail($request);
 
-        if ($participationRequest->status !== CouponParticipationRequest::STATUS_APPROVED) {
-            return response()->json(['message' => 'لا يمكن تحديد الطلب كمدفوع إلا بعد قبوله.'], 422);
+        try {
+            app(CouponParticipationInvitationService::class)->confirmPayment($participationRequest, Auth::guard('admin')->id());
+        } catch (ValidationException $e) {
+            return response()->json(['message' => collect($e->errors())->flatten()->first()], 422);
         }
-
-        $participationRequest->update([
-            'status' => CouponParticipationRequest::STATUS_PAID,
-            'paid_at' => now(),
-        ]);
 
         return response()->json(['success' => true]);
     }

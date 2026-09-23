@@ -21,8 +21,11 @@ class CouponParticipationRequest extends Model
         'participant_type',
         'participant_id',
         'offered_fee_amount',
+        'payment_method',
+        'bank_transfer_proof_path',
         'status',
         'paid_at',
+        'reviewed_by_admin_id',
     ];
 
     protected $casts = [

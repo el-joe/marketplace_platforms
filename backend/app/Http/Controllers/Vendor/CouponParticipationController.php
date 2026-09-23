@@ -33,6 +33,7 @@ class CouponParticipationController extends Controller
      */
     public function index(): JsonResponse
     {
+        abort_if(! $this->actor()->vendor->isProductVendor(), 403);
         $vendorId = $this->actor()->vendor_id;
 
         $invitations = CouponParticipationInvitation::query()
@@ -61,6 +62,7 @@ class CouponParticipationController extends Controller
     public function store(Request $request, string $invitation): JsonResponse
     {
         $vendor = $this->actor()->vendor;
+        abort_if(! $vendor->isProductVendor(), 403);
         $invitationModel = CouponParticipationInvitation::findOrFail($invitation);
 
         try {
@@ -68,9 +70,17 @@ class CouponParticipationController extends Controller
                 $invitationModel,
                 CouponParticipationRequest::TYPE_VENDOR,
                 $vendor->id,
-                $request->input('offered_fee_amount')
+                $request->input('offered_fee_amount'),
+                $request->input('payment_method', 'wallet'),
+                $request->hasFile('bank_transfer_proof') ? $request->file('bank_transfer_proof')->store('coupon-participation-proofs', 'local') : null
             );
         } catch (ValidationException $e) {
+            if (isset($e->errors()['error'])) {
+                $balance = (int) app(CouponParticipationInvitationService::class)->walletFor(CouponParticipationRequest::TYPE_VENDOR, $vendor->id, $invitationModel->currency)->balance;
+
+                return response()->json(['error' => 'insufficient_balance', 'balance' => $balance], 422);
+            }
+
             return ApiResponse::error(collect($e->errors())->flatten()->first(), [], 422);
         }
 

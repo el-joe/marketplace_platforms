@@ -26,6 +26,7 @@ class CouponParticipationController extends Controller
     public function index(): View
     {
         $vendorId = $this->vendorId();
+        abort_if(! Auth::guard('vendor')->user()->vendor->isProductVendor(), 403);
 
         $invitations = CouponParticipationInvitation::query()
             ->open()
@@ -42,18 +43,24 @@ class CouponParticipationController extends Controller
             ->latest()
             ->paginate(20, ['*'], 'requests_page');
 
-        return view('partner.coupon-participation.index', compact('invitations', 'myRequests'));
+        $svc = app(CouponParticipationInvitationService::class);
+        $balances = $invitations->getCollection()->mapWithKeys(fn ($i) => [$i->id => (int) $svc->walletFor('vendor', $vendorId, $i->currency)->balance]);
+
+        return view('partner.coupon-participation.index', compact('invitations', 'myRequests', 'balances'));
     }
 
     public function store(Request $request, string $invitation): RedirectResponse
     {
+        abort_if(! Auth::guard('vendor')->user()->vendor->isProductVendor(), 403);
         $model = CouponParticipationInvitation::findOrFail($invitation);
 
         app(CouponParticipationInvitationService::class)->submitRequest(
             $model,
             CouponParticipationRequest::TYPE_VENDOR,
             $this->vendorId(),
-            $request->input('offered_fee_amount')
+            $request->input('offered_fee_amount'),
+            $request->input('payment_method', 'wallet'),
+            $request->hasFile('bank_transfer_proof') ? $request->file('bank_transfer_proof')->store('coupon-participation-proofs', 'local') : null
         );
 
         return back()->with('success', 'تم إرسال طلب المشاركة بنجاح.');

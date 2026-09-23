@@ -77,6 +77,7 @@ class CouponParticipationInvitationTest extends TestCase
     {
         $inv = $this->invitation();
         $ma = $this->marketerAdmin();
+        $this->fund('marketer', $this->s->marketer->id, 1000);
         $url = route('marketer.coupon-participation.store', $inv->id);
 
         $this->actingAs($ma, 'marketer')->post($url, ['offered_fee_amount' => 50])->assertSessionHasErrors('offered_fee_amount');
@@ -111,6 +112,7 @@ class CouponParticipationInvitationTest extends TestCase
     public function test_vendor_web_panel_lists_and_applies(): void
     {
         $inv = $this->invitation();
+        $this->fund('vendor', $this->s->vendor->id, 1000);
         $va = VendorAdmin::create([
             'vendor_id' => $this->s->vendor->id, 'name' => 'V', 'email' => 'v-'.Str::random(8).'@example.test',
             'password' => bcrypt('password'), 'role' => 'owner', 'is_owner' => true, 'is_active' => true,
@@ -175,6 +177,45 @@ class CouponParticipationInvitationTest extends TestCase
         $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.approve', [$inv->id, $b->id]))->assertStatus(422);
         $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.reject', [$inv->id, $b->id]))->assertOk();
         $this->assertSame(500, $this->balance('marketer', $this->s->marketer->id));
+    }
+
+    public function test_wallet_apply_blocked_when_insufficient_and_bank_transfer_flow(): void
+    {
+        $inv = $this->invitation(['max_participants' => 1]);
+        $va = VendorAdmin::create([
+            'vendor_id' => $this->s->vendor->id, 'name' => 'V', 'email' => 'v-'.Str::random(8).'@example.test',
+            'password' => bcrypt('password'), 'role' => 'owner', 'is_owner' => true, 'is_active' => true,
+        ]);
+        $this->actingAs($va, 'vendor')->post(route('partner.coupon-participation.store', $inv->id), ['offered_fee_amount' => 100])
+            ->assertSessionHasErrors('error');
+        $this->assertDatabaseCount('coupon_participation_requests', 0);
+        $this->actingAs($va, 'vendor')->get(route('partner.coupon-participation.index'))->assertOk()
+            ->assertSee(__('partner.insufficient_balance_warning'));
+
+        $r = $this->makeReq($inv, 'vendor', $this->s->vendor->id, 100);
+        $r->update(['payment_method' => 'bank_transfer', 'bank_transfer_proof_path' => 'p.png']);
+        $admin = $this->admin();
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.approve', [$inv->id, $r->id]))->assertOk();
+        $this->assertSame('approved', $r->fresh()->status);
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.mark-paid', [$inv->id, $r->id]))->assertOk();
+        $this->assertSame('paid', $r->fresh()->status);
+        $this->assertSame('fulfilled', $inv->fresh()->status);
+    }
+
+    public function test_reject_paid_without_refund_flag_keeps_balance_and_classified_vendor_not_notified(): void
+    {
+        $inv = $this->invitation();
+        $vid = $this->s->vendor->id;
+        $this->fund('vendor', $vid, 1000);
+        $r = $this->makeReq($inv, 'vendor', $vid, 300);
+        $admin = $this->admin();
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.approve', [$inv->id, $r->id]))->assertOk();
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.reject', [$inv->id, $r->id]), ['refund_on_reject' => 0])->assertOk();
+        $this->assertSame(700, $this->balance('vendor', $vid));
+
+        $this->s->vendor->forceFill(['vendor_type' => 'classified_vendor'])->save();
+        $this->actingAs($admin, 'admin')->get(route('admin.coupon-participation-invitations.index'))->assertOk();
+        $this->assertFalse($this->s->vendor->fresh()->isProductVendor());
     }
 
     // ── Command ──

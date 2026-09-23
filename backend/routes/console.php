@@ -106,6 +106,8 @@ Schedule::command('coupons:close-expired-participation-invitations')
     ->runInBackground()
     ->name('close-expired-coupon-participation-invitations');
 
+Schedule::job(new \App\Jobs\ActivateFulfilledCouponInvitationJob)->dailyAt('00:30')->name('activate-fulfilled-coupon-invitations');
+
 // Activate pending exclusive contracts whose start date arrived, and expire those past ends_at
 Schedule::command('exclusive-contracts:expire')
     ->dailyAt('00:45')

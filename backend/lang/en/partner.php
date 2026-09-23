@@ -2777,4 +2777,13 @@ return [
     'promo_badges_hint' => "Rotating messages shown on the product card and page for this listing (max 10). If you add none, the product's default badges are shown.",
     'promo_badges_save' => 'Save',
     'promo_badges_saved' => 'Promo badges saved.',
+    'coupon_participation' => 'Coupon Participation',
+    'coupon_participation_invitations' => 'Coupon Participation Invitations',
+    'min_fee_amount' => 'Minimum Fee',
+    'offered_fee_amount' => 'Your Offered Fee',
+    'registration_deadline' => 'Registration Deadline',
+    'wallet_balance' => 'Wallet Balance',
+    'insufficient_balance_warning' => 'Your wallet balance is insufficient for the minimum fee.',
+    'payment_method_wallet' => 'Wallet',
+    'payment_method_bank_transfer' => 'Bank Transfer',
 ];
