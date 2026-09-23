@@ -3,7 +3,11 @@
 use App\Http\Controllers\Marketer\AuthController;
 use App\Http\Controllers\Marketer\CampaignController;
 use App\Http\Controllers\Marketer\ContractController;
+use App\Http\Controllers\Marketer\ClassifiedInquiryController;
+use App\Http\Controllers\Marketer\ClassifiedListingController;
 use App\Http\Controllers\Marketer\CouponParticipationController;
+use App\Http\Controllers\Marketer\ExclusiveContractController;
+use App\Http\Controllers\Marketer\WantedListingController;
 use App\Http\Controllers\Marketer\DashboardController;
 use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
@@ -103,6 +107,40 @@ Route::middleware('web')->group(function () {
         Route::prefix('coupon-participation')->name('coupon-participation.')->group(function () {
             Route::get('/', [CouponParticipationController::class, 'index'])->name('index');
             Route::post('/{invitation}', [CouponParticipationController::class, 'store'])->name('store');
+        });
+
+        // Classified listings (open market ads)
+        Route::prefix('classified-listings')->name('classified-listings.')->group(function () {
+            Route::get('/', [ClassifiedListingController::class, 'index'])->name('index');
+            Route::get('/create', [ClassifiedListingController::class, 'create'])->name('create');
+            Route::post('/', [ClassifiedListingController::class, 'store'])->name('store');
+            Route::get('/{listing}', [ClassifiedListingController::class, 'show'])->name('show');
+            Route::get('/{listing}/edit', [ClassifiedListingController::class, 'edit'])->name('edit');
+            Route::put('/{listing}', [ClassifiedListingController::class, 'update'])->name('update');
+            Route::delete('/{listing}', [ClassifiedListingController::class, 'destroy'])->name('destroy');
+            Route::post('/{listing}/toggle', [ClassifiedListingController::class, 'toggleStatus'])->name('toggle');
+        });
+
+        // Received inquiries
+        Route::prefix('classified-inquiries')->name('classified-inquiries.')->group(function () {
+            Route::get('/', [ClassifiedInquiryController::class, 'index'])->name('index');
+            Route::get('/{inquiry}', [ClassifiedInquiryController::class, 'show'])->name('show');
+            Route::patch('/{inquiry}/close', [ClassifiedInquiryController::class, 'close'])->name('close');
+        });
+
+        // Wanted listings
+        Route::prefix('wanted-listings')->name('wanted-listings.')->group(function () {
+            Route::get('/', [WantedListingController::class, 'index'])->name('index');
+            Route::get('/create', [WantedListingController::class, 'create'])->name('create');
+            Route::post('/', [WantedListingController::class, 'store'])->name('store');
+            Route::delete('/{wanted}', [WantedListingController::class, 'destroy'])->name('destroy');
+        });
+
+        // Exclusive contracts (read-only)
+        Route::prefix('exclusive-contracts')->name('exclusive-contracts.')->group(function () {
+            Route::get('/', [ExclusiveContractController::class, 'index'])->name('index');
+            Route::get('/{contract}', [ExclusiveContractController::class, 'show'])->name('show');
+            Route::get('/{contract}/download', [ExclusiveContractController::class, 'download'])->name('download');
         });
 
         // Active campaigns (accepted invitations)

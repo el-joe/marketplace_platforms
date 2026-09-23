@@ -25,13 +25,14 @@ class ClassifiedCategory extends Model
 
     protected $fillable = [
         'name_en', 'name_ar', 'slug', 'icon', 'parent_id',
-        'requires_location_map', 'requires_sketch_upload',
+        'requires_location_map', 'requires_sketch_upload', 'attribute_schema',
         'contract_template_id', 'required_attachment_types',
         'is_active', 'sort_order',
     ];
 
     protected $casts = [
         'required_attachment_types' => 'array',
+        'attribute_schema'          => 'array',
         'requires_location_map'     => 'boolean',
         'requires_sketch_upload'    => 'boolean',
         'is_active'                 => 'boolean',
