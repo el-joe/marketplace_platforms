@@ -34,7 +34,12 @@ class AuthController extends Controller
         $marketerAdmin = Auth::guard('marketer_api')->user();
         $marketer = $marketerAdmin->marketer;
 
-        if (! $marketer->isActive()) {
+        // Pending marketers may log in only to finish onboarding; the
+        // marketer.api.active middleware confines them to onboarding routes.
+        $blocked = in_array($marketer->global_status?->value, ['suspended', 'blacklisted', 'rejected'], true)
+            || (! $marketer->isActive() && ! $marketer->needsOnboarding());
+
+        if ($blocked) {
             Auth::guard('marketer_api')->logout();
 
             return response()->json(['success' => false, 'message' => 'حسابك غير مفعّل بعد.'], 403);
@@ -52,6 +57,7 @@ class AuthController extends Controller
                 'marketer_type' => $marketer->marketerJobs->first()?->key,
                 'global_status' => $marketer->global_status?->value,
                 'country_id' => $marketer->country_id,
+                'onboarding_completed_at' => $marketer->onboarding_completed_at,
             ],
         ]);
     }

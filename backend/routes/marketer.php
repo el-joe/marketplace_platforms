@@ -14,6 +14,7 @@ use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
 use App\Http\Controllers\Marketer\InvitationController;
 use App\Http\Controllers\Marketer\ListingController;
+use App\Http\Controllers\Marketer\OnboardingController;
 use App\Http\Controllers\Marketer\OrderController;
 use App\Http\Controllers\Marketer\ProfileController;
 use App\Http\Controllers\Marketer\PromoteBookingController;
@@ -69,6 +70,13 @@ Route::middleware('web')->group(function () {
     Route::middleware('auth.marketer')->group(function () {
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+        Route::prefix('onboarding')->name('onboarding.')->group(function () {
+            Route::get('/', [OnboardingController::class, 'index'])->name('index');
+            Route::post('/job-type', [OnboardingController::class, 'saveJobType'])->name('job-type');
+            Route::get('/profile', [OnboardingController::class, 'profileForm'])->name('profile');
+            Route::post('/profile', [OnboardingController::class, 'saveProfile'])->name('profile.save');
+        });
 
         // Dashboard / statistics
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

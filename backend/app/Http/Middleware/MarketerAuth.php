@@ -41,6 +41,15 @@ class MarketerAuth
             $request->attributes->set('marketer_pending', true);
         }
 
+        if ($marketer->needsOnboarding()
+            && ! $request->routeIs('marketer.onboarding.*', 'marketer.logout')) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Onboarding required.'], 403);
+            }
+
+            return redirect()->route('marketer.onboarding.index');
+        }
+
         return $next($request);
     }
 }

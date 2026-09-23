@@ -22,6 +22,17 @@ class MarketerApiActive
             return response()->json(['success' => false, 'message' => 'Account is suspended.'], 403);
         }
 
+        if ($marketer->needsOnboarding()
+            && ! str_ends_with($request->path(), '/me')
+            && ! str_ends_with($request->path(), '/logout')
+            && ! str_ends_with($request->path(), '/refresh')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Onboarding required.',
+                'code' => 'onboarding_required',
+            ], 403);
+        }
+
         return $next($request);
     }
 }

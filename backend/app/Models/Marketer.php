@@ -65,6 +65,16 @@ class Marketer extends Model
         return $this->belongsTo(Admin::class, 'approved_by_admin_id');
     }
 
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MarketerDocument::class);
+    }
+
+    public function needsOnboarding(): bool
+    {
+        return $this->onboarding_completed_at === null;
+    }
+
     public function marketerProfile(): HasOne
     {
         return $this->hasOne(MarketerProfile::class, 'marketer_id');

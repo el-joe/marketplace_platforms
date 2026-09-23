@@ -18,12 +18,20 @@ use App\Http\Controllers\Api\Marketer\WantedListingController;
 use App\Http\Controllers\Api\Marketer\ExclusiveContractController;
 use App\Http\Controllers\Api\Marketer\CouponParticipationController;
 use App\Http\Controllers\Api\Marketer\ConversationController;
+use App\Http\Controllers\Api\Marketer\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (no guard) ───────────────────────────────────────────────────────
 Route::post('/login',           [AuthController::class, 'login']);
 Route::post('/register',        [AuthController::class, 'register']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+
+// ── Onboarding (authenticated, allowed before onboarding is complete) ─────
+Route::middleware('marketer.api.auth')->prefix('onboarding')->group(function () {
+    Route::post('/job-type', [OnboardingController::class, 'jobType']);
+    Route::post('/profile',  [OnboardingController::class, 'profile']);
+    Route::post('/complete', [OnboardingController::class, 'complete']);
+});
 
 // ── Authenticated ─────────────────────────────────────────────────────────
 Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function () {

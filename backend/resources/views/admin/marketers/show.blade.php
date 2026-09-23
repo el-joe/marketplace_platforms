@@ -135,8 +135,9 @@
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">العملة</label>
-                    @php $adCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code', 'name']); $selAdCur = old('ad_price_currency', $marketer->marketerProfile?->ad_price_currency); @endphp
-                    <select name="ad_price_currency" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
+                    @php $adCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code', 'name']); $selAdCur = $marketer->country?->currency_code ?? $marketer->marketerProfile?->ad_price_currency; @endphp
+                    <input type="hidden" name="ad_price_currency" value="{{ $selAdCur }}">
+                    <select disabled class="w-full bg-gray-100 cursor-not-allowed border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                         <option value="">-</option>
                         @foreach($adCurrencies as $cur)
                             <option value="{{ $cur->code }}" @selected($selAdCur === $cur->code)>{{ $cur->code }} — {{ $cur->name }}</option>
