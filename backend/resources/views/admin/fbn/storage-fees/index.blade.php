@@ -14,9 +14,14 @@
             <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.fbn_section.storage_fees_title') }}</h1>
             <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.fbn_section.storage_fees_desc') }}</p>
         </div>
-        <button type="button" id="btn-generate-fees" class="btn btn-primary btn-sm">
-            {{ __('admin.fbn_section.generate_monthly_fees') }}
-        </button>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.fbn.storage-fees.free-period-rules.index') }}" class="btn btn-secondary btn-sm">
+                {{ __('admin.fbn_section.free_period_rules_title') }}
+            </a>
+            <button type="button" id="btn-generate-fees" class="btn btn-primary btn-sm">
+                {{ __('admin.fbn_section.generate_monthly_fees') }}
+            </button>
+        </div>
     </div>
 
     {{-- ─── Stats ───────────────────────────────────────────────────────────────── --}}

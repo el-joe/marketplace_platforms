@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\FbnStorageFee;
+use App\Models\StorageFeeFreePeriodRule;
 use App\Models\WarehouseInventory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +11,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -19,13 +19,31 @@ use Illuminate\Support\Facades\Log;
  *
  * Scheduled: 1st of each month (see routes/console.php).
  * Can also be dispatched manually from admin panel.
+ *
+ * Client feature request doc, section 5 ("رسوم التخزين الحقيقية حسب الوزن"):
+ * fees are billed on the CHARGEABLE weight (max of actual declared weight
+ * vs. volumetric weight), not flatly per unit on hand, and only after a
+ * configurable free-storage period (StorageFeeFreePeriodRule) has elapsed
+ * since the inventory entered the warehouse.
  */
 class GenerateFbnStorageFeesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 300;
+
+    /**
+     * Volumetric weight divisor (cm^3 -> grams), i.e.
+     * volumetric_weight_grams = (length_cm * width_cm * height_cm) / DIVISOR * 1000.
+     *
+     * The plan doc (section 5.1) leaves this "يُحدَّد مع العميل" (TBD, pending
+     * client confirmation) between the two industry-standard values of 5000
+     * and 6000. Hardcoded to 5000 here as the working default until the
+     * client confirms — revisit once section 6 (or a follow-up) settles it.
+     */
+    private const VOLUMETRIC_DIVISOR = 5000;
 
     public function __construct(private string $monthString)
     {
@@ -34,16 +52,22 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
 
     public function handle(): void
     {
-        $month = Carbon::createFromFormat('Y-m', $this->monthString)->startOfMonth()->toDateString();
+        $month = Carbon::createFromFormat('Y-m', $this->monthString)->startOfMonth();
+        $monthDate = $month->toDateString();
 
-        Log::info("[GenerateFbnStorageFeesJob] Generating storage fees for month: {$month}");
+        Log::info("[GenerateFbnStorageFeesJob] Generating storage fees for month: {$monthDate}");
 
         // Get all warehouse_inventories in platform_fbn warehouses with stock
         $inventories = WarehouseInventory::query()
             ->select([
                 'warehouse_inventories.id as inventory_id',
                 'warehouse_inventories.quantity_on_hand',
+                'warehouse_inventories.created_at as stored_since',
                 'vendor_listings.vendor_id',
+                'vendor_listings.declared_weight_grams',
+                'vendor_listings.declared_length_cm',
+                'vendor_listings.declared_width_cm',
+                'vendor_listings.declared_height_cm',
                 'warehouses.storage_rate_per_m3_price as rate_per_unit',
                 'warehouses.storage_currency as currency',
             ])
@@ -56,28 +80,78 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
 
         $created = 0;
         $skipped = 0;
+        $freeOfCharge = 0;
+
+        // End of the billed month, used to measure days-in-storage consistently
+        // regardless of when in the month the job actually runs.
+        $billingCutoff = $month->copy()->endOfMonth();
 
         foreach ($inventories as $inv) {
             $rateCents = (int) ($inv->rate_per_unit ?? 0);
             if ($rateCents <= 0) {
                 $skipped++;
+
                 continue;
             }
 
             if (! $inv->currency) {
                 Log::warning("[GenerateFbnStorageFeesJob] Warehouse has no storage_currency, skipping inventory {$inv->inventory_id}");
                 $skipped++;
+
                 continue;
             }
 
-            $totalCents = $inv->quantity_on_hand * $rateCents;
+            $storedSince = $inv->stored_since ? Carbon::parse($inv->stored_since) : null;
+            if (! $storedSince) {
+                Log::warning("[GenerateFbnStorageFeesJob] Inventory {$inv->inventory_id} has no stored-since date, skipping.");
+                $skipped++;
+
+                continue;
+            }
+
+            $daysInStorage = $storedSince->diffInDays($billingCutoff);
+
+            // Actual declared weight (grams). Missing/zero is treated as 0 so
+            // volumetric weight can still drive the chargeable weight.
+            $actualWeightGrams = (int) ($inv->declared_weight_grams ?? 0);
+
+            // Volumetric weight (grams): (L x W x H in cm) / divisor -> "volumetric kg",
+            // converted to grams to compare against the actual weight on the
+            // same unit before picking the chargeable (larger) one.
+            $volumetricWeightGrams = 0;
+            if ($inv->declared_length_cm && $inv->declared_width_cm && $inv->declared_height_cm) {
+                $volumetricWeightKg = ((float) $inv->declared_length_cm * (float) $inv->declared_width_cm * (float) $inv->declared_height_cm)
+                    / self::VOLUMETRIC_DIVISOR;
+                $volumetricWeightGrams = (int) round($volumetricWeightKg * 1000);
+            }
+
+            $chargeableWeightGrams = max($actualWeightGrams, $volumetricWeightGrams);
+
+            $freeDays = StorageFeeFreePeriodRule::freeDaysFor($chargeableWeightGrams);
+
+            if ($daysInStorage <= $freeDays) {
+                $freeOfCharge++;
+
+                continue;
+            }
+
+            // storage_rate_per_m3_price is priced per cubic meter. We convert the
+            // chargeable weight (grams) to an m3-equivalent using the same
+            // volumetric divisor used above (industry convention: volumetric
+            // divisor 5000 assumes ~200kg per m3, i.e. 1 m3 <=> 200,000g of
+            // volumetric weight), so the rate's unit and the chargeable weight
+            // stay consistent with one another. This is the same assumption
+            // baked into the volumetric-weight formula itself.
+            $chargeableM3 = $chargeableWeightGrams / (self::VOLUMETRIC_DIVISOR * 200);
+
+            $totalCents = (int) round($chargeableM3 * $rateCents * $inv->quantity_on_hand);
 
             try {
                 FbnStorageFee::updateOrCreate(
                     [
                         'vendor_id' => $inv->vendor_id,
                         'warehouse_inventory_id' => $inv->inventory_id,
-                        'month' => $month,
+                        'month' => $monthDate,
                     ],
                     [
                         'units_stored' => $inv->quantity_on_hand,
@@ -89,10 +163,10 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                 );
                 $created++;
             } catch (\Throwable $e) {
-                Log::error("[GenerateFbnStorageFeesJob] Failed for inventory {$inv->inventory_id}: " . $e->getMessage());
+                Log::error("[GenerateFbnStorageFeesJob] Failed for inventory {$inv->inventory_id}: ".$e->getMessage());
             }
         }
 
-        Log::info("[GenerateFbnStorageFeesJob] Done. Created/updated: {$created}, skipped (no rate): {$skipped}");
+        Log::info("[GenerateFbnStorageFeesJob] Done. Created/updated: {$created}, free of charge: {$freeOfCharge}, skipped (no rate/data): {$skipped}");
     }
 }

@@ -10,15 +10,16 @@ use App\Jobs\GenerateFbnStorageFeesJob;
 use App\Models\FbnInboundRequest;
 use App\Models\FbnStorageFee;
 use App\Models\MarketplaceShippingRule;
-use App\Models\Vendor;
-use App\Models\VendorListing;
+use App\Models\StorageFeeFreePeriodRule;
 use App\Models\Warehouse;
+use App\Models\WarehouseInventory;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class FbnController extends Controller
@@ -83,32 +84,32 @@ class FbnController extends Controller
             'orderable_column' => 'fbn_inbound_requests.created_at',
         ], function ($row) {
             $product = $row->vendorListing?->productVariant?->product;
-            $statusBadge = '<span class="badge badge-' . $row->statusColor() . '">' . $row->statusLabel() . '</span>';
+            $statusBadge = '<span class="badge badge-'.$row->statusColor().'">'.$row->statusLabel().'</span>';
 
             $actions = '<div class="flex gap-1 flex-wrap">';
             if ($row->canBeApproved()) {
-                $actions .= '<button class="btn btn-xs btn-success btn-approve-inbound" data-id="' . $row->id . '">Approve</button>';
+                $actions .= '<button class="btn btn-xs btn-success btn-approve-inbound" data-id="'.$row->id.'">Approve</button>';
             }
             if ($row->canBeRejected()) {
-                $actions .= '<button class="btn btn-xs btn-danger btn-reject-inbound" data-id="' . $row->id . '" data-number="' . $row->request_number . '">Reject</button>';
+                $actions .= '<button class="btn btn-xs btn-danger btn-reject-inbound" data-id="'.$row->id.'" data-number="'.$row->request_number.'">Reject</button>';
             }
             if ($row->canMarkShipped()) {
-                $actions .= '<button class="btn btn-xs btn-primary btn-update-tracking" data-id="' . $row->id . '">Tracking</button>';
+                $actions .= '<button class="btn btn-xs btn-primary btn-update-tracking" data-id="'.$row->id.'">Tracking</button>';
             }
             if ($row->canMarkReceived()) {
-                $actions .= '<button class="btn btn-xs btn-success btn-mark-received" data-id="' . $row->id . '" data-max="' . $row->quantity_requested . '">Receive</button>';
+                $actions .= '<button class="btn btn-xs btn-success btn-mark-received" data-id="'.$row->id.'" data-max="'.$row->quantity_requested.'">Receive</button>';
             }
             $actions .= '</div>';
 
             return [
-                'request_number' => '<span class="font-mono text-xs">' . $row->request_number . '</span>',
+                'request_number' => '<span class="font-mono text-xs">'.$row->request_number.'</span>',
                 'vendor' => e($row->vendor_name),
-                'product' => $product ? '<div class="text-xs">' . e($product->name_en) . '</div>' : '—',
-                'warehouse' => '<span class="text-xs">' . e($row->warehouse_name) . ' <span class="badge badge-secondary">' . $row->warehouse_code . '</span></span>',
-                'qty' => $row->quantity_requested . ' / <span class="text-green-600 font-semibold">' . $row->quantity_received . '</span>',
+                'product' => $product ? '<div class="text-xs">'.e($product->name_en).'</div>' : '—',
+                'warehouse' => '<span class="text-xs">'.e($row->warehouse_name).' <span class="badge badge-secondary">'.$row->warehouse_code.'</span></span>',
+                'qty' => $row->quantity_requested.' / <span class="text-green-600 font-semibold">'.$row->quantity_received.'</span>',
                 'status' => $statusBadge,
                 'expected' => $row->expected_arrival?->format('d M Y') ?? '—',
-                'tracking' => $row->tracking_number ? '<span class="font-mono text-xs">' . e($row->tracking_number) . '</span>' : '—',
+                'tracking' => $row->tracking_number ? '<span class="font-mono text-xs">'.e($row->tracking_number).'</span>' : '—',
                 'created_at' => $row->created_at->format('d M Y'),
                 'actions' => $actions,
             ];
@@ -117,7 +118,7 @@ class FbnController extends Controller
 
     public function approveInbound(Request $request, FbnInboundRequest $inboundRequest): JsonResponse
     {
-        if (!$inboundRequest->canBeApproved()) {
+        if (! $inboundRequest->canBeApproved()) {
             return response()->json(['success' => false, 'message' => 'Request cannot be approved in its current state.'], 422);
         }
 
@@ -137,7 +138,7 @@ class FbnController extends Controller
 
     public function rejectInbound(Request $request, FbnInboundRequest $inboundRequest): JsonResponse
     {
-        if (!$inboundRequest->canBeRejected()) {
+        if (! $inboundRequest->canBeRejected()) {
             return response()->json(['success' => false, 'message' => 'Request cannot be rejected in its current state.'], 422);
         }
 
@@ -155,7 +156,7 @@ class FbnController extends Controller
 
     public function updateTracking(Request $request, FbnInboundRequest $inboundRequest): JsonResponse
     {
-        if (!$inboundRequest->canMarkShipped()) {
+        if (! $inboundRequest->canMarkShipped()) {
             return response()->json(['success' => false, 'message' => 'Request must be in approved status to update tracking.'], 422);
         }
 
@@ -175,12 +176,12 @@ class FbnController extends Controller
 
     public function receiveInbound(Request $request, FbnInboundRequest $inboundRequest): JsonResponse
     {
-        if (!$inboundRequest->canMarkReceived()) {
+        if (! $inboundRequest->canMarkReceived()) {
             return response()->json(['success' => false, 'message' => 'Request must be in shipped status to mark received.'], 422);
         }
 
         $data = $request->validate([
-            'quantity_received' => 'required|integer|min:1|max:' . $inboundRequest->quantity_requested,
+            'quantity_received' => 'required|integer|min:1|max:'.$inboundRequest->quantity_requested,
         ]);
 
         DB::transaction(function () use ($inboundRequest, $data) {
@@ -190,7 +191,7 @@ class FbnController extends Controller
             ]);
 
             // Update warehouse inventory quantity_inbound → quantity_on_hand
-            $inventory = \App\Models\WarehouseInventory::where('vendor_listing_id', $inboundRequest->vendor_listing_id)
+            $inventory = WarehouseInventory::where('vendor_listing_id', $inboundRequest->vendor_listing_id)
                 ->where('warehouse_id', $inboundRequest->warehouse_id)
                 ->first();
 
@@ -258,18 +259,18 @@ class FbnController extends Controller
         ], function ($row) {
             $actions = '';
             if ($row->status === FbnStorageFeeStatus::Pending) {
-                $actions = '<button class="btn btn-xs btn-primary btn-mark-invoiced" data-id="' . $row->id . '">Mark Invoiced</button>';
+                $actions = '<button class="btn btn-xs btn-primary btn-mark-invoiced" data-id="'.$row->id.'">Mark Invoiced</button>';
             } elseif ($row->status === FbnStorageFeeStatus::Invoiced) {
-                $actions = '<button class="btn btn-xs btn-success btn-mark-fee-paid" data-id="' . $row->id . '">Mark Paid</button>';
+                $actions = '<button class="btn btn-xs btn-success btn-mark-fee-paid" data-id="'.$row->id.'">Mark Paid</button>';
             }
 
             return [
                 'vendor' => e($row->vendor_name),
                 'month' => $row->monthLabel(),
                 'units_stored' => number_format($row->units_stored),
-                'rate' => number_format($row->rate_per_unit, 2) . ' ' . $row->currency,
-                'total_fee' => '<span class="font-semibold">' . $row->totalFormatted() . '</span>',
-                'status' => '<span class="badge badge-' . $row->statusColor() . '">' . $row->status->label() . '</span>',
+                'rate' => number_format($row->rate_per_unit, 2).' '.$row->currency,
+                'total_fee' => '<span class="font-semibold">'.$row->totalFormatted().'</span>',
+                'status' => '<span class="badge badge-'.$row->statusColor().'">'.$row->status->label().'</span>',
                 'actions' => $actions,
             ];
         });
@@ -308,8 +309,89 @@ class FbnController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Storage fee generation job queued for ' . $data['month'] . '.',
+            'message' => 'Storage fee generation job queued for '.$data['month'].'.',
         ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // STORAGE FEE FREE-PERIOD RULES
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function freePeriodRulesIndex(): View
+    {
+        $rules = StorageFeeFreePeriodRule::orderBy('min_weight_grams')->get();
+
+        return view('admin.fbn.storage-fees.free-period-rules', [
+            'breadcrumbs' => [
+                ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+                ['label' => 'FBN / Fulfillment'],
+                ['label' => 'Storage Fees', 'url' => route('admin.fbn.storage-fees.index')],
+                ['label' => 'Free Period Rules'],
+            ],
+            'rules' => $rules,
+        ]);
+    }
+
+    public function storeFreePeriodRule(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'min_weight_grams' => ['required', 'integer', 'min:0'],
+            'max_weight_grams' => ['nullable', 'integer', 'gt:min_weight_grams'],
+            'free_days' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $this->assertNoFreePeriodRuleOverlap($data);
+
+        $rule = StorageFeeFreePeriodRule::create($data);
+
+        return response()->json(['success' => true, 'message' => 'Free period rule created.', 'id' => $rule->id]);
+    }
+
+    public function updateFreePeriodRule(Request $request, StorageFeeFreePeriodRule $freePeriodRule): JsonResponse
+    {
+        $data = $request->validate([
+            'min_weight_grams' => ['required', 'integer', 'min:0'],
+            'max_weight_grams' => ['nullable', 'integer', 'gt:min_weight_grams'],
+            'free_days' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $this->assertNoFreePeriodRuleOverlap($data, $freePeriodRule->id);
+
+        $freePeriodRule->update($data);
+
+        return response()->json(['success' => true, 'message' => 'Free period rule updated.']);
+    }
+
+    public function destroyFreePeriodRule(StorageFeeFreePeriodRule $freePeriodRule): JsonResponse
+    {
+        $freePeriodRule->delete();
+
+        return response()->json(['success' => true, 'message' => 'Free period rule deleted.']);
+    }
+
+    /**
+     * @param  array{min_weight_grams: int, max_weight_grams: ?int}  $data
+     */
+    protected function assertNoFreePeriodRuleOverlap(array $data, ?string $excludeId = null): void
+    {
+        $min = $data['min_weight_grams'];
+        $max = $data['max_weight_grams'] ?? null;
+
+        $query = StorageFeeFreePeriodRule::query()
+            ->where('min_weight_grams', '<=', $max ?? PHP_INT_MAX)
+            ->where(function ($q) use ($min) {
+                $q->whereNull('max_weight_grams')->orWhere('max_weight_grams', '>=', $min);
+            });
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'min_weight_grams' => 'This weight range overlaps with an existing rule.',
+            ]);
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -364,16 +446,16 @@ class FbnController extends Controller
             }
 
             $actions = '<div class="flex gap-1">'
-                . '<button class="btn btn-xs btn-ghost btn-edit-rule" data-rule=\'' . htmlspecialchars(json_encode($row), ENT_QUOTES) . '\'>Edit</button>'
-                . '<button class="btn btn-xs btn-danger btn-delete-rule" data-id="' . $row->id . '">Del</button>'
-                . '</div>';
+                .'<button class="btn btn-xs btn-ghost btn-edit-rule" data-rule=\''.htmlspecialchars(json_encode($row), ENT_QUOTES).'\'>Edit</button>'
+                .'<button class="btn btn-xs btn-danger btn-delete-rule" data-id="'.$row->id.'">Del</button>'
+                .'</div>';
 
             return [
-                'listing_id' => '<span class="font-mono text-xs">' . substr($row->vendor_listing_id, 0, 8) . '…</span>',
+                'listing_id' => '<span class="font-mono text-xs">'.substr($row->vendor_listing_id, 0, 8).'…</span>',
                 'vendor' => e($row->vendor_name),
                 'product' => $product ? e($product->name_en) : '—',
                 'flags' => $flags ?: '<span class="text-gray-300">—</span>',
-                'weight' => $row->max_weight_kg ? $row->max_weight_kg . ' kg' : '—',
+                'weight' => $row->max_weight_kg ? $row->max_weight_kg.' kg' : '—',
                 'commission' => $row->commissionLabel(),
                 'extra_fee' => $row->extra_delivery_fee > 0 ? $row->extraFeeFormatted() : '—',
                 'actions' => $actions,

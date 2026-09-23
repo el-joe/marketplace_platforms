@@ -60,6 +60,7 @@ export default defineConfig({
                 'resources/js/admin/warehouses.js',
                 'resources/js/admin/warehouse-detail.js',
                 'resources/js/admin/warehouse-shipping-surcharges.js',
+                'resources/js/admin/storage-fee-free-period-rules.js',
                 'resources/js/admin/shipping-subsidies.js',
                 'resources/js/admin/support-tickets.js',
                 'resources/js/admin/analytics.js',

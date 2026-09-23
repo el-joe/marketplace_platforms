@@ -7402,6 +7402,18 @@ return [
         'generate_fees_desc' => 'This will calculate storage fees for all vendors with FBN inventory in platform warehouses. Existing records for the same month will be updated (not duplicated).',
         'queue_job' => 'Queue Job',
         'select_month' => 'Please select a month.',
+        // Free period rules
+        'free_period_rules_title' => 'Storage Fee Free Period Rules',
+        'free_period_rules_desc' => 'Configure how many days of storage are free before fees start accruing, based on chargeable (actual vs. volumetric) weight.',
+        'manage_free_period_rules' => 'Manage Free Period Rules',
+        'add_rule' => 'Add Rule',
+        'min_weight_grams' => 'Min Weight (g)',
+        'max_weight_grams' => 'Max Weight (g)',
+        'open_ended' => 'Open-ended (no max)',
+        'free_days' => 'Free Days',
+        'rule_saved' => 'Rule saved.',
+        'rule_deleted' => 'Rule deleted.',
+        'delete_rule_confirm' => 'Delete this free period rule?',
     ],
 
     // ─── Radio ───────────────────────────────────────────────────────────────

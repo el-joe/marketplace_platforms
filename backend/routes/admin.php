@@ -1517,6 +1517,14 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/datatable', [FbnController::class, 'storageFeesDatatable'])->name('datatable');
             Route::post('/generate', [FbnController::class, 'generateMonthlyFees'])->name('generate');
             Route::post('/{fee}/status', [FbnController::class, 'updateStorageFeeStatus'])->name('status');
+
+            // Free-period rules (min/max weight -> free storage days)
+            Route::prefix('free-period-rules')->name('free-period-rules.')->group(function () {
+                Route::get('/', [FbnController::class, 'freePeriodRulesIndex'])->name('index');
+                Route::post('/', [FbnController::class, 'storeFreePeriodRule'])->name('store');
+                Route::put('/{freePeriodRule}', [FbnController::class, 'updateFreePeriodRule'])->name('update');
+                Route::delete('/{freePeriodRule}', [FbnController::class, 'destroyFreePeriodRule'])->name('destroy');
+            });
         });
 
         // Marketplace shipping rules
