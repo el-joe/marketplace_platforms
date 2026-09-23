@@ -23,7 +23,7 @@ class BookableUnitAvailabilityController extends Controller
      */
     public function calendar(Request $request, string $unit): JsonResponse
     {
-        $bookableUnit = BookableUnit::find($unit);
+        $bookableUnit = BookableUnit::where('status', 'active')->find($unit);
 
         if (! $bookableUnit) {
             return ApiResponse::error(__('common.exceptions.listing.not_found'), [], 404);
@@ -55,7 +55,7 @@ class BookableUnitAvailabilityController extends Controller
      */
     public function reserve(CreateReservationRequest $request, string $unit): JsonResponse
     {
-        $bookableUnit = BookableUnit::find($unit);
+        $bookableUnit = BookableUnit::where('status', 'active')->find($unit);
 
         if (! $bookableUnit) {
             return ApiResponse::error(__('common.exceptions.listing.not_found'), [], 404);

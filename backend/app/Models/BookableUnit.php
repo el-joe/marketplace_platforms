@@ -14,15 +14,20 @@ class BookableUnit extends Model
     protected $fillable = [
         'travel_agency_id',
         'name',
+        'name_ar',
         'type',
         'capacity',
         'description',
+        'status',
+        'approved_by_admin_id',
+        'approved_at',
     ];
 
     protected function casts(): array
     {
         return [
             'capacity' => 'integer',
+            'approved_at' => 'datetime',
         ];
     }
 

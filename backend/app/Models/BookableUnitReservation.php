@@ -11,7 +11,17 @@ class BookableUnitReservation extends Model
 {
     use HasUuids;
 
+    protected static function booted(): void
+    {
+        static::creating(fn ($r) => $r->reservation_number ??= 'BU-'.strtoupper(\Illuminate\Support\Str::random(8)));
+    }
+
     protected $fillable = [
+        'reservation_number',
+        'currency',
+        'customer_notes',
+        'confirmed_by_admin_id',
+        'confirmed_at',
         'bookable_unit_id',
         'customer_id',
         'date_from',

@@ -94,6 +94,7 @@ use App\Http\Controllers\Admin\SystemToolsController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\TravelAgencyChangeRequestController;
 use App\Http\Controllers\Admin\TravelAgencyController;
+use App\Http\Controllers\Admin\BookableUnitController as AdminBookableUnitController;
 use App\Http\Controllers\Admin\TravelBookingController;
 use App\Http\Controllers\Admin\TravelCategoryController;
 use App\Http\Controllers\Admin\TravelCityController;
@@ -1692,6 +1693,12 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
                     ->name('reject')
                     ->middleware('admin.permission:travel_agency_change_requests.approve');
             });
+
+        Route::prefix('bookable-units')->name('bookable-units.')->group(function () {
+            Route::get('/', [AdminBookableUnitController::class, 'index'])->name('index');
+            Route::get('/{bookableUnit}', [AdminBookableUnitController::class, 'show'])->name('show');
+            Route::post('/{bookableUnit}/approve', [AdminBookableUnitController::class, 'approve'])->name('approve');
+        });
 
         Route::prefix('packages')->name('packages.')->group(function () {
             Route::get('/', [TravelPackageController::class, 'index'])->name('index');
