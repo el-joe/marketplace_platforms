@@ -194,6 +194,15 @@
                 {{ __('travel.nav.packages') }}
             </a>
 
+            <a href="{{ route('travel-agency.bookable-units.index') }}"
+                class="{{ request()->routeIs('travel-agency.bookable-units.*') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path stroke-linecap="round" d="M3 9h18M8 3v3M16 3v3" />
+                </svg>
+                {{ __('travel.bookable_units.title') }}
+            </a>
+
             <a href="{{ route('travel-agency.bookings.index') }}"
                 class="{{ request()->routeIs('travel-agency.bookings.*') ? 'active' : '' }}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TravelAgencyPortal\AuthController;
 use App\Http\Controllers\TravelAgencyPortal\BankAccountController;
+use App\Http\Controllers\TravelAgencyPortal\BookableUnitController;
 use App\Http\Controllers\TravelAgencyPortal\BookingController;
 use App\Http\Controllers\TravelAgencyPortal\CampaignController;
 use App\Http\Controllers\TravelAgencyPortal\ChangeRequestController;
@@ -15,22 +17,25 @@ use App\Http\Controllers\TravelAgencyPortal\ReportController;
 use App\Http\Controllers\TravelAgencyPortal\RoleController;
 use App\Http\Controllers\TravelAgencyPortal\SupportController;
 use App\Http\Controllers\TravelAgencyPortal\TeamController;
-use App\Http\Controllers\NotificationController;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 // ── Locale switcher (travel-agency subdomain) ─────────────────────────────
 Route::middleware('web')
-    ->post('/locale/switch', function (\Illuminate\Http\Request $request) {
+    ->post('/locale/switch', function (Request $request) {
         $locale = $request->input('locale');
         abort_unless(in_array($locale, config('app.available_locales', ['ar', 'en'])), 422);
         $request->session()->put([
-            'locale'          => $locale,
+            'locale' => $locale,
             'locale_override' => $locale,
-            'dir'             => $locale === 'ar' ? 'rtl' : 'ltr',
+            'dir' => $locale === 'ar' ? 'rtl' : 'ltr',
         ]);
-        \Carbon\Carbon::setLocale($locale);
-        \Illuminate\Support\Facades\App::setLocale($locale);
+        Carbon::setLocale($locale);
+        App::setLocale($locale);
+
         return back();
     })->name('travel-agency.locale.switch');
 
@@ -52,11 +57,11 @@ Route::name('travel-agency.')
             Route::prefix('notifications')->name('notifications.')
                 ->controller(NotificationController::class)
                 ->group(function () {
-                    Route::get('/',              'index')->name('index');
-                    Route::get('/recent',        'recent')->name('recent');
-                    Route::get('/unread-count',  'unreadCount')->name('unread-count');
-                    Route::post('/mark-all-read','markAllRead')->name('mark-all-read');
-                    Route::post('/{id}/read',    'markRead')->name('mark-read');
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/recent', 'recent')->name('recent');
+                    Route::get('/unread-count', 'unreadCount')->name('unread-count');
+                    Route::post('/mark-all-read', 'markAllRead')->name('mark-all-read');
+                    Route::post('/{id}/read', 'markRead')->name('mark-read');
                 });
 
             // Dashboard
@@ -78,6 +83,24 @@ Route::name('travel-agency.')
                 Route::get('/{package}/contract', [PackageController::class, 'downloadContract'])->name('contract.download')->middleware('travel_agency.can:packages.view');
             });
 
+            // Bookable units (daily calendar bookings: chalets/hotel rooms) —
+            // entirely separate from Packages above (fixed-date travel packages).
+            Route::prefix('bookable-units')->name('bookable-units.')->group(function () {
+                Route::get('/', [BookableUnitController::class, 'index'])->name('index');
+                Route::get('/create', [BookableUnitController::class, 'create'])->name('create');
+                Route::post('/', [BookableUnitController::class, 'store'])->name('store');
+                Route::get('/{bookableUnit}', [BookableUnitController::class, 'show'])->name('show');
+                Route::get('/{bookableUnit}/edit', [BookableUnitController::class, 'edit'])->name('edit');
+                Route::put('/{bookableUnit}', [BookableUnitController::class, 'update'])->name('update');
+                Route::delete('/{bookableUnit}', [BookableUnitController::class, 'destroy'])->name('destroy');
+
+                Route::post('/{bookableUnit}/availability', [BookableUnitController::class, 'upsertAvailability'])->name('availability.upsert');
+                Route::post('/{bookableUnit}/availability/bulk', [BookableUnitController::class, 'bulkUpsertAvailability'])->name('availability.bulk-upsert');
+
+                Route::post('/{bookableUnit}/time-slots', [BookableUnitController::class, 'storeTimeSlot'])->name('time-slots.store');
+                Route::delete('/{bookableUnit}/time-slots/{timeSlot}', [BookableUnitController::class, 'destroyTimeSlot'])->name('time-slots.destroy');
+            });
+
             // Bookings
             Route::prefix('bookings')->name('bookings.')->group(function () {
                 Route::get('/', [BookingController::class, 'index'])->name('index')->middleware('travel_agency.can:bookings.view');
@@ -93,18 +116,18 @@ Route::name('travel-agency.')
 
             // Campaign Offers
             Route::prefix('campaigns')->name('campaigns.')->group(function () {
-                Route::get('/',                                   [CampaignController::class, 'index'])->name('index')->middleware('travel_agency.can:campaigns.view');
-                Route::get('/export',                              [CampaignController::class, 'export'])->name('export')->middleware('travel_agency.can:campaigns.view');
-                Route::get('/create',                              [CampaignController::class, 'create'])->name('create')->middleware('travel_agency.can:campaigns.create');
-                Route::post('/',                                   [CampaignController::class, 'store'])->name('store')->middleware('travel_agency.can:campaigns.create');
-                Route::get('/packages/search',                     [CampaignController::class, 'searchPackages'])->name('packages.search')->middleware('travel_agency.can:campaigns.create');
-                Route::get('/{offer}',                             [CampaignController::class, 'show'])->name('show')->middleware('travel_agency.can:campaigns.view');
-                Route::post('/{offer}/submit',                     [CampaignController::class, 'submitForReview'])->name('submit')->middleware('travel_agency.can:campaigns.edit');
-                Route::post('/{offer}/pause',                      [CampaignController::class, 'pauseOffer'])->name('pause')->middleware('travel_agency.can:campaigns.manage');
-                Route::post('/{offer}/resume',                     [CampaignController::class, 'resumeOffer'])->name('resume')->middleware('travel_agency.can:campaigns.manage');
-                Route::delete('/{offer}',                          [CampaignController::class, 'destroy'])->name('destroy')->middleware('travel_agency.can:campaigns.manage');
-                Route::post('/{offer}/invite',                     [CampaignController::class, 'invite'])->name('invite')->middleware('travel_agency.can:campaigns.manage');
-                Route::delete('/invitations/{invitation}/revoke',  [CampaignController::class, 'revokeInvitation'])->name('invitations.revoke')->middleware('travel_agency.can:campaigns.manage');
+                Route::get('/', [CampaignController::class, 'index'])->name('index')->middleware('travel_agency.can:campaigns.view');
+                Route::get('/export', [CampaignController::class, 'export'])->name('export')->middleware('travel_agency.can:campaigns.view');
+                Route::get('/create', [CampaignController::class, 'create'])->name('create')->middleware('travel_agency.can:campaigns.create');
+                Route::post('/', [CampaignController::class, 'store'])->name('store')->middleware('travel_agency.can:campaigns.create');
+                Route::get('/packages/search', [CampaignController::class, 'searchPackages'])->name('packages.search')->middleware('travel_agency.can:campaigns.create');
+                Route::get('/{offer}', [CampaignController::class, 'show'])->name('show')->middleware('travel_agency.can:campaigns.view');
+                Route::post('/{offer}/submit', [CampaignController::class, 'submitForReview'])->name('submit')->middleware('travel_agency.can:campaigns.edit');
+                Route::post('/{offer}/pause', [CampaignController::class, 'pauseOffer'])->name('pause')->middleware('travel_agency.can:campaigns.manage');
+                Route::post('/{offer}/resume', [CampaignController::class, 'resumeOffer'])->name('resume')->middleware('travel_agency.can:campaigns.manage');
+                Route::delete('/{offer}', [CampaignController::class, 'destroy'])->name('destroy')->middleware('travel_agency.can:campaigns.manage');
+                Route::post('/{offer}/invite', [CampaignController::class, 'invite'])->name('invite')->middleware('travel_agency.can:campaigns.manage');
+                Route::delete('/invitations/{invitation}/revoke', [CampaignController::class, 'revokeInvitation'])->name('invitations.revoke')->middleware('travel_agency.can:campaigns.manage');
             });
 
             // Package Inquiries (lead management)

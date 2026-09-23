@@ -193,6 +193,11 @@ class Customer extends Authenticatable implements JWTSubject
         return $this->hasMany(TravelBooking::class);
     }
 
+    public function bookableUnitReservations(): HasMany
+    {
+        return $this->hasMany(BookableUnitReservation::class);
+    }
+
     public function wallets(): HasMany
     {
         return $this->hasMany(Wallet::class, 'owner_id')->where('owner_type', WalletOwnerType::Customer);
@@ -241,8 +246,8 @@ class Customer extends Authenticatable implements JWTSubject
 
         $parts = preg_split('/\s+/', $name);
         $first = $parts[0];
-        $last  = count($parts) > 1 ? end($parts) : null;
+        $last = count($parts) > 1 ? end($parts) : null;
 
-        return trim($first . ' ' . ($last ? strtoupper(substr($last, 0, 1)) . '.' : ''));
+        return trim($first.' '.($last ? strtoupper(substr($last, 0, 1)).'.' : ''));
     }
 }

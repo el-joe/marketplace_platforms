@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\TravelAgencyAuthUser;
 use App\Enums\TravelAgencyStatus;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAuthUser
 {
-    use HasUuids, SoftDeletes, Notifiable, HasRoles;
+    use HasRoles, HasUuids, Notifiable, SoftDeletes;
 
     protected string $guard_name = 'travel_agency';
 
@@ -38,8 +39,8 @@ class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAu
     {
         return [
             'approved_at' => 'datetime',
-            'password'    => 'hashed',
-            'status'      => TravelAgencyStatus::class,
+            'password' => 'hashed',
+            'status' => TravelAgencyStatus::class,
         ];
     }
 
@@ -72,6 +73,11 @@ class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAu
         return $this->hasMany(TravelPackage::class);
     }
 
+    public function bookableUnits(): HasMany
+    {
+        return $this->hasMany(BookableUnit::class);
+    }
+
     public function travelAgencyMembers(): HasMany
     {
         return $this->hasMany(TravelAgencyMember::class);
@@ -87,7 +93,7 @@ class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAu
         return $this->members()->where('is_owner', 1)->first();
     }
 
-    public function activeMembers(): \Illuminate\Database\Eloquent\Collection
+    public function activeMembers(): Collection
     {
         return $this->members()->where('is_active', 1)->get();
     }
@@ -116,7 +122,7 @@ class TravelAgency extends Authenticatable implements JWTSubject, TravelAgencyAu
 
     public function logoUrl(): ?string
     {
-        return $this->logo_path ? asset('storage/' . $this->logo_path) : null;
+        return $this->logo_path ? asset('storage/'.$this->logo_path) : null;
     }
 
     public function isOwner(): bool
