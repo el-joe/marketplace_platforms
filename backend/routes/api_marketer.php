@@ -11,6 +11,13 @@ use App\Http\Controllers\Api\Marketer\InvitationController;
 use App\Http\Controllers\Api\Marketer\ListingController;
 use App\Http\Controllers\Api\Marketer\ProfileController;
 use App\Http\Controllers\Api\Marketer\ReportController;
+use App\Http\Controllers\Api\Marketer\NotificationController;
+use App\Http\Controllers\Api\Marketer\ClassifiedListingController;
+use App\Http\Controllers\Api\Marketer\ClassifiedInquiryController;
+use App\Http\Controllers\Api\Marketer\WantedListingController;
+use App\Http\Controllers\Api\Marketer\ExclusiveContractController;
+use App\Http\Controllers\Api\Marketer\CouponParticipationController;
+use App\Http\Controllers\Api\Marketer\ConversationController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (no guard) ───────────────────────────────────────────────────────
@@ -74,5 +81,45 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
         Route::post('{id}/pay',            [AdBookingController::class, 'pay'])->name('pay');
         Route::post('{id}/cancel',         [AdBookingController::class, 'cancel'])->name('cancel');
         Route::get('{id}/stats',           [AdBookingController::class, 'stats'])->name('stats');
+    });
+
+    Route::prefix('notifications')->name('marketer.api.notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllRead'])->name('mark-all-read');
+        Route::post('/{id}/read', [NotificationController::class, 'markRead'])->name('mark-read');
+    });
+    Route::prefix('classified-listings')->name('marketer.api.classified.')->group(function () {
+        Route::get('/', [ClassifiedListingController::class, 'index'])->name('index');
+        Route::post('/', [ClassifiedListingController::class, 'store'])->name('store');
+        Route::get('/{id}', [ClassifiedListingController::class, 'show'])->name('show');
+        Route::put('/{id}', [ClassifiedListingController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ClassifiedListingController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/toggle', [ClassifiedListingController::class, 'toggleStatus'])->name('toggle');
+    });
+    Route::prefix('classified-inquiries')->name('marketer.api.inquiries.')->group(function () {
+        Route::get('/', [ClassifiedInquiryController::class, 'index'])->name('index');
+        Route::get('/{id}', [ClassifiedInquiryController::class, 'show'])->name('show');
+        Route::patch('/{id}/close', [ClassifiedInquiryController::class, 'close'])->name('close');
+    });
+    Route::prefix('wanted-listings')->name('marketer.api.wanted.')->group(function () {
+        Route::get('/', [WantedListingController::class, 'index'])->name('index');
+        Route::post('/', [WantedListingController::class, 'store'])->name('store');
+        Route::delete('/{id}', [WantedListingController::class, 'destroy'])->name('destroy');
+    });
+    Route::prefix('exclusive-contracts')->name('marketer.api.contracts.')->group(function () {
+        Route::get('/', [ExclusiveContractController::class, 'index'])->name('index');
+        Route::get('/{id}', [ExclusiveContractController::class, 'show'])->name('show');
+    });
+    Route::prefix('coupon-participation')->name('marketer.api.coupon.')->group(function () {
+        Route::get('/', [CouponParticipationController::class, 'index'])->name('index');
+        Route::post('/{invitation}', [CouponParticipationController::class, 'store'])->name('store');
+    });
+    Route::prefix('conversations')->name('marketer.api.conversations.')->group(function () {
+        Route::get('/', [ConversationController::class, 'index'])->name('index');
+        Route::post('/', [ConversationController::class, 'store'])->name('store');
+        Route::get('/{id}', [ConversationController::class, 'show'])->name('show');
+        Route::post('/{id}/messages', [ConversationController::class, 'sendMessage'])->name('message');
+        Route::post('/{id}/messages/read', [ConversationController::class, 'markRead'])->name('read');
     });
 });
