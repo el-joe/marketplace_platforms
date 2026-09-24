@@ -22,7 +22,7 @@ const FacetFilter = ({ attribute }: FacetFilterProps) => {
   const searchParams = useSearchParams();
   const { setFilter } = useShopFilterParams();
 
-  const paramKey = attribute.code;
+  const paramKey = `attr.${attribute.code}`;
   const title = attribute.name[locale];
 
   if (attribute.type === "color") {
@@ -34,7 +34,7 @@ const FacetFilter = ({ attribute }: FacetFilterProps) => {
         ? [...selectedValues, value]
         : selectedValues.filter((v) => v !== value);
 
-      setFilter(attribute.code, nextValues.join(","));
+      setFilter(paramKey, nextValues.join(","));
     };
 
     return (
@@ -58,7 +58,7 @@ const FacetFilter = ({ attribute }: FacetFilterProps) => {
         ? [...selectedValues, value]
         : selectedValues.filter((v) => v !== value);
 
-      setFilter(attribute.code, nextValues.join(","));
+      setFilter(paramKey, nextValues.join(","));
     };
 
     return (
@@ -78,7 +78,7 @@ const FacetFilter = ({ attribute }: FacetFilterProps) => {
         id={`facet-${attribute.code}`}
         type={attribute.type}
         defaultValue={searchParams.get(paramKey) ?? ""}
-        onCommit={(value) => setFilter(attribute.code, value)}
+        onCommit={(value) => setFilter(paramKey, value)}
       />
     </FilterAccordionSection>
   );

@@ -149,7 +149,11 @@ class ListingQueryService
         }
         if (! empty($filters['attributes']) && is_array($filters['attributes'])) {
             foreach ($filters['attributes'] as $attrCode => $values) {
-                $values = (array) $values;
+                $values = is_array($values) ? $values : explode(',', (string) $values);
+                $values = array_values(array_filter(array_map('trim', $values), fn ($v) => $v !== ''));
+                if (! $values) {
+                    continue;
+                }
                 $builder->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))
                         ->from('product_variant_attributes as pva')
@@ -1064,7 +1068,11 @@ class ListingQueryService
         }
         if (! empty($filters['attributes']) && is_array($filters['attributes'])) {
             foreach ($filters['attributes'] as $attrCode => $values) {
-                $values = (array) $values;
+                $values = is_array($values) ? $values : explode(',', (string) $values);
+                $values = array_values(array_filter(array_map('trim', $values), fn ($v) => $v !== ''));
+                if (! $values) {
+                    continue;
+                }
                 $q->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))->from('product_variant_attributes as pva')
                         ->join('attributes as a', 'a.id', '=', 'pva.attribute_id')

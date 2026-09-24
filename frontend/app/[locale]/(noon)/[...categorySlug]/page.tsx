@@ -44,8 +44,19 @@ export default async function ShopPage({ params, searchParams }: Props) {
     const queryParams = new URLSearchParams();
     if (slug && !isSearch) queryParams.set("category", slug);
     Object.entries(sp).forEach(([key, value]) => {
-      if (value && !key.startsWith(`${FILTER_PREFIX}_`)) {
-        queryParams.set(key, value);
+      if (!value || key.startsWith(`${FILTER_PREFIX}_`)) return;
+      if (key.startsWith("attr.")) {
+        // Backend expects attributes[code][]=value
+        value
+          .split(",")
+          .filter(Boolean)
+          .forEach((v) =>
+            queryParams.append(`attributes[${key.slice(5)}][]`, v),
+          );
+      } else {
+        const apiKey =
+          key === "min_price" ? "price_min" : key === "max_price" ? "price_max" : key;
+        queryParams.set(apiKey, value);
       }
     });
 

@@ -11,6 +11,22 @@ class ProductListRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $attrs = $this->input('attributes');
+        if (is_array($attrs)) {
+            $out = [];
+            foreach ($attrs as $code => $vals) {
+                $list = is_array($vals) ? $vals : explode(',', (string) $vals);
+                $list = array_values(array_filter(array_map(fn ($v) => trim((string) $v), $list), fn ($v) => $v !== ''));
+                if ($list) {
+                    $out[$code] = $list;
+                }
+            }
+            $this->merge(['attributes' => $out]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -26,7 +42,8 @@ class ProductListRequest extends FormRequest
             'page'              => ['nullable', 'integer', 'min:1'],
             'per_page'          => ['nullable', 'integer', 'min:1', 'max:100'],
             'attributes'        => ['nullable', 'array'],
-            'attributes.*'      => ['array'],
+            'attributes.*'      => ['nullable'],
+            'attributes.*.*'    => ['string', 'max:255'],
         ];
     }
 }
