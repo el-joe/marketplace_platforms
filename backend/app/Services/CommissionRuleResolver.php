@@ -34,7 +34,9 @@ class CommissionRuleResolver
                     return $rows->get($id);
                 }
             }
-            if ($rows->has('_default')) {
+            // A default rule with "all except" categories is skipped for those
+            // categories, falling through to the next owner (e.g. platform).
+            if ($rows->has('_default') && ! $rows->get('_default')->excludes($ids)) {
                 return $rows->get('_default');
             }
         }

@@ -10878,6 +10878,8 @@ return [
     'marketer_commission_type_products' => 'المنتجات',
     'marketer_commission_type_open_market' => 'السوق المفتوح',
     'marketer_commission_type_travel' => 'السفر',
+    'marketer_commission_except' => 'كل الأقسام ما عدا',
+    'marketer_commission_except_hint' => 'اتركه فارغاً لتطبيقه على كل الأقسام.',
     'marketer_commission_default_all' => 'افتراضي (كل الأقسام)',
     'marketer_commission_default_all_type' => 'افتراضي (كل أقسام هذا النوع)',
     'commission_mode' => 'نوع العمولة',

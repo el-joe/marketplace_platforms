@@ -19,7 +19,7 @@ class MarketerCommissionRule extends Model
     protected $fillable = [
         'marketer_id', 'scope', 'category_type', 'category_id',
         'commission_mode', 'commission_rate', 'commission_flat_amount', 'updated_by_admin_id',
-        'rule_key',
+        'rule_key', 'excluded_category_ids',
     ];
 
     protected static function booted(): void
@@ -40,6 +40,7 @@ class MarketerCommissionRule extends Model
     protected $casts = [
         'commission_rate' => 'decimal:2',
         'commission_flat_amount' => 'integer',
+        'excluded_category_ids' => 'array',
     ];
 
     /** Category model class for a scope. */
@@ -50,6 +51,14 @@ class MarketerCommissionRule extends Model
             self::SCOPE_TRAVEL => TravelCategory::class,
             default => Category::class,
         };
+    }
+
+    /** True when a scope-default rule is configured to skip any of these category ids (category + ancestors). */
+    public function excludes(array $categoryChain): bool
+    {
+        return $this->category_id === null
+            && ! empty($this->excluded_category_ids)
+            && array_intersect($this->excluded_category_ids, $categoryChain) !== [];
     }
 
     public function marketer(): BelongsTo

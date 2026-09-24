@@ -10921,6 +10921,8 @@ return [
     'marketer_commission_type_products' => 'Products',
     'marketer_commission_type_open_market' => 'Open market (classified)',
     'marketer_commission_type_travel' => 'Travel',
+    'marketer_commission_except' => 'Except categories',
+    'marketer_commission_except_hint' => 'Leave empty to apply to all categories.',
     'marketer_commission_default_all' => 'Default (all categories)',
     'marketer_commission_default_all_type' => 'Default (all categories of this type)',
     'commission_mode' => 'Commission Mode',

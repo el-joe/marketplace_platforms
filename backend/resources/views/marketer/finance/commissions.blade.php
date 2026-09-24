@@ -11,7 +11,7 @@
         <ul class="text-sm divide-y">
             @foreach($commissionRules as $r)
             <li class="py-2 flex justify-between gap-3">
-                <span>{{ __('marketer.commission_scope_' . $r['scope']) }} — {{ $r['category']['name'] ?? __('marketer.commission_default') }}</span>
+                <span>{{ __('marketer.commission_scope_' . $r['scope']) }} — {{ $r['category']['name'] ?? __('marketer.commission_default') }}@if(empty($r['category']) && !empty($r['excluded_categories'])) <span class="text-xs text-red-500">({{ __('admin.marketer_commission_except') }}: {{ collect($r['excluded_categories'])->pluck('name')->implode('، ') }})</span>@endif</span>
                 <span class="font-semibold">{{ collect([
                     in_array($r['commission_mode'], ['percentage','both']) ? rtrim(rtrim($r['commission_rate'],'0'),'.').'%' : null,
                     in_array($r['commission_mode'], ['fixed','both']) ? number_format($r['commission_flat_amount']).' '.$r['currency'] : null,

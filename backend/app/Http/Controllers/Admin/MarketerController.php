@@ -269,6 +269,8 @@ class MarketerController extends Controller
         $validated = $request->validate([
             'scope' => ['nullable', 'in:products,open_market,travel'],
             'category_id' => ['nullable', 'uuid'],
+            'excluded_category_ids' => ['nullable', 'array'],
+            'excluded_category_ids.*' => ['uuid'],
             'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'commission_flat_amount' => ['nullable', 'integer', 'min:0'],
         ]);
@@ -294,10 +296,16 @@ class MarketerController extends Controller
             throw \Illuminate\Validation\ValidationException::withMessages(['category_id' => __('validation.exists', ['attribute' => 'category_id'])]);
         }
 
+        // "All categories except ..." only makes sense on the scope default.
+        $excluded = $categoryId ? [] : array_values(array_unique($validated['excluded_category_ids'] ?? []));
+        if ($excluded && $catClass::whereKey($excluded)->count() !== count($excluded)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['excluded_category_ids' => __('validation.exists', ['attribute' => 'excluded_category_ids'])]);
+        }
+
         $ruleQuery = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', $scope)
             ->when($categoryId, fn ($q) => $q->where('category_type', $catClass)->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'));
         $rule = $ruleQuery->first();
-        $ruleData = $payload + ['updated_by_admin_id' => auth('admin')->id()];
+        $ruleData = $payload + ['updated_by_admin_id' => auth('admin')->id(), 'excluded_category_ids' => $excluded ?: null];
         if ($rule) {
             $rule->update($ruleData);
         } else {
@@ -313,7 +321,7 @@ class MarketerController extends Controller
         if ($scope === 'open_market') {
             \App\Models\OpenMarketCategoryCommission::updateOrCreate(
                 ['marketer_id' => $marketer->id, 'classified_category_id' => $categoryId],
-                $ruleData
+                $payload + ['updated_by_admin_id' => auth('admin')->id()]
             );
 
             return back()->with('success', 'تم حفظ نسبة العمولة.');

@@ -92,4 +92,16 @@ class CommissionRuleResolverTest extends TestCase
         $this->assertSame(15, $rules->first()->resolveAmount(100));
         $this->assertSame('products', $rules->first()->scope);
     }
+
+    public function test_default_rule_skips_excluded_categories(): void
+    {
+        $m = $this->marketer();
+        $a = Category::factory()->create();
+        $b = Category::factory()->create();
+        $this->rule(['marketer_id' => $m->id, 'scope' => 'products', 'commission_rate' => 10, 'excluded_category_ids' => [$a->id]]);
+
+        $r = new CommissionRuleResolver();
+        $this->assertNull($r->resolve($m->id, 'products', $a));
+        $this->assertNotNull($r->resolve($m->id, 'products', $b));
+    }
 }

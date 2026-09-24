@@ -379,6 +379,9 @@
                     <td class="px-6 py-3 font-medium">
                         <span class="text-xs text-gray-500">{{ __('admin.marketer_commission_type_'.$cc->scope) }}</span>
                         · {{ $cc->category ? ($cc->category->name_ar ?: $cc->category->name_en) : __('admin.marketer_commission_default_all') }}
+                        @if(! $cc->category && $cc->excluded_category_ids)
+                        <div class="text-xs text-red-500 font-normal">{{ __('admin.marketer_commission_except') }}: {{ ($commissionCategories[$cc->scope] ?? collect())->whereIn('id', $cc->excluded_category_ids)->map(fn ($x) => $x->name_ar ?: $x->name_en)->implode('، ') }}</div>
+                        @endif
                     </td>
                     <td class="px-6 py-3 text-center">
                         <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">{{ collect([
@@ -402,7 +405,7 @@
         </table>
         </div>
         <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3"
-              x-data='{ scope: "products", cats: @json($commissionCategories->map(fn ($c) => $c->map(fn ($x) => ["id" => $x->id, "name" => $x->name_ar ?: $x->name_en])->values())) }'>
+              x-data='{ scope: "products", category: "", cats: @json($commissionCategories->map(fn ($c) => $c->map(fn ($x) => ["id" => $x->id, "name" => $x->name_ar ?: $x->name_en])->values())) }'>
             @csrf
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_type') }}</label>
@@ -414,10 +417,17 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
-                <select name="category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
+                <select name="category_id" x-model="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
                     <option value="">{{ __('admin.marketer_commission_default_all_type') }}</option>
                     <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
                 </select>
+            </div>
+            <div x-show="category === ''" x-cloak x-effect="scope; $refs.excl && Array.from($refs.excl.options).forEach(o => o.selected = false)">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_except') }}</label>
+                <select name="excluded_category_ids[]" x-ref="excl" multiple size="4" :disabled="category !== ''" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[200px]">
+                    <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
+                </select>
+                <p class="text-[11px] text-gray-400 mt-1">{{ __('admin.marketer_commission_except_hint') }}</p>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">نسبة العمولة %</label>

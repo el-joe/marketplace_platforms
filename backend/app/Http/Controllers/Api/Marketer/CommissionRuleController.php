@@ -30,6 +30,10 @@ class CommissionRuleController extends Controller
                     'id' => $r->category->getKey(),
                     'name' => $r->category->name ?? $r->category->name_en ?? null,
                 ] : null,
+                'excluded_categories' => $r->category_id === null && $r->excluded_category_ids
+                    ? $r->categoryClassFor($r->scope)::whereIn('id', $r->excluded_category_ids)->get()
+                        ->map(fn ($c) => ['id' => $c->getKey(), 'name' => $c->name ?? $c->name_en ?? null])->values()->all()
+                    : [],
                 'commission_mode' => $r->commission_mode,
                 'commission_rate' => $r->commission_rate,
                 'commission_flat_amount' => $r->commission_flat_amount,
