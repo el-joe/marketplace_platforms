@@ -51,5 +51,6 @@ class RebuildBuyBoxOnStockChange
         }
 
         $this->rebuilder->rebuildProducts([$productId], $country);
+        \App\Support\ListingCacheVersion::bump();
     }
 }

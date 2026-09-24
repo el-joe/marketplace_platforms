@@ -22,6 +22,7 @@ class AdminListingObserver
     public function created(AdminListing $listing): void
     {
         $this->cachedListingResolver->bustAdminListing($listing);
+        $this->pageCache->bustAdminListing($listing);
         $this->rebuildBuyBox($listing);
     }
 

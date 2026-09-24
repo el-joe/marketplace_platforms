@@ -28,6 +28,7 @@ class VendorListingObserver
         ));
 
         $this->cachedListingResolver->bustVendorListing($listing);
+        $this->pageCache->bustVendorListing($listing);
         $this->rebuildBuyBox($listing);
         $this->lockFirstPrice($listing);
     }

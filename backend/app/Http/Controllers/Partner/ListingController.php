@@ -957,6 +957,10 @@ class ListingController extends Controller
                 ]);
             }
         });
+        // Inventory is created after the listing row (so the observer's buy-box
+        // rebuild saw stock 0); re-sync buy-box total_stock, status and caches now.
+        event(new \App\Events\ListingStockChanged($listing->id, null));
+
         // } catch (\Throwable $e) {
         //     Log::error('ListingController::store failed', ['error' => $e->getMessage()]);
         //     return response()->json(['success' => false, 'message' => 'حدث خطأ أثناء إنشاء القائمة. يرجى المحاولة مرة أخرى.'], 500);

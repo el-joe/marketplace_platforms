@@ -16,7 +16,7 @@ class SellerController extends Controller
 {
     public function show(Request $request, string $sellerId): JsonResponse
     {
-        $cacheKey = "public_seller_profile:{$sellerId}";
+        $cacheKey = "public_seller_profile:v".\App\Support\ListingCacheVersion::current().":{$sellerId}";
 
         $payload = Cache::remember($cacheKey, 300, fn () => $this->buildPayload($sellerId));
 

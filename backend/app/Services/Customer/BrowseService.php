@@ -162,7 +162,7 @@ class BrowseService
         $chain = $this->buildAncestorChain($category);
 
         foreach ($chain as $node) {
-            $cacheKey = "browse_page_blocks:{$pageType}:{$country->id}:{$node->id}";
+            $cacheKey = \App\Services\Shared\PageCacheService::browseKey($pageType, $country->id, $node->id);
 
             $cached = SafeCache::tags(['pages'])->remember($cacheKey, 300, function () use ($pageType, $node, $country) {
                 $page = Page::where('page_type', $pageType)

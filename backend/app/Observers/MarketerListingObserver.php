@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Country;
 use App\Models\MarketerListing;
 use App\Services\Customer\BuyBoxRebuildService;
+use App\Support\ListingCacheVersion;
 
 /**
  * enhancement.md P-19 task 2: marketer listings are the lowest-priority
@@ -20,18 +21,21 @@ class MarketerListingObserver
 
     public function created(MarketerListing $listing): void
     {
+        ListingCacheVersion::bump();
         $this->rebuildBuyBox($listing);
     }
 
     public function updated(MarketerListing $listing): void
     {
         if ($listing->wasChanged(['status', 'price', 'compare_at_price', 'score', 'rating_avg', 'rating_count'])) {
+            ListingCacheVersion::bump();
             $this->rebuildBuyBox($listing);
         }
     }
 
     public function deleted(MarketerListing $listing): void
     {
+        ListingCacheVersion::bump();
         $this->rebuildBuyBox($listing);
     }
 

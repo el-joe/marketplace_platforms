@@ -7,6 +7,7 @@ use App\Models\Country;
 use App\Models\Page;
 use App\Models\PageBlock;
 use App\Models\VendorListing;
+use App\Support\ListingCacheVersion;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -20,6 +21,29 @@ use Illuminate\Support\Facades\Cache;
  */
 class PageCacheService
 {
+    // ── Versioned keys (version bumps on any listing add/edit/delete) ─────────
+
+    public static function blockKey(string $blockId, string $countryId): string
+    {
+        return "page_block:v" . ListingCacheVersion::current() . ":{$blockId}:{$countryId}";
+    }
+
+    public static function appConfigKey(string $countryId): string
+    {
+        return "app_config_v" . ListingCacheVersion::current() . "_{$countryId}";
+    }
+
+    public static function browseKey(string $pageType, string $countryId, string $nodeId): string
+    {
+        return "browse_page_blocks:v" . ListingCacheVersion::current() . ":{$pageType}:{$countryId}:{$nodeId}";
+    }
+
+    /** Invalidate every listing-derived storefront cache at once. */
+    public function bustAllListingCaches(): void
+    {
+        ListingCacheVersion::bump();
+    }
+
     // ── Single block ──────────────────────────────────────────────────────────
 
     public function bustBlock(PageBlock $block): void
@@ -27,10 +51,10 @@ class PageCacheService
         $countryId = $block->page?->country_id;
 
         if ($countryId) {
-            Cache::forget("page_block:{$block->id}:{$countryId}");
+            Cache::forget(self::blockKey($block->id, $countryId));
         } else {
             Country::where('is_active', true)->pluck('id')
-                ->each(fn ($cid) => Cache::forget("page_block:{$block->id}:{$cid}"));
+                ->each(fn ($cid) => Cache::forget(self::blockKey($block->id, $cid)));
         }
 
         if ($block->page) {
@@ -46,16 +70,16 @@ class PageCacheService
 
         $page->blocks()->pluck('id')->each(function ($blockId) use ($countryId) {
             if ($countryId) {
-                Cache::forget("page_block:{$blockId}:{$countryId}");
+                Cache::forget(self::blockKey($blockId, $countryId));
             }
         });
 
         if ($countryId) {
-            Cache::forget("app_config_{$countryId}");
+            Cache::forget(self::appConfigKey($countryId));
         }
 
         if ($page->page_type !== 'home' && $page->reference_id && $countryId) {
-            Cache::forget("browse_page_blocks:{$page->page_type}:{$countryId}:{$page->reference_id}");
+            Cache::forget(self::browseKey($page->page_type, $countryId, $page->reference_id));
         }
 
         $this->bustSkeleton($page);
@@ -104,6 +128,7 @@ class PageCacheService
     {
         // Buy-box resolution
         app(\App\Services\CachedListingResolver::class)->bustVendorListing($listing);
+        $this->bustAllListingCaches();
 
         // PDP delivery options — all zones, same product+country
         $this->bustProductDeliveryOptions($listing->productVariant?->product_id, $listing->country_id);
@@ -118,6 +143,7 @@ class PageCacheService
     public function bustAdminListing(AdminListing $listing): void
     {
         app(\App\Services\CachedListingResolver::class)->bustAdminListing($listing);
+        $this->bustAllListingCaches();
 
         $this->bustProductDeliveryOptions($listing->productVariant?->product_id, $listing->country_id);
 
@@ -176,13 +202,13 @@ class PageCacheService
 
     public function bustAllForCountry(string $countryId): void
     {
-        Cache::forget("app_config_{$countryId}");
+        Cache::forget(self::appConfigKey($countryId));
         Cache::forget("nav_tree:{$countryId}");
         Cache::forget("cart_recs:best_sellers:{$countryId}:*"); // pattern — may not work on DB driver
 
         PageBlock::whereHas('page', fn ($q) => $q->where('country_id', $countryId))
             ->pluck('id')
-            ->each(fn ($id) => Cache::forget("page_block:{$id}:{$countryId}"));
+            ->each(fn ($id) => Cache::forget(self::blockKey($id, $countryId)));
 
         // Increment category version to invalidate category_tree and unified_nav
         \App\Services\Customer\CategoryService::flushCache();
@@ -196,6 +222,6 @@ class PageCacheService
         // Bust deal_of_day / product_row blocks that reference this listing by config key
         PageBlock::whereRaw("JSON_UNQUOTE(JSON_EXTRACT(config, '$.{$configKey}')) = ?", [$listingId])
             ->get()
-            ->each(fn (PageBlock $block) => Cache::forget("page_block:{$block->id}:{$countryId}"));
+            ->each(fn (PageBlock $block) => Cache::forget(self::blockKey($block->id, $countryId)));
     }
 }

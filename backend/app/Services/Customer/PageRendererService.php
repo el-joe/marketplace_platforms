@@ -286,7 +286,7 @@ class PageRendererService
         $ttl = max(1, (int) $block->cache_ttl_seconds);
 
         return SafeCache::remember(
-            "page_block:{$block->id}:{$country->id}",
+            \App\Services\Shared\PageCacheService::blockKey($block->id, $country->id),
             $ttl,
             fn() => $this->hydrateBlock($block, $country, $customer),
         );

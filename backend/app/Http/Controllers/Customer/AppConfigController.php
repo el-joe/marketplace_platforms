@@ -29,7 +29,7 @@ class AppConfigController extends Controller
 
         $countryId = $validated['country_id'];
 
-        $data = SafeCache::remember("app_config_{$countryId}", 300, function () use ($countryId) {
+        $data = SafeCache::remember(\App\Services\Shared\PageCacheService::appConfigKey($countryId), 300, function () use ($countryId) {
             $contextCountries = AppContextCountry::query()
                 ->where('country_id', $countryId)
                 ->where('is_active', true)
