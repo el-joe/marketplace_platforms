@@ -41,11 +41,22 @@ export const ProductsSlider = ({ data }: { data: Block }) => {
       <Swiper
         modules={isMultiRow ? [Navigation, Grid] : [Navigation]}
         navigation
-        slidesPerView={"auto"}
+        slidesPerView={Number(data.config.items_per_row) / 2.6 || 8}
         spaceBetween={isSpecial ? 12 : 8}
         {...(isMultiRow
           ? { grid: { rows: rowsCount, fill: "row" as const } }
           : {})}
+        breakpoints={{
+          520: {
+            slidesPerView: Number(data?.config?.items_per_row) / 2 || "auto",
+          },
+          768: {
+            slidesPerView: Number(data?.config?.items_per_row) / 1.3 || "auto",
+          },
+          1024: {
+            slidesPerView: Number(data?.config?.items_per_row) || "auto",
+          },
+        }}
         // breakpoints={
         //   isSpecial
         //     ? {
@@ -63,14 +74,19 @@ export const ProductsSlider = ({ data }: { data: Block }) => {
         {chunksRows?.map((row, i) => (
           <SwiperSlide
             key={i}
-            className={"h-auto! flex! flex-col! w-fit! gap-4"}
+            // className={"h-auto! flex! flex-col! w-fit! gap-4"}
+            className={"h-auto! flex! flex-col! gap-4"}
           >
             {row.map((product) =>
               isSpecial ? (
                 <SpotlightCard data={product} key={product.listing_id} />
               ) : (
                 // <SpecialProductCard productData={product} />
-                <ProductCard productData={product} key={product.listing_id} />
+                <ProductCard
+                  productData={product}
+                  key={product.listing_id}
+                  className="w-auto!"
+                />
               ),
             )}
           </SwiperSlide>
