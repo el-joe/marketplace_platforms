@@ -29,7 +29,8 @@ class FlashSaleItemResource extends JsonResource
             'id' => $this->id,
             'product' => [
                 'id' => $product?->id,
-                'name' => $product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null],
+                'name' => $variant ? $variant->displayNamePair() : ($product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null]),
+                'product_name' => $product ? Bilingual::pair($product, 'name') : ['ar' => null, 'en' => null],
                 'slug' => $product?->slug,
                 'image' => $imageUrl,
             ],
