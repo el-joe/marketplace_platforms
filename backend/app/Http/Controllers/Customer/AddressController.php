@@ -44,9 +44,15 @@ class AddressController extends Controller
             $customer->addresses()->where('is_default', true)->update(['is_default' => false]);
         }
 
-        $address = $customer->addresses()->create(array_merge($data, [
-            'country_id' => $request->attributes->get('country')?->id ?? $customer->country_id,
-        ]));
+        $location = $this->addressService->resolveLocation(
+            $data['country_code'] ?? null,
+            $data['city_name'] ?? null,
+            $request->attributes->get('country')?->id ?? $customer->country_id,
+            $data['city_id'] ?? null,
+        );
+        unset($data['country_code'], $data['city_name']);
+
+        $address = $customer->addresses()->create(array_merge($data, $location));
 
         $this->receiverService->findOrCreateForNameAndPhone(
             $customer,
@@ -65,6 +71,16 @@ class AddressController extends Controller
             $this->addressService->setDefault(auth('customer')->user(), $address);
             unset($data['is_default']);
         }
+
+        if (!empty($data['country_code']) || !empty($data['city_name'])) {
+            $data = array_merge($data, $this->addressService->resolveLocation(
+                $data['country_code'] ?? null,
+                $data['city_name'] ?? null,
+                $address->country_id,
+                $data['city_id'] ?? null,
+            ));
+        }
+        unset($data['country_code'], $data['city_name']);
 
         $address->update($data);
 

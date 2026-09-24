@@ -4,7 +4,6 @@ import type {
   ResolvedAddress,
 } from "@/src/components/shared/maps/use-location-map";
 import type { AddressDetailsValues } from "../add-address-modal/schema";
-import { DEFAULT_CITY_ID } from "./constants";
 
 export type AddressWizardData = {
   center: LatLng;
@@ -14,13 +13,16 @@ export type AddressWizardData = {
 
 export function toAddressPayload({
   center,
+  address,
   details,
 }: AddressWizardData): AddressPayload {
   return {
     label: details.label?.trim() || null,
     recipient_name: `${details.firstName} ${details.lastName}`.trim(),
     recipient_phone: details.phoneNumber,
-    city_id: DEFAULT_CITY_ID,
+    country_code: address?.countryCode ?? null,
+    city_name: address?.city ?? null,
+    area: address?.area ?? null,
     street_address: details.streetAddress.trim(),
     building: details.building?.trim() || null,
     apartment: details.apartment?.trim() || null,

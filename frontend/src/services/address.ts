@@ -28,7 +28,9 @@ export type AddressPayload = {
   label?: string | null;
   recipient_name: string;
   recipient_phone: string;
-  city_id: string;
+  city_id?: string | null;
+  country_code?: string | null;
+  city_name?: string | null;
   area?: string | null;
   street_address: string;
   building?: string | null;

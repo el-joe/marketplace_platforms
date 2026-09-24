@@ -9,10 +9,42 @@ export type ResolvedAddress = {
   formattedAddress: string;
   mainText: string;
   secondaryText: string;
+  countryCode: string | null;
+  countryName: string | null;
+  city: string | null;
+  area: string | null;
 };
 
 const DEFAULT_CENTER: LatLng = { lat: 25.1972, lng: 55.2744 };
 const REVERSE_GEOCODE_DEBOUNCE_MS = 400;
+
+function findComponent(
+  components: google.maps.GeocoderAddressComponent[],
+  types: string[],
+) {
+  for (const type of types) {
+    const match = components.find((c) => c.types.includes(type));
+    if (match) return match;
+  }
+  return undefined;
+}
+
+function extractLocation(result: google.maps.GeocoderResult) {
+  const c = result.address_components;
+  return {
+    countryCode: findComponent(c, ["country"])?.short_name ?? null,
+    countryName: findComponent(c, ["country"])?.long_name ?? null,
+    city:
+      findComponent(c, [
+        "locality",
+        "administrative_area_level_2",
+        "administrative_area_level_1",
+      ])?.long_name ?? null,
+    area:
+      findComponent(c, ["sublocality", "sublocality_level_1", "neighborhood"])
+        ?.long_name ?? null,
+  };
+}
 
 function splitFormattedAddress(formattedAddress: string): {
   mainText: string;
@@ -47,11 +79,13 @@ export function useLocationMap(defaultCenter: LatLng = DEFAULT_CENTER) {
       geocoderRef.current
         .geocode({ location })
         .then(({ results }) => {
-          const formattedAddress = results[0]?.formatted_address;
-          if (formattedAddress) {
+          const result = results[0];
+          const formattedAddress = result?.formatted_address;
+          if (result && formattedAddress) {
             setAddress({
               formattedAddress,
               ...splitFormattedAddress(formattedAddress),
+              ...extractLocation(result),
             });
           }
         })

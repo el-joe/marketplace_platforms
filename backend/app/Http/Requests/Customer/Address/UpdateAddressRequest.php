@@ -20,6 +20,8 @@ class UpdateAddressRequest extends FormRequest
             'recipient_name' => ['required', 'string', 'max:255'],
             'recipient_phone' => ['required', 'string', 'max:20'],
             'city_id' => ['nullable', 'uuid'],
+            'country_code' => ['nullable', 'string', 'size:2'],
+            'city_name' => ['nullable', 'string', 'max:255'],
             'area' => ['nullable', 'string', 'max:255'],
             'street_address' => ['required', 'string', 'max:500'],
             'building' => ['nullable', 'string', 'max:100'],
