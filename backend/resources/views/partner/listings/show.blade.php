@@ -18,6 +18,7 @@
     ];
     [$statusClass, $statusLabel] = $statusMap[$listing->status->value] ?? ['bg-gray-100 text-gray-600', $listing->status->value];
 
+    $fulfillmentKey = $listing->fulfillment_model instanceof \BackedEnum ? $listing->fulfillment_model->value : $listing->fulfillment_model;
     $fulfillmentLabels = [
         'fbm' => __('partner.listings.show.fulfillment_labels.fbm'),
         'fbn' => __('partner.listings.show.fulfillment_labels.fbn'),
@@ -210,7 +211,7 @@
                     <div>
                         <span class="text-xs text-gray-400 block mb-0.5">{{ __('partner.listings.show.fulfillment_model') }}</span>
                         <span
-                            class="font-medium">{{ $fulfillmentLabels[$listing->fulfillment_model] ?? $listing->fulfillment_model }}</span>
+                            class="font-medium">{{ $fulfillmentLabels[$fulfillmentKey] ?? $fulfillmentKey }}</span>
                     </div>
                     <div>
                         <span class="text-xs text-gray-400 block mb-0.5">{{ __('partner.listings.show.total_sold') }}</span>
@@ -597,7 +598,7 @@
                 <p class="text-sm text-gray-400 mb-4">
                     {{ __('partner.listings.show.marketer_campaign.no_campaign') }}
                 </p>
-                @if($listing->fulfillment_model === 'fbn')
+                @if($fulfillmentKey === 'fbn')
                     <a href="{{ route('partner.marketer-campaigns.create', $listing) }}"
                         class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
                         <i class="fas fa-bullhorn"></i>
