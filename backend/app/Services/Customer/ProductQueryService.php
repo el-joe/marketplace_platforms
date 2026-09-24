@@ -103,8 +103,6 @@ class ProductQueryService
             $base->whereIn('bb.category_id', $categoryIds);
         }
 
-        // Clone before attribute filters so sibling values of a selected attribute stay listed.
-        $unfiltered = $this->applyFilters(clone $base, array_diff_key($filters, ['attributes' => 1]), $categoryIds);
         $base = $this->applyFilters($base, $filters, $categoryIds);
 
         $priceRange = (clone $base)
@@ -116,7 +114,7 @@ class ProductQueryService
                 'min' => $priceRange ? (int) $priceRange->low : 0,
                 'max' => $priceRange ? (int) $priceRange->high : 0,
             ],
-            'attributes' => $this->attributeFacets($base, $unfiltered, $filters['attributes'] ?? [], $categoryIds ?? []),
+            'attributes' => $this->attributeFacets($base, $categoryIds ?? []),
         ];
     }
 
@@ -129,16 +127,15 @@ class ProductQueryService
      *
      * @param  list<string>  $categoryIds
      */
-    private function attributeFacets($base, $unfiltered, array $selected, array $categoryIds): array
+    private function attributeFacets($base, array $categoryIds): array
     {
         if (empty($categoryIds)) {
             return [];
         }
 
-        // variant_id pairs (the displayed variant) of the unfiltered set
-        $variantIds = (clone $unfiltered)->distinct()->pluck('bb.variant_id');
+        $productIds = (clone $base)->distinct()->pluck('bb.product_id');
 
-        if ($variantIds->isEmpty()) {
+        if ($productIds->isEmpty()) {
             return [];
         }
 
@@ -155,14 +152,14 @@ class ProductQueryService
 
         $counts = DB::table('product_variant_attributes as pva')
             ->join('product_variants as pv', 'pv.id', '=', 'pva.product_variant_id')
-            ->whereIn('pva.product_variant_id', $variantIds)
+            ->whereIn('pv.product_id', $productIds)
             ->whereIn('pva.attribute_id', $attributes->pluck('id'))
             ->selectRaw('pva.attribute_id, pva.attribute_value_id, COUNT(DISTINCT pv.product_id) as cnt')
             ->groupBy('pva.attribute_id', 'pva.attribute_value_id')
             ->get()
             ->groupBy('attribute_id');
 
-        return $attributes->map(function (Attribute $attribute) use ($counts, $selected) {
+        return $attributes->map(function (Attribute $attribute) use ($counts) {
             $attrCounts = ($counts->get($attribute->id) ?? collect())->pluck('cnt', 'attribute_value_id');
 
             return [
@@ -171,15 +168,14 @@ class ProductQueryService
                 'name'   => Bilingual::pair($attribute, 'name'),
                 'type'   => $attribute->type->value,
                 'unit'   => $attribute->unit,
-                'values' => $attribute->values->filter(fn ($v) => ($attrCounts[$v->id] ?? 0) > 0
-                        || in_array($v->value_en, (array) ($selected[$attribute->code] ?? []), true))->map(fn ($value) => [
+                'values' => $attribute->values->map(fn ($value) => [
                     'id'        => $value->id,
                     'value'     => Bilingual::pair($value, 'value'),
                     'color_hex' => $value->color_hex,
                     'count'     => (int) ($attrCounts[$value->id] ?? 0),
                 ])->values()->all(),
             ];
-        })->filter(fn ($a) => !empty($a['values']))->values()->all();
+        })->values()->all();
     }
 
     /**
@@ -359,11 +355,10 @@ class ProductQueryService
                 $builder->whereExists(function ($sub) use ($attrCode, $values) {
                     $sub->select(DB::raw(1))
                         ->from('product_variant_attributes as pva')
+                        ->join('product_variants as pv_attr', 'pv_attr.id', '=', 'pva.product_variant_id')
                         ->join('attributes as a', 'a.id', '=', 'pva.attribute_id')
                         ->join('attribute_values as av', 'av.id', '=', 'pva.attribute_value_id')
-                        // Match the variant the card actually displays (buy-box winner),
-                        // not any sibling variant of the product.
-                        ->whereColumn('pva.product_variant_id', 'bb.variant_id')
+                        ->whereColumn('pv_attr.product_id', 'bb.product_id')
                         ->where('a.code', $attrCode)
                         ->whereIn('av.value_en', $values);
                 });
