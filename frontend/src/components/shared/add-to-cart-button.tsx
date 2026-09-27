@@ -78,7 +78,7 @@ export default function AddToCartButton({
         ) : cartItem ? (
           <>
             <span className="relative w-6.5 group-hover/cart:hidden">
-              <span className="absolute -top-1.5 left-1/2 translate-x-[-35%] text-sm">
+              <span className="absolute -top-1.5 left-1/2 translate-x-[-35%] text-[9px] md:text-xs lg:text-sm">
                 {cartItem.quantity}
               </span>
               <Image src="/images/cart.svg" alt="" width={26} height={26} />

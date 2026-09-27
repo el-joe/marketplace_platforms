@@ -88,7 +88,7 @@ export default function ClassifiedGallery({
         {/* Desktop Side Thumbnails Stack (4 cols on desktop) */}
         <div className="hidden md:flex md:col-span-4 flex-col gap-2 h-[400px] lg:h-[450px]">
           {/* Thumb 1 */}
-          {images[1] && (
+          {images[0] && (
             <div
               onClick={() => setSelectedIndex(1)}
               className={`relative flex-1 rounded-lg overflow-hidden cursor-pointer bg-neutral-900 border-2 transition-all ${
@@ -98,8 +98,8 @@ export default function ClassifiedGallery({
               }`}
             >
               <Image
-                src={images[1].url}
-                alt={images[1].alt || t("thumbnail1")}
+                src={images[0].url}
+                alt={images[0].alt || t("thumbnail1")}
                 fill
                 className="object-cover"
                 sizes="300px"
@@ -108,7 +108,7 @@ export default function ClassifiedGallery({
           )}
 
           {/* Thumb 2 */}
-          {images[2] && (
+          {images[1] && (
             <div
               onClick={() => setSelectedIndex(2)}
               className={`relative flex-1 rounded-lg overflow-hidden cursor-pointer bg-neutral-900 border-2 transition-all ${
@@ -118,8 +118,8 @@ export default function ClassifiedGallery({
               }`}
             >
               <Image
-                src={images[2].url}
-                alt={images[2].alt || t("thumbnail2")}
+                src={images[1].url}
+                alt={images[1].alt || t("thumbnail2")}
                 fill
                 className="object-cover"
                 sizes="300px"
@@ -128,14 +128,14 @@ export default function ClassifiedGallery({
           )}
 
           {/* Thumb 3 with "Show More Photos" overlay */}
-          {images[3] && (
+          {images[2] && (
             <div
               onClick={() => setIsLightboxOpen(true)}
               className="relative flex-1 rounded-lg overflow-hidden cursor-pointer bg-neutral-900 group"
             >
               <Image
-                src={images[3].url}
-                alt={images[3].alt || t("thumbnail3")}
+                src={images[2].url}
+                alt={images[2].alt || t("thumbnail3")}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform"
                 sizes="300px"

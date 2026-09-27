@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 import Price from "@/src/components/shared/Price";
 import { Button } from "@/src/components/ui/button";
 import useLocale from "@/src/hooks/use-locale";
-import { Item } from "@/types/wishlist.type";
+import { Item, ProductItem } from "@/types/wishlist.type";
 import { EllipsisIcon, StarIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useRef } from "react";
@@ -14,12 +14,13 @@ import WishlistItemOptionsMenu from "./item-options-menu";
 import AnimatedBadge from "@/src/components/shared/animated-badge";
 import { mapPromoBadges } from "@/src/lib/promo-badges";
 import CartButton from "../productView/cart-button";
+import { ShippingBadgePill } from "@/src/components/shared/shipping-badge-pill";
 
 type Props = {
-  item: Item;
+  item: ProductItem;
 };
 
-export default function ItemCard({ item }: Props) {
+export default function ProductCard({ item }: Props) {
   const locale = useLocale();
   const swiperRef = useRef<null | SwiperType>(null);
   const handleAutoplay = (state: "start" | "stop") => {
@@ -42,11 +43,11 @@ export default function ItemCard({ item }: Props) {
         {/* card top (images slide, topleft badge, wishlist but, cart btn) */}
         <div className="relative h-43 md:h-52 lg:h-60 xl:h-92">
           {/* top left badge */}
-          {/* {item.label && (
+          {!!item.listing.brand && (
             <div className="absolute top-0 left-0 rounded-br-lg bg-green-2 text-white px-3.5 py-0.5 text-[8px] md:text-xs lg:text-sm line-clamp-1 max-w-full z-10">
-              {item.label}
+              {item.listing?.brand?.name?.[locale]}
             </div>
-          )} */}
+          )}
           <Swiper
             modules={[Pagination, Autoplay]}
             pagination
@@ -57,14 +58,14 @@ export default function ItemCard({ item }: Props) {
               swiper.autoplay.stop();
             }}
           >
-            {item.listing.product?.images.map((image) => (
+            {item?.listing?.product?.images.map((image) => (
               <SwiperSlide key={image.url}>
                 <Image
                   src={image.url}
                   alt={
                     locale === "ar"
-                      ? item.listing?.product.name_ar
-                      : item.listing.product.name_en
+                      ? item.listing?.product?.name_ar || ""
+                      : item.listing.product?.name_en || ""
                   }
                   width={500}
                   height={600}
@@ -75,19 +76,19 @@ export default function ItemCard({ item }: Props) {
           </Swiper>
         </div>
         {/* card body (title, rate, price, bottom badge) */}
-        <Link href={`/products/${item.listing.listing_id}`}>
-          <div className="flex flex-col gap-2 justify-around p-1 lg:p-2.5 flex-1">
+        <Link href={`/products/${item.listing.listing_id}`} className="flex-1">
+          <div className="flex flex-col gap-2 justify-around p-1 lg:p-2.5 h-full">
             {/* title */}
             <h3 className="text-[10px] font-medium md:text-xs lg:text-sm line-clamp-3">
               {locale === "ar"
-                ? item.listing?.product.name_ar
-                : item.listing.product.name_en}
+                ? item.listing?.product?.name_ar
+                : item.listing.product?.name_en}
             </h3>
-            {!!item.listing.variant_name && (
+            {/* {!!item.listing.variant_name && (
               <p className="text-[9px] md:text-xs bg-gray-2 border border-border-color py-0.5 px-1 rounded-md w-full line-clamp-1 overflow-hidden">
                 {item.listing.variant_name}
               </p>
-            )}
+            )} */}
             {/* rating */}
             <div className="bg-gray-2 rounded-md flex items-center gap-1 w-fit px-2 py-px">
               <StarIcon size={"13px"} className="text-green fill-green" />
@@ -99,37 +100,36 @@ export default function ItemCard({ item }: Props) {
               </p>
             </div>
             <Price
-              currency={item.listing.currency}
-              currentPrice={item.listing.price}
+              currency={item?.listing?.currency}
+              currentPrice={item?.listing?.price as number}
               size="sm"
             />
-            {!!(item.listing.promo_badges ?? item.promo_badges)?.length && (
+            {!!item.listing.promo_badges?.length && (
               <AnimatedBadge
                 size="sm"
-                badges={mapPromoBadges(
-                  item.listing.promo_badges ?? item.promo_badges,
-                  locale,
-                )}
+                badges={mapPromoBadges(item.listing.promo_badges, locale)}
               />
             )}
             {/* bottom badge */}
-            {/* <div className="flex w-fit bg-blue font-semibold text-white rounded-md items-center text-[9px] lg:text-xs gap-1">
-              <span>⚡GET IN </span>
-              <span className="text-yellow-400"> 33 MINS</span>
-              <ChevronRightIcon className="size-3 lg:size-5" />
-            </div> */}
+            {item.listing?.shipping_badge && (
+              <ShippingBadgePill
+                badge={item?.listing?.shipping_badge}
+                locale={locale}
+                className="mt-auto"
+              />
+            )}
           </div>
         </Link>
       </div>
       <div className="flex gap-3">
         <div className="flex-1">
           <CartButton
-            listingId={item.listing.listing_id}
+            listingId={item?.listing?.listing_id as string}
             classes="text-xs md:text-base"
           />
         </div>
         <WishlistItemOptionsMenu
-          item={item}
+          item={item as Item}
           trigger={
             <Button variant={"outline"} className={"border-blue "}>
               <EllipsisIcon />
