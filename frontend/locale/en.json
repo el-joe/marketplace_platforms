@@ -1047,6 +1047,7 @@
       "includesOvernight": "Include overnight stay",
       "reserveUnit": "Reserve",
       "unitReserved": "Reservation submitted.",
+      "reservationNumber": "Reservation number: {number}",
       "slot_morning": "Morning",
       "slot_evening": "Evening",
       "slot_custom": "Custom"
@@ -1450,6 +1451,27 @@
   "adsPopup": {
     "close": "Close",
     "viewProduct": "View product"
+  },
+  "myBookings": {
+    "title": "My Bookings",
+    "subtitle": "View and manage all your bookings in one place",
+    "noResults": "No bookings found",
+    "viewDetails": "View Details",
+    "operatedBy": "Operated by {agency}",
+    "columns": {
+      "bookingNumber": "Booking Number"
+    },
+    "tabs": {
+      "travel_package": "Travel Packages",
+      "bookable_unit": "Bookable Units",
+      "flight": "Flights"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
   },
   "specialRequests": {
     "myRequests": "My Special Requests",

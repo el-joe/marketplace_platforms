@@ -21,6 +21,9 @@ class BookableUnit extends Model
         'status',
         'approved_by_admin_id',
         'approved_at',
+        'rejected_by_admin_id',
+        'rejected_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -28,6 +31,7 @@ class BookableUnit extends Model
         return [
             'capacity' => 'integer',
             'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
         ];
     }
 

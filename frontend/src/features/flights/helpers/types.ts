@@ -222,6 +222,7 @@ export type BookableUnitCalendar = {
 
 export type BookableUnitReservation = {
   id: string;
+  reservation_number: string;
   total_price: number;
   status: string;
 };

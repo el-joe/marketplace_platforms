@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
+use App\Enums\BookableUnitReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
 use App\Models\BookableUnit;
 use App\Models\BookableUnitAvailability;
+use App\Models\BookableUnitReservation;
 use App\Models\BookableUnitTimeSlot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookableUnitController extends Controller
@@ -124,6 +127,29 @@ class BookableUnitController extends Controller
     // ── Calendar: availability + pricing per date ───────────────────────────
 
     /**
+     * Blocks closing a date range that overlaps an active (pending/confirmed)
+     * reservation — silently closing a day a customer already booked would
+     * strand that reservation with no unit for the day.
+     */
+    private function guardAgainstClosingBookedDates(BookableUnit $bookableUnit, Carbon $rangeStart, Carbon $rangeEnd): void
+    {
+        $conflicting = BookableUnitReservation::where('bookable_unit_id', $bookableUnit->id)
+            ->whereIn('status', [BookableUnitReservationStatus::Pending, BookableUnitReservationStatus::Confirmed])
+            ->whereDate('date_from', '<=', $rangeEnd->toDateString())
+            ->whereDate('date_to', '>=', $rangeStart->toDateString())
+            ->pluck('reservation_number');
+
+        if ($conflicting->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'is_available' => __('travel.bookable_units.availability_conflict', [
+                    'date' => $rangeStart->equalTo($rangeEnd) ? $rangeStart->toDateString() : $rangeStart->toDateString().' → '.$rangeEnd->toDateString(),
+                    'reservations' => $conflicting->implode(', '),
+                ]),
+            ]);
+        }
+    }
+
+    /**
      * Upsert a single date's availability/pricing row. This is the minimum
      * bar from the plan; bulk range-set below is the nice-to-have.
      */
@@ -139,10 +165,16 @@ class BookableUnitController extends Controller
             'price_with_overnight' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        $isAvailable = $request->boolean('is_available', true);
+
+        if (! $isAvailable) {
+            $this->guardAgainstClosingBookedDates($bookableUnit, Carbon::parse($data['date']), Carbon::parse($data['date']));
+        }
+
         BookableUnitAvailability::updateOrCreate(
             ['bookable_unit_id' => $bookableUnit->id, 'date' => $data['date']],
             [
-                'is_available' => $request->boolean('is_available', true),
+                'is_available' => $isAvailable,
                 'capacity_override' => $data['capacity_override'] ?? null,
                 'price_day_only' => $data['price_day_only'] ?? null,
                 'price_with_overnight' => $data['price_with_overnight'] ?? null,
@@ -170,6 +202,10 @@ class BookableUnitController extends Controller
         ]);
 
         $isAvailable = $request->boolean('is_available', true);
+
+        if (! $isAvailable) {
+            $this->guardAgainstClosingBookedDates($bookableUnit, Carbon::parse($data['date_from']), Carbon::parse($data['date_to']));
+        }
 
         DB::transaction(function () use ($bookableUnit, $data, $isAvailable) {
             $cursor = Carbon::parse($data['date_from']);

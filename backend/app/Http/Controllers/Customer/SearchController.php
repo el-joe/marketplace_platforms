@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\SearchRequest;
 use App\Http\Responses\ApiResponse;
+use App\Jobs\LogSearchJob;
 use App\Models\AdminListing;
+use App\Models\Category;
 use App\Models\Country;
+use App\Services\Ads\PlacementAdService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\SearchService;
 use App\Services\Customer\SponsoredProductService;
@@ -21,9 +24,8 @@ class SearchController extends Controller
         private readonly SponsoredProductService $sponsored,
         private readonly ListingQueryService $listings,
         private readonly PageBuilderService $pageBuilder,
-        private readonly \App\Services\Ads\PlacementAdService $placementAds,
-    ) {
-    }
+        private readonly PlacementAdService $placementAds,
+    ) {}
 
     public function search(SearchRequest $request, $country): JsonResponse
     {
@@ -33,8 +35,8 @@ class SearchController extends Controller
         $perPage = (int) ($data['per_page'] ?? 20);
         $page = (int) ($data['page'] ?? 1);
 
-        if (!empty($data['category'])) {
-            $data['category'] = \App\Models\Category::where('id', $data['category'])
+        if (! empty($data['category'])) {
+            $data['category'] = Category::where('id', $data['category'])
                 ->orWhere('slug', $data['category'])
                 ->value('id') ?? $data['category'];
         }
@@ -56,7 +58,7 @@ class SearchController extends Controller
 
         // ── Device & audience detection ───────────────────────────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);
-        $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
+        $audience = auth('customer')->check() ? 'authenticated' : 'guest';
 
         $result = $this->search->search(
             country: $country,
@@ -75,7 +77,7 @@ class SearchController extends Controller
         $facets = $this->search->facets($country, $data);
 
         // ── Page builder (category > brand priority, product search only) ─────
-        $pageBuilder    = $this->resolvePageBuilder($country, $data, $deviceTarget, $audience);
+        $pageBuilder = $this->resolvePageBuilder($country, $data, $deviceTarget, $audience);
         $hasPageBuilder = $pageBuilder !== null;
 
         $bannerAudience = auth('customer')->check() ? 'logged_in' : 'guest';
@@ -91,9 +93,9 @@ class SearchController extends Controller
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
             ],
-            'page_builder'     => $pageBuilder,
+            'page_builder' => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
-            'top_banner'       => $topBanner,
+            'top_banner' => $topBanner,
         ]);
     }
 
@@ -109,21 +111,21 @@ class SearchController extends Controller
         string $deviceTarget,
         string $audience,
     ): ?array {
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $result = $this->pageBuilder->resolve(
-                country:      $country,
-                pageType:     'category',
-                referenceId:  $filters['category'],
+                country: $country,
+                pageType: 'category',
+                referenceId: $filters['category'],
                 deviceTarget: $deviceTarget,
-                audience:     $audience,
+                audience: $audience,
             );
-        } elseif (!empty($filters['brand'])) {
+        } elseif (! empty($filters['brand'])) {
             $result = $this->pageBuilder->resolve(
-                country:      $country,
-                pageType:     'brand',
-                referenceId:  $filters['brand'],
+                country: $country,
+                pageType: 'brand',
+                referenceId: $filters['brand'],
                 deviceTarget: $deviceTarget,
-                audience:     $audience,
+                audience: $audience,
             );
         } else {
             return null;
@@ -140,7 +142,7 @@ class SearchController extends Controller
     {
         $paginator = $this->search->searchClassifieds($data['q'], $data, $perPage);
 
-        dispatch(new \App\Jobs\LogSearchJob(
+        dispatch(new LogSearchJob(
             query: $data['q'],
             countryId: $country->id,
             resultsCount: $paginator->total(),
@@ -150,8 +152,10 @@ class SearchController extends Controller
             language: app()->getLocale(),
         ))->afterResponse();
 
+        $exclusiveContracts = $this->listings->exclusiveContractsForListings($paginator->getCollection());
+
         $items = $paginator->getCollection()
-            ->map(fn($listing) => $this->listings->toClassifiedCardShape($listing))
+            ->map(fn ($listing) => $this->listings->toClassifiedCardShape($listing, $exclusiveContracts[$listing->id] ?? null))
             ->toArray();
 
         return ApiResponse::success([
@@ -171,7 +175,7 @@ class SearchController extends Controller
     {
         $paginator = $this->search->searchTravel($data['q'], $perPage);
 
-        dispatch(new \App\Jobs\LogSearchJob(
+        dispatch(new LogSearchJob(
             query: $data['q'],
             countryId: $country->id,
             resultsCount: $paginator->total(),
@@ -182,7 +186,7 @@ class SearchController extends Controller
         ))->afterResponse();
 
         $items = $paginator->getCollection()
-            ->map(fn($package) => $this->listings->toTravelCardShape($package))
+            ->map(fn ($package) => $this->listings->toTravelCardShape($package))
             ->toArray();
 
         return ApiResponse::success([
@@ -221,30 +225,30 @@ class SearchController extends Controller
         // Inject admin listings into product results (admin first, deduped by product_id)
         $adminSearchListings = AdminListing::where('country_id', $country->id)
             ->where('status', 'active')
-            ->whereHas('productVariant.product', fn ($q) =>
-                $q->where('status', 'active')
-                  ->where(fn ($q2) => $q2->where('name_en', 'like', "%{$query}%")
-                                         ->orWhere('name_ar', 'like', "%{$query}%"))
+            ->whereHas('productVariant.product', fn ($q) => $q->where('status', 'active')
+                ->where(fn ($q2) => $q2->where('name_en', 'like', "%{$query}%")
+                    ->orWhere('name_ar', 'like', "%{$query}%"))
             )
             ->with(['productVariant.product.images', 'productVariant.images', 'primaryShippingMethod'])
             ->orderBy('search_boost', 'desc')->limit(4)->get();
 
         $seenProductIds = array_column($productItems, 'product_id');
-        $adminResults   = $adminSearchListings->map(function ($al) use ($country, $wishlistIds) {
+        $adminResults = $adminSearchListings->map(function ($al) use ($country, $wishlistIds) {
             return $this->listings->toAdminCardShape($al, $al->productVariant->product, $country,
                 in_array($al->id, $wishlistIds));
-        })->filter(fn ($i) => !in_array($i['product_id'], $seenProductIds))->values()->all();
+        })->filter(fn ($i) => ! in_array($i['product_id'], $seenProductIds))->values()->all();
 
         $productItems = array_merge($adminResults, $productItems);
 
         $classifiedPaginator = $this->search->searchClassifieds($query, $data, 4);
+        $classifiedExclusiveContracts = $this->listings->exclusiveContractsForListings($classifiedPaginator->getCollection());
         $classifiedItems = $classifiedPaginator->getCollection()
-            ->map(fn($listing) => $this->listings->toClassifiedCardShape($listing))
+            ->map(fn ($listing) => $this->listings->toClassifiedCardShape($listing, $classifiedExclusiveContracts[$listing->id] ?? null))
             ->toArray();
 
         $travelPaginator = $this->search->searchTravel($query, 4);
         $travelItems = $travelPaginator->getCollection()
-            ->map(fn($package) => $this->listings->toTravelCardShape($package))
+            ->map(fn ($package) => $this->listings->toTravelCardShape($package))
             ->toArray();
 
         $totalResults = $productPaginator->total() + $classifiedPaginator->total() + $travelPaginator->total();

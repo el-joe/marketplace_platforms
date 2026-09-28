@@ -1537,6 +1537,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::get('/', [FbnController::class, 'storageFeesIndex'])->name('index');
             Route::post('/datatable', [FbnController::class, 'storageFeesDatatable'])->name('datatable');
             Route::post('/generate', [FbnController::class, 'generateMonthlyFees'])->name('generate');
+            Route::get('/generation-status', [FbnController::class, 'storageFeesGenerationStatus'])->name('generation-status');
             Route::post('/{fee}/status', [FbnController::class, 'updateStorageFeeStatus'])->name('status');
 
             // Free-period rules (min/max weight -> free storage days)
@@ -1716,6 +1717,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::get('/', [AdminBookableUnitController::class, 'index'])->name('index');
             Route::get('/{bookableUnit}', [AdminBookableUnitController::class, 'show'])->name('show');
             Route::post('/{bookableUnit}/approve', [AdminBookableUnitController::class, 'approve'])->name('approve');
+            Route::post('/{bookableUnit}/reject', [AdminBookableUnitController::class, 'reject'])->name('reject');
         });
 
         Route::prefix('packages')->name('packages.')->group(function () {

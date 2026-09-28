@@ -22,7 +22,7 @@
                 <tr class="border-t">
                     <td class="p-3">{{ $p->name_ar }} <span class="text-gray-400">{{ $p->name_en }}</span></td>
                     <td class="p-3">{{ number_format($p->price) }} {{ $p->currency }}</td>
-                    <td class="p-3">{{ $p->vat_pct }}</td><td class="p-3">{{ $p->target_type }}</td>
+                    <td class="p-3">{{ $p->vat_pct }}</td><td class="p-3">{{ __('ad_packages.target_'.$p->target_type) }}</td>
                     <td class="p-3">{{ $p->duration_days }}</td><td class="p-3">{{ $p->is_active ? '✓' : '—' }}</td>
                     <td class="p-3 flex gap-3">
                         <a class="text-blue-600" href="{{ route('admin.marketer-ad-packages.edit', $p->id) }}">{{ __('ad_packages.edit') }}</a>
@@ -67,7 +67,7 @@
         <table class="min-w-full text-sm"><tbody>
         @foreach($recent as $s)
             <tr class="border-t"><td class="p-3">{{ $s->marketer?->name ?? $s->marketer_id }}</td><td class="p-3">{{ $s->package?->name_ar }}</td>
-            <td class="p-3">{{ number_format($s->amount_paid) }} {{ $s->currency }}</td><td class="p-3">{{ $s->status }}</td>
+            <td class="p-3">{{ number_format($s->amount_paid) }} {{ $s->currency }}</td><td class="p-3">{{ __('ad_packages.status_'.$s->status) }}</td>
             <td class="p-3">{{ $s->expires_at?->format('Y-m-d') }}</td></tr>
         @endforeach
         </tbody></table>

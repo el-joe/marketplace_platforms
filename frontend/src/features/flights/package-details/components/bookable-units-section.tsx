@@ -38,7 +38,7 @@ export default function BookableUnitsSection({ units, currency }: Props) {
   const [slotId, setSlotId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [reservationNumber, setReservationNumber] = useState<string | null>(null);
 
   const key = monthKey(month);
 
@@ -84,7 +84,7 @@ export default function BookableUnitsSection({ units, currency }: Props) {
       );
 
   function pick(date: string) {
-    setDone(false);
+    setReservationNumber(null);
     if (!from || to || slot || date < from) {
       setFrom(date);
       setTo(null);
@@ -98,13 +98,13 @@ export default function BookableUnitsSection({ units, currency }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await reserveBookableUnit(unitId, {
+      const reservation = await reserveBookableUnit(unitId, {
         date_from: from,
         date_to: end,
         includes_overnight: slot ? false : overnight,
         ...(slot ? { time_slot_id: slot.id } : {}),
       });
-      setDone(true);
+      setReservationNumber(reservation.reservation_number);
       setFrom(null);
       setTo(null);
       setCalendar(await getBookableUnitCalendar(unitId, key));
@@ -235,7 +235,11 @@ export default function BookableUnitsSection({ units, currency }: Props) {
             <span>{error}</span>
           </div>
         )}
-        {done && <p className="text-sm text-green">{t("unitReserved")}</p>}
+        {reservationNumber && (
+          <p className="text-sm text-green">
+            {t("unitReserved")} {t("reservationNumber", { number: reservationNumber })}
+          </p>
+        )}
 
         <Button
           type="button"

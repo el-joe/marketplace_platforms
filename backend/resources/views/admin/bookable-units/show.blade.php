@@ -10,12 +10,25 @@
             <p class="text-sm text-gray-500">{{ $unit->agency?->name }} · {{ __('admin.bookable_units_section.type_'.($unit->type->value ?? $unit->type)) }} · {{ __('admin.bookable_units_section.status_'.$unit->status) }}</p>
         </div>
         @if($unit->status !== 'active')
-        <form method="POST" action="{{ route('admin.travel.bookable-units.approve', $unit) }}">
-            @csrf
-            <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium">{{ __('admin.bookable_units_section.approve') }}</button>
-        </form>
+        <div class="flex items-start gap-3">
+            <form method="POST" action="{{ route('admin.travel.bookable-units.approve', $unit) }}">
+                @csrf
+                <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium">{{ __('admin.bookable_units_section.approve') }}</button>
+            </form>
+            <form method="POST" action="{{ route('admin.travel.bookable-units.reject', $unit) }}" class="flex items-start gap-2">
+                @csrf
+                <textarea name="rejection_reason" required placeholder="{{ __('admin.bookable_units_section.rejection_reason') }}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64" rows="1"></textarea>
+                <button class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium">{{ __('admin.bookable_units_section.reject') }}</button>
+            </form>
+        </div>
         @endif
     </div>
+
+    @if($unit->status === 'rejected' && $unit->rejection_reason)
+    <div class="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3">
+        <strong>{{ __('admin.bookable_units_section.rejection_reason') }}:</strong> {{ $unit->rejection_reason }}
+    </div>
+    @endif
 
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.bookable_units_section.calendar_overview') }}</h3>

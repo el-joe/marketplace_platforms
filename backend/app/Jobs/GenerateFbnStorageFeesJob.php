@@ -11,8 +11,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Generates monthly FBN storage fee records for all vendors with
@@ -46,15 +48,28 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
      */
     private const VOLUMETRIC_DIVISOR = 5000;
 
+    private const STATUS_TTL_SECONDS = 3600;
+
     public function __construct(private string $monthString)
     {
         // $monthString format: "Y-m" e.g. "2026-06"
+    }
+
+    /**
+     * Cache key the admin panel polls for this month's generation progress.
+     */
+    public static function statusCacheKey(string $monthString): string
+    {
+        return "fbn_storage_fees_generation_status:{$monthString}";
     }
 
     public function handle(): void
     {
         $month = Carbon::createFromFormat('Y-m', $this->monthString)->startOfMonth();
         $monthDate = $month->toDateString();
+        $statusKey = self::statusCacheKey($this->monthString);
+
+        Cache::put($statusKey, ['state' => 'running', 'created' => 0, 'free' => 0, 'skipped' => 0], self::STATUS_TTL_SECONDS);
 
         Log::info("[GenerateFbnStorageFeesJob] Generating storage fees for month: {$monthDate}");
 
@@ -110,7 +125,12 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                 continue;
             }
 
-            $daysInStorage = $storedSince->diffInDays($billingCutoff);
+            // Cast to int immediately: $billingCutoff carries microseconds
+            // (endOfMonth() sets 23:59:59.999999) while $storedSince read back
+            // from the DB does not, so the raw float diff can overshoot a
+            // whole-day boundary by a fraction of a second and wrongly flip
+            // an inventory exactly at its free-day limit into "paid".
+            $daysInStorage = (int) $storedSince->diffInDays($billingCutoff);
 
             // Actual declared weight (grams). Missing/zero is treated as 0 so
             // volumetric weight can still drive the chargeable weight.
@@ -158,17 +178,36 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                         'volumetric_weight_grams' => $volumetricWeightGrams,
                         'chargeable_weight_grams' => $chargeableWeightGrams,
                         'free_days_applied' => $freeDays,
-                        'days_in_storage' => (int) $daysInStorage,
+                        'days_in_storage' => $daysInStorage,
                         'within_free_period' => $withinFree,
                         'status' => 'pending',
                     ]
                 );
                 $created++;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::error("[GenerateFbnStorageFeesJob] Failed for inventory {$inv->inventory_id}: ".$e->getMessage());
             }
         }
 
         Log::info("[GenerateFbnStorageFeesJob] Done. Created/updated: {$created}, free of charge: {$freeOfCharge}, skipped (no rate/data): {$skipped}");
+
+        Cache::put($statusKey, [
+            'state' => 'done',
+            'created' => $created,
+            'free' => $freeOfCharge,
+            'skipped' => $skipped,
+        ], self::STATUS_TTL_SECONDS);
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        Log::error('[GenerateFbnStorageFeesJob] Failed: '.$exception?->getMessage());
+
+        Cache::put(self::statusCacheKey($this->monthString), [
+            'state' => 'failed',
+            'created' => 0,
+            'free' => 0,
+            'skipped' => 0,
+        ], self::STATUS_TTL_SECONDS);
     }
 }

@@ -30,26 +30,43 @@ class StoreExclusiveContractRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $listingId = $this->input('classified_listing_id');
-
-            if (! $listingId) {
-                return;
-            }
-
+            $categoryId = $this->input('classified_category_id');
             $startsAt = $this->input('starts_at');
             $endsAt = $this->input('ends_at');
 
-            $overlaps = ExclusiveContract::where('classified_listing_id', $listingId)
-                ->whereIn('status', ['pending', 'active'])
-                ->when($this->route('exclusiveContract'), fn ($q, $current) => $q->whereKeyNot($current->id))
-                ->where('starts_at', '<', $endsAt)
-                ->where('ends_at', '>', $startsAt)
-                ->exists();
+            if ($listingId) {
+                $overlaps = ExclusiveContract::where('classified_listing_id', $listingId)
+                    ->whereIn('status', ['pending', 'active'])
+                    ->when($this->route('exclusiveContract'), fn ($q, $current) => $q->whereKeyNot($current->id))
+                    ->where('starts_at', '<', $endsAt)
+                    ->where('ends_at', '>', $startsAt)
+                    ->exists();
 
-            if ($overlaps) {
-                $validator->errors()->add(
-                    'classified_listing_id',
-                    __('admin.contract_conflict_error')
-                );
+                if ($overlaps) {
+                    $validator->errors()->add(
+                        'classified_listing_id',
+                        __('admin.contract_conflict_error')
+                    );
+                }
+
+                return;
+            }
+
+            if ($categoryId) {
+                $categoryOverlaps = ExclusiveContract::where('classified_category_id', $categoryId)
+                    ->whereNull('classified_listing_id')
+                    ->whereIn('status', ['pending', 'active'])
+                    ->when($this->route('exclusiveContract'), fn ($q, $current) => $q->whereKeyNot($current->id))
+                    ->where('starts_at', '<', $endsAt)
+                    ->where('ends_at', '>', $startsAt)
+                    ->exists();
+
+                if ($categoryOverlaps) {
+                    $validator->errors()->add(
+                        'classified_category_id',
+                        __('admin.contract_category_conflict_error')
+                    );
+                }
             }
         });
     }

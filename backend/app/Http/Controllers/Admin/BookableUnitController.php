@@ -53,8 +53,29 @@ class BookableUnitController extends Controller
             'status' => 'active',
             'approved_by_admin_id' => auth('admin')->id(),
             'approved_at' => now(),
+            'rejected_by_admin_id' => null,
+            'rejected_at' => null,
+            'rejection_reason' => null,
         ]);
 
         return back()->with('success', __('admin.bookable_units_section.approved'));
+    }
+
+    public function reject(Request $request, BookableUnit $bookableUnit): RedirectResponse
+    {
+        abort_unless(auth('admin')->user()->hasPermissionTo('travel.manage') || auth('admin')->user()->hasPermissionTo('travel.view'), 403);
+
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $bookableUnit->update([
+            'status' => 'rejected',
+            'rejected_by_admin_id' => auth('admin')->id(),
+            'rejected_at' => now(),
+            'rejection_reason' => $data['rejection_reason'],
+        ]);
+
+        return back()->with('success', __('admin.bookable_units_section.rejected'));
     }
 }

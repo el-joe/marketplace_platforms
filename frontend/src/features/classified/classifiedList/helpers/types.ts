@@ -28,6 +28,13 @@ export interface ClassifiedItem {
   images_count: number;
   attributes: Record<string, string>;
   created_at: Date;
+  exclusive_contract?: {
+    marketer: {
+      id: string;
+      name: string;
+    };
+    expires_at: string | null;
+  } | null;
 }
 
 export interface Image {

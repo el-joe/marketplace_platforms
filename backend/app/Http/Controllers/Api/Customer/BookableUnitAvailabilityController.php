@@ -68,6 +68,7 @@ class BookableUnitAvailabilityController extends Controller
 
         return ApiResponse::success([
             'id' => $reservation->id,
+            'reservation_number' => $reservation->reservation_number,
             'bookable_unit_id' => $reservation->bookable_unit_id,
             'date_from' => $reservation->date_from->toDateString(),
             'date_to' => $reservation->date_to->toDateString(),

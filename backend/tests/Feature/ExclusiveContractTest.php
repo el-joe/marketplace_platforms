@@ -61,6 +61,27 @@ class ExclusiveContractTest extends TestCase
         $this->assertSame(2, ExclusiveContract::count());
     }
 
+    public function test_store_rejects_overlapping_category_wide_contract(): void
+    {
+        [$s, $admin, $cat] = $this->setUpData();
+        $url = route('admin.marketers.exclusive-contracts.store', $s->marketer->id);
+        $payload = fn ($from, $to) => [
+            'classified_category_id' => $cat->id, 'starts_at' => $from, 'ends_at' => $to, 'status' => 'active',
+        ];
+
+        $this->actingAs($admin, 'admin')->post($url, $payload('2027-01-01', '2027-02-01'))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(1, ExclusiveContract::count());
+
+        $this->actingAs($admin, 'admin')->post($url, $payload('2027-01-15', '2027-03-01'))
+            ->assertSessionHasErrors('classified_category_id');
+        $this->assertSame(1, ExclusiveContract::count());
+
+        $this->actingAs($admin, 'admin')->post($url, $payload('2027-02-01', '2027-03-01'))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(2, ExclusiveContract::count());
+    }
+
     public function test_end_before_start_rejected(): void
     {
         [$s, $admin, , $listing] = $this->setUpData();

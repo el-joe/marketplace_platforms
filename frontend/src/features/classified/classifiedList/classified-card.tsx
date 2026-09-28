@@ -13,6 +13,7 @@ import {
   Fuel,
   Gauge,
   Car,
+  Star,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
@@ -27,6 +28,7 @@ interface ClassifiedCardProps {
 
 export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
   const t = useTranslations("classified");
+  const tContract = useTranslations("classifiedHeaderDetails");
   const locale = useLocale();
   const [isFavorite, setIsFavorite] = useState(false);
   const [phoneRevealed, setPhoneRevealed] = useState(false);
@@ -71,6 +73,14 @@ export default function ClassifiedCard({ listing }: ClassifiedCardProps) {
             <div className="absolute top-2.5 start-2.5 bg-[#0066cc]/90 text-white text-[11px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
               <CheckCircle2 className="w-3 h-3 text-white" />
               <span>{t("verifiedUser")}</span>
+            </div>
+          )}
+
+          {/* Exclusive Contract Badge */}
+          {listing.exclusive_contract && (
+            <div className="absolute top-2.5 end-2.5 bg-amber-50/95 border border-amber-200 text-amber-700 text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+              <span>{tContract("exclusiveContract")}</span>
             </div>
           )}
 

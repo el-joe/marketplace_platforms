@@ -1036,6 +1036,7 @@
       "includesOvernight": "مع المبيت",
       "reserveUnit": "احجز",
       "unitReserved": "تم إرسال الحجز.",
+      "reservationNumber": "رقم الحجز: {number}",
       "slot_morning": "صباحي",
       "slot_evening": "مسائي",
       "slot_custom": "مخصص"
@@ -1439,6 +1440,27 @@
   "adsPopup": {
     "close": "إغلاق",
     "viewProduct": "عرض المنتج"
+  },
+  "myBookings": {
+    "title": "حجوزاتي",
+    "subtitle": "اطّلع على جميع حجوزاتك وأدرها من مكان واحد",
+    "noResults": "لا توجد حجوزات",
+    "viewDetails": "عرض التفاصيل",
+    "operatedBy": "تشغيل بواسطة {agency}",
+    "columns": {
+      "bookingNumber": "رقم الحجز"
+    },
+    "tabs": {
+      "travel_package": "باقات السفر",
+      "bookable_unit": "الوحدات القابلة للحجز",
+      "flight": "الرحلات الجوية"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "confirmed": "مؤكد",
+      "cancelled": "ملغى",
+      "completed": "مكتمل"
+    }
   },
   "specialRequests": {
     "myRequests": "طلباتي الخاصة",

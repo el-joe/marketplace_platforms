@@ -218,7 +218,7 @@ class CouponParticipationInvitationService
                 throw ValidationException::withMessages(['request' => 'الطلب مرفوض بالفعل.']);
             }
 
-            if ($refund && $req->status === CouponParticipationRequest::STATUS_PAID && $req->payment_method === 'wallet') {
+            if ($refund && $req->status === CouponParticipationRequest::STATUS_PAID) {
                 $invitation = CouponParticipationInvitation::findOrFail($req->invitation_id);
                 $wallets = app(WalletService::class);
                 $wallet = $wallets->getOrCreateWallet($req->participant_type, $req->participant_id, $invitation->currency);

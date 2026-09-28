@@ -83,6 +83,11 @@
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.vendor') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.month') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.units_stored') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.actual_weight') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.volumetric_weight') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.chargeable_weight') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.days_in_storage') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.in_free_period') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.rate_per_unit') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.total_fee') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.status') }}</th>
@@ -109,6 +114,10 @@
                 <button type="button" id="gen-close" class="btn btn-ghost btn-sm">{{ __('admin.fbn_section.cancel') }}</button>
                 <button type="button" id="gen-confirm" class="btn btn-primary btn-sm">{{ __('admin.fbn_section.queue_job') }}</button>
             </div>
+            <div id="gen-progress" class="hidden mt-4 pt-4 border-t text-sm text-gray-600 flex items-center gap-2">
+                <span class="loading loading-spinner loading-sm"></span>
+                <span id="gen-progress-text">{{ __('admin.fbn_section.generation_in_progress') }}</span>
+            </div>
         </div>
     </div>
 
@@ -121,6 +130,9 @@
             loading: @json(__('admin.fbn_section.loading')),
             error: @json(__('admin.fbn_section.error')),
             selectMonth: @json(__('admin.fbn_section.select_month')),
+            generationInProgress: @json(__('admin.fbn_section.generation_in_progress')),
+            generationComplete: @json(__('admin.fbn_section.generation_complete')),
+            generationFailed: @json(__('admin.fbn_section.generation_failed')),
         });
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -145,6 +157,11 @@
                     { data: 'vendor', orderable: false },
                     { data: 'month', orderable: true },
                     { data: 'units_stored', orderable: false },
+                    { data: 'actual_weight', orderable: false },
+                    { data: 'volumetric_weight', orderable: false },
+                    { data: 'chargeable_weight', orderable: false },
+                    { data: 'days_in_storage', orderable: false },
+                    { data: 'in_free_period', orderable: false },
                     { data: 'rate', orderable: false },
                     { data: 'total_fee', orderable: false },
                     { data: 'status', orderable: false },
@@ -175,13 +192,44 @@
             });
 
             // ── Generate monthly fees ──────────────────────────────────────────────────
+            let genPollTimer = null;
+
+            function stopGenPolling() {
+                if (genPollTimer) { clearInterval(genPollTimer); genPollTimer = null; }
+            }
+
+            function pollGenerationStatus(month) {
+                fetch(`{{ route('admin.fbn.storage-fees.generation-status') }}?month=${encodeURIComponent(month)}`)
+                    .then(r => r.json())
+                    .then(status => {
+                        if (status.state === 'done') {
+                            stopGenPolling();
+                            $('#gen-progress').addClass('hidden');
+                            window.Toast.success(T.generationComplete
+                                .replace(':created', status.created)
+                                .replace(':free', status.free)
+                                .replace(':skipped', status.skipped));
+                            tbl.ajax.reload();
+                        } else if (status.state === 'failed') {
+                            stopGenPolling();
+                            $('#gen-progress').addClass('hidden');
+                            window.Toast.error(T.generationFailed);
+                        }
+                        // 'running' / 'unknown' → keep polling
+                    });
+            }
+
             $('#btn-generate-fees').on('click', () => $('#generate-modal').show());
             $('#gen-close').on('click', () => $('#generate-modal').hide());
             $('#gen-confirm').on('click', () => {
                 const month = $('#gen-month').val();
                 if (!month) { window.Toast.error(T.selectMonth); return; }
-                jsonPost('{{ route('admin.fbn.storage-fees.generate') }}', { month },
-                    () => $('#generate-modal').hide());
+                $('#gen-progress').removeClass('hidden');
+                $('#gen-progress-text').text(T.generationInProgress);
+                jsonPost('{{ route('admin.fbn.storage-fees.generate') }}', { month }, () => {
+                    stopGenPolling();
+                    genPollTimer = setInterval(() => pollGenerationStatus(month), 1500);
+                });
             });
         }, { once: true });
     </script>

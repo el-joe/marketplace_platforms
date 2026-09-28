@@ -17,7 +17,7 @@
             <textarea name="description_ar" rows="3" class="w-full border rounded-lg px-3 py-2">{{ old('description_ar', $package->description_ar) }}</textarea></div>
         <div><label class="block text-sm mb-1">{{ __('ad_packages.target') }}</label>
             <select name="target_type" class="w-full border rounded-lg px-3 py-2">
-                @foreach(['all','influencer','affiliate','broker'] as $t)<option value="{{ $t }}" @selected(old('target_type', $package->target_type) === $t)>{{ $t }}</option>@endforeach
+                @foreach(['all','influencer','affiliate','broker'] as $t)<option value="{{ $t }}" @selected(old('target_type', $package->target_type) === $t)>{{ __('ad_packages.target_'.$t) }}</option>@endforeach
             </select></div>
         <div><label class="block text-sm mb-1">{{ __('ad_packages.f_features') }}</label>
             <textarea name="features_text" rows="4" class="w-full border rounded-lg px-3 py-2">{{ old('features_text', implode("\n", $package->features ?? [])) }}</textarea></div>

@@ -17,6 +17,7 @@ use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -268,12 +269,31 @@ class FbnController extends Controller
                 'vendor' => e($row->vendor_name),
                 'month' => $row->monthLabel(),
                 'units_stored' => number_format($row->units_stored),
+                'actual_weight' => number_format($row->declared_weight_grams),
+                'volumetric_weight' => number_format($row->volumetric_weight_grams),
+                'chargeable_weight' => number_format($row->chargeable_weight_grams),
+                'free_days' => number_format($row->free_days_applied),
+                'days_in_storage' => number_format($row->days_in_storage),
+                'in_free_period' => $row->within_free_period
+                    ? '<span class="badge badge-success">'.__('admin.yes').'</span>'
+                    : '<span class="badge badge-secondary">'.__('admin.no').'</span>',
                 'rate' => number_format($row->rate_per_unit, 2).' '.$row->currency,
                 'total_fee' => '<span class="font-semibold">'.$row->totalFormatted().'</span>',
                 'status' => '<span class="badge badge-'.$row->statusColor().'">'.$row->status->label().'</span>',
                 'actions' => $actions,
             ];
         });
+    }
+
+    public function storageFeesGenerationStatus(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
+
+        $status = Cache::get(GenerateFbnStorageFeesJob::statusCacheKey($data['month']));
+
+        return response()->json($status ?? ['state' => 'unknown']);
     }
 
     public function updateStorageFeeStatus(Request $request, FbnStorageFee $fee): JsonResponse

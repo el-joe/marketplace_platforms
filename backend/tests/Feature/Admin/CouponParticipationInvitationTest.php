@@ -202,6 +202,22 @@ class CouponParticipationInvitationTest extends TestCase
         $this->assertSame('fulfilled', $inv->fresh()->status);
     }
 
+    public function test_reject_paid_bank_transfer_request_credits_wallet(): void
+    {
+        $inv = $this->invitation(['max_participants' => 2]);
+        $vid = $this->s->vendor->id;
+        $r = $this->makeReq($inv, 'vendor', $vid, 300);
+        $r->update(['payment_method' => 'bank_transfer', 'bank_transfer_proof_path' => 'p.png']);
+        $admin = $this->admin();
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.approve', [$inv->id, $r->id]))->assertOk();
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.mark-paid', [$inv->id, $r->id]))->assertOk();
+        $this->assertSame('paid', $r->fresh()->status);
+
+        $this->actingAs($admin, 'admin')->postJson(route('admin.coupon-participation-invitations.requests.reject', [$inv->id, $r->id]))->assertOk();
+        $this->assertSame('rejected', $r->fresh()->status);
+        $this->assertSame(300, $this->balance('vendor', $vid));
+    }
+
     public function test_reject_paid_without_refund_flag_keeps_balance_and_classified_vendor_not_notified(): void
     {
         $inv = $this->invitation();

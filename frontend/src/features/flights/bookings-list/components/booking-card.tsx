@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { CalendarIcon, UsersIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import useLocale from "@/src/hooks/use-locale";
+import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -69,7 +70,11 @@ export default function BookingCard({ booking }: Props) {
         </p>
 
         <div className="flex items-end justify-between mt-auto pt-3 border-t border-border">
-          <Price currentPrice={booking.total_price} size="lg" />
+          <Price
+            currentPrice={booking.total_price}
+            currency={booking.package.currency as CurrencyCode}
+            size="lg"
+          />
           <Link
             href={`/my-bookings/${booking.id}`}
             className={cn(

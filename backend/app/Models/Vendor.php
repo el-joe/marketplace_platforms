@@ -19,6 +19,13 @@ class Vendor extends Model
 {
     use HasFactory, HasUuids/* , SoftDeletes */ ;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $vendor) {
+            $vendor->ownedShippingCompanies()->update(['owner_vendor_id' => null]);
+        });
+    }
+
     protected $fillable = [
         'name',
         'email',

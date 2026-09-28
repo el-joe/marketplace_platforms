@@ -15,6 +15,7 @@ use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Models\Customer;
+use App\Models\ExclusiveContract;
 use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -821,9 +822,49 @@ class ListingQueryService
     }
 
     /**
+     * Batch-resolve the active exclusive contract for each listing in a page of results,
+     * checking listing-level contracts first and falling back to category-wide contracts.
+     *
+     * @param  Collection<int, ClassifiedListing>  $listings
+     * @return array<string, ExclusiveContract> Keyed by listing id.
+     */
+    public function exclusiveContractsForListings($listings): array
+    {
+        $listingIds = $listings->pluck('id')->all();
+        $categoryIds = $listings->pluck('classified_category_id')->unique()->values()->all();
+
+        if (empty($listingIds)) {
+            return [];
+        }
+
+        $contracts = ExclusiveContract::where('status', 'active')
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now())
+            ->where(function ($q) use ($listingIds, $categoryIds) {
+                $q->whereIn('classified_listing_id', $listingIds)
+                    ->orWhere(function ($q2) use ($categoryIds) {
+                        $q2->whereNull('classified_listing_id')
+                            ->whereIn('classified_category_id', $categoryIds);
+                    });
+            })
+            ->with('marketer')
+            ->get();
+
+        $byListing = $contracts->whereNotNull('classified_listing_id')->keyBy('classified_listing_id');
+        $byCategory = $contracts->whereNull('classified_listing_id')->keyBy('classified_category_id');
+
+        $result = [];
+        foreach ($listings as $listing) {
+            $result[$listing->id] = $byListing->get($listing->id) ?? $byCategory->get($listing->classified_category_id);
+        }
+
+        return $result;
+    }
+
+    /**
      * Canonical card shape for classified listings on browse/search grids.
      */
-    public function toClassifiedCardShape(ClassifiedListing $listing): array
+    public function toClassifiedCardShape(ClassifiedListing $listing, ?ExclusiveContract $exclusiveContract = null): array
     {
         return [
             'listing_id' => $listing->id,
@@ -851,6 +892,13 @@ class ListingQueryService
             'images_count' => $listing->images->count(),
             'attributes' => $listing->attributes ?? [],
             'created_at' => $listing->created_at?->toIso8601String(),
+            'exclusive_contract' => $exclusiveContract ? [
+                'marketer' => [
+                    'id' => $exclusiveContract->marketer?->id,
+                    'name' => $exclusiveContract->marketer?->name,
+                ],
+                'expires_at' => $exclusiveContract->ends_at?->toIso8601String(),
+            ] : null,
         ];
     }
 

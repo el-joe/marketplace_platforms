@@ -9,7 +9,7 @@
     <form method="GET" class="flex gap-3">
         <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
             <option value="">{{ __('admin.bookable_units_section.all_statuses') }}</option>
-            @foreach(['draft','active','paused','archived'] as $s)
+            @foreach(['draft','active','paused','archived','rejected'] as $s)
                 <option value="{{ $s }}" @selected(request('status') === $s)>{{ __('admin.bookable_units_section.status_'.$s) }}</option>
             @endforeach
         </select>

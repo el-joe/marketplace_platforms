@@ -18,6 +18,7 @@ use App\Services\Customer\UnifiedCategoryService;
 use App\Services\Shared\PageBuilderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class BrowseController extends Controller
@@ -41,14 +42,14 @@ class BrowseController extends Controller
             'type' => [Rule::in(['product', 'classified', 'travel'])],
         ]);
 
-        if (!in_array($type, ['product', 'classified', 'travel'], true)) {
+        if (! in_array($type, ['product', 'classified', 'travel'], true)) {
             return response()->json(['success' => false, 'message' => __('common.exceptions.browse.invalid_type')], 404);
         }
 
         return match ($type) {
-            'product'    => $this->browseProduct($request, $country, $id),
+            'product' => $this->browseProduct($request, $country, $id),
             'classified' => $this->browseClassified($request, $country, $id),
-            'travel'     => $this->browseTravel($request, $country, $id),
+            'travel' => $this->browseTravel($request, $country, $id),
         };
     }
 
@@ -59,6 +60,7 @@ class BrowseController extends Controller
     public function travelIndex(Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
+
         return $this->browseTravel($request, $country, 'all');
     }
 
@@ -69,6 +71,7 @@ class BrowseController extends Controller
     public function classifiedIndex(Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
+
         return $this->browseClassified($request, $country, 'all');
     }
 
@@ -80,19 +83,19 @@ class BrowseController extends Controller
 
         $category = Category::where('id', $id)->where('is_active', true)->firstOrFail();
 
-        $catVersion  = \Illuminate\Support\Facades\Cache::get("category_v:{$category->id}", 0);
-        $categoryResource = \Illuminate\Support\Facades\Cache::remember(
+        $catVersion = Cache::get("category_v:{$category->id}", 0);
+        $categoryResource = Cache::remember(
             "browse_category_resource:{$category->id}:{$catVersion}",
             now()->addMinutes(30),
             fn () => (new ProductBrowseCategoryResource($category))->resolve()
         );
 
-        $filters     = $request->only([
+        $filters = $request->only([
             'price_min', 'price_max', 'brand', 'rating_min', 'condition',
             'fulfillment_model', 'include_oos', 'attributes', 'sort',
         ]);
-        $perPage     = $request->integer('per_page', 20);
-        $page        = $request->integer('page', 1);
+        $perPage = $request->integer('per_page', 20);
+        $page = $request->integer('page', 1);
         $categoryIds = $this->categories->getDescendantIds($category);
 
         $categoryNode = $this->unifiedCategories->findById($id, 'product');
@@ -108,8 +111,8 @@ class BrowseController extends Controller
         $attributeFilters = is_array($filters['attributes'] ?? null) ? $filters['attributes'] : [];
 
         $paginator = $this->products->paginate($country, $filters, $perPage, $categoryIds);
-        $facets    = $this->products->facets($country, $filters, $categoryIds);
-        $payload   = $this->products->buildProductsPayload(
+        $facets = $this->products->facets($country, $filters, $categoryIds);
+        $payload = $this->products->buildProductsPayload(
             $paginator,
             $country,
             $page,
@@ -120,11 +123,11 @@ class BrowseController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => [
-                'category'      => $categoryResource,
+            'data' => [
+                'category' => $categoryResource,
                 'category_node' => $categoryNode,
-                'page_builder'  => $pageBuilder,
-                'listings'      => array_merge($payload, ['facets' => $facets]),
+                'page_builder' => $pageBuilder,
+                'listings' => array_merge($payload, ['facets' => $facets]),
             ],
         ]);
     }
@@ -140,7 +143,7 @@ class BrowseController extends Controller
         if ($id !== 'all' && $id !== '') {
             $categoryNode = $this->unifiedCategories->findById($id, 'classified');
 
-            if (!$categoryNode) {
+            if (! $categoryNode) {
                 return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);
             }
 
@@ -162,22 +165,24 @@ class BrowseController extends Controller
 
         $paginator = $this->listings->paginateForClassifiedCategory($category?->id, $perPage, $filters);
 
+        $exclusiveContracts = $this->listings->exclusiveContractsForListings($paginator->getCollection());
+
         $items = $paginator->getCollection()
-            ->map(fn ($listing) => $this->listings->toClassifiedCardShape($listing))
+            ->map(fn ($listing) => $this->listings->toClassifiedCardShape($listing, $exclusiveContracts[$listing->id] ?? null))
             ->toArray();
 
         return response()->json([
             'success' => true,
-            'data'    => [
+            'data' => [
                 'category' => $category ? new ClassifiedBrowseCategoryResource($category) : null,
                 'page_builder' => $pageBuilder,
-                'listings'     => [
+                'listings' => [
                     'items' => $items,
-                    'meta'  => [
+                    'meta' => [
                         'current_page' => $paginator->currentPage(),
-                        'last_page'    => $paginator->lastPage(),
-                        'per_page'     => $paginator->perPage(),
-                        'total'        => $paginator->total(),
+                        'last_page' => $paginator->lastPage(),
+                        'per_page' => $paginator->perPage(),
+                        'total' => $paginator->total(),
                     ],
                 ],
             ],
@@ -197,7 +202,7 @@ class BrowseController extends Controller
                 ->where(fn ($query) => $query->where('id', $id)->orWhere('slug', $id))
                 ->first();
 
-            if (!$travelCategory) {
+            if (! $travelCategory) {
                 return response()->json(['success' => false, 'message' => __('common.exceptions.browse.category_not_found')], 404);
             }
         }
@@ -215,17 +220,17 @@ class BrowseController extends Controller
         // Documented names are departure_from/departure_to; date_from/date_to kept as aliases.
         $request->merge([
             'date_from' => $request->input('departure_from', $request->input('date_from')),
-            'date_to'   => $request->input('departure_to', $request->input('date_to')),
+            'date_to' => $request->input('departure_to', $request->input('date_to')),
         ]);
         $request->validate([
             'country_id' => 'nullable|uuid|exists:travel_countries,id',
-            'city_id'    => ['nullable', 'uuid', \Illuminate\Validation\Rule::exists('travel_cities', 'id')
+            'city_id' => ['nullable', 'uuid', Rule::exists('travel_cities', 'id')
                 ->when($request->filled('country_id'), fn ($r) => $r->where('travel_country_id', $request->input('country_id')))],
-            'date_from'  => 'nullable|date',
-            'date_to'    => 'nullable|date|after_or_equal:date_from',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
         ]);
 
-        $perPage   = $request->integer('per_page', 20);
+        $perPage = $request->integer('per_page', 20);
         $paginator = $this->listings->paginateTravelPackages(
             $travelCategory?->id,
             $perPage,
@@ -248,17 +253,17 @@ class BrowseController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => [
+            'data' => [
                 'category' => new TravelBrowseCategoryResource($travelCategory),
                 'available_categories' => $availableCategories,
-                'page_builder'          => $pageBuilder,
-                'listings'              => [
+                'page_builder' => $pageBuilder,
+                'listings' => [
                     'items' => $items,
-                    'meta'  => [
+                    'meta' => [
                         'current_page' => $paginator->currentPage(),
-                        'last_page'    => $paginator->lastPage(),
-                        'per_page'     => $paginator->perPage(),
-                        'total'        => $paginator->total(),
+                        'last_page' => $paginator->lastPage(),
+                        'per_page' => $paginator->perPage(),
+                        'total' => $paginator->total(),
                     ],
                 ],
             ],

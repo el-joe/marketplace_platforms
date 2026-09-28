@@ -16,6 +16,20 @@
             <div class="bg-green-50 text-green-700 text-sm rounded-lg px-4 py-2">{{ session('success') }}</div>
         @endif
 
+        @if ($errors->any())
+            <div class="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-2">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+
+        @if ($unit->status === 'rejected' && $unit->rejection_reason)
+            <div class="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-2">
+                <strong>{{ __('travel.bookable_units.rejection_reason') }}:</strong> {{ $unit->rejection_reason }}
+            </div>
+        @endif
+
         {{-- ── Calendar month nav ─────────────────────────────────────────── --}}
         <div class="flex items-center justify-between">
             <a href="{{ route('travel-agency.bookable-units.show', ['bookableUnit' => $unit, 'month' => $month->copy()->subMonth()->format('Y-m')]) }}"
