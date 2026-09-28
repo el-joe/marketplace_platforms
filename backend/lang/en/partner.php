@@ -2807,6 +2807,13 @@ return [
     'cp_request_sent' => 'Participation request submitted successfully.',
     'cp_min_fee_label' => 'Minimum fee',
     'cp_deadline_label' => 'Registration deadline',
+    'cp_targeted_coupons' => 'Coupons Targeting You',
+    'cp_col_code' => 'Code',
+    'cp_col_discount' => 'Discount',
+    'cp_col_validity' => 'Validity',
+    'cp_status_active' => 'Active',
+    'cp_status_inactive' => 'Inactive',
+    'cp_no_targeted' => 'No coupons currently target your store',
     'product_vendors_only' => 'This feature is available to product vendors only.',
     'submit_participation' => 'Submit Participation Request',
 ];

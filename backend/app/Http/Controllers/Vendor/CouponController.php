@@ -23,8 +23,7 @@ class CouponController extends Controller
     public function __construct(
         private readonly CouponService $coupons,
         private readonly VendorCouponPolicy $policy,
-    ) {
-    }
+    ) {}
 
     private function actor(): VendorAdmin
     {
@@ -48,6 +47,23 @@ class CouponController extends Controller
         return ApiResponse::paginated($coupons, VendorCouponResource::class);
     }
 
+    /**
+     * Coupons the admin directly targeted this vendor on (coupon_vendors
+     * eligibility pivot) — vendor doesn't own or manage these, but they
+     * apply to their listings, so surface them for visibility.
+     */
+    public function targeted(): JsonResponse
+    {
+        $vendorId = $this->actor()->vendor_id;
+
+        $coupons = Coupon::query()
+            ->whereHas('vendors', fn ($q) => $q->where('vendors.id', $vendorId))
+            ->latest()
+            ->paginate(20);
+
+        return ApiResponse::paginated($coupons, VendorCouponResource::class);
+    }
+
     public function show(string $id): JsonResponse
     {
         $coupon = Coupon::with('products:id')->findOrFail($id);
@@ -63,7 +79,7 @@ class CouponController extends Controller
 
         abort_unless($this->policy->create($actor), 403);
 
-        if (!in_array($request->input('scope'), CouponService::VENDOR_MANAGEABLE_SCOPES, true)) {
+        if (! in_array($request->input('scope'), CouponService::VENDOR_MANAGEABLE_SCOPES, true)) {
             abort(403, __('partner.coupons.messages.vendor_scope_restricted'));
         }
 
@@ -87,7 +103,7 @@ class CouponController extends Controller
 
         abort_unless($this->policy->update($actor, $coupon), 403);
 
-        if (!in_array($request->input('scope'), CouponService::VENDOR_MANAGEABLE_SCOPES, true)) {
+        if (! in_array($request->input('scope'), CouponService::VENDOR_MANAGEABLE_SCOPES, true)) {
             abort(403, __('partner.coupons.messages.vendor_scope_restricted'));
         }
 
@@ -106,7 +122,7 @@ class CouponController extends Controller
 
         abort_unless($this->policy->toggleActive($this->actor(), $coupon), 403);
 
-        $coupon->update(['is_active' => !$coupon->is_active]);
+        $coupon->update(['is_active' => ! $coupon->is_active]);
 
         return ApiResponse::success(['is_active' => $coupon->is_active], __('partner.coupons.messages.coupon_status_updated'));
     }

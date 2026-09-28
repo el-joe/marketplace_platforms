@@ -102,7 +102,7 @@ class Coupon extends Model
      */
     public function vendors(): BelongsToMany
     {
-        return $this->belongsToMany(Vendor::class, 'coupon_vendors');
+        return $this->belongsToMany(Vendor::class, 'coupon_vendors')->withTimestamps();
     }
 
     /**
@@ -112,7 +112,7 @@ class Coupon extends Model
      */
     public function marketers(): BelongsToMany
     {
-        return $this->belongsToMany(Marketer::class, 'coupon_marketers');
+        return $this->belongsToMany(Marketer::class, 'coupon_marketers')->withTimestamps();
     }
 
     public function couponProducts(): HasMany

@@ -138,6 +138,7 @@ Route::prefix('v1')->group(function (): void {
             Route::prefix('coupons')->name('vendor.coupons.')->group(function (): void {
                 Route::get('/', [CouponController::class, 'index'])->name('index');
                 Route::post('/', [CouponController::class, 'store'])->name('store');
+                Route::get('targeted', [CouponController::class, 'targeted'])->name('targeted');
                 Route::get('{id}', [CouponController::class, 'show'])->name('show');
                 Route::put('{id}', [CouponController::class, 'update'])->name('update');
                 Route::put('{id}/toggle-active', [CouponController::class, 'toggleActive'])->name('toggle-active');

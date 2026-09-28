@@ -16,7 +16,33 @@
         </div>
     @endif
 
-    <h2 class="font-bold text-gray-900">{{ __('partner.cp_open_invitations') }}</h2>
+    <h2 class="font-bold text-gray-900">{{ __('partner.cp_targeted_coupons') }}</h2>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs">
+                <tr>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_code') }}</th>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_discount') }}</th>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_validity') }}</th>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_status') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($targetedCoupons as $tc)
+                <tr>
+                    <td class="px-4 py-2 font-medium">{{ $tc->code }}</td>
+                    <td class="px-4 py-2">{{ $tc->type === 'percentage' ? $tc->value . '%' : number_format($tc->value) . ' ' . $tc->currency }}</td>
+                    <td class="px-4 py-2">{{ $tc->valid_from?->format('Y-m-d') }} — {{ $tc->valid_until?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-2">{{ $tc->is_active ? __('partner.cp_status_active') : __('partner.cp_status_inactive') }}</td>
+                </tr>
+                @empty
+                <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400">{{ __('partner.cp_no_targeted') }}</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="font-bold text-gray-900 pt-4">{{ __('partner.cp_open_invitations') }}</h2>
 
     @forelse($invitations as $invitation)
         @php $myRequest = $invitation->requests->first(); @endphp

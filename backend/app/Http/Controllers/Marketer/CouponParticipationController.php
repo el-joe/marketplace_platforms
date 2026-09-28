@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\CouponParticipationInvitation;
 use App\Models\CouponParticipationRequest;
 use App\Models\Marketer;
@@ -41,7 +42,12 @@ class CouponParticipationController extends Controller
         $svc = app(CouponParticipationInvitationService::class);
         $balances = $invitations->getCollection()->mapWithKeys(fn ($i) => [$i->id => (int) $svc->walletFor('marketer', $marketer->id, $i->currency)->balance]);
 
-        return view('marketer.coupon-participation.index', compact('marketer', 'invitations', 'balances'));
+        $targetedCoupons = Coupon::query()
+            ->whereHas('marketers', fn ($q) => $q->where('marketers.id', $marketer->id))
+            ->latest()
+            ->get();
+
+        return view('marketer.coupon-participation.index', compact('marketer', 'invitations', 'balances', 'targetedCoupons'));
     }
 
     public function store(Request $request, CouponParticipationInvitation $invitation): RedirectResponse

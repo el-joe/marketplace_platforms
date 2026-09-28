@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\CouponParticipationInvitation;
 use App\Models\CouponParticipationRequest;
 use App\Services\Admin\CouponParticipationInvitationService;
@@ -46,7 +47,15 @@ class CouponParticipationController extends Controller
         $svc = app(CouponParticipationInvitationService::class);
         $balances = $invitations->getCollection()->mapWithKeys(fn ($i) => [$i->id => (int) $svc->walletFor('vendor', $vendorId, $i->currency)->balance]);
 
-        return view('partner.coupon-participation.index', compact('invitations', 'myRequests', 'balances'));
+        // Coupons the admin directly targeted this vendor on (coupon_vendors
+        // eligibility pivot) — a separate, read-only feature from the paid
+        // participation invitations above.
+        $targetedCoupons = Coupon::query()
+            ->whereHas('vendors', fn ($q) => $q->where('vendors.id', $vendorId))
+            ->latest()
+            ->get();
+
+        return view('partner.coupon-participation.index', compact('invitations', 'myRequests', 'balances', 'targetedCoupons'));
     }
 
     public function store(Request $request, string $invitation): RedirectResponse

@@ -2807,6 +2807,13 @@ return [
     'cp_request_sent' => 'تم إرسال طلب المشاركة بنجاح.',
     'cp_min_fee_label' => 'الحد الأدنى للرسوم',
     'cp_deadline_label' => 'آخر موعد للتسجيل',
+    'cp_targeted_coupons' => 'قسائم تستهدفك',
+    'cp_col_code' => 'الكود',
+    'cp_col_discount' => 'الخصم',
+    'cp_col_validity' => 'الصلاحية',
+    'cp_status_active' => 'مفعّلة',
+    'cp_status_inactive' => 'غير مفعّلة',
+    'cp_no_targeted' => 'لا توجد قسائم تستهدف متجرك حاليًا',
     'product_vendors_only' => 'هذه الميزة متاحة للبائعين من نوع المنتجات فقط.',
     'submit_participation' => 'إرسال طلب المشاركة',
 ];

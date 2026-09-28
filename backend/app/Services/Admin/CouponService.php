@@ -4,8 +4,12 @@ namespace App\Services\Admin;
 
 use App\Models\Admin;
 use App\Models\Coupon;
+use App\Models\MarketerAdmin;
+use App\Models\VendorAdmin;
+use App\Notifications\CouponTargetedNotification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -48,14 +52,41 @@ class CouponService
                 $data
             ));
 
-            $coupon->vendors()->sync($vendorIds);
-            $coupon->marketers()->sync($marketerIds);
+            $vendorSync = $coupon->vendors()->sync($vendorIds);
+            $marketerSync = $coupon->marketers()->sync($marketerIds);
             $coupon->products()->sync($productIds);
+
+            $this->notifyNewlyTargeted($coupon, $vendorSync['attached'], $marketerSync['attached']);
 
             return $coupon;
         });
 
         return $coupon;
+    }
+
+    /**
+     * Notify vendors/marketers newly added to the coupon's targeting
+     * pivots (not ones already targeted, to avoid re-notifying on every
+     * unrelated edit).
+     *
+     * @param  array<int, string>  $newVendorIds
+     * @param  array<int, string>  $newMarketerIds
+     */
+    private function notifyNewlyTargeted(Coupon $coupon, array $newVendorIds, array $newMarketerIds): void
+    {
+        if (! empty($newVendorIds)) {
+            $admins = VendorAdmin::whereIn('vendor_id', $newVendorIds)->get();
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new CouponTargetedNotification($coupon));
+            }
+        }
+
+        if (! empty($newMarketerIds)) {
+            $admins = MarketerAdmin::whereIn('marketer_id', $newMarketerIds)->get();
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new CouponTargetedNotification($coupon));
+            }
+        }
     }
 
     public function update(Coupon $coupon, array $data): Coupon
@@ -84,9 +115,11 @@ class CouponService
 
         DB::transaction(function () use ($coupon, $data, $vendorIds, $marketerIds, $productIds) {
             $coupon->update($data);
-            $coupon->vendors()->sync($vendorIds);
-            $coupon->marketers()->sync($marketerIds);
+            $vendorSync = $coupon->vendors()->sync($vendorIds);
+            $marketerSync = $coupon->marketers()->sync($marketerIds);
             $coupon->products()->sync($productIds);
+
+            $this->notifyNewlyTargeted($coupon, $vendorSync['attached'], $marketerSync['attached']);
         });
 
         return $coupon->refresh();
