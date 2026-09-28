@@ -4,13 +4,15 @@ import { Button } from "@/src/components/ui/button";
 import { CheckIcon, EllipsisIcon, Share2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
-import ItemCard from "./item-card";
 import EmptyState from "./empty-state";
 import { useQueryState } from "nuqs";
 import { useWishlistContext } from "@/src/providers/wishlist-provider";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import WishlistOptionsMenu from "./wihlist-options-menu";
 import { IWishlist } from "@/types";
+import ClassifiedCard from "./classified-card";
+import ProductCard from "./product-card";
+import { ClassifiedItem, ProductItem } from "@/types/wishlist.type";
 
 export default function WishlistItems() {
   const t = useTranslations("wishlist");
@@ -109,9 +111,13 @@ export default function WishlistItems() {
         <EmptyState />
       ) : (
         <div className="w-full flex gap-3 flex-wrap items-stretch md:py-4 md:ps-4">
-          {wishlistGroup?.items.map((p) => (
-            <ItemCard item={p} key={p.id} />
-          ))}
+          {wishlistGroup?.items.map((p) =>
+            p.type === "classified" ? (
+              <ClassifiedCard item={p as ClassifiedItem} key={p.id} />
+            ) : (
+              <ProductCard item={p as ProductItem} key={p.id} />
+            ),
+          )}
         </div>
       )}
     </div>

@@ -147,7 +147,7 @@ const CategoriesNav = () => {
 
   return (
     <div
-      className="w-full container hidden md:flex items-center gap-3 h-11 relative"
+      className="w-full container hidden md:flex items-center gap-3 h-11 relative select-none"
       onMouseLeave={() => {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);

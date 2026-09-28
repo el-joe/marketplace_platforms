@@ -32,9 +32,10 @@ import { ShippingBadgePill } from "./shipping-badge-pill";
 
 type Props = {
   productData: Product | IProduct;
+  className?: string;
 };
 
-const ProductCard = ({ productData }: Props) => {
+const ProductCard = ({ productData, className }: Props) => {
   const [isWishlisted, setIsWishlisted] = useState<boolean>(
     productData.is_wishlisted,
   );
@@ -65,12 +66,15 @@ const ProductCard = ({ productData }: Props) => {
 
   return (
     <div
-      className="border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group"
+      className={cn(
+        "border border-border-color w-37 md:w-40 lg:w-48 xl:w-72 rounded-lg overflow-hidden h-full flex flex-col gap-2 bg-white group max-w-dvw",
+        className,
+      )}
       onMouseEnter={() => handleAutoplay("start")}
       onMouseLeave={() => handleAutoplay("stop")}
     >
       {/* card top (images slide, topleft badge, wishlist but, cart btn) */}
-      <div className="relative h-[300px]">
+      <div className="relative max-h-[260px] lg:max-h-[320px] aspect-12/16 h-max">
         {/* sponsored/ad badge */}
         {!!productData.is_sponsored && <AdBadge />}
         {/* top left badge */}

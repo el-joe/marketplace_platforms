@@ -21,6 +21,7 @@ import {
 } from "@/src/services/wishlist";
 import { useTranslations } from "next-intl";
 import { ClassifiedDetail } from "./types";
+import { Button } from "@/src/components/ui/button";
 
 interface ClassifiedHeaderDetailsProps {
   listing: ClassifiedDetail;
@@ -31,7 +32,6 @@ export default function ClassifiedHeaderDetails({
 }: ClassifiedHeaderDetailsProps) {
   const t = useTranslations("classifiedHeaderDetails");
   const [isFavorite, setIsFavorite] = useState(listing.isFavorite);
-  const [favCount, setFavCount] = useState(listing.favoritesCount);
   const [isNotified, setIsNotified] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
@@ -67,7 +67,6 @@ export default function ClassifiedHeaderDetails({
 
     // Optimistic update
     setIsFavorite(!wasFavorite);
-    setFavCount((c) => (wasFavorite ? Math.max(0, c - 1) : c + 1));
     setIsTogglingFavorite(true);
 
     try {
@@ -86,7 +85,6 @@ export default function ClassifiedHeaderDetails({
     } catch {
       // Roll back optimistic update on failure
       setIsFavorite(wasFavorite);
-      setFavCount((c) => (wasFavorite ? c + 1 : Math.max(0, c - 1)));
       wishlistItemId.current = previousItemId;
       toast.error("Couldn't update favorites. Please try again.");
     } finally {
@@ -133,7 +131,8 @@ export default function ClassifiedHeaderDetails({
         <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700">
           <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
           <span>
-            {t("exclusiveContract")}{listing.exclusiveContract.marketerName
+            {t("exclusiveContract")}
+            {listing.exclusiveContract.marketerName
               ? ` — ${listing.exclusiveContract.marketerName}`
               : ""}
           </span>
@@ -171,7 +170,7 @@ export default function ClassifiedHeaderDetails({
 
         {/* Right: Favourite & Share */}
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={toggleFavorite}
             className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700 hover:text-red-500 transition-colors py-1 px-2 rounded-lg hover:bg-gray-50"
           >
@@ -180,10 +179,9 @@ export default function ClassifiedHeaderDetails({
                 isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"
               }`}
             />
-            <span>Favourite ({favCount})</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={handleShare}
             className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors py-1 px-2 rounded-lg hover:bg-gray-50"
           >
@@ -193,7 +191,7 @@ export default function ClassifiedHeaderDetails({
               <Share2 className="w-4 h-4 text-gray-600" />
             )}
             <span>{copied ? "Link Copied!" : "Share"}</span>
-          </button>
+          </Button>
         </div>
       </div>
 
