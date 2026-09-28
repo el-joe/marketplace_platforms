@@ -405,7 +405,15 @@
         </table>
         </div>
         <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3"
-              x-data='{ scope: "products", category: "", cats: @json($commissionCategories->map(fn ($c) => $c->map(fn ($x) => ["id" => $x->id, "name" => $x->name_ar ?: $x->name_en])->values())) }'>
+              x-data='{
+                  scope: "products",
+                  category: "",
+                  cats: @json($commissionCategories->map(fn ($c) => $c->map(fn ($x) => ["id" => $x->id, "name" => $x->name_ar ?: $x->name_en])->values())),
+              }'
+              x-effect="scope; category; $nextTick(() => {
+                  window.initSelect2 && window.initSelect2($($el));
+                  $refs.excl && $($refs.excl).prop('disabled', category !== '').trigger('change.select2');
+              })">
             @csrf
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_type') }}</label>
@@ -417,14 +425,14 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
-                <select name="category_id" x-model="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
+                <select name="category_id" data-select2-init x-model="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
                     <option value="">{{ __('admin.marketer_commission_default_all_type') }}</option>
                     <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
                 </select>
             </div>
             <div x-show="category === ''" x-cloak x-effect="scope; $refs.excl && Array.from($refs.excl.options).forEach(o => o.selected = false)">
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_except') }}</label>
-                <select name="excluded_category_ids[]" x-ref="excl" multiple size="4" :disabled="category !== ''" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[200px]">
+                <select name="excluded_category_ids[]" x-ref="excl" data-select2-init multiple :disabled="category !== ''" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[200px]">
                     <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
                 </select>
                 <p class="text-[11px] text-gray-400 mt-1">{{ __('admin.marketer_commission_except_hint') }}</p>
