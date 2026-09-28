@@ -238,6 +238,9 @@ class CouponController extends Controller
             'selectedCustomers' => $coupon->eligible_customer_ids
                 ? Customer::query()->whereIn('id', $coupon->eligible_customer_ids)->get(['id', 'name', 'email'])
                 : collect(),
+            'selectedVendors' => $coupon->vendors,
+            'selectedMarketers' => $coupon->marketers,
+            'selectedProducts' => $coupon->products,
             'totalDiscountGranted' => (float) $totalDiscountGranted,
             'dailyRedemptions' => $dailyRedemptions,
             'recentUsages' => CouponUsageResource::collection($recentUsages)->resolve(),
