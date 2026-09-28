@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\CouponParticipationInvitation;
 use App\Models\CouponParticipationRequest;
+use App\Models\Currency;
 use App\Services\Admin\CouponParticipationInvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -45,7 +48,8 @@ class CouponParticipationInvitationController extends Controller
     public function create(): View
     {
         return view('admin.coupon-participation-invitations.create', [
-            'coupons' => \App\Models\Coupon::where('is_active', false)->where('value', '>', 0)->orderBy('code')->get(['id', 'code', 'value']),
+            'coupons' => Coupon::where('is_active', false)->where('value', '>', 0)->orderBy('code')->get(['id', 'code', 'value']),
+            'currencies' => Currency::where('is_active', true)->orderBy('code')->pluck('code'),
             'breadcrumbs' => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.nav.coupons'), 'url' => route('admin.coupons.index')],
@@ -54,11 +58,25 @@ class CouponParticipationInvitationController extends Controller
         ]);
     }
 
+    public function couponDetails(Request $request): JsonResponse
+    {
+        $coupon = Coupon::where('is_active', false)
+            ->where('value', '>', 0)
+            ->findOrFail($request->input('id'));
+
+        return response()->json([
+            'shipping_type' => $coupon->shipping_type_restriction?->value ?? 'all',
+            'value' => $coupon->value,
+            'type' => $coupon->type?->value,
+            'currency' => $coupon->currency,
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'coupon_id' => ['required', 'uuid', 'exists:coupons,id', function ($attr, $value, $fail) {
-                $coupon = \App\Models\Coupon::find($value);
+                $coupon = Coupon::find($value);
                 if (! $coupon) {
                     return $fail(__('admin.coupon_participation_section.coupon_not_found'));
                 }
@@ -73,7 +91,7 @@ class CouponParticipationInvitationController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'max_participants' => ['required', 'integer', 'min:1'],
             'min_fee_amount' => ['required', 'integer', 'min:0'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', Rule::exists('currencies', 'code')->where('is_active', true)],
             'registration_deadline' => ['required', 'date', 'after:now'],
         ]);
 

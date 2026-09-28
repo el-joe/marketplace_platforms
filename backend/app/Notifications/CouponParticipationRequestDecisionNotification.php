@@ -4,6 +4,8 @@ namespace App\Notifications;
 
 use App\Models\CouponParticipationRequest;
 use App\Models\VendorAdmin;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Notifications\Messages\MailMessage;
 
 /**
  * Sent to the requesting vendor/marketer when the admin approves or rejects
@@ -11,7 +13,16 @@ use App\Models\VendorAdmin;
  */
 class CouponParticipationRequestDecisionNotification extends BaseDatabaseBroadcastNotification
 {
-    public function __construct(private readonly CouponParticipationRequest $participationRequest) {}
+    public function __construct(
+        private readonly CouponParticipationRequest $participationRequest,
+        private readonly string $notifiableId,
+        private readonly string $guard,
+    ) {}
+
+    public function via(object $notifiable): array
+    {
+        return ['database', 'broadcast', 'mail'];
+    }
 
     public function notificationType(): string
     {
@@ -37,6 +48,16 @@ class CouponParticipationRequestDecisionNotification extends BaseDatabaseBroadca
 
     public function broadcastOn(): array
     {
-        return [];
+        return [new PrivateChannel($this->guard.'.'.$this->notifiableId)];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $data = $this->notificationData($notifiable);
+
+        return (new MailMessage)
+            ->subject($data['title'])
+            ->line($data['message'])
+            ->action('عرض التفاصيل', $data['url']);
     }
 }

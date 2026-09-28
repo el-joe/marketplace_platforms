@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BestsellerController;
 use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\BlogPostController;
+use App\Http\Controllers\Admin\BookableUnitController as AdminBookableUnitController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CarrierClaimController;
 use App\Http\Controllers\Admin\CarrierScorecardController;
@@ -59,6 +60,7 @@ use App\Http\Controllers\Admin\InternationalShippingEligibilityController;
 use App\Http\Controllers\Admin\InternationalShippingRateController;
 use App\Http\Controllers\Admin\LedgerController;
 use App\Http\Controllers\Admin\LiveStreamController;
+use App\Http\Controllers\Admin\MarketerAdPackageController;
 use App\Http\Controllers\Admin\MarketerCampaignController;
 use App\Http\Controllers\Admin\MarketerContractController;
 use App\Http\Controllers\Admin\MarketerController;
@@ -94,7 +96,6 @@ use App\Http\Controllers\Admin\SystemToolsController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\TravelAgencyChangeRequestController;
 use App\Http\Controllers\Admin\TravelAgencyController;
-use App\Http\Controllers\Admin\BookableUnitController as AdminBookableUnitController;
 use App\Http\Controllers\Admin\TravelBookingController;
 use App\Http\Controllers\Admin\TravelCategoryController;
 use App\Http\Controllers\Admin\TravelCityController;
@@ -756,6 +757,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('coupon-participation-invitations')->name('coupon-participation-invitations.')->middleware('admin.permission:coupons.view')->group(function () {
         Route::get('/', [CouponParticipationInvitationController::class, 'index'])->name('index');
         Route::get('/create', [CouponParticipationInvitationController::class, 'create'])->name('create');
+        Route::get('/coupon-details', [CouponParticipationInvitationController::class, 'couponDetails'])->name('coupon-details');
         Route::post('/', [CouponParticipationInvitationController::class, 'store'])->name('store');
         Route::get('/{invitation}', [CouponParticipationInvitationController::class, 'show'])->name('show');
         Route::post('/{invitation}/cancel', [CouponParticipationInvitationController::class, 'cancel'])->name('cancel');
@@ -990,17 +992,17 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     // ── Marketer Management ────────────────────────────────────────────────
     Route::prefix('marketer-ad-packages')->name('marketer-ad-packages.')->group(function () {
         Route::middleware('admin.permission:marketers.view')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'index'])->name('index');
-            Route::get('/subscriptions/{subscription}/proof', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'proof'])->name('proof');
+            Route::get('/', [MarketerAdPackageController::class, 'index'])->name('index');
+            Route::get('/subscriptions/{subscription}/proof', [MarketerAdPackageController::class, 'proof'])->name('proof');
         });
         Route::middleware('admin.permission:marketers.manage')->group(function () {
-            Route::get('/create', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'create'])->name('create');
-            Route::post('/', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'store'])->name('store');
-            Route::post('/subscriptions/{subscription}/approve', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'approve'])->name('approve');
-            Route::post('/subscriptions/{subscription}/reject', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'reject'])->name('reject');
-            Route::get('/{marketerAdPackage}/edit', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'edit'])->name('edit');
-            Route::put('/{marketerAdPackage}', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'update'])->name('update');
-            Route::delete('/{marketerAdPackage}', [\App\Http\Controllers\Admin\MarketerAdPackageController::class, 'destroy'])->name('destroy');
+            Route::get('/create', [MarketerAdPackageController::class, 'create'])->name('create');
+            Route::post('/', [MarketerAdPackageController::class, 'store'])->name('store');
+            Route::post('/subscriptions/{subscription}/approve', [MarketerAdPackageController::class, 'approve'])->name('approve');
+            Route::post('/subscriptions/{subscription}/reject', [MarketerAdPackageController::class, 'reject'])->name('reject');
+            Route::get('/{marketerAdPackage}/edit', [MarketerAdPackageController::class, 'edit'])->name('edit');
+            Route::put('/{marketerAdPackage}', [MarketerAdPackageController::class, 'update'])->name('update');
+            Route::delete('/{marketerAdPackage}', [MarketerAdPackageController::class, 'destroy'])->name('destroy');
         });
     });
 

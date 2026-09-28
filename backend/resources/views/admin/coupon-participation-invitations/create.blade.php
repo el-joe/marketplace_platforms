@@ -19,6 +19,7 @@
             <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupon_participation_section.cps_description') }}</label>
             <textarea name="description" rows="3" class="input w-full">{{ old('description') }}</textarea>
             @error('description') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            <p class="text-xs text-amber-600 mt-1">{{ __('admin.coupon_participation_section.cps_description_hint') }}</p>
         </div>
 
         <div>
@@ -30,6 +31,10 @@
                 @endforeach
             </select>
             @error('coupon_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            <div id="coupon-details-preview" class="mt-2 text-xs text-blue-700 bg-blue-50 rounded p-2 hidden">
+                <span id="coupon-shipping-badge"></span>
+                <span id="coupon-value-badge" class="ml-2"></span>
+            </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -48,7 +53,11 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupon_participation_section.cps_currency') }}</label>
-                <input type="text" name="currency" maxlength="3" value="{{ old('currency', 'SAR') }}" class="input w-full" required />
+                <select name="currency" class="input w-full" required>
+                    @foreach($currencies as $code)
+                        <option value="{{ $code }}" @selected(old('currency', 'SAR') === $code)>{{ $code }}</option>
+                    @endforeach
+                </select>
                 @error('currency') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
@@ -63,4 +72,20 @@
         </div>
     </form>
 </div>
+
+@push('scripts')
+<script>
+document.querySelector('select[name="coupon_id"]')?.addEventListener('change', async function () {
+    const id = this.value;
+    const preview = document.getElementById('coupon-details-preview');
+    if (!id) { preview.classList.add('hidden'); return; }
+    const res = await fetch('{{ route('admin.coupon-participation-invitations.coupon-details') }}?id=' + id);
+    if (!res.ok) { preview.classList.add('hidden'); return; }
+    const data = await res.json();
+    document.getElementById('coupon-shipping-badge').textContent = 'نوع الشحن: ' + (data.shipping_type ?? 'الكل');
+    document.getElementById('coupon-value-badge').textContent = 'الخصم: ' + data.value + ' ' + (data.type === 'percentage' ? '%' : data.currency);
+    preview.classList.remove('hidden');
+});
+</script>
+@endpush
 @endsection

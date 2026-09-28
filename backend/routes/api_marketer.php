@@ -1,94 +1,97 @@
 <?php
 
 use App\Http\Controllers\Api\Marketer\AdBookingController;
+use App\Http\Controllers\Api\Marketer\AdPackageController;
 use App\Http\Controllers\Api\Marketer\AdSlotController;
 use App\Http\Controllers\Api\Marketer\AuthController;
 use App\Http\Controllers\Api\Marketer\CampaignController;
+use App\Http\Controllers\Api\Marketer\ClassifiedInquiryController;
+use App\Http\Controllers\Api\Marketer\ClassifiedListingController;
+use App\Http\Controllers\Api\Marketer\CommissionRuleController;
 use App\Http\Controllers\Api\Marketer\ContractController;
+use App\Http\Controllers\Api\Marketer\ConversationController;
+use App\Http\Controllers\Api\Marketer\CouponParticipationController;
 use App\Http\Controllers\Api\Marketer\DashboardController;
+use App\Http\Controllers\Api\Marketer\ExclusiveContractController;
 use App\Http\Controllers\Api\Marketer\FinanceController;
 use App\Http\Controllers\Api\Marketer\InvitationController;
 use App\Http\Controllers\Api\Marketer\ListingController;
+use App\Http\Controllers\Api\Marketer\NotificationController;
+use App\Http\Controllers\Api\Marketer\OnboardingController;
 use App\Http\Controllers\Api\Marketer\ProfileController;
 use App\Http\Controllers\Api\Marketer\ReportController;
-use App\Http\Controllers\Api\Marketer\NotificationController;
-use App\Http\Controllers\Api\Marketer\ClassifiedListingController;
-use App\Http\Controllers\Api\Marketer\ClassifiedInquiryController;
+use App\Http\Controllers\Api\Marketer\SpecialRequestController;
 use App\Http\Controllers\Api\Marketer\WantedListingController;
-use App\Http\Controllers\Api\Marketer\ExclusiveContractController;
-use App\Http\Controllers\Api\Marketer\CouponParticipationController;
-use App\Http\Controllers\Api\Marketer\ConversationController;
-use App\Http\Controllers\Api\Marketer\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (no guard) ───────────────────────────────────────────────────────
-Route::post('/login',           [AuthController::class, 'login']);
-Route::post('/register',        [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 // ── Onboarding (authenticated, allowed before onboarding is complete) ─────
 Route::middleware('marketer.api.auth')->prefix('onboarding')->group(function () {
     Route::post('/job-type', [OnboardingController::class, 'jobType']);
-    Route::post('/profile',  [OnboardingController::class, 'profile']);
+    Route::post('/profile', [OnboardingController::class, 'profile']);
     Route::post('/complete', [OnboardingController::class, 'complete']);
 });
 
 // ── Authenticated ─────────────────────────────────────────────────────────
 Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function () {
-    Route::post('/logout',         [AuthController::class, 'logout']);
-    Route::post('/refresh',        [AuthController::class, 'refresh']);
-    Route::get('/me',              [AuthController::class, 'me']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
+    Route::get('/me', [AuthController::class, 'me']);
 
-    Route::get('/dashboard',       [DashboardController::class, 'index']);
-    Route::get('/commission-rules', [\App\Http\Controllers\Api\Marketer\CommissionRuleController::class, 'index']);
-    Route::get('/profile',         [ProfileController::class, 'show']);
-    Route::post('/profile',        [ProfileController::class, 'update']);
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/commission-rules', [CommissionRuleController::class, 'index']);
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::post('/profile', [ProfileController::class, 'update']);
 
-    Route::get('/special-requests',      [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'index']);
-    Route::patch('/special-requests/{id}/start', [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'start']);
-    Route::get('/special-requests/{id}', [\App\Http\Controllers\Api\Marketer\SpecialRequestController::class, 'show']);
+    Route::get('/special-requests', [SpecialRequestController::class, 'index']);
+    Route::patch('/special-requests/{id}/start', [SpecialRequestController::class, 'start']);
+    Route::get('/special-requests/{id}', [SpecialRequestController::class, 'show']);
 
-    Route::get('/invitations',                          [InvitationController::class, 'index']);
-    Route::post('/invitations/{invitation}/accept',     [InvitationController::class, 'accept']);
-    Route::post('/invitations/{invitation}/reject',     [InvitationController::class, 'reject']);
+    Route::get('/invitations', [InvitationController::class, 'index']);
+    Route::post('/invitations/{invitation}/accept', [InvitationController::class, 'accept']);
+    Route::post('/invitations/{invitation}/reject', [InvitationController::class, 'reject']);
 
-    Route::get('/campaigns/active',                    [CampaignController::class, 'active']);
-    Route::get('/campaigns/finished',                  [CampaignController::class, 'finished']);
+    Route::get('/campaigns/active', [CampaignController::class, 'active']);
+    Route::get('/campaigns/finished', [CampaignController::class, 'finished']);
 
-    Route::get('/reports',                             [ReportController::class, 'index']);
+    Route::get('/reports', [ReportController::class, 'index']);
 
-    Route::get('/contract',          [ContractController::class, 'show']);
-    Route::post('/contract/accept',  [ContractController::class, 'accept']);
+    Route::get('/contract', [ContractController::class, 'show']);
+    Route::post('/contract/accept', [ContractController::class, 'accept']);
 
     // enhancement.md P-16 task 2: API parity — listings (CRUD subset), finance/wallet/withdrawals.
-    Route::get('/listings',                             [ListingController::class, 'index']);
-    Route::post('/listings/{listing}/toggle',           [ListingController::class, 'toggleStatus']);
-    Route::post('/listings/{listing}/price',            [ListingController::class, 'updatePrice']);
-    Route::get('/listings/{listing}/promo-badges',      [ListingController::class, 'promoBadges']);
-    Route::put('/listings/{listing}/promo-badges',      [ListingController::class, 'updatePromoBadges']);
-    Route::delete('/listings/{listing}',                [ListingController::class, 'destroy']);
+    Route::get('/listings', [ListingController::class, 'index']);
+    Route::post('/listings/{listing}/toggle', [ListingController::class, 'toggleStatus']);
+    Route::post('/listings/{listing}/price', [ListingController::class, 'updatePrice']);
+    Route::get('/listings/{listing}/promo-badges', [ListingController::class, 'promoBadges']);
+    Route::put('/listings/{listing}/promo-badges', [ListingController::class, 'updatePromoBadges']);
+    Route::delete('/listings/{listing}', [ListingController::class, 'destroy']);
 
-    Route::get('/finance/commissions',                  [FinanceController::class, 'commissions']);
-    Route::get('/finance/wallet',                       [FinanceController::class, 'wallet']);
-    Route::post('/finance/withdrawals',                 [FinanceController::class, 'requestWithdrawal']);
+    Route::get('/finance/commissions', [FinanceController::class, 'commissions']);
+    Route::get('/finance/wallet', [FinanceController::class, 'wallet']);
+    Route::post('/finance/withdrawals', [FinanceController::class, 'requestWithdrawal']);
 
     // Paid ad slots (AS-07) — marketer booking of admin-managed placements/page-block slots
     Route::prefix('ad-slots')->name('marketer.api.ad-slots.')->group(function (): void {
-        Route::get('/',                    [AdSlotController::class, 'index'])->name('index');
-        Route::get('destinations',         [AdSlotController::class, 'destinations'])->name('destinations'); // before {id}
-        Route::get('{id}',                 [AdSlotController::class, 'show'])->name('show');
-        Route::get('{id}/calendar',        [AdSlotController::class, 'calendar'])->name('calendar');
-        Route::post('{id}/quote',          [AdSlotController::class, 'quote'])->name('quote');
+        Route::get('/', [AdSlotController::class, 'index'])->name('index');
+        Route::get('destinations', [AdSlotController::class, 'destinations'])->name('destinations'); // before {id}
+        Route::get('{id}', [AdSlotController::class, 'show'])->name('show');
+        Route::get('{id}/calendar', [AdSlotController::class, 'calendar'])->name('calendar');
+        Route::post('{id}/quote', [AdSlotController::class, 'quote'])->name('quote');
     });
     Route::prefix('ad-bookings')->name('marketer.api.ad-bookings.')->group(function (): void {
-        Route::get('/',                    [AdBookingController::class, 'index'])->name('index');
-        Route::post('/',                   [AdBookingController::class, 'store'])->name('store');
-        Route::get('{id}',                 [AdBookingController::class, 'show'])->name('show');
-        Route::post('{id}/creative',       [AdBookingController::class, 'uploadCreative'])->name('creative');
-        Route::post('{id}/submit',         [AdBookingController::class, 'submit'])->name('submit');
-        Route::post('{id}/pay',            [AdBookingController::class, 'pay'])->name('pay');
-        Route::post('{id}/cancel',         [AdBookingController::class, 'cancel'])->name('cancel');
-        Route::get('{id}/stats',           [AdBookingController::class, 'stats'])->name('stats');
+        Route::get('/', [AdBookingController::class, 'index'])->name('index');
+        Route::post('/', [AdBookingController::class, 'store'])->name('store');
+        Route::get('{id}', [AdBookingController::class, 'show'])->name('show');
+        Route::post('{id}/creative', [AdBookingController::class, 'uploadCreative'])->name('creative');
+        Route::post('{id}/submit', [AdBookingController::class, 'submit'])->name('submit');
+        Route::post('{id}/pay', [AdBookingController::class, 'pay'])->name('pay');
+        Route::post('{id}/cancel', [AdBookingController::class, 'cancel'])->name('cancel');
+        Route::get('{id}/stats', [AdBookingController::class, 'stats'])->name('stats');
     });
 
     Route::prefix('notifications')->name('marketer.api.notifications.')->group(function () {
@@ -120,12 +123,13 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
         Route::get('/{id}', [ExclusiveContractController::class, 'show'])->name('show');
     });
     Route::prefix('ad-packages')->name('marketer.api.packages.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\Marketer\AdPackageController::class, 'index'])->name('index');
-        Route::get('/my-subscription', [\App\Http\Controllers\Api\Marketer\AdPackageController::class, 'mySubscription'])->name('current');
-        Route::post('/{id}/subscribe', [\App\Http\Controllers\Api\Marketer\AdPackageController::class, 'subscribe'])->name('subscribe');
+        Route::get('/', [AdPackageController::class, 'index'])->name('index');
+        Route::get('/my-subscription', [AdPackageController::class, 'mySubscription'])->name('current');
+        Route::post('/{id}/subscribe', [AdPackageController::class, 'subscribe'])->name('subscribe');
     });
     Route::prefix('coupon-participation')->name('marketer.api.coupon.')->group(function () {
         Route::get('/', [CouponParticipationController::class, 'index'])->name('index');
+        Route::get('/my-requests', [CouponParticipationController::class, 'myRequests'])->name('my-requests');
         Route::post('/{invitation}', [CouponParticipationController::class, 'store'])->name('store');
     });
     Route::prefix('conversations')->name('marketer.api.conversations.')->group(function () {

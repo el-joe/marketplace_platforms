@@ -81,5 +81,33 @@
         <div>{{ $invitations->links() }}</div>
     @endif
 
+    <h2 class="font-bold text-gray-900 pt-4">{{ __('partner.cp_my_requests') }}</h2>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs">
+                <tr>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_invitation') }}</th>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_fee') }}</th>
+                    <th class="px-4 py-2 text-start">{{ __('partner.cp_col_status') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($myRequests as $r)
+                <tr>
+                    <td class="px-4 py-2">{{ $r->invitation?->title ?? '—' }}</td>
+                    <td class="px-4 py-2">{{ number_format($r->offered_fee_amount) }} {{ $r->invitation?->currency }}</td>
+                    <td class="px-4 py-2">
+                        @php $statusLabels = ['pending' => __('partner.cp_status_pending'), 'approved' => __('partner.cp_status_approved'), 'rejected' => __('partner.cp_status_rejected'), 'paid' => __('partner.cp_status_paid')]; @endphp
+                        {{ $statusLabels[$r->status] ?? $r->status }}
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="3" class="px-4 py-6 text-center text-gray-400">{{ __('partner.cp_no_requests') }}</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    {{ $myRequests->links() }}
+
 </div>
 @endsection

@@ -2,11 +2,12 @@
 
 namespace App\Services\Admin;
 
+use App\Exceptions\InsufficientBalanceException;
 use App\Models\CouponParticipationInvitation;
 use App\Models\CouponParticipationRequest;
-use App\Exceptions\InsufficientBalanceException;
 use App\Models\Marketer;
 use App\Models\Vendor;
+use App\Models\Wallet;
 use App\Notifications\CouponParticipationInvitationNotification;
 use App\Notifications\CouponParticipationRequestDecisionNotification;
 use App\Services\WalletService;
@@ -25,7 +26,7 @@ class CouponParticipationInvitationService
         Vendor::query()->where('vendor_type', 'product_vendor')->with('vendorAdmins')->chunk(200, function ($vendors) use ($invitation) {
             foreach ($vendors as $vendor) {
                 $vendor->vendorAdmins?->each(
-                    fn ($va) => $va->notify(new CouponParticipationInvitationNotification($invitation))
+                    fn ($va) => $va->notify(new CouponParticipationInvitationNotification($invitation, $va->id, 'vendor'))
                 );
             }
         });
@@ -33,7 +34,7 @@ class CouponParticipationInvitationService
         Marketer::query()->with('marketerAdmins')->chunk(200, function ($marketers) use ($invitation) {
             foreach ($marketers as $marketer) {
                 $marketer->marketerAdmins?->each(
-                    fn ($ma) => $ma->notify(new CouponParticipationInvitationNotification($invitation))
+                    fn ($ma) => $ma->notify(new CouponParticipationInvitationNotification($invitation, $ma->id, 'marketer'))
                 );
             }
         });
@@ -47,7 +48,7 @@ class CouponParticipationInvitationService
                 return;
             }
             $vendor->vendorAdmins?->each(
-                fn ($va) => $va->notify(new CouponParticipationRequestDecisionNotification($participationRequest))
+                fn ($va) => $va->notify(new CouponParticipationRequestDecisionNotification($participationRequest, $va->id, 'vendor'))
             );
 
             return;
@@ -55,11 +56,11 @@ class CouponParticipationInvitationService
 
         $marketer = Marketer::with('marketerAdmins')->find($participationRequest->participant_id);
         $marketer?->marketerAdmins?->each(
-            fn ($ma) => $ma->notify(new CouponParticipationRequestDecisionNotification($participationRequest))
+            fn ($ma) => $ma->notify(new CouponParticipationRequestDecisionNotification($participationRequest, $ma->id, 'marketer'))
         );
     }
 
-    public function walletFor(string $type, string $participantId, string $currency): \App\Models\Wallet
+    public function walletFor(string $type, string $participantId, string $currency): Wallet
     {
         return app(WalletService::class)->getOrCreateWallet($type, $participantId, $currency);
     }

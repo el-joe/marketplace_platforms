@@ -47,7 +47,14 @@ class CouponParticipationController extends Controller
             ->latest()
             ->get();
 
-        return view('marketer.coupon-participation.index', compact('marketer', 'invitations', 'balances', 'targetedCoupons'));
+        $myRequests = CouponParticipationRequest::query()
+            ->where('participant_type', CouponParticipationRequest::TYPE_MARKETER)
+            ->where('participant_id', $marketer->id)
+            ->with('invitation')
+            ->latest()
+            ->paginate(20, ['*'], 'requests_page');
+
+        return view('marketer.coupon-participation.index', compact('marketer', 'invitations', 'balances', 'targetedCoupons', 'myRequests'));
     }
 
     public function store(Request $request, CouponParticipationInvitation $invitation): RedirectResponse

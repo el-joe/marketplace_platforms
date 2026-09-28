@@ -10954,6 +10954,7 @@ return [
         'cps_view' => 'View',
         'cps_none' => 'No invitations yet',
         'cps_description' => 'Description',
+        'cps_description_hint' => '💡 Tip: write the details in an alert tone for vendors and marketers (e.g. "Limited seats — offering the highest fee guarantees acceptance").',
         'cps_coupon_link' => 'Linked coupon (required — must be inactive with a value above zero; activated when the invitation is fulfilled)',
         'cps_select_coupon' => 'Select a coupon',
         'cps_max_participants' => 'Maximum participants',

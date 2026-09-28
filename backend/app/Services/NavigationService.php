@@ -363,6 +363,13 @@ class NavigationService
                         'permission' => 'marketers.view',
                         'badge' => null,
                     ],
+                    [
+                        'label' => __('ad_packages.ad_packages'),
+                        'route' => 'admin.marketer-ad-packages.index',
+                        'icon' => 'rectangle-stack',
+                        'permission' => 'marketers.view',
+                        'badge' => null,
+                    ],
                 ],
             ],
             [
@@ -414,6 +421,13 @@ class NavigationService
                     [
                         'label' => __('admin.nav.coupons'),
                         'route' => 'admin.coupons.index',
+                        'icon' => 'ticket',
+                        'permission' => 'coupons.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => __('admin.coupon_participation_section.cps_title'),
+                        'route' => 'admin.coupon-participation-invitations.index',
                         'icon' => 'ticket',
                         'permission' => 'coupons.view',
                         'badge' => null,

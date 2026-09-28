@@ -47,11 +47,25 @@ class CouponParticipationController extends Controller
         return response()->json(['success' => true, 'data' => $page]);
     }
 
+    public function myRequests(): JsonResponse
+    {
+        $m = $this->marketer();
+
+        $requests = CouponParticipationRequest::query()
+            ->where('participant_type', CouponParticipationRequest::TYPE_MARKETER)
+            ->where('participant_id', $m->id)
+            ->with('invitation:id,title,currency,registration_deadline')
+            ->latest()
+            ->paginate(20);
+
+        return response()->json(['success' => true, 'data' => $requests]);
+    }
+
     public function store(Request $request, string $invitation): JsonResponse
     {
         $inv = CouponParticipationInvitation::findOrFail($invitation);
         $request->validate([
-            'offered_fee_amount' => ['required', 'integer', 'min:' . (int) $inv->min_fee_amount],
+            'offered_fee_amount' => ['required', 'integer', 'min:'.(int) $inv->min_fee_amount],
             'payment_method' => ['required', 'in:wallet,bank_transfer'],
             'bank_transfer_proof' => ['nullable', 'file', 'max:5120'],
         ]);
