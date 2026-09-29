@@ -242,7 +242,7 @@
                             <td class="px-4 py-3 text-gray-600">{{ $unit->capacity }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $unitStatusColor }}">
-                                    {{ $unit->status?->label() ?? $unit->status }}
+                                    {{ $unit->status }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $unit->reservations_count }}</td>
