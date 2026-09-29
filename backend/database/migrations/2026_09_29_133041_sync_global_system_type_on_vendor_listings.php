@@ -8,6 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Add 'merchant_fbm' to the enum before any row can be set to it.
+        DB::statement("
+            ALTER TABLE vendor_listings
+            MODIFY COLUMN global_system_type ENUM('express_fbn', 'merchant_fbp', 'marketplace', 'merchant_fbm')
+                NOT NULL DEFAULT 'express_fbn'
+                COMMENT 'Always express_fbn — enforced by model boot'
+        ");
+
         // Fix listings misfiled as merchant_fbp (or any other value) despite being fulfilled via FBN.
         DB::statement("
             UPDATE vendor_listings
