@@ -7,14 +7,18 @@ use App\DTOs\Payment\PaymentInitiationData;
 use App\DTOs\Payment\PaymentInitiationResult;
 use App\DTOs\Payment\PaymentVerificationResult;
 use App\DTOs\Payment\RefundResult;
+use App\Models\Admin;
 use App\Models\Country;
 use App\Models\CountryPaymentGateway;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Notifications\Admin\PaymentFailed as AdminPaymentFailed;
 use App\Notifications\Customer\PaymentFailed;
+use App\Notifications\Vendor\PaymentCapturedForOrder;
 use App\Services\Checkout\CouponUsageService;
 use App\Services\Payments\CurrencyConversionService;
 use App\Services\Payments\PaymentGatewayFactory;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
@@ -130,10 +134,15 @@ class PaymentService
             // gateway transaction actually settled.
             $this->ledgerService->postOrderCapture($transaction->order, (int) $transaction->amount);
             $this->couponUsageService->consumeForOrder($transaction->order);
+            $transaction->load('order.subOrders.vendor.vendorAdmins');
+            $transaction->order->subOrders->each(function ($subOrder): void {
+                Notification::send($subOrder->vendor->vendorAdmins, new PaymentCapturedForOrder($subOrder));
+            });
         } elseif (in_array($result->status, ['failed', 'cancelled', 'declined'], true)) {
             $transaction->order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
             $transaction->order->customer->notify(new PaymentFailed($transaction->order, $result->failureMessage ?? ''));
             $this->couponUsageService->releaseForOrder($transaction->order);
+            Notification::send(Admin::permission('orders.view')->get(), new AdminPaymentFailed($transaction->order, $result->failureMessage ?? ''));
         }
 
         return $result;

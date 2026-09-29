@@ -4,21 +4,22 @@ namespace App\Services;
 
 use App\DTOs\Refund\RefundScope;
 use App\Enums\CancelActor;
-use App\Enums\InventoryMovementType;
-use App\Models\InventoryMovement;
+use App\Models\Admin;
+use App\Models\Customer;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\PaymentTransaction;
 use App\Models\SubOrder;
-use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
 use App\Notifications\Customer\OrderCancelled as CustomerOrderCancelled;
 use App\Notifications\Vendor\OrderCancelledByAdmin;
+use App\Notifications\Vendor\SubOrderCancelledByCustomer;
 use App\Services\Checkout\CouponUsageService;
 use App\Services\Customer\CheckoutWalletService;
 use App\Services\Customer\LoyaltyService;
+use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -78,13 +79,13 @@ use Illuminate\Support\Facades\Notification;
 class OrderCancellationService
 {
     public function __construct(
-        private readonly CouponUsageService $couponUsageService = new CouponUsageService(),
-        private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService(),
-        private readonly LoyaltyService $loyaltyService = new LoyaltyService(),
-        private readonly LedgerService $ledgerService = new LedgerService(),
-        private readonly PaymentService $paymentService = new PaymentService(),
-        private readonly RefundService $refundService = new RefundService(),
-        private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService(),
+        private readonly CouponUsageService $couponUsageService = new CouponUsageService,
+        private readonly CheckoutWalletService $checkoutWalletService = new CheckoutWalletService,
+        private readonly LoyaltyService $loyaltyService = new LoyaltyService,
+        private readonly LedgerService $ledgerService = new LedgerService,
+        private readonly PaymentService $paymentService = new PaymentService,
+        private readonly RefundService $refundService = new RefundService,
+        private readonly MarketerConversionReversalService $marketerConversionReversalService = new MarketerConversionReversalService,
     ) {}
 
     /**
@@ -156,7 +157,7 @@ class OrderCancellationService
                 ],
             ]);
 
-            $this->notify($order, $items, $reason);
+            $this->notify($order, $items, $reason, $actor);
 
             return $order->fresh(['subOrders.items', 'statusHistories']);
         });
@@ -228,7 +229,7 @@ class OrderCancellationService
     private function releaseStock(Order $order, Collection $items, string $reason): void
     {
         $items->loadMissing('allocations');
-        $inventoryService = app(\App\Services\Inventory\InventoryService::class);
+        $inventoryService = app(InventoryService::class);
 
         foreach ($items as $item) {
             $subOrder = $order->subOrders->firstWhere('id', $item->sub_order_id);
@@ -429,7 +430,7 @@ class OrderCancellationService
             // always restores the FULL loyalty_points_used, which is only
             // correct for a whole-order cancellation. For a partial scope we
             // credit the pro-rated share directly here instead.
-            \App\Models\Customer::where('id', $order->customer_id)
+            Customer::where('id', $order->customer_id)
                 ->lockForUpdate()
                 ->first()
                 ?->increment('loyalty_points', $pointsToRestore);
@@ -464,7 +465,7 @@ class OrderCancellationService
         $this->ledgerService->reverseOrderCapture($order, $reason);
     }
 
-    private function notify(Order $order, Collection $items, string $reason): void
+    private function notify(Order $order, Collection $items, string $reason, CancelActor $actor): void
     {
         $subOrderIds = $items->pluck('sub_order_id')->unique();
 
@@ -482,7 +483,11 @@ class OrderCancellationService
                 if ($subOrder->vendor_id) {
                     $subOrder->loadMissing('vendor.vendorAdmins');
                     if ($subOrder->vendor) {
-                        Notification::send($subOrder->vendor->vendorAdmins, new OrderCancelledByAdmin($subOrder, $reason));
+                        $vendorNotification = $actor === CancelActor::Customer
+                            ? new SubOrderCancelledByCustomer($subOrder, $reason)
+                            : new OrderCancelledByAdmin($subOrder, $reason);
+
+                        Notification::send($subOrder->vendor->vendorAdmins, $vendorNotification);
                     }
                 }
             } catch (\Throwable $e) {

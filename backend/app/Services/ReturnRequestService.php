@@ -16,8 +16,10 @@ use App\Models\ReturnRequest;
 use App\Models\ReturnRequestItem;
 use App\Models\SubOrder;
 use App\Models\WarehouseInventory;
+use App\Notifications\Vendor\ReturnArrivedAtVendor;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -202,6 +204,11 @@ class ReturnRequestService
             'status' => ReturnRequestStatus::Received->value,
             'received_at_warehouse_at' => now(),
         ]);
+
+        $returnRequest->loadMissing('vendor.vendorAdmins');
+        if ($returnRequest->vendor) {
+            Notification::send($returnRequest->vendor->vendorAdmins, new ReturnArrivedAtVendor($returnRequest));
+        }
     }
 
     public function cancel(ReturnRequest $returnRequest): void
