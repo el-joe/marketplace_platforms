@@ -153,6 +153,10 @@ Broadcast::routes(['middleware' => ['web', 'auth.admin']]);
 // ─── All protected admin routes ───────────────────────────────────────────────────
 Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
+    // Redirect legacy/incorrect URL to correct admin travel bookable-units path
+    Route::redirect('travel-agencies/bookable-units', 'travel/bookable-units');
+    Route::get('travel-agencies/bookable-units/{any}', fn ($any) => redirect('travel/bookable-units/'.$any))->where('any', '.*');
+
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     // ─── Profile ──────────────────────────────────────────────────────────────────
