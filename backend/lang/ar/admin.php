@@ -386,6 +386,7 @@ return [
         'subscription_invoices' => 'فواتير الاشتراك',
         'travel_inquiries' => 'استفسارات السفر',
         'travel_categories' => 'فئات السفر',
+        'bookable_units' => 'الوحدات القابلة للحجز',
         'vendor_applications_queue' => 'طلبات انضمام التجار',
         'vendor_change_requests' => 'طلبات تغيير التجار',
         'travel_agency_change_requests' => 'طلبات تغيير شركات السفر',

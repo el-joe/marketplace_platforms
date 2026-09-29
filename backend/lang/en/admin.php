@@ -386,6 +386,7 @@ return [
         'subscription_invoices' => 'Subscription Invoices',
         'travel_inquiries' => 'Travel Inquiries',
         'travel_categories' => 'Travel Categories',
+        'bookable_units' => 'Bookable Units',
         'vendor_applications_queue' => 'Vendor Applications Queue',
         'vendor_change_requests' => 'Vendor Change Requests',
         'product_certifications' => 'Product Certifications',

@@ -10,6 +10,7 @@ use App\Enums\SupportTicketStatus;
 use App\Enums\TravelPackageStatus;
 use App\Enums\VendorGlobalStatus;
 use App\Models\AdminListing;
+use App\Models\BookableUnit;
 use App\Models\CartCardOffer;
 use App\Models\ClassifiedListing;
 use App\Models\Dispute;
@@ -541,6 +542,13 @@ class NavigationService
                         'icon' => 'chat-bubble-left-right',
                         'permission' => 'travel.view',
                         'badge' => null,
+                    ],
+                    [
+                        'label' => __('admin.nav.bookable_units'),
+                        'route' => 'admin.travel.bookable-units.index',
+                        'icon' => 'home-modern',
+                        'permission' => 'travel.view',
+                        'badge' => $this->cachedBadge('draft_bookable_units', fn () => $this->countDraftBookableUnits()),
                     ],
                 ],
             ],
@@ -1212,6 +1220,15 @@ class NavigationService
     {
         try {
             return (int) TravelPackage::query()->where('status', TravelPackageStatus::PendingReview->value)->count();
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    protected function countDraftBookableUnits(): int
+    {
+        try {
+            return (int) BookableUnit::where('status', 'draft')->count();
         } catch (\Throwable) {
             return 0;
         }
