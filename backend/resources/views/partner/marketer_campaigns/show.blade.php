@@ -208,7 +208,9 @@
                                 @endphp
                                 <tr>
                                     <td class="px-4 py-3 font-medium text-gray-900">{{ $invitation->marketer?->name ?? '—' }}</td>
-                                    @php($invitationMarketerType = $invitation->marketer?->marketerJobs->first()?->key)
+                                    @php
+                                        $invitationMarketerType = $invitation->marketer?->marketerJobs->first()?->key;
+                                    @endphp
                                     <td class="px-4 py-3 text-gray-600">{{ $invitationMarketerType ? __('partner.marketer_types.' . $invitationMarketerType) : '—' }}</td>
                                     <td class="px-4 py-3">
                                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $ist['cls'] }}">
@@ -222,7 +224,10 @@
                                                        class="w-40 truncate rounded border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-600" />
                                                 <button type="button"
                                                         class="text-xs font-medium text-primary-600 hover:underline"
-                                                        onclick="copyToClipboard('{{ $invitation->referral_link }}'); const btn = this; btn.textContent='{{ __('partner.marketer_campaigns_my.copied') }}'; setTimeout(() => btn.textContent='{{ __('partner.marketer_campaigns_my.copy') }}', 1500)">
+                                                        data-link="{{ $invitation->referral_link }}"
+                                                        data-copy-label="{{ __('partner.marketer_campaigns_my.copy') }}"
+                                                        data-copied-label="{{ __('partner.marketer_campaigns_my.copied') }}"
+                                                        onclick="copyToClipboard(this.dataset.link); const btn = this; btn.textContent = btn.dataset.copiedLabel; setTimeout(() => btn.textContent = btn.dataset.copyLabel, 1500)">
                                                     {{ __('partner.marketer_campaigns_my.copy') }}
                                                 </button>
                                             </div>
@@ -257,6 +262,7 @@
                     ->whereNotIn('id', $alreadyInvitedIds)
                     ->orderBy('name')
                     ->get();
+                $availableMarketerOptions = $availableMarketers->mapWithKeys(fn ($m) => [$m->id => $m->name.' ('.__('partner.marketer_types.'.$m->marketerJobs->first()?->key).')'])->toArray();
             @endphp
             <div id="invite-marketers-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
                 <div class="bg-white rounded-2xl p-6 w-full max-w-lg">
@@ -275,8 +281,7 @@
                                 label="{{ __('partner.marketer_campaigns_my.select_marketers') }}"
                                 :multiple="true"
                                 :select2="true"
-                                :options="$availableMarketers->mapWithKeys(fn ($m) =>
-                                    [$m->id => $m->name . ' (' . __('partner.marketer_types.' . $m->marketerJobs->first()?->key) . ')'])->toArray()"
+                                :options="$availableMarketerOptions"
                             />
                         @endif
 
