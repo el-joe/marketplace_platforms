@@ -25,8 +25,8 @@ class CouponTargetedNotification extends BaseDatabaseBroadcastNotification
         $isVendor = $notifiable instanceof VendorAdmin;
 
         return [
-            'title' => 'قسيمة جديدة تستهدفك',
-            'message' => "تم استهدافك في قسيمة: {$this->coupon->code}",
+            'title' => __('admin.coupons_section.coupon_targeted_title'),
+            'message' => __('admin.coupons_section.coupon_targeted_message', ['code' => $this->coupon->code]),
             'url' => $isVendor ? route('partner.coupon-participation.index') : route('marketer.coupon-participation.index'),
             'coupon_id' => $this->coupon->id,
             'coupon_code' => $this->coupon->code,

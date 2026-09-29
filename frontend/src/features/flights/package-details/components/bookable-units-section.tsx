@@ -142,6 +142,21 @@ export default function BookableUnitsSection({ units, currency }: Props) {
           ))}
         </select>
 
+        {(() => {
+          const selectedUnit = units.find((u) => u.id === unitId);
+          return selectedUnit?.primary_photo_url ? (
+            <img
+              src={selectedUnit.primary_photo_url}
+              alt={selectedUnit.name}
+              className="w-full h-48 object-cover rounded-lg"
+            />
+          ) : (
+            <div className="w-full h-48 rounded-lg bg-gray-2/40 flex items-center justify-center text-light text-sm">
+              {t("noPhoto")}
+            </div>
+          );
+        })()}
+
         <div className="flex items-center justify-between">
           <button
             type="button"

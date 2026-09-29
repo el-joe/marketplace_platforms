@@ -71,6 +71,7 @@ class TravelPackageDetailResource extends JsonResource
                     'type' => $u->type->value ?? $u->type,
                     'capacity' => $u->capacity,
                     'description' => $u->description,
+                    'primary_photo_url' => $u->primary_photo_url,
                 ])->values()
                 : [],
             'status' => $this->status?->value,

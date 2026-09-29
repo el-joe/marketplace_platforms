@@ -195,6 +195,7 @@ export type BookableUnitSummary = {
   type: "chalet" | "hotel_room" | "other";
   capacity: number;
   description: string | null;
+  primary_photo_url?: string | null;
 };
 
 export type BookableUnitDay = {

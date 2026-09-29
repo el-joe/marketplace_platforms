@@ -4377,6 +4377,8 @@ return [
         'funded_by_shared' => 'Shared with Vendor',
         'vendor_share_pct' => 'Vendor Share %',
         'vendor_share_pct_hint' => '(0–100, portion of the discount the vendor covers)',
+        'coupon_targeted_title' => 'New Coupon Targeting You',
+        'coupon_targeted_message' => 'You have been targeted in a coupon: :code',
     ],
 
     'vouchers_section' => [

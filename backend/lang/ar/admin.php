@@ -4336,6 +4336,8 @@ return [
         'funded_by_shared' => 'مشترك مع البائع',
         'vendor_share_pct' => 'نسبة مساهمة البائع %',
         'vendor_share_pct_hint' => '(0–100، الجزء الذي يتحمله البائع من الخصم)',
+        'coupon_targeted_title' => 'قسيمة جديدة تستهدفك',
+        'coupon_targeted_message' => 'تم استهدافك في قسيمة: :code',
     ],
 
     'vouchers_section' => [
