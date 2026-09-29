@@ -10,5 +10,6 @@ enum GlobalSystemType: string
 
     case ExpressFbn = 'express_fbn';
     case MerchantFbp = 'merchant_fbp';
+    case MerchantFbm = 'merchant_fbm';
     case Marketplace = 'marketplace';
 }

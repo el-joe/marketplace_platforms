@@ -29,6 +29,11 @@
             <p class="text-xs text-gray-400 mt-0.5">{{ __('partner.fulfillment.product_unit') }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
+            <p class="text-xs text-yellow-500 uppercase tracking-wide mb-1">{{ __('partner.fulfillment.merchant_fbm') }}</p>
+            <p class="text-2xl font-extrabold text-yellow-700">{{ $stats['fbm_count'] }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ __('partner.fulfillment.product_unit') }}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <p class="text-xs text-green-500 uppercase tracking-wide mb-1">{{ __('partner.fulfillment.marketplace') }}</p>
             <p class="text-2xl font-extrabold text-green-700">{{ $stats['marketplace_count'] }}</p>
             <p class="text-xs text-gray-400 mt-0.5">{{ __('partner.fulfillment.product_unit') }}</p>
@@ -51,6 +56,11 @@
                 :class="tab==='fbp' ? 'bg-white shadow text-blue-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
                 class="px-4 py-2 rounded-lg text-sm transition-all">
             {{ __('partner.fulfillment.tab_fbp') }}
+        </button>
+        <button @click="tab='fbm'"
+                :class="tab==='fbm' ? 'bg-white shadow text-yellow-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                class="px-4 py-2 rounded-lg text-sm transition-all">
+            {{ __('partner.fulfillment.tab_fbm') }}
         </button>
         <button @click="tab='marketplace'"
                 :class="tab==='marketplace' ? 'bg-white shadow text-green-700 font-semibold' : 'text-gray-500 hover:text-gray-700'"
@@ -247,6 +257,82 @@
         @endif
 
     </div>{{-- end FBP tab --}}
+
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    {{-- TAB: FBM                                                                --}}
+    {{-- ─────────────────────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='fbm'" x-cloak class="space-y-5">
+
+        <div class="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 flex gap-3">
+            <span class="text-2xl">🏪</span>
+            <div>
+                <p class="font-semibold text-yellow-800">{{ __('partner.fulfillment.fbm_explainer_title') }}</p>
+                <p class="text-sm text-yellow-600 mt-0.5">
+                    {{ __('partner.fulfillment.fbm_explainer_desc') }}
+                </p>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+            <h2 class="text-base font-bold text-gray-700">{{ __('partner.fulfillment.fbm_inventory_title') }}</h2>
+        </div>
+
+        @if($fbmListings->isEmpty())
+            <div class="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-gray-400">
+                <p class="text-2xl mb-2">🏪</p>
+                <p class="font-medium">{{ __('partner.fulfillment.no_fbm_listings') }}</p>
+                <p class="text-sm mt-1">{{ __('partner.fulfillment.convert_to_fbm_hint') }}</p>
+            </div>
+        @else
+            <div id="fbm-inventory-container">
+                <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-xs text-gray-500">
+                            <tr>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.product') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.warehouse') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.on_hand') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.available') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.reserved') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.location') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.reorder_point') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($fbmListings as $listing)
+                            @foreach($listing->warehouseInventories as $inv)
+                            <tr class="border-t border-gray-50 hover:bg-gray-50/50
+                                {{ $inv->reorder_point && $inv->quantity_available <= $inv->reorder_point ? 'bg-red-50/30' : '' }}">
+                                <td class="px-4 py-3 font-medium text-gray-800 text-right text-xs">
+                                    {{ $listing->productVariant?->product?->name_ar ?? $listing->productVariant?->product?->name_en }}
+                                </td>
+                                <td class="px-4 py-3 text-xs text-gray-500 text-right">{{ $inv->warehouse?->name ?? '—' }}</td>
+                                <td class="px-4 py-3 text-center font-bold text-gray-900">{{ $inv->quantity_on_hand }}</td>
+                                <td class="px-4 py-3 text-center font-bold text-green-600">{{ $inv->quantity_available }}</td>
+                                <td class="px-4 py-3 text-center text-orange-500">{{ $inv->quantity_reserved }}</td>
+                                <td class="px-4 py-3 text-xs text-gray-400 text-right">{{ $inv->bin_location ?? '—' }}</td>
+                                <td class="px-4 py-3 text-center text-xs">
+                                    @if($inv->reorder_point)
+                                        <span class="{{ $inv->quantity_available <= $inv->reorder_point ? 'text-red-500 font-bold' : 'text-gray-400' }}">
+                                            {{ $inv->reorder_point }}
+                                            @if($inv->quantity_available <= $inv->reorder_point)
+                                                ⚠️
+                                            @endif
+                                        </span>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
+    </div>{{-- end FBM tab --}}
 
     {{-- ─────────────────────────────────────────────────────────────────────── --}}
     {{-- TAB: Marketplace                                                         --}}

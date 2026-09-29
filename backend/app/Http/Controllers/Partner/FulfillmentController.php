@@ -5,10 +5,9 @@ namespace App\Http\Controllers\Partner;
 use App\Enums\GlobalSystemType;
 use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\FbnInboundRequest;
 use App\Models\FbnStorageFee;
-use App\Models\Admin;
-use App\Models\MarketplaceShippingRule;
 use App\Models\VendorListing;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
@@ -17,6 +16,7 @@ use App\Services\ActivityLoggerService;
 use App\Services\WarehouseVendorLimitService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FulfillmentController extends Controller
 {
@@ -51,6 +52,7 @@ class FulfillmentController extends Controller
             'fbn_count' => $listings->where('global_system_type', GlobalSystemType::ExpressFbn)->count(),
             'fbp_count' => $listings->where('global_system_type', GlobalSystemType::MerchantFbp)->count(),
             'marketplace_count' => $listings->where('global_system_type', GlobalSystemType::Marketplace)->count(),
+            'fbm_count' => $listings->where('global_system_type', GlobalSystemType::MerchantFbm)->count(),
             'pending_requests' => FbnInboundRequest::where('vendor_id', $vendor->id)
                 ->whereIn('status', ['draft', 'submitted', 'approved'])
                 ->count(),
@@ -59,6 +61,7 @@ class FulfillmentController extends Controller
         $fbnListings = $listings->where('global_system_type', GlobalSystemType::ExpressFbn)->values();
         $fbpListings = $listings->where('global_system_type', GlobalSystemType::MerchantFbp)->values();
         $marketplaceListings = $listings->where('global_system_type', GlobalSystemType::Marketplace)->values();
+        $fbmListings = $listings->where('global_system_type', GlobalSystemType::MerchantFbm)->values();
 
         $warehouses = Warehouse::where('is_active', true)
             ->where(function ($q) use ($vendor) {
@@ -73,6 +76,7 @@ class FulfillmentController extends Controller
             'fbnListings',
             'fbpListings',
             'marketplaceListings',
+            'fbmListings',
             'warehouses'
         ));
     }
@@ -160,7 +164,7 @@ class FulfillmentController extends Controller
             abort(403);
         }
 
-        if (!$inboundRequest->canBeCancelled()) {
+        if (! $inboundRequest->canBeCancelled()) {
             return response()->json(['success' => false, 'message' => __('partner.fulfillment.messages.cannot_cancel_current_state')], 422);
         }
 
@@ -168,7 +172,7 @@ class FulfillmentController extends Controller
         WarehouseInventory::where('vendor_listing_id', $inboundRequest->vendor_listing_id)
             ->where('warehouse_id', $inboundRequest->warehouse_id)
             ->where('quantity_inbound', '>', 0)
-            ->each(fn($inv) => $inv->decrement('quantity_inbound', min($inboundRequest->quantity_requested, $inv->quantity_inbound)));
+            ->each(fn ($inv) => $inv->decrement('quantity_inbound', min($inboundRequest->quantity_requested, $inv->quantity_inbound)));
 
         $inboundRequest->update(['status' => 'rejected', 'rejection_reason' => __('partner.fulfillment.messages.cancelled_by_vendor')]);
 
@@ -185,7 +189,7 @@ class FulfillmentController extends Controller
             abort(403);
         }
 
-        if (!in_array($inboundRequest->status->value, ['approved', 'submitted'], true)) {
+        if (! in_array($inboundRequest->status->value, ['approved', 'submitted'], true)) {
             return response()->json(['success' => false, 'message' => __('partner.fulfillment.messages.cannot_update_tracking_stage')], 422);
         }
 
@@ -197,7 +201,7 @@ class FulfillmentController extends Controller
             $inboundRequest->update(['tracking_number' => $data['tracking_number']]);
 
             app(ActivityLoggerService::class)->log(
-                'Tracking number added to inbound request ' . $inboundRequest->request_number,
+                'Tracking number added to inbound request '.$inboundRequest->request_number,
                 $inboundRequest,
                 Auth::guard('vendor')->user(),
                 ['tracking_number' => $data['tracking_number']],
@@ -211,7 +215,7 @@ class FulfillmentController extends Controller
                     new InboundTrackingAddedNotification($inboundRequest),
                 );
             } catch (\Throwable $e) {
-                Log::warning('InboundTrackingAddedNotification failed: ' . $e->getMessage());
+                Log::warning('InboundTrackingAddedNotification failed: '.$e->getMessage());
             }
         });
 
@@ -236,7 +240,7 @@ class FulfillmentController extends Controller
             ->map(function ($inv) {
                 return [
                     'product' => $inv->vendorListing?->productVariant?->product?->name_en ?? '—',
-                    'warehouse' => $inv->warehouse_name . ' (' . $inv->warehouse_code . ')',
+                    'warehouse' => $inv->warehouse_name.' ('.$inv->warehouse_code.')',
                     'on_hand' => $inv->quantity_on_hand,
                     'available' => $inv->quantity_available,
                     'reserved' => $inv->quantity_reserved,
@@ -252,7 +256,7 @@ class FulfillmentController extends Controller
 
     // ── Storage fees (vendor's own) ───────────────────────────────────────────
 
-    public function storageFees(Request $request): JsonResponse|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function storageFees(Request $request): JsonResponse|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportStorageFees($request);
@@ -262,7 +266,7 @@ class FulfillmentController extends Controller
             ->orderByDesc('month')
             ->limit(24)
             ->get()
-            ->map(fn($f) => [
+            ->map(fn ($f) => [
                 'month' => $f->monthLabel(),
                 'units' => $f->units_stored,
                 'total' => $f->totalFormatted(),
@@ -277,7 +281,7 @@ class FulfillmentController extends Controller
     // Storage Fees — shared query builder / export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildStorageFeesQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildStorageFeesQuery(Request $request): Builder
     {
         $vendor = $this->vendor();
 
@@ -285,15 +289,15 @@ class FulfillmentController extends Controller
             ->with('warehouseInventory.vendorListing.productVariant.product');
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('status', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('month', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('month', '<=', $v),
+            'status' => fn ($q, $v) => $q->where('status', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('month', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('month', '<=', $v),
         ]);
 
         return $query;
     }
 
-    private function exportStorageFees(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportStorageFees(Request $request): StreamedResponse
     {
         $fees = $this->buildStorageFeesQuery($request)->orderByDesc('month')->get();
 
