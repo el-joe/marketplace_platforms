@@ -7,9 +7,12 @@ use App\DTOs\Payment\PaymentInitiationData;
 use App\DTOs\Payment\PaymentInitiationResult;
 use App\DTOs\Payment\PaymentVerificationResult;
 use App\DTOs\Payment\RefundResult;
+use App\Models\Country;
 use App\Models\CountryPaymentGateway;
 use App\Models\Order;
 use App\Models\PaymentTransaction;
+use App\Notifications\Customer\PaymentFailed;
+use App\Services\Checkout\CouponUsageService;
 use App\Services\Payments\CurrencyConversionService;
 use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Support\Facades\URL;
@@ -18,18 +21,18 @@ use Illuminate\Support\Str;
 class PaymentService
 {
     public function __construct(
-        private readonly LedgerService $ledgerService = new LedgerService(),
-        private readonly \App\Services\Checkout\CouponUsageService $couponUsageService = new \App\Services\Checkout\CouponUsageService(),
-        private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService(),
+        private readonly LedgerService $ledgerService = new LedgerService,
+        private readonly CouponUsageService $couponUsageService = new CouponUsageService,
+        private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService,
     ) {}
 
     /**
      * @param  int|null  $amountCents  The amount to actually charge at the
-     *      gateway, in the ORDER's currency. Defaults to $order->total, but
-     *      enhancement.md P-05 task 2 requires callers to pass
-     *      total - wallet_used - gift_card_used for split payments, so the
-     *      customer is never charged twice for the wallet/gift-card
-     *      portion already settled internally.
+     *                                 gateway, in the ORDER's currency. Defaults to $order->total, but
+     *                                 enhancement.md P-05 task 2 requires callers to pass
+     *                                 total - wallet_used - gift_card_used for split payments, so the
+     *                                 customer is never charged twice for the wallet/gift-card
+     *                                 portion already settled internally.
      */
     public function initiatePayment(
         Order $order,
@@ -37,7 +40,7 @@ class PaymentService
         ?string $idempotencyKey = null,
         ?int $amountCents = null,
     ): PaymentInitiationResult {
-        $gateway        = PaymentGatewayFactory::make($gatewayConfig);
+        $gateway = PaymentGatewayFactory::make($gatewayConfig);
         $idempotencyKey ??= (string) Str::uuid();
         $orderAmountCents = $amountCents ?? $order->total;
 
@@ -51,46 +54,46 @@ class PaymentService
         );
 
         $data = new PaymentInitiationData(
-            orderId:       $order->id,
-            orderNumber:   $order->order_number,
-            amountCents:   $conversion['amount'],
-            currency:      $gatewayConfig->effective_currency,
-            customerId:    $order->customer_id,
+            orderId: $order->id,
+            orderNumber: $order->order_number,
+            amountCents: $conversion['amount'],
+            currency: $gatewayConfig->effective_currency,
+            customerId: $order->customer_id,
             customerEmail: $order->customer->email,
             customerPhone: $order->customer->phone ?? null,
-            successUrl:    route('checkout.success', [
-                'country' => $order->country?->site_code ?? \App\Models\Country::resolveSiteCode(null),
+            successUrl: route('checkout.success', [
+                'country' => $order->country?->site_code ?? Country::resolveSiteCode(null),
                 'orderNumber' => $order->order_number,
             ]),
             // Signed: enhancement.md P-05 task 5 — cancel must not be
             // callable by anyone who merely guesses the order number.
-            cancelUrl:     URL::signedRoute('checkout.cancel', [
-                'country' => $order->country?->site_code ?? \App\Models\Country::resolveSiteCode(null),
+            cancelUrl: URL::signedRoute('checkout.cancel', [
+                'country' => $order->country?->site_code ?? Country::resolveSiteCode(null),
                 'orderNumber' => $order->order_number,
             ], now()->addDays(1)),
-            webhookUrl:    route('webhooks.payment', $gateway->getCode()),
-            metadata:      ['idempotency_key' => $idempotencyKey],
+            webhookUrl: route('webhooks.payment', $gateway->getCode()),
+            metadata: ['idempotency_key' => $idempotencyKey],
         );
 
         $result = $gateway->initiate($data);
 
         PaymentTransaction::create([
-            'id'                     => (string) Str::uuid(),
-            'order_id'               => $order->id,
-            'customer_id'            => $order->customer_id,
-            'type'                   => 'authorization',
-            'gateway'                => $gateway->getCode(),
-            'gateway_transaction_id' => $result->gatewayTransactionId ?? ('PENDING-' . $idempotencyKey),
-            'idempotency_key'        => $idempotencyKey,
-            'amount'                 => $orderAmountCents,
-            'currency'               => $order->currency,
-            'gateway_amount'         => $conversion['amount'],
-            'gateway_currency'       => $gatewayConfig->effective_currency,
-            'exchange_rate'          => $conversion['rate'],
-            'status'                 => $result->success ? 'pending' : 'failed',
-            'failure_message'        => $result->errorMessage,
-            'raw_request'            => (array) $data,
-            'raw_response'           => $result->rawResponse,
+            'id' => (string) Str::uuid(),
+            'order_id' => $order->id,
+            'customer_id' => $order->customer_id,
+            'type' => 'authorization',
+            'gateway' => $gateway->getCode(),
+            'gateway_transaction_id' => $result->gatewayTransactionId ?? ('PENDING-'.$idempotencyKey),
+            'idempotency_key' => $idempotencyKey,
+            'amount' => $orderAmountCents,
+            'currency' => $order->currency,
+            'gateway_amount' => $conversion['amount'],
+            'gateway_currency' => $gatewayConfig->effective_currency,
+            'exchange_rate' => $conversion['rate'],
+            'status' => $result->success ? 'pending' : 'failed',
+            'failure_message' => $result->errorMessage,
+            'raw_request' => (array) $data,
+            'raw_response' => $result->rawResponse,
         ]);
 
         return $result;
@@ -107,14 +110,14 @@ class PaymentService
             ->firstOrFail();
 
         $gateway = PaymentGatewayFactory::make($gatewayConfig);
-        $result  = $gateway->verify($transaction->gateway_transaction_id);
+        $result = $gateway->verify($transaction->gateway_transaction_id);
 
         $transaction->update([
-            'status'          => $result->status,
-            'failure_code'    => $result->failureCode    ?? null,
+            'status' => $result->status,
+            'failure_code' => $result->failureCode ?? null,
             'failure_message' => $result->failureMessage ?? null,
-            'raw_response'    => $result->rawResponse,
-            'processed_at'    => now(),
+            'raw_response' => $result->rawResponse,
+            'processed_at' => now(),
         ]);
 
         if ($result->success) {
@@ -129,6 +132,7 @@ class PaymentService
             $this->couponUsageService->consumeForOrder($transaction->order);
         } elseif (in_array($result->status, ['failed', 'cancelled', 'declined'], true)) {
             $transaction->order->update(['payment_status' => 'failed', 'status' => 'cancelled']);
+            $transaction->order->customer->notify(new PaymentFailed($transaction->order, $result->failureMessage ?? ''));
             $this->couponUsageService->releaseForOrder($transaction->order);
         }
 
@@ -145,22 +149,22 @@ class PaymentService
             ->firstOrFail();
 
         $gateway = PaymentGatewayFactory::make($gatewayConfig);
-        $result  = $gateway->refund($originalTransaction->gateway_transaction_id, $amountCents, $reason);
+        $result = $gateway->refund($originalTransaction->gateway_transaction_id, $amountCents, $reason);
 
         if ($result->success) {
             PaymentTransaction::create([
-                'id'                     => (string) Str::uuid(),
-                'order_id'               => $originalTransaction->order_id,
-                'customer_id'            => $originalTransaction->customer_id,
-                'type'                   => 'refund',
-                'gateway'                => $gateway->getCode(),
-                'gateway_transaction_id' => $result->refundTransactionId ?? ('REFUND-' . Str::uuid()),
-                'idempotency_key'        => (string) Str::uuid(),
-                'amount'                 => -$result->refundedAmountCents,
-                'currency'               => $originalTransaction->currency,
-                'status'                 => 'succeeded',
-                'raw_response'           => $result->rawResponse,
-                'processed_at'           => now(),
+                'id' => (string) Str::uuid(),
+                'order_id' => $originalTransaction->order_id,
+                'customer_id' => $originalTransaction->customer_id,
+                'type' => 'refund',
+                'gateway' => $gateway->getCode(),
+                'gateway_transaction_id' => $result->refundTransactionId ?? ('REFUND-'.Str::uuid()),
+                'idempotency_key' => (string) Str::uuid(),
+                'amount' => -$result->refundedAmountCents,
+                'currency' => $originalTransaction->currency,
+                'status' => 'succeeded',
+                'raw_response' => $result->rawResponse,
+                'processed_at' => now(),
             ]);
         }
 
@@ -170,12 +174,12 @@ class PaymentService
     public function testGatewayConnection(CountryPaymentGateway $gatewayConfig): ConnectionTestResult
     {
         $gateway = PaymentGatewayFactory::make($gatewayConfig);
-        $result  = $gateway->testConnection();
+        $result = $gateway->testConnection();
 
         $gatewayConfig->update([
-            'last_verified_at'           => now(),
-            'last_verification_status'   => $result->success ? 'success' : 'failed',
-            'last_verification_message'  => $result->message,
+            'last_verified_at' => now(),
+            'last_verification_status' => $result->success ? 'success' : 'failed',
+            'last_verification_message' => $result->message,
         ]);
 
         return $result;

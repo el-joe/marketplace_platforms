@@ -36,3 +36,7 @@ Broadcast::channel('travel-agency.{agencyId}', function ($user, $agencyId) {
 Broadcast::channel('marketer.{marketerAdminId}', function ($user, $marketerAdminId) {
     return (string) $user->id === (string) $marketerAdminId;
 });
+
+Broadcast::channel('customer.{customerId}', function ($user, $customerId) {
+    return (string) $user->id === (string) $customerId;
+});
