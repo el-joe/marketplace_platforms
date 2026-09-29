@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Enums\CodSettlementDiscrepancyResolution;
 use App\Enums\DeliveryAgentCodSettlementStatus;
 use App\Enums\DeliveryAgentEarningStatus;
+use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\DeliveryAgent;
 use App\Models\DeliveryAgentCodSettlement;
 use App\Models\DeliveryAgentEarning;
 use App\Models\DeliveryAssignment;
 use App\Models\SubOrder;
+use App\Notifications\Admin\CodRemittanceRequested;
+use App\Notifications\Vendor\CodRemittanceConfirmedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 
 class CodSettlementController extends Controller
@@ -38,9 +42,9 @@ class CodSettlementController extends Controller
 
         // Per-agent summary: pending cash in custody + last settlement
         $agents = DeliveryAgent::query()
-            ->withCount(['codSettlements as pending_count' => fn($q) => $q->where('status', DeliveryAgentCodSettlementStatus::Pending)])
-            ->with(['codSettlements' => fn($q) => $q->orderByDesc('period_end')->limit(1)])
-            ->whereHas('assignments', fn($q) => $q->whereNotNull('cod_amount_collected'))
+            ->withCount(['codSettlements as pending_count' => fn ($q) => $q->where('status', DeliveryAgentCodSettlementStatus::Pending)])
+            ->with(['codSettlements' => fn ($q) => $q->orderByDesc('period_end')->limit(1)])
+            ->whereHas('assignments', fn ($q) => $q->whereNotNull('cod_amount_collected'))
             ->orWhereHas('codSettlements')
             ->get();
 
@@ -68,14 +72,14 @@ class CodSettlementController extends Controller
                 ['label' => __('admin.nav.delivery')],
                 ['label' => __('admin.nav.cod_settlements')],
             ],
-            'pendingCashCents'        => $pendingCashCents,
-            'settledThisMonthCents'   => $settledThisMonthCents,
-            'disputedCount'           => $disputedCount,
-            'discrepancyCount'        => $discrepancyCount,
-            'agents'                  => $agents,
-            'agentPendingCod'         => $agentPendingCod,
-            'flaggedSettlements'      => $flaggedSettlements,
-            'showingDiscrepancies'    => $request->boolean('discrepancies'),
+            'pendingCashCents' => $pendingCashCents,
+            'settledThisMonthCents' => $settledThisMonthCents,
+            'disputedCount' => $disputedCount,
+            'discrepancyCount' => $discrepancyCount,
+            'agents' => $agents,
+            'agentPendingCod' => $agentPendingCod,
+            'flaggedSettlements' => $flaggedSettlements,
+            'showingDiscrepancies' => $request->boolean('discrepancies'),
         ]);
     }
 
@@ -115,11 +119,11 @@ class CodSettlementController extends Controller
                 ['label' => __('admin.nav.cod_settlements'), 'url' => route('admin.delivery.cod-settlements.index')],
                 ['label' => $settlement->agent->name ?? __('admin.cod_settlements_section.settlement_label')],
             ],
-            'settlement'       => $settlement,
-            'assignments'      => $assignments,
-            'earnings'         => $earnings,
-            'history'          => $history,
-            'openAssignments'  => $openAssignments,
+            'settlement' => $settlement,
+            'assignments' => $assignments,
+            'earnings' => $earnings,
+            'history' => $history,
+            'openAssignments' => $openAssignments,
         ]);
     }
 
@@ -128,14 +132,14 @@ class CodSettlementController extends Controller
     public function generate(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'agent_id'     => ['required', 'uuid', 'exists:delivery_agents,id'],
+            'agent_id' => ['required', 'uuid', 'exists:delivery_agents,id'],
             'period_start' => ['required', 'date'],
-            'period_end'   => ['required', 'date', 'after_or_equal:period_start'],
+            'period_end' => ['required', 'date', 'after_or_equal:period_start'],
         ]);
 
-        $agent       = DeliveryAgent::findOrFail($validated['agent_id']);
+        $agent = DeliveryAgent::findOrFail($validated['agent_id']);
         $periodStart = $validated['period_start'];
-        $periodEnd   = $validated['period_end'];
+        $periodEnd = $validated['period_end'];
 
         // Verify no overlapping settlement exists for this agent
         $overlap = DeliveryAgentCodSettlement::where('agent_id', $agent->id)
@@ -153,7 +157,7 @@ class CodSettlementController extends Controller
         // Collect assignments with COD collected and not yet settled
         $assignments = DeliveryAssignment::with('subOrder.order')
             ->where('agent_id', $agent->id)
-            ->whereBetween('delivered_at', [$periodStart . ' 00:00:00', $periodEnd . ' 23:59:59'])
+            ->whereBetween('delivered_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
             ->whereNotNull('cod_amount_collected')
             ->whereNull('cod_settlement_id')
             ->get();
@@ -169,7 +173,7 @@ class CodSettlementController extends Controller
 
         $earningsOwed = DeliveryAgentEarning::where('agent_id', $agent->id)
             ->whereIn('earning_type', ['base_fee', 'cod_handling'])
-            ->whereBetween('created_at', [$periodStart . ' 00:00:00', $periodEnd . ' 23:59:59'])
+            ->whereBetween('created_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
             ->where('status', '!=', DeliveryAgentEarningStatus::Cancelled)
             ->sum('amount');
 
@@ -183,13 +187,14 @@ class CodSettlementController extends Controller
         }
 
         // Aggregate per-assignment discrepancies before the transaction.
-        $discrepancyAssignments = $assignments->filter(fn($a) => ! empty($a->discrepancy_note));
-        $hasDiscrepancy         = $discrepancyAssignments->isNotEmpty();
-        $discrepancyNotes       = $discrepancyAssignments
-            ->map(fn($a) => "Assignment {$a->id}: {$a->discrepancy_note}")
+        $discrepancyAssignments = $assignments->filter(fn ($a) => ! empty($a->discrepancy_note));
+        $hasDiscrepancy = $discrepancyAssignments->isNotEmpty();
+        $discrepancyNotes = $discrepancyAssignments
+            ->map(fn ($a) => "Assignment {$a->id}: {$a->discrepancy_note}")
             ->implode("\n");
         $discrepancyAmountCents = $discrepancyAssignments->sum(function ($a) {
             $expected = (int) ($a->subOrder?->order?->total ?? 0);
+
             return max(0, $expected - (int) $a->cod_amount_collected);
         });
 
@@ -198,17 +203,17 @@ class CodSettlementController extends Controller
             $hasDiscrepancy, $discrepancyNotes, $discrepancyAmountCents
         ) {
             $s = DeliveryAgentCodSettlement::create([
-                'agent_id'                   => $agent->id,
-                'period_start'               => $periodStart,
-                'period_end'                 => $periodEnd,
-                'total_cod_collected'  => $collected,
-                'total_earnings_owed'  => $earningsOwed,
-                'net_to_remit'         => $netToRemit,
-                'status'                     => DeliveryAgentCodSettlementStatus::Pending,
+                'agent_id' => $agent->id,
+                'period_start' => $periodStart,
+                'period_end' => $periodEnd,
+                'total_cod_collected' => $collected,
+                'total_earnings_owed' => $earningsOwed,
+                'net_to_remit' => $netToRemit,
+                'status' => DeliveryAgentCodSettlementStatus::Pending,
                 'has_collection_discrepancy' => $hasDiscrepancy,
-                'discrepancy_notes'          => $hasDiscrepancy ? $discrepancyNotes : null,
-                'discrepancy_amount'   => $discrepancyAmountCents,
-                'discrepancy_resolution'     => $hasDiscrepancy ? CodSettlementDiscrepancyResolution::Pending : null,
+                'discrepancy_notes' => $hasDiscrepancy ? $discrepancyNotes : null,
+                'discrepancy_amount' => $discrepancyAmountCents,
+                'discrepancy_resolution' => $hasDiscrepancy ? CodSettlementDiscrepancyResolution::Pending : null,
             ]);
 
             // Link all covered assignments to this settlement
@@ -218,19 +223,21 @@ class CodSettlementController extends Controller
             return $s;
         });
 
+        Notification::send(Admin::permission('cod_settlements.manage')->get(), new CodRemittanceRequested($settlement));
+
         $message = __('admin.cod_settlements_section.generated_message', ['amount' => number_format($netToRemit, 2)]);
         if ($hasDiscrepancy) {
             $message .= __('admin.cod_settlements_section.discrepancy_flagged', ['amount' => number_format($discrepancyAmountCents, 2)]);
         }
 
         return response()->json([
-            'success'     => true,
-            'message'     => $message,
-            'settlement'  => [
-                'id'                         => $settlement->id,
-                'net_to_remit'               => $netToRemit,
+            'success' => true,
+            'message' => $message,
+            'settlement' => [
+                'id' => $settlement->id,
+                'net_to_remit' => $netToRemit,
                 'has_collection_discrepancy' => $hasDiscrepancy,
-                'show_url'                   => route('admin.delivery.cod-settlements.show', $settlement),
+                'show_url' => route('admin.delivery.cod-settlements.show', $settlement),
             ],
         ]);
     }
@@ -246,9 +253,9 @@ class CodSettlementController extends Controller
         $toleranceCents = 100; // 1 unit tolerance
 
         $rules = [
-            'payment_reference'        => ['required', 'string', 'max:255'],
-            'actual_amount_remitted'   => ['required', 'integer', 'min:0'],
-            'notes'                    => ['nullable', 'string', 'max:1000'],
+            'payment_reference' => ['required', 'string', 'max:255'],
+            'actual_amount_remitted' => ['required', 'integer', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
 
         $discrepancy = abs($request->input('actual_amount_remitted', 0) - $settlement->net_to_remit);
@@ -260,22 +267,22 @@ class CodSettlementController extends Controller
 
         DB::transaction(function () use ($settlement, $validated) {
             $settlement->update([
-                'status'     => DeliveryAgentCodSettlementStatus::Settled,
+                'status' => DeliveryAgentCodSettlementStatus::Settled,
                 'settled_at' => now(),
-                'notes'      => isset($validated['notes'])
-                    ? ($validated['payment_reference'] . ' | ' . $validated['notes'])
+                'notes' => isset($validated['notes'])
+                    ? ($validated['payment_reference'].' | '.$validated['notes'])
                     : $validated['payment_reference'],
             ]);
 
             // Approve earnings for this period
             DeliveryAgentEarning::where('agent_id', $settlement->agent_id)
-                ->whereBetween('created_at', [$settlement->period_start . ' 00:00:00', $settlement->period_end . ' 23:59:59'])
+                ->whereBetween('created_at', [$settlement->period_start.' 00:00:00', $settlement->period_end.' 23:59:59'])
                 ->where('status', DeliveryAgentEarningStatus::Pending)
                 ->update(['status' => DeliveryAgentEarningStatus::Approved]);
 
             // Unlock vendor payouts for all COD sub_orders covered by this settlement.
             $subOrderIds = DeliveryAssignment::where('agent_id', $settlement->agent_id)
-                ->whereBetween('delivered_at', [$settlement->period_start . ' 00:00:00', $settlement->period_end . ' 23:59:59'])
+                ->whereBetween('delivered_at', [$settlement->period_start.' 00:00:00', $settlement->period_end.' 23:59:59'])
                 ->whereNotNull('cod_amount_collected')
                 ->pluck('sub_order_id');
 
@@ -286,18 +293,18 @@ class CodSettlementController extends Controller
 
                 SubOrder::whereIn('id', $newlyConfirmed->pluck('id'))
                     ->update([
-                        'cod_remittance_confirmed'    => true,
+                        'cod_remittance_confirmed' => true,
                         'cod_remittance_confirmed_at' => now(),
-                        'cod_settlement_id'           => $settlement->id,
+                        'cod_settlement_id' => $settlement->id,
                     ]);
 
                 // Give vendors visibility into their COD remittance status once it's confirmed.
                 $newlyConfirmed->load('vendor.vendorAdmins');
                 foreach ($newlyConfirmed as $subOrder) {
                     if ($subOrder->vendor?->vendorAdmins->isNotEmpty()) {
-                        \Illuminate\Support\Facades\Notification::send(
+                        Notification::send(
                             $subOrder->vendor->vendorAdmins,
-                            new \App\Notifications\Vendor\CodRemittanceConfirmedNotification($subOrder)
+                            new CodRemittanceConfirmedNotification($subOrder)
                         );
                     }
                 }
@@ -324,7 +331,7 @@ class CodSettlementController extends Controller
 
         $settlement->update([
             'status' => DeliveryAgentCodSettlementStatus::Disputed,
-            'notes'  => $validated['reason'],
+            'notes' => $validated['reason'],
         ]);
 
         return response()->json([

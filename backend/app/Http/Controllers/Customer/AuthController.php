@@ -2,30 +2,33 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\CustomerStatus;
+use App\Enums\DeviceTokenPlatform;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Customer\Auth\LoginRequest;
 use App\Http\Requests\Customer\Auth\RefreshTokenRequest;
 use App\Http\Requests\Customer\Auth\RegisterRequest;
 use App\Http\Requests\Customer\Auth\ResetPasswordRequest;
-use App\Enums\CustomerStatus;
-use App\Enums\DeviceTokenPlatform;
 use App\Http\Resources\Customer\CustomerResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\Admin;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerOtpToken;
 use App\Models\DeviceToken;
+use App\Notifications\Admin\NewCustomerRegistered;
 use App\Services\Customer\ReferralService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
     private const ACCESS_TTL_MINUTES = 60;
+
     private const REFRESH_TTL_MINUTES = 43200; // 30 days
 
     public function __construct(private readonly ReferralService $referralService) {}
@@ -55,6 +58,8 @@ class AuthController extends Controller
             return $customer;
         });
 
+        Notification::send(Admin::permission('customers.view')->get(), new NewCustomerRegistered($customer));
+
         $tokens = $this->issueTokenPair($customer);
 
         return ApiResponse::success(
@@ -74,16 +79,17 @@ class AuthController extends Controller
         /** @var Customer|null $customer */
         $customer = Customer::where($field, $credential)->first();
 
-        if (!$customer || !password_verify($request->password, $customer->password)) {
+        if (! $customer || ! password_verify($request->password, $customer->password)) {
             return ApiResponse::error(__('common.exceptions.auth.invalid_credentials'), [], 401);
         }
 
         if (in_array($customer->status, [CustomerStatus::Suspended, CustomerStatus::Banned, CustomerStatus::Deleted], true)) {
             $reason = match ($customer->status) {
                 CustomerStatus::Suspended => __('common.exceptions.auth.account_suspended'),
-                CustomerStatus::Banned    => __('common.exceptions.auth.account_banned'),
-                CustomerStatus::Deleted   => __('common.exceptions.auth.account_no_longer_exists'),
+                CustomerStatus::Banned => __('common.exceptions.auth.account_banned'),
+                CustomerStatus::Deleted => __('common.exceptions.auth.account_no_longer_exists'),
             };
+
             return ApiResponse::error($reason, [], 403);
         }
 
@@ -139,7 +145,7 @@ class AuthController extends Controller
 
         $customer = Customer::find($payload->getSubject());
 
-        if (!$customer || $customer->status !== CustomerStatus::Active) {
+        if (! $customer || $customer->status !== CustomerStatus::Active) {
             return ApiResponse::error(__('common.exceptions.auth.account_not_found'), [], 401);
         }
 
@@ -199,7 +205,7 @@ class AuthController extends Controller
             ->whereNull('used_at')
             ->first();
 
-        if (!$otp || !$otp->isValid()) {
+        if (! $otp || ! $otp->isValid()) {
             return ApiResponse::error(__('common.exceptions.auth.invalid_reset_token'), [], 422);
         }
 

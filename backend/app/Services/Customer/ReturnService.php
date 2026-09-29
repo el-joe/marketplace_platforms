@@ -2,10 +2,13 @@
 
 namespace App\Services\Customer;
 
+use App\Models\Admin;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\ReturnRequest;
+use App\Notifications\Admin\ReturnRequestReceived;
 use App\Notifications\Vendor\ReturnRequestSubmitted;
+use App\Services\ReturnRequestService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -21,7 +24,7 @@ use Illuminate\Support\Facades\Notification;
  */
 class ReturnService
 {
-    public function __construct(private readonly \App\Services\ReturnRequestService $returnRequestService) {}
+    public function __construct(private readonly ReturnRequestService $returnRequestService) {}
 
     /**
      * @return Collection<int, ReturnRequest>
@@ -41,6 +44,8 @@ class ReturnService
             if ($returnRequest->vendor?->vendorAdmins->isNotEmpty()) {
                 Notification::send($returnRequest->vendor->vendorAdmins, new ReturnRequestSubmitted($returnRequest));
             }
+
+            Notification::send(Admin::permission('returns.manage')->get(), new ReturnRequestReceived($returnRequest));
         }
 
         return $returnRequests;

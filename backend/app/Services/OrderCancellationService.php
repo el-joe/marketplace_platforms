@@ -490,6 +490,10 @@ class OrderCancellationService
                         Notification::send($subOrder->vendor->vendorAdmins, $vendorNotification);
                     }
                 }
+
+                if ($actor === CancelActor::Customer) {
+                    Notification::send(Admin::permission('orders.view')->get(), new AdminOrderCancelledByCustomer($order, $reason));
+                }
             } catch (\Throwable $e) {
                 Log::warning('OrderCancellationService: notification failed.', [
                     'order_id' => $order->id,
