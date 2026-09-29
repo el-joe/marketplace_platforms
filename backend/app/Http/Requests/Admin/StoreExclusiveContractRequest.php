@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\ExclusiveContract;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -31,8 +32,12 @@ class StoreExclusiveContractRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             $listingId = $this->input('classified_listing_id');
             $categoryId = $this->input('classified_category_id');
-            $startsAt = $this->input('starts_at');
-            $endsAt = $this->input('ends_at');
+            if (! $this->input('starts_at') || ! $this->input('ends_at')) {
+                return;
+            }
+
+            $startsAt = Carbon::parse($this->input('starts_at'));
+            $endsAt = Carbon::parse($this->input('ends_at'));
 
             if ($listingId) {
                 $overlaps = ExclusiveContract::where('classified_listing_id', $listingId)
