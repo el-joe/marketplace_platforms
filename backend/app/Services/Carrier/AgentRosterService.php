@@ -8,7 +8,9 @@ use App\Models\DeliveryAgent;
 use App\Models\DeliveryZone;
 use App\Models\ShippingCompany;
 use App\Models\ShippingCompanySupervisor;
+use App\Notifications\Carrier\NewAgentRegistered;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class AgentRosterService
@@ -26,7 +28,7 @@ class AgentRosterService
         ShippingCompanySupervisor $supervisor,
         array $data,
     ): DeliveryAgent {
-        if (!empty($data['zone_id'])) {
+        if (! empty($data['zone_id'])) {
             $zone = DeliveryZone::find($data['zone_id']);
 
             if ($zone && $zone->isAtCapacity()) {
@@ -37,23 +39,29 @@ class AgentRosterService
         }
 
         $agent = DeliveryAgent::create([
-            'shipping_company_id'      => $company->id,
-            'added_by_supervisor_id'   => $supervisor->id,
-            'agent_type'               => DeliveryAgentType::ThirdParty->value,
-            'status'                   => 'inactive',
-            'country_id'               => $data['country_id'],
-            'name'                     => $data['name'],
-            'email'                    => $data['email'],
-            'phone'                    => $data['phone'],
-            'password'                 => $data['password'],
-            'vehicle_type'             => $data['vehicle_type'],
-            'vehicle_plate'            => $data['license_plate'],
-            'zone_id'                  => $data['zone_id'] ?? null,
-            'is_available'             => false,
+            'shipping_company_id' => $company->id,
+            'added_by_supervisor_id' => $supervisor->id,
+            'agent_type' => DeliveryAgentType::ThirdParty->value,
+            'status' => 'inactive',
+            'country_id' => $data['country_id'],
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'password' => $data['password'],
+            'vehicle_type' => $data['vehicle_type'],
+            'vehicle_plate' => $data['license_plate'],
+            'zone_id' => $data['zone_id'] ?? null,
+            'is_available' => false,
         ]);
 
         Mail::to($agent->email)
             ->queue(new AgentWelcomeMail($agent, $company, $data['password']));
+
+        $supervisors = $company->supervisors()->receivingNotifications()->get();
+
+        if ($supervisors->isNotEmpty()) {
+            Notification::send($supervisors, new NewAgentRegistered($agent));
+        }
 
         return $agent;
     }

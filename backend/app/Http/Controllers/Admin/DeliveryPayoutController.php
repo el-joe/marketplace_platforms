@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\Currency;
 use App\Enums\DeliveryAgentEarningStatus;
 use App\Enums\DeliveryAgentPayoutStatus;
+use App\Http\Controllers\Controller;
+use App\Models\Currency;
 use App\Models\DeliveryAgent;
 use App\Models\DeliveryAgentPayout;
+use App\Notifications\Carrier\PayoutProcessed;
+use App\Notifications\DeliveryAgent\EarningsPaid;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -36,10 +39,10 @@ class DeliveryPayoutController extends Controller
         $pendingCount = DeliveryAgentPayout::where('status', DeliveryAgentPayoutStatus::Pending)->count();
 
         $stats = [
-            'total'    => DeliveryAgentPayout::count(),
-            'pending'  => $pendingCount,
+            'total' => DeliveryAgentPayout::count(),
+            'pending' => $pendingCount,
             'approved' => DeliveryAgentPayout::where('status', DeliveryAgentPayoutStatus::Approved)->count(),
-            'paid'     => DeliveryAgentPayout::where('status', DeliveryAgentPayoutStatus::Paid)->count(),
+            'paid' => DeliveryAgentPayout::where('status', DeliveryAgentPayoutStatus::Paid)->count(),
         ];
 
         $agents = DeliveryAgent::orderBy('name')->get(['id', 'name']);
@@ -52,9 +55,9 @@ class DeliveryPayoutController extends Controller
                 ['label' => 'Payouts'],
             ],
             'pendingCount' => $pendingCount,
-            'stats'        => $stats,
-            'agents'       => $agents,
-            'currencies'   => $currencies,
+            'stats' => $stats,
+            'agents' => $agents,
+            'currencies' => $currencies,
         ]);
     }
 
@@ -80,8 +83,8 @@ class DeliveryPayoutController extends Controller
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('delivery_agent_payouts.status', $v),
-            'agent_id' => fn($q, $v) => $q->where('delivery_agent_payouts.agent_id', $v),
+            'status' => fn ($q, $v) => $q->where('delivery_agent_payouts.status', $v),
+            'agent_id' => fn ($q, $v) => $q->where('delivery_agent_payouts.agent_id', $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function (DeliveryAgentPayout $payout) {
@@ -89,7 +92,7 @@ class DeliveryPayoutController extends Controller
                 'id' => $payout->id,
                 'payout_number' => $payout->payout_number,
                 'agent_name' => e($payout->agent_name),
-                'period' => $payout->period_start->format('d M') . ' – ' . $payout->period_end->format('d M Y'),
+                'period' => $payout->period_start->format('d M').' – '.$payout->period_end->format('d M Y'),
                 'total_deliveries' => $payout->total_deliveries,
                 'gross_earnings' => number_format($payout->gross_earnings, 2),
                 'net_amount' => number_format($payout->net_amount, 2),
@@ -117,7 +120,7 @@ class DeliveryPayoutController extends Controller
         $rows = DB::table('delivery_agent_earnings')
             ->where('agent_id', $agentId)
             ->where('status', DeliveryAgentEarningStatus::Approved->value)
-            ->whereBetween('created_at', [$request->period_start . ' 00:00:00', $request->period_end . ' 23:59:59'])
+            ->whereBetween('created_at', [$request->period_start.' 00:00:00', $request->period_end.' 23:59:59'])
             ->selectRaw('
                 currency,
                 COUNT(DISTINCT delivery_assignment_id) as total_deliveries,
@@ -127,7 +130,7 @@ class DeliveryPayoutController extends Controller
             ->groupBy('currency')
             ->get();
 
-        $rows = $rows->filter(fn($r) => $r->gross > 0);
+        $rows = $rows->filter(fn ($r) => $r->gross > 0);
 
         if ($rows->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'No approved earnings found for the selected period.'], 422);
@@ -136,34 +139,34 @@ class DeliveryPayoutController extends Controller
         $payouts = [];
 
         foreach ($rows as $row) {
-            $gross      = (int) $row->gross;
+            $gross = (int) $row->gross;
             $deductions = (int) $row->deductions;
-            $net        = $gross - $deductions;
+            $net = $gross - $deductions;
 
             $payout = DeliveryAgentPayout::create([
-                'payout_number'        => 'DAP-' . strtoupper(Str::random(8)),
-                'agent_id'             => $agentId,
-                'period_start'         => $request->period_start,
-                'period_end'           => $request->period_end,
-                'total_deliveries'     => (int) $row->total_deliveries,
+                'payout_number' => 'DAP-'.strtoupper(Str::random(8)),
+                'agent_id' => $agentId,
+                'period_start' => $request->period_start,
+                'period_end' => $request->period_end,
+                'total_deliveries' => (int) $row->total_deliveries,
                 'gross_earnings' => $gross,
-                'deductions'     => $deductions,
-                'net_amount'     => $net,
-                'currency'             => $row->currency,
-                'status'               => DeliveryAgentPayoutStatus::Pending,
+                'deductions' => $deductions,
+                'net_amount' => $net,
+                'currency' => $row->currency,
+                'status' => DeliveryAgentPayoutStatus::Pending,
             ]);
 
             $payouts[] = [
-                'id'           => $payout->id,
+                'id' => $payout->id,
                 'payout_number' => $payout->payout_number,
-                'net_amount'   => number_format($net, 2),
-                'currency'     => $payout->currency,
+                'net_amount' => number_format($net, 2),
+                'currency' => $payout->currency,
             ];
         }
 
         return response()->json([
             'success' => true,
-            'message' => count($payouts) . ' payout(s) generated: ' . implode(', ', array_column($payouts, 'payout_number')),
+            'message' => count($payouts).' payout(s) generated: '.implode(', ', array_column($payouts, 'payout_number')),
             'payouts' => $payouts,
         ]);
     }
@@ -203,6 +206,21 @@ class DeliveryPayoutController extends Controller
             'payment_reference' => $request->payment_reference,
             'processed_at' => now(),
         ]);
+
+        // Notify agent and carrier supervisors
+        $payout->load('agent.shippingCompany.supervisors');
+
+        if ($payout->agent) {
+            $payout->agent->notify(new EarningsPaid($payout));
+
+            $supervisors = $payout->agent->shippingCompany?->supervisors()
+                ->receivingNotifications()
+                ->get();
+
+            if ($supervisors?->isNotEmpty()) {
+                Notification::send($supervisors, new PayoutProcessed($payout));
+            }
+        }
 
         // Mark underlying earnings as paid
         DB::table('delivery_agent_earnings')
