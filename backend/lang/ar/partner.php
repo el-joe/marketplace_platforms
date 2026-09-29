@@ -2788,6 +2788,7 @@ return [
     'insufficient_balance_warning' => 'رصيد محفظتك غير كافٍ للحد الأدنى للرسوم.',
     'payment_method_wallet' => 'المحفظة',
     'payment_method_bank_transfer' => 'التحويل البنكي',
+    'bank_transfer_proof_label' => 'إثبات التحويل البنكي (إيصال/فاتورة)',
     'cp_status_pending' => 'قيد المراجعة',
     'cp_status_approved' => 'مقبول',
     'cp_status_rejected' => 'مرفوض',

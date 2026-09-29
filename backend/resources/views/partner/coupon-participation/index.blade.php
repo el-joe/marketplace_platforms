@@ -56,7 +56,7 @@
                     <div>{{ __('partner.cp_deadline_label') }}: {{ $invitation->registration_deadline->format('Y-m-d H:i') }}</div>
                 </div>
             </div>
-            <div class="w-56">
+            <div class="w-72">
                 @if($myRequest)
                     <div class="text-xs text-center px-2 py-2 rounded bg-gray-100 text-gray-600">
                         {{ __('partner.cp_your_request') }}: {{ number_format($myRequest->offered_fee_amount) }} {{ $invitation->currency }} — {{ $statusLabels[$myRequest->status] ?? $myRequest->status }}
@@ -69,7 +69,10 @@
 <div class="text-xs text-amber-700 bg-amber-50 rounded p-1 mb-1">{{ __('partner.insufficient_balance_warning') }}</div>
 @endif
 <select name="payment_method" x-model="method" class="w-full rounded border-gray-300 text-sm"><option value="wallet">{{ __('partner.payment_method_wallet') }}</option><option value="bank_transfer">{{ __('partner.payment_method_bank_transfer') }}</option></select>
-<input type="file" name="bank_transfer_proof" class="w-full text-xs" />
+<div x-show="method === 'bank_transfer'" x-cloak class="flex flex-col gap-1">
+    <label class="text-xs text-gray-600">{{ __('partner.bank_transfer_proof_label') }}</label>
+    <input type="file" name="bank_transfer_proof" class="w-full text-xs" :required="method === 'bank_transfer'" />
+</div>
                         <input type="number" name="offered_fee_amount" min="{{ $invitation->min_fee_amount }}" value="{{ $invitation->min_fee_amount }}" class="w-full rounded border-gray-300 text-sm" required />
                         <button type="submit" :disabled="method === \'wallet\' && balance < minFee" :class="method === \'wallet\' && balance < minFee ? \'opacity-50 cursor-not-allowed\' : \'\'" class="px-3 py-2 rounded bg-blue-600 text-white text-sm whitespace-nowrap">{{ __('partner.cp_submit_request') }}</button>
                     </form>

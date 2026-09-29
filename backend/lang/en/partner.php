@@ -2788,6 +2788,7 @@ return [
     'insufficient_balance_warning' => 'Your wallet balance is insufficient for the minimum fee.',
     'payment_method_wallet' => 'Wallet',
     'payment_method_bank_transfer' => 'Bank Transfer',
+    'bank_transfer_proof_label' => 'Bank Transfer Proof (receipt/invoice)',
     'cp_status_pending' => 'Under review',
     'cp_status_approved' => 'Approved',
     'cp_status_rejected' => 'Rejected',
