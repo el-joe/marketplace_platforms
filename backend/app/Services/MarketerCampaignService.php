@@ -16,6 +16,7 @@ use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCampaignTieredRule;
 use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionCountrySetting;
+use App\Models\MarketerCommissionRule;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerListing;
 use App\Models\OpenMarketCategoryCommission;
@@ -23,6 +24,7 @@ use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Admin\NewCampaignPendingNotification;
+use App\Notifications\Marketer\CampaignExpired;
 use App\Notifications\Marketer\CampaignInvitationAcceptedNotification;
 use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
 use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
@@ -527,7 +529,7 @@ class MarketerCampaignService
             return null;
         }
 
-        $categoryRate = app(\App\Services\CommissionRuleResolver::class)
+        $categoryRate = app(CommissionRuleResolver::class)
             ->resolve(null, 'products', $category);
 
         $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
@@ -577,7 +579,7 @@ class MarketerCampaignService
             return null;
         }
 
-        $categoryRate = app(\App\Services\CommissionRuleResolver::class)
+        $categoryRate = app(CommissionRuleResolver::class)
             ->resolve(null, 'open_market', $category);
 
         $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
@@ -619,7 +621,7 @@ class MarketerCampaignService
      */
     private function computeCommissionAmount(string $mode, ?int $flat, float $rate, int $base): int
     {
-        return (new \App\Models\MarketerCommissionRule([
+        return (new MarketerCommissionRule([
             'commission_mode' => $mode,
             'commission_rate' => $rate,
             'commission_flat_amount' => $flat,
@@ -1047,6 +1049,12 @@ class MarketerCampaignService
                     (int) $inv->total_conversions,
                     (float) $inv->total_commission_earned
                 ))
+            ));
+
+        // Notify marketer admins that the campaign has expired/ended.
+        $campaign->invitations()->where('status', 'accepted')->with('marketer.marketerAdmins')->get()
+            ->each(fn ($inv) => $inv->marketer->marketerAdmins->each(
+                fn ($va) => $va->notify(new CampaignExpired($campaign, $va->id))
             ));
     }
 

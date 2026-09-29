@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Marketer;
 
+use App\Http\Controllers\Api\Marketer\CommissionRuleController;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
+use App\Models\MarketerAdmin;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Notifications\Marketer\PayoutScheduled;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,11 +29,11 @@ class FinanceController extends Controller
         $invitationIds = MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
 
         $conversions = MarketerCampaignConversion::with([
-                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
-                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
-                'order',
-                'invitation',
-            ])
+            'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+            'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+            'order',
+            'invitation',
+        ])
             ->whereIn('invitation_id', $invitationIds)
             ->when($request->filled('campaign_id'), fn ($q) => $q->where('campaign_id', $request->campaign_id))
             ->when($request->filled('from'), fn ($q) => $q->whereDate('created_at', '>=', $request->from))
@@ -45,7 +48,7 @@ class FinanceController extends Controller
         $pendingEarnings = MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
             ->where('commissioned', false)->sum('commission_amount');
 
-        $commissionRules = \App\Http\Controllers\Api\Marketer\CommissionRuleController::rulesFor($marketer);
+        $commissionRules = CommissionRuleController::rulesFor($marketer);
 
         return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules'));
     }
@@ -90,10 +93,14 @@ class FinanceController extends Controller
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $this->walletService->requestWithdrawal($wallet, (int) $data['amount'], [
+        $withdrawal = $this->walletService->requestWithdrawal($wallet, (int) $data['amount'], [
             'bank_name' => $data['bank_name'],
             'bank_iban' => $data['bank_iban'],
         ]);
+
+        /** @var MarketerAdmin $marketerAdmin */
+        $marketerAdmin = Auth::guard('marketer')->user();
+        $marketerAdmin->notify(new PayoutScheduled($withdrawal, $marketerAdmin->id));
 
         return back()->with('success', 'تم تقديم طلب السحب بنجاح');
     }
