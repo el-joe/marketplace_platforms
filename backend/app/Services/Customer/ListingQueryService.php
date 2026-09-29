@@ -29,7 +29,6 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ListingQueryService
 {
@@ -874,11 +873,11 @@ class ListingQueryService
             'title_ar' => $listing->title_ar,
             'slug' => $listing->listing_number,
             'thumbnail' => $listing->images->first()?->file_path
-                ? Storage::url($listing->images->first()->file_path)
+                ? asset('storage/'.$listing->images->first()->file_path)
                 : null,
             'images' => $listing->images->map(fn ($img) => [
                 'id' => $img->id,
-                'url' => Storage::url($img->file_path),
+                'url' => asset('storage/'.$img->file_path),
                 'is_primary' => (bool) ($img->is_primary ?? false),
                 'position' => (int) ($img->position ?? 0),
             ])->values()->all(),
