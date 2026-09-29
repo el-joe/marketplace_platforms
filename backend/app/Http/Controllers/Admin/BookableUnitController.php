@@ -47,7 +47,7 @@ class BookableUnitController extends Controller
 
     public function approve(BookableUnit $bookableUnit): RedirectResponse
     {
-        abort_unless(auth('admin')->user()->hasPermissionTo('travel.manage') || auth('admin')->user()->hasPermissionTo('travel.view'), 403);
+        abort_unless(auth('admin')->user()->hasPermissionTo('travel.approve') || auth('admin')->user()->hasPermissionTo('travel.view'), 403);
 
         $bookableUnit->update([
             'status' => 'active',
@@ -63,7 +63,7 @@ class BookableUnitController extends Controller
 
     public function reject(Request $request, BookableUnit $bookableUnit): RedirectResponse
     {
-        abort_unless(auth('admin')->user()->hasPermissionTo('travel.manage') || auth('admin')->user()->hasPermissionTo('travel.view'), 403);
+        abort_unless(auth('admin')->user()->hasPermissionTo('travel.reject') || auth('admin')->user()->hasPermissionTo('travel.view'), 403);
 
         $data = $request->validate([
             'rejection_reason' => ['required', 'string', 'max:1000'],

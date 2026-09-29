@@ -77,6 +77,7 @@ class PermissionSeeder extends Seeder
             'ledger.view',
             'analytics.view',
             'transactions.view',
+            'transactions.edit',
             // Marketing
             'banners.view',
             'banners.create',
@@ -126,6 +127,7 @@ class PermissionSeeder extends Seeder
             'travel_agency_change_requests.approve',
             'pages.view',
             'pages.manage',
+            'pages.delete_published',
             'app_contexts.view',
             'app_contexts.manage',
             // Customers
@@ -146,6 +148,7 @@ class PermissionSeeder extends Seeder
             // Disputes
             'disputes.view',
             'disputes.resolve',
+            'disputes.manage',
             // Returns
             'returns.view',
             'returns.manage',
@@ -212,9 +215,9 @@ class PermissionSeeder extends Seeder
         }
 
         $countPermissions = Permission::where('guard_name', $guard)->count();
-        $this->command->info('Permissions seeded: ' . $countPermissions . ' permissions (guard: ' . $guard . ').');
+        $this->command->info('Permissions seeded: '.$countPermissions.' permissions (guard: '.$guard.').');
 
-        $this->command->info('Permissions seeded: ' . count($permissions) . ' permissions (guard: ' . $guard . ').');
+        $this->command->info('Permissions seeded: '.count($permissions).' permissions (guard: '.$guard.').');
 
         $vendorGuard = 'vendor';
 
@@ -239,6 +242,6 @@ class PermissionSeeder extends Seeder
         }
 
         $countVendorPermissions = Permission::where('guard_name', $vendorGuard)->count();
-        $this->command->info('Permissions seeded: ' . $countVendorPermissions . ' permissions (guard: ' . $vendorGuard . ').');
+        $this->command->info('Permissions seeded: '.$countVendorPermissions.' permissions (guard: '.$vendorGuard.').');
     }
 }
