@@ -6,18 +6,20 @@ use App\Http\Controllers\Api\Customer\CustomerGiftCardStoreController;
 use App\Http\Controllers\Api\Customer\GiftCardController as ApiGiftCardController;
 use App\Http\Controllers\Api\Customer\ListingController as ApiListingController;
 use App\Http\Controllers\Api\Customer\MarketerContractController;
+use App\Http\Controllers\Api\Customer\MyBookingsController;
 use App\Http\Controllers\Api\Customer\NewsletterController;
 use App\Http\Controllers\Api\Customer\NotificationController;
 use App\Http\Controllers\Api\Customer\OrderController as ApiOrderController;
+use App\Http\Controllers\Api\Customer\PackageBookableUnitsController;
 use App\Http\Controllers\Api\Customer\PageContentController;
 use App\Http\Controllers\Api\Customer\PaymentCallbackController;
 use App\Http\Controllers\Api\Customer\PaymentHistoryController;
-use App\Http\Controllers\Api\Customer\QrCodeController;
-use App\Http\Controllers\Api\Customer\SecurityController;
 // NOTE: Api\Customer\WalletController and Api\Customer\CustomerWalletController
 // were deleted as part of the wallet systems merge (Phase 3). All three
 // route families below now alias to Customer\WalletController (the single
 // canonical, Wallet-backed controller).
+use App\Http\Controllers\Api\Customer\QrCodeController;
+use App\Http\Controllers\Api\Customer\SecurityController;
 use App\Http\Controllers\Api\Customer\SpecialRequestController;
 use App\Http\Controllers\Api\Customer\WarrantyController as ApiWarrantyController;
 use App\Http\Controllers\Api\Customer\WishlistController as ApiWishlistController;
@@ -48,10 +50,10 @@ use App\Http\Controllers\Customer\ProductController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ReceiverController;
 use App\Http\Controllers\Customer\RefundController;
-use App\Http\Controllers\Customer\ReturnController;
-use App\Http\Controllers\Customer\ReviewController;
 // ── Home composite (public) ───────────────────────────────────────────
 
+use App\Http\Controllers\Customer\ReturnController;
+use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\SearchController;
 use App\Http\Controllers\Customer\SponsoredAdController;
 use App\Http\Controllers\Customer\SupportTicketController;
@@ -145,6 +147,10 @@ Route::post(
     [ListingController::class, 'signContract']
 )->middleware('auth:customer')->name('customer.listings.travel.bookings.contract');
 
+// GET /packages/{packageId}/units — active bookable units for a travel package
+Route::get('packages/{packageId}/units', PackageBookableUnitsController::class)
+    ->name('customer.packages.units');
+
 // ── Bookable units (daily calendar bookings: chalets/hotel rooms) ──────
 // Entirely separate from TravelPackage/TravelBooking above (fixed-date
 // travel packages) — the two coexist as different agency offerings.
@@ -163,7 +169,7 @@ Route::prefix('bookable-units')->name('customer.bookable-units.')->group(functio
 });
 
 // Unified "My Bookings": travel packages + bookable units + flights.
-Route::get('my-bookings', [\App\Http\Controllers\Api\Customer\MyBookingsController::class, 'index'])
+Route::get('my-bookings', [MyBookingsController::class, 'index'])
     ->middleware('auth:customer')
     ->name('customer.my-bookings');
 

@@ -6,6 +6,7 @@ use App\Enums\TravelPackageStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
 use App\Models\Currency;
+use App\Models\TravelCategory;
 use App\Models\TravelCity;
 use App\Models\TravelCountry;
 use App\Models\TravelPackage;
@@ -21,8 +22,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PackageController extends Controller
 {
-    use ResolvesTravelAgency;
     use HasExport;
+    use ResolvesTravelAgency;
 
     private function authorise(TravelPackage $package): void
     {
@@ -91,7 +92,7 @@ class PackageController extends Controller
 
         $rows = $packages->map(fn (TravelPackage $package) => [
             $package->title_en,
-            trim(($package->destinationCity->name_en ?? '') . ' ' . ($package->destinationCountry->name_en ?? '')),
+            trim(($package->destinationCity->name_en ?? '').' '.($package->destinationCountry->name_en ?? '')),
             $package->price,
             $package->currency,
             $package->status->value ?? $package->status,
@@ -99,13 +100,13 @@ class PackageController extends Controller
             $package->created_at?->toDateString(),
         ]);
 
-        $filename = 'packages-' . now()->toDateString();
+        $filename = 'packages-'.now()->toDateString();
         $format = $request->input('format', 'csv');
 
         return match ($format) {
             'excel' => $this->exportExcel($filename, $headers, $rows),
-            'word'  => $this->exportWord($filename, __('travel.packages.export.sheet_title'), $rows),
-            'csv'   => $this->exportCsv($filename, $headers, $rows),
+            'word' => $this->exportWord($filename, __('travel.packages.export.sheet_title'), $rows),
+            'csv' => $this->exportCsv($filename, $headers, $rows),
             default => abort(400, __('travel.export.invalid_format')),
         };
     }
@@ -115,9 +116,9 @@ class PackageController extends Controller
     private function formData(): array
     {
         return [
-            'travelCountries'  => TravelCountry::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']),
-            'currencies'       => Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']),
-            'travelCategories' => \App\Models\TravelCategory::where('is_active', true)
+            'travelCountries' => TravelCountry::where('is_active', true)->orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']),
+            'currencies' => Currency::where('is_active', true)->orderBy('code')->get(['code', 'name', 'symbol']),
+            'travelCategories' => TravelCategory::where('is_active', true)
                 ->orderBy('sort_order')
                 ->orderBy('name_en')
                 ->get(['id', 'name_en', 'name_ar', 'icon', 'parent_id']),
@@ -132,31 +133,31 @@ class PackageController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'title_en'                      => ['required', 'string', 'max:255'],
-            'title_ar'                      => ['required', 'string', 'max:255'],
-            'description_en'                => ['nullable', 'string'],
-            'description_ar'                => ['nullable', 'string'],
+            'title_en' => ['required', 'string', 'max:255'],
+            'title_ar' => ['required', 'string', 'max:255'],
+            'description_en' => ['nullable', 'string'],
+            'description_ar' => ['nullable', 'string'],
             'destination_travel_country_id' => ['required', 'uuid', 'exists:travel_countries,id'],
-            'destination_travel_city_id'    => ['nullable', 'uuid', 'exists:travel_cities,id'],
-            'price'                   => ['required', 'integer', 'min:1'],
-            'currency'                      => ['required', 'string', 'size:3', 'exists:currencies,code'],
-            'pricing_tiers_enabled'         => ['nullable', 'boolean'],
+            'destination_travel_city_id' => ['nullable', 'uuid', 'exists:travel_cities,id'],
+            'price' => ['required', 'integer', 'min:1'],
+            'currency' => ['required', 'string', 'size:3', 'exists:currencies,code'],
+            'pricing_tiers_enabled' => ['nullable', 'boolean'],
             'show_pricing_tiers_to_customer' => ['nullable', 'boolean'],
-            'price_tiers'                   => ['nullable', 'array'],
+            'price_tiers' => ['nullable', 'array'],
             'price_tiers.*.travelers_count' => ['required_with:price_tiers', 'integer', 'min:1'],
-            'price_tiers.*.price'     => ['required_with:price_tiers', 'integer', 'min:1'],
-            'duration_days'                 => ['required', 'integer', 'min:1'],
-            'duration_nights'               => ['required', 'integer', 'min:0'],
-            'departure_date'                => ['required', 'date', 'after:today'],
-            'return_date'                   => ['required', 'date', 'after:departure_date'],
-            'available_seats'               => ['nullable', 'integer', 'min:1'],
-            'inclusion_ids'                 => ['nullable', 'array'],
-            'inclusion_ids.*'               => ['uuid', 'exists:travel_inclusions,id'],
-            'category_ids'                  => ['nullable', 'array'],
-            'category_ids.*'                => ['uuid', 'exists:travel_categories,id'],
-            'media'                         => ['nullable', 'array', 'max:10'],
-            'media.*'                       => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:51200'],
-            'contract_file'                 => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'price_tiers.*.price' => ['required_with:price_tiers', 'integer', 'min:1'],
+            'duration_days' => ['required', 'integer', 'min:1'],
+            'duration_nights' => ['required', 'integer', 'min:0'],
+            'departure_date' => ['required', 'date', 'after:today'],
+            'return_date' => ['required', 'date', 'after:departure_date'],
+            'available_seats' => ['nullable', 'integer', 'min:1'],
+            'inclusion_ids' => ['nullable', 'array'],
+            'inclusion_ids.*' => ['uuid', 'exists:travel_inclusions,id'],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['uuid', 'exists:travel_categories,id'],
+            'media' => ['nullable', 'array', 'max:10'],
+            'media.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:51200'],
+            'contract_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         $priceTiers = $data['price_tiers'] ?? [];
@@ -189,7 +190,10 @@ class PackageController extends Controller
     public function show(TravelPackage $package): View
     {
         $this->authorise($package);
-        $package->load(['media', 'bookings.customer', 'inclusions', 'pricingTiers']);
+        $package->load(['media', 'destinationCountry', 'destinationCity', 'pricingTiers',
+            'bookableUnits' => fn ($q) => $q->withCount('reservations')->latest(),
+        ]);
+
         return view('travel-agency.packages.show', compact('package'));
     }
 
@@ -207,34 +211,34 @@ class PackageController extends Controller
     {
         $this->authorise($package);
 
-        $wasPublished = !in_array($package->status, [TravelPackageStatus::Draft, TravelPackageStatus::PendingReview]);
+        $wasPublished = ! in_array($package->status, [TravelPackageStatus::Draft, TravelPackageStatus::PendingReview]);
 
         $data = $request->validate([
-            'title_en'                      => ['required', 'string', 'max:255'],
-            'title_ar'                      => ['required', 'string', 'max:255'],
-            'description_en'                => ['nullable', 'string'],
-            'description_ar'                => ['nullable', 'string'],
+            'title_en' => ['required', 'string', 'max:255'],
+            'title_ar' => ['required', 'string', 'max:255'],
+            'description_en' => ['nullable', 'string'],
+            'description_ar' => ['nullable', 'string'],
             'destination_travel_country_id' => ['required', 'uuid', 'exists:travel_countries,id'],
-            'destination_travel_city_id'    => ['nullable', 'uuid', 'exists:travel_cities,id'],
-            'price'                   => ['required', 'integer', 'min:1'],
-            'currency'                      => ['required', 'string', 'size:3', 'exists:currencies,code'],
-            'pricing_tiers_enabled'         => ['nullable', 'boolean'],
+            'destination_travel_city_id' => ['nullable', 'uuid', 'exists:travel_cities,id'],
+            'price' => ['required', 'integer', 'min:1'],
+            'currency' => ['required', 'string', 'size:3', 'exists:currencies,code'],
+            'pricing_tiers_enabled' => ['nullable', 'boolean'],
             'show_pricing_tiers_to_customer' => ['nullable', 'boolean'],
-            'price_tiers'                   => ['nullable', 'array'],
+            'price_tiers' => ['nullable', 'array'],
             'price_tiers.*.travelers_count' => ['required_with:price_tiers', 'integer', 'min:1'],
-            'price_tiers.*.price'     => ['required_with:price_tiers', 'integer', 'min:1'],
-            'duration_days'                 => ['required', 'integer', 'min:1'],
-            'duration_nights'               => ['required', 'integer', 'min:0'],
-            'departure_date'                => ['required', 'date'],
-            'return_date'                   => ['required', 'date', 'after:departure_date'],
-            'available_seats'               => ['nullable', 'integer', 'min:1'],
-            'inclusion_ids'                 => ['nullable', 'array'],
-            'inclusion_ids.*'               => ['uuid', 'exists:travel_inclusions,id'],
-            'category_ids'                  => ['nullable', 'array'],
-            'category_ids.*'                => ['uuid', 'exists:travel_categories,id'],
-            'media'                         => ['nullable', 'array', 'max:10'],
-            'media.*'                       => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:51200'],
-            'contract_file'                 => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'price_tiers.*.price' => ['required_with:price_tiers', 'integer', 'min:1'],
+            'duration_days' => ['required', 'integer', 'min:1'],
+            'duration_nights' => ['required', 'integer', 'min:0'],
+            'departure_date' => ['required', 'date'],
+            'return_date' => ['required', 'date', 'after:departure_date'],
+            'available_seats' => ['nullable', 'integer', 'min:1'],
+            'inclusion_ids' => ['nullable', 'array'],
+            'inclusion_ids.*' => ['uuid', 'exists:travel_inclusions,id'],
+            'category_ids' => ['nullable', 'array'],
+            'category_ids.*' => ['uuid', 'exists:travel_categories,id'],
+            'media' => ['nullable', 'array', 'max:10'],
+            'media.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:51200'],
+            'contract_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         $priceTiers = $data['price_tiers'] ?? [];
@@ -319,7 +323,7 @@ class PackageController extends Controller
 
     // ── Delete media ──────────────────────────────────────────────────────────
 
-    public function destroyMedia(TravelPackage $package, TravelPackageMedia $media): \Illuminate\Http\JsonResponse
+    public function destroyMedia(TravelPackage $package, TravelPackageMedia $media): JsonResponse
     {
         $this->authorise($package);
         abort_if($media->travel_package_id !== $package->id, 404);
@@ -332,7 +336,7 @@ class PackageController extends Controller
 
     // ── Download contract ─────────────────────────────────────────────────────
 
-    public function downloadContract(TravelPackage $package): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function downloadContract(TravelPackage $package): StreamedResponse
     {
         $this->authorise($package);
 
@@ -352,15 +356,15 @@ class PackageController extends Controller
         $path = $file->store("travel-packages/{$package->id}/contracts", 'local');
 
         $package->update([
-            'contract_file_path'          => $path,
+            'contract_file_path' => $path,
             'contract_file_original_name' => $file->getClientOriginalName(),
-            'contract_uploaded_at'        => now(),
+            'contract_uploaded_at' => now(),
         ]);
     }
 
     private function handleMediaUploads(Request $request, TravelPackage $package): void
     {
-        if (!$request->hasFile('media')) {
+        if (! $request->hasFile('media')) {
             return;
         }
 

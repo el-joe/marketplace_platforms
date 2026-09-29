@@ -206,5 +206,59 @@
                 </table>
             </div>
         @endif
+        {{-- Bookable Units --}}
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h3 class="font-semibold text-gray-700 text-sm uppercase tracking-wide">{{ __('travel.packages.bookable_units', [], null, 'Bookable Units') }}</h3>
+                <a href="{{ route('travel-agency.bookable-units.create', ['package_id' => $package->id]) }}"
+                    class="text-xs text-blue-600 hover:underline">+ {{ __('travel.packages.add_unit', [], null, 'Add Unit to this Package') }}</a>
+            </div>
+            <table class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-start text-xs font-medium text-gray-500">{{ __('travel.packages.unit_name', [], null, 'Name') }}</th>
+                        <th class="px-4 py-2 text-start text-xs font-medium text-gray-500">{{ __('travel.packages.unit_type', [], null, 'Type') }}</th>
+                        <th class="px-4 py-2 text-start text-xs font-medium text-gray-500">{{ __('travel.packages.unit_capacity', [], null, 'Capacity') }}</th>
+                        <th class="px-4 py-2 text-start text-xs font-medium text-gray-500">{{ __('travel.packages.unit_status', [], null, 'Status') }}</th>
+                        <th class="px-4 py-2 text-start text-xs font-medium text-gray-500">{{ __('travel.packages.unit_reservations', [], null, 'Reservations') }}</th>
+                        <th class="px-4 py-2 text-start text-xs font-medium text-gray-500">{{ __('travel.packages.unit_actions', [], null, 'Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($package->bookableUnits as $unit)
+                        @php
+                            $unitStatusColors = [
+                                'draft'    => 'bg-gray-100 text-gray-600',
+                                'active'   => 'bg-emerald-100 text-emerald-700',
+                                'paused'   => 'bg-amber-100 text-amber-700',
+                                'rejected' => 'bg-red-100 text-red-700',
+                                'archived' => 'bg-gray-100 text-gray-500',
+                            ];
+                            $unitStatusColor = $unitStatusColors[$unit->status?->value ?? $unit->status] ?? 'bg-gray-100 text-gray-500';
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-gray-900 font-medium">{{ $unit->name }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $unit->type }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $unit->capacity }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium {{ $unitStatusColor }}">
+                                    {{ $unit->status?->label() ?? $unit->status }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">{{ $unit->reservations_count }}</td>
+                            <td class="px-4 py-3">
+                                <a href="{{ route('travel-agency.bookable-units.show', $unit) }}"
+                                    class="text-xs text-blue-600 hover:underline">{{ __('travel.packages.view', [], null, 'View') }}</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-400 text-sm">{{ __('travel.packages.no_units', [], null, 'No bookable units yet.') }}</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
     </div>
 @endsection

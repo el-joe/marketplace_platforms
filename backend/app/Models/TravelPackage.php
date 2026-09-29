@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Enums\TravelPackageStatus;
+use App\Helpers\CurrencyFormatter;
+use App\Services\Customer\UnifiedCategoryService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class TravelPackage extends Model
@@ -49,17 +52,17 @@ class TravelPackage extends Model
         static::creating(function (self $package) {
             $base = Str::slug($package->title_en ?? 'package');
             do {
-                $slug = $base . '-' . Str::lower(Str::random(6));
+                $slug = $base.'-'.Str::lower(Str::random(6));
             } while (static::where('slug', $slug)->exists());
             $package->slug = $slug;
         });
 
         static::saved(function (self $package) {
             if ($package->isDirty('status')) {
-                \App\Services\Customer\UnifiedCategoryService::flushCache();
+                UnifiedCategoryService::flushCache();
 
-                if (\Illuminate\Support\Facades\Cache::supportsTags()) {
-                    \Illuminate\Support\Facades\Cache::tags(['pages'])->flush();
+                if (Cache::supportsTags()) {
+                    Cache::tags(['pages'])->flush();
                 }
             }
         });
@@ -110,6 +113,11 @@ class TravelPackage extends Model
         return $this->hasMany(TravelPackageInquiry::class);
     }
 
+    public function bookableUnits(): HasMany
+    {
+        return $this->hasMany(BookableUnit::class);
+    }
+
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(TravelCategory::class, 'travel_package_categories');
@@ -134,7 +142,7 @@ class TravelPackage extends Model
 
     public function priceFormatted(): string
     {
-        return \App\Helpers\CurrencyFormatter::formatPrice($this->price, $this->currency);
+        return CurrencyFormatter::formatPrice($this->price, $this->currency);
     }
 
     /**

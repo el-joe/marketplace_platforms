@@ -36,6 +36,7 @@ class BookableUnitController extends Controller
     public function index(): View
     {
         $units = BookableUnit::where('travel_agency_id', $this->agencyId())
+            ->with('travelPackage:id,title_en,title_ar')
             ->withCount('reservations')
             ->latest()
             ->paginate(20);
@@ -47,7 +48,11 @@ class BookableUnitController extends Controller
 
     public function create(): View
     {
-        return view('travel-agency.bookable-units.create');
+        $packages = TravelPackage::where('travel_agency_id', $this->agencyId())
+            ->orderBy('title_en')->get(['id', 'title_en', 'title_ar']);
+        $selectedPackageId = request()->query('package_id');
+
+        return view('travel-agency.bookable-units.create', compact('packages', 'selectedPackageId'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -57,7 +62,15 @@ class BookableUnitController extends Controller
             'type' => ['required', 'in:chalet,hotel_room,other'],
             'capacity' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
+            'travel_package_id' => ['nullable', 'uuid', 'exists:travel_packages,id'],
         ]);
+
+        if ($data['travel_package_id'] ?? null) {
+            $packageBelongsToAgency = TravelPackage::where('id', $data['travel_package_id'])
+                ->where('travel_agency_id', $this->agencyId())
+                ->exists();
+            abort_unless($packageBelongsToAgency, 403);
+        }
 
         $unit = BookableUnit::create([
             ...$data,
@@ -131,7 +144,10 @@ class BookableUnitController extends Controller
 
         $bookableUnit->load('photos');
 
-        return view('travel-agency.bookable-units.edit', ['unit' => $bookableUnit]);
+        $packages = TravelPackage::where('travel_agency_id', $this->agencyId())
+            ->orderBy('title_en')->get(['id', 'title_en', 'title_ar']);
+
+        return view('travel-agency.bookable-units.edit', ['unit' => $bookableUnit, 'packages' => $packages]);
     }
 
     public function update(Request $request, BookableUnit $bookableUnit): RedirectResponse
@@ -143,7 +159,15 @@ class BookableUnitController extends Controller
             'type' => ['required', 'in:chalet,hotel_room,other'],
             'capacity' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
+            'travel_package_id' => ['nullable', 'uuid', 'exists:travel_packages,id'],
         ]);
+
+        if ($data['travel_package_id'] ?? null) {
+            $packageBelongsToAgency = TravelPackage::where('id', $data['travel_package_id'])
+                ->where('travel_agency_id', $this->agencyId())
+                ->exists();
+            abort_unless($packageBelongsToAgency, 403);
+        }
 
         $bookableUnit->update($data);
 

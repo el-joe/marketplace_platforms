@@ -20,6 +20,7 @@
                         <th class="px-4 py-3 text-start">{{ __('travel.bookable_units.type') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('travel.bookable_units.capacity') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('travel.bookable_units.reservations') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('travel.bookable_units.package') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('common.status') }}</th>
                         <th class="px-4 py-3"></th>
                     </tr>
@@ -32,6 +33,13 @@
                             <td class="px-4 py-3">{{ $unit->capacity }}</td>
                             <td class="px-4 py-3">{{ $unit->reservations_count }}</td>
                             <td class="px-4 py-3">
+                                @if($unit->travelPackage)
+                                    <a href="{{ route('travel-agency.packages.show', $unit->travel_package_id) }}" class="text-blue-600 hover:underline">{{ $unit->travelPackage->title_ar ?: $unit->travelPackage->title_en }}</a>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
                                 {{ __('travel.bookable_units.statuses.'.$unit->status) }}
                                 @if($unit->status === 'rejected' && $unit->rejection_reason)
                                     <div class="text-xs text-red-500">{{ $unit->rejection_reason }}</div>
@@ -43,7 +51,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">{{ __('travel.bookable_units.none') }}</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-400">{{ __('travel.bookable_units.none') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

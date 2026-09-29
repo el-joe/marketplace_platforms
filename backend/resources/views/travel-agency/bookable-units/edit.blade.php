@@ -40,6 +40,19 @@
                 @error('description') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('travel.bookable_units.package_optional') }}</label>
+                <select name="travel_package_id" class="w-full rounded-lg border-gray-300 text-sm">
+                    <option value="">— {{ __('travel.bookable_units.no_package') }} —</option>
+                    @foreach($packages as $pkg)
+                        <option value="{{ $pkg->id }}" {{ (old('travel_package_id', $unit->travel_package_id) === $pkg->id) ? 'selected' : '' }}>
+                            {{ $pkg->title_ar ?: $pkg->title_en }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('travel_package_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
             <button type="submit" class="px-5 py-2.5 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-400 transition-colors">
                 {{ __('common.save') }}
             </button>

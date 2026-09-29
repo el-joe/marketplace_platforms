@@ -14,7 +14,7 @@ class BookableUnitController extends Controller
     {
         abort_unless(auth('admin')->user()->hasPermissionTo('travel.view'), 403);
 
-        $units = BookableUnit::with('agency:id,name')
+        $units = BookableUnit::with(['agency:id,name', 'travelPackage:id,title_en,title_ar'])
             ->withCount('reservations')
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))

@@ -28,6 +28,7 @@
                 <tr>
                     <th class="px-4 py-3 text-start">{{ __('admin.bookable_units_section.name') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.bookable_units_section.agency') }}</th>
+                    <th class="px-4 py-3 text-start">Package</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.bookable_units_section.type') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.bookable_units_section.status') }}</th>
                     <th class="px-4 py-3 text-start">{{ __('admin.bookable_units_section.reservations') }}</th>
@@ -39,13 +40,20 @@
                 <tr>
                     <td class="px-4 py-3">{{ $unit->name_ar && app()->getLocale() === 'ar' ? $unit->name_ar : $unit->name }}</td>
                     <td class="px-4 py-3">{{ $unit->agency?->name }}</td>
+                    <td class="px-4 py-3">
+                        @if($unit->travelPackage)
+                            <a class="text-blue-600 hover:underline" href="{{ route('admin.travel.packages.show', $unit->travel_package_id) }}">{{ $unit->travelPackage->title_en }}</a>
+                        @else
+                            —
+                        @endif
+                    </td>
                     <td class="px-4 py-3">{{ __('admin.bookable_units_section.type_'.($unit->type->value ?? $unit->type)) }}</td>
                     <td class="px-4 py-3">{{ __('admin.bookable_units_section.status_'.$unit->status) }}</td>
                     <td class="px-4 py-3">{{ $unit->reservations_count }}</td>
                     <td class="px-4 py-3 text-end"><a class="text-blue-600" href="{{ route('admin.travel.bookable-units.show', $unit) }}">{{ __('admin.bookable_units_section.view') }}</a></td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">{{ __('admin.bookable_units_section.none') }}</td></tr>
+                <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">{{ __('admin.bookable_units_section.none') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

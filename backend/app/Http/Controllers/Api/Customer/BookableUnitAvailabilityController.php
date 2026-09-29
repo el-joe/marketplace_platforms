@@ -66,6 +66,11 @@ class BookableUnitAvailabilityController extends Controller
 
         $reservation = $this->reservations->reserve($bookableUnit, $customer, $request->validated());
 
+        $bookableUnit->load('travelPackage:id,title_en,title_ar');
+        $packageTitle = $bookableUnit->travelPackage
+            ? ($bookableUnit->travelPackage->title_ar ?: $bookableUnit->travelPackage->title_en)
+            : null;
+
         return ApiResponse::success([
             'id' => $reservation->id,
             'reservation_number' => $reservation->reservation_number,
@@ -76,6 +81,8 @@ class BookableUnitAvailabilityController extends Controller
             'includes_overnight' => $reservation->includes_overnight,
             'total_price' => $reservation->total_price,
             'status' => $reservation->status->value,
+            'package_id' => $bookableUnit->travel_package_id,
+            'package_title' => $packageTitle,
         ], __('common.exceptions.listing.booking_submitted'), 201);
     }
 }

@@ -7,14 +7,17 @@ use App\Enums\TravelPackageStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TravelCountry;
 use App\Models\TravelPackage;
-use Illuminate\Support\Facades\Storage;
 use App\Notifications\TravelAgency\PackageApproved;
 use App\Notifications\TravelAgency\PackageRejected;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TravelPackageController extends Controller
 {
@@ -23,7 +26,7 @@ class TravelPackageController extends Controller
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
@@ -85,19 +88,19 @@ class TravelPackageController extends Controller
             $cover = $row->media->where('media_type', 'image')->first();
             $thumbHtml = $cover
                 ? "<img src=\"/storage/{$cover->file_path}\" class=\"w-10 h-10 rounded object-cover inline-block mr-2 align-middle\" alt=\"\">"
-                : "<span class=\"inline-block w-10 h-10 rounded bg-gray-100 mr-2 align-middle\"></span>";
+                : '<span class="inline-block w-10 h-10 rounded bg-gray-100 mr-2 align-middle"></span>';
 
-            $title = $thumbHtml . '<span class="font-medium text-gray-900">' . e($row->title_en) . '</span>';
+            $title = $thumbHtml.'<span class="font-medium text-gray-900">'.e($row->title_en).'</span>';
 
             $country = $row->destinationCountry;
             $destination = $country
-                ? ($country->flag_emoji ? $country->flag_emoji . ' ' : '') . e($country->name_en)
+                ? ($country->flag_emoji ? $country->flag_emoji.' ' : '').e($country->name_en)
                 : e($row->destination_country ?? '—');
             if ($row->destination_city) {
-                $destination .= '<br><span class="text-xs text-gray-400">' . e($row->destination_city) . '</span>';
+                $destination .= '<br><span class="text-xs text-gray-400">'.e($row->destination_city).'</span>';
             }
 
-            $price = e($row->currency) . ' ' . number_format($row->price, 2);
+            $price = e($row->currency).' '.number_format($row->price, 2);
 
             $departure = Carbon::parse($row->departure_date)->format('d M Y');
 
@@ -116,8 +119,8 @@ class TravelPackageController extends Controller
             $actions = '<div class="flex items-center gap-1">';
             $actions .= "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>";
             if ($canEdit && $row->status === TravelPackageStatus::PendingReview) {
-                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-btn\" data-url=\"{$approveUrl}\" data-name=\"" . e($row->title_en) . "\">Approve</button>";
-                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-btn\" data-url=\"{$rejectUrl}\" data-name=\"" . e($row->title_en) . "\">Reject</button>";
+                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-btn\" data-url=\"{$approveUrl}\" data-name=\"".e($row->title_en).'">Approve</button>';
+                $actions .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-btn\" data-url=\"{$rejectUrl}\" data-name=\"".e($row->title_en).'">Reject</button>';
             }
             $actions .= '</div>';
 
@@ -137,7 +140,7 @@ class TravelPackageController extends Controller
 
     // ── Query building / Export ──────────────────────────────────────────────
 
-    private function buildPackagesQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildPackagesQuery(Request $request): Builder
     {
         $query = TravelPackage::query()
             ->select('travel_packages.*')
@@ -145,22 +148,22 @@ class TravelPackageController extends Controller
             ->join('travel_agencies', 'travel_agencies.id', '=', 'travel_packages.travel_agency_id');
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where('travel_packages.title_en', 'like', '%' . $v . '%'),
-            'status' => fn($q, $v) => $q->where('travel_packages.status', $v),
-            'destination_travel_country_id' => fn($q, $v) => $q->where('travel_packages.destination_travel_country_id', $v),
-            'agency_id' => fn($q, $v) => $q->where('travel_packages.travel_agency_id', $v),
-            'departure_from' => fn($q, $v) => $q->whereDate('travel_packages.departure_date', '>=', $v),
-            'departure_to' => fn($q, $v) => $q->whereDate('travel_packages.departure_date', '<=', $v),
+            'search' => fn ($q, $v) => $q->where('travel_packages.title_en', 'like', '%'.$v.'%'),
+            'status' => fn ($q, $v) => $q->where('travel_packages.status', $v),
+            'destination_travel_country_id' => fn ($q, $v) => $q->where('travel_packages.destination_travel_country_id', $v),
+            'agency_id' => fn ($q, $v) => $q->where('travel_packages.travel_agency_id', $v),
+            'departure_from' => fn ($q, $v) => $q->whereDate('travel_packages.departure_date', '>=', $v),
+            'departure_to' => fn ($q, $v) => $q->whereDate('travel_packages.departure_date', '<=', $v),
         ]);
     }
 
-    private function exportPackages(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportPackages(Request $request): StreamedResponse
     {
         $packages = $this->buildPackagesQuery($request)->orderByDesc('travel_packages.departure_date')->get();
 
         $headers = ['Package', 'Agency', 'Destination', 'Price', 'Currency', 'Status', 'Date'];
 
-        $rows = $packages->map(fn($pkg) => [
+        $rows = $packages->map(fn ($pkg) => [
             $pkg->title_en,
             $pkg->agency?->name,
             $pkg->destinationCountry?->name_en ?? $pkg->destination_country,
@@ -180,7 +183,7 @@ class TravelPackageController extends Controller
 
     // ── Show ──────────────────────────────────────────────────────────────────
 
-    public function show(TravelPackage $travelPackage): \Illuminate\View\View
+    public function show(TravelPackage $travelPackage): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
@@ -193,6 +196,7 @@ class TravelPackageController extends Controller
             'approvedByAdmin',
             'destinationCountry',
             'destinationCity',
+            'bookableUnits' => fn ($q) => $q->withCount('reservations')->latest(),
         ]);
 
         $bookingStats = [
@@ -279,7 +283,7 @@ class TravelPackageController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.suspend'), 403);
 
-        if (!in_array($travelPackage->status, [TravelPackageStatus::Active, TravelPackageStatus::SoldOut])) {
+        if (! in_array($travelPackage->status, [TravelPackageStatus::Active, TravelPackageStatus::SoldOut])) {
             return response()->json(['message' => 'Package cannot be expired from its current status.'], 422);
         }
 
@@ -290,7 +294,7 @@ class TravelPackageController extends Controller
 
     // ── Download contract ─────────────────────────────────────────────────────
 
-    public function downloadContract(TravelPackage $travelPackage): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function downloadContract(TravelPackage $travelPackage): StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
@@ -314,14 +318,14 @@ class TravelPackageController extends Controller
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
 
         $data = $request->validate([
-            'category_ids'   => ['nullable', 'array'],
+            'category_ids' => ['nullable', 'array'],
             'category_ids.*' => ['uuid', 'exists:travel_categories,id'],
         ]);
 
         $travelPackage->categories()->sync($data['category_ids'] ?? []);
 
         return response()->json([
-            'message'    => __('admin.travel.categories_updated'),
+            'message' => __('admin.travel.categories_updated'),
             'categories' => $travelPackage->categories()->get(['id', 'name_en', 'name_ar', 'icon']),
         ]);
     }

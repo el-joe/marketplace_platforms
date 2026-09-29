@@ -40,22 +40,31 @@ class MyBookingsController extends Controller
         );
 
         $bookings = $bookings->merge(
-            BookableUnitReservation::with('bookableUnit.agency')
+            BookableUnitReservation::with('bookableUnit.agency', 'bookableUnit.travelPackage')
                 ->where('customer_id', $customer->id)
                 ->get()
-                ->map(fn ($r) => new UnifiedBookingDTO(
-                    id: $r->id,
-                    type: 'bookable_unit',
-                    bookingNumber: (string) $r->reservation_number,
-                    title: (string) ($r->bookableUnit?->name_ar ?? $r->bookableUnit?->name ?? ''),
-                    dateFrom: $r->date_from->toDateString(),
-                    dateTo: $r->date_to->toDateString(),
-                    totalPrice: (int) $r->total_price,
-                    currency: (string) $r->currency,
-                    status: (string) ($r->status->value ?? $r->status),
-                    agencyName: $r->bookableUnit?->agency?->name,
-                    thumbnailUrl: null,
-                ))
+                ->map(function ($r) {
+                    $unitName = (string) ($r->bookableUnit?->name_ar ?? $r->bookableUnit?->name ?? '');
+                    $package = $r->bookableUnit?->travelPackage;
+                    $packageTitle = $package
+                        ? ($package->title_ar ?: $package->title_en)
+                        : null;
+                    $title = $packageTitle ? "{$unitName} — {$packageTitle}" : $unitName;
+
+                    return new UnifiedBookingDTO(
+                        id: $r->id,
+                        type: 'bookable_unit',
+                        bookingNumber: (string) $r->reservation_number,
+                        title: $title,
+                        dateFrom: $r->date_from->toDateString(),
+                        dateTo: $r->date_to->toDateString(),
+                        totalPrice: (int) $r->total_price,
+                        currency: (string) $r->currency,
+                        status: (string) ($r->status->value ?? $r->status),
+                        agencyName: $r->bookableUnit?->agency?->name,
+                        thumbnailUrl: null,
+                    );
+                })
         );
 
         $bookings = $bookings->merge(

@@ -279,6 +279,41 @@
         @endif
     </x-card>
 
+    {{-- ─── Bookable Units ──────────────────────────────────────────────────────────── --}}
+    <x-card>
+        <h3 class="font-semibold text-gray-700 text-xs uppercase tracking-wide mb-3">Bookable Units ({{ $travelPackage->bookableUnits->count() }})</h3>
+        @if($travelPackage->bookableUnits->isNotEmpty())
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-start font-medium text-gray-500">{{ __('admin.bookable_units_section.name') }}</th>
+                        <th class="px-4 py-3 text-start font-medium text-gray-500">{{ __('admin.bookable_units_section.type') }}</th>
+                        <th class="px-4 py-3 text-start font-medium text-gray-500">Capacity</th>
+                        <th class="px-4 py-3 text-start font-medium text-gray-500">{{ __('admin.bookable_units_section.status') }}</th>
+                        <th class="px-4 py-3 text-start font-medium text-gray-500">{{ __('admin.bookable_units_section.reservations') }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($travelPackage->bookableUnits as $unit)
+                    <tr>
+                        <td class="px-4 py-3 text-gray-900">{{ $unit->name }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ __('admin.bookable_units_section.type_'.($unit->type->value ?? $unit->type)) }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $unit->capacity ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ __('admin.bookable_units_section.status_'.$unit->status) }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $unit->reservations_count }}</td>
+                        <td class="px-4 py-3 text-end"><a class="text-primary-600 hover:underline text-xs" href="{{ route('admin.travel.bookable-units.show', $unit) }}">{{ __('admin.bookable_units_section.view') }}</a></td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
+        <p class="text-sm text-gray-400">No bookable units attached to this package.</p>
+        @endif
+    </x-card>
+
     {{-- ─── Media Gallery ─────────────────────────────────────────────────────────── --}}
     @if($travelPackage->media->count())
     <x-card>
