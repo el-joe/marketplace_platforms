@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\ExclusiveContract;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -15,6 +16,12 @@ use Tests\TestCase;
 class ExclusiveContractTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(PreventRequestForgery::class);
+    }
 
     private function setUpData(): array
     {
