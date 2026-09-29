@@ -23,6 +23,7 @@ class FbnStorageFee extends Model
         'chargeable_weight_grams',
         'free_days_applied',
         'days_in_storage',
+        'stored_since',
         'within_free_period',
         'rate_per_unit',
         'total_fee',
@@ -35,6 +36,7 @@ class FbnStorageFee extends Model
         'status' => FbnStorageFeeStatus::class,
         'month' => 'date',
         'units_stored' => 'integer',
+        'stored_since' => 'date',
         'within_free_period' => 'boolean',
         'rate_per_unit' => 'integer',
         'total_fee' => 'integer',
@@ -58,10 +60,12 @@ class FbnStorageFee extends Model
     {
         return $query->where('status', FbnStorageFeeStatus::Pending);
     }
+
     public function scopeInvoiced($query)
     {
         return $query->where('status', FbnStorageFeeStatus::Invoiced);
     }
+
     public function scopePaid($query)
     {
         return $query->where('status', FbnStorageFeeStatus::Paid);
@@ -86,7 +90,7 @@ class FbnStorageFee extends Model
 
     public function totalFormatted(): string
     {
-        return number_format($this->total_fee, 2) . ' ' . $this->currency;
+        return number_format($this->total_fee, 2).' '.$this->currency;
     }
 
     public function monthLabel(): string

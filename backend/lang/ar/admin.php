@@ -7447,6 +7447,9 @@ return [
         'volumetric_weight' => 'الوزن الحجمي (جم)',
         'chargeable_weight' => 'الوزن المحاسَب (جم)',
         'days_in_storage' => 'أيام التخزين',
+        'arrival_date' => 'تاريخ الوصول',
+        'product' => 'المنتج',
+        'storage_days_note' => 'تُحسَب أيام التخزين من تاريخ وصول المنتج إلى المستودع (عمود تاريخ الوصول)، وليس من تاريخ إنشاء القائمة.',
         'in_free_period' => 'الفترة المجانية',
         'generate_monthly_storage_fees' => 'إنشاء رسوم التخزين الشهرية',
         'generate_fees_desc' => 'سيؤدي هذا إلى حساب رسوم التخزين لجميع التجار الذين لديهم مخزون FBN في مستودعات المنصة. سيتم تحديث السجلات الحالية لنفس الشهر (وليس تكرارها).',
@@ -10910,6 +10913,7 @@ return [
     'add_exclusive_contract' => 'إضافة عقد حصري',
     'contract_conflict_error' => 'يوجد عقد حصري نشط متعارض لهذا الإعلان.',
     'contract_category_conflict_error' => 'يوجد عقد حصري نشط بالفعل لهذا التصنيف في نطاق التاريخ المحدد.',
+    'contract_global_conflict_error' => 'يوجد عقد حصري عام نشط بالفعل في نطاق التاريخ المحدد.',
 
     'coupon_participation_section' => [
         'cps_title' => 'دعوات مشاركة القسائم',

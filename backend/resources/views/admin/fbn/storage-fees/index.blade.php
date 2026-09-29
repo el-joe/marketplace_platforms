@@ -74,6 +74,12 @@
         </div>
     </div>
 
+    {{-- ─── Storage days info note ──────────────────────────────────────────────── --}}
+    <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-2 text-sm text-blue-800">
+        <svg class="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        <span>{{ __('admin.fbn_section.storage_days_note') }}</span>
+    </div>
+
     {{-- ─── DataTable ───────────────────────────────────────────────────────────── --}}
     <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
@@ -81,11 +87,13 @@
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
                     <tr>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.vendor') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.product') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.month') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.units_stored') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.actual_weight') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.volumetric_weight') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.chargeable_weight') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.arrival_date') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.days_in_storage') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.in_free_period') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('admin.fbn_section.rate_per_unit') }}</th>
@@ -155,11 +163,13 @@
                 },
                 columns: [
                     { data: 'vendor', orderable: false },
+                    { data: 'product_name', orderable: false },
                     { data: 'month', orderable: true },
                     { data: 'units_stored', orderable: false },
                     { data: 'actual_weight', orderable: false },
                     { data: 'volumetric_weight', orderable: false },
                     { data: 'chargeable_weight', orderable: false },
+                    { data: 'stored_since', orderable: false },
                     { data: 'days_in_storage', orderable: false },
                     { data: 'in_free_period', orderable: false },
                     { data: 'rate', orderable: false },

@@ -2473,12 +2473,6 @@ return [
             'timed_out' => 'Timed Out',
         ],
 
-        'commission_type' => [
-            'percentage' => 'Percentage',
-            'flat' => 'Flat Amount',
-            'tiered' => 'Tiered',
-        ],
-
         'timeline' => [
             'created' => 'Campaign created',
             'reviewed' => 'Reviewed by admin',

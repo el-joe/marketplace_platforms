@@ -7489,6 +7489,9 @@ return [
         'volumetric_weight' => 'Volumetric Weight (g)',
         'chargeable_weight' => 'Chargeable Weight (g)',
         'days_in_storage' => 'Days in Storage',
+        'arrival_date' => 'Arrival Date',
+        'product' => 'Product',
+        'storage_days_note' => 'Storage days are counted from the date the product arrived at the warehouse (Arrival Date), not from the listing creation date.',
         'in_free_period' => 'Free Period',
         'generate_monthly_storage_fees' => 'Generate Monthly Storage Fees',
         'generate_fees_desc' => 'This will calculate storage fees for all vendors with FBN inventory in platform warehouses. Existing records for the same month will be updated (not duplicated).',
@@ -10953,6 +10956,7 @@ return [
     'add_exclusive_contract' => 'Add Exclusive Contract',
     'contract_conflict_error' => 'A conflicting active exclusive contract exists for this listing.',
     'contract_category_conflict_error' => 'A conflicting active exclusive contract already exists for this category in the given date range.',
+    'contract_global_conflict_error' => 'A conflicting global exclusive contract already exists for this date range.',
 
     'coupon_participation_section' => [
         'cps_title' => 'Coupon Participation Invitations',

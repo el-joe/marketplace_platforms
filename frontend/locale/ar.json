@@ -1039,7 +1039,8 @@
       "reservationNumber": "رقم الحجز: {number}",
       "slot_morning": "صباحي",
       "slot_evening": "مسائي",
-      "slot_custom": "مخصص"
+      "slot_custom": "مخصص",
+      "calendarUnavailable": "التقويم غير متاح — يرجى المحاولة لاحقاً"
     },
     "myBookings": {
       "title": "حجوزاتي",

@@ -99,6 +99,10 @@ Route::name('travel-agency.')
 
                 Route::post('/{bookableUnit}/time-slots', [BookableUnitController::class, 'storeTimeSlot'])->name('time-slots.store');
                 Route::delete('/{bookableUnit}/time-slots/{timeSlot}', [BookableUnitController::class, 'destroyTimeSlot'])->name('time-slots.destroy');
+
+                Route::post('/{bookableUnit}/photos', [BookableUnitController::class, 'storePhotos'])->name('photos.store');
+                Route::delete('/{bookableUnit}/photos/{photo}', [BookableUnitController::class, 'destroyPhoto'])->name('photos.destroy');
+                Route::post('/{bookableUnit}/link-package', [BookableUnitController::class, 'linkPackage'])->name('link-package');
             });
 
             // Bookings

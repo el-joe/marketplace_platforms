@@ -162,6 +162,14 @@ export default function BookableUnitsSection({ units, currency }: Props) {
           </button>
         </div>
 
+        {loading && (
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <div key={i} className="rounded-lg py-4 bg-gray-2/40 animate-pulse" />
+            ))}
+          </div>
+        )}
+
         <div className={`grid grid-cols-7 gap-1 text-center ${loading ? "opacity-50" : ""}`}>
           {Array.from({ length: firstWeekday }).map((_, i) => (
             <span key={`b${i}`} />
@@ -195,6 +203,10 @@ export default function BookableUnitsSection({ units, currency }: Props) {
           })}
         </div>
 
+        {!loading && !calendar && (
+          <p className="text-sm text-center text-light py-4">{t("calendarUnavailable")}</p>
+        )}
+
         {calendar && calendar.time_slots.length > 0 && (
           <select
             value={slotId}
@@ -224,10 +236,12 @@ export default function BookableUnitsSection({ units, currency }: Props) {
           </label>
         )}
 
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <span className="text-sm text-gray">{t("totalPrice")}</span>
-          <Price currentPrice={total} currency={currency} size="lg" />
-        </div>
+        {(total > 0 || from) && (
+          <div className="flex items-center justify-between border-t border-border pt-4">
+            <span className="text-sm text-gray">{t("totalPrice")}</span>
+            <Price currentPrice={total} currency={currency} size="lg" />
+          </div>
+        )}
 
         {error && (
           <div className="flex items-start gap-2 text-sm text-red bg-red/5 rounded-lg px-3 py-2">

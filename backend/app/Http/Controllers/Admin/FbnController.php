@@ -185,20 +185,30 @@ class FbnController extends Controller
             'quantity_received' => 'required|integer|min:1|max:'.$inboundRequest->quantity_requested,
         ]);
 
-        DB::transaction(function () use ($inboundRequest, $data) {
+        $arrivedAt = now();
+
+        DB::transaction(function () use ($inboundRequest, $data, $arrivedAt) {
             $inboundRequest->update([
                 'status' => FbnInboundRequestStatus::Received,
                 'quantity_received' => $data['quantity_received'],
+                'received_at' => $arrivedAt,
             ]);
 
-            // Update warehouse inventory quantity_inbound → quantity_on_hand
+            // Update warehouse inventory quantity_inbound → quantity_on_hand.
+            // Uses Eloquent save() (not increment/decrement) so the saving observer
+            // fires and first_stocked_at gets stamped as the arrival anchor for
+            // storage-fee day counting.
             $inventory = WarehouseInventory::where('vendor_listing_id', $inboundRequest->vendor_listing_id)
                 ->where('warehouse_id', $inboundRequest->warehouse_id)
                 ->first();
 
             if ($inventory) {
-                $inventory->increment('quantity_on_hand', $data['quantity_received']);
-                $inventory->decrement('quantity_inbound', min($data['quantity_received'], $inventory->quantity_inbound));
+                $inventory->quantity_on_hand += $data['quantity_received'];
+                $inventory->quantity_inbound = max(0, $inventory->quantity_inbound - $data['quantity_received']);
+                if ($inventory->first_stocked_at === null) {
+                    $inventory->first_stocked_at = $arrivedAt;
+                }
+                $inventory->save();
             }
         });
 
@@ -244,8 +254,13 @@ class FbnController extends Controller
             ->select([
                 'fbn_storage_fees.*',
                 'vendors.store_name as vendor_name',
+                'products.name_en as product_name',
             ])
-            ->join('vendors', 'vendors.id', '=', 'fbn_storage_fees.vendor_id');
+            ->join('vendors', 'vendors.id', '=', 'fbn_storage_fees.vendor_id')
+            ->leftJoin('warehouse_inventories', 'warehouse_inventories.id', '=', 'fbn_storage_fees.warehouse_inventory_id')
+            ->leftJoin('vendor_listings', 'vendor_listings.id', '=', 'warehouse_inventories.vendor_listing_id')
+            ->leftJoin('product_variants', 'product_variants.id', '=', 'vendor_listings.product_variant_id')
+            ->leftJoin('products', 'products.id', '=', 'product_variants.product_id');
 
         if ($request->filled('status')) {
             $query->where('fbn_storage_fees.status', $request->status);
@@ -255,7 +270,7 @@ class FbnController extends Controller
         }
 
         return $this->dataTableResponse($request, $query, [
-            'searchable_columns' => ['vendors.store_name'],
+            'searchable_columns' => ['vendors.store_name', 'products.name_en'],
             'orderable_column' => 'fbn_storage_fees.month',
         ], function ($row) {
             $actions = '';
@@ -267,6 +282,7 @@ class FbnController extends Controller
 
             return [
                 'vendor' => e($row->vendor_name),
+                'product_name' => $row->product_name ? e($row->product_name) : '—',
                 'month' => $row->monthLabel(),
                 'units_stored' => number_format($row->units_stored),
                 'actual_weight' => number_format($row->declared_weight_grams),
@@ -274,6 +290,7 @@ class FbnController extends Controller
                 'chargeable_weight' => number_format($row->chargeable_weight_grams),
                 'free_days' => number_format($row->free_days_applied),
                 'days_in_storage' => number_format($row->days_in_storage),
+                'stored_since' => $row->stored_since ? $row->stored_since->format('d M Y') : '—',
                 'in_free_period' => $row->within_free_period
                     ? '<span class="badge badge-success">'.__('admin.yes').'</span>'
                     : '<span class="badge badge-secondary">'.__('admin.no').'</span>',

@@ -41,5 +41,7 @@
                 {{ __('common.save') }}
             </button>
         </form>
+
+        <p class="text-xs text-gray-400 px-1">📷 {{ __('travel.bookable_units.photos_note') }}</p>
     </div>
 @endsection

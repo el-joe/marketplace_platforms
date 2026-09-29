@@ -30,6 +30,36 @@
             </div>
         @endif
 
+        {{-- ── Photos ──────────────────────────────────────────────────────── --}}
+        @if($unit->photos->count())
+            <div class="flex flex-wrap gap-3">
+                @foreach($unit->photos as $photo)
+                    <img src="{{ Storage::url($photo->file_path) }}"
+                         class="w-32 h-32 object-cover rounded-xl border border-gray-100"
+                         alt="{{ $unit->name }}">
+                @endforeach
+            </div>
+        @endif
+
+        {{-- ── Link to package ───────────────────────────────────────────── --}}
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+            <h3 class="font-bold text-gray-900 mb-3">{{ __('travel.bookable_units.link_to_package') }}</h3>
+            <form method="POST" action="{{ route('travel-agency.bookable-units.link-package', $unit) }}" class="flex flex-wrap items-end gap-3">
+                @csrf
+                <div>
+                    <select name="travel_package_id" class="rounded-lg border-gray-300 text-sm">
+                        <option value="">{{ __('travel.bookable_units.package_none') }}</option>
+                        @foreach ($packages as $package)
+                            <option value="{{ $package->id }}" {{ $unit->travel_package_id === $package->id ? 'selected' : '' }}>
+                                {{ $package->title }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">{{ __('common.save') }}</button>
+            </form>
+        </div>
+
         {{-- ── Calendar month nav ─────────────────────────────────────────── --}}
         <div class="flex items-center justify-between">
             <a href="{{ route('travel-agency.bookable-units.show', ['bookableUnit' => $unit, 'month' => $month->copy()->subMonth()->format('Y-m')]) }}"
@@ -61,6 +91,7 @@
                                 <input type="hidden" name="date" value="{{ $day->toDateString() }}">
                                 <td class="px-3 py-2 font-medium">{{ $day->format('D, d M') }}</td>
                                 <td class="px-3 py-2">
+                                    <input type="hidden" name="is_available" value="0">
                                     <input type="checkbox" name="is_available" value="1" {{ ($row->is_available ?? true) ? 'checked' : '' }}>
                                 </td>
                                 <td class="px-3 py-2">
@@ -104,6 +135,7 @@
                     <input type="number" name="price_with_overnight" min="0" class="w-28 rounded-lg border-gray-300 text-sm">
                 </div>
                 <label class="flex items-center gap-1 text-sm text-gray-600">
+                    <input type="hidden" name="is_available" value="0">
                     <input type="checkbox" name="is_available" value="1" checked> {{ __('travel.bookable_units.available') }}
                 </label>
                 <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700">

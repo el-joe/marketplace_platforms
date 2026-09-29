@@ -541,36 +541,51 @@
             </tbody>
         </table>
         </div>
+        @if($errors->hasAny(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes']))
+        <div id="exclusive-contracts-error" class="mx-4 mt-4 rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-800">
+            <p class="font-semibold mb-1">تعذّر إنشاء العقد الحصري:</p>
+            <ul class="list-disc list-inside space-y-0.5">
+                @foreach($errors->only(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes']) as $msgs)
+                    @foreach((array) $msgs as $msg)
+                        <li>{{ $msg }}</li>
+                    @endforeach
+                @endforeach
+            </ul>
+        </div>
+        @endif
         <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.store', $marketer) }}"
               enctype="multipart/form-data" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3">
             @csrf
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">القسم (اختياري)</label>
-                <select name="classified_category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[160px]">
+                <select name="classified_category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[160px] @error('classified_category_id') border-red-400 @enderror">
                     <option value="">كل الأقسام</option>
                     @foreach($classifiedCategories as $category)
-                    <option value="{{ $category->id }}">{{ $category->name_ar }}</option>
+                    <option value="{{ $category->id }}" @selected(old('classified_category_id') === $category->id)>{{ $category->name_ar }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">رقم إعلان محدد (اختياري)</label>
                 <input type="text" name="classified_listing_id" placeholder="UUID الإعلان"
-                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48">
+                       value="{{ old('classified_listing_id') }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48 @error('classified_listing_id') border-red-400 @enderror">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">من</label>
-                <input type="date" name="starts_at" required class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <input type="date" name="starts_at" required value="{{ old('starts_at') }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm @error('starts_at') border-red-400 @enderror">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">إلى</label>
-                <input type="date" name="ends_at" required class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <input type="date" name="ends_at" required value="{{ old('ends_at') }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm @error('ends_at') border-red-400 @enderror">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">الحالة</label>
                 <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="pending">قيد الانتظار</option>
-                    <option value="active">نشط</option>
+                    <option value="pending" @selected(old('status', 'pending') === 'pending')>قيد الانتظار</option>
+                    <option value="active" @selected(old('status') === 'active')>نشط</option>
                 </select>
             </div>
             <div>
@@ -579,7 +594,7 @@
             </div>
             <div class="flex-1 min-w-[160px]">
                 <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
-                <input type="text" name="notes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
+                <input type="text" name="notes" value="{{ old('notes') }}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
             </div>
             <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.add_exclusive_contract') }}</button>
         </form>

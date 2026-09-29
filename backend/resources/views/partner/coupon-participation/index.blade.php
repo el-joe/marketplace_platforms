@@ -62,7 +62,7 @@
                         {{ __('partner.cp_your_request') }}: {{ number_format($myRequest->offered_fee_amount) }} {{ $invitation->currency }} — {{ $statusLabels[$myRequest->status] ?? $myRequest->status }}
                     </div>
                 @else
-                    <form method="POST" action="{{ route('partner.coupon-participation.store', $invitation->id) }}" class="flex flex-col gap-2" x-data="{ method: 'wallet', balance: {{ (int) ($balances[$invitation->id] ?? 0) }}, minFee: {{ (int) $invitation->min_fee_amount }} }" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('partner.coupon-participation.store', $invitation->id) }}" class="flex flex-col gap-2" x-data="{ method: '{{ old('payment_method', 'wallet') }}', balance: {{ (int) ($balances[$invitation->id] ?? 0) }}, minFee: {{ (int) $invitation->min_fee_amount }} }" enctype="multipart/form-data">
                         @csrf
 <div class="text-xs text-gray-600 mb-1">{{ __('partner.wallet_balance') }}: {{ number_format($balances[$invitation->id] ?? 0) }} {{ $invitation->currency }}</div>
 @if(($balances[$invitation->id] ?? 0) < $invitation->min_fee_amount)

@@ -84,6 +84,23 @@ class StoreExclusiveContractRequest extends FormRequest
                         __('admin.contract_category_conflict_error')
                     );
                 }
+
+                return;
+            }
+
+            $globalOverlaps = ExclusiveContract::whereNull('classified_listing_id')
+                ->whereNull('classified_category_id')
+                ->whereIn('status', ['pending', 'active'])
+                ->when($this->route('exclusiveContract'), fn ($q, $current) => $q->whereKeyNot($current->id))
+                ->where('starts_at', '<', $endsAt)
+                ->where('ends_at', '>', $startsAt)
+                ->exists();
+
+            if ($globalOverlaps) {
+                $validator->errors()->add(
+                    'global',
+                    __('admin.contract_global_conflict_error')
+                );
             }
         });
     }

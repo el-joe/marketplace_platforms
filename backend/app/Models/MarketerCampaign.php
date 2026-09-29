@@ -27,6 +27,10 @@ class MarketerCampaign extends Model
         'title', 'notes',
     ];
 
+    protected $attributes = [
+        'campaign_category' => 'product',
+    ];
+
     protected $casts = [
         'reviewed_at' => 'datetime',
         'auto_approve_at' => 'datetime',

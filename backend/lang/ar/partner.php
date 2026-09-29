@@ -2473,12 +2473,6 @@ return [
             'timed_out' => 'انتهت المهلة',
         ],
 
-        'commission_type' => [
-            'percentage' => 'نسبة مئوية',
-            'flat' => 'مبلغ ثابت',
-            'tiered' => 'متدرجة',
-        ],
-
         'timeline' => [
             'created' => 'تم إنشاء الحملة',
             'reviewed' => 'تمت المراجعة من الإدارة',

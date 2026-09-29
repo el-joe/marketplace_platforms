@@ -7,12 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
 use App\Models\BookableUnit;
 use App\Models\BookableUnitAvailability;
+use App\Models\BookableUnitPhoto;
 use App\Models\BookableUnitReservation;
 use App\Models\BookableUnitTimeSlot;
+use App\Models\TravelPackage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -81,12 +85,42 @@ class BookableUnitController extends Controller
 
         $timeSlots = $bookableUnit->timeSlots()->orderBy('starts_at')->get();
 
+        $packages = TravelPackage::where('travel_agency_id', $this->agencyId())
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        $bookableUnit->load('photos');
+
         return view('travel-agency.bookable-units.show', [
             'unit' => $bookableUnit,
             'month' => $start,
             'availability' => $availability,
             'timeSlots' => $timeSlots,
+            'packages' => $packages,
         ]);
+    }
+
+    // ── Link to package ──────────────────────────────────────────────────────
+
+    public function linkPackage(Request $request, BookableUnit $bookableUnit): RedirectResponse
+    {
+        $this->authorise($bookableUnit);
+
+        $data = $request->validate([
+            'travel_package_id' => ['nullable', 'uuid', 'exists:travel_packages,id'],
+        ]);
+
+        // Ensure the selected package belongs to the same agency
+        if ($data['travel_package_id'] ?? null) {
+            $packageBelongsToAgency = TravelPackage::where('id', $data['travel_package_id'])
+                ->where('travel_agency_id', $this->agencyId())
+                ->exists();
+            abort_unless($packageBelongsToAgency, 403);
+        }
+
+        $bookableUnit->update(['travel_package_id' => $data['travel_package_id'] ?? null]);
+
+        return back()->with('success', __('travel.bookable_units.package_linked'));
     }
 
     // ── Edit / Update ────────────────────────────────────────────────────────
@@ -94,6 +128,8 @@ class BookableUnitController extends Controller
     public function edit(BookableUnit $bookableUnit): View
     {
         $this->authorise($bookableUnit);
+
+        $bookableUnit->load('photos');
 
         return view('travel-agency.bookable-units.edit', ['unit' => $bookableUnit]);
     }
@@ -165,7 +201,7 @@ class BookableUnitController extends Controller
             'price_with_overnight' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $isAvailable = $request->boolean('is_available', true);
+        $isAvailable = $request->boolean('is_available');
 
         if (! $isAvailable) {
             $this->guardAgainstClosingBookedDates($bookableUnit, Carbon::parse($data['date']), Carbon::parse($data['date']));
@@ -201,7 +237,7 @@ class BookableUnitController extends Controller
             'price_with_overnight' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $isAvailable = $request->boolean('is_available', true);
+        $isAvailable = $request->boolean('is_available');
 
         if (! $isAvailable) {
             $this->guardAgainstClosingBookedDates($bookableUnit, Carbon::parse($data['date_from']), Carbon::parse($data['date_to']));
@@ -257,5 +293,48 @@ class BookableUnitController extends Controller
         $timeSlot->delete();
 
         return back()->with('success', __('travel.bookable_units.time_slot_deleted'));
+    }
+
+    // ── Photos ────────────────────────────────────────────────────────────────
+
+    public function storePhotos(Request $request, BookableUnit $bookableUnit): RedirectResponse
+    {
+        $this->authorise($bookableUnit);
+
+        $request->validate([
+            'photos' => ['required', 'array', 'max:10'],
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        $position = $bookableUnit->photos()->max('position') ?? 0;
+        $isFirst = $bookableUnit->photos()->count() === 0;
+
+        foreach ($request->file('photos') as $i => $file) {
+            $path = $file->store("bookable-unit-photos/{$bookableUnit->id}", 'public');
+            $position++;
+            $bookableUnit->photos()->create([
+                'file_path' => $path,
+                'position' => $position,
+                'is_primary' => $isFirst && $i === 0,
+            ]);
+        }
+
+        return back()->with('success', __('travel.bookable_units.photos_saved'));
+    }
+
+    public function destroyPhoto(BookableUnit $bookableUnit, BookableUnitPhoto $photo): JsonResponse
+    {
+        $this->authorise($bookableUnit);
+        abort_if($photo->bookable_unit_id !== $bookableUnit->id, 404);
+
+        Storage::disk('public')->delete($photo->file_path);
+        $wasPrimary = $photo->is_primary;
+        $photo->delete();
+
+        if ($wasPrimary) {
+            $bookableUnit->photos()->orderBy('position')->first()?->update(['is_primary' => true]);
+        }
+
+        return response()->json(['message' => __('travel.bookable_units.photo_deleted')]);
     }
 }

@@ -150,6 +150,17 @@ return [
             'evening' => 'Evening',
             'custom' => 'Custom',
         ],
+        'photos' => 'Photos',
+        'add_photos' => 'Add photos',
+        'photos_saved' => 'Photos saved.',
+        'photo_deleted' => 'Photo deleted.',
+        'confirm_delete_photo_title' => 'Delete photo?',
+        'confirm_delete_photo_text' => 'This action cannot be undone.',
+        'no_photos' => 'No photos yet.',
+        'photos_note' => 'You can add photos after saving the unit.',
+        'link_to_package' => 'Link to Package',
+        'package_linked' => 'Package link updated.',
+        'package_none' => 'None',
     ],
 
     'packages' => [

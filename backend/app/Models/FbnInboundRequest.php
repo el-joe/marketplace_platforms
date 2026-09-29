@@ -28,11 +28,13 @@ class FbnInboundRequest extends Model
         'tracking_number',
         'rejection_reason',
         'vendor_notes',
+        'received_at',
     ];
 
     protected $casts = [
         'status' => FbnInboundRequestStatus::class,
         'approved_at' => 'datetime',
+        'received_at' => 'datetime',
         'expected_arrival' => 'date',
         'quantity_requested' => 'integer',
         'quantity_received' => 'integer',
@@ -48,7 +50,7 @@ class FbnInboundRequest extends Model
                 $seq = DB::table('fbn_inbound_requests')
                     ->whereYear('created_at', $year)
                     ->count() + 1;
-                $model->request_number = 'FBN-' . $year . '-' . str_pad($seq, 5, '0', STR_PAD_LEFT);
+                $model->request_number = 'FBN-'.$year.'-'.str_pad($seq, 5, '0', STR_PAD_LEFT);
             }
         });
     }
@@ -81,18 +83,22 @@ class FbnInboundRequest extends Model
     {
         return $query->where('status', FbnInboundRequestStatus::Draft);
     }
+
     public function scopeSubmitted($query)
     {
         return $query->where('status', FbnInboundRequestStatus::Submitted);
     }
+
     public function scopeApproved($query)
     {
         return $query->where('status', FbnInboundRequestStatus::Approved);
     }
+
     public function scopeReceived($query)
     {
         return $query->where('status', FbnInboundRequestStatus::Received);
     }
+
     public function scopePendingApproval($query)
     {
         return $query->whereIn('status', [FbnInboundRequestStatus::Submitted]);
@@ -122,18 +128,22 @@ class FbnInboundRequest extends Model
     {
         return $this->status === FbnInboundRequestStatus::Submitted;
     }
+
     public function canBeRejected(): bool
     {
         return in_array($this->status, [FbnInboundRequestStatus::Submitted, FbnInboundRequestStatus::Approved], true);
     }
+
     public function canMarkShipped(): bool
     {
         return $this->status === FbnInboundRequestStatus::Approved;
     }
+
     public function canMarkReceived(): bool
     {
         return $this->status === FbnInboundRequestStatus::Shipped;
     }
+
     public function canBeCancelled(): bool
     {
         return in_array($this->status, [FbnInboundRequestStatus::Draft, FbnInboundRequestStatus::Submitted], true);

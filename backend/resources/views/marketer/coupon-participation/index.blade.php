@@ -61,7 +61,7 @@
                             {{ ['pending' => __('partner.cp_status_pending'), 'approved' => __('partner.cp_status_approved'), 'rejected' => __('partner.cp_status_rejected'), 'paid' => __('partner.cp_status_paid')][$myRequest->status] ?? $myRequest->status }}
                         </div>
                     @else
-                        <form method="POST" action="{{ route('marketer.coupon-participation.store', $invitation->id) }}" class="flex flex-col gap-2" x-data="{ method: 'wallet', balance: {{ (int) ($balances[$invitation->id] ?? 0) }}, minFee: {{ (int) $invitation->min_fee_amount }} }" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('marketer.coupon-participation.store', $invitation->id) }}" class="flex flex-col gap-2" x-data="{ method: '{{ old('payment_method', 'wallet') }}', balance: {{ (int) ($balances[$invitation->id] ?? 0) }}, minFee: {{ (int) $invitation->min_fee_amount }} }" enctype="multipart/form-data">
                             @csrf
 <div class="text-xs text-gray-600 mb-1">{{ __('partner.wallet_balance') }}: {{ number_format($balances[$invitation->id] ?? 0) }} {{ $invitation->currency }}</div>
 @if(($balances[$invitation->id] ?? 0) < $invitation->min_fee_amount)

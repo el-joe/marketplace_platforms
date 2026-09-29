@@ -179,6 +179,7 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                         'chargeable_weight_grams' => $chargeableWeightGrams,
                         'free_days_applied' => $freeDays,
                         'days_in_storage' => $daysInStorage,
+                        'stored_since' => $storedSince->toDateString(),
                         'within_free_period' => $withinFree,
                         'status' => 'pending',
                     ]

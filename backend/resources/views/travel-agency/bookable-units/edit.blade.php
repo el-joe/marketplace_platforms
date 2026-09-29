@@ -44,5 +44,88 @@
                 {{ __('common.save') }}
             </button>
         </form>
+
+        {{-- ── Photos ─────────────────────────────────────────────────────────── --}}
+        <div class="bg-white p-6 rounded-xl border border-gray-100 space-y-4">
+            <h3 class="font-bold text-gray-800">{{ __('travel.bookable_units.photos') }}</h3>
+
+            @if($unit->photos->count())
+                <div class="flex flex-wrap gap-3">
+                    @foreach($unit->photos as $photo)
+                        <div class="relative group w-28 h-28">
+                            <img src="{{ Storage::url($photo->file_path) }}" class="w-full h-full object-cover rounded-lg">
+                            <button type="button"
+                                data-photo-delete-url="{{ route('travel-agency.bookable-units.photos.destroy', [$unit, $photo]) }}"
+                                class="photo-delete-btn absolute top-1 left-1 hidden group-hover:flex items-center justify-center bg-red-500 text-white rounded-full w-6 h-6 text-sm leading-none">×</button>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-gray-400">{{ __('travel.bookable_units.no_photos') }}</p>
+            @endif
+
+            <form method="POST" action="{{ route('travel-agency.bookable-units.photos.store', $unit) }}" enctype="multipart/form-data" class="space-y-2">
+                @csrf
+                <input type="file" name="photos[]" multiple accept="image/jpeg,image/png,image/webp"
+                       class="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                @error('photos') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+                @error('photos.*') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-400 transition-colors">
+                    {{ __('travel.bookable_units.add_photos') }}
+                </button>
+            </form>
+        </div>
     </div>
+
+    {{-- ── Photo delete modal ──────────────────────────────────────────────────── --}}
+    <div id="photo-delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full space-y-4">
+            <h3 class="font-bold text-gray-800">{{ __('travel.bookable_units.confirm_delete_photo_title') }}</h3>
+            <p class="text-sm text-gray-500">{{ __('travel.bookable_units.confirm_delete_photo_text') }}</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" id="photo-delete-cancel" class="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50">{{ __('common.cancel') }}</button>
+                <button type="button" id="photo-delete-confirm" class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600">{{ __('common.delete') }}</button>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+    (function () {
+        const modal = document.getElementById('photo-delete-modal');
+        let deleteUrl = null, targetCard = null;
+
+        function openModal(card, url) { deleteUrl = url; targetCard = card; modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); deleteUrl = null; targetCard = null; }
+
+        document.getElementById('photo-delete-cancel').addEventListener('click', closeModal);
+
+        document.getElementById('photo-delete-confirm').addEventListener('click', function () {
+            if (!deleteUrl) { return; }
+            fetch(deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                },
+            })
+            .then(function (r) {
+                if (r.ok) {
+                    targetCard && targetCard.remove();
+                    closeModal();
+                } else {
+                    return Promise.reject();
+                }
+            })
+            .catch(function () { alert('Delete failed.'); });
+        });
+
+        document.querySelectorAll('.photo-delete-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                openModal(btn.closest('.relative.group'), btn.dataset.photoDeleteUrl);
+            });
+        });
+    }());
+    </script>
+    @endpush
 @endsection

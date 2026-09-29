@@ -1050,7 +1050,8 @@
       "reservationNumber": "Reservation number: {number}",
       "slot_morning": "Morning",
       "slot_evening": "Evening",
-      "slot_custom": "Custom"
+      "slot_custom": "Custom",
+      "calendarUnavailable": "Calendar unavailable — please check back later"
     },
     "myBookings": {
       "title": "My Bookings",
