@@ -202,59 +202,50 @@
             <button type="button" @click="loadFbpInventory()" class="btn btn-ghost btn-xs">{{ __('partner.fulfillment.refresh') }}</button>
         </div>
 
-        @if($fbpListings->isEmpty())
+        <template x-if="fbpInventory.length === 0">
             <div class="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-gray-400">
                 <p class="text-2xl mb-2">🏪</p>
                 <p class="font-medium">{{ __('partner.fulfillment.no_fbp_listings') }}</p>
             </div>
-        @else
-            <div id="fbp-inventory-container">
-                <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 text-xs text-gray-500">
-                            <tr>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.product') }}</th>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.warehouse') }}</th>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.on_hand') }}</th>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.available') }}</th>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.reserved') }}</th>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.location') }}</th>
-                                <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.reorder_point') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($fbpListings as $listing)
-                            @foreach($listing->warehouseInventories as $inv)
-                            <tr class="border-t border-gray-50 hover:bg-gray-50/50
-                                {{ $inv->reorder_point && $inv->quantity_available <= $inv->reorder_point ? 'bg-red-50/30' : '' }}">
-                                <td class="px-4 py-3 font-medium text-gray-800 text-right text-xs">
-                                    {{ $listing->productVariant?->product?->name_ar ?? $listing->productVariant?->product?->name_en }}
-                                </td>
-                                <td class="px-4 py-3 text-xs text-gray-500 text-right">{{ $inv->warehouse?->name ?? '—' }}</td>
-                                <td class="px-4 py-3 text-center font-bold text-gray-900">{{ $inv->quantity_on_hand }}</td>
-                                <td class="px-4 py-3 text-center font-bold text-green-600">{{ $inv->quantity_available }}</td>
-                                <td class="px-4 py-3 text-center text-orange-500">{{ $inv->quantity_reserved }}</td>
-                                <td class="px-4 py-3 text-xs text-gray-400 text-right">{{ $inv->bin_location ?? '—' }}</td>
+        </template>
+        <template x-if="fbpInventory.length > 0">
+            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-xs text-gray-500">
+                        <tr>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.product') }}</th>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.warehouse') }}</th>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.on_hand') }}</th>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.available') }}</th>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.reserved') }}</th>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.location') }}</th>
+                            <th class="px-4 py-3 text-right">{{ __('partner.fulfillment.inventory_table.reorder_point') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(inv, i) in fbpInventory" :key="i">
+                            <tr class="border-t border-gray-50 hover:bg-gray-50/50" :class="inv.low_stock ? 'bg-red-50/30' : ''">
+                                <td class="px-4 py-3 font-medium text-gray-800 text-right text-xs" x-text="inv.product ?? '—'"></td>
+                                <td class="px-4 py-3 text-xs text-gray-500 text-right" x-text="inv.warehouse ?? '—'"></td>
+                                <td class="px-4 py-3 text-center font-bold text-gray-900" x-text="inv.quantity_on_hand"></td>
+                                <td class="px-4 py-3 text-center font-bold text-green-600" x-text="inv.quantity_available"></td>
+                                <td class="px-4 py-3 text-center text-orange-500" x-text="inv.quantity_reserved"></td>
+                                <td class="px-4 py-3 text-xs text-gray-400 text-right" x-text="inv.bin_location ?? '—'"></td>
                                 <td class="px-4 py-3 text-center text-xs">
-                                    @if($inv->reorder_point)
-                                        <span class="{{ $inv->quantity_available <= $inv->reorder_point ? 'text-red-500 font-bold' : 'text-gray-400' }}">
-                                            {{ $inv->reorder_point }}
-                                            @if($inv->quantity_available <= $inv->reorder_point)
-                                                ⚠️
-                                            @endif
+                                    <template x-if="inv.reorder_point">
+                                        <span :class="inv.low_stock ? 'text-red-500 font-bold' : 'text-gray-400'">
+                                            <span x-text="inv.reorder_point"></span>
+                                            <template x-if="inv.low_stock"> ⚠️</template>
                                         </span>
-                                    @else
-                                        —
-                                    @endif
+                                    </template>
+                                    <template x-if="!inv.reorder_point"><span>—</span></template>
                                 </td>
                             </tr>
-                            @endforeach
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                        </template>
+                    </tbody>
+                </table>
             </div>
-        @endif
+        </template>
 
     </div>{{-- end FBP tab --}}
 
@@ -446,6 +437,7 @@ Object.assign(window.PARTNER_TRANSLATIONS, {
         genericError: @json(__('partner.fulfillment.generic_error')),
         noStorageFees: @json(__('partner.fulfillment.no_storage_fees')),
         inventoryUpdated: @json(__('partner.fulfillment.inventory_updated')),
+        inventoryUpdateFailed: @json(__('partner.inventory_update_failed')),
         cancelRequestConfirm: @json(__('partner.fulfillment.cancel_request_confirm')),
         trackingPlaceholder: @json(__('partner.fulfillment.tracking_placeholder')),
         saveTracking: @json(__('partner.fulfillment.save_tracking')),
@@ -457,6 +449,16 @@ function fulfillmentApp() {
         tab: 'fbn',
         showFbnForm: false,
         feesLoaded: false,
+        fbpInventory: @json($fbpListings->flatMap(fn($l) => $l->warehouseInventories->map(fn($inv) => [
+            'product' => $l->productVariant?->product?->name_ar ?? $l->productVariant?->product?->name_en,
+            'warehouse' => $inv->warehouse?->name,
+            'quantity_on_hand' => $inv->quantity_on_hand,
+            'quantity_available' => $inv->quantity_available,
+            'quantity_reserved' => $inv->quantity_reserved,
+            'bin_location' => $inv->bin_location,
+            'reorder_point' => $inv->reorder_point,
+            'low_stock' => $inv->reorder_point && $inv->quantity_available <= $inv->reorder_point,
+        ]))->values()),
 
         init() {
             this.loadFbnRequests();
@@ -561,7 +563,12 @@ function fulfillmentApp() {
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             });
             const data = await res.json();
-            window.Toast.info(window.PARTNER_TRANSLATIONS.fulfillment.inventoryUpdated);
+            if (data.success) {
+                this.fbpInventory = data.data;
+                window.Toast.success(window.PARTNER_TRANSLATIONS.fulfillment.inventoryUpdated);
+            } else {
+                window.Toast.error(window.PARTNER_TRANSLATIONS.fulfillment.inventoryUpdateFailed);
+            }
         },
     };
 }

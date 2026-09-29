@@ -2818,4 +2818,5 @@ return [
     'cp_no_targeted' => 'لا توجد قسائم تستهدف متجرك حاليًا',
     'product_vendors_only' => 'هذه الميزة متاحة للبائعين من نوع المنتجات فقط.',
     'submit_participation' => 'إرسال طلب المشاركة',
+    'inventory_update_failed' => 'فشل تحديث المخزون. يرجى المحاولة مرة أخرى.',
 ];

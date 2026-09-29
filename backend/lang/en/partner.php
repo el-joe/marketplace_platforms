@@ -2818,4 +2818,5 @@ return [
     'cp_no_targeted' => 'No coupons currently target your store',
     'product_vendors_only' => 'This feature is available to product vendors only.',
     'submit_participation' => 'Submit Participation Request',
+    'inventory_update_failed' => 'Failed to refresh inventory. Please try again.',
 ];
