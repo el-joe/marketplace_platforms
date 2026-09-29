@@ -4,7 +4,9 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\ExclusiveContract;
 use Carbon\Carbon;
+use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\Validator;
 
 class StoreExclusiveContractRequest extends FormRequest
@@ -12,6 +14,16 @@ class StoreExclusiveContractRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function failedValidation(ValidatorContract $validator): void
+    {
+        throw new HttpResponseException(
+            redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('error', implode(' | ', $validator->errors()->all()))
+        );
     }
 
     public function rules(): array
