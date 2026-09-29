@@ -86,8 +86,8 @@ class BookableUnitController extends Controller
         $timeSlots = $bookableUnit->timeSlots()->orderBy('starts_at')->get();
 
         $packages = TravelPackage::where('travel_agency_id', $this->agencyId())
-            ->orderBy('title')
-            ->get(['id', 'title']);
+            ->orderBy('title_en')
+            ->get(['id', 'title_en', 'title_ar']);
 
         $bookableUnit->load('photos');
 

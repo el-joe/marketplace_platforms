@@ -51,7 +51,7 @@
                         <option value="">{{ __('travel.bookable_units.package_none') }}</option>
                         @foreach ($packages as $package)
                             <option value="{{ $package->id }}" {{ $unit->travel_package_id === $package->id ? 'selected' : '' }}>
-                                {{ $package->title }}
+                                {{ $package->title_ar ?: $package->title_en }}
                             </option>
                         @endforeach
                     </select>
