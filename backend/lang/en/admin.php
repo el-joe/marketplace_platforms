@@ -6049,6 +6049,9 @@ return [
         'reject' => 'Reject',
         'rejected' => 'Unit rejected.',
         'rejection_reason' => 'Rejection reason',
+        'reject_with_reason' => 'Reject with reason',
+        'save_status' => 'Save Status',
+        'status_changed' => 'Unit status updated.',
         'calendar_overview' => 'Calendar Overview',
     ],
 

@@ -6061,6 +6061,9 @@ return [
         'reject' => 'رفض',
         'rejected' => 'تم رفض الوحدة.',
         'rejection_reason' => 'سبب الرفض',
+        'reject_with_reason' => 'رفض مع سبب',
+        'save_status' => 'حفظ الحالة',
+        'status_changed' => 'تم تحديث حالة الوحدة.',
         'calendar_overview' => 'نظرة على التقويم',
     ],
 

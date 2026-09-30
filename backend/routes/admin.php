@@ -1722,6 +1722,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::get('/{bookableUnit}', [AdminBookableUnitController::class, 'show'])->name('show');
             Route::post('/{bookableUnit}/approve', [AdminBookableUnitController::class, 'approve'])->name('approve');
             Route::post('/{bookableUnit}/reject', [AdminBookableUnitController::class, 'reject'])->name('reject');
+            Route::post('/{bookableUnit}/status', [AdminBookableUnitController::class, 'changeStatus'])->name('status');
         });
 
         Route::prefix('packages')->name('packages.')->group(function () {

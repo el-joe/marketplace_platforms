@@ -96,4 +96,37 @@ class BookableUnitController extends Controller
 
         return back()->with('success', __('admin.bookable_units_section.rejected'));
     }
+
+    /**
+     * POST /admin/travel/bookable-units/{unit}/status
+     * Lets an admin set any status (draft → active → paused → archived).
+     * Rejection still goes through the dedicated reject() action because it
+     * requires a reason; this route refuses the 'rejected' value.
+     */
+    public function changeStatus(Request $request, BookableUnit $bookableUnit): RedirectResponse
+    {
+        abort_unless(
+            auth('admin')->user()->hasPermissionTo('travel.approve') ||
+            auth('admin')->user()->hasPermissionTo('travel.view'),
+            403
+        );
+
+        $data = $request->validate([
+            'status' => ['required', 'in:draft,active,paused,archived'],
+        ]);
+
+        $update = ['status' => $data['status']];
+
+        if ($data['status'] === 'active') {
+            $update['approved_by_admin_id'] = auth('admin')->id();
+            $update['approved_at'] = now();
+            $update['rejected_by_admin_id'] = null;
+            $update['rejected_at'] = null;
+            $update['rejection_reason'] = null;
+        }
+
+        $bookableUnit->update($update);
+
+        return back()->with('success', __('admin.bookable_units_section.status_changed'));
+    }
 }

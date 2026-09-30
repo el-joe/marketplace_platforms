@@ -1,7 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { AlertCircleIcon, CheckCircle2Icon, RefreshCwIcon, BedDoubleIcon } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { AlertCircleIcon, CheckCircle2Icon, RefreshCwIcon, BedDoubleIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { DayPicker, type DayButtonProps } from "react-day-picker";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
@@ -20,6 +20,7 @@ type Props = {
 
 export default function BookableUnitsClient({ units, currency }: Props) {
   const t = useTranslations("flights.packageDetails");
+  const locale = useLocale();
   const booking = useUnitBooking(units);
 
   const selectedUnit = units.find((u) => u.id === booking.unitId);
@@ -68,6 +69,22 @@ export default function BookableUnitsClient({ units, currency }: Props) {
       <div>
         <p className="text-sm font-medium text-primary mb-3">{t("selectDates")}</p>
 
+        {/* Month navigator — always visible */}
+        <MonthNavigator
+          month={booking.month}
+          locale={locale}
+          onPrev={() => {
+            const d = new Date(booking.month);
+            d.setMonth(d.getMonth() - 1);
+            booking.onMonthChange(d);
+          }}
+          onNext={() => {
+            const d = new Date(booking.month);
+            d.setMonth(d.getMonth() + 1);
+            booking.onMonthChange(d);
+          }}
+        />
+
         {booking.calendarLoading && (
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 35 }).map((_, i) => (
@@ -112,15 +129,10 @@ export default function BookableUnitsClient({ units, currency }: Props) {
             }}
             classNames={{
               root: "w-full",
-              months: "relative w-full",
+              months: "w-full",
               month: "w-full",
-              month_caption:
-                "flex justify-center items-center h-9 mb-2 font-semibold text-primary",
-              nav: "absolute inset-x-0 top-0 flex justify-between items-center h-9 px-1 z-10",
-              button_previous:
-                "p-1.5 hover:bg-muted rounded-lg cursor-pointer transition-colors",
-              button_next:
-                "p-1.5 hover:bg-muted rounded-lg cursor-pointer transition-colors",
+              month_caption: "hidden",
+              nav: "hidden",
               month_grid: "w-full border-collapse",
               weekdays: "flex",
               weekday: "flex-1 text-center text-xs text-muted-foreground pb-2 select-none",
@@ -220,5 +232,48 @@ export default function BookableUnitsClient({ units, currency }: Props) {
         {booking.submitting ? t("bookingInProgress") : t("reserveUnit")}
       </Button>
     </Card>
+  );
+}
+
+// ─── MonthNavigator ──────────────────────────────────────────────────────────
+
+function MonthNavigator({
+  month,
+  locale,
+  onPrev,
+  onNext,
+}: {
+  month: Date;
+  locale: string;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const label = month.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="flex items-center justify-between mb-3 px-1">
+      <button
+        type="button"
+        onClick={onPrev}
+        aria-label="Previous month"
+        className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+      >
+        <ChevronLeftIcon className="size-4" />
+      </button>
+
+      <span className="text-sm font-semibold text-primary select-none">{label}</span>
+
+      <button
+        type="button"
+        onClick={onNext}
+        aria-label="Next month"
+        className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
+      >
+        <ChevronRightIcon className="size-4" />
+      </button>
+    </div>
   );
 }
