@@ -11,11 +11,11 @@
         </select>
         <select id="filter-pricing" class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
             <option value="">{{ __('partner.ad_slots.all_pricing') }}</option>
-            <option value="fixed_daily">Fixed daily</option>
-            <option value="fixed_weekly">Fixed weekly</option>
-            <option value="fixed_monthly">Fixed monthly</option>
-            <option value="cpm">CPM</option>
-            <option value="cpc">CPC</option>
+            <option value="fixed_daily">{{ __('partner.ad_slots.pricing_fixed_daily') }}</option>
+            <option value="fixed_weekly">{{ __('partner.ad_slots.pricing_fixed_weekly') }}</option>
+            <option value="fixed_monthly">{{ __('partner.ad_slots.pricing_fixed_monthly') }}</option>
+            <option value="cpm">{{ __('partner.ad_slots.pricing_cpm') }}</option>
+            <option value="cpc">{{ __('partner.ad_slots.pricing_cpc') }}</option>
         </select>
     </div>
 

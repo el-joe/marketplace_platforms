@@ -77,7 +77,7 @@
                                     <button type="button" data-clear-tile-image class="mt-1 text-xs text-rose-500">Remove</button>
                                 </div>
                                 <label class="flex items-center justify-center gap-1 px-2 py-1.5 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 text-xs text-gray-500">
-                                    <span>Upload EN</span>
+                                    <span>{{ __('admin.page_builder.upload_en') }}</span>
                                     <input type="file" accept="image/*" class="sr-only" data-tile-image-upload>
                                 </label>
                             </div>
@@ -99,7 +99,7 @@
                                     <button type="button" data-clear-tile-image-ar class="mt-1 text-xs text-rose-500">Remove</button>
                                 </div>
                                 <label class="flex items-center justify-center gap-1 px-2 py-1.5 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 text-xs text-gray-500">
-                                    <span>Upload AR</span>
+                                    <span>{{ __('admin.page_builder.upload_ar') }}</span>
                                     <input type="file" accept="image/*" class="sr-only" data-tile-image-ar-upload>
                                 </label>
                             </div>

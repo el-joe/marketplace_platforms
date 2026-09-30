@@ -33,7 +33,7 @@
 
                 <div class="mt-8 flex flex-col gap-4 items-start sm:flex-row sm:items-center sm:gap-6">
                     @php($explainerVideosCta = portal_link('how-it-works', 'fulfilment-model', 'explainer_videos_button', 'Watch explainer videos', 'شاهد فيديوهات الشرح', 'https://www.youtube.com/@noonsellerlab7442/videos'))
-                    <a target="_blank" rel="noopener" title="{{ $isAr ? 'يفتح في نافذة جديدة' : 'Opens in a new window' }}"
+                    <a target="_blank" rel="noopener" title="{{ portal_content('how-it-works', 'fulfilment-model', 'new_window_title', 'Opens in a new window', 'يفتح في نافذة جديدة') }}"
                        href="{{ $explainerVideosCta['url'] }}"
                        class="w-full sm:w-auto text-center bg-[#feee00] hover:bg-[#e5d600] text-black font-black text-sm px-6 py-2.5 rounded-full transition-colors">
                         {{ $explainerVideosCta['label'] }}

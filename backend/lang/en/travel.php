@@ -161,6 +161,9 @@ return [
         'link_to_package' => 'Link to Package',
         'package_linked' => 'Package link updated.',
         'package_none' => 'None',
+        'package' => 'Package',
+        'package_optional' => 'Package (Optional)',
+        'no_package' => 'None',
     ],
 
     'packages' => [
@@ -279,6 +282,15 @@ return [
         'per_traveler_count' => ':count travelers',
         'edit_package_title' => 'Edit Package',
         'save_changes' => 'Save Changes',
+        'bookable_units' => 'Bookable Units',
+        'add_unit' => 'Add Unit to this Package',
+        'unit_name' => 'Name',
+        'unit_type' => 'Type',
+        'unit_capacity' => 'Capacity',
+        'unit_status' => 'Status',
+        'unit_reservations' => 'Reservations',
+        'unit_actions' => 'Actions',
+        'no_units' => 'No bookable units yet.',
     ],
 
     'bookings' => [
@@ -724,6 +736,7 @@ return [
         'selected' => 'selected',
         'save_changes' => 'Save Changes',
         'delete_forbidden_members' => 'Cannot delete role ":role": :count team member(s) are assigned to it.',
+        'owner_only_action' => 'Only the agency owner can perform this action.',
     ],
 
     'bank_accounts' => [

@@ -33,7 +33,7 @@
     .delivery-rows.open { display: table-row-group; }
 </style>
 
-<div dir="rtl" class="space-y-5">
+<div dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}" class="space-y-5">
 
     {{-- ── Page Title ───────────────────────────────────────────────────────── --}}
     <div class="flex items-center gap-3 mb-1">

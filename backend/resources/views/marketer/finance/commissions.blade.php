@@ -1,6 +1,6 @@
 @extends('layouts.marketer')
-@section('title', 'العمولات')
-@section('page-title', 'العمولات')
+@section('title', __('marketer.finance.commissions_title'))
+@section('page-title', __('marketer.finance.commissions_title'))
 
 @section('content')
 <div class="space-y-5">
@@ -24,30 +24,30 @@
 
     <div class="grid grid-cols-2 lg:grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border p-5">
-            <div class="text-xs text-gray-400 mb-1">إجمالي العمولات المحصّلة</div>
+            <div class="text-xs text-gray-400 mb-1">{{ __('marketer.finance.total_earned_label') }}</div>
             <div class="text-3xl font-black text-green-600">{{ number_format($totalEarned) }}</div>
         </div>
         <div class="bg-white rounded-xl border p-5">
-            <div class="text-xs text-gray-400 mb-1">عمولات معلّقة</div>
+            <div class="text-xs text-gray-400 mb-1">{{ __('marketer.finance.pending_earnings_label') }}</div>
             <div class="text-3xl font-black text-yellow-500">{{ number_format($pendingEarnings) }}</div>
         </div>
     </div>
 
     <div class="bg-white rounded-xl border overflow-hidden">
         @if($conversions->isEmpty())
-            <div class="p-12 text-center text-gray-400">لا توجد عمولات بعد</div>
+            <div class="p-12 text-center text-gray-400">{{ __('marketer.finance.no_commissions') }}</div>
         @else
             <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs text-gray-500">
                     <tr>
-                        <th class="px-4 py-3 text-start">التاريخ</th>
-                        <th class="px-4 py-3 text-start">الحملة</th>
-                        <th class="px-4 py-3 text-start">المنتج</th>
-                        <th class="px-4 py-3 text-center">رقم الطلب</th>
-                        <th class="px-4 py-3 text-center">العمولة</th>
-                        <th class="px-4 py-3 text-center">مكافأة التخفيضات السريعة</th>
-                        <th class="px-4 py-3 text-center">الحالة</th>
+                        <th class="px-4 py-3 text-start">{{ __('marketer.finance.date_header') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('marketer.finance.campaign_header') }}</th>
+                        <th class="px-4 py-3 text-start">{{ __('marketer.finance.product_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.order_number_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.commission_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.flash_sale_bonus_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.status_header') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -67,7 +67,7 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-0.5 rounded text-xs {{ $conv->commissioned ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                {{ $conv->commissioned ? 'مدفوعة' : 'معلّقة' }}
+                                {{ $conv->commissioned ? __('marketer.finance.status_paid') : __('marketer.finance.status_pending') }}
                             </span>
                         </td>
                     </tr>

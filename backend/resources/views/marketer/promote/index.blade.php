@@ -1,25 +1,31 @@
 @extends('layouts.marketer')
-@section('title', 'الترويج المدفوع')
-@section('page-title', 'الترويج المدفوع')
+@section('title', __('marketer.promote.index_title'))
+@section('page-title', __('marketer.promote.index_title'))
 
 @section('content')
     <div class="bg-white rounded-2xl border border-gray-200 p-4 mb-4 flex items-center gap-3 flex-wrap">
         <select id="filter-surface" class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
-            <option value="">كل الأماكن</option>
-            <option value="page_block">الصفحة الرئيسية</option>
-            <option value="placement">أماكن أخرى</option>
+            <option value="">{{ __('marketer.promote.filter_all_slots') }}</option>
+            <option value="page_block">{{ __('marketer.promote.filter_homepage') }}</option>
+            <option value="placement">{{ __('marketer.promote.filter_other_slots') }}</option>
         </select>
         <select id="filter-pricing" class="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
-            <option value="">كل نماذج التسعير</option>
-            <option value="fixed_daily">يومي ثابت</option>
-            <option value="fixed_weekly">أسبوعي ثابت</option>
-            <option value="fixed_monthly">شهري ثابت</option>
+            <option value="">{{ __('marketer.promote.filter_all_pricing') }}</option>
+            <option value="fixed_daily">{{ __('marketer.promote.filter_daily') }}</option>
+            <option value="fixed_weekly">{{ __('marketer.promote.filter_weekly') }}</option>
+            <option value="fixed_monthly">{{ __('marketer.promote.filter_monthly') }}</option>
             <option value="cpm">CPM</option>
             <option value="cpc">CPC</option>
         </select>
     </div>
 
-    @foreach (['homepage' => 'الصفحة الرئيسية', 'cart' => 'السلة', 'product' => 'صفحات المنتج', 'search' => 'البحث', 'category' => 'الأقسام'] as $key => $label)
+    @foreach ([
+        'homepage' => __('marketer.promote.section_homepage'),
+        'cart'     => __('marketer.promote.section_cart'),
+        'product'  => __('marketer.promote.section_product'),
+        'search'   => __('marketer.promote.section_search'),
+        'category' => __('marketer.promote.section_category'),
+    ] as $key => $label)
         @if ($grouped->has($key))
             <h3 class="text-sm font-semibold text-gray-700 mt-6 mb-3">{{ $label }}</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -39,7 +45,7 @@
                             <div class="text-sm font-medium text-primary-700 mt-2">
                                 @if (in_array($slot->pricing_model->value, ['cpm', 'cpc']))
                                     {{ strtoupper($slot->pricing_model->value) }} {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }}
-                                    · بحد أدنى للميزانية {{ number_format($slot->min_budget) }} {{ $slot->country?->currency_code }}
+                                    · {{ __('marketer.promote.min_budget_label') }} {{ number_format($slot->min_budget) }} {{ $slot->country?->currency_code }}
                                 @else
                                     {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }} / {{ str_replace('fixed_', '', $slot->pricing_model->value) }}
                                 @endif
@@ -47,7 +53,7 @@
                             <div class="text-xs text-gray-400 mt-1">{{ $slot->creative_width_px }}×{{ $slot->creative_height_px }}px</div>
                             <a href="{{ route('marketer.promote.show', $slot->id) }}"
                                class="mt-3 block text-center rounded-lg bg-primary-600 text-white text-sm font-medium py-2 hover:bg-primary-700">
-                                احجز
+                                {{ __('marketer.promote.book_button') }}
                             </a>
                         </div>
                     </div>
@@ -57,7 +63,7 @@
     @endforeach
 
     @if ($grouped->isEmpty())
-        <div class="text-center text-gray-400 py-16">لا توجد أماكن إعلانية متاحة لحسابك حالياً.</div>
+        <div class="text-center text-gray-400 py-16">{{ __('marketer.promote.no_slots') }}</div>
     @endif
 
     <script>

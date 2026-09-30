@@ -57,7 +57,7 @@
             <button type="button" @click="active = (active - 1 + count) % count"
                     class="hidden sm:flex absolute {{ $isAr ? '-right-2 lg:-right-6' : '-left-2 lg:-left-6' }} top-1/2 -translate-y-1/2
                            w-9 h-9 items-center justify-center rounded-full bg-white shadow hover:bg-gray-100 text-gray-600"
-                    aria-label="{{ $isAr ? 'السابق' : 'Previous' }}">
+                    aria-label="{{ portal_content('sellers', 'testimonials', 'prev_aria', 'Previous', 'السابق') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" class="{{ $isAr ? '-scale-x-100' : '' }}">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M10.75 8.25 7 12m0 0 3.75 3.75M7 12h10" />
                 </svg>
@@ -65,7 +65,7 @@
             <button type="button" @click="active = (active + 1) % count"
                     class="hidden sm:flex absolute {{ $isAr ? '-left-2 lg:-left-6' : '-right-2 lg:-right-6' }} top-1/2 -translate-y-1/2
                            w-9 h-9 items-center justify-center rounded-full bg-white shadow hover:bg-gray-100 text-gray-600"
-                    aria-label="{{ $isAr ? 'التالي' : 'Next' }}">
+                    aria-label="{{ portal_content('sellers', 'testimonials', 'next_aria', 'Next', 'التالي') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" class="{{ $isAr ? '-scale-x-100' : '' }}">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.25 8.25 17 12m0 0-3.75 3.75M17 12H7" />
                 </svg>
@@ -77,7 +77,7 @@
                     <button type="button" @click="active = {{ $i }}"
                             :class="active === {{ $i }} ? 'w-6 bg-gray-900' : 'w-4 bg-gray-300'"
                             class="h-1.5 rounded-full transition-all"
-                            aria-label="{{ $isAr ? 'الشريحة' : 'Slide' }} {{ $i + 1 }}"></button>
+                            aria-label="{{ portal_content('sellers', 'testimonials', 'slide_aria', 'Slide', 'الشريحة') }} {{ $i + 1 }}"></button>
                 @endforeach
             </div>
         </div>

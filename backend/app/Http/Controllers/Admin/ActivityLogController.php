@@ -14,12 +14,15 @@ use App\Models\VendorAdmin;
 use App\Models\VendorListing;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityLogController extends Controller
 {
@@ -52,7 +55,7 @@ class ActivityLogController extends Controller
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $this->authorizeView();
 
@@ -112,7 +115,7 @@ class ActivityLogController extends Controller
                 ?? $this->resolveSubjectDisplay($row->subject_type, $row->subject_id);
 
             return [
-                'DT_RowId' => 'al-' . $row->id,
+                'DT_RowId' => 'al-'.$row->id,
                 'id' => $row->id,
                 'created_at' => $row->created_at,
                 'created_at_formatted' => Carbon::parse($row->created_at)->format('M d, Y H:i'),
@@ -130,7 +133,7 @@ class ActivityLogController extends Controller
         });
     }
 
-    private function buildActivityLogQuery(Request $request): \Illuminate\Database\Query\Builder
+    private function buildActivityLogQuery(Request $request): Builder
     {
         $query = DB::table('activity_log as al')
             ->leftJoin('admins as a', function ($j) {
@@ -152,24 +155,24 @@ class ActivityLogController extends Controller
             ]);
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($qq) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
                 $qq->where('al.description', 'like', "%{$v}%")
                     ->orWhere('al.subject_type', 'like', "%{$v}%");
             }),
-            'log_name' => fn($q, $v) => $q->where('al.log_name', 'like', "%{$v}%"),
-            'event' => fn($q, $v) => $q->where('al.event', $v),
-            'causer_type' => fn($q, $v) => $v === 'system'
+            'log_name' => fn ($q, $v) => $q->where('al.log_name', 'like', "%{$v}%"),
+            'event' => fn ($q, $v) => $q->where('al.event', $v),
+            'causer_type' => fn ($q, $v) => $v === 'system'
                 ? $q->whereNull('al.causer_type')
                 : $q->where('al.causer_type', $v),
-            'subject_type' => fn($q, $v) => $q->where('al.subject_type', $v),
-            'causer_id' => fn($q, $v) => $q->where('al.causer_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('al.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('al.created_at', '<=', $v),
-            'ip_address' => fn($q, $v) => $q->where('al.ip_address', 'like', "%{$v}%"),
+            'subject_type' => fn ($q, $v) => $q->where('al.subject_type', $v),
+            'causer_id' => fn ($q, $v) => $q->where('al.causer_id', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('al.created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('al.created_at', '<=', $v),
+            'ip_address' => fn ($q, $v) => $q->where('al.ip_address', 'like', "%{$v}%"),
         ]);
     }
 
-    private function exportActivityLog(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportActivityLog(Request $request): StreamedResponse
     {
         $entries = $this->buildActivityLogQuery($request)->orderByDesc('al.created_at')->limit(10000)->get();
 
@@ -196,7 +199,7 @@ class ActivityLogController extends Controller
             'excel' => $this->exportExcel('activity_log', $headers, $rows),
             'csv' => $this->exportCsv('activity_log', $headers, $rows),
             'word' => $this->exportWord('activity_log', 'Activity Log', $rows),
-            default => abort(400, __('admin.invalid_export_format')),
+            default => abort(400, __('admin.common.invalid_export_format')),
         };
     }
 
@@ -207,7 +210,7 @@ class ActivityLogController extends Controller
      */
     private function resolveSubjectDisplay(?string $type, ?string $id): ?string
     {
-        if (!$type || !$id) {
+        if (! $type || ! $id) {
             return null;
         }
 
@@ -216,7 +219,7 @@ class ActivityLogController extends Controller
             Order::class => optional(Order::find($id))->order_number,
             Vendor::class => optional(Vendor::find($id))->store_name,
             Payout::class => optional(Payout::find($id))->payout_number,
-            VendorListing::class => 'Listing #' . Str::limit($id, 8, ''),
+            VendorListing::class => 'Listing #'.Str::limit($id, 8, ''),
             Customer::class => optional(Customer::find($id))->name,
             Admin::class => optional(Admin::find($id))->name,
             VendorAdmin::class => optional(VendorAdmin::find($id))->name,
@@ -285,7 +288,7 @@ class ActivityLogController extends Controller
 
     private function resolveSubjectUrl(?string $type, ?string $id): ?string
     {
-        if (!$type || !$id) {
+        if (! $type || ! $id) {
             return null;
         }
 
@@ -298,7 +301,7 @@ class ActivityLogController extends Controller
             default => null,
         };
 
-        if (!$routeName || !Route::has($routeName)) {
+        if (! $routeName || ! Route::has($routeName)) {
             return null;
         }
 
@@ -320,20 +323,20 @@ class ActivityLogController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $like = '%' . $q . '%';
+        $like = '%'.$q.'%';
         $results = [];
 
         foreach (self::CAUSER_MAP as $info) {
             $rows = DB::table($info['table'])
                 ->select('id', 'name', 'email')
-                ->where(fn($w) => $w->where('name', 'like', $like)->orWhere('email', 'like', $like))
+                ->where(fn ($w) => $w->where('name', 'like', $like)->orWhere('email', 'like', $like))
                 ->limit(10)
                 ->get();
 
             foreach ($rows as $r) {
                 $results[] = [
                     'id' => $r->id,
-                    'text' => $r->name . ' — ' . $info['label'] . ' (' . $r->email . ')',
+                    'text' => $r->name.' — '.$info['label'].' ('.$r->email.')',
                     'name' => $r->name,
                     'email' => $r->email,
                     'type' => $info['label'],

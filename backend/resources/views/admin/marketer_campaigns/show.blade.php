@@ -52,7 +52,7 @@
 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
 
     <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">رسوم المنصة</div>
+        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.platform_fees') }}</div>
         <div class="text-lg font-bold
             {{ $totalFeePending > 0 ? 'text-orange-600' : ($totalFeeExpected > 0 ? 'text-green-700' : 'text-gray-400') }}">
             {{ number_format($totalFeeExpected) }}
@@ -60,56 +60,56 @@
         </div>
         <div class="text-xs mt-1">
             @if($totalFeePending > 0)
-                <span class="text-orange-500">انتظار: {{ number_format($totalFeePending) }}</span>
+                <span class="text-orange-500">{{ __('admin.marketer_campaigns.pending_prefix') }}: {{ number_format($totalFeePending) }}</span>
             @elseif($totalFeeExpected > 0)
-                <span class="text-green-600">مدفوعة بالكامل</span>
+                <span class="text-green-600">{{ __('admin.marketer_campaigns.fully_paid') }}</span>
             @else
-                <span class="text-gray-400">لا توجد رسوم</span>
+                <span class="text-gray-400">{{ __('admin.marketer_campaigns.no_fees') }}</span>
             @endif
         </div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">ماركترز قبلوا</div>
+        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.marketers_accepted') }}</div>
         <div class="text-sm font-semibold text-gray-800">
             @if($influencerAccepted > 0)
-                <span class="text-purple-700">{{ $influencerAccepted }} إنفلوينسر</span>
+                <span class="text-purple-700">{{ $influencerAccepted }} {{ __('admin.marketer_campaigns.influencer_label') }}</span>
             @endif
             @if($affiliateAccepted > 0)
                 @if($influencerAccepted > 0) + @endif
-                <span class="text-blue-700">{{ $affiliateAccepted }} أفيلييت</span>
+                <span class="text-blue-700">{{ $affiliateAccepted }} {{ __('admin.marketer_campaigns.affiliate_label') }}</span>
             @endif
             @if($influencerAccepted === 0 && $affiliateAccepted === 0)
-                <span class="text-gray-400">لا يوجد بعد</span>
+                <span class="text-gray-400">{{ __('admin.marketer_campaigns.none_yet') }}</span>
             @endif
         </div>
-        <div class="text-xs text-gray-400 mt-1">أفيلييت مجاني</div>
+        <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.affiliate_free') }}</div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">إجمالي البيعات</div>
+        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.total_sales') }}</div>
         <div class="text-lg font-bold text-gray-900">
             {{ $marketerCampaign->conversions()->count() }}
         </div>
-        <div class="text-xs text-gray-400 mt-1">تحويل ناجح</div>
+        <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.successful_conversion') }}</div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">كوميشن الماركترز (مستحق)</div>
+        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.marketers_commission_owed') }}</div>
         <div class="text-lg font-bold text-red-600">
             {{ number_format($marketerCampaign->total_commission_owed) }}
             {{ $marketerCampaign->currency }}
         </div>
-        <div class="text-xs text-gray-400 mt-1">لم يُدفع بعد</div>
+        <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.not_paid_yet') }}</div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">ربح المنصة</div>
+        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.platform_profit') }}</div>
         <div class="text-lg font-bold text-green-700">
             {{ number_format($marketerCampaign->net_platform_profit) }}
             {{ $marketerCampaign->currency }}
         </div>
-        <div class="text-xs text-gray-400 mt-1">من الرسوم</div>
+        <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.from_fees') }}</div>
     </div>
 
 </div>
@@ -117,10 +117,10 @@
 @if($totalFeePending > 0)
 <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
     <span class="font-semibold text-orange-800">
-        يوجد رسوم منصة في انتظار التحصيل
+        {{ __('admin.marketer_campaigns.pending_fees_notice') }}
     </span>
     <span class="text-sm text-orange-600 ml-2">
-        المبلغ: {{ number_format($totalFeePending) }} {{ $marketerCampaign->currency }} — راجع تبويب "الدعوات" لتسجيل كل رسوم على حدة.
+        {{ __('admin.marketer_campaigns.pending_fees_detail', ['amount' => number_format($totalFeePending), 'currency' => $marketerCampaign->currency]) }}
     </span>
 </div>
 @endif
@@ -185,18 +185,18 @@
             </div>
         </x-card>
 
-        <x-card title="نطاق الأقسام (منتجات / سوق مفتوح)">
+        <x-card title="{{ __('admin.marketer_campaigns.category_scope_title') }}">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                @foreach([['product', 'category', 'أقسام المنتجات', $categories], ['classified', 'classifiedCategory', 'أقسام السوق المفتوح', $classifiedCategories]] as [$type, $relation, $label, $options])
+                @foreach([['product', 'category', __('admin.marketer_campaigns.product_categories'), $categories], ['classified', 'classifiedCategory', __('admin.marketer_campaigns.classified_categories'), $classifiedCategories]] as [$type, $relation, $label, $options])
                 <form method="POST" action="{{ route('admin.marketer-campaigns.category-rules.sync', $marketerCampaign) }}" class="space-y-2 border rounded-lg p-3">
                     @csrf
                     <input type="hidden" name="category_type" value="{{ $type }}">
                     <div class="text-sm font-semibold text-gray-700">{{ $label }}</div>
                     <select name="selection_mode" class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                         @php $currentMode = $type === 'product' ? $marketerCampaign->product_category_selection_mode : $marketerCampaign->classified_category_selection_mode; @endphp
-                        <option value="all" @selected($currentMode === 'all')>كل الأقسام</option>
-                        <option value="include" @selected($currentMode === 'include')>أقسام محددة (تضمين)</option>
-                        <option value="exclude" @selected($currentMode === 'exclude')>كل الأقسام باستثناء</option>
+                        <option value="all" @selected($currentMode === 'all')>{{ __('admin.marketer_campaigns.scope_all') }}</option>
+                        <option value="include" @selected($currentMode === 'include')>{{ __('admin.marketer_campaigns.scope_include') }}</option>
+                        <option value="exclude" @selected($currentMode === 'exclude')>{{ __('admin.marketer_campaigns.scope_exclude') }}</option>
                     </select>
                     <select name="category_ids[]" multiple data-select2-init class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                         @php $selectedIds = $marketerCampaign->categoryRules->pluck($relation)->filter()->pluck('id')->all(); @endphp
@@ -204,7 +204,7 @@
                             <option value="{{ $option->id }}" @selected(in_array($option->id, $selectedIds, true))>{{ $option->name_ar }}</option>
                         @endforeach
                     </select>
-                    <button class="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">حفظ</button>
+                    <button class="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">{{ __('admin.marketer_campaigns.save') }}</button>
                 </form>
                 @endforeach
             </div>
@@ -265,7 +265,7 @@
                         <span class="font-medium text-gray-800">{{ $inv->marketer?->name ?? '—' }}</span>
                         <span class="text-xs ml-2 px-2 py-0.5 rounded-full
                             {{ $inv->marketer?->isInfluencer() ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                            {{ $inv->marketer?->isInfluencer() ? 'إنفلوينسر' : 'أفيلييت' }}
+                            {{ $inv->marketer?->isInfluencer() ? __('admin.marketer_campaigns.influencer_label') : __('admin.marketer_campaigns.affiliate_label') }}
                         </span>
                     </div>
                     <div class="flex items-center gap-3 text-sm">
@@ -356,8 +356,8 @@
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_qr_code') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_sent_at') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_responded_at') }}</th>
-                                <th class="text-center px-4 py-2 font-medium text-gray-600">رسوم المنصة</th>
-                                <th class="text-center px-4 py-2 font-medium text-gray-600">حالة الرسوم</th>
+                                <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('admin.marketer_campaigns.platform_fees') }}</th>
+                                <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('admin.marketer_campaigns.fees_status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -384,7 +384,7 @@
                                     <td class="py-2 pr-4">{{ $invitation->responded_at?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="px-4 py-3 text-center">
                                         @if($invitation->platform_fee_status === 'not_applicable')
-                                            <span class="text-xs text-green-600">مجاني (أفيلييت)</span>
+                                            <span class="text-xs text-green-600">{{ __('admin.marketer_campaigns.fee_free_affiliate') }}</span>
                                         @else
                                             <span class="font-semibold text-gray-800">
                                                 {{ number_format($invitation->platform_fee_amount) }} {{ $invitation->platform_fee_currency }}
@@ -396,12 +396,12 @@
                                             <span class="text-xs text-gray-300">—</span>
                                         @elseif($invitation->platform_fee_status === 'paid')
                                             <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                                <i class="fas fa-check mr-1"></i>مدفوعة
+                                                <i class="fas fa-check mr-1"></i>{{ __('admin.marketer_campaigns.fee_paid') }}
                                             </span>
                                         @elseif($invitation->platform_fee_status === 'pending')
                                             <div class="flex items-center gap-1 justify-center">
                                                 <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                                                    انتظار
+                                                    {{ __('admin.marketer_campaigns.pending_prefix') }}
                                                 </span>
                                                 @can('marketer_campaigns.approve')
                                                 <form action="{{ route('admin.marketer-campaigns.invitations.mark-fee-paid', [$marketerCampaign, $invitation]) }}"
@@ -409,13 +409,13 @@
                                                     @csrf @method('PATCH')
                                                     <button type="submit"
                                                             class="text-xs text-orange-600 hover:text-orange-800 underline">
-                                                        تسجيل كمدفوعة
+                                                        {{ __('admin.marketer_campaigns.mark_as_paid') }}
                                                     </button>
                                                 </form>
                                                 @endcan
                                             </div>
                                         @elseif($invitation->platform_fee_status === 'waived')
-                                            <span class="text-xs text-gray-400">معفاة</span>
+                                            <span class="text-xs text-gray-400">{{ __('admin.marketer_campaigns.fee_waived') }}</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -527,7 +527,7 @@
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_marketer') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_quantity') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_status') }}</th>
-                            <th class="py-2 pr-4">عنوان التوصيل</th>
+                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.delivery_address') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_dispatched_at') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_delivered_at') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_change_status') }}</th>
@@ -566,7 +566,7 @@
                                             @endif
                                         </div>
                                     @elseif($sample->sample_owner === 'marketer' && !$sample->delivery_address_snapshot)
-                                        <span class="text-amber-600 font-semibold">⚠ لم يُسجَّل عنوان بعد</span>
+                                        <span class="text-amber-600 font-semibold">⚠ {{ __('admin.marketer_campaigns.no_address_recorded') }}</span>
                                     @else
                                         <span class="text-gray-300">—</span>
                                     @endif

@@ -121,21 +121,21 @@
                 <div class="flex flex-wrap gap-2">
                     <select id="filter-method"
                             class="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500">
-                        <option value="">All Methods</option>
+                        <option value="">{{ __('admin.shipping_settings.all_methods') }}</option>
                         @foreach($methods as $method)
                             <option value="{{ $method->id }}">{{ $method->name }}</option>
                         @endforeach
                     </select>
                     <select id="filter-carrier"
                             class="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500">
-                        <option value="">All Carriers</option>
+                        <option value="">{{ __('admin.shipping_settings.all_carriers') }}</option>
                         @foreach($carriers as $carrier)
                             <option value="{{ $carrier->id }}">{{ $carrier->name }}</option>
                         @endforeach
                     </select>
                     <select id="filter-zone"
                             class="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500">
-                        <option value="">All Zones</option>
+                        <option value="">{{ __('admin.shipping_settings.all_zones') }}</option>
                         @foreach($zones as $zone)
                             <option value="{{ $zone->id }}">{{ $zone->name }} ({{ optional($zone->country)->iso_code_2 }})</option>
                         @endforeach
@@ -157,9 +157,9 @@
                 <table id="shipping-rates-table" class="table-base w-full">
                     <thead>
                         <tr>
-                            <th>Zone</th>
-                            <th>Method</th>
-                            <th>Carrier</th>
+                            <th>{{ __('admin.shipping_settings.zone') }}</th>
+                            <th>{{ __('admin.shipping_settings.method') }}</th>
+                            <th>{{ __('admin.shipping_settings.carrier') }}</th>
                             <th class="text-end">Base Fee</th>
                             <th class="text-end">Rate/kg</th>
                             <th class="text-end">Free Threshold</th>

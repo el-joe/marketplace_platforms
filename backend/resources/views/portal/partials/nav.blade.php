@@ -108,7 +108,7 @@
                                  alt="{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}" width="20" height="20" class="rounded-sm">
                             <span>{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}</span>
                         @else
-                            <span>{{ $isAr ? 'الدولة' : 'Country' }}</span>
+                            <span>{{ portal_content('nav', 'country_toggle', 'label', 'Country', 'الدولة') }}</span>
                         @endif
                     </button>
 
@@ -158,12 +158,12 @@
                             <a href="{{ route('portal.language', 'en') }}" 
                                class="relative block px-5 py-3 text-[14px] font-bold transition-all duration-200 flex items-center group/sub hover:bg-white/5 {{ !$isAr ? 'text-[#feee00]' : 'text-gray-300 hover:text-white' }}">
                                 <div class="w-[3px] h-0 bg-[#feee00] absolute {{ $isAr ? 'right-0' : 'left-0' }} top-1/2 -translate-y-1/2 transition-all duration-300 group-hover/sub:h-[70%] {{ $isAr ? 'rounded-l-full' : 'rounded-r-full' }}"></div>
-                                <span class="transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">English</span>
+                                <span class="transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">{{ portal_content('nav', 'lang_option_en', 'label', 'English', 'English') }}</span>
                             </a>
-                            <a href="{{ route('portal.language', 'ar') }}" 
+                            <a href="{{ route('portal.language', 'ar') }}"
                                class="relative block px-5 py-3 text-[14px] font-bold transition-all duration-200 flex items-center group/sub hover:bg-white/5 {{ $isAr ? 'text-[#feee00]' : 'text-gray-300 hover:text-white' }}">
                                 <div class="w-[3px] h-0 bg-[#feee00] absolute {{ $isAr ? 'right-0' : 'left-0' }} top-1/2 -translate-y-1/2 transition-all duration-300 group-hover/sub:h-[70%] {{ $isAr ? 'rounded-l-full' : 'rounded-r-full' }}"></div>
-                                <span class="transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">العربية</span>
+                                <span class="transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">{{ portal_content('nav', 'lang_option_ar', 'label', 'العربية', 'العربية') }}</span>
                             </a>
                         </div>
                     </div>
@@ -173,7 +173,7 @@
             {{-- Mobile controls --}}
             <div class="flex lg:hidden items-center gap-4">
                 <div class="relative" x-data="{ mobileCountryOpen: false }" @click.outside="mobileCountryOpen = false">
-                    <button type="button" @click="mobileCountryOpen = !mobileCountryOpen" aria-label="{{ $isAr ? 'اختر الدولة' : 'Select country' }}">
+                    <button type="button" @click="mobileCountryOpen = !mobileCountryOpen" aria-label="{{ portal_content('nav', 'country_toggle', 'mobile_aria_label', 'Select country', 'اختر الدولة') }}">
                         @if($currentCountry)
                             <img src="https://f.nooncdn.com/s/app/com/common/images/flags/{{ strtolower($currentCountry->iso_code_2) }}.svg"
                                  alt="{{ $isAr ? $currentCountry->name_ar : $currentCountry->name_en }}" width="20" height="20" class="rounded-sm">

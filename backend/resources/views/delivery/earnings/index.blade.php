@@ -59,7 +59,7 @@
                 <div class="d-card flex items-center justify-between">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-0.5">
-                            <span class="chip {{ $chipClass }}">{{ ucfirst(str_replace('_', ' ', $earning->earning_type)) }}</span>
+                            <span class="chip {{ $chipClass }}">{{ __('delivery.earnings.' . $earning->earning_type) }}</span>
                         </div>
                         @if($earning->deliveryAssignment?->subOrder?->sub_order_number)
                             <p class="text-xs text-slate-400">#{{ $earning->deliveryAssignment->subOrder->sub_order_number }}</p>

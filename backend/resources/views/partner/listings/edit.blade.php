@@ -6,8 +6,8 @@
     $primaryImg = $product->images->where('is_primary', true)->first() ?? $product->images->first();
 @endphp
 
-@section('title', 'تعديل القائمة')
-@section('page-title', 'تعديل القائمة')
+@section('title', __('partner.listings.edit_listing'))
+@section('page-title', __('partner.listings.edit_listing'))
 
 @section('content')
 
@@ -17,28 +17,27 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            العودة إلى القائمة
+            {{ __('partner.listings.show.back_to_listings') }}
         </a>
     </div>
 
     @if($listing->status->value === 'rejected' && $listing->rejection_reason)
         <div class="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
-            <strong>سبب الرفض / Rejection Reason:</strong> {{ $listing->rejection_reason }}
+            <strong>{{ __('partner.listings.edit.rejection_reason_label') }}:</strong> {{ $listing->rejection_reason }}
             <p class="mt-1 text-sm">{{ __('partner.listings.fix_and_resubmit') }}</p>
         </div>
     @endif
 
     @if($listing->status->value === 'active')
         <div class="bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-3 rounded mb-4">
-            هذه القائمة نشطة حالياً. يجب إيقافها مؤقتاً قبل التعديل.
+            {{ __('partner.listings.edit.active_listing_notice') }}
         </div>
     @endif
 
     @if($missingCertification)
         <div class="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded mb-4">
-            ⚠ هذا المنتج يتطلب شهادة اعتماد محلية في {{ $listing->country->name_ar ?? $listing->country->name_en }}.
-            لا يمكن تفعيل هذه القائمة حتى تتم الموافقة على شهادتك.
-            <a href="{{ route('partner.product-certifications.index') }}" class="underline font-semibold">رفع الشهادة &rarr;</a>
+            ⚠ {{ __('partner.listings.edit.missing_certification_notice', ['country' => $listing->country->name_ar ?? $listing->country->name_en]) }}
+            <a href="{{ route('partner.product-certifications.index') }}" class="underline font-semibold">{{ __('partner.listings.edit.upload_certificate_link') }} &rarr;</a>
         </div>
     @endif
 
@@ -47,7 +46,7 @@
         {{-- LEFT: Product info (read-only) --}}
         <div class="lg:col-span-5">
             <div class="bg-white rounded-2xl border border-gray-200 p-6 sticky top-6">
-                <h3 class="font-semibold text-gray-800 mb-4">المنتج</h3>
+                <h3 class="font-semibold text-gray-800 mb-4">{{ __('partner.orders.product') }}</h3>
                 <div class="flex items-start gap-4">
                     <div class="w-14 h-14 rounded-xl border border-gray-100 bg-gray-50 overflow-hidden shrink-0 flex items-center justify-center">
                         @if($primaryImg)
@@ -60,11 +59,11 @@
                     </div>
                     <div class="min-w-0 flex-1">
                         <p class="font-semibold text-gray-900 text-sm">{{ $product->name_ar ?: $product->name_en }}</p>
-                        <p class="text-xs text-gray-500 mt-0.5">{{ $variant->variant_name ?: 'النسخة الافتراضية' }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ $variant->variant_name ?: __('partner.listings.edit.default_variant') }}</p>
                         <p class="text-xs font-mono text-gray-400 mt-0.5">{{ $variant->sku }}</p>
                     </div>
                 </div>
-                <p class="text-xs text-gray-400 mt-4">البلد: {{ $listing->country?->name_ar ?: $listing->country?->name_en }} ({{ $listing->currency }})</p>
+                <p class="text-xs text-gray-400 mt-4">{{ __('partner.listings.edit.country_label') }}: {{ $listing->country?->name_ar ?: $listing->country?->name_en }} ({{ $listing->currency }})</p>
 
                 @php $customerUrl = "/products/{$variant->id}/{$listing->id}"; @endphp
                 <div class="mt-4 pt-4 border-t border-gray-100">
@@ -100,7 +99,7 @@
                 @endif
 
                 <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                    <h4 class="font-semibold text-gray-800 text-sm mb-2">بيانات القائمة</h4>
+                    <h4 class="font-semibold text-gray-800 text-sm mb-2">{{ __('partner.listings.edit.listing_data_title') }}</h4>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -111,7 +110,7 @@
                             <p class="text-xs text-gray-400 mt-1">{{ __('partner.listings.price_decimal_hint') }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">الحالة <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.condition_label') }} <span class="text-red-500">*</span></label>
                             <select name="condition" required
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                                 @foreach($conditions as $key => $label)
@@ -143,7 +142,7 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">نموذج التنفيذ <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.fulfillment_model_label') }} <span class="text-red-500">*</span></label>
                             <select name="fulfillment_model" required
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                                 @foreach($fulfillmentModels as $key => $label)
@@ -152,7 +151,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">SKU الخاص بالبائع</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.vendor_sku_label') }}</label>
                             <input type="text" name="vendor_sku" maxlength="100" value="{{ old('vendor_sku', $listing->vendor_sku) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                         </div>
@@ -160,12 +159,12 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">الحد الأقصى للطلب</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.max_order_qty_label') }}</label>
                             <input type="number" name="max_order_quantity" min="1" max="9999" value="{{ old('max_order_quantity', $listing->max_order_quantity) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">حد المخزون المنخفض</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.low_stock_threshold_label') }}</label>
                             <input type="number" name="low_stock_threshold" min="0" value="{{ old('low_stock_threshold', $listing->low_stock_threshold) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                         </div>
@@ -180,22 +179,22 @@
                     <label class="flex items-start gap-2 cursor-pointer">
                         <input type="checkbox" name="vendor_covers_delivery" value="1" {{ old('vendor_covers_delivery', $listing->vendor_covers_delivery) ? 'checked' : '' }}
                             class="mt-1 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400/40">
-                        <span class="text-sm text-gray-700">أتحمل تكاليف التوصيل المتبقية / I cover remaining delivery costs</span>
+                        <span class="text-sm text-gray-700">{{ __('partner.listings.edit.vendor_covers_delivery') }}</span>
                     </label>
                 </div>
 
                 <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                    <h4 class="font-semibold text-gray-800 text-sm mb-1">الشحن والأبعاد</h4>
+                    <h4 class="font-semibold text-gray-800 text-sm mb-1">{{ __('partner.listings.edit.shipping_dimensions_title') }}</h4>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">وزن المنتج (جرام) <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.product_weight_label') }} <span class="text-red-500">*</span></label>
                         <input type="number" name="declared_weight_grams" min="1" step="1" required
                             value="{{ old('declared_weight_grams', $listing->declared_weight_grams) }}"
                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">أبعاد التغليف (سم)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.packaged_dimensions_label') }}</label>
                         <div class="grid grid-cols-3 gap-3">
                             <input type="number" name="declared_length_cm" min="0.1" step="0.1" placeholder="L"
                                 value="{{ old('declared_length_cm', $listing->declared_length_cm) }}"
@@ -210,13 +209,13 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">فئة المناولة <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.handling_class_label') }} <span class="text-red-500">*</span></label>
                         <select name="handling_class" required
                             class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
-                            <option value="standard" {{ old('handling_class', $listing->handling_class) === 'standard' ? 'selected' : '' }}>عادي / Standard</option>
-                            <option value="refrigerated" {{ old('handling_class', $listing->handling_class) === 'refrigerated' ? 'selected' : '' }}>يحتاج تبريد / Requires Refrigeration</option>
-                            <option value="fragile" {{ old('handling_class', $listing->handling_class) === 'fragile' ? 'selected' : '' }}>هش - يحتاج حرص / Fragile</option>
-                            <option value="special_tech" {{ old('handling_class', $listing->handling_class) === 'special_tech' ? 'selected' : '' }}>يحتاج تقنية خاصة / Special Handling</option>
+                            <option value="standard" {{ old('handling_class', $listing->handling_class) === 'standard' ? 'selected' : '' }}>{{ __('partner.listings.edit.handling_standard') }}</option>
+                            <option value="refrigerated" {{ old('handling_class', $listing->handling_class) === 'refrigerated' ? 'selected' : '' }}>{{ __('partner.listings.edit.handling_refrigerated') }}</option>
+                            <option value="fragile" {{ old('handling_class', $listing->handling_class) === 'fragile' ? 'selected' : '' }}>{{ __('partner.listings.edit.handling_fragile') }}</option>
+                            <option value="special_tech" {{ old('handling_class', $listing->handling_class) === 'special_tech' ? 'selected' : '' }}>{{ __('partner.listings.edit.handling_special_tech') }}</option>
                         </select>
                     </div>
                 </div>
@@ -236,17 +235,17 @@
                 </div>
 
                 <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                    <h4 class="font-semibold text-gray-800 text-sm mb-1">عمولات التسويق</h4>
+                    <h4 class="font-semibold text-gray-800 text-sm mb-1">{{ __('partner.listings.edit.marketing_commissions_title') }}</h4>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">نسبة عمولة المؤثرين</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.influencer_commission_label') }}</label>
                             <input type="number" name="influencer_commission_percentage" step="0.01" min="0" max="100"
                                 value="{{ old('influencer_commission_percentage', $listing->influencer_commission_percentage) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">حصة عينات المؤثرين</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.influencer_sample_quota_label') }}</label>
                             <input type="number" name="influencer_sample_quota" min="0" max="9999"
                                 value="{{ old('influencer_sample_quota', $listing->influencer_sample_quota) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
@@ -255,13 +254,13 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">نسبة عمولة الشركاء</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.affiliate_commission_label') }}</label>
                             <input type="number" name="affiliate_commission_percentage" step="0.01" min="0" max="100"
                                 value="{{ old('affiliate_commission_percentage', $listing->affiliate_commission_percentage) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">حصة عينات الشركاء</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.edit.affiliate_sample_quota_label') }}</label>
                             <input type="number" name="affiliate_sample_quota" min="0" max="9999"
                                 value="{{ old('affiliate_sample_quota', $listing->affiliate_sample_quota) }}"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
@@ -277,16 +276,16 @@
                             class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
                         <span class="text-sm text-gray-700">
                             <i class="fas fa-bullhorn text-purple-500 mr-1"></i>
-                            تفعيل حملة ماركتر لهذا المنتج
+                            {{ __('partner.listings.edit.enable_campaign_label') }}
                             <span class="block text-xs text-gray-400 mt-0.5">
-                                متاح فقط لقوائم FBN — يتيح لك دعوة ماركترز للترويج مقابل عمولة.
+                                {{ __('partner.listings.edit.enable_campaign_hint') }}
                             </span>
                         </span>
                     </label>
 
                     <template x-if="!isFbn">
                         <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
-                            يجب اختيار نموذج التنفيذ FBN لتفعيل حملة الماركتر.
+                            {{ __('partner.listings.edit.fbn_required_notice') }}
                         </p>
                     </template>
 
@@ -294,21 +293,21 @@
                         x-effect="enabled && $nextTick(() => window.initSelect2 && window.initSelect2())">
                         @if($marketerVendors->isEmpty())
                             <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
-                                لا يوجد ماركترز متاحين في بلدك حالياً. يمكن للأدمن تفعيل ماركترز من لوحة التحكم.
+                                {{ __('partner.listings.edit.no_marketers_available') }}
                             </p>
                         @else
                         <x-form.select
                             name="marketer_ids"
-                            label="اختر الماركترز"
+                            label="{{ __('partner.listings.edit.select_marketers_label') }}"
                             :multiple="true"
                             :select2="true"
-                            placeholder="ابحث واختر الماركترز..."
+                            placeholder="{{ __('partner.listings.edit.select_marketers_placeholder') }}"
                             x-on:change="updateSelectedMarketers($event)"
                         >
                             @foreach($marketerVendors as $m)
                                 <option value="{{ $m->id }}" data-type="{{ $m->marketerJobs->first()?->key }}"
                                         data-name="{{ $m->name }}">
-                                    {{ $m->name }} — {{ $m->isInfluencer() ? 'مؤثر' : 'أفلييت' }}
+                                    {{ $m->name }} — {{ $m->isInfluencer() ? __('partner.listings.edit.influencer_label') : __('partner.listings.edit.affiliate_label') }}
                                 </option>
                             @endforeach
                         </x-form.select>
@@ -318,15 +317,15 @@
                         <div x-show="selectedMarketers.length > 0" x-cloak class="mt-4">
                             <h5 class="text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-receipt text-orange-500 mr-1"></i>
-                                تفاصيل الرسوم لكل ماركتر
+                                {{ __('partner.listings.edit.fee_details_title') }}
                             </h5>
                             <div class="rounded-lg border border-gray-200 overflow-hidden">
                                 <table class="w-full text-sm">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th class="text-right px-4 py-2 text-gray-600 font-medium">الماركتر</th>
-                                            <th class="text-center px-4 py-2 text-gray-600 font-medium">النوع</th>
-                                            <th class="text-center px-4 py-2 text-gray-600 font-medium">الرسوم</th>
+                                            <th class="text-right px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.edit.marketer_col') }}</th>
+                                            <th class="text-center px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.edit.type_col') }}</th>
+                                            <th class="text-center px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.edit.fees_col') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -338,7 +337,7 @@
                                                           :class="marketer.type === 'influencer'
                                                               ? 'bg-purple-100 text-purple-700'
                                                               : 'bg-blue-100 text-blue-700'"
-                                                          x-text="marketer.type === 'influencer' ? 'إنفلوينسر' : 'أفيلييت'">
+                                                          x-text="marketer.type === 'influencer' ? '{{ __('partner.listings.edit.influencer_label') }}' : '{{ __('partner.listings.edit.affiliate_label') }}'">
                                                     </span>
                                                 </td>
                                                 <td class="px-4 py-2 text-center font-medium"
@@ -349,7 +348,7 @@
                                                     </span>
                                                     <span x-show="!(marketer.type === 'influencer' && feePerInfluencer > 0)"
                                                           class="text-green-600">
-                                                        مجاني
+                                                        {{ __('partner.listings.edit.free_label') }}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -358,14 +357,14 @@
                                     <tfoot class="bg-gray-50 border-t-2 border-gray-200">
                                         <tr>
                                             <td colspan="2" class="px-4 py-2 font-semibold text-gray-700 text-right">
-                                                إجمالي رسوم المنصة
+                                                {{ __('partner.listings.edit.platform_fees_total') }}
                                             </td>
                                             <td class="px-4 py-2 text-center font-bold"
                                                 :class="totalInfluencerFee > 0 ? 'text-orange-700' : 'text-green-600'">
                                                 <span x-show="totalInfluencerFee > 0"
                                                       x-text="totalInfluencerFee + ' ' + currency"></span>
                                                 <span x-show="totalInfluencerFee === 0" class="text-green-600">
-                                                    مجاني
+                                                    {{ __('partner.listings.edit.free_label') }}
                                                 </span>
                                             </td>
                                         </tr>
@@ -374,12 +373,12 @@
                             </div>
                             <p class="text-xs text-gray-400 mt-2">
                                 <i class="fas fa-info-circle mr-1"></i>
-                                رسوم المنصة تُحسب لكل إنفلوينسر مختار — الأفيلييت مجاني دائماً
+                                {{ __('partner.listings.edit.platform_fee_note') }}
                             </p>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">نوع الكوميشن</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.listings.edit.commission_type_label') }}</label>
                             <select name="commission_type" x-model="commissionType"
                                     class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
                                 <option value="fixed">{{ __('partner.listings.commission_type_fixed') }}</option>
@@ -390,7 +389,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">
-                                أقصى ميزانية كوميشن
+                                {{ __('partner.listings.edit.max_commission_budget_label') }}
                                 <span class="text-xs text-gray-400">({{ auth()->guard('vendor')->user()->vendor->country->currency_code ?? '' }})</span>
                             </label>
                             <input type="number" name="max_commission_budget" min="0"
@@ -399,17 +398,17 @@
                         </div>
 
                         <div x-show="commissionType === 'tiered'" x-cloak>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">قواعد الكوميشن المتدرج</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('partner.listings.edit.tiered_rules_label') }}</label>
                             <div class="space-y-2">
                                 <template x-for="(rule, i) in tieredRules" :key="i">
                                     <div class="flex gap-2 items-center">
                                         <input type="number" :name="`tiered_rules[${i}][from_sale_number]`"
                                                x-model="rule.from_sale_number"
-                                               placeholder="رقم البيعة (مثال: 10)"
+                                               placeholder="{{ __('partner.listings.edit.sale_number_placeholder') }}"
                                                class="w-1/2 border border-gray-200 rounded-xl px-3 py-2 text-sm">
                                         <input type="number" :name="`tiered_rules[${i}][commission_amount]`"
                                                x-model="rule.commission_amount"
-                                               placeholder="مبلغ الكوميشن"
+                                               placeholder="{{ __('partner.listings.edit.commission_amount_placeholder') }}"
                                                class="w-1/2 border border-gray-200 rounded-xl px-3 py-2 text-sm">
                                         <button type="button" @click="tieredRules.splice(i, 1)"
                                                 class="text-red-500 hover:text-red-700">
@@ -420,15 +419,15 @@
                             </div>
                             <button type="button" @click="tieredRules.push({from_sale_number: '', commission_amount: ''})"
                                     class="mt-2 text-sm text-purple-600 hover:underline">
-                                + إضافة مستوى
+                                {{ __('partner.listings.edit.add_tier_btn') }}
                             </button>
                         </div>
 
                         <div class="p-3 bg-purple-50 rounded-lg text-sm text-purple-800">
                             <i class="fas fa-box-open mr-1"></i>
-                            إجمالي العينات المتوقع: <strong x-text="selectedMarketers.length"></strong> ماركتر مختار
+                            {{ __('partner.listings.edit.expected_samples_label') }} <strong x-text="selectedMarketers.length"></strong> {{ __('partner.listings.edit.marketers_selected_suffix') }}
                             <span class="block text-xs text-gray-500 mt-1">
-                                سيتم تحديد كمية العينات النهائية تلقائياً حسب فئة المنتج بعد إنشاء الحملة.
+                                {{ __('partner.listings.edit.samples_auto_note') }}
                             </span>
                         </div>
                     </div>
@@ -436,7 +435,7 @@
 
                 <button type="submit"
                     class="w-full bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm">
-                    حفظ التعديلات
+                    {{ __('partner.listings.edit.save_changes_btn') }}
                 </button>
             </form>
 
@@ -445,7 +444,7 @@
                     @csrf
                     <button type="submit"
                         class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 rounded-xl transition-colors text-sm">
-                        Save &amp; Resubmit for Review
+                        {{ __('partner.listings.edit.save_resubmit_btn') }}
                     </button>
                 </form>
             @endif

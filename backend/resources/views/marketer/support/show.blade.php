@@ -1,6 +1,6 @@
 @extends('layouts.marketer')
 @section('title', $ticket->ticket_number)
-@section('page-title', 'تذكرة #' . $ticket->ticket_number)
+@section('page-title', '#' . $ticket->ticket_number)
 
 @section('content')
 @php
@@ -12,9 +12,9 @@
             <h2 class="font-semibold text-gray-900">{{ $ticket->subject }}</h2>
             @unless($closed)
                 <form method="POST" action="{{ route('marketer.support.close', $ticket->ticket_number) }}"
-                      onsubmit="return confirm('هل تريد إغلاق هذه التذكرة؟');">
+                      onsubmit="return confirm('{{ __('marketer.support.confirm_close') }}');">
                     @csrf
-                    <button class="text-xs text-gray-500 hover:text-red-600">إغلاق التذكرة</button>
+                    <button class="text-xs text-gray-500 hover:text-red-600">{{ __('marketer.support.close_ticket_button') }}</button>
                 </form>
             @endunless
         </div>
@@ -34,9 +34,9 @@
     <div class="bg-white rounded-xl border p-5">
         <form id="form-reply">
             @csrf
-            <textarea name="message" rows="3" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="اكتب ردك..."></textarea>
+            <textarea name="message" rows="3" required class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="{{ __('marketer.support.reply_placeholder') }}"></textarea>
             <div class="mt-3 flex justify-end">
-                <button type="submit" class="px-5 py-2 bg-yellow-500 text-gray-900 text-sm font-semibold rounded-lg">إرسال الرد</button>
+                <button type="submit" class="px-5 py-2 bg-yellow-500 text-gray-900 text-sm font-semibold rounded-lg">{{ __('marketer.support.send_reply_button') }}</button>
             </div>
         </form>
     </div>
@@ -66,7 +66,7 @@ document.getElementById('form-reply')?.addEventListener('submit', function (e) {
             list.appendChild(div);
             this.reset();
         })
-        .catch((err) => alert(err?.message || 'حدث خطأ ما'));
+        .catch((err) => alert(err?.message || '{{ __('marketer.support.error_default') }}'));
 });
 </script>
 @endpush

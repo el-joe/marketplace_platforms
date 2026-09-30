@@ -8,18 +8,18 @@ use App\Services\AnalyticsService;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AnalyticsController extends Controller
 {
     use HasExport;
 
-    public function __construct(protected AnalyticsService $analytics)
-    {
-    }
+    public function __construct(protected AnalyticsService $analytics) {}
 
     // ── Page ──────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportOverview($request);
@@ -38,11 +38,11 @@ class AnalyticsController extends Controller
     // summary metrics the page's AJAX overview() endpoint returns, flattened
     // into label/value rows.
 
-    private function exportOverview(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportOverview(Request $request): StreamedResponse
     {
         $overview = $this->analytics->overview($request);
 
-        $rows = collect($overview)->map(fn($value, $key) => [
+        $rows = collect($overview)->map(fn ($value, $key) => [
             'Metric' => $key,
             'Value' => is_scalar($value) ? $value : json_encode($value),
         ])->values();
@@ -53,7 +53,7 @@ class AnalyticsController extends Controller
             'excel' => $this->exportExcel('analytics-overview', $headers, $rows),
             'csv' => $this->exportCsv('analytics-overview', $headers, $rows),
             'word' => $this->exportWord('analytics-overview', 'Analytics Overview', $rows),
-            default => abort(400, __('admin.invalid_export_format')),
+            default => abort(400, __('admin.common.invalid_export_format')),
         };
     }
 

@@ -23,6 +23,7 @@ return [
     ],
 
     'auth' => [
+        'brand_name' => 'ديليفري',
         'sign_in_title' => 'تسجيل الدخول | نون للتوصيل',
         'sign_in_subtitle' => 'سجّل الدخول إلى حساب المندوب الخاص بك',
         'phone_number' => 'رقم الهاتف',
@@ -153,6 +154,7 @@ return [
         'status_disputed' => 'متنازع عليه',
         'discrepancy_reason' => 'سبب الاختلاف في المبلغ (مطلوب)',
         'discrepancy_placeholder' => 'مثال: العميل لم يكن معه فكّة كافية، دفع أقل بمقدار 2 جنيه…',
+        'acronym' => 'COD',
     ],
 
     'earnings' => [
@@ -190,6 +192,10 @@ return [
         'withdrawal_requests' => 'طلبات السحب',
         'transactions' => 'المعاملات',
         'no_transactions_yet' => 'لا توجد معاملات بعد.',
+        'status_pending' => 'معلّق',
+        'status_approved' => 'موافق عليه',
+        'status_processed' => 'تمت المعالجة',
+        'status_rejected' => 'مرفوض',
     ],
 
     'profile' => [
@@ -211,6 +217,10 @@ return [
         'confirm_new_password' => 'تأكيد كلمة المرور الجديدة',
         'update_password' => 'تحديث كلمة المرور',
         'sign_out' => 'تسجيل الخروج',
+        'status_active' => 'نشط',
+        'status_on_shift' => 'في المناوبة',
+        'status_suspended' => 'موقوف',
+        'status_inactive' => 'غير نشط',
     ],
 
     // ─── رسائل استجابة الخادم (فلاش / JSON) ──────────────────────────

@@ -9,7 +9,7 @@
     $crumbArrow = $isAr ? 'rotate-180' : '';
 @endphp
 
-@section('title', $article->localizedTitle() . ' | ' . ($isAr ? 'مركز مساعدة البائع' : 'noon Seller Help Center'))
+@section('title', $article->localizedTitle() . ' | ' . portal_content('helpcenter', 'article', 'site_title', 'noon Seller Help Center', 'مركز مساعدة البائع'))
 @section('description', $article->localizedExcerpt() ?? '')
 
 @section('header')
@@ -45,7 +45,7 @@
                 <div class="flex flex-col gap-3">
                     <h1 class="mb-1 text-2xl font-bold leading-10 text-black">{{ $article->localizedTitle() }}</h1>
                     <div class="-mt-0.5 text-sm text-[#737373]">
-                        <time datetime="{{ ($article->published_at ?? $article->updated_at)->toIso8601String() }}" title="{{ $isAr ? 'تم التحديث' : 'Updated' }}">{{ $article->updatedLabel() }}</time>
+                        <time datetime="{{ ($article->published_at ?? $article->updated_at)->toIso8601String() }}" title="{{ portal_content('helpcenter', 'article', 'updated_label', 'Updated', 'تم التحديث') }}">{{ $article->updatedLabel() }}</time>
                         &middot; {{ number_format($article->views_count) }} {{ portal_content('helpcenter', 'article', 'views_label', 'views', 'مشاهدة') }}
                     </div>
                 </div>
@@ -102,7 +102,7 @@
         @if(!empty($toc))
             <div class="w-61 sticky top-8 {{ $isAr ? 'mr-7' : 'ml-7' }} max-w-61 self-start max-lg:hidden mt-16">
                 <div class="max-h-[calc(100vh-96px)] overflow-y-auto rounded-2xl text-black">
-                    <div class="my-2 font-semibold">{{ $isAr ? 'محتويات الصفحة' : 'Table of contents' }}</div>
+                    <div class="my-2 font-semibold">{{ portal_content('helpcenter', 'article', 'table_of_contents', 'Table of contents', 'محتويات الصفحة') }}</div>
                     <div class="my-2">
                         @foreach($toc as $item)
                             <section class="flex border-s-2 border-solid border-[#f2f2f2] px-7 py-1.5 hover:border-orange-400 {{ $item['level'] === 3 ? 'ps-10' : '' }}">

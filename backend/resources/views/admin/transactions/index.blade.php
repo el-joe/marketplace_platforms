@@ -118,9 +118,9 @@ Object.assign(window.TRANSLATIONS, {
                     <option value="cod">{{ __('admin.orders.payment_cod') }}</option>
                     <option value="wallet">{{ __('admin.orders.payment_wallet') }}</option>
                     <option value="bank_transfer">{{ __('admin.orders.payment_bank_transfer') }}</option>
-                    <option value="thawani">Thawani</option>
-                    <option value="paytabs">Paytabs</option>
-                    <option value="stripe">Stripe</option>
+                    <option value="thawani">{{ __('admin.transactions.gateway_thawani') }}</option>
+                    <option value="paytabs">{{ __('admin.transactions.gateway_paytabs') }}</option>
+                    <option value="stripe">{{ __('admin.transactions.gateway_stripe') }}</option>
                 </select>
             </div>
             <div class="w-36">

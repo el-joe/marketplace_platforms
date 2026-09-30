@@ -14,10 +14,10 @@
         'rejected' => 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200',
     ];
     $statusLabels = [
-        'active' => 'نشط',
-        'pending' => 'قيد المراجعة',
-        'suspended' => 'معلّق',
-        'rejected' => 'مرفوض',
+        'active' => __('admin.marketers.status_active'),
+        'pending' => __('admin.marketers.status_pending'),
+        'suspended' => __('admin.marketers.status_suspended'),
+        'rejected' => __('admin.marketers.status_rejected'),
     ];
     $statusValue = $marketer->global_status?->value;
 @endphp
@@ -62,28 +62,28 @@
                 @if($statusValue === 'pending')
                     <form method="POST" action="{{ route('admin.marketers.approve', $marketer) }}">
                         @csrf
-                        <button class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-emerald-600 transition-colors">✓ موافقة وتفعيل</button>
+                        <button class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-emerald-600 transition-colors">✓ {{ __('admin.marketers.approve_and_activate') }}</button>
                     </form>
                     <form method="POST" action="{{ route('admin.marketers.reject', $marketer) }}" x-data x-on:submit.prevent="
-                        const r = prompt('سبب الرفض:');
+                        const r = prompt('{{ __('admin.marketers.reject_reason_prompt') }}');
                         if(r){ $el.querySelector('[name=reason]').value = r; $el.submit(); }">
                         @csrf
                         <input type="hidden" name="reason">
-                        <button class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-red-600 transition-colors">✕ رفض</button>
+                        <button class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-red-600 transition-colors">✕ {{ __('admin.marketers.reject') }}</button>
                     </form>
                 @elseif($statusValue === 'active')
                     <form method="POST" action="{{ route('admin.marketers.suspend', $marketer) }}" x-data x-on:submit.prevent="
-                        const r = prompt('سبب التعليق:');
+                        const r = prompt('{{ __('admin.marketers.suspend_reason_prompt') }}');
                         $el.querySelector('[name=reason]').value = r || '';
                         $el.submit();">
                         @csrf
                         <input type="hidden" name="reason">
-                        <button class="px-4 py-2 bg-red-50 text-red-700 font-semibold rounded-lg text-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 transition-colors">تعليق الحساب</button>
+                        <button class="px-4 py-2 bg-red-50 text-red-700 font-semibold rounded-lg text-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 transition-colors">{{ __('admin.marketers.suspend_account') }}</button>
                     </form>
                 @elseif($statusValue === 'suspended')
                     <form method="POST" action="{{ route('admin.marketers.activate', $marketer) }}">
                         @csrf
-                        <button class="px-4 py-2 bg-emerald-50 text-emerald-700 font-semibold rounded-lg text-sm ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 transition-colors">إعادة تفعيل</button>
+                        <button class="px-4 py-2 bg-emerald-50 text-emerald-700 font-semibold rounded-lg text-sm ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 transition-colors">{{ __('admin.marketers.reactivate') }}</button>
                     </form>
                 @endif
             </div>
@@ -91,20 +91,20 @@
 
         <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-gray-100 pt-5 text-sm">
             <div>
-                <div class="text-gray-400 text-xs mb-0.5">الدولة</div>
+                <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketers.country') }}</div>
                 <div class="font-semibold text-gray-800">{{ $marketer->country?->name_ar ?? '-' }}</div>
             </div>
             <div>
-                <div class="text-gray-400 text-xs mb-0.5">واتساب</div>
+                <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketers.whatsapp') }}</div>
                 <div class="font-semibold text-gray-800" dir="ltr">{{ $marketer->whatsapp_for_campaigns ?? '-' }}</div>
             </div>
             <div>
-                <div class="text-gray-400 text-xs mb-0.5">تاريخ التسجيل</div>
+                <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketers.registered_at') }}</div>
                 <div class="font-semibold text-gray-800">{{ $marketer->created_at->format('Y-m-d') }}</div>
             </div>
             @if($marketer->approved_at)
             <div>
-                <div class="text-gray-400 text-xs mb-0.5">تمت الموافقة</div>
+                <div class="text-gray-400 text-xs mb-0.5">{{ __('admin.marketers.approved_at') }}</div>
                 <div class="font-semibold text-gray-800">{{ $marketer->approved_at->format('Y-m-d') }} <span class="text-gray-400 font-normal">— {{ $marketer->approvedBy?->name ?? '-' }}</span></div>
             </div>
             @endif
@@ -112,7 +112,7 @@
 
         @if($marketer->rejection_reason)
         <div class="mt-5 flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-            <strong class="shrink-0">سبب الرفض/التعليق:</strong> <span>{{ $marketer->rejection_reason }}</span>
+            <strong class="shrink-0">{{ __('admin.marketers.rejection_suspension_reason') }}:</strong> <span>{{ $marketer->rejection_reason }}</span>
         </div>
         @endif
     </div>
@@ -121,7 +121,7 @@
     <div class="bg-white rounded-xl border shadow-sm p-6 space-y-4">
         <div class="flex items-center gap-2 border-b border-gray-100 pb-4">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">💰</span>
-            <h3 class="font-bold text-gray-800">سعر الإعلان المعروض (Ad Display Price)</h3>
+            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.ad_display_price') }}</h3>
         </div>
         <form method="POST" action="{{ route('admin.marketers.profile.update', $marketer) }}" class="space-y-4">
             @csrf
@@ -129,12 +129,12 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">السعر</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.price') }}</label>
                     <input type="number" min="0" name="ad_price" value="{{ old('ad_price', $marketer->marketerProfile?->ad_price) }}"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">العملة</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.currency') }}</label>
                     @php $adCurrencies = \App\Models\Currency::where('is_active', true)->orderBy('code')->get(['code', 'name']); $selAdCur = $marketer->country?->currency_code ?? $marketer->marketerProfile?->ad_price_currency; @endphp
                     <input type="hidden" name="ad_price_currency" value="{{ $selAdCur }}">
                     <select disabled class="w-full bg-gray-100 cursor-not-allowed border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
@@ -150,46 +150,46 @@
                 <input type="checkbox" name="can_self_edit_ad_price" value="1"
                        @checked(old('can_self_edit_ad_price', $marketer->marketerProfile?->can_self_edit_ad_price))
                        class="rounded border-gray-300">
-                السماح للماركتر بتعديل سعره الخاص (استثناء)
+                {{ __('admin.marketers.allow_self_edit_price') }}
             </label>
 
             @if($marketer->isInfluencer())
             <div class="pt-4 border-t border-gray-100 space-y-4">
-                <h4 class="font-bold text-gray-800">مقاسات المؤثر (Sample Sizes)</h4>
+                <h4 class="font-bold text-gray-800">{{ __('admin.marketers.influencer_sizes') }}</h4>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">المقاس العام</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_general') }}</label>
                         <input type="text" name="clothing_size" value="{{ old('clothing_size', $marketer->marketerProfile?->clothing_size) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس القميص</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_shirt') }}</label>
                         <input type="text" name="shirt_size" value="{{ old('shirt_size', $marketer->marketerProfile?->shirt_size) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس البنطلون</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_pants') }}</label>
                         <input type="text" name="pants_size" value="{{ old('pants_size', $marketer->marketerProfile?->pants_size) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس الفستان</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_dress') }}</label>
                         <input type="text" name="dress_size" value="{{ old('dress_size', $marketer->marketerProfile?->dress_size) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس العباية</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_abaya') }}</label>
                         <input type="text" name="abaya_size" value="{{ old('abaya_size', $marketer->marketerProfile?->abaya_size) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div class="flex gap-2">
                         <div class="flex-1">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">مقاس الحذاء</label>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_shoe') }}</label>
                             <input type="text" name="shoe_size" value="{{ old('shoe_size', $marketer->marketerProfile?->shoe_size) }}"
                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         </div>
                         <div class="w-24">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">النظام</label>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.size_system') }}</label>
                             <select name="shoe_size_system" class="w-full border border-gray-300 rounded-lg px-2 py-2 text-sm">
                                 <option value="">-</option>
                                 @foreach(['EU', 'US', 'UK'] as $sys)
@@ -201,50 +201,50 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الصدر (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.chest_cm') }}</label>
                         <input type="number" step="0.1" name="chest_cm" value="{{ old('chest_cm', $marketer->marketerProfile?->chest_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الخصر (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.waist_cm') }}</label>
                         <input type="number" step="0.1" name="waist_cm" value="{{ old('waist_cm', $marketer->marketerProfile?->waist_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">محيط الحوض (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.hip_cm') }}</label>
                         <input type="number" step="0.1" name="hip_cm" value="{{ old('hip_cm', $marketer->marketerProfile?->hip_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">الطول (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.height_cm') }}</label>
                         <input type="number" step="0.1" name="height_cm" value="{{ old('height_cm', $marketer->marketerProfile?->height_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">طول الملابس (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.item_length_cm') }}</label>
                         <input type="number" step="0.1" name="item_length_cm" value="{{ old('item_length_cm', $marketer->marketerProfile?->item_length_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">الكم من الرقبة (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.sleeve_from_neck_cm') }}</label>
                         <input type="number" step="0.1" name="sleeve_from_neck_cm" value="{{ old('sleeve_from_neck_cm', $marketer->marketerProfile?->sleeve_from_neck_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">الكم من الكتف (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.sleeve_from_shoulder_cm') }}</label>
                         <input type="number" step="0.1" name="sleeve_from_shoulder_cm" value="{{ old('sleeve_from_shoulder_cm', $marketer->marketerProfile?->sleeve_from_shoulder_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">عرض الكم (سم)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.sleeve_width_cm') }}</label>
                         <input type="number" step="0.1" name="sleeve_width_cm" value="{{ old('sleeve_width_cm', $marketer->marketerProfile?->sleeve_width_cm) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.notes') }}</label>
                     <textarea name="measurements_notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">{{ old('measurements_notes', $marketer->marketerProfile?->measurements_notes) }}</textarea>
                 </div>
             </div>
@@ -262,10 +262,10 @@
             </div>
             @if($marketer->isAffiliate())
             <div class="border-t pt-4 mt-2">
-                <h4 class="text-sm font-bold text-gray-700 mb-3">تخصص السمسار (Broker Specialization)</h4>
+                <h4 class="text-sm font-bold text-gray-700 mb-3">{{ __('admin.marketers.broker_specialization') }}</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">القسم المتخصص فيه</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.specialized_category') }}</label>
                         <select name="broker_category_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                             <option value="">— بدون تحديد —</option>
                             @foreach($categories as $cat)
@@ -277,7 +277,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">المدينة</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.city') }}</label>
                         <select name="broker_city_id" id="brokerCitySelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                                 {{ old('broker_serves_all_cities', $marketer->marketerProfile?->broker_serves_all_cities) ? 'disabled' : '' }}>
                             <option value="">— اختر مدينة —</option>
@@ -294,14 +294,14 @@
                             <input type="checkbox" name="broker_serves_all_cities" value="1" id="brokerAllCitiesCheck"
                                    {{ old('broker_serves_all_cities', $marketer->marketerProfile?->broker_serves_all_cities) ? 'checked' : '' }}
                                    onchange="document.getElementById('brokerCitySelect').disabled = this.checked">
-                            يخدم كل المدن
+                            {{ __('admin.marketers.serves_all_cities') }}
                         </label>
                     </div>
                 </div>
             </div>
             @endif
 
-            <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">حفظ</button>
+            <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">{{ __('admin.marketers.save') }}</button>
         </form>
     </div>
 
@@ -310,7 +310,7 @@
     <div class="bg-white rounded-xl border shadow-sm p-6 space-y-5">
         <div class="flex items-center gap-2 border-b border-gray-100 pb-4">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">🗂️</span>
-            <h3 class="font-bold text-gray-800">أقسام الوظائف (Job Categories)</h3>
+            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.job_categories') }}</h3>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         @foreach($marketer->marketerJobAssignments as $assignment)
@@ -324,7 +324,7 @@
                 </h4>
 
                 @if($scopableTypes->isEmpty())
-                    <p class="text-xs text-gray-400">تنطبق هذه الوظيفة على كل الأقسام دون قيود.</p>
+                    <p class="text-xs text-gray-400">{{ __('admin.marketers.job_applies_all_categories') }}</p>
                 @else
                     @foreach($scopableTypes as $categoryType)
                         @php
@@ -338,7 +338,7 @@
                             <input type="hidden" name="marketer_job_id" value="{{ $job->id }}">
                             <input type="hidden" name="category_type" value="{{ $categoryType }}">
                             <label class="block text-xs font-semibold text-gray-600 mb-1">
-                                {{ $categoryType === 'product' ? 'أقسام المنتجات' : 'أقسام المصنفات (opensouq)' }}
+                                {{ $categoryType === 'product' ? __('admin.marketers.product_categories') : __('admin.marketers.classified_categories') }}
                             </label>
                             <select name="category_ids[]" multiple data-select2-init class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                 @foreach($sourceOptions as $option)
@@ -347,8 +347,8 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <p class="text-xs text-gray-400 mt-1">اترك التحديد فارغًا ليشمل كل الأقسام.</p>
-                            <button class="mt-2 px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">حفظ</button>
+                            <p class="text-xs text-gray-400 mt-1">{{ __('admin.marketers.leave_blank_all_categories') }}</p>
+                            <button class="mt-2 px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">{{ __('admin.marketers.save') }}</button>
                         </form>
                     @endforeach
                 @endif
@@ -362,14 +362,14 @@
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">%</span>
-            <h3 class="font-bold text-gray-800">نسب العمولة حسب القسم</h3>
+            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.commission_by_category') }}</h3>
         </div>
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-6 py-3 text-start">القسم</th>
-                    <th class="px-6 py-3 text-center">نسبة العمولة</th>
+                    <th class="px-6 py-3 text-start">{{ __('admin.marketers.col_category') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketers.col_commission_rate') }}</th>
                     <th class="px-6 py-3 text-center"></th>
                 </tr>
             </thead>
@@ -399,7 +399,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="3" class="px-6 py-8 text-center text-gray-400">لا توجد نسب عمولة مخصصة بعد.</td></tr>
+                <tr><td colspan="3" class="px-6 py-8 text-center text-gray-400">{{ __('admin.marketers.no_custom_commissions') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -424,7 +424,7 @@
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">القسم</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.col_category') }}</label>
                 <select name="category_id" data-select2-init x-model="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
                     <option value="">{{ __('admin.marketer_commission_default_all_type') }}</option>
                     <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
@@ -438,7 +438,7 @@
                 <p class="text-[11px] text-gray-400 mt-1">{{ __('admin.marketer_commission_except_hint') }}</p>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">نسبة العمولة %</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.commission_rate_pct') }}</label>
                 <input type="number" step="0.01" min="0" max="100" name="commission_rate" value="{{ old('commission_rate') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
             </div>
@@ -448,7 +448,7 @@
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
                 @error('commission_rate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
-            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">إضافة / تحديث</button>
+            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.marketers.add_or_update') }}</button>
         </form>
     </div>
 
@@ -462,14 +462,14 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-4 py-3 text-start">النطاق</th>
-                    <th class="px-4 py-3 text-center">من</th>
-                    <th class="px-4 py-3 text-center">إلى</th>
-                    <th class="px-4 py-3 text-center">المدة / المتبقي</th>
-                    <th class="px-4 py-3 text-center">الحالة</th>
-                    <th class="px-4 py-3 text-center">ملف العقد</th>
-                    <th class="px-4 py-3 text-start">ملاحظات</th>
-                    <th class="px-4 py-3 text-center">أضافه</th>
+                    <th class="px-4 py-3 text-start">{{ __('admin.marketers.contract_scope') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.contract_from') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.contract_to') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.contract_duration_remaining') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.col_status') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.contract_file') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('admin.marketers.notes') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('admin.marketers.added_by') }}</th>
                     <th class="px-4 py-3 text-center"></th>
                 </tr>
             </thead>
@@ -477,10 +477,10 @@
                 @forelse($marketer->exclusiveContracts as $contract)
                 @php
                     $statusMap = [
-                        'pending' => ['قيد الانتظار', 'bg-yellow-50 text-yellow-700'],
-                        'active' => ['نشط', 'bg-emerald-50 text-emerald-700'],
-                        'expired' => ['منتهي', 'bg-gray-100 text-gray-600'],
-                        'revoked' => ['ملغي', 'bg-red-50 text-red-600'],
+                        'pending' => [__('admin.marketers.contract_status_pending'), 'bg-yellow-50 text-yellow-700'],
+                        'active' => [__('admin.marketers.contract_status_active'), 'bg-emerald-50 text-emerald-700'],
+                        'expired' => [__('admin.marketers.contract_status_expired'), 'bg-gray-100 text-gray-600'],
+                        'revoked' => [__('admin.marketers.contract_status_revoked'), 'bg-red-50 text-red-600'],
                     ];
                     $isLapsed = $contract->status === 'active' && $contract->ends_at && $contract->ends_at->isPast();
                     [$statusLabel, $statusClass] = $isLapsed ? $statusMap['expired'] : ($statusMap[$contract->status] ?? [$contract->status, 'bg-gray-100 text-gray-600']);
@@ -490,22 +490,22 @@
                 <tr class="hover:bg-gray-50/60 transition-colors">
                     <td class="px-4 py-3 font-medium">
                         @if($contract->classifiedListing)
-                            إعلان: {{ $contract->classifiedListing->listing_number }}
+                            {{ __('admin.marketers.listing_prefix') }}: {{ $contract->classifiedListing->listing_number }}
                             @if($contract->classifiedListing->title_ar ?? $contract->classifiedListing->title_en)
                                 <div class="text-xs text-gray-400 font-normal">{{ $contract->classifiedListing->title_ar ?: $contract->classifiedListing->title_en }}</div>
                             @endif
                         @elseif($contract->classifiedCategory)
-                            قسم: {{ $contract->classifiedCategory->name_ar }}
+                            {{ __('admin.marketers.category_prefix') }}: {{ $contract->classifiedCategory->name_ar }}
                         @else
-                            كل الأقسام
+                            {{ __('admin.marketers.all_categories') }}
                         @endif
                     </td>
                     <td class="px-4 py-3 text-center text-gray-500">{{ $contract->starts_at?->format('Y-m-d') }}</td>
                     <td class="px-4 py-3 text-center text-gray-500">{{ $contract->ends_at?->format('Y-m-d') }}</td>
                     <td class="px-4 py-3 text-center text-gray-500 text-xs">
-                        @if($totalDays !== null){{ $totalDays }} يوم @endif
+                        @if($totalDays !== null){{ $totalDays }} {{ __('admin.marketers.days') }} @endif
                         @if(in_array($contract->status, ['pending', 'active']) && ! $isLapsed && $contract->ends_at)
-                            <div class="text-emerald-600">متبقي {{ $daysLeft }} يوم</div>
+                            <div class="text-emerald-600">{{ __('admin.marketers.remaining', ['days' => $daysLeft]) }}</div>
                         @endif
                     </td>
                     <td class="px-4 py-3 text-center">
@@ -514,7 +514,7 @@
                     <td class="px-4 py-3 text-center">
                         @if($contract->contract_file_path)
                             <a href="{{ route('admin.marketers.exclusive-contracts.download', [$marketer, $contract]) }}"
-                               class="text-blue-600 hover:text-blue-800 text-xs font-semibold">تحميل</a>
+                               class="text-blue-600 hover:text-blue-800 text-xs font-semibold">{{ __('admin.marketers.download') }}</a>
                         @else
                             <span class="text-gray-300">—</span>
                         @endif
@@ -527,23 +527,23 @@
                     <td class="px-4 py-3 text-center">
                         @if(in_array($contract->status, ['pending', 'active']))
                         <form method="POST" action="{{ route('admin.marketers.exclusive-contracts.destroy', [$marketer, $contract]) }}"
-                              onsubmit="return confirm('إلغاء العقد الحصري؟');">
+                              onsubmit="return confirm('{{ __('admin.marketers.revoke_contract_confirm') }}');">
                             @csrf
                             @method('DELETE')
-                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">إلغاء</button>
+                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">{{ __('admin.marketers.revoke') }}</button>
                         </form>
                         @endif
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="9" class="px-6 py-8 text-center text-gray-400">لا توجد عقود حصرية بعد.</td></tr>
+                <tr><td colspan="9" class="px-6 py-8 text-center text-gray-400">{{ __('admin.marketers.no_exclusive_contracts') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
         </div>
         @if($errors->hasAny(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes']))
         <div id="exclusive-contracts-error" class="mx-4 mt-4 rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-800">
-            <p class="font-semibold mb-1">تعذّر إنشاء العقد الحصري:</p>
+            <p class="font-semibold mb-1">{{ __('admin.marketers.contract_create_failed') }}</p>
             <ul class="list-disc list-inside space-y-0.5">
                 @foreach($errors->only(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes']) as $msgs)
                     @foreach((array) $msgs as $msg)
@@ -557,43 +557,43 @@
               enctype="multipart/form-data" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3">
             @csrf
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">القسم (اختياري)</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.category_optional') }}</label>
                 <select name="classified_category_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[160px] @error('classified_category_id') border-red-400 @enderror">
-                    <option value="">كل الأقسام</option>
+                    <option value="">{{ __('admin.marketers.all_categories') }}</option>
                     @foreach($classifiedCategories as $category)
                     <option value="{{ $category->id }}" @selected(old('classified_category_id') === $category->id)>{{ $category->name_ar }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">رقم إعلان محدد (اختياري)</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.listing_id_optional') }}</label>
                 <input type="text" name="classified_listing_id" placeholder="UUID الإعلان"
                        value="{{ old('classified_listing_id') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-48 @error('classified_listing_id') border-red-400 @enderror">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">من</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.contract_from') }}</label>
                 <input type="date" name="starts_at" required value="{{ old('starts_at') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm @error('starts_at') border-red-400 @enderror">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">إلى</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.contract_to') }}</label>
                 <input type="date" name="ends_at" required value="{{ old('ends_at') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm @error('ends_at') border-red-400 @enderror">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">الحالة</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.col_status') }}</label>
                 <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="pending" @selected(old('status', 'pending') === 'pending')>قيد الانتظار</option>
-                    <option value="active" @selected(old('status') === 'active')>نشط</option>
+                    <option value="pending" @selected(old('status', 'pending') === 'pending')>{{ __('admin.marketers.contract_status_pending') }}</option>
+                    <option value="active" @selected(old('status') === 'active')>{{ __('admin.marketers.contract_status_active') }}</option>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">ملف العقد (اختياري)</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.contract_file_optional') }}</label>
                 <input type="file" name="contract_file" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
             </div>
             <div class="flex-1 min-w-[160px]">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.notes') }}</label>
                 <input type="text" name="notes" value="{{ old('notes') }}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full">
             </div>
             <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.add_exclusive_contract') }}</button>
@@ -605,15 +605,15 @@
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">📣</span>
-            <h3 class="font-bold text-gray-800">الحملات ({{ $marketer->invitations->count() }})</h3>
+            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.campaigns') }} ({{ $marketer->invitations->count() }})</h3>
         </div>
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-500 text-xs">
                 <tr>
-                    <th class="px-6 py-3 text-start">الحملة</th>
-                    <th class="px-6 py-3 text-center">البائع</th>
-                    <th class="px-6 py-3 text-center">الحالة</th>
+                    <th class="px-6 py-3 text-start">{{ __('admin.marketers.col_campaign') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketers.col_vendor') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketers.col_status') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">

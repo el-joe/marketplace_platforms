@@ -1,15 +1,15 @@
 @extends('layouts.marketer')
-@section('title', 'الحملات النشطة')
-@section('page-title', 'الحملات النشطة')
+@section('title', __('marketer.campaigns.active_title'))
+@section('page-title', __('marketer.campaigns.active_title'))
 
 @section('content')
 <div class="space-y-4">
     @if($invitations->isEmpty())
         <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div class="text-5xl mb-3">🚀</div>
-            <h3 class="font-bold text-gray-700">لا توجد حملات نشطة</h3>
-            <p class="text-gray-400 text-sm mt-1">اقبل دعوة حملة لتبدأ كسب العمولات</p>
-            <a href="{{ route('marketer.invitations.index') }}" class="inline-block mt-4 px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm">عرض الدعوات</a>
+            <h3 class="font-bold text-gray-700">{{ __('marketer.campaigns.no_active') }}</h3>
+            <p class="text-gray-400 text-sm mt-1">{{ __('marketer.campaigns.no_active_hint') }}</p>
+            <a href="{{ route('marketer.invitations.index') }}" class="inline-block mt-4 px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm">{{ __('marketer.campaigns.view_invitations') }}</a>
         </div>
     @else
         @foreach($invitations as $inv)
@@ -25,41 +25,41 @@
                         {{ $inv->campaign->vendor->name ?? 'نون' }} • {{ $inv->campaign->country->name_ar ?? '' }}
                     </div>
                 </div>
-                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded">نشطة</span>
+                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded">{{ __('marketer.campaigns.status_badge_active') }}</span>
             </div>
 
             <div class="grid grid-cols-3 gap-3 text-center">
                 <div class="bg-gray-50 rounded-lg p-3">
                     <div class="text-lg font-black text-gray-900">{{ number_format($inv->conversions_count ?? 0) }}</div>
-                    <div class="text-xs text-gray-500">تحويلات</div>
+                    <div class="text-xs text-gray-500">{{ __('marketer.campaigns.conversions') }}</div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
                     <div class="text-lg font-black text-green-600">{{ number_format($inv->conversions_sum_commission_amount ?? 0) }}</div>
-                    <div class="text-xs text-gray-500">عمولة مكتسبة</div>
+                    <div class="text-xs text-gray-500">{{ __('marketer.campaigns.earned_commission') }}</div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
                     <div class="text-lg font-black text-yellow-600">{{ number_format($inv->campaign->marketer_commission_amount) }}</div>
-                    <div class="text-xs text-gray-500">عمولة/بيعة</div>
+                    <div class="text-xs text-gray-500">{{ __('marketer.campaigns.commission_per_sale') }}</div>
                 </div>
             </div>
 
             @if($inv->referral_link)
             <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                <div class="text-xs font-semibold text-yellow-800 mb-1">رابط الإحالة الخاص بك:</div>
+                <div class="text-xs font-semibold text-yellow-800 mb-1">{{ __('marketer.campaigns.your_referral_link') }}</div>
                 <div class="flex items-center gap-2">
                     <code class="text-xs bg-white px-2 py-1 rounded border text-gray-700 flex-1 truncate">{{ $inv->referral_link }}</code>
                     <button onclick="navigator.clipboard.writeText('{{ $inv->referral_link }}')"
-                            class="shrink-0 text-xs px-3 py-1 bg-yellow-400 text-gray-900 font-semibold rounded hover:bg-yellow-500">نسخ</button>
+                            class="shrink-0 text-xs px-3 py-1 bg-yellow-400 text-gray-900 font-semibold rounded hover:bg-yellow-500">{{ __('marketer.campaigns.copy') }}</button>
                 </div>
-                <div class="text-xs text-gray-500 mt-1">كود: <strong>{{ $inv->referral_code }}</strong></div>
+                <div class="text-xs text-gray-500 mt-1">{{ __('marketer.campaigns.code_label') }} <strong>{{ $inv->referral_code }}</strong></div>
             </div>
             @endif
 
             {{-- Samples summary --}}
             @if($inv->samples->isNotEmpty())
             <div class="text-xs text-gray-500">
-                عينات: {{ $inv->samples->where('status', 'delivered')->count() }} مستلمة /
-                {{ $inv->samples->count() }} إجمالي
+                {{ __('marketer.campaigns.samples_label') }} {{ $inv->samples->where('status', 'delivered')->count() }} {{ __('marketer.campaigns.received') }} /
+                {{ $inv->samples->count() }} {{ __('marketer.campaigns.total') }}
             </div>
             @endif
         </div>

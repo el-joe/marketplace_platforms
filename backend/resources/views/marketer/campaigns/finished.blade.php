@@ -1,20 +1,24 @@
 @extends('layouts.marketer')
-@section('title', 'الحملات المنتهية')
-@section('page-title', 'الحملات المنتهية')
+@section('title', __('marketer.campaigns.finished_title'))
+@section('page-title', __('marketer.campaigns.finished_title'))
 
 @section('content')
 <div class="space-y-4">
     @if($invitations->isEmpty())
         <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div class="text-5xl mb-3">🏁</div>
-            <h3 class="font-bold text-gray-700">لا توجد حملات منتهية</h3>
+            <h3 class="font-bold text-gray-700">{{ __('marketer.campaigns.no_finished') }}</h3>
         </div>
     @else
         @foreach($invitations as $inv)
         @php
             $product = $inv->campaign->vendorListing?->productVariant?->product
                      ?? $inv->campaign->adminListing?->productVariant?->product;
-            $statusLabel = ['done' => 'منتهية', 'cancelled' => 'ملغاة', 'rejected' => 'مرفوضة'][$inv->campaign->status] ?? $inv->campaign->status;
+            $statusLabel = [
+                'done'      => __('marketer.campaigns.status_done'),
+                'cancelled' => __('marketer.campaigns.status_cancelled'),
+                'rejected'  => __('marketer.campaigns.status_rejected'),
+            ][$inv->campaign->status] ?? $inv->campaign->status;
         @endphp
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-start justify-between mb-3">
@@ -25,8 +29,8 @@
                 <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded">{{ $statusLabel }}</span>
             </div>
             <div class="flex gap-6 text-sm">
-                <div><span class="text-gray-500">التحويلات: </span><strong>{{ number_format($inv->conversions_count ?? 0) }}</strong></div>
-                <div><span class="text-gray-500">الأرباح: </span><strong class="text-green-600">{{ number_format($inv->conversions_sum_commission_amount ?? 0) }} {{ $inv->campaign->currency }}</strong></div>
+                <div><span class="text-gray-500">{{ __('marketer.campaigns.conversions_label') }} </span><strong>{{ number_format($inv->conversions_count ?? 0) }}</strong></div>
+                <div><span class="text-gray-500">{{ __('marketer.campaigns.earnings_label') }} </span><strong class="text-green-600">{{ number_format($inv->conversions_sum_commission_amount ?? 0) }} {{ $inv->campaign->currency }}</strong></div>
             </div>
         </div>
         @endforeach

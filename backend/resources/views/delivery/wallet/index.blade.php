@@ -60,7 +60,7 @@
                     <p class="text-sm font-semibold text-white">{{ number_format($wr->amount, 2) }} {{ $wr->currency }}</p>
                     <p class="text-xs text-slate-400">{{ $wr->bank_name }} · {{ $wr->created_at->format('d M Y') }}</p>
                 </div>
-                <span class="text-xs font-bold {{ $colors[$wr->status->value] ?? 'text-slate-400' }}">{{ ucfirst($wr->status->value) }}</span>
+                <span class="text-xs font-bold {{ $colors[$wr->status->value] ?? 'text-slate-400' }}">{{ __('delivery.wallet.status_' . $wr->status->value) }}</span>
             </div>
         @endforeach
     </div>

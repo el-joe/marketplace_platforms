@@ -30,7 +30,7 @@
                 default     => 'chip-assigned',
             };
         @endphp
-        <span class="chip {{ $statusColor }}">{{ ucfirst(str_replace('_', ' ', $agent->status->value)) }}</span>
+        <span class="chip {{ $statusColor }}">{{ __('delivery.profile.status_' . $agent->status->value) }}</span>
         <span class="chip chip-assigned">{{ $agent->vehicle_type->label() }}</span>
     </div>
     <div class="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-slate-700">

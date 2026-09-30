@@ -167,7 +167,7 @@
                     <div class="d-card mb-3 border border-yellow-500/40 bg-yellow-500/5">
                         <div class="flex items-center gap-2 mb-3">
                             <span class="text-yellow-400 text-lg">💵</span>
-                            <p class="text-sm font-bold text-yellow-300">{{ __('delivery.cod.title') }} (COD)</p>
+                            <p class="text-sm font-bold text-yellow-300">{{ __('delivery.cod.title') }} ({{ __('delivery.cod.acronym') }})</p>
                         </div>
                         <div class="bg-slate-800 rounded-xl p-4 mb-3 text-center">
                             <p class="text-xs text-slate-400 mb-1">{{ __('delivery.cod.expected_amount') }}</p>

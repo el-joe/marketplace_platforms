@@ -238,22 +238,22 @@
                                 return 'ثقيل / Heavy';
                             }
                         }">
-                        <h4 class="font-semibold text-gray-800 text-sm mb-1">الشحن والأبعاد / Shipping &amp; Dimensions</h4>
+                        <h4 class="font-semibold text-gray-800 text-sm mb-1">{{ __('partner.listings.create.shipping_dimensions_title') }}</h4>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                وزن المنتج (جرام) / Product Weight (grams) <span class="text-red-500">*</span>
+                                {{ __('partner.listings.create.product_weight_label') }} <span class="text-red-500">*</span>
                             </label>
                             <input type="number" name="declared_weight_grams" min="1" step="1" required
                                 x-model.number="actual"
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
                                 placeholder="0">
-                            <p class="text-xs text-gray-400 mt-1">Enter the packed/boxed weight including packaging</p>
+                            <p class="text-xs text-gray-400 mt-1">{{ __('partner.listings.create.product_weight_hint') }}</p>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                أبعاد التغليف / Packaged Dimensions (cm)
+                                {{ __('partner.listings.create.packaged_dimensions_label') }}
                             </label>
                             <div class="grid grid-cols-3 gap-3">
                                 <input type="number" name="declared_length_cm" min="0.1" step="0.1" x-model.number="l"
@@ -266,43 +266,43 @@
                                     placeholder="H"
                                     class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">L × W × H ÷ 5 = وزن حجمي بالجرام (Length × Width × Height ÷ 5 = volumetric grams)</p>
+                            <p class="text-xs text-gray-400 mt-1">{{ __('partner.listings.create.volumetric_hint') }}</p>
                         </div>
 
                         <div class="bg-gray-50 rounded-xl p-4 space-y-1.5 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-500">الوزن الحجمي / Volumetric Weight</span>
+                                <span class="text-gray-500">{{ __('partner.listings.create.volumetric_weight') }}</span>
                                 <span class="font-medium text-gray-800" x-text="volumetric + ' g'"></span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-500">الوزن الفعلي / Actual Weight</span>
+                                <span class="text-gray-500">{{ __('partner.listings.create.actual_weight') }}</span>
                                 <span class="font-medium text-gray-800" x-text="actual + ' g'"></span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-500">الوزن القابل للفوترة / Billable Weight</span>
+                                <span class="text-gray-500">{{ __('partner.listings.create.billable_weight') }}</span>
                                 <span class="font-bold text-gray-900" x-text="billable + ' g'"></span>
                             </div>
                             <div class="flex justify-between pt-1.5 border-t border-gray-100">
-                                <span class="text-gray-500">تصنيف الوزن / Weight Class</span>
+                                <span class="text-gray-500">{{ __('partner.listings.create.weight_class') }}</span>
                                 <span class="font-semibold text-yellow-600" x-text="weightClass"></span>
                             </div>
                         </div>
 
                         <a href="{{ route('partner.tools.weight-calculator') }}" target="_blank"
                            class="text-sm text-blue-600 hover:underline">
-                            📐 فتح حاسبة الوزن / Open Weight Calculator
+                            📐 {{ __('partner.listings.create.open_weight_calculator') }}
                         </a>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                فئة المناولة / Handling Class <span class="text-red-500">*</span>
+                                {{ __('partner.listings.create.handling_class_label') }} <span class="text-red-500">*</span>
                             </label>
                             <select name="handling_class" required
                                 class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
-                                <option value="standard">عادي / Standard</option>
-                                <option value="refrigerated">يحتاج تبريد / Requires Refrigeration</option>
-                                <option value="fragile">هش - يحتاج حرص / Fragile - Handle with Care</option>
-                                <option value="special_tech">يحتاج تقنية خاصة / Requires Special Handling</option>
+                                <option value="standard">{{ __('partner.listings.create.handling_standard') }}</option>
+                                <option value="refrigerated">{{ __('partner.listings.create.handling_refrigerated') }}</option>
+                                <option value="fragile">{{ __('partner.listings.create.handling_fragile') }}</option>
+                                <option value="special_tech">{{ __('partner.listings.create.handling_special_tech') }}</option>
                             </select>
                         </div>
                     </div>
@@ -368,20 +368,20 @@
                         <div class="space-y-4 hidden" id="campaign-details">
                             @if($marketerVendors->isEmpty())
                                 <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
-                                    لا يوجد ماركترز متاحين في بلدك حالياً. يمكن للأدمن تفعيل ماركترز من لوحة التحكم.
+                                    {{ __('partner.listings.create.no_marketers_available') }}
                                 </p>
                             @else
                             <x-form.select
                                 name="marketer_ids"
-                                label="اختر الماركترز"
+                                label="{{ __('partner.listings.create.select_marketers_label') }}"
                                 :multiple="true"
                                 :select2="true"
-                                placeholder="ابحث واختر الماركترز..."
+                                placeholder="{{ __('partner.listings.create.select_marketers_placeholder') }}"
                             >
                                 @foreach($marketerVendors as $m)
                                     <option value="{{ $m->id }}" data-type="{{ $m->marketerJobs->first()?->key }}"
                                             data-name="{{ $m->name }}">
-                                        {{ $m->name }} — {{ $m->isInfluencer() ? 'مؤثر' : 'أفلييت' }}
+                                        {{ $m->name }} — {{ $m->isInfluencer() ? __('partner.listings.create.marketer_type_influencer') : __('partner.listings.create.marketer_type_affiliate') }}
                                     </option>
                                 @endforeach
                             </x-form.select>
@@ -393,19 +393,19 @@
                                 <div class="p-4 rounded-lg border bg-gray-50 border-gray-200" id="fee-card">
                                     <div class="flex items-center gap-2 mb-1">
                                         <i class="fas fa-receipt text-orange-500 text-sm"></i>
-                                        <span class="text-xs font-semibold text-gray-700">رسوم المنصة (إنفلوينسر فقط)</span>
+                                        <span class="text-xs font-semibold text-gray-700">{{ __('partner.listings.create.fee_card_title') }}</span>
                                     </div>
-                                    <div class="text-sm text-gray-800" id="fee-breakdown-text">اختر منتجاً وماركترز لرؤية الرسوم</div>
+                                    <div class="text-sm text-gray-800" id="fee-breakdown-text">{{ __('partner.listings.create.fee_card_placeholder') }}</div>
                                     <div class="mt-2 text-base font-bold text-orange-700 hidden" id="fee-total-wrap">
-                                        الإجمالي: <span id="fee-total-value">0</span> <span id="fee-currency"></span>
+                                        {{ __('partner.listings.create.fee_total_label') }} <span id="fee-total-value">0</span> <span id="fee-currency"></span>
                                     </div>
                                 </div>
                                 <div class="p-4 rounded-lg border bg-green-50 border-green-200">
                                     <div class="flex items-center gap-2 mb-1">
                                         <i class="fas fa-percentage text-green-500 text-sm"></i>
-                                        <span class="text-xs font-semibold text-gray-700">كوميشن الماركتر لكل بيعة</span>
+                                        <span class="text-xs font-semibold text-gray-700">{{ __('partner.listings.create.commission_card_title') }}</span>
                                     </div>
-                                    <div class="text-sm text-gray-800" id="commission-breakdown-text">سيتم تحديده بعد اختيار المنتج</div>
+                                    <div class="text-sm text-gray-800" id="commission-breakdown-text">{{ __('partner.listings.create.commission_card_placeholder') }}</div>
                                 </div>
                             </div>
 
@@ -413,21 +413,21 @@
                             <div class="hidden" id="marketer-fee-table-wrap">
                                 <h5 class="text-sm font-semibold text-gray-700 mb-2">
                                     <i class="fas fa-receipt text-orange-500 mr-1"></i>
-                                    تفاصيل الرسوم لكل ماركتر
+                                    {{ __('partner.listings.create.fee_details_title') }}
                                 </h5>
                                 <div class="rounded-lg border border-gray-200 overflow-hidden">
                                     <table class="w-full text-sm">
                                         <thead class="bg-gray-50">
                                             <tr>
-                                                <th class="text-right px-4 py-2 text-gray-600 font-medium">الماركتر</th>
-                                                <th class="text-center px-4 py-2 text-gray-600 font-medium">النوع</th>
-                                                <th class="text-center px-4 py-2 text-gray-600 font-medium">الرسوم</th>
+                                                <th class="text-right px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.create.marketer_col') }}</th>
+                                                <th class="text-center px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.create.type_col') }}</th>
+                                                <th class="text-center px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.create.fees_col') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody id="marketer-fee-table-body"></tbody>
                                         <tfoot class="bg-gray-50 border-t-2 border-gray-200">
                                             <tr>
-                                                <td colspan="2" class="px-4 py-2 font-semibold text-gray-700 text-right">إجمالي رسوم المنصة</td>
+                                                <td colspan="2" class="px-4 py-2 font-semibold text-gray-700 text-right">{{ __('partner.listings.create.platform_fees_total') }}</td>
                                                 <td class="px-4 py-2 text-center font-bold" id="marketer-fee-table-total"></td>
                                             </tr>
                                         </tfoot>
@@ -436,7 +436,7 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">نوع الكوميشن</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.listings.create.commission_type_label') }}</label>
                                 <select name="commission_type" id="commission-type-select"
                                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
                                     <option value="fixed">{{ __('partner.listings.commission_type_fixed') }}</option>
@@ -447,7 +447,7 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    أقصى ميزانية كوميشن
+                                    {{ __('partner.listings.create.max_commission_budget_label') }}
                                     <span class="text-xs text-gray-400">({{ auth()->guard('vendor')->user()->vendor->country->currency_code ?? '' }})</span>
                                 </label>
                                 <input type="number" name="max_commission_budget" min="0"
@@ -456,17 +456,17 @@
                             </div>
 
                             <div class="hidden" id="tiered-rules-section">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">قواعد الكوميشن المتدرج</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('partner.listings.create.tiered_rules_label') }}</label>
                                 <div class="space-y-2" id="tiered-rules-list"></div>
                                 <button type="button" id="add-tier-btn"
                                         class="mt-2 text-sm text-purple-600 hover:underline">
-                                    + إضافة مستوى
+                                    {{ __('partner.listings.create.add_tier_btn') }}
                                 </button>
                             </div>
 
                             <div class="p-3 bg-purple-50 rounded-lg text-sm text-purple-800">
                                 <i class="fas fa-box-open mr-1"></i>
-                                <span class="font-semibold">إجمالي العينات المتوقع:</span>
+                                <span class="font-semibold">{{ __('partner.listings.create.expected_samples_label') }}</span>
                                 <strong id="total-samples-value">0</strong>
                                 <span class="block text-xs text-gray-500 mt-1" id="sample-breakdown-text"></span>
                             </div>

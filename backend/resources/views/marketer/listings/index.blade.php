@@ -1,6 +1,6 @@
 @extends('layouts.marketer')
-@section('title', 'قوائم المنتجات')
-@section('page-title', 'قوائم المنتجات')
+@section('title', __('marketer.listings.index_title'))
+@section('page-title', __('marketer.listings.index_title'))
 
 @section('content')
 <div class="space-y-4">
@@ -11,24 +11,24 @@
             @foreach(['', 'active', 'paused'] as $s)
                 <a href="{{ route('marketer.listings.index', $s ? ['status' => $s] : []) }}"
                    class="px-3 py-1 rounded-full text-xs font-semibold border {{ request('status') === $s || (!request('status') && !$s) ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-300 text-gray-600' }}">
-                    {{ $s ?: 'الكل' }}
+                    {{ $s ?: __('marketer.listings.filter_all') }}
                 </a>
             @endforeach
         </div>
         <a href="{{ route('marketer.listings.create') }}"
            class="px-4 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500">
-            + إضافة قائمة
+            {{ __('marketer.listings.add_listing_button') }}
         </a>
     </div>
 
     @if($listings->isEmpty())
         <div class="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div class="text-5xl mb-3">📦</div>
-            <h3 class="font-bold text-gray-700">لا توجد قوائم بعد</h3>
-            <p class="text-gray-400 text-sm mt-1">أضف منتجات لتروّجها وتكسب عمولات من مبيعاتها</p>
+            <h3 class="font-bold text-gray-700">{{ __('marketer.listings.no_listings') }}</h3>
+            <p class="text-gray-400 text-sm mt-1">{{ __('marketer.listings.no_listings_hint') }}</p>
             <a href="{{ route('marketer.listings.create') }}"
                class="inline-block mt-4 px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm">
-                إضافة منتج
+                {{ __('marketer.listings.add_product_button') }}
             </a>
         </div>
     @else
@@ -37,14 +37,14 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs">
                     <tr>
-                        <th class="px-4 py-3 text-start">المنتج</th>
-                        <th class="px-4 py-3 text-center">الدولة</th>
-                        <th class="px-4 py-3 text-center">السعر</th>
-                        <th class="px-4 py-3 text-center">المبيعات</th>
-                        <th class="px-4 py-3 text-center">المخزون</th>
-                        <th class="px-4 py-3 text-center">الحالة</th>
-                        <th class="px-4 py-3 text-center">المصدر</th>
-                        <th class="px-4 py-3 text-center">إجراءات</th>
+                        <th class="px-4 py-3 text-start">{{ __('marketer.listings.product_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.country_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.price_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.sales_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.stock_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.status_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.source_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.listings.actions_header') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -74,7 +74,7 @@
                                 <div>
                                     @if($isClassified)
                                         <div class="font-semibold text-gray-900 text-xs">{{ Str::limit($listing->classifiedListing?->title_ar ?? '—', 40) }}</div>
-                                        <div class="text-gray-400 text-xs">إعلان سوق مفتوح</div>
+                                        <div class="text-gray-400 text-xs">{{ __('marketer.listings.open_market_ad') }}</div>
                                     @else
                                         <div class="font-semibold text-gray-900 text-xs">{{ Str::limit($product?->name_ar ?? '—', 40) }}</div>
                                         <div class="text-gray-400 text-xs">{{ $listing->productVariant?->sku }}</div>
@@ -90,21 +90,21 @@
                         <td class="px-4 py-3 text-center text-gray-700">{{ number_format($listing->total_sold) }}</td>
                         <td class="px-4 py-3 text-center text-xs text-gray-400">
                             @if($listing->invitation_id)
-                                <span class="text-blue-500">من الحملة</span>
+                                <span class="text-blue-500">{{ __('marketer.listings.from_campaign') }}</span>
                             @else
                                 <span class="text-gray-300">—</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $listing->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                                {{ $listing->status === 'active' ? 'نشط' : 'موقوف' }}
+                                {{ $listing->status === 'active' ? __('marketer.listings.status_active') : __('marketer.listings.status_paused') }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             @if($listing->invitation_id)
-                                <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded">حملة</span>
+                                <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded">{{ __('marketer.listings.source_campaign') }}</span>
                             @else
-                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">مستقل</span>
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">{{ __('marketer.listings.source_independent') }}</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-center">
@@ -113,29 +113,29 @@
                                 <form method="POST" action="{{ route('marketer.listings.toggle-status', $listing) }}">
                                     @csrf
                                     <button class="text-xs px-2 py-1 rounded {{ $listing->status === 'active' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700' }} hover:opacity-80">
-                                        {{ $listing->status === 'active' ? 'إيقاف' : 'تفعيل' }}
+                                        {{ $listing->status === 'active' ? __('marketer.listings.toggle_pause') : __('marketer.listings.toggle_activate') }}
                                     </button>
                                 </form>
 
                                 <a href="{{ route('marketer.listings.promo-badges.edit', $listing) }}"
                                    class="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 hover:opacity-80">{{ __('marketer.promo_badges_button') }}</a>
 
-                                {{-- Update price inline — for a classified listing, only when the admin allowed marketer price override for that category --}}
+                                {{-- Update price inline --}}
                                 @if($priceEditable)
                                 <form method="POST" action="{{ route('marketer.listings.update-price', $listing) }}"
                                       x-data="{ open: false }" class="relative">
                                     @csrf @method('PATCH')
                                     <button type="button" @click="open = !open"
                                             class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:opacity-80">
-                                        سعر
+                                        {{ __('marketer.listings.price_button') }}
                                     </button>
                                     <div x-show="open" x-cloak
                                          class="absolute left-0 top-8 z-20 bg-white border rounded-lg shadow p-3 w-44 space-y-2">
                                         <input type="number" name="price" value="{{ $listing->price }}" min="1"
                                                @if($isClassified && $listingPrice?->min_price) min="{{ $listingPrice->min_price }}" @endif
                                                @if($isClassified && $listingPrice?->max_price) max="{{ $listingPrice->max_price }}" @endif
-                                               placeholder="السعر" class="w-full border rounded px-2 py-1 text-xs">
-                                        <button type="submit" class="w-full bg-yellow-400 text-gray-900 text-xs font-bold py-1 rounded">حفظ</button>
+                                               placeholder="{{ __('marketer.listings.price_placeholder') }}" class="w-full border rounded px-2 py-1 text-xs">
+                                        <button type="submit" class="w-full bg-yellow-400 text-gray-900 text-xs font-bold py-1 rounded">{{ __('marketer.listings.save_button') }}</button>
                                     </div>
                                 </form>
                                 @endif
@@ -144,9 +144,9 @@
                                 @if(!$listing->invitation_id)
                                 <form method="POST" action="{{ route('marketer.listings.destroy', $listing) }}">
                                     @csrf @method('DELETE')
-                                    <button onclick="return confirm('حذف هذه القائمة؟')"
+                                    <button onclick="return confirm('{{ __('marketer.listings.confirm_delete') }}')"
                                             class="text-xs px-2 py-1 rounded bg-red-100 text-red-600 hover:opacity-80">
-                                        حذف
+                                        {{ __('marketer.listings.delete_button') }}
                                     </button>
                                 </form>
                                 @endif

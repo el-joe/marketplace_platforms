@@ -23,6 +23,7 @@ return [
     ],
 
     'auth' => [
+        'brand_name' => 'delivery',
         'sign_in_title' => 'Sign In | Noon Delivery',
         'sign_in_subtitle' => 'Sign in to your delivery account',
         'phone_number' => 'Phone Number',
@@ -153,6 +154,7 @@ return [
         'status_disputed' => 'Disputed',
         'discrepancy_reason' => 'Reason for the amount discrepancy (required)',
         'discrepancy_placeholder' => 'e.g. Customer did not have enough change, paid 2 less…',
+        'acronym' => 'COD',
     ],
 
     'earnings' => [
@@ -190,6 +192,10 @@ return [
         'withdrawal_requests' => 'Withdrawal Requests',
         'transactions' => 'Transactions',
         'no_transactions_yet' => 'No transactions yet.',
+        'status_pending' => 'Pending',
+        'status_approved' => 'Approved',
+        'status_processed' => 'Processed',
+        'status_rejected' => 'Rejected',
     ],
 
     'profile' => [
@@ -211,6 +217,10 @@ return [
         'confirm_new_password' => 'Confirm New Password',
         'update_password' => 'Update Password',
         'sign_out' => 'Sign Out',
+        'status_active' => 'Active',
+        'status_on_shift' => 'On Shift',
+        'status_suspended' => 'Suspended',
+        'status_inactive' => 'Inactive',
     ],
 
     // ─── Controller response messages (flash / JSON) ──────────────────────────

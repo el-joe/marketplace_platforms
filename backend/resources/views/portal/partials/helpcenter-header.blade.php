@@ -33,7 +33,7 @@
 
                             {{-- Mobile hamburger --}}
                             <div class="flex items-center md:hidden">
-                                <button type="button" @click="mobileOpen = !mobileOpen" class="flex items-center border-none bg-transparent px-1.5" aria-label="{{ $isAr ? 'فتح القائمة' : 'Open menu' }}">
+                                <button type="button" @click="mobileOpen = !mobileOpen" class="flex items-center border-none bg-transparent px-1.5" aria-label="{{ portal_content('helpcenter', 'header', 'open_menu_aria', 'Open menu', 'فتح القائمة') }}">
                                     <svg width="22" height="22" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" class="fill-current">
                                         <path d="M1.86861 2C1.38889 2 1 2.3806 1 2.85008C1 3.31957 1.38889 3.70017 1.86861 3.70017H14.1314C14.6111 3.70017 15 3.31957 15 2.85008C15 2.3806 14.6111 2 14.1314 2H1.86861Z"></path>
                                         <path d="M1 8C1 7.53051 1.38889 7.14992 1.86861 7.14992H14.1314C14.6111 7.14992 15 7.53051 15 8C15 8.46949 14.6111 8.85008 14.1314 8.85008H1.86861C1.38889 8.85008 1 8.46949 1 8Z"></path>
@@ -57,7 +57,7 @@
                 <div x-show="mobileOpen" x-cloak x-transition class="fixed {{ $isAr ? 'left-0' : 'right-0' }} top-0 z-50 h-full w-full md:hidden">
                     <div class="flex h-full w-full justify-end bg-black bg-opacity-30" @click="mobileOpen = false">
                         <div class="flex h-fit w-full flex-col bg-white opacity-100 sm:w-1/2" @click.stop>
-                            <button type="button" @click="mobileOpen = false" class="flex items-center self-end border-none bg-transparent pe-6 pt-6" aria-label="{{ $isAr ? 'إغلاق القائمة' : 'Close menu' }}">✕</button>
+                            <button type="button" @click="mobileOpen = false" class="flex items-center self-end border-none bg-transparent pe-6 pt-6" aria-label="{{ portal_content('helpcenter', 'header', 'close_menu_aria', 'Close menu', 'إغلاق القائمة') }}">✕</button>
                             <nav class="flex flex-col ps-6 pb-6 text-black">
                                 @php($registerLinkMobile = portal_link('helpcenter', 'header', 'register_now', 'Register now', 'سجّل الآن', route('portal.register')))
                                 <a href="{{ $registerLinkMobile['url'] }}" class="mb-4 no-underline hover:text-orange-600">{{ $registerLinkMobile['label'] }}</a>

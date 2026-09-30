@@ -41,7 +41,7 @@
             <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-700">
                 <div class="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center font-black text-gray-900 text-sm">M</div>
                 <div>
-                    <div class="text-white font-bold text-sm leading-none">بوابة الماركتر</div>
+                    <div class="text-white font-bold text-sm leading-none">{{ __('marketer.portal_title') }}</div>
                     <div class="text-gray-400 text-xs mt-0.5">{{ $marketer?->name }}</div>
                 </div>
             </div>

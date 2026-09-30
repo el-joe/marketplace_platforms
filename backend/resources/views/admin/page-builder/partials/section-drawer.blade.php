@@ -49,7 +49,7 @@
                         </div>
                         <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                            <span>Upload background image</span>
+                            <span>{{ __('admin.page_builder.upload_background_image') }}</span>
                             <input type="file" accept="image/*" class="sr-only" data-section-bg-upload data-locale="en">
                         </label>
                     </div>

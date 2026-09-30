@@ -6,20 +6,23 @@ use App\Enums\AdCampaignStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AdCampaign;
 use App\Models\AdCampaignProduct;
+use App\Models\AdDailyStat;
+use App\Models\AdFraudPattern;
 use App\Models\AdminListing;
+use App\Models\Country;
+use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Notifications\Vendor\AdCampaignApproved;
 use App\Notifications\Vendor\AdCampaignRejected;
-use Illuminate\Support\Facades\Notification;
-use App\Models\AdDailyStat;
-use App\Models\AdFraudPattern;
-use App\Models\Country;
-use App\Models\Vendor;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdCampaignController extends Controller
 {
@@ -28,7 +31,7 @@ class AdCampaignController extends Controller
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
@@ -57,7 +60,7 @@ class AdCampaignController extends Controller
      * Shared base query for the datatable and export, with request-driven filters applied.
      * Search matches the campaign name and the joined vendor's store name.
      */
-    private function buildCampaignsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildCampaignsQuery(Request $request): Builder
     {
         $query = AdCampaign::query()
             ->select('ad_campaigns.*')
@@ -65,13 +68,13 @@ class AdCampaignController extends Controller
             ->join('vendors', 'vendors.id', '=', 'ad_campaigns.vendor_id');
 
         return $this->applyFilters($query, $request, [
-            'status' => fn($q, $v) => $q->where('ad_campaigns.status', $v),
-            'type' => fn($q, $v) => $q->where('ad_campaigns.type', $v),
-            'vendor_id' => fn($q, $v) => $q->where('ad_campaigns.vendor_id', $v),
-            'country_id' => fn($q, $v) => $q->where('ad_campaigns.country_id', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('ad_campaigns.starts_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('ad_campaigns.ends_at', '<=', $v),
-            'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
+            'status' => fn ($q, $v) => $q->where('ad_campaigns.status', $v),
+            'type' => fn ($q, $v) => $q->where('ad_campaigns.type', $v),
+            'vendor_id' => fn ($q, $v) => $q->where('ad_campaigns.vendor_id', $v),
+            'country_id' => fn ($q, $v) => $q->where('ad_campaigns.country_id', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('ad_campaigns.starts_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('ad_campaigns.ends_at', '<=', $v),
+            'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('ad_campaigns.name', 'like', "%{$v}%")
                     ->orWhere('vendors.store_name', 'like', "%{$v}%");
             }),
@@ -83,13 +86,13 @@ class AdCampaignController extends Controller
      * amounts in the campaign's country currency. The country's `currency_code` is used as the
      * "Currency" column, and amounts are never summed across rows/currencies.
      */
-    private function exportCampaigns(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportCampaigns(Request $request): StreamedResponse
     {
         $campaigns = $this->buildCampaignsQuery($request)->orderByDesc('ad_campaigns.starts_at')->get();
 
         $headers = ['Campaign', 'Vendor', 'Status', 'Budget', 'Currency', 'Start', 'End'];
 
-        $rows = $campaigns->map(fn(AdCampaign $row) => [
+        $rows = $campaigns->map(fn (AdCampaign $row) => [
             $row->name,
             $row->vendor?->store_name,
             $row->status?->value,
@@ -103,7 +106,7 @@ class AdCampaignController extends Controller
             'excel' => $this->exportExcel('ad-campaigns', $headers, $rows),
             'csv' => $this->exportCsv('ad-campaigns', $headers, $rows),
             'word' => $this->exportWord('ad-campaigns', 'Ad Campaigns', $rows),
-            default => abort(400, __('admin.invalid_export_format')),
+            default => abort(400, __('admin.common.invalid_export_format')),
         };
     }
 
@@ -172,15 +175,15 @@ class AdCampaignController extends Controller
             $typeLabel = strtoupper($row->type->value);
             $typeBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-{$typeColor}-100 text-{$typeColor}-700\">{$typeLabel}</span>";
 
-            $dateRange = Carbon::parse($row->starts_at)->format('d M') . ' – ' . ($row->ends_at ? Carbon::parse($row->ends_at)->format('d M Y') : '∞');
+            $dateRange = Carbon::parse($row->starts_at)->format('d M').' – '.($row->ends_at ? Carbon::parse($row->ends_at)->format('d M Y') : '∞');
 
             return [
                 'vendor' => e($row->vendor?->store_name ?? '—'),
                 'name' => e($row->name),
                 'type' => $typeBadge,
                 'status' => $statusBadge,
-                'budget' => '$' . number_format($budgetTotal, 2),
-                'spend' => '$' . number_format($budgetSpent, 2),
+                'budget' => '$'.number_format($budgetTotal, 2),
+                'spend' => '$'.number_format($budgetSpent, 2),
                 'utilization' => $progressBar,
                 'quality' => $qualityBadge,
                 'date_range' => $dateRange,
@@ -200,25 +203,26 @@ class AdCampaignController extends Controller
         $resumeUrl = route('admin.ad-campaigns.resume', $campaign->id);
 
         $html = '<div class="flex items-center gap-1">';
-        $html .= "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">" . __('admin.ad_campaigns.view_action') . "</a>";
+        $html .= "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">".__('admin.ad_campaigns.view_action').'</a>';
 
         if ($canEdit) {
             if ($campaign->status?->value === AdCampaignStatus::PendingReview->value) {
-                $html .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-btn\" data-url=\"{$approveUrl}\" data-name=\"" . e($campaign->name) . "\">" . __('admin.ad_campaigns.approve_action') . "</button>";
-                $html .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-btn\" data-url=\"{$rejectUrl}\" data-name=\"" . e($campaign->name) . "\">" . __('admin.ad_campaigns.reject_action') . "</button>";
+                $html .= "<button type=\"button\" class=\"btn btn-xs btn-success js-approve-btn\" data-url=\"{$approveUrl}\" data-name=\"".e($campaign->name).'">'.__('admin.ad_campaigns.approve_action').'</button>';
+                $html .= "<button type=\"button\" class=\"btn btn-xs btn-danger js-reject-btn\" data-url=\"{$rejectUrl}\" data-name=\"".e($campaign->name).'">'.__('admin.ad_campaigns.reject_action').'</button>';
             } elseif ($campaign->status?->value === AdCampaignStatus::Active->value) {
-                $html .= "<button type=\"button\" class=\"btn btn-xs btn-warning js-pause-btn\" data-url=\"{$pauseUrl}\" data-name=\"" . e($campaign->name) . "\">" . __('admin.ad_campaigns.pause') . "</button>";
+                $html .= "<button type=\"button\" class=\"btn btn-xs btn-warning js-pause-btn\" data-url=\"{$pauseUrl}\" data-name=\"".e($campaign->name).'">'.__('admin.ad_campaigns.pause').'</button>';
             } elseif ($campaign->status?->value === AdCampaignStatus::Paused->value) {
-                $html .= "<button type=\"button\" class=\"btn btn-xs btn-success js-resume-btn\" data-url=\"{$resumeUrl}\" data-name=\"" . e($campaign->name) . "\">" . __('admin.ad_campaigns.resume') . "</button>";
+                $html .= "<button type=\"button\" class=\"btn btn-xs btn-success js-resume-btn\" data-url=\"{$resumeUrl}\" data-name=\"".e($campaign->name).'">'.__('admin.ad_campaigns.resume').'</button>';
             }
         }
         $html .= '</div>';
+
         return $html;
     }
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(AdCampaign $campaign): \Illuminate\View\View
+    public function show(AdCampaign $campaign): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
@@ -250,7 +254,7 @@ class AdCampaignController extends Controller
             ->take(30)
             ->get(['date', 'impressions', 'clicks', 'spend']);
 
-        $chartLabels = $chartStats->pluck('date')->map(fn($d) => Carbon::parse($d)->format('d M'))->values();
+        $chartLabels = $chartStats->pluck('date')->map(fn ($d) => Carbon::parse($d)->format('d M'))->values();
         $chartImpressions = $chartStats->pluck('impressions')->values();
         $chartClicks = $chartStats->pluck('clicks')->values();
 
@@ -299,18 +303,18 @@ class AdCampaignController extends Controller
             $listing = $p->listing;
 
             $typeBadge = $isAdmin
-                ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">' . __('admin.ad_campaigns.admin_listing_badge') . '</span>'
-                : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-700">' . __('admin.ad_campaigns.vendor_listing_badge') . '</span>';
+                ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">'.__('admin.ad_campaigns.admin_listing_badge').'</span>'
+                : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-700">'.__('admin.ad_campaigns.vendor_listing_badge').'</span>';
 
             return [
                 'type' => $typeBadge,
                 'product' => e($listing?->productVariant?->product?->name_en ?? '—'),
                 'variant' => e($listing?->productVariant?->variant_name ?? ($p->product_variant_id ?? '—')),
-                'price' => $listing ? '$' . number_format($listing->price, 2) : '—',
+                'price' => $listing ? '$'.number_format($listing->price, 2) : '—',
                 'active' => $p->is_active
-                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">' . __('admin.ad_campaigns.active') . '</span>'
-                    : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' . __('admin.ad_campaigns.inactive') . '</span>',
-                'actions' => '<button type="button" class="btn btn-xs btn-danger js-remove-campaign-product" data-id="' . $p->id . '">' . __('common.remove') . '</button>',
+                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700">'.__('admin.ad_campaigns.active').'</span>'
+                    : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">'.__('admin.ad_campaigns.inactive').'</span>',
+                'actions' => '<button type="button" class="btn btn-xs btn-danger js-remove-campaign-product" data-id="'.$p->id.'">'.__('common.remove').'</button>',
                 'DT_RowData' => ['id' => $p->id],
             ];
         });
@@ -332,8 +336,8 @@ class AdCampaignController extends Controller
         $exists = AdCampaignProduct::where('ad_campaign_id', $campaign->id)
             ->when(
                 $isAdmin,
-                fn($q) => $q->where('admin_listing_id', $validated['admin_listing_id']),
-                fn($q) => $q->where('vendor_listing_id', $validated['vendor_listing_id'])
+                fn ($q) => $q->where('admin_listing_id', $validated['admin_listing_id']),
+                fn ($q) => $q->where('vendor_listing_id', $validated['vendor_listing_id'])
             )
             ->exists();
 
@@ -375,14 +379,14 @@ class AdCampaignController extends Controller
 
         $listings = VendorListing::where('vendor_id', $campaign->vendor_id)
             ->where('status', 'active')
-            ->when($q !== '', fn($query) => $query->whereHas(
+            ->when($q !== '', fn ($query) => $query->whereHas(
                 'productVariant.product',
-                fn($p) => $p->where('name_en', 'like', "%{$q}%")
+                fn ($p) => $p->where('name_en', 'like', "%{$q}%")
             ))
             ->with('productVariant.product')
             ->limit(20)
             ->get()
-            ->map(fn(VendorListing $l) => [
+            ->map(fn (VendorListing $l) => [
                 'id' => $l->id,
                 'text' => $l->productVariant?->product?->name_en ?? 'Unknown',
                 'price' => $l->price,
@@ -400,16 +404,16 @@ class AdCampaignController extends Controller
         $q = $request->input('q', '');
 
         $listings = AdminListing::active()
-            ->when($q !== '', fn($query) => $query->where(
-                fn($w) => $w->where('platform_sku', 'like', "%{$q}%")
-                    ->orWhereHas('productVariant.product', fn($p) => $p->where('name_en', 'like', "%{$q}%"))
+            ->when($q !== '', fn ($query) => $query->where(
+                fn ($w) => $w->where('platform_sku', 'like', "%{$q}%")
+                    ->orWhereHas('productVariant.product', fn ($p) => $p->where('name_en', 'like', "%{$q}%"))
             ))
             ->with('productVariant.product')
             ->limit(20)
             ->get()
-            ->map(fn(AdminListing $l) => [
+            ->map(fn (AdminListing $l) => [
                 'id' => $l->id,
-                'text' => ($l->productVariant?->product?->name_en ?? 'Unknown') . ' (' . $l->platform_sku . ')',
+                'text' => ($l->productVariant?->product?->name_en ?? 'Unknown').' ('.$l->platform_sku.')',
                 'price' => $l->price,
                 'currency' => $l->currency,
             ]);
@@ -424,7 +428,7 @@ class AdCampaignController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_campaigns.edit'), 403);
 
-        if (!in_array($campaign->status?->value, [AdCampaignStatus::PendingReview->value, AdCampaignStatus::Paused->value])) {
+        if (! in_array($campaign->status?->value, [AdCampaignStatus::PendingReview->value, AdCampaignStatus::Paused->value])) {
             return response()->json(['message' => __('admin.ad_campaigns.not_pending_review')], 422);
         }
 
@@ -495,7 +499,7 @@ class AdCampaignController extends Controller
 
     // ─── Fraud Alerts ─────────────────────────────────────────────────────────
 
-    public function fraudAlerts(): \Illuminate\View\View
+    public function fraudAlerts(): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('ad_campaigns.view'), 403);
@@ -521,8 +525,8 @@ class AdCampaignController extends Controller
             ->with(['campaign.vendor']);
 
         $query = $this->applyFilters($query, $request, [
-            'is_blocked' => fn($q, $v) => $q->where('is_blocked', (int) $v),
-            'campaign_id' => fn($q, $v) => $q->where('ad_campaign_id', $v),
+            'is_blocked' => fn ($q, $v) => $q->where('is_blocked', (int) $v),
+            'campaign_id' => fn ($q, $v) => $q->where('ad_campaign_id', $v),
         ]);
 
         $columns = [
@@ -540,18 +544,18 @@ class AdCampaignController extends Controller
 
         return $this->dataTableResponse($request, $query, $columns, function (AdFraudPattern $row) use ($canEdit) {
             $blockedBadge = $row->is_blocked
-                ? '<span class="badge badge-danger text-xs">' . __('admin.ad_campaigns.blocked') . '</span>'
-                : '<span class="badge badge-warning text-xs">' . __('admin.ad_campaigns.suspicious') . '</span>';
+                ? '<span class="badge badge-danger text-xs">'.__('admin.ad_campaigns.blocked').'</span>'
+                : '<span class="badge badge-warning text-xs">'.__('admin.ad_campaigns.suspicious').'</span>';
 
             $blockUrl = route('admin.ad-campaigns.fraud.block', $row->id);
             $actions = '';
-            if ($canEdit && !$row->is_blocked) {
-                $actions = "<button type=\"button\" class=\"btn btn-xs btn-danger js-block-ip-btn\" data-url=\"{$blockUrl}\" data-ip=\"" . e($row->ip_address) . "\">" . __('admin.ad_campaigns.block_ip') . "</button>";
+            if ($canEdit && ! $row->is_blocked) {
+                $actions = "<button type=\"button\" class=\"btn btn-xs btn-danger js-block-ip-btn\" data-url=\"{$blockUrl}\" data-ip=\"".e($row->ip_address).'">'.__('admin.ad_campaigns.block_ip').'</button>';
             }
 
             return [
                 'ip_address' => e($row->ip_address),
-                'campaign' => e($row->campaign?->name ?? '—') . '<br><span class="text-xs text-gray-400">' . e($row->campaign?->vendor?->store_name ?? '') . '</span>',
+                'campaign' => e($row->campaign?->name ?? '—').'<br><span class="text-xs text-gray-400">'.e($row->campaign?->vendor?->store_name ?? '').'</span>',
                 'clicks_last_hour' => $row->clicks_last_hour,
                 'clicks_last_24h' => $row->clicks_last_24h,
                 'is_blocked' => $blockedBadge,

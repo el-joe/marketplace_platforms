@@ -160,6 +160,9 @@ return [
         'link_to_package' => 'ربط بالباقة',
         'package_linked' => 'تم تحديث ربط الباقة.',
         'package_none' => 'بدون',
+        'package' => 'الباقة',
+        'package_optional' => 'الباقة (اختياري)',
+        'no_package' => 'بدون باقة',
     ],
 
     'packages' => [
@@ -278,6 +281,15 @@ return [
         'per_traveler_count' => ':count مسافرين',
         'edit_package_title' => 'تعديل الباقة',
         'save_changes' => 'حفظ التعديلات',
+        'bookable_units' => 'الوحدات القابلة للحجز',
+        'add_unit' => 'إضافة وحدة لهذه الباقة',
+        'unit_name' => 'الاسم',
+        'unit_type' => 'النوع',
+        'unit_capacity' => 'السعة',
+        'unit_status' => 'الحالة',
+        'unit_reservations' => 'الحجوزات',
+        'unit_actions' => 'الإجراءات',
+        'no_units' => 'لا توجد وحدات قابلة للحجز بعد.',
     ],
 
     'bookings' => [
@@ -723,6 +735,7 @@ return [
         'selected' => 'محدد',
         'save_changes' => 'حفظ التغييرات',
         'delete_forbidden_members' => 'لا يمكن حذف الدور ":role": يوجد :count عضو (أعضاء) فريق مسندين إليه.',
+        'owner_only_action' => 'هذا الإجراء متاح لمالك الوكالة فقط.',
     ],
 
     'bank_accounts' => [

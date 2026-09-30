@@ -1,6 +1,6 @@
 @extends('layouts.marketer')
-@section('title', 'ترويجاتي')
-@section('page-title', 'ترويجاتي')
+@section('title', __('marketer.promote.bookings_title'))
+@section('page-title', __('marketer.promote.bookings_title'))
 
 @push('styles')
     @vite(['resources/js/components/datatable.js'])
@@ -19,7 +19,7 @@
     <div class="bg-white rounded-2xl border border-gray-200 p-4 mb-4 flex items-center gap-2 flex-wrap">
         @php
             $tabs = [
-                '' => 'الكل',
+                '' => __('marketer.promote.bookings_filter_all'),
                 'draft' => __('ads.booking_status.draft'),
                 'pending_review' => __('ads.booking_status.pending_review'),
                 'approved' => __('ads.booking_status.approved'),
@@ -43,13 +43,13 @@
         <table id="ad-bookings-table" class="w-full text-sm" style="width:100%">
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500">
-                    <th class="px-4 py-3 text-left font-semibold">المرجع</th>
-                    <th class="px-4 py-3 text-left font-semibold">المكان الإعلاني</th>
-                    <th class="px-4 py-3 text-left font-semibold">التواريخ</th>
-                    <th class="px-4 py-3 text-left font-semibold">المبلغ</th>
-                    <th class="px-4 py-3 text-left font-semibold">الدفع</th>
-                    <th class="px-4 py-3 text-left font-semibold">الحالة</th>
-                    <th class="px-4 py-3 text-left font-semibold">حالة التصميم</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_reference') }}</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_slot') }}</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_dates') }}</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_amount') }}</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_payment') }}</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_status') }}</th>
+                    <th class="px-4 py-3 text-left font-semibold">{{ __('marketer.promote.bookings_col_creative_status') }}</th>
                     <th class="px-4 py-3 text-left font-semibold"></th>
                 </tr>
             </thead>

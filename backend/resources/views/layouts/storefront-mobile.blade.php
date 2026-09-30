@@ -69,7 +69,7 @@
                    class="flex flex-col items-center justify-center gap-0.5 flex-1
                           {{ request()->routeIs('nawy.*') ? 'text-primary-600' : 'text-gray-400' }}">
                     <x-heroicon name="sparkles" class="w-6 h-6" />
-                    <span class="text-[10px] leading-none">Now Nawy</span>
+                    <span class="text-[10px] leading-none">{{ __('common.nav.now_nawy') }}</span>
                 </a>
 
                 {{-- Cart --}}

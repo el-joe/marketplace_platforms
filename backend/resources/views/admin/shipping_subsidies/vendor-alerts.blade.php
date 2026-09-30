@@ -154,7 +154,7 @@
                                             <label class="text-xs text-gray-500">Shipping Method</label>
                                             <select name="zone_configs[{{ $i }}][shipping_method_id]" required
                                                     class="mt-1 w-full border rounded-lg px-3 py-2 text-sm method-select-{{ $alert->id }}">
-                                                <option value="all">All Methods</option>
+                                                <option value="all">{{ __('admin.shipping_subsidies.all_methods') }}</option>
                                                 @foreach($methods as $m)
                                                     <option value="{{ $m->id }}">{{ $m->name }}</option>
                                                 @endforeach
@@ -266,13 +266,13 @@
                 <table class="table-base w-full">
                     <thead>
                         <tr>
-                            <th>Vendor</th>
-                            <th>Warehouse</th>
-                            <th>Zones Configured</th>
-                            <th>Carrier</th>
-                            <th>Status</th>
-                            <th>Reviewed By</th>
-                            <th>Date</th>
+                            <th>{{ __('admin.shipping_subsidies.vendor') }}</th>
+                            <th>{{ __('admin.shipping_subsidies.warehouse') }}</th>
+                            <th>{{ __('admin.shipping_subsidies.zones_configured') }}</th>
+                            <th>{{ __('admin.shipping_subsidies.carrier') }}</th>
+                            <th>{{ __('admin.shipping_subsidies.status') }}</th>
+                            <th>{{ __('admin.shipping_subsidies.reviewed_by') }}</th>
+                            <th>{{ __('admin.shipping_subsidies.date') }}</th>
                         </tr>
                     </thead>
                     <tbody>

@@ -1,21 +1,21 @@
 @extends('layouts.marketer')
-@section('title', 'الدعم الفني')
-@section('page-title', 'تذاكر الدعم الفني')
+@section('title', __('marketer.support.index_title'))
+@section('page-title', __('marketer.support.index_page_title'))
 
 @section('content')
 @php
     $statusLabels = [
-        'open' => ['label' => 'مفتوحة', 'color' => 'bg-blue-100 text-blue-700'],
-        'in_progress' => ['label' => 'قيد المعالجة', 'color' => 'bg-yellow-100 text-yellow-700'],
-        'waiting_customer' => ['label' => 'بانتظار ردك', 'color' => 'bg-amber-100 text-amber-700'],
-        'resolved' => ['label' => 'تم الحل', 'color' => 'bg-green-100 text-green-700'],
-        'closed' => ['label' => 'مغلقة', 'color' => 'bg-gray-100 text-gray-500'],
+        'open'             => ['label' => __('marketer.support.status_open'),            'color' => 'bg-blue-100 text-blue-700'],
+        'in_progress'      => ['label' => __('marketer.support.status_in_progress'),     'color' => 'bg-yellow-100 text-yellow-700'],
+        'waiting_customer' => ['label' => __('marketer.support.status_waiting_customer'),'color' => 'bg-amber-100 text-amber-700'],
+        'resolved'         => ['label' => __('marketer.support.status_resolved'),        'color' => 'bg-green-100 text-green-700'],
+        'closed'           => ['label' => __('marketer.support.status_closed'),          'color' => 'bg-gray-100 text-gray-500'],
     ];
 @endphp
 <div class="space-y-5">
     <div class="flex justify-end">
         <a href="{{ route('marketer.support.create') }}" class="px-4 py-2 bg-yellow-500 text-gray-900 text-sm font-semibold rounded-lg">
-            + تذكرة جديدة
+            {{ __('marketer.support.new_ticket_button') }}
         </a>
     </div>
 
@@ -23,10 +23,10 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-xs text-gray-500">
                 <tr>
-                    <th class="px-4 py-3 text-start">رقم التذكرة</th>
-                    <th class="px-4 py-3 text-start">الموضوع</th>
-                    <th class="px-4 py-3 text-center">الحالة</th>
-                    <th class="px-4 py-3 text-center">التاريخ</th>
+                    <th class="px-4 py-3 text-start">{{ __('marketer.support.ticket_number_header') }}</th>
+                    <th class="px-4 py-3 text-start">{{ __('marketer.support.subject_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.support.status_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.support.date_header') }}</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
@@ -41,12 +41,12 @@
                         </td>
                         <td class="px-4 py-3 text-center text-xs text-gray-400">{{ $ticket->created_at->format('d/m/Y') }}</td>
                         <td class="px-4 py-3 text-end">
-                            <a href="{{ route('marketer.support.show', $ticket->ticket_number) }}" class="text-xs font-medium text-yellow-600 hover:underline">عرض</a>
+                            <a href="{{ route('marketer.support.show', $ticket->ticket_number) }}" class="text-xs font-medium text-yellow-600 hover:underline">{{ __('marketer.support.view_button') }}</a>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-400">لا توجد تذاكر بعد</td>
+                        <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-400">{{ __('marketer.support.no_tickets') }}</td>
                     </tr>
                 @endforelse
             </tbody>

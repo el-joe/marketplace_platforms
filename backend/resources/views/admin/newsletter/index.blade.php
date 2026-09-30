@@ -43,9 +43,9 @@
     {{-- Filters --}}
     <div class="flex items-center gap-3">
         <select id="filter-status" class="rounded-lg border border-gray-300 text-sm px-3 py-2">
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="unsubscribed">Unsubscribed</option>
+            <option value="">{{ __('admin.newsletter.all_statuses') }}</option>
+            <option value="active">{{ __('admin.newsletter.status_active') }}</option>
+            <option value="unsubscribed">{{ __('admin.newsletter.status_unsubscribed') }}</option>
         </select>
     </div>
 

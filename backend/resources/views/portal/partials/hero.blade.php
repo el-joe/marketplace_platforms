@@ -4,10 +4,10 @@
     {{-- Background photo --}}
     <div class="h-[560px] sm:h-[620px] lg:h-[440px] xl:h-[420px] relative">
         <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-hero-back-sm.jpg"
-             alt="{{ $isAr ? 'مندوب توصيل نون يحمل طرداً في دبي' : 'A noon delivery agent carrying a box for delivery in Dubai' }}"
+             alt="{{ portal_content('home', 'hero', 'bg_image_alt', 'A noon delivery agent carrying a box for delivery in Dubai', 'مندوب توصيل نون يحمل طرداً في دبي') }}"
              class="absolute inset-0 w-full h-full object-cover md:hidden {{ $isAr ? '-scale-x-100' : '' }}">
         <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-hero-back.jpg"
-             alt="{{ $isAr ? 'مندوب توصيل نون يحمل طرداً في دبي' : 'A noon delivery agent carrying a box for delivery in Dubai' }}"
+             alt="{{ portal_content('home', 'hero', 'bg_image_alt', 'A noon delivery agent carrying a box for delivery in Dubai', 'مندوب توصيل نون يحمل طرداً في دبي') }}"
              class="absolute inset-0 w-full h-full object-cover object-[75%_center] hidden md:block {{ $isAr ? '-scale-x-100' : '' }}">
 
         {{-- Gradient overlay: dark on the text side, transparent toward the photo --}}

@@ -99,7 +99,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contract Type</label>
                 <select name="content_type" x-model="type" class="w-full border rounded-lg px-3 py-2 text-sm">
-                    <option value="pdf">PDF File</option>
+                    <option value="pdf">{{ __('admin.marketers.pdf_file') }}</option>
                     <option value="text">Text (plain, escaped)</option>
                 </select>
             </div>
