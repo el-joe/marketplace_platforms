@@ -1051,7 +1051,11 @@
       "slot_morning": "Morning",
       "slot_evening": "Evening",
       "slot_custom": "Custom",
-      "calendarUnavailable": "Calendar unavailable — please check back later"
+      "calendarUnavailable": "Calendar unavailable — please check back later",
+      "noPhoto": "No photo",
+      "retry": "Retry",
+      "from": "From",
+      "perPerson": "per person"
     },
     "myBookings": {
       "title": "My Bookings",

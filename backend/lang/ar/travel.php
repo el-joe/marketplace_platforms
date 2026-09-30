@@ -153,6 +153,7 @@ return [
         'add_photos' => 'إضافة صور',
         'photos_saved' => 'تم حفظ الصور.',
         'photo_deleted' => 'تم حذف الصورة.',
+        'photo_set_primary' => 'تم تحديث صورة الغلاف.',
         'confirm_delete_photo_title' => 'حذف الصورة؟',
         'confirm_delete_photo_text' => 'لا يمكن التراجع عن هذا الإجراء.',
         'no_photos' => 'لا توجد صور بعد.',

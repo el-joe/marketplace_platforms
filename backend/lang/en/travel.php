@@ -154,6 +154,7 @@ return [
         'add_photos' => 'Add photos',
         'photos_saved' => 'Photos saved.',
         'photo_deleted' => 'Photo deleted.',
+        'photo_set_primary' => 'Cover photo updated.',
         'confirm_delete_photo_title' => 'Delete photo?',
         'confirm_delete_photo_text' => 'This action cannot be undone.',
         'no_photos' => 'No photos yet.',

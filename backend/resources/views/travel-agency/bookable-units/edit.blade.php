@@ -11,9 +11,15 @@
             @method('PUT')
 
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('travel.bookable_units.name') }}</label>
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('travel.bookable_units.name') }} (EN)</label>
                 <input type="text" name="name" value="{{ old('name', $unit->name) }}" required class="w-full rounded-lg border-gray-300 text-sm">
                 @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('travel.bookable_units.name') }} (AR)</label>
+                <input type="text" name="name_ar" value="{{ old('name_ar', $unit->name_ar) }}" dir="rtl" class="w-full rounded-lg border-gray-300 text-sm">
+                @error('name_ar') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -65,11 +71,18 @@
             @if($unit->photos->count())
                 <div class="flex flex-wrap gap-3">
                     @foreach($unit->photos as $photo)
-                        <div class="relative group w-28 h-28">
-                            <img src="{{ Storage::url($photo->file_path) }}" class="w-full h-full object-cover rounded-lg">
+                        <div class="relative group w-28 h-28" data-photo-id="{{ $photo->id }}">
+                            <img src="{{ Storage::url($photo->file_path) }}" class="w-full h-full object-cover rounded-lg {{ $photo->is_primary ? 'ring-2 ring-blue-500' : '' }}">
+                            @if($photo->is_primary)
+                                <span class="absolute bottom-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">Cover</span>
+                            @else
+                                <button type="button"
+                                    data-photo-primary-url="{{ route('travel-agency.bookable-units.photos.set-primary', [$unit, $photo]) }}"
+                                    class="photo-primary-btn absolute bottom-1 left-1 hidden group-hover:flex items-center justify-center bg-white/90 text-blue-600 text-[10px] px-1.5 py-0.5 rounded font-medium border border-blue-200 hover:bg-blue-50">Cover</button>
+                            @endif
                             <button type="button"
                                 data-photo-delete-url="{{ route('travel-agency.bookable-units.photos.destroy', [$unit, $photo]) }}"
-                                class="photo-delete-btn absolute top-1 left-1 hidden group-hover:flex items-center justify-center bg-red-500 text-white rounded-full w-6 h-6 text-sm leading-none">×</button>
+                                class="photo-delete-btn absolute top-1 right-1 hidden group-hover:flex items-center justify-center bg-red-500 text-white rounded-full w-6 h-6 text-sm leading-none">×</button>
                         </div>
                     @endforeach
                 </div>
@@ -105,6 +118,7 @@
     @push('scripts')
     <script>
     (function () {
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const modal = document.getElementById('photo-delete-modal');
         let deleteUrl = null, targetCard = null;
 
@@ -117,25 +131,45 @@
             if (!deleteUrl) { return; }
             fetch(deleteUrl, {
                 method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                },
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
             })
             .then(function (r) {
-                if (r.ok) {
-                    targetCard && targetCard.remove();
-                    closeModal();
-                } else {
-                    return Promise.reject();
-                }
+                if (r.ok) { targetCard && targetCard.remove(); closeModal(); }
+                else { return Promise.reject(); }
             })
             .catch(function () { alert('Delete failed.'); });
         });
 
         document.querySelectorAll('.photo-delete-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                openModal(btn.closest('.relative.group'), btn.dataset.photoDeleteUrl);
+                openModal(btn.closest('[data-photo-id]'), btn.dataset.photoDeleteUrl);
+            });
+        });
+
+        document.querySelectorAll('.photo-primary-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                fetch(btn.dataset.photoPrimaryUrl, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                })
+                .then(function (r) {
+                    if (!r.ok) { return Promise.reject(); }
+                    // Update UI: remove ring + Cover badge from all, add to this one
+                    document.querySelectorAll('[data-photo-id] img').forEach(function (img) {
+                        img.classList.remove('ring-2', 'ring-blue-500');
+                    });
+                    document.querySelectorAll('[data-photo-id] span').forEach(function (s) { s.remove(); });
+                    document.querySelectorAll('.photo-primary-btn').forEach(function (b) { b.classList.remove('hidden'); b.classList.add('hidden'); });
+
+                    const card = btn.closest('[data-photo-id]');
+                    card.querySelector('img').classList.add('ring-2', 'ring-blue-500');
+                    btn.remove();
+                    const badge = document.createElement('span');
+                    badge.className = 'absolute bottom-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded font-medium';
+                    badge.textContent = 'Cover';
+                    card.appendChild(badge);
+                })
+                .catch(function () { alert('Failed to set cover photo.'); });
             });
         });
     }());

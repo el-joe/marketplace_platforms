@@ -156,6 +156,7 @@ class BookableUnitController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'name_ar' => ['nullable', 'string', 'max:255'],
             'type' => ['required', 'in:chalet,hotel_room,other'],
             'capacity' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
@@ -360,5 +361,16 @@ class BookableUnitController extends Controller
         }
 
         return response()->json(['message' => __('travel.bookable_units.photo_deleted')]);
+    }
+
+    public function setPrimaryPhoto(BookableUnit $bookableUnit, BookableUnitPhoto $photo): JsonResponse
+    {
+        $this->authorise($bookableUnit);
+        abort_if($photo->bookable_unit_id !== $bookableUnit->id, 404);
+
+        $bookableUnit->photos()->update(['is_primary' => false]);
+        $photo->update(['is_primary' => true]);
+
+        return response()->json(['message' => __('travel.bookable_units.photo_set_primary')]);
     }
 }

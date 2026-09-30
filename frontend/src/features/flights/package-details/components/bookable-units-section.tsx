@@ -201,11 +201,15 @@ export default function BookableUnitsSection({ units, currency }: Props) {
               ))}
             </div>
           )}
-          {!loading && (
+          {!loading && calendar && (
             <DayPicker
               mode="range"
               month={month}
-              onMonthChange={setMonth}
+              onMonthChange={(m) => {
+                setMonth(m);
+                setFrom(null);
+                setTo(null);
+              }}
               selected={selectedRange}
               onSelect={handleSelect}
               disabled={isDisabled}
@@ -227,24 +231,24 @@ export default function BookableUnitsSection({ units, currency }: Props) {
               }}
               classNames={{
                 root: "w-full",
-                months: "w-full",
+                months: "relative w-full",
                 month: "w-full",
-                month_caption: "flex justify-center items-center h-8 mb-2 font-bold text-primary",
-                nav: "absolute inset-x-0 top-0 flex justify-between px-1",
-                button_previous: "p-1 hover:bg-gray-2/40 rounded",
-                button_next: "p-1 hover:bg-gray-2/40 rounded",
+                month_caption: "flex justify-center items-center h-9 mb-2 font-bold text-primary",
+                nav: "absolute inset-x-0 top-0 flex justify-between items-center h-9 px-1 z-10",
+                button_previous: "p-1.5 hover:bg-gray-2/40 rounded-lg cursor-pointer",
+                button_next: "p-1.5 hover:bg-gray-2/40 rounded-lg cursor-pointer",
                 month_grid: "w-full border-collapse",
                 weekdays: "flex",
-                weekday: "flex-1 text-center text-xs text-light pb-1",
+                weekday: "flex-1 text-center text-xs text-light pb-2 select-none",
                 week: "flex",
                 day: "flex-1 aspect-square p-0.5",
-                day_button: "w-full h-full rounded-lg text-xs",
+                day_button: "w-full h-full rounded-lg text-xs hover:bg-gray-2/40 transition-colors",
                 selected: "",
-                range_start: "[&>button]:bg-blue-3 [&>button]:text-white",
-                range_end: "[&>button]:bg-blue-3 [&>button]:text-white",
-                range_middle: "[&>button]:bg-blue-3/20",
-                disabled: "[&>button]:opacity-40 [&>button]:line-through [&>button]:cursor-not-allowed",
-                today: "[&>button]:font-bold",
+                range_start: "[&>button]:!bg-blue-3 [&>button]:!text-white",
+                range_end: "[&>button]:!bg-blue-3 [&>button]:!text-white",
+                range_middle: "[&>button]:!bg-blue-3/20 [&>button]:rounded-none",
+                disabled: "[&>button]:!opacity-35 [&>button]:line-through [&>button]:cursor-not-allowed [&>button]:hover:bg-transparent",
+                today: "[&>button]:font-bold [&>button]:underline",
                 outside: "opacity-0 pointer-events-none",
               }}
             />
