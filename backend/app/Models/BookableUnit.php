@@ -77,6 +77,6 @@ class BookableUnit extends Model
             return null;
         }
 
-        return Storage::url($photo->file_path);
+        return asset(Storage::url($photo->file_path));
     }
 }

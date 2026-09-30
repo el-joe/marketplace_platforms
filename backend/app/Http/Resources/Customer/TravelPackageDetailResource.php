@@ -65,7 +65,7 @@ class TravelPackageDetailResource extends JsonResource
                 'contact_phone' => $agency->phone,
             ] : null,
             'bookable_units' => $agency
-                ? $agency->bookableUnits()->where('status', 'active')->where('travel_package_id', $this->id)->orderBy('name')->get()->map(fn ($u) => [
+                ? $agency->bookableUnits()->where('status', 'active')->where('travel_package_id', $this->id)->orderBy('name')->with('photos')->get()->map(fn ($u) => [
                     'id' => $u->id,
                     'name' => $u->name,
                     'type' => $u->type->value ?? $u->type,

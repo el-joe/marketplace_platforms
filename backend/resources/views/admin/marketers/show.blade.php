@@ -545,10 +545,8 @@
         <div id="exclusive-contracts-error" class="mx-4 mt-4 rounded-lg border border-danger-200 bg-danger-50 p-3 text-sm text-danger-800">
             <p class="font-semibold mb-1">{{ __('admin.marketers.contract_create_failed') }}</p>
             <ul class="list-disc list-inside space-y-0.5">
-                @foreach($errors->only(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes']) as $msgs)
-                    @foreach((array) $msgs as $msg)
-                        <li>{{ $msg }}</li>
-                    @endforeach
+                @foreach(collect(['classified_listing_id', 'classified_category_id', 'starts_at', 'ends_at', 'global', 'status', 'contract_file', 'notes'])->flatMap(fn($k) => $errors->get($k)) as $msg)
+                    <li>{{ $msg }}</li>
                 @endforeach
             </ul>
         </div>
