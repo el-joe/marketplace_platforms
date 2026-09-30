@@ -32,16 +32,34 @@ class BookableUnitController extends Controller
 
         $bookableUnit->load('agency:id,name', 'timeSlots');
         $reservations = $bookableUnit->reservations()->latest()->limit(50)->get();
-        $upcomingAvailability = $bookableUnit->availability()
-            ->where('date', '>=', now()->toDateString())
+
+        $monthStart = now()->startOfMonth();
+        $monthEnd = now()->endOfMonth();
+
+        $availabilityByDate = $bookableUnit->availability()
+            ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->orderBy('date')
-            ->limit(31)
-            ->get();
+            ->get()
+            ->keyBy(fn ($row) => $row->date->toDateString());
+
+        $calendarDays = collect();
+        for ($day = $monthStart->copy(); $day->lte($monthEnd); $day->addDay()) {
+            $dateStr = $day->toDateString();
+            $row = $availabilityByDate->get($dateStr);
+            $calendarDays->push((object) [
+                'date' => $day->copy(),
+                'is_available' => $row?->is_available ?? false,
+                'price_day_only' => $row?->price_day_only,
+                'has_row' => $row !== null,
+            ]);
+        }
 
         return view('admin.bookable-units.show', [
             'unit' => $bookableUnit,
             'reservations' => $reservations,
-            'availability' => $upcomingAvailability,
+            'calendarDays' => $calendarDays,
+            'calendarMonth' => $monthStart->format('F Y'),
+            'firstWeekday' => (int) $monthStart->dayOfWeek,
         ]);
     }
 

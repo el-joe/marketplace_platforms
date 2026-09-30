@@ -31,12 +31,28 @@
     @endif
 
     <div class="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.bookable_units_section.calendar_overview') }}</h3>
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-gray-700">{{ __('admin.bookable_units_section.calendar_overview') }}</h3>
+            <span class="text-xs text-gray-500">{{ $calendarMonth }}</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-xs text-center text-gray-400 mb-1">
+            @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $wd)
+                <div>{{ $wd }}</div>
+            @endforeach
+        </div>
         <div class="grid grid-cols-7 gap-1 text-xs">
-            @foreach($availability as $day)
-            <div class="rounded p-2 border {{ $day->is_available ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-100 text-gray-400' }}">
-                <div>{{ $day->date->format('m-d') }}</div>
-                <div>{{ $day->price_day_only ?? '' }}</div>
+            @for($i = 0; $i < $firstWeekday; $i++)
+                <div></div>
+            @endfor
+            @foreach($calendarDays as $day)
+            <div class="rounded p-1.5 border text-center
+                {{ $day->is_available
+                    ? 'border-emerald-200 bg-emerald-50'
+                    : ($day->has_row ? 'border-red-200 bg-red-50 text-red-400' : 'border-gray-100 bg-gray-50 text-gray-300') }}">
+                <div class="font-medium">{{ $day->date->format('j') }}</div>
+                @if($day->price_day_only !== null)
+                    <div class="text-[10px] opacity-70">{{ number_format($day->price_day_only) }}</div>
+                @endif
             </div>
             @endforeach
         </div>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { AlertCircleIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { AlertCircleIcon } from "lucide-react";
+import { DayPicker, type DateRange, type DayButtonProps } from "react-day-picker";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
 import { Button } from "@/src/components/ui/button";
@@ -22,6 +23,14 @@ type Props = {
   currency: CurrencyCode;
 };
 
+function toDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function fromDateStr(s: string): Date {
+  return new Date(s + "T00:00:00");
+}
+
 function monthKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -31,7 +40,10 @@ export default function BookableUnitsSection({ units, currency }: Props) {
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [month, setMonth] = useState(() => new Date());
   const [calendar, setCalendar] = useState<BookableUnitCalendar | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [from, setFrom] = useState<string | null>(null);
   const [to, setTo] = useState<string | null>(null);
   const [overnight, setOvernight] = useState(true);
@@ -43,17 +55,34 @@ export default function BookableUnitsSection({ units, currency }: Props) {
   const key = monthKey(month);
 
   useEffect(() => {
-    if (!unitId) return;
+    if (!unitId) {
+      setHasFetched(true);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
+    setCalendarError(null);
     getBookableUnitCalendar(unitId, key)
-      .then((c) => !cancelled && setCalendar(c))
-      .catch(() => !cancelled && setCalendar(null))
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [unitId, key]);
+      .then((c) => { if (!cancelled) { setCalendar(c); setCalendarError(null); } })
+      .catch((err) => {
+        if (!cancelled) {
+          setCalendar(null);
+          setCalendarError(
+            err instanceof ApiRequestError || err instanceof Error
+              ? err.message
+              : t("calendarUnavailable"),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+          setHasFetched(true);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [unitId, key, retryKey]);
 
   if (units.length === 0) return null;
 
@@ -70,7 +99,7 @@ export default function BookableUnitsSection({ units, currency }: Props) {
       out.push(day);
       const n = new Date(d + "T00:00:00");
       n.setDate(n.getDate() + 1);
-      d = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+      d = toDateStr(n);
     }
     return out;
   })();
@@ -83,14 +112,18 @@ export default function BookableUnitsSection({ units, currency }: Props) {
         0,
       );
 
-  function pick(date: string) {
+  function handleSelect(range: DateRange | undefined) {
     setReservationNumber(null);
-    if (!from || to || slot || date < from) {
-      setFrom(date);
-      setTo(null);
-    } else {
-      setTo(date);
-    }
+    if (!range) { setFrom(null); setTo(null); return; }
+    setFrom(range.from ? toDateStr(range.from) : null);
+    setTo(range.to ? toDateStr(range.to) : null);
+  }
+
+  function isDisabled(date: Date): boolean {
+    const d = toDateStr(date);
+    const today = new Date().toISOString().slice(0, 10);
+    const day = byDate.get(d);
+    return !day || !day.is_available || d < today;
   }
 
   async function submit() {
@@ -119,7 +152,10 @@ export default function BookableUnitsSection({ units, currency }: Props) {
     }
   }
 
-  const firstWeekday = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const selectedRange: DateRange | undefined =
+    from
+      ? { from: fromDateStr(from), to: (to ?? from) ? fromDateStr(to ?? from!) : undefined }
+      : undefined;
 
   return (
     <section>
@@ -157,69 +193,78 @@ export default function BookableUnitsSection({ units, currency }: Props) {
           );
         })()}
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            aria-label={t("prevMonth")}
-            onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-            className="p-1"
-          >
-            <ChevronLeftIcon className="size-5 rtl:rotate-180" />
-          </button>
-          <span className="font-bold text-primary">{key}</span>
-          <button
-            type="button"
-            aria-label={t("nextMonth")}
-            onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-            className="p-1"
-          >
-            <ChevronRightIcon className="size-5 rtl:rotate-180" />
-          </button>
+        <div className={loading ? "opacity-50 pointer-events-none" : ""}>
+          {loading && (
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <div key={i} className="rounded-lg py-8 bg-gray-2/40 animate-pulse" />
+              ))}
+            </div>
+          )}
+          {!loading && (
+            <DayPicker
+              mode="range"
+              month={month}
+              onMonthChange={setMonth}
+              selected={selectedRange}
+              onSelect={handleSelect}
+              disabled={isDisabled}
+              showOutsideDays={false}
+              components={{
+                DayButton: (props: DayButtonProps) => {
+                  const dateStr = toDateStr(props.day.date);
+                  const dayData = byDate.get(dateStr);
+                  const price = dayData?.price_day_only ?? dayData?.price_with_overnight;
+                  return (
+                    <button {...props} className={[props.className, "flex flex-col items-center gap-0.5 py-1 w-full"].filter(Boolean).join(" ")}>
+                      <span>{props.day.date.getDate()}</span>
+                      {price !== null && price !== undefined && dayData?.is_available && (
+                        <span className="text-[9px] opacity-70 leading-none">{price}</span>
+                      )}
+                    </button>
+                  );
+                },
+              }}
+              classNames={{
+                root: "w-full",
+                months: "w-full",
+                month: "w-full",
+                month_caption: "flex justify-center items-center h-8 mb-2 font-bold text-primary",
+                nav: "absolute inset-x-0 top-0 flex justify-between px-1",
+                button_previous: "p-1 hover:bg-gray-2/40 rounded",
+                button_next: "p-1 hover:bg-gray-2/40 rounded",
+                month_grid: "w-full border-collapse",
+                weekdays: "flex",
+                weekday: "flex-1 text-center text-xs text-light pb-1",
+                week: "flex",
+                day: "flex-1 aspect-square p-0.5",
+                day_button: "w-full h-full rounded-lg text-xs",
+                selected: "",
+                range_start: "[&>button]:bg-blue-3 [&>button]:text-white",
+                range_end: "[&>button]:bg-blue-3 [&>button]:text-white",
+                range_middle: "[&>button]:bg-blue-3/20",
+                disabled: "[&>button]:opacity-40 [&>button]:line-through [&>button]:cursor-not-allowed",
+                today: "[&>button]:font-bold",
+                outside: "opacity-0 pointer-events-none",
+              }}
+            />
+          )}
         </div>
 
-        {loading && (
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: 35 }).map((_, i) => (
-              <div key={i} className="rounded-lg py-4 bg-gray-2/40 animate-pulse" />
-            ))}
+        {hasFetched && !loading && !calendar && (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <p className="text-sm text-center text-light">
+              {calendarError ?? t("calendarUnavailable")}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRetryKey((k) => k + 1)}
+            >
+              {t("retry") ?? "Retry"}
+            </Button>
           </div>
-        )}
-
-        <div className={`grid grid-cols-7 gap-1 text-center ${loading ? "opacity-50" : ""}`}>
-          {Array.from({ length: firstWeekday }).map((_, i) => (
-            <span key={`b${i}`} />
-          ))}
-          {calendar?.days.map((d) => {
-            const inRange = from && end && d.date >= from && d.date <= end;
-            const past = d.date < new Date().toISOString().slice(0, 10);
-            const disabled = !d.is_available || past;
-            return (
-              <button
-                key={d.date}
-                type="button"
-                disabled={disabled}
-                onClick={() => pick(d.date)}
-                className={`rounded-lg py-1.5 text-xs flex flex-col items-center ${
-                  inRange
-                    ? "bg-blue-3 text-white"
-                    : disabled
-                      ? "bg-gray-2/40 text-light line-through cursor-not-allowed"
-                      : "border border-border hover:bg-gray-2/40"
-                }`}
-              >
-                <span className="font-bold">{Number(d.date.slice(8))}</span>
-                {!disabled && (d.price_day_only ?? d.price_with_overnight) !== null && (
-                  <span className="text-[9px] opacity-80">
-                    {d.price_day_only ?? d.price_with_overnight}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {!loading && !calendar && (
-          <p className="text-sm text-center text-light py-4">{t("calendarUnavailable")}</p>
         )}
 
         {calendar && calendar.time_slots.length > 0 && (
