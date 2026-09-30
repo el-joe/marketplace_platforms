@@ -250,7 +250,7 @@ export default function BookingDetails({ booking }: Props) {
                       {booking.bookable_unit!.type.replace("_", " ")}
                     </p>
                   </div>
-                  <Badge variant="outline" className="shrink-0">
+                  <Badge variant="gray" className="shrink-0">
                     <UsersIcon className="size-3 mr-1" />
                     Up to {booking.bookable_unit!.capacity}
                   </Badge>
