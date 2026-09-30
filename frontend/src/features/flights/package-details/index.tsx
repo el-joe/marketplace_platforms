@@ -9,6 +9,7 @@ import GuidelinesAccordion from "./components/guidelines-accordion";
 import PricingTiers from "./components/pricing-tiers";
 import BookableUnitsSection from "./components/bookable-units-section";
 import BookingSidebar from "./components/booking-sidebar";
+import UnitBookingProvider from "./components/unit-booking-provider";
 import type { TravelPackageDetail } from "../helpers/types";
 import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 
@@ -39,6 +40,7 @@ export default async function PackageDetails({ pkg }: Props) {
         description={description}
       />
 
+      <UnitBookingProvider units={pkg.bookable_units ?? []}>
       <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: guidelines */}
         <div className="lg:col-span-8 flex flex-col gap-16">
@@ -125,6 +127,7 @@ export default async function PackageDetails({ pkg }: Props) {
           )}
         </div>
       </main>
+      </UnitBookingProvider>
     </div>
   );
 }

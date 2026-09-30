@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useReducer, useCallback } from "react";
+import { useEffect, useReducer } from "react";
 import { useTranslations } from "next-intl";
 import type { DateRange } from "react-day-picker";
 import { ApiRequestError } from "@/src/lib/utils";
-import {
-  getBookableUnitCalendar,
-  reserveBookableUnit,
-} from "../../api/bookable-units.actions";
+import { getBookableUnitCalendar } from "../../api/bookable-units.actions";
 import type {
   BookableUnitCalendar,
   BookableUnitDay,
@@ -45,9 +42,6 @@ type State = {
   dateTo: string | null;
   slotId: string;
   overnight: boolean;
-  submitting: boolean;
-  submitError: string | null;
-  reservationNumber: string | null;
 };
 
 type Action =
@@ -59,13 +53,10 @@ type Action =
   | { type: "SET_RANGE"; from: string | null; to: string | null }
   | { type: "SET_SLOT"; slotId: string }
   | { type: "SET_OVERNIGHT"; overnight: boolean }
-  | { type: "SUBMIT_START" }
-  | { type: "SUBMIT_OK"; reservationNumber: string; calendar: BookableUnitCalendar }
-  | { type: "SUBMIT_ERR"; error: string }
   | { type: "RETRY" };
 
 function resetSelection(s: State): Partial<State> {
-  return { dateFrom: null, dateTo: null, slotId: "", submitError: null, reservationNumber: null };
+  return { dateFrom: null, dateTo: null, slotId: "" };
 }
 
 function reducer(state: State, action: Action): State {
@@ -96,23 +87,11 @@ function reducer(state: State, action: Action): State {
     case "CALENDAR_ERR":
       return { ...state, calendar: null, calendarLoading: false, calendarError: action.error, hasFetched: true };
     case "SET_RANGE":
-      return { ...state, dateFrom: action.from, dateTo: action.to, submitError: null, reservationNumber: null };
+      return { ...state, dateFrom: action.from, dateTo: action.to };
     case "SET_SLOT":
       return { ...state, slotId: action.slotId, dateTo: null };
     case "SET_OVERNIGHT":
       return { ...state, overnight: action.overnight };
-    case "SUBMIT_START":
-      return { ...state, submitting: true, submitError: null };
-    case "SUBMIT_OK":
-      return {
-        ...state,
-        submitting: false,
-        reservationNumber: action.reservationNumber,
-        calendar: action.calendar,
-        ...resetSelection(state),
-      };
-    case "SUBMIT_ERR":
-      return { ...state, submitting: false, submitError: action.error };
     case "RETRY":
       return { ...state, calendarLoading: true, calendarError: null, hasFetched: false };
     default:
@@ -136,14 +115,10 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
     dateTo: null,
     slotId: "",
     overnight: true,
-    submitting: false,
-    submitError: null,
-    reservationNumber: null,
   });
 
   const key = monthKey(state.month);
 
-  // fetch calendar whenever unit or month changes
   useEffect(() => {
     if (!state.unitId) {
       dispatch({ type: "CALENDAR_ERR", error: "" });
@@ -175,7 +150,7 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
     (state.calendar?.time_slots ?? []).find(
       (s: BookableUnitCalendar["time_slots"][number]) => s.id === state.slotId,
     ) ?? null;
-  // when a time slot is selected it's a single-day booking
+
   const effectiveTo = activeSlot ? state.dateFrom : (state.dateTo ?? state.dateFrom);
 
   const selectedDays = (() => {
@@ -194,7 +169,7 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
 
   const rangeValid = selectedDays.length > 0 && selectedDays.every((d) => d.is_available);
 
-  const total = activeSlot
+  const unitTotal = activeSlot
     ? activeSlot.price
     : selectedDays.reduce(
         (sum, d) =>
@@ -208,6 +183,20 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
         to: effectiveTo ? fromDateStr(effectiveTo) : undefined,
       }
     : undefined;
+
+  /** Payload to send along with the travel booking POST. Null when no days selected. */
+  const unitDaysPayload =
+    state.unitId && rangeValid
+      ? {
+          unit_id: state.unitId,
+          unit_days: selectedDays.map((d) => ({
+            date: d.date,
+            ...(activeSlot
+              ? { time_slot_id: activeSlot.id }
+              : { includes_overnight: state.overnight }),
+          })),
+        }
+      : null;
 
   function isDisabled(date: Date): boolean {
     const d = toDateStr(date);
@@ -243,28 +232,6 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
     dispatch({ type: "RETRY" });
   }
 
-  const submit = useCallback(async () => {
-    if (!state.dateFrom || !effectiveTo || !rangeValid) return;
-    dispatch({ type: "SUBMIT_START" });
-    try {
-      const reservation = await reserveBookableUnit(state.unitId, {
-        date_from: state.dateFrom,
-        date_to: effectiveTo,
-        includes_overnight: activeSlot ? false : state.overnight,
-        ...(activeSlot ? { time_slot_id: activeSlot.id } : {}),
-      });
-      const refreshed = await getBookableUnitCalendar(state.unitId, key);
-      dispatch({ type: "SUBMIT_OK", reservationNumber: reservation.reservation_number, calendar: refreshed });
-    } catch (err) {
-      const msg =
-        err instanceof ApiRequestError || err instanceof Error
-          ? err.message
-          : t("bookingError");
-      dispatch({ type: "SUBMIT_ERR", error: msg });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.dateFrom, effectiveTo, rangeValid, state.unitId, activeSlot, state.overnight, key]);
-
   return {
     // state
     unitId: state.unitId,
@@ -275,15 +242,13 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
     hasFetched: state.hasFetched,
     slotId: state.slotId,
     overnight: state.overnight,
-    submitting: state.submitting,
-    submitError: state.submitError,
-    reservationNumber: state.reservationNumber,
     // derived
     byDate,
     activeSlot,
     selectedRange,
     rangeValid,
-    total,
+    unitTotal,
+    unitDaysPayload,
     // actions
     isDisabled,
     onRangeSelect,
@@ -292,6 +257,5 @@ export function useUnitBooking(units: BookableUnitSummary[]) {
     onSlotChange,
     onOvernightChange,
     onRetry,
-    submit,
   };
 }

@@ -15,15 +15,25 @@ type UploadPassportResult = { passport_uploaded: boolean };
  * multi-seat booking for the given travel package (requires auth:customer).
  * `travelersCount` maps to the backend's `travelers_count` (1-50).
  */
+type UnitDayPayload = {
+  date: string;
+  includes_overnight?: boolean;
+  time_slot_id?: string;
+};
+
 export async function createBooking(
   slug: string,
   travelersCount: number,
+  unitSelection?: { unit_id: string; unit_days: UnitDayPayload[] } | null,
 ): Promise<CreateBookingResult> {
   const envelope = await fetchInstance<ApiEnvelope<CreateBookingResult>>(
     `/listings/travel/${slug}/bookings`,
     {
       method: "POST",
-      body: JSON.stringify({ travelers_count: travelersCount }),
+      body: JSON.stringify({
+        travelers_count: travelersCount,
+        ...(unitSelection ?? {}),
+      }),
     },
   );
   return envelope.data;

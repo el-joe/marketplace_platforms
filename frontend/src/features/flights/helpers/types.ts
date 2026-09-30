@@ -221,9 +221,3 @@ export type BookableUnitCalendar = {
   time_slots: BookableUnitTimeSlot[];
 };
 
-export type BookableUnitReservation = {
-  id: string;
-  reservation_number: string;
-  total_price: number;
-  status: string;
-};

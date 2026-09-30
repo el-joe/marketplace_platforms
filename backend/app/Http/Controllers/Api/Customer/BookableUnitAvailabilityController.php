@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Customer\BookableUnit\CreateReservationRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\BookableUnit;
-use App\Models\Customer;
 use App\Services\Customer\BookableUnitReservationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,10 +16,9 @@ class BookableUnitAvailabilityController extends Controller
 
     /**
      * GET /bookable-units/{unit}/calendar?month=YYYY-MM
-     * Returns a month's calendar: date, is_available, capacity and both
-     * prices, for the customer-facing booking widget.
+     * Returns a month's calendar for the customer-facing booking widget.
      */
-    public function calendar(Request $request, $country , string $unit): JsonResponse
+    public function calendar(Request $request, $country, string $unit): JsonResponse
     {
         $bookableUnit = BookableUnit::where('status', 'active')->find($unit);
 
@@ -45,44 +42,5 @@ class BookableUnitAvailabilityController extends Controller
             'days' => $this->reservations->calendarForMonth($bookableUnit, $month),
             'time_slots' => $timeSlots,
         ]);
-    }
-
-    /**
-     * POST /bookable-units/{unit}/reservations (authenticated customer)
-     * Creates a reservation. Double-booking is prevented inside the
-     * service via a DB transaction + lockForUpdate() on the relevant
-     * availability row(s).
-     */
-    public function reserve(CreateReservationRequest $request , $country, string $unit): JsonResponse
-    {
-        $bookableUnit = BookableUnit::where('status', 'active')->find($unit);
-
-        if (! $bookableUnit) {
-            return ApiResponse::error(__('common.exceptions.listing.not_found'), [], 404);
-        }
-
-        /** @var Customer $customer */
-        $customer = auth('customer')->user();
-
-        $reservation = $this->reservations->reserve($bookableUnit, $customer, $request->validated());
-
-        $bookableUnit->load('travelPackage:id,title_en,title_ar');
-        $packageTitle = $bookableUnit->travelPackage
-            ? ($bookableUnit->travelPackage->title_ar ?: $bookableUnit->travelPackage->title_en)
-            : null;
-
-        return ApiResponse::success([
-            'id' => $reservation->id,
-            'reservation_number' => $reservation->reservation_number,
-            'bookable_unit_id' => $reservation->bookable_unit_id,
-            'date_from' => $reservation->date_from->toDateString(),
-            'date_to' => $reservation->date_to->toDateString(),
-            'time_slot_id' => $reservation->time_slot_id,
-            'includes_overnight' => $reservation->includes_overnight,
-            'total_price' => $reservation->total_price,
-            'status' => $reservation->status->value,
-            'package_id' => $bookableUnit->travel_package_id,
-            'package_title' => $packageTitle,
-        ], __('common.exceptions.listing.booking_submitted'), 201);
     }
 }

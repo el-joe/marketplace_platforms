@@ -193,11 +193,6 @@ class Customer extends Authenticatable implements JWTSubject
         return $this->hasMany(TravelBooking::class);
     }
 
-    public function bookableUnitReservations(): HasMany
-    {
-        return $this->hasMany(BookableUnitReservation::class);
-    }
-
     public function wallets(): HasMany
     {
         return $this->hasMany(Wallet::class, 'owner_id')->where('owner_type', WalletOwnerType::Customer);

@@ -2,16 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Enums\BookableUnitReservationStatus;
 use App\Enums\TravelAgencyStatus;
+use App\Enums\TravelBookingStatus;
 use App\Models\Admin;
 use App\Models\BookableUnit;
 use App\Models\BookableUnitAvailability;
-use App\Models\BookableUnitReservation;
+use App\Models\BookingUnitDay;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\TravelAgency;
 use App\Models\TravelAgencyMember;
+use App\Models\TravelBooking;
+use App\Models\TravelPackage;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
@@ -126,14 +128,36 @@ class BookableUnitGapsTest extends TestCase
             'price_with_overnight' => 300,
         ]);
 
-        BookableUnitReservation::create([
+        // Unit days are now part of travel bookings.
+        $pkg = TravelPackage::create([
+            'travel_agency_id' => $agency->id,
+            'slug' => 'pkg-'.Str::lower(Str::random(8)),
+            'title_en' => 'Test Pkg',
+            'title_ar' => 'باقة',
+            'destination_country' => 'AE',
+            'destination_city' => 'Dubai',
+            'price' => 1000,
+            'currency' => 'AED',
+            'duration_days' => 1,
+            'duration_nights' => 1,
+            'departure_date' => '2026-10-10',
+            'return_date' => '2026-10-10',
+            'status' => 'active',
+        ]);
+        $booking = TravelBooking::create([
+            'travel_package_id' => $pkg->id,
             'bookable_unit_id' => $unit->id,
             'customer_id' => $customer->id,
-            'date_from' => '2026-10-10',
-            'date_to' => '2026-10-10',
-            'includes_overnight' => true,
+            'travelers_count' => 1,
             'total_price' => 300,
-            'status' => BookableUnitReservationStatus::Pending,
+            'status' => TravelBookingStatus::PendingDocuments,
+        ]);
+        BookingUnitDay::create([
+            'travel_booking_id' => $booking->id,
+            'bookable_unit_id' => $unit->id,
+            'date' => '2026-10-10',
+            'includes_overnight' => true,
+            'price' => 300,
         ]);
 
         $response = $this->actingAs($this->owner($agency), 'travel_agency')

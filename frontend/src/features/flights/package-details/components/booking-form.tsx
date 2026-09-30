@@ -8,6 +8,7 @@ import Price from "@/src/components/shared/Price";
 import { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import { useBookingActions } from "../helpers/use-booking-actions";
 import { priceForTravelersCount } from "../helpers/price-for-travelers-count";
+import { useUnitBookingContext } from "../helpers/unit-booking-context";
 
 const MAX_TRAVELERS = 50;
 
@@ -28,6 +29,7 @@ export default function BookingForm({
 }: Props) {
   const t = useTranslations("flights.packageDetails");
   const { book, isBooking, error } = useBookingActions(slug);
+  const unitBooking = useUnitBookingContext();
 
   const maxTravelers = Math.min(
     MAX_TRAVELERS,
@@ -37,11 +39,8 @@ export default function BookingForm({
 
   const [travelersCount, setTravelersCount] = useState(soldOut ? 0 : 1);
 
-  const totalPrice = priceForTravelersCount(
-    travelersCount,
-    price,
-    priceTiers,
-  );
+  const packagePrice = priceForTravelersCount(travelersCount, price, priceTiers);
+  const totalPrice = packagePrice + (unitBooking.unitDaysPayload ? unitBooking.unitTotal : 0);
 
   function decrement() {
     setTravelersCount((count) => Math.max(1, count - 1));
@@ -54,7 +53,7 @@ export default function BookingForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (soldOut || travelersCount < 1) return;
-    await book(travelersCount);
+    await book(travelersCount, unitBooking.unitDaysPayload);
   }
 
   return (

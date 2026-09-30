@@ -6,22 +6,19 @@ import { useRouter } from "@/i18n/navigation";
 import { createBooking } from "../../api/bookings.actions";
 import { ApiRequestError } from "@/src/lib/utils";
 
-/**
- * Feature-level action for the package-details booking sidebar — creates a
- * real multi-seat booking (POST /listings/travel/:slug/bookings) and
- * redirects to the booking's confirmation/detail page on success.
- */
+type UnitSelection = { unit_id: string; unit_days: { date: string; includes_overnight?: boolean; time_slot_id?: string }[] } | null;
+
 export function useBookingActions(slug: string) {
   const t = useTranslations("flights.packageDetails");
   const router = useRouter();
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const book = async (travelersCount: number) => {
+  const book = async (travelersCount: number, unitSelection: UnitSelection = null) => {
     setIsBooking(true);
     setError(null);
     try {
-      const booking = await createBooking(slug, travelersCount);
+      const booking = await createBooking(slug, travelersCount, unitSelection);
       router.push(`/my-bookings/${booking.id}`);
       return true;
     } catch (err: unknown) {

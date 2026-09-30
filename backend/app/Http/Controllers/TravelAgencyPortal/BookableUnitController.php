@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
-use App\Enums\BookableUnitReservationStatus;
+use App\Enums\TravelBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
 use App\Models\BookableUnit;
 use App\Models\BookableUnitAvailability;
 use App\Models\BookableUnitPhoto;
-use App\Models\BookableUnitReservation;
 use App\Models\BookableUnitTimeSlot;
+use App\Models\BookingUnitDay;
 use App\Models\TravelPackage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -194,11 +194,17 @@ class BookableUnitController extends Controller
      */
     private function guardAgainstClosingBookedDates(BookableUnit $bookableUnit, Carbon $rangeStart, Carbon $rangeEnd): void
     {
-        $conflicting = BookableUnitReservation::where('bookable_unit_id', $bookableUnit->id)
-            ->whereIn('status', [BookableUnitReservationStatus::Pending, BookableUnitReservationStatus::Confirmed])
-            ->whereDate('date_from', '<=', $rangeEnd->toDateString())
-            ->whereDate('date_to', '>=', $rangeStart->toDateString())
-            ->pluck('reservation_number');
+        $conflicting = BookingUnitDay::where('bookable_unit_id', $bookableUnit->id)
+            ->whereBetween('date', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
+            ->whereHas('travelBooking', fn ($q) => $q->whereIn('status', [
+                TravelBookingStatus::PendingDocuments->value,
+                TravelBookingStatus::Confirmed->value,
+            ]))
+            ->with('travelBooking:id,booking_number')
+            ->get()
+            ->pluck('travelBooking.booking_number')
+            ->unique()
+            ->filter();
 
         if ($conflicting->isNotEmpty()) {
             throw ValidationException::withMessages([

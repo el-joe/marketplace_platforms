@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations, useLocale } from "next-intl";
-import { AlertCircleIcon, CheckCircle2Icon, RefreshCwIcon, BedDoubleIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { AlertCircleIcon, RefreshCwIcon, BedDoubleIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { DayPicker, type DayButtonProps } from "react-day-picker";
 import Card from "@/src/components/shared/Card";
 import Price from "@/src/components/shared/Price";
@@ -11,7 +11,8 @@ import { Checkbox } from "@/src/components/ui/base-inputs/checkbox";
 import { Select } from "@/src/components/ui/base-inputs/select";
 import type { CurrencyCode } from "@/src/helpers/get-currency-symbol";
 import type { BookableUnitSummary, BookableUnitTimeSlot } from "../../helpers/types";
-import { useUnitBooking, toDateStr } from "../helpers/use-unit-booking";
+import { useUnitBookingContext } from "../helpers/unit-booking-context";
+import { toDateStr } from "../helpers/use-unit-booking";
 
 type Props = {
   units: BookableUnitSummary[];
@@ -21,7 +22,7 @@ type Props = {
 export default function BookableUnitsClient({ units, currency }: Props) {
   const t = useTranslations("flights.packageDetails");
   const locale = useLocale();
-  const booking = useUnitBooking(units);
+  const booking = useUnitBookingContext();
 
   const selectedUnit = units.find((u) => u.id === booking.unitId);
 
@@ -69,7 +70,6 @@ export default function BookableUnitsClient({ units, currency }: Props) {
       <div>
         <p className="text-sm font-medium text-primary mb-3">{t("selectDates")}</p>
 
-        {/* Month navigator — always visible */}
         <MonthNavigator
           month={booking.month}
           locale={locale}
@@ -171,7 +171,7 @@ export default function BookableUnitsClient({ units, currency }: Props) {
         )}
       </div>
 
-      {/* Time slot selector — only when available */}
+      {/* Time slot selector */}
       {!booking.calendarLoading && (booking.calendar?.time_slots.length ?? 0) > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-primary">{t("selectTimeSlot")}</p>
@@ -184,7 +184,7 @@ export default function BookableUnitsClient({ units, currency }: Props) {
         </div>
       )}
 
-      {/* Overnight toggle — only when no time slot is selected */}
+      {/* Overnight toggle */}
       {!booking.activeSlot && (
         <Checkbox
           label={t("includesOvernight")}
@@ -193,44 +193,17 @@ export default function BookableUnitsClient({ units, currency }: Props) {
         />
       )}
 
-      {/* Price summary */}
-      {booking.total > 0 && (
+      {/* Unit days subtotal — helps customer see what they're adding to the booking */}
+      {booking.unitTotal > 0 && (
         <div className="flex items-center justify-between border-t border-border pt-4">
-          <span className="text-sm text-muted-foreground">{t("totalPrice")}</span>
-          <Price currentPrice={booking.total} currency={currency} size="lg" />
+          <span className="text-sm text-muted-foreground">{t("unitDaysSubtotal")}</span>
+          <Price currentPrice={booking.unitTotal} currency={currency} size="lg" />
         </div>
       )}
 
-      {/* Errors */}
-      {booking.submitError && (
-        <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/5 rounded-lg px-3 py-2.5">
-          <AlertCircleIcon className="size-4 shrink-0 mt-0.5" />
-          <span>{booking.submitError}</span>
-        </div>
+      {booking.unitTotal > 0 && (
+        <p className="text-xs text-muted-foreground -mt-4">{t("unitDaysIncludedInBooking")}</p>
       )}
-
-      {/* Success confirmation */}
-      {booking.reservationNumber && (
-        <div className="flex items-start gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400 rounded-lg px-3 py-2.5">
-          <CheckCircle2Icon className="size-4 shrink-0 mt-0.5" />
-          <span>
-            {t("unitReserved")}{" "}
-            <span className="font-semibold">
-              {t("reservationNumber", { number: booking.reservationNumber })}
-            </span>
-          </span>
-        </div>
-      )}
-
-      {/* Reserve button */}
-      <Button
-        type="button"
-        onClick={booking.submit}
-        disabled={!booking.rangeValid || booking.submitting}
-        className="bg-blue-3 hover:opacity-90 text-white border-transparent font-semibold w-full"
-      >
-        {booking.submitting ? t("bookingInProgress") : t("reserveUnit")}
-      </Button>
     </Card>
   );
 }

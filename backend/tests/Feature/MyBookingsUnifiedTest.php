@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Enums\BookableUnitReservationStatus;
 use App\Enums\TravelAgencyStatus;
 use App\Enums\TravelBookingStatus;
 use App\Models\BookableUnit;
-use App\Models\BookableUnitReservation;
+use App\Models\BookingUnitDay;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\TravelAgency;
@@ -90,6 +89,7 @@ class MyBookingsUnifiedTest extends TestCase
         $me = $this->customer();
         $otherCustomer = $this->customer();
 
+        // A plain package booking for $me
         $myPackage = $this->package($agency);
         TravelBooking::create([
             'travel_package_id' => $myPackage->id,
@@ -99,19 +99,26 @@ class MyBookingsUnifiedTest extends TestCase
             'status' => TravelBookingStatus::Confirmed,
         ]);
 
+        // A package+unit booking for $me — unit days are embedded in the booking
         $myUnit = $this->unit($agency);
-        BookableUnitReservation::create([
+        $myUnitPackage = $this->package($agency);
+        $unitBooking = TravelBooking::create([
+            'travel_package_id' => $myUnitPackage->id,
             'bookable_unit_id' => $myUnit->id,
             'customer_id' => $me->id,
-            'currency' => 'AED',
-            'date_from' => '2026-10-10',
-            'date_to' => '2026-10-11',
+            'travelers_count' => 1,
+            'total_price' => 1300,
+            'status' => TravelBookingStatus::PendingDocuments,
+        ]);
+        BookingUnitDay::create([
+            'travel_booking_id' => $unitBooking->id,
+            'bookable_unit_id' => $myUnit->id,
+            'date' => '2026-10-10',
             'includes_overnight' => true,
-            'total_price' => 300,
-            'status' => BookableUnitReservationStatus::Pending,
+            'price' => 300,
         ]);
 
-        // Belongs to a different customer — must never appear in `$me`'s response.
+        // Belongs to a different customer — must never appear in $me's response.
         $otherPackage = $this->package($agency);
         TravelBooking::create([
             'travel_package_id' => $otherPackage->id,
@@ -129,7 +136,7 @@ class MyBookingsUnifiedTest extends TestCase
 
         $this->assertCount(2, $data);
         $this->assertEqualsCanonicalizing(
-            ['travel_package', 'bookable_unit'],
+            ['travel_package', 'travel_package'],
             array_column($data, 'type'),
         );
         $this->assertTrue(

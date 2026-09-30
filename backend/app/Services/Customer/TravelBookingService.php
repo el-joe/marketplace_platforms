@@ -5,6 +5,10 @@ namespace App\Services\Customer;
 use App\Enums\TravelBookingStatus;
 use App\Enums\TravelPackageStatus;
 use App\Jobs\NotifyTravelBookingJob;
+use App\Models\BookableUnit;
+use App\Models\BookableUnitAvailability;
+use App\Models\BookableUnitTimeSlot;
+use App\Models\BookingUnitDay;
 use App\Models\Customer;
 use App\Models\TravelBooking;
 use App\Models\TravelPackage;
@@ -75,8 +79,10 @@ class TravelBookingService
     public function book(TravelPackage $package, Customer $customer, array $data): TravelBooking
     {
         $travelersCount = (int) $data['travelers_count'];
+        $unitId = $data['unit_id'] ?? null;
+        $unitDays = $data['unit_days'] ?? [];
 
-        $booking = DB::transaction(function () use ($package, $customer, $data, $travelersCount) {
+        $booking = DB::transaction(function () use ($package, $customer, $data, $travelersCount, $unitId, $unitDays) {
             $pkg = TravelPackage::lockForUpdate()->findOrFail($package->id);
             if ($pkg->available_seats !== null
                 && ($pkg->seats_booked + $travelersCount) > $pkg->available_seats
@@ -90,14 +96,37 @@ class TravelBookingService
                 $passportPath = $data['passport_file']->store('travel-bookings/passports', 'private');
             }
 
-            return TravelBooking::create([
+            // Resolve unit days total and validate availability when unit is selected.
+            $unitTotal = 0;
+            $resolvedDays = [];
+            if ($unitId && count($unitDays) > 0) {
+                $unit = BookableUnit::where('status', 'active')->findOrFail($unitId);
+                [$unitTotal, $resolvedDays] = $this->processUnitDays($unit, $unitDays);
+                $totalCents += $unitTotal;
+            }
+
+            $booking = TravelBooking::create([
                 'travel_package_id' => $package->id,
+                'bookable_unit_id' => $unitId ?: null,
                 'customer_id' => $customer->id,
                 'travelers_count' => $travelersCount,
                 'total_price' => $totalCents,
                 'passport_file_path' => $passportPath,
                 'status' => TravelBookingStatus::PendingDocuments,
             ]);
+
+            foreach ($resolvedDays as $day) {
+                BookingUnitDay::create([
+                    'travel_booking_id' => $booking->id,
+                    'bookable_unit_id' => $unitId,
+                    'date' => $day['date'],
+                    'includes_overnight' => $day['includes_overnight'],
+                    'time_slot_id' => $day['time_slot_id'] ?? null,
+                    'price' => $day['price'],
+                ]);
+            }
+
+            return $booking;
         });
 
         NotifyTravelBookingJob::dispatch($booking);
@@ -109,6 +138,94 @@ class TravelBookingService
         );
 
         return $booking;
+    }
+
+    /**
+     * Validates and prices an array of unit-day inputs against live availability rows.
+     * Marks consumed days as unavailable. Returns [totalPrice, resolvedDays[]] inside
+     * the caller's DB transaction.
+     *
+     * @param  array<int, array{date: string, includes_overnight?: bool, time_slot_id?: string}>  $unitDays
+     * @return array{0: int, 1: list<array{date: string, includes_overnight: bool, time_slot_id: string|null, price: int}>}
+     */
+    private function processUnitDays(BookableUnit $unit, array $unitDays): array
+    {
+        $totalPrice = 0;
+        $resolved = [];
+
+        // Separate slot days from whole-day bookings.
+        $wholeDayDates = [];
+        $slotEntries = [];
+        foreach ($unitDays as $entry) {
+            if (! empty($entry['time_slot_id'])) {
+                $slotEntries[] = $entry;
+            } else {
+                $wholeDayDates[] = $entry['date'];
+            }
+        }
+
+        // ── Whole-day bookings ────────────────────────────────────────────────
+        if (count($wholeDayDates) > 0) {
+            $rows = BookableUnitAvailability::where('bookable_unit_id', $unit->id)
+                ->whereIn('date', $wholeDayDates)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy(fn (BookableUnitAvailability $r) => $r->date->toDateString());
+
+            foreach ($wholeDayDates as $date) {
+                $row = $rows->get($date);
+                if (! $row || ! $row->is_available) {
+                    throw ValidationException::withMessages([
+                        'unit_days' => "The unit is not available on {$date}.",
+                    ]);
+                }
+                // Find the matching entry to determine overnight preference.
+                $entry = collect($unitDays)->firstWhere('date', $date);
+                $overnight = (bool) ($entry['includes_overnight'] ?? false);
+                $price = $overnight ? $row->price_with_overnight : $row->price_day_only;
+                if ($price === null) {
+                    throw ValidationException::withMessages([
+                        'unit_days' => "No price configured for {$date}.",
+                    ]);
+                }
+                $totalPrice += $price;
+                $resolved[] = ['date' => $date, 'includes_overnight' => $overnight, 'time_slot_id' => null, 'price' => $price];
+            }
+
+            BookableUnitAvailability::where('bookable_unit_id', $unit->id)
+                ->whereIn('date', $wholeDayDates)
+                ->update(['is_available' => false]);
+        }
+
+        // ── Time-slot bookings ────────────────────────────────────────────────
+        foreach ($slotEntries as $entry) {
+            $slot = BookableUnitTimeSlot::where('bookable_unit_id', $unit->id)
+                ->lockForUpdate()
+                ->find($entry['time_slot_id']);
+
+            if (! $slot) {
+                throw ValidationException::withMessages([
+                    'unit_days' => 'Time slot not found for the selected unit.',
+                ]);
+            }
+
+            $alreadyBooked = BookingUnitDay::where('bookable_unit_id', $unit->id)
+                ->where('time_slot_id', $slot->id)
+                ->where('date', $entry['date'])
+                ->lockForUpdate()
+                ->exists();
+
+            if ($alreadyBooked) {
+                throw ValidationException::withMessages([
+                    'unit_days' => "Time slot is already booked for {$entry['date']}.",
+                ]);
+            }
+
+            $totalPrice += $slot->price;
+            $resolved[] = ['date' => $entry['date'], 'includes_overnight' => false, 'time_slot_id' => $slot->id, 'price' => $slot->price];
+        }
+
+        return [$totalPrice, $resolved];
     }
 
     // ── Contract signing ──────────────────────────────────────────────────────

@@ -5,36 +5,41 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class BookableUnitTimeSlot extends Model
+class BookingUnitDay extends Model
 {
     use HasUuids;
 
     protected $fillable = [
+        'travel_booking_id',
         'bookable_unit_id',
-        'slot_type',
-        'starts_at',
-        'ends_at',
+        'date',
+        'includes_overnight',
+        'time_slot_id',
         'price',
     ];
 
     protected function casts(): array
     {
         return [
+            'date' => 'date',
+            'includes_overnight' => 'boolean',
             'price' => 'integer',
         ];
     }
 
-    // ── Relationships ─────────────────────────────────────────────────────────
+    public function travelBooking(): BelongsTo
+    {
+        return $this->belongsTo(TravelBooking::class);
+    }
 
     public function bookableUnit(): BelongsTo
     {
         return $this->belongsTo(BookableUnit::class);
     }
 
-    public function bookingDays(): HasMany
+    public function timeSlot(): BelongsTo
     {
-        return $this->hasMany(BookingUnitDay::class, 'time_slot_id');
+        return $this->belongsTo(BookableUnitTimeSlot::class, 'time_slot_id');
     }
 }

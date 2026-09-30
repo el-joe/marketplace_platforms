@@ -59,9 +59,9 @@ class BookableUnit extends Model
         return $this->hasMany(BookableUnitTimeSlot::class);
     }
 
-    public function reservations(): HasMany
+    public function bookingDays(): HasMany
     {
-        return $this->hasMany(BookableUnitReservation::class);
+        return $this->hasMany(BookingUnitDay::class);
     }
 
     public function photos(): HasMany

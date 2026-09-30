@@ -151,21 +151,13 @@ Route::post(
 Route::get('packages/{packageId}/units', PackageBookableUnitsController::class)
     ->name('customer.packages.units');
 
-// ── Bookable units (daily calendar bookings: chalets/hotel rooms) ──────
-// Entirely separate from TravelPackage/TravelBooking above (fixed-date
-// travel packages) — the two coexist as different agency offerings.
+// ── Bookable units — calendar only (reservation is part of travel booking) ──
 Route::prefix('bookable-units')->name('customer.bookable-units.')->group(function (): void {
     // GET /bookable-units/{unit}/calendar?month=YYYY-MM — public
     Route::get(
         '{unit}/calendar',
         [BookableUnitAvailabilityController::class, 'calendar']
     )->name('calendar');
-
-    // POST /bookable-units/{unit}/reservations — authenticated
-    Route::post(
-        '{unit}/reservations',
-        [BookableUnitAvailabilityController::class, 'reserve']
-    )->middleware('auth:customer')->name('reservations.store');
 });
 
 // Unified "My Bookings": travel packages + bookable units + flights.
