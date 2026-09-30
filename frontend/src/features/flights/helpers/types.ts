@@ -20,6 +20,32 @@ export type BookingPackageSummary = {
   currency: string;
   agency: { id: string; name: string };
   cover_image: string;
+  departure_date: string | null;
+  return_date: string | null;
+  duration_days: number | null;
+  duration_nights: number | null;
+};
+
+export type BookingUnitDaySummary = {
+  id: string;
+  date: string;
+  price: number;
+  includes_overnight: boolean;
+  time_slot: {
+    id: string;
+    slot_type: "morning" | "evening" | "custom";
+    starts_at: string;
+    ends_at: string;
+  } | null;
+};
+
+export type BookingBookableUnit = {
+  id: string;
+  name: string;
+  name_ar: string | null;
+  type: "chalet" | "hotel_room" | "other";
+  capacity: number;
+  primary_photo_url: string | null;
 };
 
 export type TravelBooking = {
@@ -34,7 +60,12 @@ export type TravelBooking = {
   package: BookingPackageSummary;
 };
 
-export type TravelBookingDetail = TravelBooking;
+export type TravelBookingDetail = TravelBooking & {
+  currency: string;
+  bookable_unit: BookingBookableUnit | null;
+  unit_days: BookingUnitDaySummary[];
+  unit_days_total: number;
+};
 
 export type BookingsListMeta = {
   current_page: number;

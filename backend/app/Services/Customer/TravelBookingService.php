@@ -37,7 +37,7 @@ class TravelBookingService
     public function showForCustomer(Customer $customer, string $id): TravelBooking
     {
         return $customer->travelBookings()
-            ->with(['package.media', 'package.agency:id,name'])
+            ->with(['package.media', 'package.agency:id,name', 'bookableUnit.photos', 'unitDays.timeSlot'])
             ->findOrFail($id);
     }
 
