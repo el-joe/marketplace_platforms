@@ -21,7 +21,7 @@ class BookableUnitAvailabilityController extends Controller
      * Returns a month's calendar: date, is_available, capacity and both
      * prices, for the customer-facing booking widget.
      */
-    public function calendar(Request $request, string $unit): JsonResponse
+    public function calendar(Request $request, $country , string $unit): JsonResponse
     {
         $bookableUnit = BookableUnit::where('status', 'active')->find($unit);
 
@@ -53,7 +53,7 @@ class BookableUnitAvailabilityController extends Controller
      * service via a DB transaction + lockForUpdate() on the relevant
      * availability row(s).
      */
-    public function reserve(CreateReservationRequest $request, string $unit): JsonResponse
+    public function reserve(CreateReservationRequest $request , $country, string $unit): JsonResponse
     {
         $bookableUnit = BookableUnit::where('status', 'active')->find($unit);
 
