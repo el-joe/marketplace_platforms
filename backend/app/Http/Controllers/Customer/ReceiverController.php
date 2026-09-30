@@ -16,7 +16,7 @@ class ReceiverController extends Controller
 {
     public function __construct(private readonly ReceiverService $receiverService) {}
 
-    public function index(): JsonResponse
+    public function index($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -29,7 +29,7 @@ class ReceiverController extends Controller
         );
     }
 
-    public function store(StoreReceiverRequest $request): JsonResponse
+    public function store(StoreReceiverRequest $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -38,7 +38,7 @@ class ReceiverController extends Controller
 
         $isFirst = ! $customer->receivers()->exists();
 
-        if ($isFirst || !empty($data['is_default'])) {
+        if ($isFirst || ! empty($data['is_default'])) {
             $customer->receivers()->where('is_default', true)->update(['is_default' => false]);
             $data['is_default'] = true;
         }
@@ -52,7 +52,7 @@ class ReceiverController extends Controller
     {
         $data = $request->validated();
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             $this->receiverService->setDefault(auth('customer')->user(), $receiver);
             unset($data['is_default']);
         }

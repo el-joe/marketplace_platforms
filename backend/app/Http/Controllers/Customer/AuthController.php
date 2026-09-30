@@ -35,7 +35,7 @@ class AuthController extends Controller
 
     // ── Register ──────────────────────────────────────────────────────────────
 
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, $country): JsonResponse
     {
         /** @var Country $country */
         $country = $request->attributes->get('country');
@@ -71,7 +71,7 @@ class AuthController extends Controller
 
     // ── Login ─────────────────────────────────────────────────────────────────
 
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request, $country): JsonResponse
     {
         $credential = $request->email_or_phone;
         $field = filter_var($credential, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
@@ -108,7 +108,7 @@ class AuthController extends Controller
 
     // ── Logout ────────────────────────────────────────────────────────────────
 
-    public function logout(): JsonResponse
+    public function logout($country): JsonResponse
     {
         $customer = auth('customer')->user();
         $token = JWTAuth::getToken()?->get();
@@ -127,7 +127,7 @@ class AuthController extends Controller
 
     // ── Refresh Token ─────────────────────────────────────────────────────────
 
-    public function refreshToken(RefreshTokenRequest $request): JsonResponse
+    public function refreshToken(RefreshTokenRequest $request, $country): JsonResponse
     {
         try {
             $payload = JWTAuth::setToken($request->refresh_token)->getPayload();
@@ -159,7 +159,7 @@ class AuthController extends Controller
 
     // ── Me ────────────────────────────────────────────────────────────────────
 
-    public function me(): JsonResponse
+    public function me($country): JsonResponse
     {
         return ApiResponse::success(
             new CustomerResource(auth('customer')->user()),
@@ -169,7 +169,7 @@ class AuthController extends Controller
 
     // ── Forgot Password ───────────────────────────────────────────────────────
 
-    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    public function forgotPassword(ForgotPasswordRequest $request, $country): JsonResponse
     {
         $credential = $request->email_or_phone;
         $field = filter_var($credential, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
@@ -198,7 +198,7 @@ class AuthController extends Controller
 
     // ── Reset Password ────────────────────────────────────────────────────────
 
-    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    public function resetPassword(ResetPasswordRequest $request, $country): JsonResponse
     {
         $otp = CustomerOtpToken::where('token', $request->token)
             ->where('type', 'password_reset')

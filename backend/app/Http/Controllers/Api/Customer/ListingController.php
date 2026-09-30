@@ -40,7 +40,7 @@ class ListingController extends Controller
         private readonly ListingQueryService $listings,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, $country): JsonResponse
     {
         $isNawyNow = $this->appContext->isNawyNow();
         $country = $this->resolveCountry($request);
@@ -106,7 +106,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $identifier): JsonResponse
+    public function show(Request $request, $country, string $identifier): JsonResponse
     {
         $isNawyNow = $this->appContext->isNawyNow();
         $country = $this->resolveCountry($request);
@@ -159,7 +159,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function shippingEstimate(Request $request, string $id): JsonResponse
+    public function shippingEstimate(Request $request, $country, string $id): JsonResponse
     {
         $request->validate([
             'address_id' => ['required', 'uuid'],

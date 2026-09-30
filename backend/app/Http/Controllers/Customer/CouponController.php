@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 class CouponController extends Controller
 {
-    public function show(string $_country, string $code): JsonResponse
+    public function show(string $country, string $code): JsonResponse
     {
         $coupon = Coupon::where('code', $code)->first();
 

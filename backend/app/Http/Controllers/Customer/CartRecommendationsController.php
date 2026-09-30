@@ -20,7 +20,7 @@ class CartRecommendationsController extends Controller
         private readonly CartService $cartService,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $isNawyNow = ListingModeResolver::isNawyNow($request);
@@ -50,7 +50,7 @@ class CartRecommendationsController extends Controller
         }
 
         $token = $request->attributes->get('guest_cart_token');
-        if (!$token) {
+        if (! $token) {
             $token = (string) Str::uuid();
             $request->attributes->set('guest_cart_token', $token);
         }

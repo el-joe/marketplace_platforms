@@ -15,7 +15,7 @@ class PackageBookableUnitsController extends Controller
      * GET /api/v1/packages/{packageId}/units
      * Returns the active bookable units for a published travel package.
      */
-    public function __invoke(string $packageId): JsonResponse
+    public function __invoke($country, string $packageId): JsonResponse
     {
         $package = TravelPackage::where('id', $packageId)
             ->where('status', TravelPackageStatus::Active)

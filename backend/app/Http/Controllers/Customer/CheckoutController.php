@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Enums\AdminListingStatus;
+use App\Enums\CouponType;
 use App\Enums\DeliveryInstruction;
 use App\Enums\GlobalSystemType;
-use App\Enums\InventoryMovementType;
+use App\Enums\OrderStatus;
 use App\Enums\VendorListingStatus;
+use App\Enums\WalletOwnerType;
 use App\Events\SubOrderPlaced;
+use App\Exceptions\GiftCardCurrencyMismatchException;
+use App\Exceptions\InsufficientWalletBalanceException;
+use App\Exceptions\InternationalShippingIneligibleException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\CheckoutPrepareRequest;
 use App\Http\Requests\Customer\PlaceOrderRequest;
@@ -22,54 +27,62 @@ use App\Jobs\FraudDetectionJob;
 use App\Jobs\NotifyVendorJob;
 use App\Jobs\OrderConfirmationEmailJob;
 use App\Models\Address;
+use App\Models\AdminListing;
+use App\Models\AffiliatePromoCode;
+use App\Models\CartItem;
 use App\Models\CountryPaymentGateway;
 use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\CustomerReceiver;
-use App\Models\MarketerContract;
-use App\Enums\WalletOwnerType;
-use App\Models\Wallet;
-use App\Exceptions\GiftCardCurrencyMismatchException;
-use App\Exceptions\InsufficientWalletBalanceException;
-use App\Exceptions\InternationalShippingIneligibleException;
-use App\Services\Shipping\InternationalShippingRateService;
-use App\Services\Shipping\CurrencyConversionService;
-use App\Models\InventoryMovement;
+use App\Models\IdempotencyKey;
+use App\Models\MarketerContractAcceptance;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemAllocation;
 use App\Models\OrderItemCustomAttributeValue;
 use App\Models\PaymentTransaction;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
-use App\Services\LastClickAttributionService;
+use App\Models\Wallet;
 use App\Models\WarehouseInventory;
 use App\Models\WarrantyPurchase;
-use Illuminate\Support\Facades\Log;
+use App\Services\Ads\PlacementAdService;
 use App\Services\Checkout\CartLineSource;
 use App\Services\Checkout\CheckoutPricingEngine;
 use App\Services\Checkout\CheckoutRollbackService;
 use App\Services\Checkout\CouponEligibilityService;
-use App\Services\Checkout\CouponUsageService;
 use App\Services\Checkout\CouponNoLongerValidException;
-use App\Services\Payments\PaymentMethodMapper;
+use App\Services\Checkout\CouponUsageService;
+use App\Services\CouponService;
 use App\Services\Customer\CartService;
 use App\Services\Customer\CheckoutCalculationService;
-use App\Services\Customer\CodValidationService;
-use App\Services\Customer\CityShippingSurchargeService;
-use App\Services\Customer\ListingIdentifierService;
-use App\Services\Customer\WarehouseShippingSurchargeService;
 use App\Services\Customer\CheckoutWalletService;
+use App\Services\Customer\CityShippingSurchargeService;
+use App\Services\Customer\CodValidationService;
+use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\LoyaltyService;
-use App\Services\CouponService;
+use App\Services\Customer\WarehouseShippingSurchargeService;
+use App\Services\Inventory\InventoryService;
+use App\Services\LastClickAttributionService;
+use App\Services\LedgerService;
+use App\Services\MarketerContractGateService;
+use App\Services\Media\ListingImageResolver;
+use App\Services\Payments\PaymentMethodMapper;
 use App\Services\PaymentService;
+use App\Services\Shipping\CurrencyConversionService;
+use App\Services\Shipping\InternationalShippingRateService;
 use App\Services\ShippingSubsidyService;
 use App\Services\WarrantyPlanService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -89,15 +102,15 @@ class CheckoutController extends Controller
         private readonly LoyaltyService $loyaltyService,
         private readonly CodValidationService $codValidationService,
         private readonly LastClickAttributionService $attributionService,
-        private readonly \App\Services\Ads\PlacementAdService $placementAds,
+        private readonly PlacementAdService $placementAds,
         private readonly CheckoutPricingEngine $pricingEngine,
         private readonly CouponEligibilityService $couponEligibilityService,
         private readonly CouponUsageService $couponUsageService,
-        private readonly \App\Services\LedgerService $ledgerService = new \App\Services\LedgerService(),
-        private readonly CheckoutRollbackService $rollbackService = new CheckoutRollbackService(),
-        private readonly \App\Services\Inventory\InventoryService $inventoryService = new \App\Services\Inventory\InventoryService(),
-        private readonly InternationalShippingRateService $internationalShippingRateService = new InternationalShippingRateService(),
-        private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService(),
+        private readonly LedgerService $ledgerService = new LedgerService,
+        private readonly CheckoutRollbackService $rollbackService = new CheckoutRollbackService,
+        private readonly InventoryService $inventoryService = new InventoryService,
+        private readonly InternationalShippingRateService $internationalShippingRateService = new InternationalShippingRateService,
+        private readonly CurrencyConversionService $currencyConversionService = new CurrencyConversionService,
     ) {}
 
     /**
@@ -141,7 +154,7 @@ class CheckoutController extends Controller
      * @param  array<string, CartLineSource>  $cartLineSources
      */
     private function applyInternationalShippingOverrides(
-        \Illuminate\Support\Collection $cartItems,
+        Collection $cartItems,
         array $cartLineSources,
         array &$vendorShipping,
         string $destinationCountryId,
@@ -198,7 +211,7 @@ class CheckoutController extends Controller
             return 0;
         }
 
-        $type = $coupon->type instanceof \App\Enums\CouponType ? $coupon->type->value : (string) $coupon->type;
+        $type = $coupon->type instanceof CouponType ? $coupon->type->value : (string) $coupon->type;
         if ($type !== 'free_shipping') {
             return 0;
         }
@@ -239,7 +252,7 @@ class CheckoutController extends Controller
         return $shippingDiscount;
     }
 
-    public function shippingMethods(ShippingMethodsRequest $request): JsonResponse
+    public function shippingMethods(ShippingMethodsRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $country = $request->attributes->get('country');
@@ -309,7 +322,7 @@ class CheckoutController extends Controller
         ], __('common.exceptions.checkout.shipping_methods_retrieved'));
     }
 
-    public function prepare(CheckoutPrepareRequest $request): JsonResponse
+    public function prepare(CheckoutPrepareRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $country = $request->attributes->get('country');
@@ -356,7 +369,7 @@ class CheckoutController extends Controller
             ->first();
 
         $gatewayCode = $selectedGateway?->gateway?->code;
-        $isCod       = $gatewayCode === 'cod';
+        $isCod = $gatewayCode === 'cod';
         if ($isCod && ! $this->codAvailable($address, $country)) {
             return ApiResponse::error(__('common.exceptions.checkout.cod_unavailable'), [], 422);
         }
@@ -365,7 +378,7 @@ class CheckoutController extends Controller
 
         if ($isCod) {
             $codErrors = $this->codValidationService->validate($cartItems, $country->id);
-            if (!empty($codErrors)) {
+            if (! empty($codErrors)) {
                 return ApiResponse::error($codErrors[0], ['errors' => $codErrors], 422);
             }
         }
@@ -475,7 +488,7 @@ class CheckoutController extends Controller
         // on top of the coupon (enhancement.md P-04 — this was previously
         // stacked unconditionally).
         if ($cart->affiliate_promo_code_id && (! $coupon || $coupon->is_stackable)) {
-            $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
+            $affiliatePromoCode = AffiliatePromoCode::find($cart->affiliate_promo_code_id);
             if ($affiliatePromoCode) {
                 $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotal, $cart->currency);
 
@@ -506,7 +519,7 @@ class CheckoutController extends Controller
 
         $summary = $pricedCart->toArray();
 
-        \Illuminate\Support\Facades\Cache::put(
+        Cache::put(
             "checkout_prepare_signature:{$customer->id}",
             $pricedCart->signature(),
             now()->addMinutes(30),
@@ -529,17 +542,17 @@ class CheckoutController extends Controller
             ->reject(fn ($cpg) => $hasInternationalLine && $cpg->gateway?->code === 'cod')
             ->filter(fn ($cpg) => $this->gatewayAllowedByFbm($cpg->gateway_id, $cart->items))
             ->map(fn ($cpg) => [
-                'id'            => $cpg->id,
-                'gateway_code'  => $cpg->gateway?->code,
-                'display_name'  => ['en' => $cpg->display_name_en, 'ar' => $cpg->display_name_ar],
-                'type'          => $cpg->gateway?->type,
-                'is_redirect'   => in_array($cpg->gateway?->code, ['thawani', 'paytabs']),
-                'fee_pct'       => (float) $cpg->fee_pct,
-                'fee_fixed'     => (int) $cpg->fee_fixed,
+                'id' => $cpg->id,
+                'gateway_code' => $cpg->gateway?->code,
+                'display_name' => ['en' => $cpg->display_name_en, 'ar' => $cpg->display_name_ar],
+                'type' => $cpg->gateway?->type,
+                'is_redirect' => in_array($cpg->gateway?->code, ['thawani', 'paytabs']),
+                'fee_pct' => (float) $cpg->fee_pct,
+                'fee_fixed' => (int) $cpg->fee_fixed,
                 'is_configured' => $cpg->is_configured,
-                'environment'   => $cpg->environment,
-                'image_url'     => $cpg->gateway?->image
-                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($cpg->gateway->image)
+                'environment' => $cpg->environment,
+                'image_url' => $cpg->gateway?->image
+                    ? Storage::disk('public')->url($cpg->gateway->image)
                     : null,
             ])->values()->all();
 
@@ -571,22 +584,22 @@ class CheckoutController extends Controller
         $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
         $checkoutBanner = $this->placementAds->resolve('checkout_banner', $country, 'logged_in', $sessionId);
 
-        $marketerContractGates = app(\App\Services\MarketerContractGateService::class)->gates($customer, $cartItems);
+        $marketerContractGates = app(MarketerContractGateService::class)->gates($customer, $cartItems);
         $marketerContractGate = collect($marketerContractGates)->firstWhere('accepted', false);
 
         return ApiResponse::success([
             'total_items_qty' => $totalItemsQty,
             'order_summary' => $summary,
             'shipping' => [
-                'total_fee'     => $vendorShipping['total'],
-                'is_free'       => $vendorShipping['total'] === 0,
-                'groups'        => collect($shippingGroups)->map(fn ($g, $id) => [
-                    'shipping_method_id'            => $id,
-                    'method_name'                   => $g['method']?->name,
-                    'fee'                           => $g['fee'],
-                    'is_free'                       => $g['is_free'],
-                    'estimated_delivery_days_min'   => $g['method']?->min_delivery_days,
-                    'estimated_delivery_days_max'   => $g['method']?->max_delivery_days,
+                'total_fee' => $vendorShipping['total'],
+                'is_free' => $vendorShipping['total'] === 0,
+                'groups' => collect($shippingGroups)->map(fn ($g, $id) => [
+                    'shipping_method_id' => $id,
+                    'method_name' => $g['method']?->name,
+                    'fee' => $g['fee'],
+                    'is_free' => $g['is_free'],
+                    'estimated_delivery_days_min' => $g['method']?->min_delivery_days,
+                    'estimated_delivery_days_max' => $g['method']?->max_delivery_days,
                 ])->values(),
                 'delivery_fee' => $vendorShipping['total'],
                 'is_free_delivery' => $vendorShipping['total'] === 0,
@@ -619,7 +632,7 @@ class CheckoutController extends Controller
         ], __('common.exceptions.checkout.preview_ready'));
     }
 
-    public function placeOrder(PlaceOrderRequest $request): JsonResponse
+    public function placeOrder(PlaceOrderRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $country = $request->attributes->get('country');
@@ -634,7 +647,7 @@ class CheckoutController extends Controller
         $idempotencyKey = $validated['idempotency_key'];
         $requestHash = hash('sha256', json_encode($validated));
 
-        $existingIdempotency = \App\Models\IdempotencyKey::where('key', $idempotencyKey)->first();
+        $existingIdempotency = IdempotencyKey::where('key', $idempotencyKey)->first();
         if ($existingIdempotency) {
             if ($existingIdempotency->request_hash !== $requestHash) {
                 return ApiResponse::error(
@@ -707,7 +720,7 @@ class CheckoutController extends Controller
             }
 
             $fulfilmentListing = $source->fulfilmentListing;
-            $isAdmin = $fulfilmentListing instanceof \App\Models\AdminListing;
+            $isAdmin = $fulfilmentListing instanceof AdminListing;
 
             if ($isAdmin) {
                 if ($fulfilmentListing->status !== AdminListingStatus::Active) {
@@ -766,8 +779,8 @@ class CheckoutController extends Controller
 
         $gatewayCode = $methodConfig->gateway?->code;
         $gatewayType = $methodConfig->gateway?->type;
-        $isCod       = $gatewayCode === 'cod';
-        $isWallet    = $gatewayCode === 'wallet';
+        $isCod = $gatewayCode === 'cod';
+        $isWallet = $gatewayCode === 'wallet';
         if ($isCod && ! $this->codAvailable($address, $country)) {
             return ApiResponse::error(__('common.exceptions.checkout.cod_unavailable'), [], 422);
         }
@@ -776,7 +789,7 @@ class CheckoutController extends Controller
 
         if ($isCod) {
             $codErrors = $this->codValidationService->validate($cartItems, $country->id);
-            if (!empty($codErrors)) {
+            if (! empty($codErrors)) {
                 return ApiResponse::error($codErrors[0], ['errors' => $codErrors], 422);
             }
         }
@@ -791,8 +804,8 @@ class CheckoutController extends Controller
         $shippingMethods = ShippingMethod::whereIn('id', $shippingMethodIds)->get()->keyBy('id');
 
         $groupedForShipping = collect($cartItems)->groupBy('selected_shipping_method_id');
-        $totalShippingFee   = 0;
-        $codExtraFee        = 0;
+        $totalShippingFee = 0;
+        $codExtraFee = 0;
 
         foreach ($groupedForShipping as $methodId => $groupItems) {
             $method = $shippingMethods[$methodId] ?? null;
@@ -801,11 +814,11 @@ class CheckoutController extends Controller
                     $address, $country, $methodId, $groupItems->all(), $isCod
                 );
                 $totalShippingFee += $calc['fee'];
-                $codExtraFee      += $calc['cod_extra_fee'];
+                $codExtraFee += $calc['cod_extra_fee'];
             }
         }
 
-        $shippingZone   = $address->city?->shippingZone;
+        $shippingZone = $address->city?->shippingZone;
         $vendorShipping = $this->resolveVendorShipping($cartItems, $cartLineSources, $totalShippingFee, $shippingZone, null);
 
         $customsDutyCents = $this->applyInternationalShippingOverrides(
@@ -816,7 +829,7 @@ class CheckoutController extends Controller
         );
 
         $shippingFeeCents = $vendorShipping['total'];
-        $codFeeCents      = $isCod ? $codExtraFee : 0;
+        $codFeeCents = $isCod ? $codExtraFee : 0;
 
         $warrantyResult = $this->pricingEngine->resolveWarrantySelections(
             $cartItems,
@@ -862,7 +875,7 @@ class CheckoutController extends Controller
         // is_stackable=false blocks the affiliate promo from stacking on top
         // of the coupon (enhancement.md P-04 — previously stacked unconditionally).
         if ($cart->affiliate_promo_code_id && (! $coupon || $coupon->is_stackable)) {
-            $affiliatePromoCode = \App\Models\AffiliatePromoCode::find($cart->affiliate_promo_code_id);
+            $affiliatePromoCode = AffiliatePromoCode::find($cart->affiliate_promo_code_id);
             if ($affiliatePromoCode) {
                 $promoResult = $this->calculationService->applyAffiliatePromoCode($affiliatePromoCode, $subtotal, $cart->currency);
 
@@ -886,7 +899,7 @@ class CheckoutController extends Controller
             $warrantyResult['selections'], $shippingByGroup, $customsDutyCents,
         );
 
-        $preparedSignature = \Illuminate\Support\Facades\Cache::pull("checkout_prepare_signature:{$customer->id}");
+        $preparedSignature = Cache::pull("checkout_prepare_signature:{$customer->id}");
         if ($preparedSignature !== null && $preparedSignature !== $comparablePricedCart->signature()) {
             return ApiResponse::error(
                 __('common.exceptions.checkout.price_changed', [], 'Prices have changed since you last viewed this order.'),
@@ -900,9 +913,9 @@ class CheckoutController extends Controller
         }
 
         // ── Loyalty redemption ────────────────────────────────────────────────
-        $loyaltyDiscount      = 0;
-        $loyaltyPointsToUse   = 0.0;
-        $loyaltyAllocations   = [];
+        $loyaltyDiscount = 0;
+        $loyaltyPointsToUse = 0.0;
+        $loyaltyAllocations = [];
         if (! empty($validated['loyalty_points_to_use'])) {
             $loyaltyPointsToUse = (float) $validated['loyalty_points_to_use'];
             try {
@@ -913,7 +926,7 @@ class CheckoutController extends Controller
                     // The real cap is re-applied inside debitPointsForOrder after order creation.
                     max(0, $subtotal - $discountCents),
                 );
-            } catch (\Illuminate\Validation\ValidationException $e) {
+            } catch (ValidationException $e) {
                 return ApiResponse::error($e->getMessage(), $e->errors(), 422);
             }
 
@@ -1019,7 +1032,7 @@ class CheckoutController extends Controller
             }
         }
 
-        $idempotencyRecord = $existingIdempotency ?? \App\Models\IdempotencyKey::create([
+        $idempotencyRecord = $existingIdempotency ?? IdempotencyKey::create([
             'key' => $idempotencyKey,
             'request_hash' => $requestHash,
             'operation_type' => 'place_order',
@@ -1041,7 +1054,7 @@ class CheckoutController extends Controller
                 // Server-side marketer contract gate: every required marketer
                 // in the cart needs an unlinked acceptance owned by this
                 // customer for the ACTIVE contract version.
-                $gateService = app(\App\Services\MarketerContractGateService::class);
+                $gateService = app(MarketerContractGateService::class);
                 $providedIds = collect($validated['contract_acceptance_ids'] ?? [])
                     ->when(! empty($validated['contract_acceptance_id']), fn ($c) => $c->push($validated['contract_acceptance_id']))
                     ->unique()->values();
@@ -1096,7 +1109,7 @@ class CheckoutController extends Controller
                 ]);
 
                 if (! empty($contractAcceptanceIds)) {
-                    \App\Models\MarketerContractAcceptance::whereIn('id', $contractAcceptanceIds)
+                    MarketerContractAcceptance::whereIn('id', $contractAcceptanceIds)
                         ->where('customer_id', $customer->id)
                         ->whereNull('order_id')
                         ->update(['order_id' => $order->id]);
@@ -1377,7 +1390,7 @@ class CheckoutController extends Controller
                         // order_item, so release/commit/return never have
                         // to re-derive the row from listing + warehouse_id.
                         foreach ($reservedInventories[$cartItem->id] as $allocation) {
-                            \App\Models\OrderItemAllocation::create([
+                            OrderItemAllocation::create([
                                 'order_item_id' => $orderItem->id,
                                 'warehouse_inventory_id' => $allocation['warehouse_inventory_id'],
                                 'quantity' => $allocation['quantity'],
@@ -1654,7 +1667,7 @@ class CheckoutController extends Controller
         // finished yet) — never when we just rolled the order back to
         // 'cancelled' above, so a declined/erroring payment doesn't also
         // cost the customer their cart.
-        $orderStatusValue = $order->status instanceof \App\Enums\OrderStatus ? $order->status->value : $order->status;
+        $orderStatusValue = $order->status instanceof OrderStatus ? $order->status->value : $order->status;
         if ($orderStatusValue !== 'cancelled') {
             $this->cartService->clearCart($cart);
         }
@@ -1689,7 +1702,7 @@ class CheckoutController extends Controller
         return ApiResponse::success($responseData, __('common.exceptions.checkout.order_placed'), 201);
     }
 
-    public function confirmation(Request $request,$country, string $orderNumber): JsonResponse
+    public function confirmation(Request $request, $country, string $orderNumber): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -1724,7 +1737,7 @@ class CheckoutController extends Controller
      * still fail with the pre-existing "listing not available" checkout
      * error rather than being silently mis-attributed.
      *
-     * @param  iterable<\App\Models\CartItem>  $cartItems
+     * @param  iterable<CartItem>  $cartItems
      */
     private function resolveMarketerCartItems(iterable $cartItems): void
     {
@@ -1749,7 +1762,7 @@ class CheckoutController extends Controller
      * defaults, and — because it is an override, not a parallel input — it
      * also writes back onto the cart item so the two never diverge again.
      *
-     * @param  iterable<\App\Models\CartItem>  $cartItems
+     * @param  iterable<CartItem>  $cartItems
      * @param  array<int|string, mixed>  $overrideSelections
      * @return array<string, array{warranty_plan_id: ?string}>
      */
@@ -1769,7 +1782,7 @@ class CheckoutController extends Controller
             $cartItemId = is_array($selection) && isset($selection['listing_id']) ? null : (string) $key;
 
             if ($cartItemId !== null) {
-                /** @var \App\Models\CartItem|null $cartItem */
+                /** @var CartItem|null $cartItem */
                 $cartItem = $itemsById->get($cartItemId);
                 $cartItem?->update(['warranty_plan_id' => $planId]);
             }
@@ -1778,6 +1791,7 @@ class CheckoutController extends Controller
                 if ($cartItemId !== null) {
                     unset($selections[$cartItemId]);
                 }
+
                 continue;
             }
 
@@ -1793,7 +1807,7 @@ class CheckoutController extends Controller
      * platform/vendor subsidy splitting; a flat warehouse surcharge is added
      * on top for each cart line whose fulfilling warehouse has one configured.
      *
-     * @param  array<\App\Models\CartItem>  $cartItems
+     * @param  array<CartItem>  $cartItems
      * @return array{total: int, per_vendor: array<string, array{shipping: int, surcharge: int, raw_fee: int, platform_subsidy: int, vendor_contribution: int, billable_weight_grams: int, is_free_by_platform: bool, is_free_by_vendor: bool}>}
      */
     private function resolveVendorShipping(
@@ -1818,8 +1832,8 @@ class CheckoutController extends Controller
             $firstSource = $cartLineSources[$items->first()->id];
             $isPlatform = $firstSource->isAdminSeller();
             $firstListing = $firstSource->fulfilmentListing;
-            $isFbn = $isPlatform || ($firstListing instanceof \App\Models\VendorListing && $firstListing->global_system_type === GlobalSystemType::ExpressFbn);
-            $isFbp = ! $isPlatform && $firstListing instanceof \App\Models\VendorListing && $firstListing->global_system_type === GlobalSystemType::MerchantFbp;
+            $isFbn = $isPlatform || ($firstListing instanceof VendorListing && $firstListing->global_system_type === GlobalSystemType::ExpressFbn);
+            $isFbp = ! $isPlatform && $firstListing instanceof VendorListing && $firstListing->global_system_type === GlobalSystemType::MerchantFbp;
 
             $subsidyBreakdown = null;
             $vendorBaseShippingCents = 0;
@@ -1901,7 +1915,7 @@ class CheckoutController extends Controller
     {
         $listing = $source->fulfilmentListing;
 
-        $column = $listing instanceof \App\Models\AdminListing ? 'admin_listing_id' : 'vendor_listing_id';
+        $column = $listing instanceof AdminListing ? 'admin_listing_id' : 'vendor_listing_id';
 
         // Mirrors InventoryService::reserve()'s most-available-first
         // selection (enhancement.md P-13), not "first row by id".
@@ -1962,12 +1976,12 @@ class CheckoutController extends Controller
      * has no `vendor_sku` or `global_system_type` column, so those fields
      * degrade to null rather than erroring.
      */
-    private function buildProductSnapshot(VendorListing|\App\Models\AdminListing $listing): array
+    private function buildProductSnapshot(VendorListing|AdminListing $listing): array
     {
         $variant = $listing->productVariant;
         $product = $variant->product;
 
-        $images = app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id);
+        $images = app(ListingImageResolver::class)->gallery($variant->id);
         $thumbnail = $images[0]->url ?? null;
 
         return [
@@ -2036,7 +2050,7 @@ class CheckoutController extends Controller
             return true;
         }
 
-        $pinned = \App\Models\VendorListing::whereIn('id', $listingIds)
+        $pinned = VendorListing::whereIn('id', $listingIds)
             ->where('fulfillment_model', 'fbm')
             ->whereNotNull('fbm_payment_gateway_id')
             ->pluck('fbm_payment_gateway_id')

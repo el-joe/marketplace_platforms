@@ -18,11 +18,12 @@ use Illuminate\Support\Facades\Validator;
 class SecurityController extends Controller
 {
     private const OTP_RESEND_SECONDS = 60;
+
     private const OTP_TTL_MINUTES = 15;
 
     // ── Change password ──────────────────────────────────────────────────────
 
-    public function changePassword(Request $request): JsonResponse
+    public function changePassword(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'current_password' => ['required', 'string'],
@@ -36,7 +37,7 @@ class SecurityController extends Controller
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
-        if (!Hash::check($request->input('current_password'), $customer->password)) {
+        if (! Hash::check($request->input('current_password'), $customer->password)) {
             return ApiResponse::error(__('customer_api.security.current_password_incorrect'), [], 422);
         }
 
@@ -50,7 +51,7 @@ class SecurityController extends Controller
 
     // ── Email verification ───────────────────────────────────────────────────
 
-    public function sendEmailVerificationOtp(Request $request): JsonResponse
+    public function sendEmailVerificationOtp(Request $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -85,7 +86,7 @@ class SecurityController extends Controller
         );
     }
 
-    public function verifyEmailOtp(Request $request): JsonResponse
+    public function verifyEmailOtp(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'otp' => ['required', 'digits:6'],
@@ -100,7 +101,7 @@ class SecurityController extends Controller
 
         $otp = $this->matchOtp($customer, 'email_verification', $request->input('otp'));
 
-        if (!$otp) {
+        if (! $otp) {
             return ApiResponse::error(__('customer_api.security.invalid_or_expired_otp'), [], 422);
         }
 
@@ -114,7 +115,7 @@ class SecurityController extends Controller
 
     // ── Phone verification ───────────────────────────────────────────────────
 
-    public function sendPhoneVerificationOtp(Request $request): JsonResponse
+    public function sendPhoneVerificationOtp(Request $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -149,7 +150,7 @@ class SecurityController extends Controller
         );
     }
 
-    public function verifyPhoneOtp(Request $request): JsonResponse
+    public function verifyPhoneOtp(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'otp' => ['required', 'digits:6'],
@@ -164,7 +165,7 @@ class SecurityController extends Controller
 
         $otp = $this->matchOtp($customer, 'phone_verification', $request->input('otp'));
 
-        if (!$otp) {
+        if (! $otp) {
             return ApiResponse::error(__('customer_api.security.invalid_or_expired_otp'), [], 422);
         }
 
@@ -178,7 +179,7 @@ class SecurityController extends Controller
 
     // ── Sessions / devices ───────────────────────────────────────────────────
 
-    public function activeSessions(Request $request): JsonResponse
+    public function activeSessions(Request $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -202,7 +203,7 @@ class SecurityController extends Controller
         ], __('customer_api.security.sessions_retrieved'));
     }
 
-    public function revokeDevice(Request $request, string $device_token_id): JsonResponse
+    public function revokeDevice(Request $request, $country, string $device_token_id): JsonResponse
     {
         $validator = Validator::make(['token_id' => $device_token_id], [
             'token_id' => ['required', 'uuid'],
@@ -221,7 +222,7 @@ class SecurityController extends Controller
             ->where('tokenable_id', $customer->getKey())
             ->first();
 
-        if (!$device) {
+        if (! $device) {
             return ApiResponse::error(__('customer_api.security.device_not_found'), [], 404);
         }
 
@@ -230,7 +231,7 @@ class SecurityController extends Controller
         return ApiResponse::success(null, __('customer_api.security.device_revoked'));
     }
 
-    public function revokeAllDevices(Request $request): JsonResponse
+    public function revokeAllDevices(Request $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -300,7 +301,7 @@ class SecurityController extends Controller
 
         $visible = min(2, strlen($local));
 
-        return substr($local, 0, $visible) . str_repeat('*', max(1, strlen($local) - $visible)) . '@' . $domain;
+        return substr($local, 0, $visible).str_repeat('*', max(1, strlen($local) - $visible)).'@'.$domain;
     }
 
     private function maskPhone(string $phone): string
@@ -311,6 +312,6 @@ class SecurityController extends Controller
             return str_repeat('*', $length);
         }
 
-        return str_repeat('*', $length - 4) . substr($phone, -4);
+        return str_repeat('*', $length - 4).substr($phone, -4);
     }
 }

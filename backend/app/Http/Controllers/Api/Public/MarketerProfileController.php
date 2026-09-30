@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Api\Public;
 
+use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\ExclusiveContract;
+use App\Models\Marketer;
 use App\Models\MarketerListing;
 use App\Models\MarketerProfile;
 use App\Services\Customer\ListingQueryService;
@@ -87,7 +91,7 @@ class MarketerProfileController extends Controller
      * times well under 1s under load.
      */
     /** Public directory of active influencers or brokers (affiliates). */
-    public function directory(Request $request, $countryId, string $type): JsonResponse
+    public function directory(Request $request, $country, string $type): JsonResponse
     {
         $marketerType = $type === 'brokers' ? 'affiliate' : 'influencer';
         $rows = MarketerProfile::query()
@@ -110,7 +114,7 @@ class MarketerProfileController extends Controller
         ]));
     }
 
-    public function show(Request $request, $countryId, string $slug): JsonResponse
+    public function show(Request $request, $country, string $slug): JsonResponse
     {
         $countryId = $request->attributes->get('country')?->id ?? 'global';
 
@@ -163,7 +167,7 @@ class MarketerProfileController extends Controller
     /** Public-safe active exclusive contracts (no file paths / notes). */
     private function exclusiveContracts(string $marketerId): array
     {
-        return \App\Models\ExclusiveContract::active()
+        return ExclusiveContract::active()
             ->where('marketer_id', $marketerId)
             ->with(['classifiedCategory:id,name_ar,name_en', 'classifiedListing:id,title_ar,title_en'])
             ->get()
@@ -179,10 +183,10 @@ class MarketerProfileController extends Controller
 
     private function classifiedListings(string $marketerId): array
     {
-        return \App\Models\ClassifiedListing::query()
-            ->where('seller_type', \App\Models\Marketer::class)
+        return ClassifiedListing::query()
+            ->where('seller_type', Marketer::class)
             ->where('seller_id', $marketerId)
-            ->where('status', \App\Enums\ClassifiedListingStatus::Active)
+            ->where('status', ClassifiedListingStatus::Active)
             ->with(['classifiedCategory:id,name_ar,name_en', 'images'])
             ->latest()
             ->limit(12)

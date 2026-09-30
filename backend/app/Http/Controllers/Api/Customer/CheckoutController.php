@@ -2,27 +2,25 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\WalletOwnerType;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\Customer\CheckoutOrderResource;
 use App\Http\Resources\Api\Customer\CouponValidationResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Address;
+use App\Models\Cart;
+use App\Models\Country;
+use App\Models\CountryPaymentGateway;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Customer;
-use App\Models\GiftCard;
-use App\Models\GiftCardTransaction;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\SubOrder;
 use App\Models\Wallet;
-use App\Models\WalletTransaction;
 use App\Models\WarehouseInventory;
-use App\Models\WarrantyPurchase;
 use App\Services\CheckoutCalculationService;
+use App\Services\Customer\CodValidationService;
+use App\Services\Media\ListingImageResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +31,7 @@ class CheckoutController extends Controller
         private readonly CheckoutCalculationService $calculationService,
     ) {}
 
-    public function calculate(Request $request): JsonResponse
+    public function calculate(Request $request, $country): JsonResponse
     {
         $validated = $this->validateCheckoutInput($request);
         if ($validated instanceof JsonResponse) {
@@ -57,68 +55,68 @@ class CheckoutController extends Controller
      * Returns active payment gateways for this country with fees and display metadata.
      * Called by Flutter on checkout load, before the customer picks a payment method.
      */
-    public function paymentOptions(Request $request): JsonResponse
+    public function paymentOptions(Request $request, $country): JsonResponse
     {
-        $country    = $request->attributes->get('country');
-        $customer   = auth('customer')->user();
+        $country = $request->attributes->get('country');
+        $customer = auth('customer')->user();
         $orderTotal = (int) $request->query('order_total', 0);
 
         // COD limits / international restriction (F11): mirror the server-side
         // check done at place-order so the UI can hide COD up front.
         $codErrors = [];
         if ($customer) {
-            $cart = \App\Models\Cart::where('user_id', $customer->id)->where('country_id', $country->id)
+            $cart = Cart::where('user_id', $customer->id)->where('country_id', $country->id)
                 ->with(['items.adminListing', 'items.vendorListing.productVariant.product', 'items.marketerListing.invitation.campaign.vendorListing.productVariant.product'])
                 ->first();
             if ($cart && $cart->items->isNotEmpty()) {
-                $codErrors = app(\App\Services\Customer\CodValidationService::class)
+                $codErrors = app(CodValidationService::class)
                     ->validate($cart->items->all(), $country->id);
             }
         }
 
-        $gateways = \App\Models\CountryPaymentGateway::where('country_id', $country->id)
+        $gateways = CountryPaymentGateway::where('country_id', $country->id)
             ->where('is_active', true)
             ->with('gateway')
             ->orderBy('sort_order')
             ->get()
             ->map(function ($cpg) use ($orderTotal, $codErrors) {
-                $code      = $cpg->gateway?->code;
-                $feePct    = (float) $cpg->fee_pct;
-                $feeFixed  = (int) $cpg->fee_fixed;
+                $code = $cpg->gateway?->code;
+                $feePct = (float) $cpg->fee_pct;
+                $feeFixed = (int) $cpg->fee_fixed;
                 $available = true;
-                $reason    = null;
+                $reason = null;
 
                 if ($cpg->min_order > 0 && $orderTotal > 0 && $orderTotal < $cpg->min_order) {
                     $available = false;
-                    $reason    = 'Order below minimum.';
+                    $reason = 'Order below minimum.';
                 }
                 if ($cpg->max_order && $orderTotal > 0 && $orderTotal > $cpg->max_order) {
                     $available = false;
-                    $reason    = 'Order exceeds maximum.';
+                    $reason = 'Order exceeds maximum.';
                 }
 
                 if ($code === 'cod' && ! empty($codErrors)) {
                     $available = false;
-                    $reason    = $codErrors[0];
+                    $reason = $codErrors[0];
                 }
 
                 return [
-                    'id'            => $cpg->id,
-                    'gateway_code'  => $code,
-                    'type'          => $cpg->gateway?->type,
-                    'display_name'  => ['en' => $cpg->display_name_en, 'ar' => $cpg->display_name_ar],
-                    'image'         => $cpg->gateway?->image,
-                    'is_redirect'   => in_array($code, ['thawani', 'paytabs']),
-                    'fee_pct'       => $feePct,
-                    'fee_fixed'     => $feeFixed,
-                    'gateway_fee'   => $orderTotal > 0 ? (int) round($orderTotal * ($feePct / 100)) + $feeFixed : 0,
-                    'is_available'  => $available,
+                    'id' => $cpg->id,
+                    'gateway_code' => $code,
+                    'type' => $cpg->gateway?->type,
+                    'display_name' => ['en' => $cpg->display_name_en, 'ar' => $cpg->display_name_ar],
+                    'image' => $cpg->gateway?->image,
+                    'is_redirect' => in_array($code, ['thawani', 'paytabs']),
+                    'fee_pct' => $feePct,
+                    'fee_fixed' => $feeFixed,
+                    'gateway_fee' => $orderTotal > 0 ? (int) round($orderTotal * ($feePct / 100)) + $feeFixed : 0,
+                    'is_available' => $available,
                     'unavailable_reason' => $reason,
-                    'environment'   => $cpg->environment,
+                    'environment' => $cpg->environment,
                 ];
             });
 
-        $wallet = Wallet::where('owner_type', \App\Enums\WalletOwnerType::Customer)
+        $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
             ->where('owner_id', $customer->id)
             ->where('currency', $country->currency_code)
             ->first();
@@ -126,9 +124,9 @@ class CheckoutController extends Controller
         return ApiResponse::success([
             'payment_options' => $gateways->values(),
             'wallet' => [
-                'balance'       => $wallet?->balance ?? 0,
+                'balance' => $wallet?->balance ?? 0,
                 'currency_code' => $wallet?->currency ?? $country->currency_code,
-                'applicable'    => $wallet && $wallet->currency === $country->currency_code && $wallet->balance > 0,
+                'applicable' => $wallet && $wallet->currency === $country->currency_code && $wallet->balance > 0,
             ],
         ]);
     }
@@ -139,35 +137,35 @@ class CheckoutController extends Controller
      * Used on product detail pages, help screens, etc.
      * No auth required — same data regardless of who is asking.
      */
-    public function availableGateways(Request $request): JsonResponse
+    public function availableGateways(Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
 
-        $gateways = \App\Models\CountryPaymentGateway::where('country_id', $country->id)
+        $gateways = CountryPaymentGateway::where('country_id', $country->id)
             ->where('is_active', true)
             ->with('gateway')
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($cpg) => [
-                'id'           => $cpg->id,
+                'id' => $cpg->id,
                 'gateway_code' => $cpg->gateway?->code,
-                'type'         => $cpg->gateway?->type,
+                'type' => $cpg->gateway?->type,
                 'display_name' => [
                     'en' => $cpg->display_name_en,
                     'ar' => $cpg->display_name_ar,
                 ],
-                'image'        => $cpg->gateway?->image,
-                'is_redirect'  => in_array($cpg->gateway?->code, ['thawani', 'paytabs']),
+                'image' => $cpg->gateway?->image,
+                'is_redirect' => in_array($cpg->gateway?->code, ['thawani', 'paytabs']),
                 'supports_cod' => $cpg->gateway?->code === 'cod',
-                'fee_pct'      => (float) $cpg->fee_pct,
-                'fee_fixed'    => (int) $cpg->fee_fixed,
+                'fee_pct' => (float) $cpg->fee_pct,
+                'fee_fixed' => (int) $cpg->fee_fixed,
             ])
             ->values();
 
         return ApiResponse::success(['gateways' => $gateways]);
     }
 
-    public function validateCoupon(Request $request): JsonResponse
+    public function validateCoupon(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'coupon_code' => ['required', 'string'],
@@ -179,7 +177,7 @@ class CheckoutController extends Controller
 
         /** @var Customer $customer */
         $customer = auth('customer')->user();
-        $country = \App\Models\Country::findOrFail($customer->country_id);
+        $country = Country::findOrFail($customer->country_id);
 
         $coupon = Coupon::where('code', $request->input('coupon_code'))->first();
         if (! $coupon) {
@@ -212,7 +210,7 @@ class CheckoutController extends Controller
         );
     }
 
-    public function place(Request $request): JsonResponse
+    public function place(Request $request, $country): JsonResponse
     {
         // This endpoint is deprecated. Use POST /checkout/place-order instead.
         // The new endpoint uses country_payment_gateway_id from GET /checkout/payment-options.
@@ -296,7 +294,7 @@ class CheckoutController extends Controller
         $variant = $listing->productVariant;
         $product = $variant?->product;
 
-        $images = $variant ? app(\App\Services\Media\ListingImageResolver::class)->gallery($variant->id) : [];
+        $images = $variant ? app(ListingImageResolver::class)->gallery($variant->id) : [];
 
         return [
             'name_en' => $product?->name_en,
@@ -319,7 +317,7 @@ class CheckoutController extends Controller
 
     private function clearCustomerCart(Customer $customer): void
     {
-        \App\Models\Cart::where('user_id', $customer->id)->get()->each(function ($cart) {
+        Cart::where('user_id', $customer->id)->get()->each(function ($cart) {
             $cart->items()->delete();
         });
     }

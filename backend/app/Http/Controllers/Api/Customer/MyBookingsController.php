@@ -15,7 +15,7 @@ class MyBookingsController extends Controller
     /**
      * GET /my-bookings — one merged list of travel packages, bookable units and flights.
      */
-    public function index(): JsonResponse
+    public function index($country): JsonResponse
     {
         $customer = auth('customer')->user();
         $bookings = collect();

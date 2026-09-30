@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 
 class ProfileController extends Controller
 {
-    public function show(): JsonResponse
+    public function show($country): JsonResponse
     {
         return ApiResponse::success(
             new CustomerResource(auth('customer')->user()),
@@ -20,7 +20,7 @@ class ProfileController extends Controller
         );
     }
 
-    public function update(UpdateProfileRequest $request): JsonResponse
+    public function update(UpdateProfileRequest $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -38,7 +38,7 @@ class ProfileController extends Controller
         return ApiResponse::success(new CustomerResource($customer->fresh()), __('common.exceptions.profile.updated'));
     }
 
-    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    public function updatePassword(UpdatePasswordRequest $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -51,7 +51,7 @@ class ProfileController extends Controller
         return ApiResponse::success(null, __('common.exceptions.profile.password_updated'));
     }
 
-    public function destroy(): JsonResponse
+    public function destroy($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();

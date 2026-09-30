@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
  */
 class PaymentHistoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index($country): JsonResponse
     {
         $customer = auth('customer')->user();
 

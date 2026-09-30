@@ -29,7 +29,7 @@ use Illuminate\Validation\Rule;
  */
 class NotificationController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -52,7 +52,7 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function unreadCount(): JsonResponse
+    public function unreadCount($country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -66,7 +66,7 @@ class NotificationController extends Controller
         return ApiResponse::success(['unread_count' => $count]);
     }
 
-    public function markAsRead(string $id): JsonResponse
+    public function markAsRead($country, string $id): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -77,7 +77,7 @@ class NotificationController extends Controller
             ->where('channel', 'database')
             ->first();
 
-        if (!$notification) {
+        if (! $notification) {
             return ApiResponse::error(__('customer_api.notification.not_found'), [], 404);
         }
 
@@ -88,7 +88,7 @@ class NotificationController extends Controller
         return ApiResponse::success(new NotificationResource($notification));
     }
 
-    public function markAllAsRead(): JsonResponse
+    public function markAllAsRead($country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -102,7 +102,7 @@ class NotificationController extends Controller
         return ApiResponse::success(null, __('customer_api.notification.all_marked_read'));
     }
 
-    public function registerDevice(Request $request): JsonResponse
+    public function registerDevice(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'token' => ['required', 'string', 'max:255'],
@@ -132,7 +132,7 @@ class NotificationController extends Controller
         return ApiResponse::success(null, __('customer_api.notification.device_registered'));
     }
 
-    public function removeDevice(Request $request): JsonResponse
+    public function removeDevice(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'token' => ['required', 'string', 'max:255'],
@@ -153,14 +153,14 @@ class NotificationController extends Controller
         return ApiResponse::success(null, __('customer_api.notification.device_removed'));
     }
 
-    public function preferences(): JsonResponse
+    public function preferences($country): JsonResponse
     {
         $customer = auth('customer')->user();
 
         return ApiResponse::success((new NotificationPreferencesResource($customer))->toArray(request()));
     }
 
-    public function updatePreferences(Request $request): JsonResponse
+    public function updatePreferences(Request $request, $country): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'locale' => ['sometimes', 'string', Rule::in(config('app.available_locales', ['ar', 'en']))],

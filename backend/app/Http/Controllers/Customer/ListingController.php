@@ -86,10 +86,10 @@ class ListingController extends Controller
 
     public function createBooking(
         CreateBookingRequest $request,
-        $_country,
+        $country,
         string $slug,
     ): JsonResponse {
-        $_country = $request->attributes->get('country');
+        $country = $request->attributes->get('country');
         $package = $this->travelDetail->findActive($slug);
 
         if (! $package) {
@@ -109,11 +109,11 @@ class ListingController extends Controller
 
     public function signContract(
         SignContractRequest $request,
-        $_country,
+        $country,
         string $slug,
         string $bookingNumber,
     ): JsonResponse {
-        $_country = $request->attributes->get('country');
+        $country = $request->attributes->get('country');
         // Verify the package still exists (even if expired — contract signing can happen post-departure)
         $packageExists = TravelPackage::where('slug', $slug)->exists();
         abort_if(! $packageExists, 404, __('common.exceptions.listing.travel_package_not_found'));

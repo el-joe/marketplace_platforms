@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\WalletOwnerType;
+use App\Exceptions\InsufficientBalanceException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\WarrantyClaimMessageRequest;
 use App\Http\Requests\Api\Customer\WarrantyClaimStoreRequest;
 use App\Http\Requests\Api\Customer\WarrantyPurchaseStoreRequest;
-use App\Http\Resources\Api\Customer\WarrantyPlanResource;
 use App\Http\Resources\Customer\WarrantyClaimMessageResource;
 use App\Http\Resources\Customer\WarrantyClaimResource;
 use App\Http\Resources\Customer\WarrantyPurchaseResource;
 use App\Http\Responses\ApiResponse;
-use App\Enums\WalletOwnerType;
 use App\Models\Admin;
 use App\Models\Customer;
 use App\Models\OrderItem;
@@ -20,22 +20,22 @@ use App\Models\WalletTransaction;
 use App\Models\WarrantyClaim;
 use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
-use App\Exceptions\InsufficientBalanceException;
 use App\Notifications\Admin\NewWarrantyClaimNotification as AdminNewWarrantyClaimNotification;
 use App\Notifications\Vendor\NewWarrantyClaimNotification as VendorNewWarrantyClaimNotification;
+use App\Services\WarrantyPlanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 
 class WarrantyController extends Controller
 {
     public function __construct(
-        private readonly \App\Services\WarrantyPlanService $warrantyPlanService,
-    ) {
-    }
+        private readonly WarrantyPlanService $warrantyPlanService,
+    ) {}
 
-    public function plans(string $orderItemId): JsonResponse
+    public function plans($country, string $orderItemId): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -67,7 +67,7 @@ class WarrantyController extends Controller
         return ApiResponse::success($plans, __('customer_api.warranty.plans_retrieved'));
     }
 
-    public function purchases(): JsonResponse
+    public function purchases($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -105,7 +105,7 @@ class WarrantyController extends Controller
      * event) using the exact same coverage-date formula as
      * SubOrderObserver (WarrantyPurchase::coverageDatesFor()).
      */
-    public function purchasesStore(WarrantyPurchaseStoreRequest $request): JsonResponse
+    public function purchasesStore(WarrantyPurchaseStoreRequest $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -204,7 +204,7 @@ class WarrantyController extends Controller
         );
     }
 
-    public function claimsIndex(): JsonResponse
+    public function claimsIndex($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -217,7 +217,7 @@ class WarrantyController extends Controller
         return ApiResponse::paginated($paginator, WarrantyClaimResource::class);
     }
 
-    public function claimsStore(WarrantyClaimStoreRequest $request): JsonResponse
+    public function claimsStore(WarrantyClaimStoreRequest $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -288,7 +288,7 @@ class WarrantyController extends Controller
             Notification::send($claim->vendor?->vendorAdmins, new VendorNewWarrantyClaimNotification($claim));
         }
 
-        if (\Spatie\Permission\Models\Permission::where('name', 'warranty_claims.manage')->where('guard_name', 'admin')->exists()) {
+        if (Permission::where('name', 'warranty_claims.manage')->where('guard_name', 'admin')->exists()) {
             Notification::send(
                 Admin::permission('warranty_claims.manage')->get(),
                 new AdminNewWarrantyClaimNotification($claim),
@@ -302,7 +302,7 @@ class WarrantyController extends Controller
         );
     }
 
-    public function claimsShow(string $claimNumber): JsonResponse
+    public function claimsShow($country, string $claimNumber): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -323,7 +323,7 @@ class WarrantyController extends Controller
         return ApiResponse::success(new WarrantyClaimResource($claim));
     }
 
-    public function claimsAddMessage(WarrantyClaimMessageRequest $request, string $claimNumber): JsonResponse
+    public function claimsAddMessage(WarrantyClaimMessageRequest $request, $country, string $claimNumber): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();

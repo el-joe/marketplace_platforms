@@ -6,14 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\MarketerContract;
 use App\Models\MarketerContractAcceptance;
 use App\Models\MarketerContractVersion;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MarketerContractController extends Controller
 {
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, $country): JsonResponse
     {
         $marketerId = (string) $request->route('marketer');
         abort_unless(Str::isUuid($marketerId), 404);
@@ -47,7 +47,7 @@ class MarketerContractController extends Controller
         ]);
     }
 
-    public function downloadActivePdf(Request $request)
+    public function downloadActivePdf(Request $request, $country)
     {
         $marketerId = (string) $request->route('marketer');
         abort_unless(Str::isUuid($marketerId), 404);
@@ -62,7 +62,7 @@ class MarketerContractController extends Controller
         return Storage::disk('local')->response($version->file_url);
     }
 
-    public function accept(Request $request): JsonResponse
+    public function accept(Request $request, $country): JsonResponse
     {
         $marketerId = (string) $request->route('marketer');
         abort_unless(Str::isUuid($marketerId), 404);

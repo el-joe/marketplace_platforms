@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api\Customer;
 
 use App\Enums\AdminListingStatus;
+use App\Enums\ClassifiedListingStatus;
 use App\Enums\VendorListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Customer\WishlistItemResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\AdminListing;
+use App\Models\ClassifiedListing;
 use App\Models\Country;
+use App\Models\MarketerListing;
 use App\Models\VendorListing;
 use App\Models\WishlistGroup;
 use App\Models\WishlistItem;
@@ -20,11 +23,9 @@ use Illuminate\Http\Request;
 
 class WishlistController extends Controller
 {
-    public function __construct(private readonly WishlistService $wishlistService)
-    {
-    }
+    public function __construct(private readonly WishlistService $wishlistService) {}
 
-    public function indexGroups(Request $request): JsonResponse
+    public function indexGroups(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -38,7 +39,7 @@ class WishlistController extends Controller
         return ApiResponse::success($groups);
     }
 
-    public function createGroup(Request $request): JsonResponse
+    public function createGroup(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -65,7 +66,7 @@ class WishlistController extends Controller
         return ApiResponse::success($this->groupShape($group->loadCount('items')), __('customer_api.wishlist.group_created'), 201);
     }
 
-    public function updateGroup(Request $request, $countryId, string $groupId): JsonResponse
+    public function updateGroup(Request $request, $country, string $groupId): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -93,7 +94,7 @@ class WishlistController extends Controller
         return ApiResponse::success($this->groupShape($group->loadCount('items')), __('customer_api.wishlist.group_updated'));
     }
 
-    public function deleteGroup(Request $request, $countryId, string $groupId): JsonResponse
+    public function deleteGroup(Request $request, $country, string $groupId): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -112,7 +113,7 @@ class WishlistController extends Controller
         return ApiResponse::success(null, __('customer_api.wishlist.group_deleted'));
     }
 
-    public function showGroup(Request $request, $countryId , string $groupId): JsonResponse
+    public function showGroup(Request $request, $country, string $groupId): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -123,7 +124,7 @@ class WishlistController extends Controller
         }
 
         $country = $this->resolveCountry($request, $customer);
-        if (!$country) {
+        if (! $country) {
             return ApiResponse::error(__('customer_api.wishlist.country_not_found'), [], 404);
         }
 
@@ -165,7 +166,7 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function addItem(Request $request): JsonResponse
+    public function addItem(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -176,16 +177,16 @@ class WishlistController extends Controller
             'group_id' => ['sometimes', 'nullable', 'uuid'],
         ]);
 
-        $isClassified   = ($data['item_type'] ?? null) === 'classified';
-        $isMarketer     = ($data['item_type'] ?? null) === 'marketer';
-        $isAdminListing = !$isClassified && !$isMarketer && ListingModeResolver::isNawyNow($request);
+        $isClassified = ($data['item_type'] ?? null) === 'classified';
+        $isMarketer = ($data['item_type'] ?? null) === 'marketer';
+        $isAdminListing = ! $isClassified && ! $isMarketer && ListingModeResolver::isNawyNow($request);
 
         if ($isClassified) {
-            $listing = \App\Models\ClassifiedListing::where('id', $data['listing_id'])
-                ->where('status', \App\Enums\ClassifiedListingStatus::Active)
+            $listing = ClassifiedListing::where('id', $data['listing_id'])
+                ->where('status', ClassifiedListingStatus::Active)
                 ->first();
         } elseif ($isMarketer) {
-            $listing = \App\Models\MarketerListing::where('id', $data['listing_id'])
+            $listing = MarketerListing::where('id', $data['listing_id'])
                 ->where('status', 'active')
                 ->first();
         } elseif ($isAdminListing) {
@@ -198,7 +199,7 @@ class WishlistController extends Controller
                 ->first();
         }
 
-        if (!$listing) {
+        if (! $listing) {
             return ApiResponse::error(__('customer_api.wishlist.listing_not_found'), [], 404);
         }
 
@@ -211,10 +212,10 @@ class WishlistController extends Controller
         }
 
         $itemType = match (true) {
-            $isClassified   => 'classified',
-            $isMarketer     => 'marketer_listing',
+            $isClassified => 'classified',
+            $isMarketer => 'marketer_listing',
             $isAdminListing => 'admin_listing',
-            default         => 'vendor_listing',
+            default => 'vendor_listing',
         };
 
         $result = $this->wishlistService->addItemOfType(
@@ -234,17 +235,17 @@ class WishlistController extends Controller
                 'added_at' => $result['item']->added_at,
                 'type' => $isClassified ? 'classified' : 'product',
                 'listing_type' => match ($itemType) {
-                    'classified'       => null,
+                    'classified' => null,
                     'marketer_listing' => 'marketer_listing',
-                    'admin_listing'    => 'admin_listing',
-                    default            => 'vendor_listing',
+                    'admin_listing' => 'admin_listing',
+                    default => 'vendor_listing',
                 },
             ],
             'group' => $this->groupShape($group),
         ], $result['already_existed'] ? __('customer_api.wishlist.already_in_wishlist') : __('customer_api.wishlist.added_to_wishlist'), $status);
     }
 
-    public function removeItem(Request $request, $countryId, string $itemId): JsonResponse
+    public function removeItem(Request $request, $country, string $itemId): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -252,7 +253,7 @@ class WishlistController extends Controller
             ->where('customer_id', $customer->id)
             ->first();
 
-        if (!$item) {
+        if (! $item) {
             return ApiResponse::error(__('customer_api.wishlist.item_not_found'), [], 404);
         }
 
@@ -261,7 +262,7 @@ class WishlistController extends Controller
         return response()->json(null, 204);
     }
 
-    public function moveItems(Request $request): JsonResponse
+    public function moveItems(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -290,7 +291,7 @@ class WishlistController extends Controller
         ], __('customer_api.wishlist.items_moved', ['count' => $moved]));
     }
 
-    public function checkListing(Request $request): JsonResponse
+    public function checkListing(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 

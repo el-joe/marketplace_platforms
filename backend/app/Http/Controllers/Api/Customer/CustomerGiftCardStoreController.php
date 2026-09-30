@@ -19,10 +19,9 @@ class CustomerGiftCardStoreController extends Controller
 {
     public function __construct(
         private readonly GiftCardPurchaseService $giftCardPurchaseService,
-    ) {
-    }
+    ) {}
 
-    public function available(Request $request): JsonResponse
+    public function available(Request $request, $country): JsonResponse
     {
         $data = $request->validate([
             'currency_code' => ['required', 'string'],
@@ -37,7 +36,7 @@ class CustomerGiftCardStoreController extends Controller
      * Single-batch lookup backing the storefront detail/purchase page
      * (e.g. `/gift-cards/{id}` on the frontend).
      */
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, $country): JsonResponse
     {
         // Note: deliberately reads the {batchId} segment via $request->route()
         // rather than a second method parameter. This route sits under
@@ -63,7 +62,7 @@ class CustomerGiftCardStoreController extends Controller
         return ApiResponse::success(new GiftCardBatchResource($batch));
     }
 
-    public function purchase(PurchaseGiftCardRequest $request): JsonResponse
+    public function purchase(PurchaseGiftCardRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -91,7 +90,7 @@ class CustomerGiftCardStoreController extends Controller
         ], __('customer_api.gift_card_store.purchased'), 201);
     }
 
-    public function myPurchases(Request $request): JsonResponse
+    public function myPurchases(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -100,7 +99,7 @@ class CustomerGiftCardStoreController extends Controller
         return ApiResponse::paginated($purchases, GiftCardPurchaseResource::class);
     }
 
-    public function resend(Request $request, GiftCardPurchase $purchase): JsonResponse
+    public function resend(Request $request, $country, GiftCardPurchase $purchase): JsonResponse
     {
         $customer = auth('customer')->user();
 

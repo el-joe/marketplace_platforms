@@ -14,7 +14,7 @@ class CurrencyController extends Controller
      * GET /currencies
      * Active currencies with their display symbol (text or image). Cached 1h.
      */
-    public function index(): JsonResponse
+    public function index($country): JsonResponse
     {
         $currencies = SafeCache::remember('currencies:active', 3600, function () {
             return Currency::where('is_active', true)->orderBy('code')->get();

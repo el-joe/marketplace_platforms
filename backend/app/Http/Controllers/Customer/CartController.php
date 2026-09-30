@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\WalletOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\AddCartItemRequest;
 use App\Http\Requests\Customer\AddCartItemsRequest;
@@ -10,16 +11,18 @@ use App\Http\Requests\Customer\UpdateCartItemRequest;
 use App\Http\Resources\Customer\CartItemResource;
 use App\Http\Resources\Customer\CartResource;
 use App\Http\Responses\ApiResponse;
-use App\Enums\WalletOwnerType;
 use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Wallet;
 use App\Models\WarrantyPlan;
+use App\Services\Ads\PlacementAdService;
 use App\Services\BannerService;
 use App\Services\Customer\CartService;
 use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\SponsoredProductService;
 use App\Services\SavingsBenefitsService;
 use App\Services\WarrantyPlanService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -32,10 +35,9 @@ class CartController extends Controller
         private readonly BannerService $bannerService,
         private readonly SavingsBenefitsService $savingsBenefitsService,
         private readonly WarrantyPlanService $warrantyPlanService,
-        private readonly \App\Services\Ads\PlacementAdService $placementAds,
+        private readonly PlacementAdService $placementAds,
         private readonly SponsoredProductService $sponsored,
-    ) {
-    }
+    ) {}
 
     private function resolveCart(Request $request): Cart
     {
@@ -51,7 +53,7 @@ class CartController extends Controller
         }
 
         $token = $request->attributes->get('guest_cart_token');
-        if (!$token) {
+        if (! $token) {
             $token = (string) Str::uuid();
             $request->attributes->set('guest_cart_token', $token);
         }
@@ -77,11 +79,11 @@ class CartController extends Controller
      * callers should treat that the same as "not found" (never leak whether
      * an item exists under someone else's cart).
      */
-    private function resolveOwnedCartItem(Request $request, string $itemId): ?\App\Models\CartItem
+    private function resolveOwnedCartItem(Request $request, string $itemId): ?CartItem
     {
-        $item = \App\Models\CartItem::with('cart')->find($itemId);
+        $item = CartItem::with('cart')->find($itemId);
 
-        if (!$item || !$item->cart) {
+        if (! $item || ! $item->cart) {
             return null;
         }
 
@@ -95,7 +97,7 @@ class CartController extends Controller
         } else {
             $token = $request->attributes->get('guest_cart_token');
 
-            if (!$token || $cart->session_token !== $token || $cart->user_id !== null) {
+            if (! $token || $cart->session_token !== $token || $cart->user_id !== null) {
                 return null;
             }
         }
@@ -114,7 +116,7 @@ class CartController extends Controller
         return ApiResponse::success($data, $message, $code);
     }
 
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, $country): JsonResponse
     {
         $cart = $this->resolveCart($request);
 
@@ -202,7 +204,7 @@ class CartController extends Controller
             $listing = $item->vendor_listing_id ? $item->vendorListing : $item->adminListing;
             $product = $listing?->productVariant?->product;
 
-            if (!$product) {
+            if (! $product) {
                 continue;
             }
 
@@ -223,11 +225,11 @@ class CartController extends Controller
      * disabled, clears the amount. Persists to carts.wallet_amount_to_use so
      * CheckoutService can read it when the order is placed.
      */
-    public function toggleWallet(Request $request): JsonResponse
+    public function toggleWallet(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
-        if (!$customer) {
+        if (! $customer) {
             return ApiResponse::error(__('common.exceptions.cart.wallet_login_required'), [], 401);
         }
 
@@ -259,7 +261,7 @@ class CartController extends Controller
     {
         $customer = auth('customer')->user();
 
-        if (!$customer) {
+        if (! $customer) {
             return [
                 'balance' => 0,
                 'currency_code' => $cart->currency,
@@ -299,14 +301,14 @@ class CartController extends Controller
         $audience = auth('customer')->check() ? 'logged_in' : 'guest';
         $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
 
-        if (!$country) {
+        if (! $country) {
             return null;
         }
 
         return $this->placementAds->resolve('cart_banner', $country, $audience, $sessionId);
     }
 
-    public function addItem(AddCartItemRequest $request): JsonResponse
+    public function addItem(AddCartItemRequest $request, $country): JsonResponse
     {
         $cart = $this->resolveCart($request);
         $countryId = $request->attributes->get('country')->id;
@@ -356,7 +358,7 @@ class CartController extends Controller
         ], __('common.exceptions.cart.item_added'), 201);
     }
 
-    public function addItems(AddCartItemsRequest $request): JsonResponse
+    public function addItems(AddCartItemsRequest $request, $country): JsonResponse
     {
         $cart = $this->resolveCart($request);
         $countryId = $request->attributes->get('country')->id;
@@ -370,11 +372,11 @@ class CartController extends Controller
         return $this->cartResponse($cart, [], __('common.exceptions.cart.items_added'), 201);
     }
 
-    public function updateItem(UpdateCartItemRequest $request, $countryId, string $id): JsonResponse
+    public function updateItem(UpdateCartItemRequest $request, $country, string $id): JsonResponse
     {
         $owned = $this->resolveOwnedCartItem($request, $id);
 
-        if (!$owned) {
+        if (! $owned) {
             return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
         }
 
@@ -383,7 +385,7 @@ class CartController extends Controller
 
         try {
             $item = $this->cartService->updateItem($cart, $id, $request->quantity, $request->shipping_method_id, $request->has('shipping_method_id'), $countryId);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), [], 422);
@@ -408,8 +410,8 @@ class CartController extends Controller
             : ($item->admin_listing_id ? $item->adminListing : null);
 
         return ApiResponse::success([
-            'cart'        => new CartResource($cart),
-            'item'        => new CartItemResource($item),
+            'cart' => new CartResource($cart),
+            'item' => new CartItemResource($item),
             'listing_ref' => $listing
                 ? $this->listingIdentifierService->buildListingRef($listing)
                 : null,
@@ -428,10 +430,10 @@ class CartController extends Controller
      * distinguish the two.
      *
      * @return string|null an error message on failure, or null on success
-     *                      (in which case the item's warranty_plan_id has
-     *                      already been updated)
+     *                     (in which case the item's warranty_plan_id has
+     *                     already been updated)
      */
-    private function applyWarrantyPlanToItem(\App\Models\CartItem $item, ?string $warrantyPlanId, $country): ?string
+    private function applyWarrantyPlanToItem(CartItem $item, ?string $warrantyPlanId, $country): ?string
     {
         if ($warrantyPlanId === null) {
             $item->update(['warranty_plan_id' => null]);
@@ -441,7 +443,7 @@ class CartController extends Controller
 
         $plan = WarrantyPlan::active()->find($warrantyPlanId);
 
-        if (!$plan) {
+        if (! $plan) {
             return __('common.exceptions.cart.warranty_plan_not_found');
         }
 
@@ -454,7 +456,7 @@ class CartController extends Controller
                 ->all()
             : [];
 
-        if (!in_array($plan->id, $applicablePlanIds, true)) {
+        if (! in_array($plan->id, $applicablePlanIds, true)) {
             return __('common.exceptions.cart.warranty_plan_not_applicable');
         }
 
@@ -463,7 +465,7 @@ class CartController extends Controller
         return null;
     }
 
-    public function updateItemWarranty(Request $request, $countryId, string $id): JsonResponse
+    public function updateItemWarranty(Request $request, $country, string $id): JsonResponse
     {
         $request->validate([
             'warranty_plan_id' => ['nullable', 'uuid', 'exists:warranty_plans,id'],
@@ -471,7 +473,7 @@ class CartController extends Controller
 
         $item = $this->resolveOwnedCartItem($request, $id);
 
-        if (!$item) {
+        if (! $item) {
             return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
         }
 
@@ -507,11 +509,11 @@ class CartController extends Controller
         ], __('common.exceptions.cart.warranty_updated'));
     }
 
-    public function removeItem(Request $request, $countryId, string $id): JsonResponse
+    public function removeItem(Request $request, $country, string $id): JsonResponse
     {
         $owned = $this->resolveOwnedCartItem($request, $id);
 
-        if (!$owned) {
+        if (! $owned) {
             return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
         }
 
@@ -519,14 +521,14 @@ class CartController extends Controller
 
         try {
             $this->cartService->removeItem($cart, $id);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             return ApiResponse::error(__('common.exceptions.cart.item_not_found'), [], 404);
         }
 
         return ApiResponse::success(new CartResource($cart), __('common.exceptions.cart.item_removed'));
     }
 
-    public function clear(Request $request): JsonResponse
+    public function clear(Request $request, $country): JsonResponse
     {
         $cart = $this->resolveCart($request);
 
@@ -535,14 +537,14 @@ class CartController extends Controller
         return ApiResponse::success(null, __('common.exceptions.cart.cleared'));
     }
 
-    public function applyCoupon(ApplyCouponRequest $request): JsonResponse
+    public function applyCoupon(ApplyCouponRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $cart = $this->resolveCart($request);
 
         try {
             $coupon = $this->cartService->applyCoupon($cart, $customer, $request->code);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             return ApiResponse::error(__('common.exceptions.cart.coupon_not_found'), [], 404);
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), [], 422);
@@ -551,7 +553,7 @@ class CartController extends Controller
         return ApiResponse::success(new CartResource($cart), __('common.exceptions.cart.coupon_applied', ['code' => $coupon->code]));
     }
 
-    public function removeCoupon(Request $request): JsonResponse
+    public function removeCoupon(Request $request, $country): JsonResponse
     {
         $cart = $this->resolveCart($request);
 
@@ -560,7 +562,7 @@ class CartController extends Controller
         return ApiResponse::success(new CartResource($cart), __('common.exceptions.cart.coupon_removed'));
     }
 
-    public function applyPromoCode(ApplyCouponRequest $request): JsonResponse
+    public function applyPromoCode(ApplyCouponRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $cart = $this->resolveCart($request);
@@ -568,7 +570,7 @@ class CartController extends Controller
 
         try {
             $coupon = $this->cartService->applyCoupon($cart, $customer, $code);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+        } catch (ModelNotFoundException) {
             return ApiResponse::error(__('common.exceptions.cart.coupon_not_found'), [], 404);
         } catch (\DomainException $e) {
             return ApiResponse::error($e->getMessage(), [], 422);
@@ -585,7 +587,7 @@ class CartController extends Controller
         ], __('common.exceptions.cart.coupon_applied', ['code' => $code]));
     }
 
-    public function removePromoCode(Request $request): JsonResponse
+    public function removePromoCode(Request $request, $country): JsonResponse
     {
         $cart = $this->resolveCart($request);
 
@@ -594,13 +596,13 @@ class CartController extends Controller
         return ApiResponse::success(new CartResource($cart), __('common.exceptions.cart.promo_removed'));
     }
 
-    public function mergeCart(Request $request): JsonResponse
+    public function mergeCart(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
         $country = $request->attributes->get('country');
         $token = $request->input('guest_cart_token');
 
-        if (!$token) {
+        if (! $token) {
             return ApiResponse::error(__('common.exceptions.cart.guest_token_required'), [], 422);
         }
 

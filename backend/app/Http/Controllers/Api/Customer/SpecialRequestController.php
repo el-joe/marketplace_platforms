@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\StoreSpecialRequestRequest;
-use App\Models\Country;
 use App\Http\Responses\ApiResponse;
+use App\Models\Country;
 use App\Models\CustomerSpecialRequest;
 use App\Services\SpecialRequestRoutingService;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +20,7 @@ class SpecialRequestController extends Controller
         private readonly SpecialRequestRoutingService $routing,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -36,11 +36,11 @@ class SpecialRequestController extends Controller
         return ApiResponse::success($requests);
     }
 
-    public function store(StoreSpecialRequestRequest $request): JsonResponse
+    public function store(StoreSpecialRequestRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
-        $key = 'special-request:' . $customer->id;
+        $key = 'special-request:'.$customer->id;
         if (RateLimiter::tooManyAttempts($key, 10)) {
             return ApiResponse::error('Too many requests. Please try again later.', [], 429);
         }
@@ -62,9 +62,9 @@ class SpecialRequestController extends Controller
         $notified = $this->routing->notifyMatchingBrokers($specialRequest);
 
         return ApiResponse::success([
-            'request_id'       => $specialRequest->id,
+            'request_id' => $specialRequest->id,
             'brokers_notified' => $notified,
-            'status'           => $specialRequest->status,
+            'status' => $specialRequest->status,
         ], 'Request posted. Matching brokers have been notified.', 201);
     }
 

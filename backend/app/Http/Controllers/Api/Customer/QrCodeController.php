@@ -12,23 +12,21 @@ use Illuminate\Support\Facades\Storage;
 
 class QrCodeController extends Controller
 {
-    public function __construct(private readonly CustomerQrCodeService $service)
-    {
-    }
+    public function __construct(private readonly CustomerQrCodeService $service) {}
 
-    public function show(): JsonResponse
+    public function show($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = Auth::guard('customer')->user();
 
-        if (!$customer->qr_code_path || !Storage::disk('public')->exists($customer->qr_code_path)) {
+        if (! $customer->qr_code_path || ! Storage::disk('public')->exists($customer->qr_code_path)) {
             $this->service->generate($customer);
         }
 
         return response()->json($this->payload($customer));
     }
 
-    public function regenerate(): JsonResponse
+    public function regenerate($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = Auth::guard('customer')->user();

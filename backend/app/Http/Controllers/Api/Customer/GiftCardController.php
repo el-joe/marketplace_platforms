@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 class GiftCardController extends Controller
 {
-    public function validate(Request $request): JsonResponse
+    public function validate(Request $request, $country): JsonResponse
     {
         $data = $request->validate([
             'code' => ['required', 'string', 'max:20'],
@@ -34,7 +34,7 @@ class GiftCardController extends Controller
         return ApiResponse::success((new GiftCardValidationResource($giftCard))->toArray($request));
     }
 
-    public function mine(Request $request): JsonResponse
+    public function mine(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 

@@ -25,7 +25,7 @@ class VendorPageController extends Controller
      * GET /vendors
      * Public store directory: paginated, searchable list of active vendors.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
 

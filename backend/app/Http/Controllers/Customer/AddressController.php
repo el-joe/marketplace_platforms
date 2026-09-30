@@ -20,7 +20,7 @@ class AddressController extends Controller
         private readonly ReceiverService $receiverService,
     ) {}
 
-    public function index(): JsonResponse
+    public function index($country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
@@ -33,14 +33,14 @@ class AddressController extends Controller
         );
     }
 
-    public function store(StoreAddressRequest $request): JsonResponse
+    public function store(StoreAddressRequest $request, $country): JsonResponse
     {
         /** @var Customer $customer */
         $customer = auth('customer')->user();
 
         $data = $request->validated();
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             $customer->addresses()->where('is_default', true)->update(['is_default' => false]);
         }
 
@@ -63,16 +63,16 @@ class AddressController extends Controller
         return ApiResponse::success(new AddressResource($address), __('common.exceptions.address.created'), 201);
     }
 
-    public function update(UpdateAddressRequest $request,$country, Address $address): JsonResponse
+    public function update(UpdateAddressRequest $request, $country, Address $address): JsonResponse
     {
         $data = $request->validated();
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             $this->addressService->setDefault(auth('customer')->user(), $address);
             unset($data['is_default']);
         }
 
-        if (!empty($data['country_code']) || !empty($data['city_name'])) {
+        if (! empty($data['country_code']) || ! empty($data['city_name'])) {
             $data = array_merge($data, $this->addressService->resolveLocation(
                 $data['country_code'] ?? null,
                 $data['city_name'] ?? null,
@@ -98,9 +98,9 @@ class AddressController extends Controller
         return ApiResponse::success(new AddressResource($address->fresh()), __('common.exceptions.address.updated'));
     }
 
-    public function destroy($country,Address $address): JsonResponse
+    public function destroy($country, Address $address): JsonResponse
     {
-        if (!$this->addressService->canDelete($address)) {
+        if (! $this->addressService->canDelete($address)) {
             return ApiResponse::error(
                 __('common.exceptions.address.in_use_cannot_delete'),
                 [],

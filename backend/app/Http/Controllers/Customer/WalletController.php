@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Customer\GiftCardBalanceRequest;
 use App\Http\Requests\Api\Customer\RedeemGiftCardRequest;
 use App\Http\Requests\Api\Customer\RedeemVoucherRequest;
+use App\Http\Resources\Api\Customer\CustomerWalletResource;
+use App\Http\Resources\Api\Customer\WalletWithdrawalRequestResource;
 use App\Http\Resources\Customer\WalletResource;
 use App\Http\Resources\Customer\WalletTransactionResource;
 use App\Http\Responses\ApiResponse;
@@ -95,8 +97,8 @@ class WalletController extends Controller
     {
         $data = $request->validate([
             'amount' => ['required', 'integer', 'min:100'],
-            'bank_name'    => ['required', 'string', 'max:150'],
-            'bank_iban'    => ['required', 'string', 'max:50'],
+            'bank_name' => ['required', 'string', 'max:150'],
+            'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
         $customer = auth('customer')->user();
@@ -147,7 +149,7 @@ class WalletController extends Controller
     |--------------------------------------------------------------------
     */
 
-    public function apiIndex(Request $request): JsonResponse
+    public function apiIndex(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -155,10 +157,10 @@ class WalletController extends Controller
             ->where('owner_id', $customer->id)
             ->get();
 
-        return ApiResponse::success(\App\Http\Resources\Api\Customer\CustomerWalletResource::collection($wallets));
+        return ApiResponse::success(CustomerWalletResource::collection($wallets));
     }
 
-    public function apiTransactions(Request $request): JsonResponse
+    public function apiTransactions(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -188,7 +190,7 @@ class WalletController extends Controller
         ]);
     }
 
-    public function apiWithdrawalRequest(Request $request): JsonResponse
+    public function apiWithdrawalRequest(Request $request, $country): JsonResponse
     {
         $data = $request->validate([
             'currency' => ['required', 'string'],
@@ -234,7 +236,7 @@ class WalletController extends Controller
         ]);
 
         return ApiResponse::success(
-            new \App\Http\Resources\Api\Customer\WalletWithdrawalRequestResource($withdrawalRequest),
+            new WalletWithdrawalRequestResource($withdrawalRequest),
             __('customer_api.wallet.withdrawal_submitted'),
             201,
         );
@@ -246,7 +248,7 @@ class WalletController extends Controller
     |--------------------------------------------------------------------
     */
 
-    public function giftCardWalletIndex(Request $request): JsonResponse
+    public function giftCardWalletIndex(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -272,7 +274,7 @@ class WalletController extends Controller
         ]);
     }
 
-    public function giftCardWalletTransactions(Request $request): JsonResponse
+    public function giftCardWalletTransactions(Request $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -306,7 +308,7 @@ class WalletController extends Controller
         ]);
     }
 
-    public function redeemGiftCard(RedeemGiftCardRequest $request): JsonResponse
+    public function redeemGiftCard(RedeemGiftCardRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -337,7 +339,7 @@ class WalletController extends Controller
         ]));
     }
 
-    public function redeemVoucher(RedeemVoucherRequest $request): JsonResponse
+    public function redeemVoucher(RedeemVoucherRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -366,7 +368,7 @@ class WalletController extends Controller
         ]));
     }
 
-    public function giftCardBalance(GiftCardBalanceRequest $request): JsonResponse
+    public function giftCardBalance(GiftCardBalanceRequest $request, $country): JsonResponse
     {
         $customer = auth('customer')->user();
 

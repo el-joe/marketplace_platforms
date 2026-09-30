@@ -16,8 +16,7 @@ class PageContentController extends Controller
 {
     public function __construct(
         private readonly BannerService $bannerService,
-    ) {
-    }
+    ) {}
 
     /**
      * GET /v1/{country}/page-content/gift-cards
@@ -27,7 +26,7 @@ class PageContentController extends Controller
      * CMS) and the gift-cards FAQ list (admin-managed via the Faq CMS).
      * Cached briefly since this is a public, low-churn page.
      */
-    public function giftCards(Request $request): JsonResponse
+    public function giftCards(Request $request, $country): JsonResponse
     {
         /** @var Country $country */
         $country = $request->attributes->get('country');
