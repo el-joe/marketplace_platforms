@@ -8,8 +8,12 @@ use App\Models\TravelBooking;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TravelBookingController extends Controller
 {
@@ -18,7 +22,7 @@ class TravelBookingController extends Controller
 
     // ── Index ─────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
@@ -30,10 +34,10 @@ class TravelBookingController extends Controller
         $thisMonthStart = now()->startOfMonth();
 
         $stats = [
-            'total'       => TravelBooking::count(),
-            'this_month'  => TravelBooking::where('created_at', '>=', $thisMonthStart)->count(),
-            'confirmed'   => TravelBooking::where('status', TravelBookingStatus::Confirmed)->count(),
-            'cancelled'   => TravelBooking::where('status', TravelBookingStatus::Cancelled)->count(),
+            'total' => TravelBooking::count(),
+            'this_month' => TravelBooking::where('created_at', '>=', $thisMonthStart)->count(),
+            'confirmed' => TravelBooking::where('status', TravelBookingStatus::Confirmed)->count(),
+            'cancelled' => TravelBooking::where('status', TravelBookingStatus::Cancelled)->count(),
         ];
 
         // Revenue grouped by currency — never a single blended sum across currencies
@@ -44,9 +48,9 @@ class TravelBookingController extends Controller
             ->groupBy('travel_packages.currency')
             ->orderBy('travel_packages.currency')
             ->get()
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'currency' => $row->currency,
-                'formatted' => $row->currency . ' ' . number_format($row->total, 2),
+                'formatted' => $row->currency.' '.number_format($row->total, 2),
             ]);
 
         return view('admin.travel-bookings.index', compact('stats', 'revenueByCurrency'));
@@ -73,9 +77,9 @@ class TravelBookingController extends Controller
 
         $statusColors = [
             TravelBookingStatus::PendingDocuments->value => 'warning',
-            TravelBookingStatus::Confirmed->value        => 'success',
-            TravelBookingStatus::Cancelled->value        => 'danger',
-            TravelBookingStatus::Completed->value        => 'gray',
+            TravelBookingStatus::Confirmed->value => 'success',
+            TravelBookingStatus::Cancelled->value => 'danger',
+            TravelBookingStatus::Completed->value => 'gray',
         ];
 
         return $this->dataTableResponse($request, $query, $columns, function (TravelBooking $row) use ($statusColors) {
@@ -83,31 +87,31 @@ class TravelBookingController extends Controller
             $statusLabel = $row->status->label();
             $statusBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{$statusColor}-100 text-{$statusColor}-700\">{$statusLabel}</span>";
 
-            $currency   = $row->package?->currency ?? '';
-            $amount     = $currency . ' ' . number_format($row->total_price, 2);
+            $currency = $row->package?->currency ?? '';
+            $amount = $currency.' '.number_format($row->total_price, 2);
 
-            $departure  = $row->package?->departure_date ? Carbon::parse($row->package->departure_date)->format('d M Y') : '—';
+            $departure = $row->package?->departure_date ? Carbon::parse($row->package->departure_date)->format('d M Y') : '—';
             $returnDate = $row->package?->return_date ? Carbon::parse($row->package->return_date)->format('d M Y') : '—';
-            $dateRange  = $departure . ' – ' . $returnDate;
+            $dateRange = $departure.' – '.$returnDate;
 
             $showUrl = route('admin.travel.bookings.show', $row->id);
 
             return [
-                'booking_number' => '<span class="font-mono text-xs">' . e($row->booking_number) . '</span>',
-                'package'        => e($row->package?->title_en ?? '—'),
-                'customer'       => e($row->customer?->name ?? '—') . '<br><span class="text-xs text-gray-400">' . e($row->customer?->email ?? '') . '</span>',
-                'travel_dates'   => $dateRange,
-                'amount'         => e($amount),
-                'status'         => $statusBadge,
-                'actions'        => "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>",
-                'DT_RowData'     => ['id' => $row->id],
+                'booking_number' => '<span class="font-mono text-xs">'.e($row->booking_number).'</span>',
+                'package' => e($row->package?->title_en ?? '—'),
+                'customer' => e($row->customer?->name ?? '—').'<br><span class="text-xs text-gray-400">'.e($row->customer?->email ?? '').'</span>',
+                'travel_dates' => $dateRange,
+                'amount' => e($amount),
+                'status' => $statusBadge,
+                'actions' => "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-secondary\">View</a>",
+                'DT_RowData' => ['id' => $row->id],
             ];
         });
     }
 
     // ── Query building / Export ──────────────────────────────────────────────
 
-    private function buildBookingsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildBookingsQuery(Request $request): Builder
     {
         $query = TravelBooking::query()
             ->select('travel_bookings.*')
@@ -116,21 +120,21 @@ class TravelBookingController extends Controller
             ->join('customers', 'customers.id', '=', 'travel_bookings.customer_id');
 
         return $this->applyFilters($query, $request, [
-            'search'     => fn($q, $v) => $q->where('travel_bookings.booking_number', 'like', '%' . $v . '%'),
-            'status'     => fn($q, $v) => $q->where('travel_bookings.status', $v),
-            'package_id' => fn($q, $v) => $q->where('travel_bookings.travel_package_id', $v),
-            'date_from'  => fn($q, $v) => $q->whereDate('travel_bookings.created_at', '>=', $v),
-            'date_to'    => fn($q, $v) => $q->whereDate('travel_bookings.created_at', '<=', $v),
+            'search' => fn ($q, $v) => $q->where('travel_bookings.booking_number', 'like', '%'.$v.'%'),
+            'status' => fn ($q, $v) => $q->where('travel_bookings.status', $v),
+            'package_id' => fn ($q, $v) => $q->where('travel_bookings.travel_package_id', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('travel_bookings.created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('travel_bookings.created_at', '<=', $v),
         ]);
     }
 
-    private function exportBookings(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportBookings(Request $request): StreamedResponse
     {
         $bookings = $this->buildBookingsQuery($request)->orderByDesc('travel_bookings.created_at')->get();
 
         $headers = ['Booking Ref', 'Package', 'Agency', 'Status', 'Price', 'Currency', 'Date'];
 
-        $rows = $bookings->map(fn($booking) => [
+        $rows = $bookings->map(fn ($booking) => [
             $booking->booking_number,
             $booking->package?->title_en,
             $booking->package?->agency?->name,
@@ -150,30 +154,36 @@ class TravelBookingController extends Controller
 
     // ── Show ──────────────────────────────────────────────────────────────────
 
-    public function show(TravelBooking $travelBooking): \Illuminate\View\View
+    public function show(TravelBooking $travelBooking): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
 
-        $travelBooking->load(['package.agency', 'package.media', 'customer']);
+        $travelBooking->load([
+            'package.agency',
+            'package.media',
+            'customer',
+            'bookableUnit.photos',
+            'unitDays.timeSlot',
+        ]);
 
         return view('admin.travel-bookings.show', compact('travelBooking'));
     }
 
-    public function downloadPassport(TravelBooking $travelBooking): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function downloadPassport(TravelBooking $travelBooking): StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('travel.view'), 403);
 
         if (! $travelBooking->passport_file_path
-            || ! \Illuminate\Support\Facades\Storage::disk('private')->exists($travelBooking->passport_file_path)
+            || ! Storage::disk('private')->exists($travelBooking->passport_file_path)
         ) {
             abort(404);
         }
 
-        return \Illuminate\Support\Facades\Storage::disk('private')->download(
+        return Storage::disk('private')->download(
             $travelBooking->passport_file_path,
-            'passport-' . $travelBooking->booking_number . '.' . pathinfo($travelBooking->passport_file_path, PATHINFO_EXTENSION)
+            'passport-'.$travelBooking->booking_number.'.'.pathinfo($travelBooking->passport_file_path, PATHINFO_EXTENSION)
         );
     }
 }

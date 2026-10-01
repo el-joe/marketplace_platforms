@@ -39,7 +39,8 @@
             </a>
         </div>
     @else
-    <form method="POST" action="{{ route('travel-agency.bookings.store') }}" class="space-y-6">
+    <form method="POST" action="{{ route('travel-agency.bookings.store') }}" class="space-y-6"
+          x-data="unitDayPicker()">
         @csrf
         @if(old('from_inquiry'))
         <input type="hidden" name="from_inquiry" value="{{ old('from_inquiry') }}">
@@ -53,6 +54,7 @@
                     {{ __('travel.bookings.select_package') }} <span class="text-red-500">*</span>
                 </label>
                 <select name="travel_package_id" id="packageSelect" required
+                        @change="loadUnits($event.target.value)"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none @error('travel_package_id') border-red-400 @enderror">
                     <option value="">{{ __('travel.bookings.select_package_placeholder') }}</option>
                     @foreach($packages as $pkg)
@@ -83,6 +85,77 @@
                     <span class="text-blue-500">{{ __('travel.packages.available_seats') }}:</span>
                     <strong id="seatsRemainingDisplay"></strong>
                 </div>
+            </div>
+        </div>
+
+        {{-- Bookable unit day picker (Alpine.js, shown only when package has active units) --}}
+        <div x-show="units.length > 0" x-cloak class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+            <h3 class="font-semibold text-gray-800">{{ __('travel.bookings.bookable_unit') }} <span class="text-gray-400 font-normal text-sm">({{ __('travel.bookings.optional') }})</span></h3>
+
+            <div>
+                <select @change="selectUnit($event.target.value)" name="unit_id"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none">
+                    <option value="">— {{ __('travel.bookings.no_unit') }} —</option>
+                    <template x-for="u in units" :key="u.id">
+                        <option :value="u.id" x-text="u.name"></option>
+                    </template>
+                </select>
+            </div>
+
+            <div x-show="selectedUnit" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('travel.bookings.date_from') }}</label>
+                        <input type="date" x-model="dateFrom" @change="buildDays()"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none" />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('travel.bookings.date_to') }}</label>
+                        <input type="date" x-model="dateTo" @change="buildDays()"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 outline-none" />
+                    </div>
+                </div>
+
+                <template x-for="(day, i) in days" :key="day.date">
+                    <div class="border border-gray-200 rounded-lg p-3 space-y-2">
+                        <span class="text-sm font-medium text-gray-700" x-text="day.date"></span>
+
+                        <div x-show="selectedUnit && selectedUnit.time_slots.length > 0">
+                            <select x-model="days[i].time_slot_id"
+                                    @change="days[i].includes_overnight = false; days[i].price = slotPrice(days[i].time_slot_id)"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-300 outline-none">
+                                <option value="">{{ __('travel.bookings.full_day') }}</option>
+                                <template x-for="slot in selectedUnit.time_slots" :key="slot.id">
+                                    <option :value="slot.id"
+                                            x-text="slot.slot_type + ' (' + slot.starts_at + '–' + slot.ends_at + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div x-show="!days[i].time_slot_id">
+                            <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                <input type="checkbox" x-model="days[i].includes_overnight"
+                                       class="rounded text-blue-600" />
+                                {{ __('travel.bookings.includes_overnight') }}
+                            </label>
+                        </div>
+
+                        <p class="text-xs text-gray-500">
+                            {{ __('travel.bookings.price') }}:
+                            <span class="font-semibold text-gray-800" x-text="(days[i].price / 100).toFixed(2)"></span>
+                        </p>
+                    </div>
+                </template>
+
+                {{-- Hidden inputs for form submission --}}
+                <template x-for="(day, i) in days" :key="'h-' + day.date">
+                    <span>
+                        <input type="hidden" :name="'unit_days[' + i + '][date]'" :value="day.date" />
+                        <input type="hidden" :name="'unit_days[' + i + '][price]'" :value="day.price" />
+                        <input type="hidden" :name="'unit_days[' + i + '][includes_overnight]'" :value="day.includes_overnight ? 1 : 0" />
+                        <input type="hidden" :name="'unit_days[' + i + '][time_slot_id]'" :value="day.time_slot_id" />
+                    </span>
+                </template>
             </div>
         </div>
 
@@ -315,6 +388,50 @@
             resultsBox.classList.add('hidden');
         }
     });
+</script>
+
+<script>
+    const unitsUrl = @json(url('/travel-agency/bookable-units/for-package'));
+
+    function unitDayPicker() {
+        return {
+            units: [],
+            selectedUnit: null,
+            dateFrom: '',
+            dateTo: '',
+            days: [],
+
+            loadUnits(packageId) {
+                if (!packageId) { this.units = []; this.selectedUnit = null; this.days = []; return; }
+                fetch(`${unitsUrl}/${packageId}`)
+                    .then(r => r.json())
+                    .then(r => { this.units = r.data ?? []; });
+            },
+
+            selectUnit(unitId) {
+                this.selectedUnit = this.units.find(u => u.id === unitId) ?? null;
+                this.buildDays();
+            },
+
+            buildDays() {
+                if (!this.dateFrom || !this.dateTo || !this.selectedUnit) { this.days = []; return; }
+                const days = [];
+                let d = new Date(this.dateFrom + 'T00:00:00');
+                const end = new Date(this.dateTo + 'T00:00:00');
+                while (d <= end) {
+                    days.push({ date: d.toISOString().slice(0, 10), includes_overnight: false, time_slot_id: '', price: 0 });
+                    d.setDate(d.getDate() + 1);
+                }
+                this.days = days;
+            },
+
+            slotPrice(slotId) {
+                if (!slotId || !this.selectedUnit) { return 0; }
+                const slot = this.selectedUnit.time_slots.find(s => s.id === slotId);
+                return slot ? slot.price : 0;
+            },
+        };
+    }
 </script>
 @endif
 @endsection

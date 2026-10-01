@@ -5,6 +5,7 @@ namespace App\Services\TravelAgency;
 use App\Enums\CustomerStatus;
 use App\Enums\TravelBookingStatus;
 use App\Enums\TravelPackageStatus;
+use App\Models\BookingUnitDay;
 use App\Models\Customer;
 use App\Models\TravelBooking;
 use App\Models\TravelPackage;
@@ -48,23 +49,38 @@ class BookingCreationService
                 $customer = Customer::findOrFail($data['customer_id']);
             } else {
                 $customer = Customer::create([
-                    'name'     => $data['new_name'],
-                    'email'    => $data['new_email'],
-                    'phone'    => $data['new_phone'],
+                    'name' => $data['new_name'],
+                    'email' => $data['new_email'],
+                    'phone' => $data['new_phone'],
                     'password' => Str::random(32), // agency-created; customer sets own password via forgot-password
-                    'status'   => CustomerStatus::Active,
+                    'status' => CustomerStatus::Active,
                 ]);
             }
 
             $booking = TravelBooking::create([
                 'travel_package_id' => $pkg->id,
-                'customer_id'       => $customer->id,
-                'travelers_count'   => $data['travelers_count'],
+                'customer_id' => $customer->id,
+                'travelers_count' => $data['travelers_count'],
                 'total_price' => $pkg->priceForTravelersCount((int) $data['travelers_count']),
-                'status'            => TravelBookingStatus::PendingDocuments,
+                'status' => TravelBookingStatus::PendingDocuments,
             ]);
 
             // Seats are reserved when the booking is confirmed (booking status change), not here.
+
+            if (! empty($data['unit_id']) && ! empty($data['unit_days'])) {
+                $booking->update(['bookable_unit_id' => $data['unit_id']]);
+
+                foreach ($data['unit_days'] as $day) {
+                    BookingUnitDay::create([
+                        'travel_booking_id' => $booking->id,
+                        'bookable_unit_id' => $data['unit_id'],
+                        'date' => $day['date'],
+                        'includes_overnight' => $day['includes_overnight'] ?? false,
+                        'time_slot_id' => $day['time_slot_id'] ?? null,
+                        'price' => $day['price'],
+                    ]);
+                }
+            }
 
             return $booking;
         });

@@ -142,6 +142,7 @@ return [
         'types' => [
             'chalet' => 'شاليه',
             'hotel_room' => 'غرفة فندق',
+            'apartment' => 'شقة',
             'other' => 'أخرى',
         ],
         'slot_types' => [
@@ -164,6 +165,13 @@ return [
         'package' => 'الباقة',
         'package_optional' => 'الباقة (اختياري)',
         'no_package' => 'بدون باقة',
+        'bookings' => 'الحجوزات',
+        'no_bookings' => 'لا توجد حجوزات بعد.',
+        'booking_number' => 'رقم الحجز',
+        'customer' => 'العميل',
+        'overnight' => 'مبيت',
+        'time_slot' => 'الفترة الزمنية',
+        'status' => 'الحالة',
     ],
 
     'packages' => [
@@ -966,4 +974,5 @@ return [
         'filter' => 'تصفية',
         'no_data' => 'لا توجد بيانات لهذه الفترة.',
     ],
+    'bookable_unit_not_available' => 'الوحدة المختارة غير متاحة لهذه الباقة.',
 ];

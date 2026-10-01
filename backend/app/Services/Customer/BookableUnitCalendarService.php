@@ -6,7 +6,7 @@ use App\Models\BookableUnit;
 use App\Models\BookableUnitAvailability;
 use Illuminate\Support\Carbon;
 
-class BookableUnitReservationService
+class BookableUnitCalendarService
 {
     /**
      * A month's calendar for a unit: date, availability, capacity and both

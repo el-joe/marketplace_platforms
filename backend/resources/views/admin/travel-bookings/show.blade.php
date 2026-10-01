@@ -100,6 +100,35 @@
     </x-card>
     @endif
 
+    {{-- ─── Booked Unit ─────────────────────────────────────────────────────────── --}}
+    @if($travelBooking->bookableUnit)
+    <x-card>
+        <h3 class="font-semibold text-gray-700 text-xs uppercase tracking-wide mb-3">Booked Unit: {{ $travelBooking->bookableUnit->name }}</h3>
+        <div class="overflow-x-auto -mx-4 -mb-4">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">Date</th>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">Overnight</th>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">Time Slot</th>
+                        <th class="text-right px-4 py-2 font-medium text-gray-500">Price</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach($travelBooking->unitDays as $day)
+                    <tr>
+                        <td class="px-4 py-2 text-gray-900">{{ $day->date->format('d M Y') }}</td>
+                        <td class="px-4 py-2 text-gray-700">{{ $day->includes_overnight ? 'Yes' : 'No' }}</td>
+                        <td class="px-4 py-2 text-gray-700">{{ $day->timeSlot?->slot_type ?? '—' }}</td>
+                        <td class="px-4 py-2 text-gray-900 text-right">{{ number_format($day->price / 100, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </x-card>
+    @endif
+
     {{-- ─── Read-only note ──────────────────────────────────────────────────────── --}}
     <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
         {{ __('admin.travel.readonly_note') }}

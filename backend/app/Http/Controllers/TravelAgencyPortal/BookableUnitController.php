@@ -31,6 +31,38 @@ class BookableUnitController extends Controller
         }
     }
 
+    // ── Units for package (AJAX) ──────────────────────────────────────────────
+
+    public function forPackage(string $packageId): JsonResponse
+    {
+        $packageBelongsToAgency = TravelPackage::where('id', $packageId)
+            ->where('travel_agency_id', $this->agencyId())
+            ->exists();
+
+        abort_unless($packageBelongsToAgency, 403);
+
+        $units = BookableUnit::where('travel_package_id', $packageId)
+            ->where('travel_agency_id', $this->agencyId())
+            ->where('status', 'active')
+            ->with('timeSlots')
+            ->get()
+            ->map(fn (BookableUnit $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'type' => $u->type,
+                'capacity' => $u->capacity,
+                'time_slots' => $u->timeSlots->map(fn ($s) => [
+                    'id' => $s->id,
+                    'slot_type' => $s->slot_type,
+                    'starts_at' => $s->starts_at,
+                    'ends_at' => $s->ends_at,
+                    'price' => $s->price,
+                ]),
+            ]);
+
+        return response()->json(['success' => true, 'data' => $units]);
+    }
+
     // ── Index ─────────────────────────────────────────────────────────────────
 
     public function index(): View
@@ -59,7 +91,7 @@ class BookableUnitController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:chalet,hotel_room,other'],
+            'type' => ['required', 'in:chalet,hotel_room,apartment,other'],
             'capacity' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
             'travel_package_id' => ['nullable', 'uuid', 'exists:travel_packages,id'],
@@ -104,12 +136,19 @@ class BookableUnitController extends Controller
 
         $bookableUnit->load('photos');
 
+        $recentBookings = BookingUnitDay::where('bookable_unit_id', $bookableUnit->id)
+            ->with(['travelBooking.customer', 'timeSlot'])
+            ->orderByDesc('date')
+            ->limit(100)
+            ->get();
+
         return view('travel-agency.bookable-units.show', [
             'unit' => $bookableUnit,
             'month' => $start,
             'availability' => $availability,
             'timeSlots' => $timeSlots,
             'packages' => $packages,
+            'recentBookings' => $recentBookings,
         ]);
     }
 
@@ -157,7 +196,7 @@ class BookableUnitController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'name_ar' => ['nullable', 'string', 'max:255'],
-            'type' => ['required', 'in:chalet,hotel_room,other'],
+            'type' => ['required', 'in:chalet,hotel_room,apartment,other'],
             'capacity' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string'],
             'travel_package_id' => ['nullable', 'uuid', 'exists:travel_packages,id'],

@@ -204,5 +204,42 @@
                 </button>
             </form>
         </div>
+        {{-- ── Bookings ─────────────────────────────────────────────────────── --}}
+        <div class="bg-white rounded-xl border border-gray-100 p-4">
+            <h3 class="font-bold text-gray-900 mb-3">{{ __('travel.bookable_units.bookings') }}</h3>
+
+            @if ($recentBookings->isEmpty())
+                <p class="text-sm text-gray-400">{{ __('travel.bookable_units.no_bookings') }}</p>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                            <tr>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.date') }}</th>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.booking_number') }}</th>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.customer') }}</th>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.overnight') }}</th>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.time_slot') }}</th>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.price') }}</th>
+                                <th class="px-3 py-2 text-start">{{ __('travel.bookable_units.status') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($recentBookings as $day)
+                                <tr class="border-t border-gray-100">
+                                    <td class="px-3 py-2">{{ $day->date->format('d M Y') }}</td>
+                                    <td class="px-3 py-2 font-medium">{{ $day->travelBooking->booking_number }}</td>
+                                    <td class="px-3 py-2">{{ $day->travelBooking->customer->name }}</td>
+                                    <td class="px-3 py-2">{{ $day->is_overnight ? __('common.yes') : __('common.no') }}</td>
+                                    <td class="px-3 py-2">{{ $day->timeSlot->slot_type ?? '—' }}</td>
+                                    <td class="px-3 py-2">{{ number_format($day->price / 100, 2) }}</td>
+                                    <td class="px-3 py-2">{{ $day->travelBooking->status->value }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
     </div>
 @endsection

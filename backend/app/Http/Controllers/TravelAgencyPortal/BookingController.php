@@ -10,6 +10,7 @@ use App\Http\Controllers\TravelAgencyPortal\Concerns\ResolvesTravelAgency;
 use App\Models\Activity;
 use App\Models\Customer;
 use App\Models\TravelAgency;
+use App\Models\TravelAgencyMember;
 use App\Models\TravelBooking;
 use App\Models\TravelPackage;
 use App\Models\TravelPackageInquiry;
@@ -31,12 +32,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BookingController extends Controller
 {
-    use ResolvesTravelAgency;
     use HasExport;
+    use ResolvesTravelAgency;
 
-    public function __construct(private readonly BookingCreationService $bookingCreationService)
-    {
-    }
+    public function __construct(private readonly BookingCreationService $bookingCreationService) {}
 
     // ── Customer search (AJAX) ────────────────────────────────────────────────
 
@@ -51,8 +50,8 @@ class BookingController extends Controller
         $customers = Customer::query()
             ->where(function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('email', 'like', "%{$term}%")
-                  ->orWhere('phone', 'like', "%{$term}%");
+                    ->orWhere('email', 'like', "%{$term}%")
+                    ->orWhere('phone', 'like', "%{$term}%");
             })
             ->select('id', 'name', 'email', 'phone')
             ->limit(10)
@@ -94,13 +93,19 @@ class BookingController extends Controller
                 Rule::exists('travel_packages', 'id')->where('travel_agency_id', $this->agencyId()),
             ],
             'travelers_count' => ['required', 'integer', 'min:1'],
-            'customer_mode'   => ['required', 'in:existing,new'],
+            'customer_mode' => ['required', 'in:existing,new'],
+            'unit_id' => ['nullable', 'uuid', 'exists:bookable_units,id'],
+            'unit_days' => ['nullable', 'array'],
+            'unit_days.*.date' => ['required_with:unit_days', 'date'],
+            'unit_days.*.price' => ['required_with:unit_days', 'integer', 'min:0'],
+            'unit_days.*.includes_overnight' => ['nullable', 'boolean'],
+            'unit_days.*.time_slot_id' => ['nullable', 'uuid', 'exists:bookable_unit_time_slots,id'],
         ];
 
         if ($mode === 'existing') {
             $rules['customer_id'] = ['required', 'uuid', 'exists:customers,id'];
         } else {
-            $rules['new_name']  = ['required', 'string', 'max:255'];
+            $rules['new_name'] = ['required', 'string', 'max:255'];
             $rules['new_phone'] = ['required', 'string', 'max:30'];
             $rules['new_email'] = ['required', 'email', 'max:255', 'unique:customers,email'];
         }
@@ -117,7 +122,7 @@ class BookingController extends Controller
                 ->first();
 
             $inquiry?->update([
-                'status'                 => TravelPackageInquiryStatus::Converted,
+                'status' => TravelPackageInquiryStatus::Converted,
                 'converted_to_booking_id' => $booking->id,
             ]);
         }
@@ -199,13 +204,13 @@ class BookingController extends Controller
             $booking->created_at?->toDateString(),
         ]);
 
-        $filename = 'bookings-' . now()->toDateString();
+        $filename = 'bookings-'.now()->toDateString();
         $format = $request->input('format', 'csv');
 
         return match ($format) {
             'excel' => $this->exportExcel($filename, $headers, $rows),
-            'word'  => $this->exportWord($filename, __('travel.bookings.export.sheet_title'), $rows),
-            'csv'   => $this->exportCsv($filename, $headers, $rows),
+            'word' => $this->exportWord($filename, __('travel.bookings.export.sheet_title'), $rows),
+            'csv' => $this->exportCsv($filename, $headers, $rows),
             default => abort(400, __('travel.export.invalid_format')),
         };
     }
@@ -215,7 +220,12 @@ class BookingController extends Controller
     public function show(TravelBooking $booking): View
     {
         $this->authorise($booking);
-        $booking->load(['package', 'customer']);
+        $booking->load([
+            'package',
+            'customer',
+            'bookableUnit.photos',
+            'unitDays.timeSlot',
+        ]);
 
         return view('travel-agency.bookings.show', compact('booking'));
     }
@@ -236,14 +246,14 @@ class BookingController extends Controller
         $allowed = match ($newStatus) {
             TravelBookingStatus::Confirmed => in_array($booking->status, [TravelBookingStatus::PendingDocuments]),
             TravelBookingStatus::Cancelled => in_array($booking->status, [TravelBookingStatus::PendingDocuments, TravelBookingStatus::Confirmed]),
-            default     => false,
+            default => false,
         };
 
-        if (!$allowed) {
+        if (! $allowed) {
             return back()->withErrors(['status' => __('travel.bookings.status_change_forbidden')]);
         }
 
-        if ($newStatus === TravelBookingStatus::Confirmed && !$booking->passport_file_path) {
+        if ($newStatus === TravelBookingStatus::Confirmed && ! $booking->passport_file_path) {
             return back()->withErrors(['status' => __('travel.bookings.confirm_requires_passport')]);
         }
 
@@ -286,7 +296,7 @@ class BookingController extends Controller
 
         $booking->loadMissing('customer');
 
-        /** @var \App\Models\TravelAgencyMember $agencyMember */
+        /** @var TravelAgencyMember $agencyMember */
         $agencyMember = $this->member();
 
         if ($newStatus === TravelBookingStatus::Confirmed) {
@@ -296,15 +306,15 @@ class BookingController extends Controller
         }
 
         Activity::create([
-            'log_name'     => 'travel_bookings',
-            'description'  => $newStatus === TravelBookingStatus::Confirmed ? 'Booking confirmed' : 'Booking cancelled',
+            'log_name' => 'travel_bookings',
+            'description' => $newStatus === TravelBookingStatus::Confirmed ? 'Booking confirmed' : 'Booking cancelled',
             'subject_type' => TravelBooking::class,
-            'subject_id'   => $booking->id,
-            'causer_type'  => TravelAgency::class,
-            'causer_id'    => $agencyMember->travel_agency_id,
-            'event'        => $newStatus->value,
-            'properties'   => json_encode(array_filter(['cancellation_reason' => $cancellationReason])),
-            'ip_address'   => $request->ip(),
+            'subject_id' => $booking->id,
+            'causer_type' => TravelAgency::class,
+            'causer_id' => $agencyMember->travel_agency_id,
+            'event' => $newStatus->value,
+            'properties' => json_encode(array_filter(['cancellation_reason' => $cancellationReason])),
+            'ip_address' => $request->ip(),
         ]);
 
         $label = $newStatus === TravelBookingStatus::Confirmed
@@ -348,7 +358,7 @@ class BookingController extends Controller
 
         return Storage::disk('private')->download(
             $booking->passport_file_path,
-            'passport-' . $booking->booking_number . '.' . pathinfo($booking->passport_file_path, PATHINFO_EXTENSION)
+            'passport-'.$booking->booking_number.'.'.pathinfo($booking->passport_file_path, PATHINFO_EXTENSION)
         );
     }
 

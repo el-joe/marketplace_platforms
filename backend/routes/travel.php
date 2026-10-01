@@ -104,6 +104,7 @@ Route::name('travel-agency.')
                 Route::delete('/{bookableUnit}/photos/{photo}', [BookableUnitController::class, 'destroyPhoto'])->name('photos.destroy');
                 Route::post('/{bookableUnit}/photos/{photo}/primary', [BookableUnitController::class, 'setPrimaryPhoto'])->name('photos.set-primary');
                 Route::post('/{bookableUnit}/link-package', [BookableUnitController::class, 'linkPackage'])->name('link-package');
+                Route::get('/for-package/{packageId}', [BookableUnitController::class, 'forPackage'])->name('for-package');
             });
 
             // Bookings

@@ -98,15 +98,29 @@
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.bookable_units_section.reservations') }}</h3>
         <table class="min-w-full text-sm divide-y divide-gray-100">
-            @forelse($reservations as $r)
+            <thead>
+                <tr class="text-xs text-gray-500">
+                    <th class="py-2 text-left font-medium">{{ __('admin.bookable_units_section.col_date') }}</th>
+                    <th class="text-left font-medium">{{ __('admin.bookable_units_section.col_booking_number') }}</th>
+                    <th class="text-left font-medium">{{ __('admin.bookable_units_section.col_customer') }}</th>
+                    <th class="text-left font-medium">{{ __('admin.bookable_units_section.col_overnight') }}</th>
+                    <th class="text-left font-medium">{{ __('admin.bookable_units_section.col_time_slot') }}</th>
+                    <th class="text-left font-medium">{{ __('admin.bookable_units_section.col_price') }}</th>
+                    <th class="text-left font-medium">{{ __('admin.bookable_units_section.col_status') }}</th>
+                </tr>
+            </thead>
+            @forelse($recentBookingDays as $day)
             <tr>
-                <td class="py-2">{{ $r->reservation_number }}</td>
-                <td>{{ $r->date_from->toDateString() }} → {{ $r->date_to->toDateString() }}</td>
-                <td>{{ $r->total_price }} {{ $r->currency }}</td>
-                <td>{{ $r->status->value ?? $r->status }}</td>
+                <td class="py-2">{{ $day->date }}</td>
+                <td>{{ $day->travelBooking?->booking_number ?? '—' }}</td>
+                <td>{{ $day->travelBooking?->customer?->name ?? '—' }}</td>
+                <td>{{ $day->includes_overnight ? __('admin.bookable_units_section.yes') : __('admin.bookable_units_section.no') }}</td>
+                <td>{{ $day->timeSlot?->slot_type ?? '—' }}</td>
+                <td>{{ number_format($day->price / 100, 2) }}</td>
+                <td>{{ $day->travelBooking?->status->value ?? '—' }}</td>
             </tr>
             @empty
-            <tr><td class="py-4 text-gray-400">{{ __('admin.bookable_units_section.none') }}</td></tr>
+            <tr><td colspan="7" class="py-4 text-gray-400">{{ __('admin.bookable_units_section.none') }}</td></tr>
             @endforelse
         </table>
     </div>

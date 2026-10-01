@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookableUnit;
+use App\Models\BookingUnitDay;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,7 +16,7 @@ class BookableUnitController extends Controller
         abort_unless(auth('admin')->user()->hasPermissionTo('travel.view'), 403);
 
         $units = BookableUnit::with(['agency:id,name', 'travelPackage:id,title_en,title_ar'])
-            ->withCount('reservations')
+            ->withCount('bookingDays')
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->type))
             ->when($request->filled('agency_id'), fn ($q) => $q->where('travel_agency_id', $request->agency_id))
@@ -31,7 +32,11 @@ class BookableUnitController extends Controller
         abort_unless(auth('admin')->user()->hasPermissionTo('travel.view'), 403);
 
         $bookableUnit->load('agency:id,name', 'timeSlots');
-        $reservations = $bookableUnit->reservations()->latest()->limit(50)->get();
+        $recentBookingDays = BookingUnitDay::where('bookable_unit_id', $bookableUnit->id)
+            ->with(['travelBooking.customer', 'timeSlot'])
+            ->orderByDesc('date')
+            ->limit(50)
+            ->get();
 
         $monthStart = now()->startOfMonth();
         $monthEnd = now()->endOfMonth();
@@ -56,7 +61,7 @@ class BookableUnitController extends Controller
 
         return view('admin.bookable-units.show', [
             'unit' => $bookableUnit,
-            'reservations' => $reservations,
+            'recentBookingDays' => $recentBookingDays,
             'calendarDays' => $calendarDays,
             'calendarMonth' => $monthStart->format('F Y'),
             'firstWeekday' => (int) $monthStart->dayOfWeek,

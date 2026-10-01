@@ -206,6 +206,35 @@ $statusLabels = [
     </div>
     @endif
 
+    {{-- Booked Unit --}}
+    @if($booking->bookableUnit)
+    <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+        <h2 class="font-bold text-gray-800 border-b border-gray-100 pb-2">Booked Unit: {{ $booking->bookableUnit->name }}</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b border-gray-100">
+                        <th class="pb-2 font-medium">Date</th>
+                        <th class="pb-2 font-medium">Overnight</th>
+                        <th class="pb-2 font-medium">Time Slot</th>
+                        <th class="pb-2 font-medium text-right">Price</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach($booking->unitDays as $day)
+                    <tr>
+                        <td class="py-2 text-gray-900">{{ $day->date->format('d M Y') }}</td>
+                        <td class="py-2 text-gray-700">{{ $day->includes_overnight ? 'Yes' : 'No' }}</td>
+                        <td class="py-2 text-gray-700">{{ $day->timeSlot?->slot_type ?? '—' }}</td>
+                        <td class="py-2 text-gray-900 text-right">{{ number_format($day->price / 100, 2) }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     <div class="text-xs text-gray-400">
         {{ __('travel.bookings.booking_date') }}: {{ $booking->created_at->format('d M Y H:i') }}
     </div>

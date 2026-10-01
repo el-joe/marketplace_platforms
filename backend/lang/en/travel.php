@@ -143,6 +143,7 @@ return [
         'types' => [
             'chalet' => 'Chalet',
             'hotel_room' => 'Hotel room',
+            'apartment' => 'Apartment',
             'other' => 'Other',
         ],
         'slot_types' => [
@@ -165,6 +166,13 @@ return [
         'package' => 'Package',
         'package_optional' => 'Package (Optional)',
         'no_package' => 'None',
+        'bookings' => 'Bookings',
+        'no_bookings' => 'No bookings yet.',
+        'booking_number' => 'Booking #',
+        'customer' => 'Customer',
+        'overnight' => 'Overnight',
+        'time_slot' => 'Time Slot',
+        'status' => 'Status',
     ],
 
     'packages' => [
@@ -967,4 +975,5 @@ return [
         'filter' => 'Filter',
         'no_data' => 'No data for this period.',
     ],
+    'bookable_unit_not_available' => 'The selected unit is not available for this package.',
 ];

@@ -82,6 +82,19 @@ class TravelBookingService
         $unitId = $data['unit_id'] ?? null;
         $unitDays = $data['unit_days'] ?? [];
 
+        if ($unitId) {
+            $unitBelongsToPackage = BookableUnit::where('id', $unitId)
+                ->where('travel_package_id', $package->id)
+                ->where('status', 'active')
+                ->exists();
+
+            if (! $unitBelongsToPackage) {
+                throw ValidationException::withMessages([
+                    'unit_id' => __('travel.bookable_unit_not_available'),
+                ]);
+            }
+        }
+
         $booking = DB::transaction(function () use ($package, $customer, $data, $travelersCount, $unitId, $unitDays) {
             $pkg = TravelPackage::lockForUpdate()->findOrFail($package->id);
             if ($pkg->available_seats !== null

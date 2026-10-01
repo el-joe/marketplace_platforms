@@ -25,7 +25,7 @@
             <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('travel.bookable_units.type') }}</label>
                 <select name="type" class="w-full rounded-lg border-gray-300 text-sm">
-                    @foreach(['chalet', 'hotel_room', 'other'] as $type)
+                    @foreach(['chalet', 'hotel_room', 'apartment', 'other'] as $type)
                         <option value="{{ $type }}" {{ old('type', $unit->type->value ?? $unit->type) === $type ? 'selected' : '' }}>
                             {{ __('travel.bookable_units.types.' . $type) }}
                         </option>

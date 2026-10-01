@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\BookableUnit;
-use App\Services\Customer\BookableUnitReservationService;
+use App\Services\Customer\BookableUnitCalendarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class BookableUnitAvailabilityController extends Controller
 {
-    public function __construct(private readonly BookableUnitReservationService $reservations) {}
+    public function __construct(private readonly BookableUnitCalendarService $reservations) {}
 
     /**
      * GET /bookable-units/{unit}/calendar?month=YYYY-MM

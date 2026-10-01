@@ -20,6 +20,7 @@
                 <select name="type" class="w-full rounded-lg border-gray-300 text-sm">
                     <option value="chalet" {{ old('type') === 'chalet' ? 'selected' : '' }}>{{ __('travel.bookable_units.types.chalet') }}</option>
                     <option value="hotel_room" {{ old('type') === 'hotel_room' ? 'selected' : '' }}>{{ __('travel.bookable_units.types.hotel_room') }}</option>
+                    <option value="apartment" {{ old('type') === 'apartment' ? 'selected' : '' }}>{{ __('travel.bookable_units.types.apartment') }}</option>
                     <option value="other" {{ old('type') === 'other' ? 'selected' : '' }}>{{ __('travel.bookable_units.types.other') }}</option>
                 </select>
                 @error('type') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
