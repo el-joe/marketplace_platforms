@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\FbnInboundRequestStatus;
 use App\Enums\FbnStorageFeeStatus;
+use App\Enums\InventoryMovementReferenceType;
 use App\Enums\MarketplaceShippingRuleCommissionType;
 use App\Http\Controllers\Controller;
 use App\Jobs\GenerateFbnStorageFeesJob;
@@ -13,6 +14,7 @@ use App\Models\MarketplaceShippingRule;
 use App\Models\StorageFeeFreePeriodRule;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
+use App\Services\Inventory\InventoryService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -194,16 +196,26 @@ class FbnController extends Controller
                 'received_at' => $arrivedAt,
             ]);
 
-            // Update warehouse inventory quantity_inbound → quantity_on_hand.
-            // Uses Eloquent save() (not increment/decrement) so the saving observer
-            // fires and first_stocked_at gets stamped as the arrival anchor for
-            // storage-fee day counting.
             $inventory = WarehouseInventory::where('vendor_listing_id', $inboundRequest->vendor_listing_id)
                 ->where('warehouse_id', $inboundRequest->warehouse_id)
                 ->first();
 
             if ($inventory) {
-                $inventory->quantity_on_hand += $data['quantity_received'];
+                // Route through InventoryService so the receipt is logged as an
+                // InventoryMovement (type=inbound) and ListingStockChanged fires.
+                app(InventoryService::class)->restock(
+                    warehouseInventoryId: $inventory->id,
+                    qty: $data['quantity_received'],
+                    referenceType: InventoryMovementReferenceType::FbnInboundRequest->value,
+                    referenceId: $inboundRequest->id,
+                    actorType: 'admin',
+                    actorId: Auth::guard('admin')->id(),
+                    reason: 'FBN inbound received: '.$inboundRequest->request_number,
+                );
+
+                // Decrement inbound-in-transit quantity and stamp first_stocked_at
+                // as the storage-fee day-count anchor (saving observer fires here).
+                $inventory->refresh();
                 $inventory->quantity_inbound = max(0, $inventory->quantity_inbound - $data['quantity_received']);
                 if ($inventory->first_stocked_at === null) {
                     $inventory->first_stocked_at = $arrivedAt;

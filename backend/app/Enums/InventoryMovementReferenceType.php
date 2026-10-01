@@ -17,4 +17,5 @@ enum InventoryMovementReferenceType: string
     case CampaignSample = 'campaign_sample';
     case WarrantyReplacement = 'warranty_replacement';
     case Rto = 'rto';
+    case FbnInboundRequest = 'fbn_inbound_request';
 }

@@ -70,6 +70,17 @@ class FulfillmentController extends Controller
             })
             ->get(['id', 'name', 'code']);
 
+        $fbpInventoryData = $fbpListings->flatMap(fn ($l) => $l->warehouseInventories->map(fn ($inv) => [
+            'product' => $l->productVariant?->product?->name_ar ?? $l->productVariant?->product?->name_en,
+            'warehouse' => $inv->warehouse?->name,
+            'quantity_on_hand' => $inv->quantity_on_hand,
+            'quantity_available' => $inv->quantity_available,
+            'quantity_reserved' => $inv->quantity_reserved,
+            'bin_location' => $inv->bin_location,
+            'reorder_point' => $inv->reorder_point,
+            'low_stock' => $inv->reorder_point && $inv->quantity_available <= $inv->reorder_point,
+        ]))->values();
+
         return view('partner.fulfillment.index', compact(
             'vendor',
             'stats',
@@ -77,7 +88,8 @@ class FulfillmentController extends Controller
             'fbpListings',
             'marketplaceListings',
             'fbmListings',
-            'warehouses'
+            'warehouses',
+            'fbpInventoryData'
         ));
     }
 

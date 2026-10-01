@@ -23,6 +23,7 @@ class InventoryMovement extends Model
         'reference_id',
         'reason',
         'created_by_user_id',
+        'actor_type',
     ];
 
     protected $casts = [

@@ -64,6 +64,11 @@ class BookableUnit extends Model
         return $this->hasMany(BookingUnitDay::class);
     }
 
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(BookableUnitReservation::class);
+    }
+
     public function photos(): HasMany
     {
         return $this->hasMany(BookableUnitPhoto::class)->orderBy('position');
