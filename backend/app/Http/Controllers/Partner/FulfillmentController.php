@@ -44,24 +44,24 @@ class FulfillmentController extends Controller
     {
         $vendor = $this->vendor();
 
-        $listings = VendorListing::where('vendor_id', $vendor->id)
-            ->with(['productVariant.product', 'warehouseInventories.warehouse'])
-            ->get();
+        $baseQuery = fn (GlobalSystemType $type) => VendorListing::where('vendor_id', $vendor->id)
+            ->where('global_system_type', $type->value)
+            ->with(['productVariant.product', 'warehouseInventories.warehouse']);
+
+        $fbnListings = $baseQuery(GlobalSystemType::ExpressFbn)->get();
+        $fbpListings = $baseQuery(GlobalSystemType::MerchantFbp)->get();
+        $marketplaceListings = $baseQuery(GlobalSystemType::Marketplace)->get();
+        $fbmListings = $baseQuery(GlobalSystemType::MerchantFbm)->get();
 
         $stats = [
-            'fbn_count' => $listings->where('global_system_type', GlobalSystemType::ExpressFbn)->count(),
-            'fbp_count' => $listings->where('global_system_type', GlobalSystemType::MerchantFbp)->count(),
-            'marketplace_count' => $listings->where('global_system_type', GlobalSystemType::Marketplace)->count(),
-            'fbm_count' => $listings->where('global_system_type', GlobalSystemType::MerchantFbm)->count(),
+            'fbn_count' => $fbnListings->count(),
+            'fbp_count' => $fbpListings->count(),
+            'marketplace_count' => $marketplaceListings->count(),
+            'fbm_count' => $fbmListings->count(),
             'pending_requests' => FbnInboundRequest::where('vendor_id', $vendor->id)
                 ->whereIn('status', ['draft', 'submitted', 'approved'])
                 ->count(),
         ];
-
-        $fbnListings = $listings->where('global_system_type', GlobalSystemType::ExpressFbn)->values();
-        $fbpListings = $listings->where('global_system_type', GlobalSystemType::MerchantFbp)->values();
-        $marketplaceListings = $listings->where('global_system_type', GlobalSystemType::Marketplace)->values();
-        $fbmListings = $listings->where('global_system_type', GlobalSystemType::MerchantFbm)->values();
 
         $warehouses = Warehouse::where('is_active', true)
             ->where(function ($q) use ($vendor) {
