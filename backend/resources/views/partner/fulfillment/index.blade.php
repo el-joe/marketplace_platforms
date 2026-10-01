@@ -140,45 +140,6 @@
             </div>
         @endif
 
-        {{-- FBN Submit form (Alpine toggle) --}}
-        <div x-show="showFbnForm" x-cloak class="bg-white rounded-2xl border border-indigo-100 p-5">
-            <h3 class="font-bold text-gray-800 mb-4">{{ __('partner.fulfillment.new_inbound_form_title') }}</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="label-sm">{{ __('partner.fulfillment.listing_label') }} <span class="text-red-500">*</span></label>
-                    <select id="fbn-listing" class="form-select w-full text-sm">
-                        <option value="">{{ __('partner.fulfillment.select_listing') }}</option>
-                        @foreach($fbnListings as $listing)
-                            <option value="{{ $listing->id }}">
-                                {{ $listing->productVariant?->product?->name_ar ?? $listing->productVariant?->product?->name_en }}
-                                ({{ $listing->vendor_sku ?? substr($listing->id, 0, 8) }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="label-sm">{{ __('partner.fulfillment.warehouse_label') }} <span class="text-red-500">*</span></label>
-                    <select id="fbn-warehouse" class="form-select w-full text-sm">
-                        <option value="">{{ __('partner.fulfillment.select_warehouse') }}</option>
-                        @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}">{{ $wh->name }} ({{ $wh->code }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="label-sm">{{ __('partner.fulfillment.quantity_to_send') }} <span class="text-red-500">*</span></label>
-                    <input type="number" id="fbn-qty" class="form-input w-full text-sm" min="1" placeholder="{{ __('partner.fulfillment.quantity_placeholder') }}">
-                </div>
-                <div>
-                    <label class="label-sm">{{ __('partner.fulfillment.notes_optional') }}</label>
-                    <input type="text" id="fbn-notes" class="form-input w-full text-sm" placeholder="{{ __('partner.fulfillment.notes_placeholder') }}">
-                </div>
-            </div>
-            <div class="flex gap-3 justify-end mt-4">
-                <button type="button" @click="showFbnForm=false" class="btn btn-ghost btn-sm">{{ __('partner.fulfillment.cancel') }}</button>
-                <button type="button" @click="submitFbnRequest()" class="btn btn-primary btn-sm">{{ __('partner.fulfillment.submit_request') }}</button>
-            </div>
-        </div>
 
     </div>{{-- end FBN tab --}}
 
@@ -413,6 +374,62 @@
             </div>
         </div>
     </div>{{-- end Fees tab --}}
+
+    {{-- ─── New Inbound Request Modal ─────────────────────────────────────────── --}}
+    <div x-show="showFbnForm" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="showFbnForm=false">
+
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showFbnForm=false"></div>
+
+        {{-- Modal panel --}}
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" @click.stop>
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-bold text-gray-900 text-base">{{ __('partner.fulfillment.new_inbound_form_title') }}</h3>
+                <button type="button" @click="showFbnForm=false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="label-sm">{{ __('partner.fulfillment.listing_label') }} <span class="text-red-500">*</span></label>
+                    <select id="fbn-listing" class="form-select w-full text-sm">
+                        <option value="">{{ __('partner.fulfillment.select_listing') }}</option>
+                        @foreach($fbnListings as $listing)
+                            <option value="{{ $listing->id }}">
+                                {{ $listing->productVariant?->product?->name_ar ?? $listing->productVariant?->product?->name_en }}
+                                ({{ $listing->vendor_sku ?? substr($listing->id, 0, 8) }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="label-sm">{{ __('partner.fulfillment.warehouse_label') }} <span class="text-red-500">*</span></label>
+                    <select id="fbn-warehouse" class="form-select w-full text-sm">
+                        <option value="">{{ __('partner.fulfillment.select_warehouse') }}</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}">{{ $wh->name }} ({{ $wh->code }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="label-sm">{{ __('partner.fulfillment.quantity_to_send') }} <span class="text-red-500">*</span></label>
+                    <input type="number" id="fbn-qty" class="form-input w-full text-sm" min="1" placeholder="{{ __('partner.fulfillment.quantity_placeholder') }}">
+                </div>
+                <div>
+                    <label class="label-sm">{{ __('partner.fulfillment.notes_optional') }}</label>
+                    <input type="text" id="fbn-notes" class="form-input w-full text-sm" placeholder="{{ __('partner.fulfillment.notes_placeholder') }}">
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-5">
+                <button type="button" @click="showFbnForm=false" class="btn btn-ghost btn-sm">{{ __('partner.fulfillment.cancel') }}</button>
+                <button type="button" @click="submitFbnRequest()" class="btn btn-primary btn-sm">{{ __('partner.fulfillment.submit_request') }}</button>
+            </div>
+        </div>
+    </div>
 
 </div>{{-- end x-data --}}
 @endsection
