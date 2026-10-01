@@ -64,10 +64,7 @@ class FulfillmentController extends Controller
         ];
 
         $warehouses = Warehouse::where('is_active', true)
-            ->where(function ($q) use ($vendor) {
-                $q->where('type', WarehouseType::PlatformFbn->value)
-                    ->orWhere('owner_vendor_id', $vendor->id);
-            })
+            ->where('type', WarehouseType::PlatformFbn->value)
             ->get(['id', 'name', 'code']);
 
         $fbpInventoryData = $fbpListings->flatMap(fn ($l) => $l->warehouseInventories->map(fn ($inv) => [
