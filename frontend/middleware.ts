@@ -46,6 +46,8 @@ function isProtectedRoute(pathname: string): boolean {
   );
 }
 export async function middleware(request: NextRequest) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const clientIp = forwardedFor?.split(",")[0].trim();
   const { pathname } = request.nextUrl;
   const authenticated = isAuthenticated(request);
   const protectedRoute = isProtectedRoute(pathname);
@@ -64,9 +66,10 @@ export async function middleware(request: NextRequest) {
   if (!country) {
     try {
       const geoRes = await fetch(
-        `https://api.ipinfo.io/lite/me?token=${IPINFO_TOKEN}`,
+        `https://api.ipinfo.io/lite/${!!clientIp && clientIp !== "::1" ? clientIp : "me"}?token=${IPINFO_TOKEN}`,
       );
       const geoData = await geoRes.json();
+      console.log("geoData", geoData);
       country =
         data
           .find(
