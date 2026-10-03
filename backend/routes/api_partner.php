@@ -14,6 +14,8 @@ use App\Http\Controllers\Partner\Api\PerformanceController;
 use App\Http\Controllers\Partner\Api\ProductCustomAttributeController;
 use App\Http\Controllers\Partner\Api\ProfileController;
 use App\Http\Controllers\Partner\Api\ReturnController;
+use App\Http\Controllers\Partner\Api\SupportTicketController;
+use App\Http\Controllers\Partner\Api\TeamController;
 use App\Http\Controllers\Partner\Api\WarehouseController;
 use App\Http\Controllers\Partner\Api\WarrantyClaimController;
 use Illuminate\Support\Facades\Route;
@@ -161,6 +163,22 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('profile')->name('partner.api.profile.')->group(function (): void {
             Route::get('/', [ProfileController::class, 'show'])->name('show');
             Route::get('documents', [ProfileController::class, 'documents'])->name('documents');
+        });
+
+        // Support Tickets
+        Route::prefix('support-tickets')->name('partner.api.support.')->group(function (): void {
+            Route::get('/', [SupportTicketController::class, 'index'])->name('index');
+            Route::post('/', [SupportTicketController::class, 'store'])->name('store');
+            Route::get('{ticketNumber}', [SupportTicketController::class, 'show'])->name('show');
+            Route::post('{ticketNumber}/replies', [SupportTicketController::class, 'reply'])->name('reply');
+        });
+
+        // Team management
+        Route::prefix('team')->name('partner.api.team.')->group(function (): void {
+            Route::get('/', [TeamController::class, 'index'])->name('index');
+            Route::post('/', [TeamController::class, 'store'])->name('store');
+            Route::put('{memberId}', [TeamController::class, 'update'])->name('update');
+            Route::delete('{memberId}', [TeamController::class, 'destroy'])->name('destroy');
         });
 
         // Developer — API token management (JWT auth only; static tokens cannot manage tokens)
