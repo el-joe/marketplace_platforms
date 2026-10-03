@@ -77,6 +77,7 @@ class Vendor extends Model
         'easy_returns_enabled',
         'secure_payments_enabled',
         'external_api_enabled',
+        'qr_code_path',
         'commission_discount_type',
         'commission_discount_flat',
         'commission_discount_percentage',

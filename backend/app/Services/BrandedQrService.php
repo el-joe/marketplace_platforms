@@ -8,6 +8,7 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Logo\Logo;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Support\Facades\Storage;
 
 class BrandedQrService
 {
@@ -97,6 +98,21 @@ class BrandedQrService
         imagedestroy($canvas);
 
         return $png;
+    }
+
+    /**
+     * Generate, persist to public storage, and return the storage-relative path.
+     * Overwrites any previously stored QR for the same entity.
+     *
+     * @param  string  $storagePath  e.g. "qr/products/some-slug.png"
+     */
+    public function generateAndStore(string $url, string $label, string $storagePath): string
+    {
+        $png = $this->generate($url, $label);
+
+        Storage::disk('public')->put($storagePath, $png);
+
+        return $storagePath;
     }
 
     /**

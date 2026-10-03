@@ -40,6 +40,7 @@ class Product extends Model
         'has_variants',
         'has_custom_attributes',
         'size_guide_image',
+        'qr_code_path',
         'ai_quality_score',
         'seller_count',
         'total_sold',
