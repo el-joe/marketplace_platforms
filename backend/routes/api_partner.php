@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Partner\Api\AuthController;
 use App\Http\Controllers\Partner\Api\ClassifiedController;
+use App\Http\Controllers\Partner\Api\CouponController;
 use App\Http\Controllers\Partner\Api\DashboardController;
 use App\Http\Controllers\Partner\Api\DeveloperController;
 use App\Http\Controllers\Partner\Api\FinanceController;
@@ -81,11 +82,24 @@ Route::prefix('v1')->group(function (): void {
             Route::get('{id}', [WarrantyClaimController::class, 'show'])->name('show');
         });
 
-        // Listings (read-only)
+        // Listings
         Route::prefix('listings')->name('partner.api.listings.')->group(function (): void {
             Route::get('/', [ListingController::class, 'index'])->name('index');
             Route::get('{id}/promo-badges', [ListingController::class, 'promoBadges'])->name('promo-badges');
+            Route::post('{id}/toggle-status', [ListingController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('{id}/update-price', [ListingController::class, 'updatePrice'])->name('update-price');
+            Route::post('{id}/adjust-stock', [ListingController::class, 'adjustStock'])->name('adjust-stock');
             Route::get('{id}', [ListingController::class, 'show'])->name('show');
+        });
+
+        // Coupons
+        Route::prefix('coupons')->name('partner.api.coupons.')->group(function (): void {
+            Route::get('/', [CouponController::class, 'index'])->name('index');
+            Route::post('/', [CouponController::class, 'store'])->name('store');
+            Route::get('{id}', [CouponController::class, 'show'])->name('show');
+            Route::put('{id}', [CouponController::class, 'update'])->name('update');
+            Route::post('{id}/toggle-status', [CouponController::class, 'toggleStatus'])->name('toggle-status');
+            Route::delete('{id}', [CouponController::class, 'destroy'])->name('destroy');
         });
 
         // Product custom attributes (shared per-product, order-scoped fields).
