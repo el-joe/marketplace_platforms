@@ -3,6 +3,7 @@
 use App\Http\Controllers\Partner\Api\AuthController;
 use App\Http\Controllers\Partner\Api\ClassifiedController;
 use App\Http\Controllers\Partner\Api\DashboardController;
+use App\Http\Controllers\Partner\Api\DeveloperController;
 use App\Http\Controllers\Partner\Api\FinanceController;
 use App\Http\Controllers\Partner\Api\InventoryController;
 use App\Http\Controllers\Partner\Api\ListingController;
@@ -139,6 +140,14 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('profile')->name('partner.api.profile.')->group(function (): void {
             Route::get('/', [ProfileController::class, 'show'])->name('show');
             Route::get('documents', [ProfileController::class, 'documents'])->name('documents');
+        });
+
+        // Developer — API token management (JWT auth only; static tokens cannot manage tokens)
+        Route::prefix('developer')->name('partner.api.developer.')->group(function (): void {
+            Route::get('tokens', [DeveloperController::class, 'index'])->name('tokens.index');
+            Route::post('tokens', [DeveloperController::class, 'store'])->name('tokens.store')
+                ->middleware('throttle:10,1');
+            Route::delete('tokens/{id}', [DeveloperController::class, 'destroy'])->name('tokens.destroy');
         });
     });
 });
