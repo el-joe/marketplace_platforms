@@ -1213,7 +1213,12 @@
     "seeAll": "See all ({count})",
     "seeLess": "See less",
     "noProductsFound": "No products found",
-    "tryAdjustingFilters": "Try adjusting your filters"
+    "tryAdjustingFilters": "Try adjusting your filters",
+    "listingSource": "Listing Source",
+    "listingSourceAll": "All",
+    "listingSourceAdmin": "Platform (Noon Express)",
+    "listingSourceVendor": "Sellers",
+    "listingSourceMarketer": "Influencers"
   },
   "classified": {
     "city": "City",
