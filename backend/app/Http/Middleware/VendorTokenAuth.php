@@ -20,11 +20,20 @@ class VendorTokenAuth
         $hashed = hash('sha256', $bearerToken);
 
         $apiToken = VendorApiToken::where('token', $hashed)
-            ->with('vendorAdmin')
+            ->with('vendorAdmin.vendor')
             ->first();
 
         if (! $apiToken || ! $apiToken->vendorAdmin) {
             return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $vendor = $apiToken->vendorAdmin?->vendor;
+
+        if (! $vendor?->external_api_enabled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'External API access is not enabled for this account. Contact support.',
+            ], 403);
         }
 
         $apiToken->update(['last_used_at' => now()]);
