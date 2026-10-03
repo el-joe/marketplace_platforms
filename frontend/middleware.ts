@@ -16,8 +16,16 @@ const PROTECTED_ROUTES = [
   "/addresses",
   "/payments",
   "/notifications",
+  "/disputes",
   "/security-settings",
   "/qr-code",
+  "/noon-credits",
+  "/my-warranties",
+  "/warranty-claims",
+  "/special-requests",
+  "/noon-credits",
+  "/gift-cards",
+  "/notifications",
 ];
 
 function isAuthenticated(request: NextRequest): boolean {
