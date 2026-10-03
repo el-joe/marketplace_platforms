@@ -2,29 +2,34 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\AdminListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\ProductListRequest;
 use App\Http\Resources\Customer\ProductCardResource;
 use App\Http\Resources\Customer\ProductDetailResource;
 use App\Http\Responses\ApiResponse;
-use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
 use App\Models\Category;
 use App\Models\Country;
+use App\Models\CustomPage;
 use App\Models\Product;
+use App\Models\Slug;
 use App\Models\VendorListing;
-use App\Models\Wishlist;
+use App\Services\Ads\PlacementAdService;
+use App\Services\BannerService;
 use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\CategoryService;
+use App\Services\Customer\ListingIdentifierService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductQueryService;
 use App\Services\Customer\ProductViewService;
+use App\Services\Customer\PromoBadgeResolver;
 use App\Services\Customer\ReviewService;
 use App\Services\Customer\SponsoredProductService;
-use App\Services\BannerService;
 use App\Services\FlashSaleService;
 use App\Services\Shared\PageBuilderService;
 use App\Support\Concerns\BuildsProductAttributeSelector;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -39,49 +44,54 @@ class ProductController extends Controller
         private readonly ProductViewService $viewService,
         private readonly SponsoredProductService $sponsored,
         private readonly ReviewService $reviewService,
-        private readonly \App\Services\Customer\ListingIdentifierService $identifiers,
+        private readonly ListingIdentifierService $identifiers,
         private readonly PageBuilderService $pageBuilder,
         private readonly FlashSaleService $flashSale,
         private readonly BannerService $bannerService,
-        private readonly \App\Services\Ads\PlacementAdService $placementAds,
-    ) {
-    }
+        private readonly PlacementAdService $placementAds,
+    ) {}
 
     public function index(ProductListRequest $request, $country): JsonResponse
     {
         $country = $request->attributes->get('country');
         $filters = $request->validated();
         $perPage = (int) ($filters['per_page'] ?? 20);
-        $page    = (int) ($filters['page'] ?? 1);
+        $page = (int) ($filters['page'] ?? 1);
 
         $categoryService = app(CategoryService::class);
 
         // ── Resolve the 'category' filter, which may be a category slug/id or a
         // custom page slug (an aggregate landing page spanning several categories).
-        $resolvedSlug = !empty($filters['category']) ? $categoryService->resolveSlug($filters['category']) : null;
-        $category     = $resolvedSlug && $resolvedSlug['type'] === 'category' ? $resolvedSlug['model'] : null;
-        $customPage   = $resolvedSlug && $resolvedSlug['type'] === 'custom_page' ? $resolvedSlug['model'] : null;
+        $resolvedSlug = ! empty($filters['category']) ? $categoryService->resolveSlug($filters['category']) : null;
+        $category = $resolvedSlug && $resolvedSlug['type'] === 'category' ? $resolvedSlug['model'] : null;
+        $customPage = $resolvedSlug && $resolvedSlug['type'] === 'custom_page' ? $resolvedSlug['model'] : null;
 
-        $categoryIds = !empty($filters['category'])
+        $categoryIds = ! empty($filters['category'])
             ? $categoryService->getCategoryScopeForFilter($filters['category'])
             : null;
 
         // A slug whose target (custom page) was soft-deleted no longer resolves -> 404.
-        if (!empty($filters['category']) && !$resolvedSlug
-            && \App\Models\Slug::where('slug_url', $filters['category'])->exists()) {
+        if (! empty($filters['category']) && ! $resolvedSlug
+            && Slug::where('slug_url', $filters['category'])->exists()) {
             abort(404);
         }
         // Inactive custom pages 404 (soft-deleted already fail resolveSlug).
-        if ($customPage && !$customPage->is_active) {
+        if ($customPage && ! $customPage->is_active) {
             abort(404);
         }
         if ($customPage) {
             return $this->customPageIndex($request, $country, $filters, $customPage, $perPage, $page);
         }
 
+        // ── Listing type filter: delegate to paginateMixed when a specific type is requested ──
+        $listingType = $filters['type'] ?? null;
+        if ($listingType !== null) {
+            return $this->typeFilteredIndex($request, $country, $filters, $listingType, $category, $categoryIds, $perPage, $page);
+        }
+
         // ── Device & audience (same logic as HomeController) ─────────────────
         $deviceTarget = $this->pageBuilder->detectDevice($request);
-        $audience     = auth('customer')->check() ? 'authenticated' : 'guest';
+        $audience = auth('customer')->check() ? 'authenticated' : 'guest';
 
         // ── Admin listings (always first) ────────────────────────────────────────
         $adminBuilder = AdminListing::query()
@@ -107,10 +117,10 @@ class ProductController extends Controller
         if ($categoryIds !== null) {
             $adminBuilder->whereIn('p.category_id', $categoryIds);
         }
-        if (!empty($filters['price_min'])) {
+        if (! empty($filters['price_min'])) {
             $adminBuilder->where('admin_listings.price', '>=', (int) $filters['price_min']);
         }
-        if (!empty($filters['price_max'])) {
+        if (! empty($filters['price_max'])) {
             $adminBuilder->where('admin_listings.price', '<=', (int) $filters['price_max']);
         }
 
@@ -140,15 +150,15 @@ class ProductController extends Controller
 
         $vendorBuilder = $this->listings->applyFilters($vendorBuilder, $filters, $categoryIds);
         $vendorBuilder = $this->listings->applySort($vendorBuilder, $filters['sort'] ?? 'relevance');
-        $paginator     = $vendorBuilder->paginate($perPage);
+        $paginator = $vendorBuilder->paginate($perPage);
 
         $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
 
-        \App\Services\Customer\PromoBadgeResolver::instance()->prime(\App\Services\Customer\PromoBadgeResolver::tuplesForListings(collect($adminListings)->concat($paginator->items())));
+        PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings(collect($adminListings)->concat($paginator->items())));
 
         // ── Admin cards (deduplicated against each other by product_variant_id) ──
         $seenVariantIds = [];
-        $adminItems     = [];
+        $adminItems = [];
         foreach ($adminListings as $al) {
             $variantId = $al->product_variant_id;
             if (isset($seenVariantIds[$variantId])) {
@@ -182,28 +192,28 @@ class ProductController extends Controller
         $facets = $this->products->facets($country, $filters, $categoryIds);
 
         // ── Page builder (category/custom-page > brand priority) ───────────────
-        $pageBuilder    = $this->resolvePageBuilder($country, $filters, $category, $customPage, $deviceTarget, $audience);
+        $pageBuilder = $this->resolvePageBuilder($country, $filters, $category, $customPage, $deviceTarget, $audience);
         $hasPageBuilder = $pageBuilder !== null;
 
         $pageEntity = $category ?? $customPage;
-        $pageSlug   = $category?->slug ?? $customPage?->slugRecord?->slug_url;
+        $pageSlug = $category?->slug ?? $customPage?->slugRecord?->slug_url;
 
         return ApiResponse::success([
-            'items'  => ProductCardResource::collection(collect($items)),
+            'items' => ProductCardResource::collection(collect($items)),
             'facets' => $facets,
-            'meta'   => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'last_page'    => $paginator->lastPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total() + count($adminItems),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total() + count($adminItems),
             ],
-            'page_builder'     => $pageBuilder,
+            'page_builder' => $pageBuilder,
             'has_page_builder' => $hasPageBuilder,
-            'category'         => $pageEntity ? [
-                'id'          => $pageEntity->id,
-                'name'        => ['en' => $pageEntity->name_en, 'ar' => $pageEntity->name_ar],
-                'slug'        => $pageSlug,
-                'image_url'   => $pageEntity->image_url,
+            'category' => $pageEntity ? [
+                'id' => $pageEntity->id,
+                'name' => ['en' => $pageEntity->name_en, 'ar' => $pageEntity->name_ar],
+                'slug' => $pageSlug,
+                'image_url' => $pageEntity->image_url,
                 'has_filters' => (bool) $pageEntity->has_filters,
             ] : null,
         ]);
@@ -214,7 +224,7 @@ class ProductController extends Controller
      * DB-paginated set (admin + vendor + marketer) so total/last_page/items and
      * facets are consistent. Not cached, so admin edits are visible immediately.
      */
-    private function customPageIndex(ProductListRequest $request, Country $country, array $filters, \App\Models\CustomPage $customPage, int $perPage, int $page): JsonResponse
+    private function customPageIndex(ProductListRequest $request, Country $country, array $filters, CustomPage $customPage, int $perPage, int $page): JsonResponse
     {
         $scope = app(CategoryService::class)->resolveCustomPageScope($customPage);
         $categoryIds = $scope['category_ids'];
@@ -230,7 +240,7 @@ class ProductController extends Controller
             $items = $this->sponsored->inject($cards, $country, $page, 'category_top', null, $categoryIds ?? [], (array) ($filters['attributes'] ?? []));
             $sponsoredIds = collect($items)->pluck('_sponsored_listing_id')->filter()->all();
             if ($sponsoredIds) {
-                $items = array_values(array_filter($items, fn ($i) => isset($i['_sponsored_listing_id']) || !in_array($i['listing_id'] ?? null, $sponsoredIds, true)));
+                $items = array_values(array_filter($items, fn ($i) => isset($i['_sponsored_listing_id']) || ! in_array($i['listing_id'] ?? null, $sponsoredIds, true)));
             }
         }
         $facets = $this->listings->mixedFacets($country, $types, $categoryIds, $filters);
@@ -238,25 +248,90 @@ class ProductController extends Controller
         $pageBuilder = $this->resolvePageBuilder($country, $filters, null, $customPage, $this->pageBuilder->detectDevice($request), auth('customer')->check() ? 'authenticated' : 'guest');
 
         return ApiResponse::success([
-            'items'  => ProductCardResource::collection(collect($items)),
+            'items' => ProductCardResource::collection(collect($items)),
             'facets' => $facets,
-            'meta'   => [
+            'meta' => [
                 'current_page' => $meta['current_page'],
-                'last_page'    => $meta['last_page'],
-                'per_page'     => $meta['per_page'],
-                'total'        => $meta['total'],
+                'last_page' => $meta['last_page'],
+                'per_page' => $meta['per_page'],
+                'total' => $meta['total'],
             ],
-            'page_builder'     => $pageBuilder,
+            'page_builder' => $pageBuilder,
             'has_page_builder' => $pageBuilder !== null,
-            'category'         => [
-                'id'            => $customPage->id,
-                'name'          => ['en' => $customPage->name_en, 'ar' => $customPage->name_ar],
-                'slug'          => $customPage->slugRecord?->slug_url,
-                'image_url'     => $customPage->image_url,
-                'has_filters'   => (bool) $customPage->has_filters,
+            'category' => [
+                'id' => $customPage->id,
+                'name' => ['en' => $customPage->name_en, 'ar' => $customPage->name_ar],
+                'slug' => $customPage->slugRecord?->slug_url,
+                'image_url' => $customPage->image_url,
+                'has_filters' => (bool) $customPage->has_filters,
                 'listing_types' => $types,
                 'all_categories' => (bool) $customPage->all_categories,
             ],
+        ]);
+    }
+
+    /**
+     * Handles GET /products/?type=admin_listing|vendor_listing|marketer_listing.
+     * Delegates to paginateMixed with a single-element types array so sorting,
+     * facets, and the response shape remain identical to the default grid.
+     *
+     * @param  list<string>|null  $categoryIds
+     */
+    private function typeFilteredIndex(
+        ProductListRequest $request,
+        Country $country,
+        array $filters,
+        string $listingType,
+        ?Category $category,
+        ?array $categoryIds,
+        int $perPage,
+        int $page,
+    ): JsonResponse {
+        // Map the public-facing type param to the internal type key used by paginateMixed.
+        $typeMap = [
+            'admin_listing' => 'admin',
+            'vendor_listing' => 'vendor',
+            'marketer_listing' => 'marketer',
+        ];
+
+        $internalType = $typeMap[$listingType];
+        $wishlistIds = $this->listings->wishlistListingIds(auth('customer')->id());
+
+        [$meta, $cards] = $this->listings->paginateMixed(
+            $country,
+            [$internalType],
+            $categoryIds,
+            $filters,
+            $page,
+            $perPage,
+            $wishlistIds,
+        );
+
+        $facets = $this->listings->mixedFacets($country, [$internalType], $categoryIds, $filters);
+        $deviceTarget = $this->pageBuilder->detectDevice($request);
+        $audience = auth('customer')->check() ? 'authenticated' : 'guest';
+        $pageBuilder = $this->resolvePageBuilder($country, $filters, $category, null, $deviceTarget, $audience);
+        $pageEntity = $category;
+        $pageSlug = $category?->slug;
+
+        return ApiResponse::success([
+            'items' => ProductCardResource::collection(collect($cards)),
+            'facets' => $facets,
+            'meta' => [
+                'current_page' => $meta['current_page'],
+                'last_page' => $meta['last_page'],
+                'per_page' => $meta['per_page'],
+                'total' => $meta['total'],
+            ],
+            'page_builder' => $pageBuilder,
+            'has_page_builder' => $pageBuilder !== null,
+            'category' => $pageEntity ? [
+                'id' => $pageEntity->id,
+                'name' => ['en' => $pageEntity->name_en, 'ar' => $pageEntity->name_ar],
+                'slug' => $pageSlug,
+                'image_url' => $pageEntity->image_url,
+                'has_filters' => (bool) $pageEntity->has_filters,
+            ] : null,
         ]);
     }
 
@@ -270,33 +345,33 @@ class ProductController extends Controller
         Country $country,
         array $filters,
         ?Category $category,
-        ?\App\Models\CustomPage $customPage,
+        ?CustomPage $customPage,
         string $deviceTarget,
         string $audience,
     ): ?array {
         if ($customPage) {
             $result = $this->pageBuilder->resolve(
-                country:      $country,
-                pageType:     'custom_page',
-                referenceId:  $customPage->id,
+                country: $country,
+                pageType: 'custom_page',
+                referenceId: $customPage->id,
                 deviceTarget: $deviceTarget,
-                audience:     $audience,
+                audience: $audience,
             );
         } elseif ($category) {
             $result = $this->pageBuilder->resolve(
-                country:      $country,
-                pageType:     'category',
-                referenceId:  $category->id,
+                country: $country,
+                pageType: 'category',
+                referenceId: $category->id,
                 deviceTarget: $deviceTarget,
-                audience:     $audience,
+                audience: $audience,
             );
-        } elseif (!empty($filters['brand'])) {
+        } elseif (! empty($filters['brand'])) {
             $result = $this->pageBuilder->resolve(
-                country:      $country,
-                pageType:     'brand',
-                referenceId:  $filters['brand'],
+                country: $country,
+                pageType: 'brand',
+                referenceId: $filters['brand'],
                 deviceTarget: $deviceTarget,
-                audience:     $audience,
+                audience: $audience,
             );
         } else {
             return null;
@@ -317,7 +392,7 @@ class ProductController extends Controller
             ->where('status', 'active')
             ->whereHas(
                 'countrySettings',
-                fn($q) => $q
+                fn ($q) => $q
                     ->where('country_id', $country->id)
                     ->where('is_available', true)
             )
@@ -329,7 +404,7 @@ class ProductController extends Controller
                 'variants.variantAttributes.attribute',
                 'variants.variantAttributes.attributeValue',
                 'variants.images',
-                'countrySettings' => fn($q) => $q->where('country_id', $country->id),
+                'countrySettings' => fn ($q) => $q->where('country_id', $country->id),
             ])
             ->firstOrFail();
 
@@ -392,7 +467,7 @@ class ProductController extends Controller
 
         $listingsByVariant = $listings
             ->groupBy('product_variant_id')
-            ->map(fn($group) => [
+            ->map(fn ($group) => [
                 'listing_id' => $group->first()->id,
                 'listing_ref' => $this->identifiers->buildListingRef($group->first()),
             ])
@@ -402,11 +477,11 @@ class ProductController extends Controller
         $sessionId = $request->header('X-Session-Id') ?? $request->cookie('session_id') ?? ($request->hasSession() ? $request->session()->getId() : null);
         $banner = $this->placementAds->resolve('product_page_bottom', $country, $audience, $sessionId, $product->id, $product->category_id);
         $crossSellAd = $this->sponsored->forProductPage(
-            country:          $country,
-            categoryId:       $product->category_id,
+            country: $country,
+            categoryId: $product->category_id,
             excludeProductId: $product->id,
-            customerId:       auth('customer')->id(),
-            sessionId:        $sessionId,
+            customerId: auth('customer')->id(),
+            sessionId: $sessionId,
         );
 
         $topBanner = $this->placementAds->resolve('product_page_top', $country, $audience, $sessionId, $product->id, $product->category_id);
@@ -441,42 +516,42 @@ class ProductController extends Controller
     private function sponsoredToRelatedShape(array $item): array
     {
         return [
-            'id'                  => $item['product_id'],
-            'listing_id'          => $item['listing_id'],
-            'listing_type'        => $item['listing_type'],
-            'variant_id'          => $item['variant_id'],
-            'product_slug'        => $item['product_slug'],
-            'slug'                => $item['slug'],
-            'variant_slug'        => $item['variant_slug'],
-            'variant_name'        => $item['variant_name']['en'] ?? null,
-            'variant_image'       => $item['variant_image'],
-            'product_url'         => $item['product_url'],
-            'name'                => ['en' => $item['name_en'], 'ar' => $item['name_ar']],
-            'primary_image'       => $item['primary_image'],
-            'images'              => $item['images'],
-            'price_range'         => ['min' => $item['price'], 'max' => $item['price']],
-            'category_name'       => $item['category_name'],
-            'compare_at_price'    => $item['compare_at_price'],
-            'rating_avg'          => (float) $item['rating_avg'],
-            'rating_count'        => (int) $item['rating_count'],
-            'seller_count'        => 1,
+            'id' => $item['product_id'],
+            'listing_id' => $item['listing_id'],
+            'listing_type' => $item['listing_type'],
+            'variant_id' => $item['variant_id'],
+            'product_slug' => $item['product_slug'],
+            'slug' => $item['slug'],
+            'variant_slug' => $item['variant_slug'],
+            'variant_name' => $item['variant_name']['en'] ?? null,
+            'variant_image' => $item['variant_image'],
+            'product_url' => $item['product_url'],
+            'name' => ['en' => $item['name_en'], 'ar' => $item['name_ar']],
+            'primary_image' => $item['primary_image'],
+            'images' => $item['images'],
+            'price_range' => ['min' => $item['price'], 'max' => $item['price']],
+            'category_name' => $item['category_name'],
+            'compare_at_price' => $item['compare_at_price'],
+            'rating_avg' => (float) $item['rating_avg'],
+            'rating_count' => (int) $item['rating_count'],
+            'seller_count' => 1,
             'admin_listing_count' => $item['is_admin_listing'] ? 1 : 0,
-            'total_seller_count'  => 1,
-            'is_in_stock'         => true,
-            'is_sponsored'        => true,
-            'is_wishlisted'       => (bool) $item['is_wishlisted'],
-            'shipping_badge'      => $item['shipping_badge'],
+            'total_seller_count' => 1,
+            'is_in_stock' => true,
+            'is_sponsored' => true,
+            'is_wishlisted' => (bool) $item['is_wishlisted'],
+            'shipping_badge' => $item['shipping_badge'],
         ];
     }
 
-    private function relatedProducts(Product $product, $country, ?int $buyBoxPrice): \Illuminate\Database\Eloquent\Collection
+    private function relatedProducts(Product $product, $country, ?int $buyBoxPrice): Collection
     {
         $query = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'active')
             ->whereHas(
                 'countrySettings',
-                fn($q) => $q
+                fn ($q) => $q
                     ->where('country_id', $country->id)
                     ->where('is_available', true)
             )
@@ -487,7 +562,7 @@ class ProductController extends Controller
             $high = (int) ($buyBoxPrice * 1.3);
             $query->whereHas(
                 'variants.vendorListings',
-                fn($q) => $q
+                fn ($q) => $q
                     ->where('country_id', $country->id)
                     ->where('status', 'active')
                     ->whereBetween('price', [$low, $high])
