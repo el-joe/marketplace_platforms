@@ -1213,7 +1213,12 @@
     "seeAll": "See all ({count})",
     "seeLess": "See less",
     "noProductsFound": "No products found",
-    "tryAdjustingFilters": "Try adjusting your filters"
+    "tryAdjustingFilters": "Try adjusting your filters",
+    "listingSource": "Listing Source",
+    "listingSourceAll": "All",
+    "listingSourceAdmin": "Platform (Noon Express)",
+    "listingSourceVendor": "Sellers",
+    "listingSourceMarketer": "Influencers"
   },
   "classified": {
     "city": "City",
@@ -1406,6 +1411,10 @@
     "emptyProducts": "No products added yet",
     "campaignProducts": "Campaign Products",
     "campaignProductsHint": "Products from vendor campaigns this marketer is promoting",
+    "tabOwn": "My Products",
+    "tabVendorCampaigns": "Promoted Merchants",
+    "tabMarketerCampaigns": "Other Influencers",
+    "tabClassifieds": "Real Estate & Cars",
     "loadMore": "Load more",
     "ownProductsEmpty": "No personal products added yet",
     "campaigns": "Campaigns",

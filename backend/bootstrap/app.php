@@ -1,17 +1,49 @@
 <?php
 
+use App\Http\Middleware\AdminAuth;
+use App\Http\Middleware\CarrierApiActive;
+use App\Http\Middleware\CarrierApiAuth;
+use App\Http\Middleware\CarrierPermission;
+use App\Http\Middleware\CheckAdminPermission;
+use App\Http\Middleware\DeliveryApiActive;
+use App\Http\Middleware\DeliveryApiAuth;
+use App\Http\Middleware\DeliveryAuth;
+use App\Http\Middleware\DetectCountry;
+use App\Http\Middleware\GuestCartToken;
+use App\Http\Middleware\MarketerApiActive;
+use App\Http\Middleware\MarketerApiAuth;
+use App\Http\Middleware\MarketerAuth;
+use App\Http\Middleware\OptionalCustomerAuth;
+use App\Http\Middleware\ResolveAppContext;
+use App\Http\Middleware\ScopeAdminToAssignedVendor;
+use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetVendorLocale;
+use App\Http\Middleware\ShippingCompanySupervisorAuth;
+use App\Http\Middleware\SubdomainDetect;
+use App\Http\Middleware\TravelAgencyAuth;
+use App\Http\Middleware\TravelAgencyPermissionMiddleware;
+use App\Http\Middleware\VendorActive;
+use App\Http\Middleware\VendorApiActive;
+use App\Http\Middleware\VendorApiAuth;
+use App\Http\Middleware\VendorAuth;
+use App\Http\Middleware\VendorDualAuth;
+use App\Http\Middleware\VendorOnboarded;
+use App\Http\Middleware\VendorPermissionMiddleware;
+use App\Http\Middleware\VendorTokenAuth;
+use App\Http\Middleware\VendorTypeMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         channels: __DIR__.'/../routes/channels.php',
-        web: __DIR__ . '/../routes/web.php',
-        api: __DIR__ . '/../routes/api.php',
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         apiPrefix: 'api',
-        commands: __DIR__ . '/../routes/console.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function (): void {
             Route::middleware('api')
@@ -55,13 +87,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
-            \Illuminate\Http\Middleware\HandleCors::class,
-            \App\Http\Middleware\ResolveAppContext::class,
+            HandleCors::class,
+            ResolveAppContext::class,
         ]);
 
         $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\SubdomainDetect::class,
+            SetLocale::class,
+            SubdomainDetect::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
@@ -69,32 +101,34 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'auth.admin' => \App\Http\Middleware\AdminAuth::class,
-            'auth.optional' => \App\Http\Middleware\OptionalCustomerAuth::class,
-            'admin.permission' => \App\Http\Middleware\CheckAdminPermission::class,
-            'admin.vendor.scope' => \App\Http\Middleware\ScopeAdminToAssignedVendor::class,
-            'vendor.auth' => \App\Http\Middleware\VendorAuth::class,
-            'vendor.active' => \App\Http\Middleware\VendorActive::class,
-            'vendor.onboarded' => \App\Http\Middleware\VendorOnboarded::class,
-            'vendor.locale' => \App\Http\Middleware\SetVendorLocale::class,
-            'vendor.can' => \App\Http\Middleware\VendorPermissionMiddleware::class,
-            'vendor.type' => \App\Http\Middleware\VendorTypeMiddleware::class,
-            'auth.delivery' => \App\Http\Middleware\DeliveryAuth::class,
-            'delivery.api.auth' => \App\Http\Middleware\DeliveryApiAuth::class,
-            'delivery.api.active' => \App\Http\Middleware\DeliveryApiActive::class,
-            'auth.travel_agency' => \App\Http\Middleware\TravelAgencyAuth::class,
-            'travel_agency.can' => \App\Http\Middleware\TravelAgencyPermissionMiddleware::class,
-            'auth.carrier' => \App\Http\Middleware\ShippingCompanySupervisorAuth::class,
-            'carrier.api.auth' => \App\Http\Middleware\CarrierApiAuth::class,
-            'carrier.api.active' => \App\Http\Middleware\CarrierApiActive::class,
-            'carrier.permission' => \App\Http\Middleware\CarrierPermission::class,
-            'vendor.api.auth' => \App\Http\Middleware\VendorApiAuth::class,
-            'vendor.api.active' => \App\Http\Middleware\VendorApiActive::class,
-            'detect.country' => \App\Http\Middleware\DetectCountry::class,
-            'guest.cart.token' => \App\Http\Middleware\GuestCartToken::class,
-            'auth.marketer' => \App\Http\Middleware\MarketerAuth::class,
-            'marketer.api.auth' => \App\Http\Middleware\MarketerApiAuth::class,
-            'marketer.api.active' => \App\Http\Middleware\MarketerApiActive::class,
+            'auth.admin' => AdminAuth::class,
+            'auth.optional' => OptionalCustomerAuth::class,
+            'admin.permission' => CheckAdminPermission::class,
+            'admin.vendor.scope' => ScopeAdminToAssignedVendor::class,
+            'vendor.auth' => VendorAuth::class,
+            'vendor.active' => VendorActive::class,
+            'vendor.onboarded' => VendorOnboarded::class,
+            'vendor.locale' => SetVendorLocale::class,
+            'vendor.can' => VendorPermissionMiddleware::class,
+            'vendor.type' => VendorTypeMiddleware::class,
+            'auth.delivery' => DeliveryAuth::class,
+            'delivery.api.auth' => DeliveryApiAuth::class,
+            'delivery.api.active' => DeliveryApiActive::class,
+            'auth.travel_agency' => TravelAgencyAuth::class,
+            'travel_agency.can' => TravelAgencyPermissionMiddleware::class,
+            'auth.carrier' => ShippingCompanySupervisorAuth::class,
+            'carrier.api.auth' => CarrierApiAuth::class,
+            'carrier.api.active' => CarrierApiActive::class,
+            'carrier.permission' => CarrierPermission::class,
+            'vendor.api.auth' => VendorApiAuth::class,
+            'vendor.api.active' => VendorApiActive::class,
+            'vendor.token.auth' => VendorTokenAuth::class,
+            'vendor.dual.auth' => VendorDualAuth::class,
+            'detect.country' => DetectCountry::class,
+            'guest.cart.token' => GuestCartToken::class,
+            'auth.marketer' => MarketerAuth::class,
+            'marketer.api.auth' => MarketerApiAuth::class,
+            'marketer.api.active' => MarketerApiActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

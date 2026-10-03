@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Vendor\AdBookingController;
 use App\Http\Controllers\Vendor\AdCampaignController;
 use App\Http\Controllers\Vendor\AdSlotController;
@@ -272,6 +273,12 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('/{ticketNumber}', [SupportTicketController::class, 'show'])->name('show');
                 Route::post('/{ticketNumber}/messages', [SupportTicketController::class, 'addMessage'])->name('messages.store');
                 Route::put('/{ticketNumber}/rate', [SupportTicketController::class, 'rate'])->name('rate');
+            });
+
+            // Branded QR code downloads — vendor downloads QR for their own products/store
+            Route::prefix('qr')->name('vendor.qr.')->group(function (): void {
+                Route::get('/store', [QrCodeController::class, 'myVendorStore'])->name('store');
+                Route::get('/products/{slug}', [QrCodeController::class, 'product'])->name('product');
             });
         });
     });

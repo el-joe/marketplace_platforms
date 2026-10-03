@@ -65,7 +65,7 @@ class Marketer extends Model
         return $this->belongsTo(Admin::class, 'approved_by_admin_id');
     }
 
-    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function documents(): HasMany
     {
         return $this->hasMany(MarketerDocument::class);
     }
@@ -189,7 +189,7 @@ class Marketer extends Model
 
     public function marketerJobs(): BelongsToMany
     {
-        return $this->belongsToMany(MarketerJob::class, 'marketer_marketer_job')->withTimestamps();
+        return $this->belongsToMany(MarketerJob::class, 'marketer_marketer_job')->using(MarketerMarketerJob::class)->withTimestamps();
     }
 
     public function marketerJobAssignments(): HasMany

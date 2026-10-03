@@ -31,7 +31,7 @@
                             <td class="px-4 py-3 font-medium">{{ $unit->name }}</td>
                             <td class="px-4 py-3">{{ $unit->type->value ?? $unit->type }}</td>
                             <td class="px-4 py-3">{{ $unit->capacity }}</td>
-                            <td class="px-4 py-3">{{ $unit->reservations_count }}</td>
+                            <td class="px-4 py-3">{{ $unit->booking_days_count }}</td>
                             <td class="px-4 py-3">
                                 @if($unit->travelPackage)
                                     <a href="{{ route('travel-agency.packages.show', $unit->travel_package_id) }}" class="text-blue-600 hover:underline">{{ $unit->travelPackage->title_ar ?: $unit->travelPackage->title_en }}</a>

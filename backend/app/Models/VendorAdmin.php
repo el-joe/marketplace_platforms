@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -13,7 +15,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class VendorAdmin extends Authenticatable implements JWTSubject
 {
-    use HasUuids, SoftDeletes, Notifiable, HasRoles;
+    use HasRoles, HasUuids, Notifiable, SoftDeletes;
 
     protected string $guard = 'vendor';
 
@@ -55,12 +57,17 @@ class VendorAdmin extends Authenticatable implements JWTSubject
         return $this->belongsTo(Vendor::class);
     }
 
+    public function apiTokens(): HasMany
+    {
+        return $this->hasMany(VendorApiToken::class);
+    }
+
     /**
      * VendorAdmin has no direct country column — it belongs to a Vendor,
      * which has the country. Convenience accessor used where callers used
      * to (incorrectly) call ->country directly on the admin.
      */
-    public function country(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
+    public function country(): HasOneThrough
     {
         return $this->hasOneThrough(
             Country::class,
@@ -98,7 +105,7 @@ class VendorAdmin extends Authenticatable implements JWTSubject
 
     public function receivesBroadcastNotificationsOn(): string
     {
-        return 'vendor.' . $this->id;
+        return 'vendor.'.$this->id;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -118,9 +125,9 @@ class VendorAdmin extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims(): array
     {
         return [
-            'guard'     => 'vendor',
+            'guard' => 'vendor',
             'vendor_id' => $this->vendor_id,
-            'role'      => $this->role,
+            'role' => $this->role,
         ];
     }
 }

@@ -163,6 +163,7 @@
                             <div class="flex items-center gap-6">
                                 <x-form.toggle name="easy_returns_enabled" label="{{ __('admin.vendors.easy_returns_enabled') }}" :checked="(bool) $vendor->easy_returns_enabled"/>
                                 <x-form.toggle name="secure_payments_enabled" label="{{ __('admin.vendors.secure_payments_enabled') }}" :checked="(bool) $vendor->secure_payments_enabled"/>
+                                <x-form.toggle name="external_api_enabled" label="External API Access" :checked="(bool) $vendor->external_api_enabled"/>
                             </div>
                             <x-form.input name="specialization_en" label="{{ __('admin.vendors.specialization_en') }}" :value="$vendor->specialization_en" />
                             <x-form.input name="specialization_ar" label="{{ __('admin.vendors.specialization_ar') }}" :value="$vendor->specialization_ar" dir="rtl" />
@@ -780,6 +781,8 @@
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.easy_returns_enabled') }}</dt>
                     <dd><x-badge :color="$vendor->easy_returns_enabled ? 'success' : 'gray'">{{ $vendor->easy_returns_enabled ? __('admin.vendors.active_badge') : '—' }}</x-badge></dd>
+                    <dt class="text-gray-500">External API Access</dt>
+                    <dd><x-badge :color="$vendor->external_api_enabled ? 'success' : 'gray'">{{ $vendor->external_api_enabled ? 'Enabled' : 'Disabled' }}</x-badge></dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.secure_payments_enabled') }}</dt>

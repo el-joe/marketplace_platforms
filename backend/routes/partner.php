@@ -14,6 +14,7 @@ use App\Http\Controllers\Partner\CouponController;
 use App\Http\Controllers\Partner\CouponParticipationController;
 use App\Http\Controllers\Partner\DashboardController;
 use App\Http\Controllers\Partner\DeliveryRatingController;
+use App\Http\Controllers\Partner\DeveloperController;
 use App\Http\Controllers\Partner\DisputeController;
 use App\Http\Controllers\Partner\ExceptionalZoneAlertController;
 use App\Http\Controllers\Partner\FinanceController;
@@ -313,6 +314,13 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ── Support tickets ──────────────────────────────────────────────────────
+    // ── Developer API ────────────────────────────────────────────────────────
+    Route::prefix('developer')->name('developer.')->controller(DeveloperController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/tokens', 'storeToken')->name('tokens.store');
+        Route::delete('/tokens/{id}', 'destroyToken')->name('tokens.destroy');
+    });
+
     Route::prefix('support/tickets')->name('support.tickets.')->controller(SupportController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/create', 'create')->name('create');

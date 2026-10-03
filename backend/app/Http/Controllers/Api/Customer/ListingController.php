@@ -24,6 +24,7 @@ use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\SavingsBenefitsService;
 use App\Services\ShippingCalculationService;
 use App\Services\WarrantyPlanService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +41,9 @@ class ListingController extends Controller
         private readonly ListingQueryService $listings,
     ) {}
 
+    /** Valid values for the `?type` query parameter. */
+    private const VALID_LISTING_TYPES = ['admin_listing', 'vendor_listing', 'marketer_listing'];
+
     public function index(Request $request, $country): JsonResponse
     {
         $isNawyNow = $this->appContext->isNawyNow();
@@ -49,8 +53,50 @@ class ListingController extends Controller
             return ApiResponse::error(__('customer_api.listing.country_not_found'), [], 404);
         }
 
+        $type = $request->query('type');
+
+        if ($type !== null && ! in_array($type, self::VALID_LISTING_TYPES, true)) {
+            return ApiResponse::error(
+                'Invalid type. Allowed values: '.implode(', ', self::VALID_LISTING_TYPES),
+                [],
+                422,
+            );
+        }
+
         $perPage = (int) $request->query('per_page', 20);
 
+        // ── Explicit type filter overrides NawyNow mode ────────────────────────
+        if ($type === 'admin_listing') {
+            $paginator = $this->buildAdminQuery($request, $country)->paginate($perPage);
+            $items = $paginator->getCollection()
+                ->map(fn (AdminListing $listing) => $this->adminListingShape($listing, $country))
+                ->values()
+                ->all();
+
+            return $this->paginatedResponse($items, $paginator);
+        }
+
+        if ($type === 'marketer_listing') {
+            $paginator = $this->buildMarketerQuery($request, $country)->paginate($perPage);
+            $items = $paginator->getCollection()
+                ->map(fn (MarketerListing $listing) => $this->marketerListingShape($listing, $country))
+                ->values()
+                ->all();
+
+            return $this->paginatedResponse($items, $paginator);
+        }
+
+        if ($type === 'vendor_listing') {
+            $paginator = $this->buildVendorQuery($request, $country)->paginate($perPage);
+            $items = $paginator->getCollection()
+                ->map(fn (VendorListing $listing) => $this->vendorListingShape($listing, $country))
+                ->values()
+                ->all();
+
+            return $this->paginatedResponse($items, $paginator);
+        }
+
+        // ── Legacy behavior (no explicit type) ────────────────────────────────
         $paginator = $isNawyNow
             ? $this->buildAdminQuery($request, $country)->paginate($perPage)
             : $this->buildVendorQuery($request, $country)->paginate($perPage);
@@ -93,6 +139,12 @@ class ListingController extends Controller
                 ->all();
         }
 
+        return $this->paginatedResponse($items, $paginator);
+    }
+
+    /** Shared pagination response envelope. */
+    private function paginatedResponse(array $items, LengthAwarePaginator $paginator): JsonResponse
+    {
         return ApiResponse::success([
             'items' => $items,
             'meta' => [
@@ -296,6 +348,45 @@ class ListingController extends Controller
         }
 
         $this->applyVendorSort($query, $request->query('sort'));
+
+        return $query;
+    }
+
+    private function buildMarketerQuery(Request $request, Country $country): Builder
+    {
+        /** @var Builder<MarketerListing> $query */
+        $query = MarketerListing::query()
+            ->where('country_id', $country->id)
+            ->where('status', 'active')
+            ->whereHas('productVariant.product')
+            ->with([
+                'marketer:id,name',
+                'marketer.marketerJobs',
+                'marketer.marketerProfile:id,marketer_id,profile_slug',
+                'productVariant.images',
+                'productVariant.product.images',
+                'productVariant.product.category',
+                'productVariant.product.brand',
+            ]);
+
+        // Scope to a specific marketer (used by marketer profile tabs)
+        if ($marketerId = $request->query('marketer_id')) {
+            $query->where('marketer_id', $marketerId);
+        }
+
+        if ($categoryId = $request->query('category_id')) {
+            $query->whereHas('productVariant.product', fn ($q) => $q->where('category_id', $categoryId));
+        }
+
+        if ($minPrice = $request->query('min_price')) {
+            $query->where('price', '>=', (int) $minPrice);
+        }
+
+        if ($maxPrice = $request->query('max_price')) {
+            $query->where('price', '<=', (int) $maxPrice);
+        }
+
+        $query->orderByDesc('score')->orderByDesc('total_sold');
 
         return $query;
     }

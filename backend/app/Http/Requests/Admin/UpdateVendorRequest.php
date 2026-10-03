@@ -48,6 +48,7 @@ class UpdateVendorRequest extends FormRequest
             'warranty_months' => ['nullable', 'integer', 'min:0', 'max:120'],
             'easy_returns_enabled' => ['nullable', 'boolean'],
             'secure_payments_enabled' => ['nullable', 'boolean'],
+            'external_api_enabled' => ['nullable', 'boolean'],
         ];
     }
 
@@ -56,7 +57,7 @@ class UpdateVendorRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $vendor = $this->route('vendor');
 
-            if (!$vendor || !$this->filled('vendor_type')) {
+            if (! $vendor || ! $this->filled('vendor_type')) {
                 return;
             }
 

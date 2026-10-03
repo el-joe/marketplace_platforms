@@ -1202,7 +1202,12 @@
     "seeAll": "عرض الكل ({count})",
     "seeLess": "عرض أقل",
     "noProductsFound": "لا توجد منتجات",
-    "tryAdjustingFilters": "حاول تعديل عوامل التصفية"
+    "tryAdjustingFilters": "حاول تعديل عوامل التصفية",
+    "listingSource": "مصدر المنتج",
+    "listingSourceAll": "الكل",
+    "listingSourceAdmin": "المنصة (نون إكسبريس)",
+    "listingSourceVendor": "البائعون",
+    "listingSourceMarketer": "المشاهير والمؤثرون"
   },
   "classified": {
     "city": "المدينة",
@@ -1395,6 +1400,10 @@
     "emptyProducts": "لا توجد منتجات مضافة بعد",
     "campaignProducts": "منتجات الحملات",
     "campaignProductsHint": "منتجات من حملات البائعين التي يروج لها هذا الماركتر",
+    "tabOwn": "منتجاتي",
+    "tabVendorCampaigns": "منتجات التجار المُروَّج لها",
+    "tabMarketerCampaigns": "منتجات المشاهير الآخرين",
+    "tabClassifieds": "عقارات وسيارات",
     "loadMore": "تحميل المزيد",
     "ownProductsEmpty": "لا توجد منتجات مضافة بعد",
     "campaigns": "حملة",

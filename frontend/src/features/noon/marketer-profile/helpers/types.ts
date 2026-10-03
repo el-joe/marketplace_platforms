@@ -123,5 +123,10 @@ export interface MarketerProfileData {
   marketer: MarketerProfileMarketer;
   profile: MarketerProfileInfo;
   own_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
-  campaign_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
+  /** Vendor campaign products (campaign.vendor_id NOT NULL) */
+  vendor_campaign_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
+  /** Cross-marketer products (campaign.vendor_id NULL, owner = another marketer) */
+  marketer_campaign_listings: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
+  /** @deprecated Use vendor_campaign_listings — kept for backward compat */
+  campaign_listings?: { items: MarketerProfileListingItem[]; meta: ListingsMeta };
 }

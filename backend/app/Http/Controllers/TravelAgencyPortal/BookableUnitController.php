@@ -69,7 +69,7 @@ class BookableUnitController extends Controller
     {
         $units = BookableUnit::where('travel_agency_id', $this->agencyId())
             ->with('travelPackage:id,title_en,title_ar')
-            ->withCount('reservations')
+            ->withCount('bookingDays')
             ->latest()
             ->paginate(20);
 

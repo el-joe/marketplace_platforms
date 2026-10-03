@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\QrScanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -235,3 +236,12 @@ Route::get('/r/{code}', function (string $code) {
     // The registration page (or mobile app) reads ?ref= and pre-fills the field.
     return redirect(url('/register?ref=' . strtoupper($code)));
 })->name('referral.shortlink');
+
+// ── Branded QR Code scan redirects ───────────────────────────────────────────
+// These public URLs are embedded in QR codes. Scanning one redirects the user
+// to the correct storefront page on the frontend.
+Route::prefix('qr')->name('qr.scan.')->middleware('throttle:120,1')->group(function () {
+    Route::get('/product/{slug}',  [QrScanController::class, 'product'])->name('product');
+    Route::get('/vendor/{slug}',   [QrScanController::class, 'vendor'])->name('vendor');
+    Route::get('/marketer/{slug}', [QrScanController::class, 'marketer'])->name('marketer');
+});

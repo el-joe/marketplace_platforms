@@ -10,7 +10,7 @@ import { getMarketerListings } from "../api";
 
 interface Props {
   slug: string;
-  section: "own" | "campaign";
+  section: "own" | "campaign" | "vendor_campaign" | "marketer_campaign";
   marketer: MarketerProfileMarketer;
   profile: MarketerProfileInfo;
   initialItems: MarketerProfileListingItem[];
@@ -29,16 +29,19 @@ export default function MarketerListingsGrid({
 
   const query = useInfiniteQuery({
     queryKey: ["marketer-listings", slug, section],
-    queryFn: ({ pageParam = 2 }) =>
-      getMarketerListings(
-        section === "own"
-          ? { slug, ownPage: pageParam as number }
-          : { slug, campaignPage: pageParam as number }
-      ),
+    queryFn: ({ pageParam = 2 }) => {
+      const p = pageParam as number;
+      if (section === "own") return getMarketerListings({ slug, ownPage: p });
+      if (section === "marketer_campaign") return getMarketerListings({ slug, marketerCampaignPage: p });
+      return getMarketerListings({ slug, campaignPage: p });
+    },
     getNextPageParam: (last) => {
-      const meta = section === "own"
-        ? last.own_listings.meta
-        : last.campaign_listings.meta;
+      const meta =
+        section === "own"
+          ? last.own_listings.meta
+          : section === "marketer_campaign"
+            ? last.marketer_campaign_listings.meta
+            : last.vendor_campaign_listings.meta;
       return meta.current_page < meta.last_page ? meta.current_page + 1 : undefined;
     },
     initialPageParam: 2, // page 1 is already SSR
@@ -58,9 +61,11 @@ export default function MarketerListingsGrid({
   }, [query]);
 
   // Flatten fetched pages
-  const fetchedItems = query.data?.pages.flatMap((page) =>
-    (section === "own" ? page.own_listings : page.campaign_listings).items
-  ) ?? [];
+  const fetchedItems = query.data?.pages.flatMap((page) => {
+    if (section === "own") return page.own_listings.items;
+    if (section === "marketer_campaign") return page.marketer_campaign_listings.items;
+    return page.vendor_campaign_listings.items;
+  }) ?? [];
 
   const allItems = [...initialItems, ...fetchedItems];
 

@@ -178,6 +178,9 @@ class AppServiceProvider extends ServiceProvider
         Coupon::observe(CouponObserver::class);
         \App\Models\ProductImage::observe(\App\Observers\ProductImageObserver::class);
         \App\Models\MarketerListing::observe(\App\Observers\MarketerListingObserver::class);
+        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+        \App\Models\Vendor::observe(\App\Observers\VendorObserver::class);
+        \App\Models\MarketerProfile::observe(\App\Observers\MarketerProfileObserver::class);
 
         Event::listen(SubOrderPlaced::class, InvalidateVendorDashboardCache::class);
         Event::listen(SubOrderShipped::class, NotifyCustomerOnShipment::class);
