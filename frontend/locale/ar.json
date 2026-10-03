@@ -1425,7 +1425,10 @@
   },
   "nawyOptions": {
     "label": "نوي الآن",
-    "ariaLabel": "تسوق نوي الآن"
+    "ariaLabel": "تسوق نوي الآن",
+    "justForYou": "فقط من أجلك",
+    "nawyToPPicks": "اختيارات نوي الآن",
+    "recentlyViewedCategories": "الفئات التي تم عرضها مؤخرًا"
   },
   "liveStreams": {
     "pageTitle": "البث المباشر",
