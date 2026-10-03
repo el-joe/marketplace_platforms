@@ -191,7 +191,7 @@ class PackageController extends Controller
     {
         $this->authorise($package);
         $package->load(['media', 'destinationCountry', 'destinationCity', 'pricingTiers',
-            'bookableUnits' => fn ($q) => $q->withCount('reservations')->latest(),
+            'bookableUnits' => fn ($q) => $q->withCount('bookingDays')->latest(),
         ]);
 
         return view('travel-agency.packages.show', compact('package'));

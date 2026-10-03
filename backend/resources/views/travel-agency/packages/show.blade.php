@@ -245,7 +245,7 @@
                                     {{ $unit->status }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-gray-600">{{ $unit->reservations_count }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $unit->booking_days_count }}</td>
                             <td class="px-4 py-3">
                                 <a href="{{ route('travel-agency.bookable-units.show', $unit) }}"
                                     class="text-xs text-blue-600 hover:underline">{{ __('travel.packages.view', [], null, 'View') }}</a>

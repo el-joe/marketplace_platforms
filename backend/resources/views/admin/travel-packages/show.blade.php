@@ -302,7 +302,7 @@
                         <td class="px-4 py-3 text-gray-600">{{ __('admin.bookable_units_section.type_'.($unit->type->value ?? $unit->type)) }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $unit->capacity ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ __('admin.bookable_units_section.status_'.$unit->status) }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $unit->reservations_count }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $unit->booking_days_count }}</td>
                         <td class="px-4 py-3 text-end"><a class="text-primary-600 hover:underline text-xs" href="{{ route('admin.travel.bookable-units.show', $unit) }}">{{ __('admin.bookable_units_section.view') }}</a></td>
                     </tr>
                     @endforeach

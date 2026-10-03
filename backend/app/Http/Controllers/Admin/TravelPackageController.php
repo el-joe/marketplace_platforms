@@ -196,7 +196,7 @@ class TravelPackageController extends Controller
             'approvedByAdmin',
             'destinationCountry',
             'destinationCity',
-            'bookableUnits' => fn ($q) => $q->withCount('reservations')->latest(),
+            'bookableUnits' => fn ($q) => $q->withCount('bookingDays')->latest(),
         ]);
 
         $bookingStats = [
