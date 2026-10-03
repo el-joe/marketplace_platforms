@@ -56,16 +56,23 @@ Route::prefix('v1')->group(function (): void {
             Route::put('{id}/read', [NotificationController::class, 'markRead'])->name('read');
         });
 
-        // Orders (read-only)
+        // Orders
         Route::prefix('orders')->name('partner.api.orders.')->group(function (): void {
             Route::get('/', [OrderController::class, 'index'])->name('index');
             Route::get('{subOrderNumber}', [OrderController::class, 'show'])->name('show');
+            Route::post('{subOrderNumber}/confirm', [OrderController::class, 'confirm'])->name('confirm');
+            Route::post('{subOrderNumber}/ship', [OrderController::class, 'ship'])->name('ship');
+            Route::post('{subOrderNumber}/out-for-delivery', [OrderController::class, 'markOutForDelivery'])->name('out-for-delivery');
+            Route::post('{subOrderNumber}/deliver', [OrderController::class, 'markDelivered'])->name('deliver');
+            Route::post('{subOrderNumber}/cancel', [OrderController::class, 'cancel'])->name('cancel');
         });
 
-        // Returns (read-only)
+        // Returns
         Route::prefix('returns')->name('partner.api.returns.')->group(function (): void {
             Route::get('/', [ReturnController::class, 'index'])->name('index');
             Route::get('{returnNumber}', [ReturnController::class, 'show'])->name('show');
+            Route::post('{returnNumber}/approve', [ReturnController::class, 'approve'])->name('approve');
+            Route::post('{returnNumber}/reject', [ReturnController::class, 'reject'])->name('reject');
         });
 
         // Warranty Claims (read-only)
