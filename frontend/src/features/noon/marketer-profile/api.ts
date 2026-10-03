@@ -26,18 +26,20 @@ export interface MarketerListingsParams {
   slug: string;
   ownPage?: number;
   campaignPage?: number;
+  marketerCampaignPage?: number;
   perPage?: number;
 }
 
 /** Fetches only the listings portion (uncached, auth-aware for wishlist). */
 export async function getMarketerListings(
   params: MarketerListingsParams
-): Promise<Pick<MarketerProfileData, "own_listings" | "campaign_listings">> {
-  const { slug, ownPage = 1, campaignPage = 1, perPage = 12 } = params;
+): Promise<Pick<MarketerProfileData, "own_listings" | "vendor_campaign_listings" | "marketer_campaign_listings">> {
+  const { slug, ownPage = 1, campaignPage = 1, marketerCampaignPage = 1, perPage = 12 } = params;
   const country = await resolveCookie("country");
   const qs = new URLSearchParams({
     own_page: String(ownPage),
     campaign_page: String(campaignPage),
+    marketer_campaign_page: String(marketerCampaignPage),
     per_page: String(perPage),
   });
   const res = await fetch(`${apiPublicBaseUrlGlobal}/${country}/marketers/${slug}?${qs}`, {
@@ -48,6 +50,7 @@ export async function getMarketerListings(
   const body: { data: MarketerProfileData } = await res.json();
   return {
     own_listings: body.data.own_listings,
-    campaign_listings: body.data.campaign_listings,
+    vendor_campaign_listings: body.data.vendor_campaign_listings,
+    marketer_campaign_listings: body.data.marketer_campaign_listings,
   };
 }
