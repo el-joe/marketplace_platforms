@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Api\Marketer\AdBookingController;
 use App\Http\Controllers\Api\Marketer\AdPackageController;
 use App\Http\Controllers\Api\Marketer\AdSlotController;
@@ -139,4 +140,7 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
         Route::post('/{id}/messages', [ConversationController::class, 'sendMessage'])->name('message');
         Route::post('/{id}/messages/read', [ConversationController::class, 'markRead'])->name('read');
     });
+
+    // Branded QR code — marketer downloads their own profile QR
+    Route::get('qr/my-profile', [QrCodeController::class, 'myMarketerProfile'])->name('marketer.qr.profile');
 });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AdCampaignController;
 use App\Http\Controllers\Admin\AdminController;
@@ -233,6 +234,13 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::post('/calculate', [ProductCostController::class, 'calculateMargin'])->name('calculate');
             Route::post('/check-competitors', [ProductCostController::class, 'checkCompetitorPrices'])->name('check-competitors');
         });
+    });
+
+    // ─── Branded QR Code Downloads (Admin) ───────────────────────────────────────
+    Route::prefix('qr')->name('qr.')->middleware('admin.permission:products.view')->group(function () {
+        Route::get('/product/{slug}',  [QrCodeController::class, 'product'])->name('product');
+        Route::get('/vendor/{slug}',   [QrCodeController::class, 'vendor'])->name('vendor');
+        Route::get('/marketer/{slug}', [QrCodeController::class, 'marketer'])->name('marketer');
     });
 
     // ─── Product Highlights ──────────────────────────────────────────────────────
