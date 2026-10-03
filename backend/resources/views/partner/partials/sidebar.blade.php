@@ -101,7 +101,12 @@
             <x-partner-nav-item route="partner.subscription.index" icon="credit-card" label="{{ __('partner.nav.subscription') }}" />
         </x-partner-nav-group>
 
-        {{-- GROUP 8: الحساب --}}
+        {{-- GROUP 8: Developer --}}
+        <x-partner-nav-group label="Developer">
+            <x-partner-nav-item route="partner.developer.index" icon="code-bracket" label="API & Tokens" />
+        </x-partner-nav-group>
+
+        {{-- GROUP 9: الحساب --}}
         <x-partner-nav-group label="{{ __('partner.nav.settings') }}">
             <x-partner-nav-item route="partner.profile.index" icon="building-storefront" label="{{ __('partner.nav.my_profile') }}" />
             <x-partner-nav-item route="partner.shipping-companies.index" icon="truck" label="{{ __('partner.shipping_companies.title') }}" />
