@@ -56,6 +56,8 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost'),
 
+    'frontend_default_locale' => env('FRONTEND_DEFAULT_LOCALE', 'uae-en'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -331,6 +331,43 @@ $businessTypeLabels = [
                 @endif
             </div>
         </div>
+
+        {{-- Branded QR Code --}}
+        @if($vendor->qr_code_path)
+        @php $storeUrl = rtrim(config('app.frontend_url', url('')), '/') . '/seller/' . $vendor->store_slug; @endphp
+        <div class="mt-6 bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 class="font-semibold text-gray-800 mb-4">{{ __('partner.profile.qr_code_heading', [], null) ?: 'Store QR Code' }}</h3>
+            <div class="flex items-start gap-5">
+                <img src="{{ \Illuminate\Support\Facades\Storage::url($vendor->qr_code_path) }}"
+                     alt="QR Code"
+                     class="w-32 h-32 rounded-xl border border-gray-200 shrink-0 object-contain">
+                <div class="flex-1 space-y-3">
+                    <div>
+                        <span class="text-xs text-gray-400 block mb-1">{{ __('partner.profile.store_url_label', [], null) ?: 'Store URL' }}</span>
+                        <div class="flex items-center gap-2">
+                            <input type="text" readonly value="{{ $storeUrl }}"
+                                   class="flex-1 border border-gray-200 bg-gray-50 rounded-lg px-3 py-1.5 text-xs font-mono text-gray-600 focus:outline-none">
+                            <button type="button" onclick="navigator.clipboard.writeText('{{ $storeUrl }}')"
+                                    class="px-3 py-1.5 text-xs font-semibold bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200">
+                                {{ __('partner.profile.copy_button', [], null) ?: 'Copy' }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($vendor->qr_code_path) }}"
+                           download="store-{{ $vendor->store_slug }}-qr.png"
+                           class="text-xs px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium">
+                            {{ __('partner.profile.download_qr', [], null) ?: 'Download QR' }}
+                        </a>
+                        <a href="https://wa.me/?text={{ urlencode('Check out my store: ' . $storeUrl) }}" target="_blank"
+                           class="text-xs px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">
+                            WhatsApp
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     {{-- ══════════════════════════════════════════════════════════════════════ --}}

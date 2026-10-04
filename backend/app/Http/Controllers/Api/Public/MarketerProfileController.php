@@ -50,8 +50,9 @@ class MarketerProfileController extends Controller
             ->paginate((int) $request->query('per_page', 24));
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
+        $defaultLocale = config('app.frontend_default_locale', 'uae-en');
 
-        $items = $profiles->getCollection()->filter(fn (MarketerProfile $profile) => $profile->marketer !== null)->map(function (MarketerProfile $profile) use ($frontendUrl) {
+        $items = $profiles->getCollection()->filter(fn (MarketerProfile $profile) => $profile->marketer !== null)->map(function (MarketerProfile $profile) use ($frontendUrl, $defaultLocale) {
             $marketer = $profile->marketer;
 
             return [
@@ -59,7 +60,7 @@ class MarketerProfileController extends Controller
                 'name' => $marketer->name,
                 'marketer_type' => $marketer->marketerJobs->first()?->key,
                 'profile_slug' => $profile->profile_slug,
-                'profile_url' => $frontendUrl.'/marketer/'.$profile->profile_slug,
+                'profile_url' => $frontendUrl.'/'.$defaultLocale.'/marketer/'.$profile->profile_slug,
                 'banner_url' => $profile->bannerFile?->url,
                 'avatar_url' => $profile->avatarFile?->url,
                 'total_campaigns' => $marketer->total_campaigns,
@@ -282,6 +283,7 @@ class MarketerProfileController extends Controller
             : null;
 
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
+        $defaultLocale = config('app.frontend_default_locale', 'uae-en');
 
         return [
             'marketer' => [
@@ -307,7 +309,7 @@ class MarketerProfileController extends Controller
                 'banner_url' => $profile->bannerFile?->url,
                 'avatar_url' => $profile->avatarFile?->url,
                 'qr_code_url' => $qrUrl,
-                'profile_url' => $frontendUrl.'/marketer/'.$profile->profile_slug,
+                'profile_url' => $frontendUrl.'/'.$defaultLocale.'/marketer/'.$profile->profile_slug,
                 'ad_price' => $profile->ad_price,
                 'ad_price_currency' => $profile->ad_price_currency,
                 'measurements' => $measurements,

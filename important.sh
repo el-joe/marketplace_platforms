@@ -1,0 +1,1 @@
+php artisan qr:generate-missing

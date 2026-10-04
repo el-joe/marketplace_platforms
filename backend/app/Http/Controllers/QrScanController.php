@@ -17,14 +17,14 @@ class QrScanController extends Controller
     {
         Product::where('slug', $slug)->firstOrFail();
 
-        return redirect($this->frontendUrl("/product/{$slug}"));
+        return redirect($this->frontendUrl("/products/{$slug}"));
     }
 
     public function vendor(string $slug): RedirectResponse
     {
-        Vendor::where('store_slug', $slug)->firstOrFail();
+        $vendor = Vendor::where('store_slug', $slug)->firstOrFail();
 
-        return redirect($this->frontendUrl("/store/{$slug}"));
+        return redirect($this->frontendUrl("/seller/{$vendor->id}"));
     }
 
     public function marketer(string $slug): RedirectResponse
@@ -37,7 +37,7 @@ class QrScanController extends Controller
     private function frontendUrl(string $path): string
     {
         $base = rtrim(config('app.frontend_url', env('FRONTEND_URL', '/')), '/');
-        $locale = 'ar'; // default locale; can be read from Accept-Language later
+        $locale = config('app.frontend_default_locale', 'uae-en');
 
         return "{$base}/{$locale}{$path}";
     }

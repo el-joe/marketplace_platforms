@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_exception.dart';
@@ -94,6 +95,59 @@ class ListingDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                if (l['product_qr_code_url'] != null) ...[
+                  const SizedBox(height: 16),
+                  PCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Product QR Code', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: CachedNetworkImage(
+                                imageUrl: '${l['product_qr_code_url']}',
+                                width: 90,
+                                height: 90,
+                                fit: BoxFit.contain,
+                                errorWidget: (_, __, ___) => const Icon(Icons.qr_code_2, size: 70, color: AppTheme.textSecondary),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Share this product with customers.', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.copy, size: 14),
+                                      label: const Text('Copy product link', style: TextStyle(fontSize: 12)),
+                                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+                                      onPressed: () {
+                                        final slug = l['product_slug'] ?? '';
+                                        final link = 'https://app.nawi.com/products/$slug';
+                                        Clipboard.setData(ClipboardData(text: link));
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Link copied'), duration: Duration(seconds: 2)),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 PCard(
                   child: Column(

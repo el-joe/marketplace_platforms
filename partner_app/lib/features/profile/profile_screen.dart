@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -91,6 +92,11 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              if (v['qr_code_url'] != null) ...[
+                const SizedBox(height: 16),
+                _QrCard(qrUrl: '${v['qr_code_url']}', storeSlug: '${v['store_slug'] ?? ''}'),
+              ],
+              const SizedBox(height: 16),
               _MenuTile(icon: Icons.badge_outlined, label: 'Documents', onTap: () => context.push('/profile/documents')),
               const SizedBox(height: 16),
               _MenuTile(
@@ -117,6 +123,66 @@ class ProfileScreen extends ConsumerWidget {
         children: [
           Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
           Text('${value ?? '-'}'),
+        ],
+      ),
+    );
+  }
+}
+
+class _QrCard extends StatelessWidget {
+  final String qrUrl;
+  final String storeSlug;
+
+  const _QrCard({required this.qrUrl, required this.storeSlug});
+
+  @override
+  Widget build(BuildContext context) {
+    return PCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Store QR Code', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedNetworkImage(
+                  imageUrl: qrUrl,
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.contain,
+                  errorWidget: (_, __, ___) => const Icon(Icons.qr_code_2, size: 80, color: AppTheme.textSecondary),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Share your store QR code with customers.', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.copy, size: 14),
+                        label: const Text('Copy store link', style: TextStyle(fontSize: 12)),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+                        onPressed: () {
+                          final link = 'https://app.nawi.com/seller/$storeSlug';
+                          Clipboard.setData(ClipboardData(text: link));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Link copied'), duration: Duration(seconds: 2)),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

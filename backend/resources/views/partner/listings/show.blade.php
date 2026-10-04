@@ -189,6 +189,29 @@
                                 </button>
                             </div>
                         </div>
+
+                        {{-- Product QR Code --}}
+                        @if($product->qr_code_path)
+                        <div class="mt-3 flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <img src="{{ \Illuminate\Support\Facades\Storage::url($product->qr_code_path) }}"
+                                 alt="Product QR"
+                                 class="w-20 h-20 rounded-lg border border-gray-200 shrink-0 object-contain">
+                            <div class="space-y-2">
+                                <p class="text-xs text-gray-500">{{ __('partner.listings.qr_hint') ?? 'Scan to open this product on the storefront.' }}</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ \Illuminate\Support\Facades\Storage::url($product->qr_code_path) }}"
+                                       download="product-{{ $product->slug }}-qr.png"
+                                       class="text-xs px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium">
+                                        {{ __('partner.listings.download_qr') ?? 'Download QR' }}
+                                    </a>
+                                    <a href="https://wa.me/?text={{ urlencode(rtrim(config('app.frontend_url', url('')), '/') . '/products/' . $product->slug) }}" target="_blank"
+                                       class="text-xs px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium">
+                                        WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
