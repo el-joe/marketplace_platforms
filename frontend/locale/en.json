@@ -1438,9 +1438,12 @@
     "download": "Download",
     "close": "Close"
   },
-  "nawyNow": {
-    "label": "Nawy Now",
-    "ariaLabel": "Shop Nawy Now"
+  "nawyOptions": {
+    "label": "Nawy Options",
+    "ariaLabel": "Shop Nawy Options",
+    "justForYou": "Just for you",
+    "nawyToPPicks": "Nawy top picks",
+    "recentlyViewedCategories": "Recently viewed categories"
   },
   "liveStreams": {
     "pageTitle": "Live Streams",
