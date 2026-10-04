@@ -2,7 +2,7 @@
 
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-@section('title', portal_content('register', 'meta', 'title', 'Register as a Seller — noon', 'سجّل كبائع — نون'))
+@section('title', portal_content('register', 'meta', 'title', 'Register as a Seller — Nawy', 'سجّل كبائع — ناوي'))
 @section('hide_nav', true)
 
 @push('head')
@@ -18,10 +18,10 @@
         {{-- Logo --}}
         <div class="text-center mb-8">
             <a href="{{ route('portal.home') }}" class="inline-flex items-center gap-2">
-                <span class="bg-[#0F807E] text-gray-950 font-black text-2xl px-3 py-1 rounded">noon</span>
+                <span class="bg-[#0F807E] text-gray-950 font-black text-2xl px-3 py-1 rounded">Nawy</span>
                 <span class="text-white text-lg font-semibold">{{ portal_content('register', 'header', 'logo_tagline', 'for Sellers', 'للبائعين') }}</span>
             </a>
-            <h1 class="mt-5 text-2xl font-black text-white">{{ portal_content('register', 'header', 'title', 'Join noon as a Seller', 'انضم إلى منصة نون كبائع') }}</h1>
+            <h1 class="mt-5 text-2xl font-black text-white">{{ portal_content('register', 'header', 'title', 'Join Nawy as a Seller', 'انضم إلى منصة ناوي كبائع') }}</h1>
             <p class="mt-2 text-gray-400 text-sm">{{ portal_content('register', 'header', 'subtitle', 'Complete the following steps to create your business account', 'أكمل الخطوات التالية لإنشاء حسابك التجاري') }}</p>
         </div>
 

@@ -2,7 +2,7 @@
 
 <div class="flex flex-col gap-y-[48px] lg:gap-y-[64px] pt-[48px] lg:pt-[64px] pb-[48px] lg:pb-[64px]">
 
-    {{-- noon Ads --}}
+    {{-- Nawy Ads --}}
     <section id="ads" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div class="rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-12 flex flex-col lg:grid lg:grid-cols-[1fr_auto] items-center gap-8 lg:gap-16">
             <div class="order-2 lg:order-1 w-full">
@@ -10,8 +10,8 @@
                      class="h-7 w-auto my-2">
                 <p class="text-[16px] font-medium text-gray-300">
                     {{ portal_content('smart-tools', 'ads', 'description_1',
-                        'Ads that work as hard as you do. noon Ads is built for sellers serious about growth and expansion.',
-                        'إعلانات تشتغل بجهدك نفسه. إعلانات نون مصممة للبائعين الجادين في النمو والتوسّع.') }}
+                        'Ads that work as hard as you do. Nawy Ads is built for sellers serious about growth and expansion.',
+                        'إعلانات تشتغل بجهدك نفسه. إعلانات ناوي مصممة للبائعين الجادين في النمو والتوسّع.') }}
                 </p>
                 <p class="mt-2 text-[16px] font-medium text-gray-300">
                     {{ portal_content('smart-tools', 'ads', 'description_2',
@@ -219,8 +219,8 @@
             <h2 class="text-xl font-bold leading-tight mb-4">{{ portal_content('smart-tools', 'vantage', 'title', 'Vantage Analytics - your growth command centre', 'فانتج للتحليلات – مركز القيادة لنموك') }}</h2>
             <p class="text-[16px] font-medium text-gray-300">
                 {{ portal_content('smart-tools', 'vantage', 'description',
-                    'Vantage is noon\'s advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.',
-                    'فانتج هو منصة نون المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.') }}
+                    'Vantage is Nawy\'s advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.',
+                    'فانتج هو منصة ناوي المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.') }}
             </p>
         </div>
     </section>

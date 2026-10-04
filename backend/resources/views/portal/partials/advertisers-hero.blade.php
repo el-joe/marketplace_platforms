@@ -12,7 +12,7 @@
                     {{ portal_content('advertise-advertisers', 'hero', 'eyebrow', 'Advertisers', 'المعلنين') }}
                 </p>
                 <p class="text-gray-600 font-medium text-base sm:text-lg max-w-[52ch] mx-auto lg:mx-0">
-                    {{ portal_content('advertise-advertisers', 'hero', 'subtitle', 'Not selling on noon, but looking to boost your visibility to large audiences across geographies? Want to increase awareness of specific events/ launches? Planning on sharing specific offers to targeted customers?', "'لا تبيع على نون، ولكنك تتطلع إلى تعزيز ظهورك لجماهير فئة كبيرة عبر المناطق الجغرافية؟ هل ترغب في زيادة الوعي بأحداث/إطلاقات محددة؟ هل تخطط لمشاركة عروض محددة للعملاء المستهدفين؟'") }}
+                    {{ portal_content('advertise-advertisers', 'hero', 'subtitle', 'Not selling on Nawy, but looking to boost your visibility to large audiences across geographies? Want to increase awareness of specific events/ launches? Planning on sharing specific offers to targeted customers?', "'لا تبيع على ناوي، ولكنك تتطلع إلى تعزيز ظهورك لجماهير فئة كبيرة عبر المناطق الجغرافية؟ هل ترغب في زيادة الوعي بأحداث/إطلاقات محددة؟ هل تخطط لمشاركة عروض محددة للعملاء المستهدفين؟'") }}
                 </p>
                 <a href="{{ $advertisersHeroCta['url'] }}"
                    class="mt-6 inline-flex items-center justify-center bg-[#0F807E] hover:bg-[#0c6665] text-white

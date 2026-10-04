@@ -99,9 +99,9 @@
                     {{ portal_content('register', 'step_5', 'terms_prefix', null, 'أوافق على') }}
                     @php($termsLink = portal_link('register', 'step_5', 'terms_link', 'Terms and Conditions', 'الشروط والأحكام', '#'))
                     <a href="{{ $termsLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $termsLink['label'] }}</a>
-                    {{ portal_content('register', 'step_5', 'terms_suffix', null, 'الخاصة ببائعي نون') }}
+                    {{ portal_content('register', 'step_5', 'terms_suffix', null, 'الخاصة ببائعي ناوي') }}
                 @else
-                    {{ portal_content('register', 'step_5', 'terms_prefix', "I agree to noon's", null) }}
+                    {{ portal_content('register', 'step_5', 'terms_prefix', "I agree to Nawy's", null) }}
                     @php($termsLink = portal_link('register', 'step_5', 'terms_link', 'Terms and Conditions', 'الشروط والأحكام', '#'))
                     <a href="{{ $termsLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $termsLink['label'] }}</a>
                     {{ portal_content('register', 'step_5', 'terms_suffix', 'for sellers', null) }}
@@ -119,12 +119,12 @@
                     {{ portal_content('register', 'step_5', 'privacy_prefix', null, 'أوافق على') }}
                     @php($privacyLink = portal_link('register', 'step_5', 'privacy_link', 'Privacy Policy', 'سياسة الخصوصية', '#'))
                     <a href="{{ $privacyLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $privacyLink['label'] }}</a>
-                    {{ portal_content('register', 'step_5', 'privacy_suffix', null, 'وأذن لنون بمعالجة بياناتي التجارية') }}
+                    {{ portal_content('register', 'step_5', 'privacy_suffix', null, 'وأذن لناوي بمعالجة بياناتي التجارية') }}
                 @else
                     {{ portal_content('register', 'step_5', 'privacy_prefix', 'I agree to the', null) }}
                     @php($privacyLink = portal_link('register', 'step_5', 'privacy_link', 'Privacy Policy', 'سياسة الخصوصية', '#'))
                     <a href="{{ $privacyLink['url'] }}" class="text-[#0F807E] hover:underline">{{ $privacyLink['label'] }}</a>
-                    {{ portal_content('register', 'step_5', 'privacy_suffix', 'and authorize noon to process my business data', null) }}
+                    {{ portal_content('register', 'step_5', 'privacy_suffix', 'and authorize Nawy to process my business data', null) }}
                 @endif
             </span>
         </label>

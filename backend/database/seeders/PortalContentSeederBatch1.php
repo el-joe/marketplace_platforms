@@ -51,33 +51,33 @@ class PortalContentSeederBatch1 extends Seeder
 
         $rows[] = ['sellers', 'solution_brand_ads', 'title', 'text', 'Brand Ads', 'إعلانات العلامة التجارية', null, 40];
         $rows[] = ['sellers', 'solution_brand_ads', 'description', 'text',
-            "Promote your products and brand in a visually appealing and prominent way within noon's browse, search, and relevant product detail pages. Display multiple products within one ad, showcasing a wider range of offerings and potentially attracting a broader audience.",
-            'قم بالترويج لمنتجاتك وعلامتك التجارية بطريقة بصرية جذابة وبارزة داخل صفحات نون للتصفح، البحث، وصفحات تفاصيل المنتج ذات الصلة. بإمكانك أيضا عرض منتجات متعددة داخل إعلان واحد، وإبراز مجموعة واسعة من منتجاتك وجذب جمهور أكبر.', null, 41];
+            "Promote your products and brand in a visually appealing and prominent way within Nawy's browse, search, and relevant product detail pages. Display multiple products within one ad, showcasing a wider range of offerings and potentially attracting a broader audience.",
+            'قم بالترويج لمنتجاتك وعلامتك التجارية بطريقة بصرية جذابة وبارزة داخل صفحات ناوي للتصفح، البحث، وصفحات تفاصيل المنتج ذات الصلة. بإمكانك أيضا عرض منتجات متعددة داخل إعلان واحد، وإبراز مجموعة واسعة من منتجاتك وجذب جمهور أكبر.', null, 41];
         $rows[] = ['sellers', 'solution_brand_ads', 'link_label', 'text', 'Learn More', 'اعرف أكثر', null, 42];
 
         $rows[] = ['sellers', 'testimonials', 'eyebrow', 'text', 'Hear from our satisfied customers', 'استمع إلى آراء عملائنا', null, 50];
 
         $rows[] = ['sellers', 'testimonial_1', 'quote', 'text',
-            "'Noon Ads played an instrumental role in enhancing our activities with Noon. Our investments have had, and continue to have, a material and positive impact to grow our sales and achieve our mutual business goals. We continue to see Noon as a key player in the e-commerce industry in the region. This is underscored by the high degree of support and dedication by the entire Noon team.'",
-            "'لعبت إعلانات نون دوراً فعالاً في تعزيز أنشطتنا مع نون. استثماراتنا كان ولا تزال، تأثيرها مادياً وإيجابياً في تنمية مبيعاتنا وتحقيق أهدافنا التجارية المتبادلة. لا زلنا نرى نون وجهة رئيسية في عالم التجارة الإلكترونية في المنطقة. وهذا ما يؤكده المستوى العالي من الدعم والتفاني الذي يقدمه فريق نون بأكمله.'", null, 51];
+            "'Nawy Ads played an instrumental role in enhancing our activities with Nawy. Our investments have had, and continue to have, a material and positive impact to grow our sales and achieve our mutual business goals. We continue to see Nawy as a key player in the e-commerce industry in the region. This is underscored by the high degree of support and dedication by the entire Nawy team.'",
+            "'لعبت إعلانات ناوي دوراً فعالاً في تعزيز أنشطتنا مع ناوي. استثماراتنا كان ولا تزال، تأثيرها مادياً وإيجابياً في تنمية مبيعاتنا وتحقيق أهدافنا التجارية المتبادلة. لا زلنا نرى ناوي وجهة رئيسية في عالم التجارة الإلكترونية في المنطقة. وهذا ما يؤكده المستوى العالي من الدعم والتفاني الذي يقدمه فريق ناوي بأكمله.'", null, 51];
         $rows[] = ['sellers', 'testimonial_1', 'name', 'text', 'Tayyam Katbe', 'تيام كاتبي', null, 52];
         $rows[] = ['sellers', 'testimonial_1', 'position', 'text', 'Senior Executive, Unicharm Gulf Hygienic Industries', 'مدير تنفيذي أول، شركة يونيتشارم جلف لصناعات الصحة', null, 53];
 
         $rows[] = ['sellers', 'testimonial_2', 'quote', 'text',
-            "'We partnered with noon to lead our advertising efforts for the launch of our products. The campaign not only gave us significant visibility in offline & onsite but helped cement our partnership by reinforcing noon as a key destination for funmoment products. The results are evident in the traffic generated, word of mouth & record sales number that we have witnessed so far.'",
-            "'لقد عقدنا شراكة مع نون لقيادة جهودنا الإعلانية لإطلاق منتجاتنا. لم تمنحنا الحملة رؤية كبيرة في الموقع وخارجي فحسب، بل ساعدت في تعزيز شراكتنا من خلال تعزيز نون وجهة رئيسية لمنتجات لحظة فرح. وتتجلى النتائج في عدد الزيارات والكلمات الشفوية وأرقام المبيعات القياسية التي شهدناها حتى الآن.'", null, 54];
+            "'We partnered with Nawy to lead our advertising efforts for the launch of our products. The campaign not only gave us significant visibility in offline & onsite but helped cement our partnership by reinforcing Nawy as a key destination for funmoment products. The results are evident in the traffic generated, word of mouth & record sales number that we have witnessed so far.'",
+            "'لقد عقدنا شراكة مع ناوي لقيادة جهودنا الإعلانية لإطلاق منتجاتنا. لم تمنحنا الحملة رؤية كبيرة في الموقع وخارجي فحسب، بل ساعدت في تعزيز شراكتنا من خلال تعزيز ناوي وجهة رئيسية لمنتجات لحظة فرح. وتتجلى النتائج في عدد الزيارات والكلمات الشفوية وأرقام المبيعات القياسية التي شهدناها حتى الآن.'", null, 54];
         $rows[] = ['sellers', 'testimonial_2', 'name', 'text', 'Salem Habtoor', 'سالم حبتور', null, 55];
         $rows[] = ['sellers', 'testimonial_2', 'position', 'text', 'Direct manager, Fun moment', 'المدير المباشر، لحظة متعة', null, 56];
 
         $rows[] = ['sellers', 'testimonial_3', 'quote', 'text',
-            "'Our experience collaborating with Noon on their website advertising services has been exceptional. From the moment we engaged with their team, we noticed a significant boost in our brand visibility and sales performance. Collaborating with Noon has not only improved our sales but also created a sustainable brand presence that resonates with customers.'",
-            "'لقد كانت تجربتنا في التعامل مع نون في خدمات الإعلان على موقعهم الإلكتروني استثنائية. منذ اللحظة التي تعاملنا فيها مع فريقهم، لاحظنا زيادة كبيرة في رؤية علامتنا التجارية وأداء المبيعات. إن التعامل مع نون لم يؤدِ إلى تحسين مبيعاتنا فحسب، بل أدى أيضاً إلى خلق حضور مستدام للعلامة التجارية وتردد صداه مع العملاء.'", null, 57];
+            "'Our experience collaborating with Nawy on their website advertising services has been exceptional. From the moment we engaged with their team, we noticed a significant boost in our brand visibility and sales performance. Collaborating with Nawy has not only improved our sales but also created a sustainable brand presence that resonates with customers.'",
+            "'لقد كانت تجربتنا في التعامل مع ناوي في خدمات الإعلان على موقعهم الإلكتروني استثنائية. منذ اللحظة التي تعاملنا فيها مع فريقهم، لاحظنا زيادة كبيرة في رؤية علامتنا التجارية وأداء المبيعات. إن التعامل مع ناوي لم يؤدِ إلى تحسين مبيعاتنا فحسب، بل أدى أيضاً إلى خلق حضور مستدام للعلامة التجارية وتردد صداه مع العملاء.'", null, 57];
         $rows[] = ['sellers', 'testimonial_3', 'name', 'text', 'Hassan Ghattas', 'حسن غطاس', null, 58];
         $rows[] = ['sellers', 'testimonial_3', 'position', 'text', 'Marketing Manager, Abdul Wahed', 'مدير التسويق عبد الواحد', null, 59];
 
         // ─── page_key = 'how-it-works' (how-it-works.blade.php + partials) ─
         $rows[] = ['how-it-works', 'hero', 'title_line1', 'text', 'Welcome to', 'مرحبا بك في', null, 1];
-        $rows[] = ['how-it-works', 'hero', 'title_line2', 'text', 'selling on noon!', 'البيع على نون!', null, 2];
+        $rows[] = ['how-it-works', 'hero', 'title_line2', 'text', 'selling on Nawy!', 'البيع على ناوي!', null, 2];
         $rows[] = ['how-it-works', 'hero', 'subtitle', 'text',
             'Turn clicks into cash. Start strong by listing your products the right way — and watch your sales take off.',
             'حول النقرات إلى أموال. ابدأ بقوة من خلال إدراج منتجاتك بالطريقة الصحيحة — وشاهد مبيعاتك تنطلق.', null, 3];
@@ -85,16 +85,16 @@ class PortalContentSeederBatch1 extends Seeder
 
         $rows[] = ['how-it-works', 'why-sell', 'title', 'text', 'Why Join Us?', 'لماذا تنضم إلينا؟', null, 10];
         $rows[] = ['how-it-works', 'why-sell-item-1', 'title', 'text', 'Reach Millions', 'وصل الملايين', null, 11];
-        $rows[] = ['how-it-works', 'why-sell-item-1', 'description', 'text', 'Millions of shoppers, one app. noon puts your products in front of more people, every single day.', 'ملايين المتسوقين، تطبيق واحد. نون تعرض منتجاتك لعدد أكبر من الناس، كل يوم.', null, 12];
+        $rows[] = ['how-it-works', 'why-sell-item-1', 'description', 'text', 'Millions of shoppers, one app. Nawy puts your products in front of more people, every single day.', 'ملايين المتسوقين، تطبيق واحد. ناوي تعرض منتجاتك لعدد أكبر من الناس، كل يوم.', null, 12];
         $rows[] = ['how-it-works', 'why-sell-item-2', 'title', 'text', 'Fast, Flexible Delivery', 'توصيل سريع ومرن', null, 13];
-        $rows[] = ['how-it-works', 'why-sell-item-2', 'description', 'text', 'Choose how you ship. noon handles the speed, care, and customer smiles.', 'اختر طريقة الشحن التي تناسبك. نون تهتم بالسرعة، العناية، ورضا العملاء.', null, 14];
+        $rows[] = ['how-it-works', 'why-sell-item-2', 'description', 'text', 'Choose how you ship. Nawy handles the speed, care, and customer smiles.', 'اختر طريقة الشحن التي تناسبك. ناوي تهتم بالسرعة، العناية، ورضا العملاء.', null, 14];
         $rows[] = ['how-it-works', 'why-sell-item-3', 'title', 'text', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر', null, 15];
-        $rows[] = ['how-it-works', 'why-sell-item-3', 'description', 'text', "Unlock growth with noon's seller tools — built to turn your hustle into real results.", 'حقق النمو مع أدوات البيع من نون — صُممت لتحوّل شغفك إلى نتائج حقيقية.', null, 16];
+        $rows[] = ['how-it-works', 'why-sell-item-3', 'description', 'text', "Unlock growth with Nawy's seller tools — built to turn your hustle into real results.", 'حقق النمو مع أدوات البيع من ناوي — صُممت لتحوّل شغفك إلى نتائج حقيقية.', null, 16];
 
         $rows[] = ['how-it-works', 'steps', 'title_prefix', 'text', 'Steps to ', 'خطوات لـ ', null, 20];
         $rows[] = ['how-it-works', 'steps', 'title_highlight', 'text', 'Go Live', 'البدء', null, 21];
         $rows[] = ['how-it-works', 'steps', 'photo', 'image', 'noon Employees packing items into crates', 'موظفو نون يعبئون الصناديق', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-steps-go-live.jpg', 22];
-        $rows[] = ['how-it-works', 'steps', 'subtitle', 'text', 'Start selling on noon in three easy steps', 'ابدأ البيع على نون بثلاث خطوات سهلة', null, 23];
+        $rows[] = ['how-it-works', 'steps', 'subtitle', 'text', 'Start selling on Nawy in three easy steps', 'ابدأ البيع على ناوي بثلاث خطوات سهلة', null, 23];
         $rows[] = ['how-it-works', 'steps', 'step_1', 'text', 'Set up your account', 'قم بإعداد حسابك', null, 24];
         $rows[] = ['how-it-works', 'steps', 'step_2', 'text', 'Get your listings ready', 'جهز قوائم منتجاتك', null, 25];
         $rows[] = ['how-it-works', 'steps', 'step_3', 'text', 'Choose your fulfilment model', 'اختر نموذج التنفيذ الخاص بك', null, 26];
@@ -127,8 +127,8 @@ class PortalContentSeederBatch1 extends Seeder
             'Covers storage, packing, shipping, returns and exchanges — with great delivery that keeps customers coming back.',
             'يشمل التخزين، التعبئة، الشحن، الإرجاع، والاستبدال — وتوصيل ممتاز يضمن عودة العملاء مرة بعد مرة.', null, 62];
         $rows[] = ['how-it-works', 'fulfilment-model', 'description', 'text',
-            'You can fulfil orders yourself (FBP) or leave it to noon with Fulfilled by noon (FBN).',
-            'يمكنك تنفيذ الطلبات بنفسك (FBP) أو ترك المهمة لنون من خلال التنفيذ من قِبل نون (FBN).', null, 63];
+            'You can fulfil orders yourself (FBP) or leave it to Nawy with Fulfilled by Nawy (FBN).',
+            'يمكنك تنفيذ الطلبات بنفسك (FBP) أو ترك المهمة لناوي من خلال التنفيذ من قِبل ناوي (FBN).', null, 63];
         $rows[] = ['how-it-works', 'fulfilment-model', 'tip_label', 'text', 'Pro tip:', 'نصيحة احترافية:', null, 64];
         $rows[] = ['how-it-works', 'fulfilment-model', 'tip_text', 'text',
             'You can mix models — pick the best one for each product to optimise your operations.',
@@ -138,7 +138,7 @@ class PortalContentSeederBatch1 extends Seeder
 
         $rows[] = ['how-it-works', 'seller-hub', 'photo', 'image', 'Seller Hub', 'مركز البائعين', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-01.jpg', 70];
         $rows[] = ['how-it-works', 'seller-hub', 'eyebrow', 'text', 'Seller Hub', 'مركز البائعين', null, 71];
-        $rows[] = ['how-it-works', 'seller-hub', 'title', 'text', 'Your command centre for selling on noon', 'مركز قيادتك للبيع على نون', null, 72];
+        $rows[] = ['how-it-works', 'seller-hub', 'title', 'text', 'Your command centre for selling on Nawy', 'مركز قيادتك للبيع على ناوي', null, 72];
         $rows[] = ['how-it-works', 'seller-hub-item-1', 'title', 'text', 'Manage your business', 'قم بادارة اعمالك', null, 73];
         $rows[] = ['how-it-works', 'seller-hub-item-1', 'description', 'text', 'Manage your account, catalogue, inventory and pricing - all in one place.', 'قم بإدارة حسابك، الكتالوج، المخزون، والأسعار - كل ذلك من مكان واحد.', null, 74];
         $rows[] = ['how-it-works', 'seller-hub-item-2', 'title', 'text', 'Track and collect payments', 'تتبع و حصل المدفوعات', null, 75];
@@ -146,22 +146,22 @@ class PortalContentSeederBatch1 extends Seeder
         $rows[] = ['how-it-works', 'seller-hub-item-3', 'title', 'text', 'Grow with confidence', 'انمو بثقة', null, 77];
         $rows[] = ['how-it-works', 'seller-hub-item-3', 'description', 'text', 'Use ads and analytics to improve performance and scale faster.', 'استخدم الإعلانات والتحليلات لتحسين الأداء والتوسع بشكل أسرع.', null, 78];
         $rows[] = ['how-it-works', 'seller-hub', 'footer_note', 'text',
-            "You'll also get our comprehensive seller guide, designed to support you from your first steps to confidently running your business on noon.",
-            'ستحصل أيضًا على دليل البائع القوي الخاص بنا، المصمم لدعمك من خطواتك الأولى وحتى إدارة عملك بثقة على نون.', null, 79];
+            "You'll also get our comprehensive seller guide, designed to support you from your first steps to confidently running your business on Nawy.",
+            'ستحصل أيضًا على دليل البائع القوي الخاص بنا، المصمم لدعمك من خطواتك الأولى وحتى إدارة عملك بثقة على ناوي.', null, 79];
 
         // ─── page_key = 'fulfillment' (fulfillment.blade.php + partials) ───
         $rows[] = ['fulfillment', 'hero', 'title', 'text', 'Ship Your Way', 'اشحن بطريقتك', null, 1];
         $rows[] = ['fulfillment', 'hero', 'subtitle', 'text', 'Choose how you ship', 'اختر طريقة الشحن المناسبة لك', null, 2];
         $rows[] = ['fulfillment', 'hero', 'description', 'richtext',
-            'Fulfilled by noon (FBN) or Fulfilled by Partner (FBP).<br class="hidden md:block"> Either way, we\'ll help you deliver fast.',
-            'التنفيذ من قبل نون (FBN) أو التنفيذ من قبل الشريك (FBP). في كل الحالتين، نساعدك على التوصيل بسرعة.', null, 3];
+            'Fulfilled by Nawy (FBN) or Fulfilled by Partner (FBP).<br class="hidden md:block"> Either way, we\'ll help you deliver fast.',
+            'التنفيذ من قبل ناوي (FBN) أو التنفيذ من قبل الشريك (FBP). في كل الحالتين، نساعدك على التوصيل بسرعة.', null, 3];
         $rows[] = ['fulfillment', 'hero', 'cta_button', 'link', 'Watch Video', 'شاهد الفيديو', 'https://youtu.be/rm45BkhIBxY', 4];
         $rows[] = ['fulfillment', 'hero', 'photo', 'image', 'A noon warehouse', 'مستودع نون', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-hero-092025.jpg', 5];
 
-        $rows[] = ['fulfillment', 'fbn', 'title_prefix', 'text', 'Fulfilled by noon: ', 'التنفيذ من قبل نون: ', null, 10];
+        $rows[] = ['fulfillment', 'fbn', 'title_prefix', 'text', 'Fulfilled by Nawy: ', 'التنفيذ من قبل ناوي: ', null, 10];
         $rows[] = ['fulfillment', 'fbn', 'title_highlight', 'text', 'Built for Speed', 'مصمم للسرعة', null, 11];
         $rows[] = ['fulfillment', 'fbn', 'photo', 'image', 'A noon employee working in the warehouse', 'موظف نون يعمل في المستودع', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbn.jpg', 12];
-        $rows[] = ['fulfillment', 'fbn', 'headline', 'text', 'Customers love fast delivery — and noon express delivers it.', 'العملاء يفضلون التوصيل السريع — ونون إكسبريس يقدمه.', null, 13];
+        $rows[] = ['fulfillment', 'fbn', 'headline', 'text', 'Customers love fast delivery — and Nawy express delivers it.', 'العملاء يفضلون التوصيل السريع — وناوي إكسبريس يقدمه.', null, 13];
         $rows[] = ['fulfillment', 'fbn', 'description', 'text', 'Store your products in our fulfillment centers, and watch orders take off.', 'خزن منتجاتك في مراكز تنفيذ الطلبات لدينا، وشاهد الطلبات تنطلق.', null, 14];
         $rows[] = ['fulfillment', 'fbn', 'included_label', 'text', "What's included:", 'الإضافة:', null, 15];
         $rows[] = ['fulfillment', 'fbn', 'included_text', 'text',
@@ -169,12 +169,12 @@ class PortalContentSeederBatch1 extends Seeder
             'شحن وارد سريع، تخزين شهري في منشآت متطورة، خدمات إزالة المنتجات، ومعالجة المرتجعات.', null, 16];
         $rows[] = ['fulfillment', 'fbn', 'ideal_label', 'text', 'Ideal for:', 'مثالي لـ:', null, 17];
         $rows[] = ['fulfillment', 'fbn', 'ideal_text', 'text', 'Best-selling products, new products, and any seller ready to grow.', 'المنتجات الأكثر مبيعا، المنتجات الجديدة، وكل بائع جاهز للنمو.', null, 18];
-        $rows[] = ['fulfillment', 'fbn', 'cta_button', 'link', 'Get started with Fulfilled by noon', 'ابدأ مع التنفيذ من قبل نون', '/register', 19];
+        $rows[] = ['fulfillment', 'fbn', 'cta_button', 'link', 'Get started with Fulfilled by Nawy', 'ابدأ مع التنفيذ من قبل ناوي', '/register', 19];
 
         $rows[] = ['fulfillment', 'fbn_testimonial', 'title', 'text', 'Seller success story', 'قصة نجاح بائع', null, 20];
         $rows[] = ['fulfillment', 'fbn_testimonial', 'quote_1', 'text',
-            "noon itself has been a huge achievement — I store with them and it's saved me so much at this point",
-            'نون بالذات عملت إنجاز كبير أنا أخزن عندها وفرت علي أشياء كثيرة بهذه النقطة', null, 21];
+            "Nawy itself has been a huge achievement — I store with them and it's saved me so much at this point",
+            'ناوي بالذات عملت إنجاز كبير أنا أخزن عندها وفرت علي أشياء كثيرة بهذه النقطة', null, 21];
         $rows[] = ['fulfillment', 'fbn_testimonial', 'quote_2', 'text',
             "They took on this cost and eased the burden on me — by God's grace, they played a huge role in the success of my project and my work",
             'هي تحملت التكلفة هذه وخففت العبء عني لعبت دور كبير بفضل الله في أنها نجحت مشروعي ونجحتني في عملي', null, 22];
@@ -183,7 +183,7 @@ class PortalContentSeederBatch1 extends Seeder
         $rows[] = ['fulfillment', 'fbp', 'title_prefix', 'text', 'Fulfilled by partner: ', 'التنفيذ من قبل الشريك: ', null, 30];
         $rows[] = ['fulfillment', 'fbp', 'title_highlight', 'text', 'Built for Flexibility', 'مصمم للمرونة', null, 31];
         $rows[] = ['fulfillment', 'fbp', 'photo', 'image', 'noon boxes', 'صناديق نون', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbp.jpg', 32];
-        $rows[] = ['fulfillment', 'fbp', 'headline', 'text', "Some products need a different plan. noon's FBP models give you options:", 'بعض المنتجات تحتاج إلى خطة مختلفة. نماذج FBP من نون تمنحك خيارات:', null, 33];
+        $rows[] = ['fulfillment', 'fbp', 'headline', 'text', "Some products need a different plan. Nawy's FBP models give you options:", 'بعض المنتجات تحتاج إلى خطة مختلفة. نماذج FBP من ناوي تمنحك خيارات:', null, 33];
         $rows[] = ['fulfillment', 'fbp', 'item_1', 'text', 'Direct shipping: You pack, we deliver.', 'الشحن المباشر: أنت تغلّف، ونحن نوصّل.', null, 34];
         $rows[] = ['fulfillment', 'fbp', 'item_2', 'text', 'Direct delivery: Best for high-value products or those that need installation.', 'التوصيل المباشر: الأنسب للمنتجات ذات القيمة العالية أو اللي تحتاج تركيب.', null, 35];
         $rows[] = ['fulfillment', 'fbp', 'ideal_label', 'text', 'Ideal for:', 'مثالي لـ:', null, 36];
@@ -192,8 +192,8 @@ class PortalContentSeederBatch1 extends Seeder
 
         $rows[] = ['fulfillment', 'fbp_testimonial', 'title', 'text', 'Seller success story', 'قصة نجاح بائع', null, 40];
         $rows[] = ['fulfillment', 'fbp_testimonial', 'quote', 'text',
-            'The noon team handles every step – from receiving products, to neatly packaging them, to delivering them to the customer. All you have to do as a seller is focus on your business and manage your store on the platform with ease!',
-            'فريق نون بيتكفّل بكل الخطوات – من استلام المنتجات، لتغليفها بشكل مرتب، وتوصيلها للعميل. كل اللي عليك كَبائع هو تركّز على شغلك وتدير متجرك على المنصة بكل سهولة!', null, 41];
+            'The Nawy team handles every step – from receiving products, to neatly packaging them, to delivering them to the customer. All you have to do as a seller is focus on your business and manage your store on the platform with ease!',
+            'فريق ناوي بيتكفّل بكل الخطوات – من استلام المنتجات، لتغليفها بشكل مرتب، وتوصيلها للعميل. كل اللي عليك كَبائع هو تركّز على شغلك وتدير متجرك على المنصة بكل سهولة!', null, 41];
         $rows[] = ['fulfillment', 'fbp_testimonial', 'author', 'text', 'Hekayat Sahab', 'حكايات سحاب', null, 42];
 
         // ─── page_key = 'smart-tools' (smart-tools.blade.php + partials) ───
@@ -202,7 +202,7 @@ class PortalContentSeederBatch1 extends Seeder
         $rows[] = ['smart-tools', 'hero', 'tagline', 'text', 'Spend smarter, scale faster', 'أنفق بذكاء، وتوسّع بسرعة', null, 3];
         $rows[] = ['smart-tools', 'hero', 'photo', 'image', 'A noon warehouse in full motion', 'مستودع نون في حركة كاملة', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-hero.jpg', 4];
 
-        $rows[] = ['smart-tools', 'ads', 'description_1', 'text', 'Ads that work as hard as you do. noon Ads is built for sellers serious about growth and expansion.', 'إعلانات تشتغل بجهدك نفسه. إعلانات نون مصممة للبائعين الجادين في النمو والتوسّع.', null, 10];
+        $rows[] = ['smart-tools', 'ads', 'description_1', 'text', 'Ads that work as hard as you do. Nawy Ads is built for sellers serious about growth and expansion.', 'إعلانات تشتغل بجهدك نفسه. إعلانات ناوي مصممة للبائعين الجادين في النمو والتوسّع.', null, 10];
         $rows[] = ['smart-tools', 'ads', 'description_2', 'text', 'Reach more customers, grow your sales, and scale your business faster.', 'وصل لعدد أكبر من العملاء، زوّد مبيعاتك، ووسّع شغلك بشكل أسرع.', null, 11];
         $rows[] = ['smart-tools', 'ads', 'formats_label', 'text', 'With our multi-format solutions, you get access to:', 'مع حلولنا متعددة الصيغ، ستحصل على إمكانية الوصول إلى:', null, 12];
         $rows[] = ['smart-tools', 'ads', 'format_item_1', 'text', 'Product ads - to promote individual products and improve conversion', 'إعلانات المنتجات - للترويج للمنتجات الفردية وتحسين التحويل', null, 13];
@@ -253,8 +253,8 @@ class PortalContentSeederBatch1 extends Seeder
 
         $rows[] = ['smart-tools', 'vantage', 'title', 'text', 'Vantage Analytics - your growth command centre', 'فانتج للتحليلات – مركز القيادة لنموك', null, 70];
         $rows[] = ['smart-tools', 'vantage', 'description', 'text',
-            "Vantage is noon's advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.",
-            'فانتج هو منصة نون المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.', null, 71];
+            "Vantage is Nawy's advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.",
+            'فانتج هو منصة ناوي المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.', null, 71];
 
         // ─── page_key = 'home' (teaser blocks from partials/fulfillment.blade.php
         //     and partials/smart-tools.blade.php, both included on home.blade.php) ─
@@ -262,7 +262,7 @@ class PortalContentSeederBatch1 extends Seeder
         $rows[] = ['home', 'fulfillment_teaser', 'title', 'text', 'Shipping and Fulfilment', 'الشحن والتوصيل', null, 101];
         $rows[] = ['home', 'fulfillment_teaser', 'subtitle', 'text', 'Flexible fulfilment options that work for you', 'خيارات تنفيذ مرنة تناسبك', null, 102];
         $rows[] = ['home', 'fulfillment_teaser', 'description', 'text', 'Pick the model that fits your business today, and scale with confidence', 'اختر النموذج الذي يناسب عملك اليوم، وتوسع بثقة', null, 103];
-        $rows[] = ['home', 'fulfillment_teaser', 'item_1', 'text', 'Fulfilled by noon — Built for speed', 'التنفيذ من قبل نون — مصمم للسرعة', null, 104];
+        $rows[] = ['home', 'fulfillment_teaser', 'item_1', 'text', 'Fulfilled by Nawy — Built for speed', 'التنفيذ من قبل ناوي — مصمم للسرعة', null, 104];
         $rows[] = ['home', 'fulfillment_teaser', 'item_2', 'text', 'Fulfilled by Partner — Built for flexibility', 'التنفيذ من قبل الشريك — مصمم للمرونة', null, 105];
         $rows[] = ['home', 'fulfillment_teaser', 'learn_more_button', 'link', 'Learn more', 'اعرف أكثر', '/fulfillment', 106];
 
@@ -270,9 +270,9 @@ class PortalContentSeederBatch1 extends Seeder
         $rows[] = ['home', 'smart_tools_teaser', 'subtitle', 'text', 'Everything you need to scale and stay ahead', 'كل ما تحتاجه للتوسع والبقاء في الصدارة', null, 111];
         $rows[] = ['home', 'smart_tools_teaser', 'learn_more_button', 'link', 'Learn more', 'اعرف أكثر', '/smart-tools', 112];
         $rows[] = ['home', 'smart_tools_teaser_item_1', 'title', 'text', 'Ads that deliver results', 'إعلانات تحقق نتائج', null, 113];
-        $rows[] = ['home', 'smart_tools_teaser_item_1', 'description', 'text', 'Use noon Ads, our in-house advertising suite, to put your products in front of more customers.', 'استفد من إعلانات نون، مجموعتنا الإعلانية الداخلية لعرض منتجاتك أمام المزيد من العملاء.', null, 114];
+        $rows[] = ['home', 'smart_tools_teaser_item_1', 'description', 'text', 'Use Nawy Ads, our in-house advertising suite, to put your products in front of more customers.', 'استفد من إعلانات ناوي، مجموعتنا الإعلانية الداخلية لعرض منتجاتك أمام المزيد من العملاء.', null, 114];
         $rows[] = ['home', 'smart_tools_teaser_item_2', 'title', 'text', 'Know your costs', 'اعرف تكاليفك', null, 115];
-        $rows[] = ['home', 'smart_tools_teaser_item_2', 'description', 'text', "With noon's competitive, transparent fee structure, you'll always know what you'll earn - no surprises, just growth", 'مع هيكل الرسوم التنافسي والشفاف من نون، ستعرف دائمًا ما ستكسبه - لا مفاجآت، فقط نمو', null, 116];
+        $rows[] = ['home', 'smart_tools_teaser_item_2', 'description', 'text', "With Nawy's competitive, transparent fee structure, you'll always know what you'll earn - no surprises, just growth", 'مع هيكل الرسوم التنافسي والشفاف من ناوي، ستعرف دائمًا ما ستكسبه - لا مفاجآت، فقط نمو', null, 116];
         $rows[] = ['home', 'smart_tools_teaser_item_3', 'title', 'text', 'Scale with insights', 'توسع مع الرؤى', null, 117];
         $rows[] = ['home', 'smart_tools_teaser_item_3', 'description', 'text', 'Turn data into smarter decisions with our powerful reporting and insights tools', 'حوّل البيانات إلى قرارات أذكى باستخدام أدوات التقارير والرؤى القوية لدينا', null, 118];
 

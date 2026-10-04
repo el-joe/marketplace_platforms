@@ -21,8 +21,8 @@
                 </h3>
                 <p class="mt-4 text-gray-300 text-[14px] font-medium">
                     {{ portal_content('how-it-works', 'fulfilment-model', 'description',
-                        'You can fulfil orders yourself (FBP) or leave it to noon with Fulfilled by noon (FBN).',
-                        'يمكنك تنفيذ الطلبات بنفسك (FBP) أو ترك المهمة لنون من خلال التنفيذ من قِبل نون (FBN).') }}
+                        'You can fulfil orders yourself (FBP) or leave it to Nawy with Fulfilled by Nawy (FBN).',
+                        'يمكنك تنفيذ الطلبات بنفسك (FBP) أو ترك المهمة لناوي من خلال التنفيذ من قِبل ناوي (FBN).') }}
                 </p>
                 <p class="text-[#0F807E] font-black text-xs uppercase tracking-wider mt-5">{{ portal_content('how-it-works', 'fulfilment-model', 'tip_label', 'Pro tip:', 'نصيحة احترافية:') }}</p>
                 <p class="text-gray-300 text-[14px] font-medium">

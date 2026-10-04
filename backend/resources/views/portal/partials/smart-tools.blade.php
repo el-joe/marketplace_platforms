@@ -13,12 +13,12 @@
                     [
                         'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-01.jpg',
                         'title' => portal_content('home', 'smart_tools_teaser_item_1', 'title', 'Ads that deliver results', 'إعلانات تحقق نتائج'),
-                        'desc' => portal_content('home', 'smart_tools_teaser_item_1', 'description', 'Use noon Ads, our in-house advertising suite, to put your products in front of more customers.', 'استفد من إعلانات نون، مجموعتنا الإعلانية الداخلية لعرض منتجاتك أمام المزيد من العملاء.'),
+                        'desc' => portal_content('home', 'smart_tools_teaser_item_1', 'description', 'Use Nawy Ads, our in-house advertising suite, to put your products in front of more customers.', 'استفد من إعلانات ناوي، مجموعتنا الإعلانية الداخلية لعرض منتجاتك أمام المزيد من العملاء.'),
                     ],
                     [
                         'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbp.jpg',
                         'title' => portal_content('home', 'smart_tools_teaser_item_2', 'title', 'Know your costs', 'اعرف تكاليفك'),
-                        'desc' => portal_content('home', 'smart_tools_teaser_item_2', 'description', 'With noon\'s competitive, transparent fee structure, you\'ll always know what you\'ll earn - no surprises, just growth', 'مع هيكل الرسوم التنافسي والشفاف من نون، ستعرف دائمًا ما ستكسبه - لا مفاجآت، فقط نمو'),
+                        'desc' => portal_content('home', 'smart_tools_teaser_item_2', 'description', 'With Nawy\'s competitive, transparent fee structure, you\'ll always know what you\'ll earn - no surprises, just growth', 'مع هيكل الرسوم التنافسي والشفاف من ناوي، ستعرف دائمًا ما ستكسبه - لا مفاجآت، فقط نمو'),
                     ],
                     [
                         'image' => asset('images/nawy_ui.jpeg'),

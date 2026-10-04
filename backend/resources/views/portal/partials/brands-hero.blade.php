@@ -26,10 +26,10 @@
                     {{ portal_content('advertise-brands', 'hero', 'eyebrow', 'Brands', 'العلامات التجارية') }}
                 </p>
                 <p class="text-gray-600 font-medium text-base sm:text-lg max-w-[52ch] mx-auto lg:mx-0">
-                    {{ portal_content('advertise-brands', 'hero', 'subtitle', 'Boost your brand awareness, reach large audiences, and connect with customers by leveraging noon ads strategic products.', 'قم بتعزيز الوعي بعلامتك التجارية، والوصول إلى عملاء أكثر، والتواصل مع العملاء من خلال الاستفادة من المنتجات الإستراتيجية لإعلانات نون') }}
+                    {{ portal_content('advertise-brands', 'hero', 'subtitle', 'Boost your brand awareness, reach large audiences, and connect with customers by leveraging Nawy ads strategic products.', 'قم بتعزيز الوعي بعلامتك التجارية، والوصول إلى عملاء أكثر، والتواصل مع العملاء من خلال الاستفادة من المنتجات الإستراتيجية لإعلانات ناوي') }}
                 </p>
                 <p class="text-gray-600 font-medium text-base sm:text-lg max-w-[52ch] mx-auto lg:mx-0 mt-3">
-                    {{ portal_content('advertise-brands', 'hero', 'subtitle_2', 'Video Ads are now available on noon ads! Take your advertising to the next level by enhancing user browsing experience with a 6 to 45 second video.', 'الإعلانات الفيديوية متاحة الآن على إعلانات العلامة التجارية! ارتق بإعلاناتك إلى المستوى التالي من خلال تحسين تصفح المستخدمين بفيديو يتراوح مدته بين 6 إلى 45 ثانية.') }}
+                    {{ portal_content('advertise-brands', 'hero', 'subtitle_2', 'Video Ads are now available on Nawy ads! Take your advertising to the next level by enhancing user browsing experience with a 6 to 45 second video.', 'الإعلانات الفيديوية متاحة الآن على إعلانات العلامة التجارية! ارتق بإعلاناتك إلى المستوى التالي من خلال تحسين تصفح المستخدمين بفيديو يتراوح مدته بين 6 إلى 45 ثانية.') }}
                 </p>
                 <a href="{{ $brandsHeroCta['url'] }}"
                     class="mt-6 inline-flex items-center justify-center bg-[#0F807E] hover:bg-[#0c6665] text-white

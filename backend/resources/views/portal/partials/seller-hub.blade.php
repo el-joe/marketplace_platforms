@@ -12,7 +12,7 @@
         <div class="pt-8 px-5 pb-8 md:p-0 md:mt-8 lg:mt-0 max-w-[60ch]">
             <p class="text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('how-it-works', 'seller-hub', 'eyebrow', 'Seller Hub', 'مركز البائعين') }}</p>
             <h2 class="text-white font-black text-xl lg:text-2xl mt-1 mb-6">
-                {{ portal_content('how-it-works', 'seller-hub', 'title', 'Your command centre for selling on noon', 'مركز قيادتك للبيع على نون') }}
+                {{ portal_content('how-it-works', 'seller-hub', 'title', 'Your command centre for selling on Nawy', 'مركز قيادتك للبيع على ناوي') }}
             </h2>
 
             <ul class="space-y-4 mb-8">
@@ -44,8 +44,8 @@
 
             <p class="text-gray-300 text-[15px] font-medium">
                 {{ portal_content('how-it-works', 'seller-hub', 'footer_note',
-                    "You'll also get our comprehensive seller guide, designed to support you from your first steps to confidently running your business on noon.",
-                    'ستحصل أيضًا على دليل البائع القوي الخاص بنا، المصمم لدعمك من خطواتك الأولى وحتى إدارة عملك بثقة على نون.') }}
+                    "You'll also get our comprehensive seller guide, designed to support you from your first steps to confidently running your business on Nawy.",
+                    'ستحصل أيضًا على دليل البائع القوي الخاص بنا، المصمم لدعمك من خطواتك الأولى وحتى إدارة عملك بثقة على ناوي.') }}
             </p>
         </div>
     </div>

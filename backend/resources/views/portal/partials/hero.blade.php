@@ -26,7 +26,7 @@
             <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
                 <div class="max-w-[480px] {{ $isAr ? 'text-right' : 'text-left' }}" x-data="{
                     line1: @js(portal_content('home', 'hero', 'title_line1', 'Start selling on', 'ابدأ البيع على')),
-                    line2: @js(portal_content('home', 'hero', 'title_line2', 'noon today!', 'نون اليوم!')),
+                    line2: @js(portal_content('home', 'hero', 'title_line2', 'Nawy today!', 'ناوي اليوم!')),
                     displayed1: '',
                     displayed2: '',
                     typewriter() {
@@ -48,7 +48,7 @@
                         <span
                             class="opacity-0 block">{{ portal_content('home', 'hero', 'title_line1', 'Start selling on', 'ابدأ البيع على') }}</span>
                         <span
-                            class="opacity-0 block">{{ portal_content('home', 'hero', 'title_line2', 'noon today!', 'نون اليوم!') }}</span>
+                            class="opacity-0 block">{{ portal_content('home', 'hero', 'title_line2', 'Nawy today!', 'ناوي اليوم!') }}</span>
                         <div class="absolute top-0 {{ $isAr ? 'right-0' : 'left-0' }} w-full flex flex-col">
                             <span x-text="displayed1"></span>
                             <span x-text="displayed2"></span>

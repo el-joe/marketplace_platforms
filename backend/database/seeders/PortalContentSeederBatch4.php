@@ -26,14 +26,14 @@ class PortalContentSeederBatch4 extends Seeder
         $rows = [];
 
         // ─── page_key = 'blog' ──────────────────────────────────────────────
-        $rows[] = ['blog', 'header', 'eyebrow', 'text', 'Noon Sellers Blog', 'مدونة نون للبائعين', null, 1];
-        $rows[] = ['blog', 'header', 'subtitle', 'text', 'News, guides and tips from the Noon platform', 'أخبار وتوجيهات ونصائح من منصة نون', null, 2];
+        $rows[] = ['blog', 'header', 'eyebrow', 'text', 'Nawy Sellers Blog', 'مدونة ناوي للبائعين', null, 1];
+        $rows[] = ['blog', 'header', 'subtitle', 'text', 'News, guides and tips from the Nawy platform', 'أخبار وتوجيهات ونصائح من منصة ناوي', null, 2];
         $rows[] = ['blog', 'show', 'attachments_label', 'text', 'Attachments', 'المرفقات', null, 10];
         $rows[] = ['blog', 'show', 'views_label', 'text', 'views', 'مشاهدة', null, 11];
 
         // ─── page_key = 'helpcenter' ────────────────────────────────────────
-        $rows[] = ['helpcenter', 'index', 'page_title', 'text', 'noon Seller Help Center', 'مركز مساعدة البائع', null, 1];
-        $rows[] = ['helpcenter', 'index', 'page_description', 'text', 'noon Seller Help Center', 'مركز مساعدة البائع في نون', null, 2];
+        $rows[] = ['helpcenter', 'index', 'page_title', 'text', 'Nawy Seller Help Center', 'مركز مساعدة البائع', null, 1];
+        $rows[] = ['helpcenter', 'index', 'page_description', 'text', 'Nawy Seller Help Center', 'مركز مساعدة البائع في ناوي', null, 2];
         $rows[] = ['helpcenter', 'index', 'article_word', 'text', 'article', 'مقالة', null, 3];
         $rows[] = ['helpcenter', 'index', 'no_categories', 'text', 'No categories yet.', 'لا توجد فئات بعد.', null, 4];
         $rows[] = ['helpcenter', 'index', 'learn_more', 'text', 'Learn more', 'اطّلع أكثر', null, 5];
@@ -49,7 +49,7 @@ class PortalContentSeederBatch4 extends Seeder
         $rows[] = ['helpcenter', 'article', 'feedback_prompt', 'text', 'Did this answer your question?', 'هل أجاب هذا المقال على سؤالك؟', null, 24];
 
         $rows[] = ['helpcenter', 'search', 'results_word', 'text', 'Search results', 'نتائج البحث', null, 30];
-        $rows[] = ['helpcenter', 'search', 'page_title', 'text', 'noon Seller Help Center', 'مركز مساعدة البائع', null, 31];
+        $rows[] = ['helpcenter', 'search', 'page_title', 'text', 'Nawy Seller Help Center', 'مركز مساعدة البائع', null, 31];
         $rows[] = ['helpcenter', 'search', 'results_for', 'text', 'Search results for', 'نتائج البحث عن', null, 32];
         $rows[] = ['helpcenter', 'search', 'no_results', 'text', 'No matching articles found.', 'لم يتم العثور على نتائج مطابقة.', null, 33];
 
@@ -61,7 +61,7 @@ class PortalContentSeederBatch4 extends Seeder
         $rows[] = ['helpcenter', 'header', 'hero_title', 'text', 'Hi, how can we help you?', 'مرحباً، كيف يمكننا مساعدتك؟', null, 45];
         $rows[] = ['helpcenter', 'header', 'search_placeholder', 'text', 'Search for articles...', 'ابحث في المقالات...', null, 46];
 
-        $rows[] = ['helpcenter', 'footer', 'brand_label', 'text', 'noon Seller Help Center', 'مركز مساعدة البائع', null, 50];
+        $rows[] = ['helpcenter', 'footer', 'brand_label', 'text', 'Nawy Seller Help Center', 'مركز مساعدة البائع', null, 50];
         $rows[] = ['helpcenter', 'footer', 'support_heading', 'text', 'Support', 'الدعم', null, 51];
         $rows[] = ['helpcenter', 'footer', 'contact_us', 'link', 'Contact us', 'تواصل معنا', 'mailto:seller@noon.com', 52];
         $rows[] = ['helpcenter', 'footer', 'related_links_heading', 'text', 'Related Links', 'روابط ذات صلة', null, 53];

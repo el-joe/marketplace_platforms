@@ -10,13 +10,13 @@
          style="background-image: radial-gradient(circle at 20% 20%, #F59E0B 0%, transparent 35%);"></div>
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <span class="inline-block text-xs font-bold tracking-widest uppercase text-[#0F807E] mb-3">
-            {{ portal_content('blog', 'header', 'eyebrow', 'Noon Sellers Blog', 'مدونة نون للبائعين') }}
+            {{ portal_content('blog', 'header', 'eyebrow', 'Nawy Sellers Blog', 'مدونة ناوي للبائعين') }}
         </span>
         <h1 class="text-4xl sm:text-5xl font-black text-white leading-tight">
             {{ __('portal.blog.title') }}
         </h1>
         <p class="text-gray-400 mt-3 text-lg max-w-2xl">
-            {{ portal_content('blog', 'header', 'subtitle', 'News, guides and tips from the Noon platform', 'أخبار وتوجيهات ونصائح من منصة نون') }}
+            {{ portal_content('blog', 'header', 'subtitle', 'News, guides and tips from the Nawy platform', 'أخبار وتوجيهات ونصائح من منصة ناوي') }}
         </p>
 
         <form method="GET" action="{{ route('portal.blog.index') }}" class="mt-8 flex gap-3 max-w-xl">

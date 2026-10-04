@@ -3,14 +3,14 @@
 <section class="relative overflow-hidden bg-gray-900">
     {{-- Mobile: near full-viewport hero --}}
     <div class="h-[calc(100svh_-_72px)] md:hidden relative">
-        @php($heroImgMobile = portal_image('how-it-works', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'noon employees working', 'موظفو نون في العمل'))
+        @php($heroImgMobile = portal_image('how-it-works', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'Nawy employees working', 'موظفو ناوي في العمل'))
         <img src="{{ $heroImgMobile['src'] }}" alt="{{ $heroImgMobile['alt'] }}"
             class="absolute inset-0 w-full h-full object-cover {{ $isAr ? '-scale-x-100' : '' }}">
     </div>
 
     {{-- Desktop: fixed-height hero --}}
     <div class="hidden md:block h-[444px] relative">
-        @php($heroImgDesktop = portal_image('how-it-works', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'noon employees working', 'موظفو نون في العمل'))
+        @php($heroImgDesktop = portal_image('how-it-works', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'Nawy employees working', 'موظفو ناوي في العمل'))
         <img src="{{ $heroImgDesktop['src'] }}" alt="{{ $heroImgDesktop['alt'] }}"
             class="absolute inset-0 w-full h-full object-cover object-[right_center] lg:object-center {{ $isAr ? '-scale-x-100' : '' }}">
     </div>
@@ -28,7 +28,7 @@
                 <h1 class="text-white font-black leading-[1.1] text-[40px] sm:text-[44px] md:text-[50px]">
                     {{ portal_content('how-it-works', 'hero', 'title_line1', 'Welcome to', 'مرحبا بك في') }}
                     <span
-                        class="block text-[#0F807E]">{{ portal_content('how-it-works', 'hero', 'title_line2', 'selling on noon!', 'البيع على نون!') }}</span>
+                        class="block text-[#0F807E]">{{ portal_content('how-it-works', 'hero', 'title_line2', 'selling on Nawy!', 'البيع على ناوي!') }}</span>
                 </h1>
                 <p class="mt-3 text-gray-200 font-semibold text-[16px] md:text-[18px] max-w-[500px] leading-relaxed">
                     {{ portal_content(

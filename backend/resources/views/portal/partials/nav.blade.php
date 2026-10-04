@@ -34,8 +34,8 @@
             'route' => 'portal.fulfillment',
             'submenu' => [
                 [
-                    'label_ar' => 'مشحون من نون (FBN)',
-                    'label_en' => 'Fulfilled by noon (FBN)',
+                    'label_ar' => 'مشحون من ناوي (FBN)',
+                    'label_en' => 'Fulfilled by Nawy (FBN)',
                     'route' => route('portal.fulfillment') . '#fbn',
                 ],
                 [
@@ -52,13 +52,13 @@
             'route' => 'portal.smart-tools',
             'submenu' => [
                 [
-                    'label_ar' => 'الإعلان على نون',
-                    'label_en' => 'Advertising on noon',
+                    'label_ar' => 'الإعلان على ناوي',
+                    'label_en' => 'Advertising on Nawy',
                     'route' => route('portal.smart-tools') . '#ads',
                 ],
                 [
-                    'label_ar' => 'هيكل رسوم نون',
-                    'label_en' => 'noon\'s Fee Structure',
+                    'label_ar' => 'هيكل رسوم ناوي',
+                    'label_en' => 'Nawy\'s Fee Structure',
                     'route' => route('portal.smart-tools') . '#fees',
                 ],
                 [

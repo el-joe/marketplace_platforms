@@ -13,7 +13,7 @@
         ],
         [
             'title' => portal_content('advertise-brands', 'solutions_item_2', 'title', 'Brand Ads', 'إعلانات العلامة التجارية'),
-            'desc' => portal_content('advertise-brands', 'solutions_item_2', 'description', "Promote your products and brand in a visually appealing and prominent way within noon's browse, search, and relevant product detail pages. Display multiple products within one ad, showcasing a wider range of offerings and potentially attracting a broader audience.", 'قم بالترويج لمنتجاتك وعلامتك التجارية بطريقة بصرية جذابة وبارزة داخل صفحات نون للتصفح، البحث، وصفحات تفاصيل المنتج ذات الصلة. بمكنك أيضًا عرض منتجات متعددة داخل إعلان واحد، لإبراز مجموعة واسعة من منتجاتك وجذب جمهور أكبر.'),
+            'desc' => portal_content('advertise-brands', 'solutions_item_2', 'description', "Promote your products and brand in a visually appealing and prominent way within Nawy's browse, search, and relevant product detail pages. Display multiple products within one ad, showcasing a wider range of offerings and potentially attracting a broader audience.", 'قم بالترويج لمنتجاتك وعلامتك التجارية بطريقة بصرية جذابة وبارزة داخل صفحات ناوي للتصفح، البحث، وصفحات تفاصيل المنتج ذات الصلة. بمكنك أيضًا عرض منتجات متعددة داخل إعلان واحد، لإبراز مجموعة واسعة من منتجاتك وجذب جمهور أكبر.'),
             'link' => portal_link('advertise-brands', 'solutions_item_2', 'link', 'Learn More', 'اعرف أكثر', route('portal.advertise.brands', $country)),
             'internal' => true,
             'image' => portal_image('advertise-brands', 'solutions_item_2', 'image', 'https://advertise.noon.com/images/brandproduct_ar.png', 'Brand Ads', 'إعلانات العلامة التجارية'),
@@ -27,7 +27,7 @@
         ],
         [
             'title' => portal_content('advertise-brands', 'solutions_item_4', 'title', 'Managed Display Ads', 'إدارة العرض'),
-            'desc' => portal_content('advertise-brands', 'solutions_item_4', 'description', 'Obtain additional support from noon ads specialists to access premium onsite placements and reach wider audiences with the support of our specialist.', 'احصل على دعم إضافي من متخصصي إعلانات نون للوصول إلى مواضع متميزة في الموقع والوصول إلى جماهير أوسع بدعم من متخصصينا'),
+            'desc' => portal_content('advertise-brands', 'solutions_item_4', 'description', 'Obtain additional support from Nawy ads specialists to access premium onsite placements and reach wider audiences with the support of our specialist.', 'احصل على دعم إضافي من متخصصي إعلانات ناوي للوصول إلى مواضع متميزة في الموقع والوصول إلى جماهير أوسع بدعم من متخصصينا'),
             'link' => portal_link('advertise-brands', 'solutions_item_4', 'link', 'Contact us to learn more', 'اتصل بنا لمعرفة المزيد', route('portal.advertise.request', $country)),
             'internal' => true,
             'image' => portal_image('advertise-brands', 'solutions_item_4', 'image', 'https://advertise.noon.com/images/managedDisplayAds_ar.png', 'Managed Display Ads', 'إدارة العرض'),

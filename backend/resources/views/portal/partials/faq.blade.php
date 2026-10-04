@@ -13,7 +13,7 @@
                 {{ portal_content('faq', 'header', 'title', 'Questions Sellers Ask', 'أسئلة يسألها البائعون') }}
             </h2>
             <p class="mt-4 text-gray-400">
-                {{ portal_content('faq', 'header', 'subtitle', 'Answers to the most common questions about selling on Noon.', 'إجابات لأكثر الأسئلة شيوعاً حول البيع على نون.') }}
+                {{ portal_content('faq', 'header', 'subtitle', 'Answers to the most common questions about selling on Nawy.', 'إجابات لأكثر الأسئلة شيوعاً حول البيع على ناوي.') }}
             </p>
         </div>
 

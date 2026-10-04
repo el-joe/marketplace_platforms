@@ -3,14 +3,14 @@
 <section class="relative overflow-hidden bg-gray-900">
     {{-- Mobile: near full-viewport hero --}}
     <div class="h-[calc(100svh_-_72px)] md:hidden relative">
-        @php($fulfillmentHeroImgMobile = portal_image('fulfillment', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'A noon warehouse', 'مستودع نون'))
+        @php($fulfillmentHeroImgMobile = portal_image('fulfillment', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'A Nawy warehouse', 'مستودع ناوي'))
         <img src="{{ $fulfillmentHeroImgMobile['src'] }}" alt="{{ $fulfillmentHeroImgMobile['alt'] }}"
             class="absolute inset-0 w-full h-full object-cover {{ $isAr ? '-scale-x-100' : '' }}">
     </div>
 
     {{-- Desktop: fixed-height hero, image anchored to one side --}}
     <div class="hidden md:flex md:justify-end h-[444px] relative">
-        @php($fulfillmentHeroImgDesktop = portal_image('fulfillment', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'A noon warehouse', 'مستودع نون'))
+        @php($fulfillmentHeroImgDesktop = portal_image('fulfillment', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'A Nawy warehouse', 'مستودع ناوي'))
         <img src="{{ $fulfillmentHeroImgDesktop['src'] }}" alt="{{ $fulfillmentHeroImgDesktop['alt'] }}"
             class="h-full w-full max-w-none object-cover object-center lg:w-[80%] xl:w-[70%] xl:object-[100%_25%] {{ $isAr ? '-scale-x-100' : '' }}">
     </div>
@@ -38,8 +38,8 @@
                         'fulfillment',
                         'hero',
                         'description',
-                        'Fulfilled by noon (FBN) or Fulfilled by Partner (FBP).<br class="hidden md:block"> Either way, we\'ll help you deliver fast.',
-                        'التنفيذ من قبل نون (FBN) أو التنفيذ من قبل الشريك (FBP). في كل الحالتين، نساعدك على التوصيل بسرعة.',
+                        'Fulfilled by Nawy (FBN) or Fulfilled by Partner (FBP).<br class="hidden md:block"> Either way, we\'ll help you deliver fast.',
+                        'التنفيذ من قبل ناوي (FBN) أو التنفيذ من قبل الشريك (FBP). في كل الحالتين، نساعدك على التوصيل بسرعة.',
                     ) !!}
                 </p>
                 @php($watchVideoCta = portal_link('fulfillment', 'hero', 'cta_button', 'Watch Video', 'شاهد الفيديو', 'https://youtu.be/rm45BkhIBxY'))

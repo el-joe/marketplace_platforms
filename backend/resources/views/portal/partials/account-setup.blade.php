@@ -49,8 +49,8 @@
                     'text_en' => portal_content('account_setup', 'step_2', 'item_3_text', 'Verify them', 'قم بالتحقق منها'),
                 ],
             ],
-            'after_list_text_ar' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the noon family', 'وهكذا، أصبحت الآن جزءاً من عائلة نون'),
-            'after_list_text_en' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the noon family', 'وهكذا، أصبحت الآن جزءاً من عائلة نون'),
+            'after_list_text_ar' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the Nawy family', 'وهكذا، أصبحت الآن جزءاً من عائلة ناوي'),
+            'after_list_text_en' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the Nawy family', 'وهكذا، أصبحت الآن جزءاً من عائلة ناوي'),
         ],
         [
             'title_ar' => portal_content('account_setup', 'step_3', 'title', 'Set up your store', 'إعداد متجرك'),
@@ -63,8 +63,8 @@
                     'text_en' => portal_content('account_setup', 'step_3', 'paragraph_1', 'Create your store for the country that you wish to sell in and add your business documents for a quick and seamless approval', 'قم بإنشاء متجرك للبلد الذي ترغب في البيع فيه وأضف مستندات عملك للحصول على موافقة سريعة وسلسة'),
                 ],
                 [
-                    'text_ar' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything noon', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بنون'),
-                    'text_en' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything noon', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بنون'),
+                    'text_ar' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything Nawy', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بناوي'),
+                    'text_en' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything Nawy', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بناوي'),
                 ],
             ],
         ],

@@ -6,7 +6,7 @@
     $solutions = [
         [
             'title' => portal_content('advertise-advertisers', 'solutions_item_1', 'title', 'Managed Display Ads', 'إدارة العرض'),
-            'desc' => portal_content('advertise-advertisers', 'solutions_item_1', 'description', 'Obtain additional support from noon ads specialists to access premium onsite placements and reach wider audiences with the support of our specialist.', 'احصل على دعم إضافي من متخصصي إعلانات نون للوصول إلى مواضع متميزة في الموقع والوصول إلى جماهير أوسع بدعم من متخصصينا'),
+            'desc' => portal_content('advertise-advertisers', 'solutions_item_1', 'description', 'Obtain additional support from Nawy ads specialists to access premium onsite placements and reach wider audiences with the support of our specialist.', 'احصل على دعم إضافي من متخصصي إعلانات ناوي للوصول إلى مواضع متميزة في الموقع والوصول إلى جماهير أوسع بدعم من متخصصينا'),
             'link' => portal_link('advertise-advertisers', 'solutions_item_1', 'link', 'Contact us to learn more', 'اتصل بنا لمعرفة المزيد', route('portal.advertise.request', $country)),
             'internal' => true,
             'image' => portal_image('advertise-advertisers', 'solutions_item_1', 'image', 'https://advertise.noon.com/images/managedDisplayAds_ar.png', 'Managed Display Ads', 'إدارة العرض'),

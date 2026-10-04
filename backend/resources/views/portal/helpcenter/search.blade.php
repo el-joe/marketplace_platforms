@@ -2,7 +2,7 @@
 
 @php $isAr = app()->getLocale() === 'ar'; @endphp
 
-@section('title', portal_content('helpcenter', 'search', 'results_word', 'Search results', 'نتائج البحث') . ' | ' . portal_content('helpcenter', 'search', 'page_title', 'noon Seller Help Center', 'مركز مساعدة البائع'))
+@section('title', portal_content('helpcenter', 'search', 'results_word', 'Search results', 'نتائج البحث') . ' | ' . portal_content('helpcenter', 'search', 'page_title', 'Nawy Seller Help Center', 'مركز مساعدة البائع'))
 
 @section('header')
     @include('portal.partials.helpcenter-header', ['variant' => 'home', 'country' => $country])

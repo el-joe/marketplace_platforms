@@ -54,7 +54,7 @@
         </div>
         <div class="pt-8 px-6 pb-8 md:pt-10 md:px-10 md:pb-10">
             <h3 class="text-white font-black text-xl lg:text-2xl text-pretty leading-tight">
-                {{ portal_content('advertise-product', 'listings', 'catalog_title', "Listing your products on noon is easy with our powerful 'My catalog' tool.", 'إدراج منتجاتك على نون سهل جداً مع أداة "كتالوجي" القوية.') }}
+                {{ portal_content('advertise-product', 'listings', 'catalog_title', "Listing your products on Nawy is easy with our powerful 'My catalog' tool.", 'إدراج منتجاتك على ناوي سهل جداً مع أداة "كتالوجي" القوية.') }}
             </h3>
             <p class="mt-4 text-gray-300 text-[14px] font-medium">
                 {{ portal_content('advertise-product', 'listings', 'catalog_subtitle', 'Enriching your catalog boosts discovery and conversion of your products.', 'إثراء الكتالوج الخاص بك يعزز اكتشاف منتجاتك ويزيد من نسبة التحويل.') }}
@@ -100,7 +100,7 @@
                     {{ portal_content('advertise-product', 'listings', 'brand_own_eyebrow', 'Own a brand or represent one?', 'تملك علامة تجارية أو تمثل واحدة؟') }}
                 </p>
                 <h4 class="text-white font-black text-lg mt-1 mb-6 text-pretty">
-                    {{ portal_content('advertise-product', 'listings', 'brand_registry_intro', 'noon\'s brand registry gives you the tools to protect your intellectual property rights and build trust with customers.', 'يمنحك سجل العلامات التجارية في نون الأدوات لحماية حقوق الملكية الفكرية وبناء الثقة مع العملاء.') }}
+                    {{ portal_content('advertise-product', 'listings', 'brand_registry_intro', 'Nawy\'s brand registry gives you the tools to protect your intellectual property rights and build trust with customers.', 'يمنحك سجل العلامات التجارية في ناوي الأدوات لحماية حقوق الملكية الفكرية وبناء الثقة مع العملاء.') }}
                 </h4>
 
                 <h5 class="text-[#0F807E] font-black text-sm mb-2">{{ portal_content('advertise-product', 'listings', 'authorised_agent_title', 'Authorised agent?', 'وكيل معتمد؟') }}</h5>

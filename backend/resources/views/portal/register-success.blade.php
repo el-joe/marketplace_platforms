@@ -2,7 +2,7 @@
 
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-@section('title', portal_content('register', 'success', 'page_title', 'Application Submitted — noon for Sellers', 'تم إرسال طلبك — نون للبائعين'))
+@section('title', portal_content('register', 'success', 'page_title', 'Application Submitted — Nawy for Sellers', 'تم إرسال طلبك — ناوي للبائعين'))
 
 @section('content')
     <div class="min-h-screen bg-gray-950 flex items-center justify-center py-16 px-4" dir="{{ $isAr ? 'rtl' : 'ltr' }}">

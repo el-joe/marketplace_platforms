@@ -18,7 +18,7 @@
             </p>
             <ul class="space-y-3 mb-8">
                 @foreach([
-                    [portal_content('home', 'fulfillment_teaser', 'item_1', 'Fulfilled by noon — Built for speed', 'التنفيذ من قبل نون — مصمم للسرعة')],
+                    [portal_content('home', 'fulfillment_teaser', 'item_1', 'Fulfilled by Nawy — Built for speed', 'التنفيذ من قبل ناوي — مصمم للسرعة')],
                     [portal_content('home', 'fulfillment_teaser', 'item_2', 'Fulfilled by Partner — Built for flexibility', 'التنفيذ من قبل الشريك — مصمم للمرونة')],
                 ] as $item)
                     <li class="flex items-start gap-3 text-gray-200 text-[15px]">

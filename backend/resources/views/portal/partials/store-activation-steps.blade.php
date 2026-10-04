@@ -27,7 +27,7 @@
             </div>
             <div class="pt-8 px-6 pb-10 md:px-0 md:py-6">
                 <h3 class="text-white font-black text-xl lg:text-2xl">
-                    {{ portal_content('how-it-works', 'steps', 'subtitle', 'Start selling on noon in three easy steps', 'ابدأ البيع على نون بثلاث خطوات سهلة') }}
+                    {{ portal_content('how-it-works', 'steps', 'subtitle', 'Start selling on Nawy in three easy steps', 'ابدأ البيع على ناوي بثلاث خطوات سهلة') }}
                 </h3>
 
                 <ul class="mt-6 space-y-3">
