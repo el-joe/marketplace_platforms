@@ -8,7 +8,7 @@
 
     {{-- Loading state --}}
     <div x-show="docTypesLoading" class="flex items-center gap-3 text-sm text-gray-400 py-6 justify-center" x-cloak>
-        <svg class="animate-spin w-5 h-5 text-[#feee00]" viewBox="0 0 24 24" fill="none">
+        <svg class="animate-spin w-5 h-5 text-[#0F807E]" viewBox="0 0 24 24" fill="none">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
         </svg>
@@ -107,7 +107,7 @@
             <p x-show="docErrors[doc.code]" x-text="docErrors[doc.code]" class="mt-1 text-xs text-red-400" x-cloak></p>
 
             {{-- Upload progress --}}
-            <div x-show="docUploading[doc.code]" class="mt-2 flex items-center gap-2 text-xs text-[#feee00]" x-cloak>
+            <div x-show="docUploading[doc.code]" class="mt-2 flex items-center gap-2 text-xs text-[#0F807E]" x-cloak>
                 <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>

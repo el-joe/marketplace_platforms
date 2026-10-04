@@ -20,7 +20,7 @@
                     <img src="{{ $formIcon['src'] }}" alt="{{ $formIcon['alt'] }}"
                          loading="lazy" class="w-9 h-9 object-contain">
                 </div>
-                <p class="text-yellow-500 font-black text-xs sm:text-sm uppercase tracking-wider mb-3">
+                <p class="text-[#0F807E] font-black text-xs sm:text-sm uppercase tracking-wider mb-3">
                     {{ portal_content('advertise-request', 'form', 'eyebrow', 'Contact us', 'اتصل بنا') }}
                 </p>
                 <h1 class="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-gray-900 mb-4 text-pretty">
@@ -105,7 +105,7 @@
                     </div>
 
                     <button type="submit"
-                            class="w-full inline-flex items-center justify-center bg-[#feee00] hover:bg-[#e5d600] text-black
+                            class="w-full inline-flex items-center justify-center bg-[#0F807E] hover:bg-[#0c6665] text-white
                                    font-black text-sm sm:text-base px-6 py-3 rounded-full transition-colors">
                         {{ portal_content('advertise-request', 'form', 'submit_button', 'Submit', 'قدّم') }}
                     </button>

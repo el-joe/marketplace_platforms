@@ -2,7 +2,7 @@
 
 <section>
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-[#feee00] font-bold text-[28px] lg:text-[36px] mb-8">{{ portal_content('home', 'testimonials', 'heading', 'Testimonials', 'شهادات') }}</h2>
+        <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-8">{{ portal_content('home', 'testimonials', 'heading', 'Testimonials', 'شهادات') }}</h2>
 
         {{-- Featured video story --}}
         <div class="grid md:grid-cols-2 gap-8 lg:gap-16 items-center mb-10">
@@ -12,14 +12,14 @@
                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
             <div>
-                <p class="text-[#feee00] font-black uppercase tracking-wide text-xs mb-2">{{ portal_content('home', 'testimonials', 'eyebrow', 'Seller success story', 'قصة نجاح بائع') }}</p>
+                <p class="text-[#0F807E] font-black uppercase tracking-wide text-xs mb-2">{{ portal_content('home', 'testimonials', 'eyebrow', 'Seller success story', 'قصة نجاح بائع') }}</p>
                 <h3 class="text-white font-black text-lg lg:text-2xl leading-snug mb-4 text-pretty">
                     {{ portal_content('home', 'testimonials', 'featured_title', 'PAN Home chose noon\'s Fulfilled by Partner (FBP) model — and became the #1 furniture seller in the region.', 'اختارت بان هوم نموذج التوصيل عن طريق البائع (FBP) من نون — وأصبحت البائع رقم 1 للأثاث في المنطقة.') }}
                 </h3>
                 <p class="text-gray-400 text-[15px] mb-4">
                     {{ portal_content('home', 'testimonials', 'featured_subtitle', 'Discover how dedicated support, tailored account management, and powerful tools helped drive their success.', 'اكتشف كيف ساعد الدعم المخصص، والإدارة المصممة خصيصا، والأدوات القوية في تحقيق نجاحهم.') }}
                 </p>
-                <p class="text-xs font-bold text-[#feee00] tracking-wide">- {{ portal_content('home', 'testimonials', 'featured_name', 'PAN Home', 'بان هوم') }}</p>
+                <p class="text-xs font-bold text-[#0F807E] tracking-wide">- {{ portal_content('home', 'testimonials', 'featured_name', 'PAN Home', 'بان هوم') }}</p>
             </div>
         </div>
 
@@ -86,7 +86,7 @@
                             {{ $tQuote }}
                         </p>
                         <p class="text-white text-xs font-extrabold mt-3">{{ $tName }}</p>
-                        <p class="text-[#feee00] text-xs font-extrabold">{{ $tCompany }}</p>
+                        <p class="text-[#0F807E] text-xs font-extrabold">{{ $tCompany }}</p>
                     </div>
                 </div>
             @endforeach

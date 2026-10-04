@@ -1,7 +1,7 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
 <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 mt-4 lg:mt-0">
-    <h2 class="text-[#feee00] font-bold text-[28px] lg:text-[36px] mb-4 lg:mb-5">
+    <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-4 lg:mb-5">
         {{ portal_content('how-it-works', 'why-sell', 'title', 'Why Join Us?', 'لماذا تنضم إلينا؟') }}
     </h2>
 

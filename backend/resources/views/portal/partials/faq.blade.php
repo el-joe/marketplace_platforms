@@ -5,7 +5,7 @@
 
         {{-- Section header --}}
         <div class="text-center mb-16">
-            <span class="inline-block bg-[#feee00]/10 border border-[#feee00]/30 text-[#feee00]
+            <span class="inline-block bg-[#0F807E]/10 border border-[#feee00]/30 text-[#0F807E]
                          text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
                 {{ portal_content('faq', 'header', 'eyebrow', 'FAQ', 'الأسئلة الشائعة') }}
             </span>
@@ -28,12 +28,12 @@
                             hover:border-gray-600 transition-colors">
                     <button @click="openIndex = openIndex === {{ $idx }} ? null : {{ $idx }}" class="w-full flex items-center justify-between gap-4 px-6 py-5
                                text-{{ $isAr ? 'right' : 'left' }} focus:outline-none group">
-                        <span class="font-semibold text-white group-hover:text-[#feee00] transition-colors">
+                        <span class="font-semibold text-white group-hover:text-[#0F807E] transition-colors">
                             {{ $faq['q'] }}
                         </span>
                         <span class="shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center
-                                     transition-colors group-hover:bg-[#feee00]/20">
-                            <svg class="w-4 h-4 text-gray-400 group-hover:text-[#feee00] transition-all duration-200"
+                                     transition-colors group-hover:bg-[#0F807E]/20">
+                            <svg class="w-4 h-4 text-gray-400 group-hover:text-[#0F807E] transition-all duration-200"
                                 :class="openIndex === {{ $idx }} ? 'rotate-45' : ''" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2.5">
                                 <path d="M12 5v14M5 12h14" />
@@ -62,7 +62,7 @@
                 {{ portal_content('faq', 'contact_cta', 'subtitle', 'Our dedicated support team is available 24/7 to answer all your inquiries.', 'فريق الدعم المخصص لدينا متاح ٢٤/٧ للإجابة على جميع استفساراتك.') }}
             </p>
             @php($contactCta = portal_link('faq', 'contact_cta', 'button', 'Contact Support', 'تواصل مع الدعم', 'mailto:sellers@noon.com'))
-            <a href="{{ $contactCta['url'] }}" class="inline-flex items-center gap-2 bg-[#feee00] hover:bg-[#e5d600] text-gray-950
+            <a href="{{ $contactCta['url'] }}" class="inline-flex items-center gap-2 bg-[#0F807E] hover:bg-[#0c6665] text-gray-950
                       font-bold px-6 py-3 rounded-xl transition-colors">
                 {{ $contactCta['label'] }}
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

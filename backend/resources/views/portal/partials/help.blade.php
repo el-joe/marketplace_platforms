@@ -13,12 +13,12 @@
         <div class="flex flex-wrap justify-center gap-5">
             @php($helpGuideCta = portal_link('home', 'help', 'guide_button', 'Download The Guide', 'حمل الدليل', route('portal.faq')))
             <a href="{{ $helpGuideCta['url'] }}"
-               class="bg-[#feee00] hover:bg-[#e5d600] text-black text-[13px] font-bold px-8 py-3 rounded-full transition-colors tracking-wide">
+               class="bg-[#0F807E] hover:bg-[#0c6665] text-white text-[13px] font-bold px-8 py-3 rounded-full transition-colors tracking-wide">
                 {{ $helpGuideCta['label'] }}
             </a>
             @php($helpTutorialsCta = portal_link('home', 'help', 'tutorials_button', 'Watch The Tutorials', 'شاهد الفيديوهات', route('portal.how-it-works')))
             <a href="{{ $helpTutorialsCta['url'] }}"
-               class="border border-[#feee00] hover:bg-[#feee00]/10 text-[#feee00] text-[13px] font-bold px-8 py-3 rounded-full transition-colors tracking-wide">
+               class="border border-[#feee00] hover:bg-[#0F807E]/10 text-[#0F807E] text-[13px] font-bold px-8 py-3 rounded-full transition-colors tracking-wide">
                 {{ $helpTutorialsCta['label'] }}
             </a>
         </div>

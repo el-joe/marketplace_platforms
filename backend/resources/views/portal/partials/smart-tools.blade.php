@@ -2,7 +2,7 @@
 
 <div class="bg-[#151515] pt-8 pb-10 lg:pt-10 lg:pb-14">
     <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-[#feee00] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('home', 'smart_tools_teaser', 'title', 'Grow smarter', 'نمِّ أعمالك بذكاء') }}</h2>
+        <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('home', 'smart_tools_teaser', 'title', 'Grow smarter', 'نمِّ أعمالك بذكاء') }}</h2>
         <h3 class="text-white font-bold text-[22px] lg:text-[26px] leading-tight mb-8 lg:mb-10">
             {{ portal_content('home', 'smart_tools_teaser', 'subtitle', 'Everything you need to scale and stay ahead', 'كل ما تحتاجه للتوسع والبقاء في الصدارة') }}
         </h3>
@@ -21,7 +21,7 @@
                         'desc' => portal_content('home', 'smart_tools_teaser_item_2', 'description', 'With noon\'s competitive, transparent fee structure, you\'ll always know what you\'ll earn - no surprises, just growth', 'مع هيكل الرسوم التنافسي والشفاف من نون، ستعرف دائمًا ما ستكسبه - لا مفاجآت، فقط نمو'),
                     ],
                     [
-                        'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-hero-092025.jpg',
+                        'image' => asset('images/nawy_ui.jpeg'),
                         'title' => portal_content('home', 'smart_tools_teaser_item_3', 'title', 'Scale with insights', 'توسع مع الرؤى'),
                         'desc' => portal_content('home', 'smart_tools_teaser_item_3', 'description', 'Turn data into smarter decisions with our powerful reporting and insights tools', 'حوّل البيانات إلى قرارات أذكى باستخدام أدوات التقارير والرؤى القوية لدينا'),
                     ],
@@ -47,7 +47,7 @@
 
         <div class="mt-8 flex justify-end">
             @php($smartToolsTeaserCta = portal_link('home', 'smart_tools_teaser', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.smart-tools')))
-            <a href="{{ $smartToolsTeaserCta['url'] }}" class="inline-flex items-center gap-2 text-[#feee00] font-bold text-[15px] hover:text-[#e5d600] transition-colors">
+            <a href="{{ $smartToolsTeaserCta['url'] }}" class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-[15px] hover:text-[#e5d600] transition-colors">
                 {{ $smartToolsTeaserCta['label'] }}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" class="{{ $isAr ? '-scale-x-100' : '' }}">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />

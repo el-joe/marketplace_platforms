@@ -66,7 +66,7 @@
                     </svg>
                 </button>
                 <div class="flex-1 h-1 rounded-full bg-white/30 overflow-hidden">
-                    <div class="h-full bg-[#feee00]" :style="`width: ${progress}%`"></div>
+                    <div class="h-full bg-[#0F807E]" :style="`width: ${progress}%`"></div>
                 </div>
             </div>
         </div>

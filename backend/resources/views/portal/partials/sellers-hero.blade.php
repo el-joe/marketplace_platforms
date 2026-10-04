@@ -4,7 +4,7 @@
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-8 lg:pb-12">
         <div class="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <div class="order-2 lg:order-1 {{ $isAr ? 'text-center lg:text-right' : 'text-center lg:text-left' }}">
-                <p class="text-yellow-500 font-black text-xs sm:text-sm uppercase tracking-wider mb-3">
+                <p class="text-[#0F807E] font-black text-xs sm:text-sm uppercase tracking-wider mb-3">
                     {{ portal_content('sellers', 'hero', 'eyebrow', 'Sellers', 'البائعين') }}
                 </p>
                 <p class="text-gray-600 font-medium text-base sm:text-lg max-w-[52ch] mx-auto lg:mx-0">
@@ -14,13 +14,13 @@
                 </p>
                 @php($sellersHeroCta = portal_link('sellers', 'hero', 'cta_button', 'Start now', 'ابدأ الآن', route('portal.register')))
                 <a href="{{ $sellersHeroCta['url'] }}" target="_blank" rel="noopener"
-                   class="mt-6 inline-flex items-center justify-center bg-[#feee00] hover:bg-[#e5d600] text-black
+                   class="mt-6 inline-flex items-center justify-center bg-[#0F807E] hover:bg-[#0c6665] text-white
                           font-black text-sm sm:text-base px-6 sm:px-8 py-3 rounded-full transition-colors">
                     {{ $sellersHeroCta['label'] }}
                 </a>
             </div>
             <div class="order-1 lg:order-2">
-                @php($sellersHeroImg = portal_image('sellers', 'hero', 'photo', 'https://advertise.noon.com/images/sellers-home.png', 'Sellers', 'البائعين'))
+                @php($sellersHeroImg = portal_image('sellers', 'hero', 'photo', asset('images/nawy_ui.jpeg'), 'Sellers', 'البائعين'))
                 <img src="{{ $sellersHeroImg['src'] }}"
                      alt="{{ $sellersHeroImg['alt'] }}" loading="eager"
                      class="w-full max-w-[420px] sm:max-w-[480px] mx-auto">

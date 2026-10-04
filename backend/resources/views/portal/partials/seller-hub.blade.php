@@ -10,7 +10,7 @@
         </div>
 
         <div class="pt-8 px-5 pb-8 md:p-0 md:mt-8 lg:mt-0 max-w-[60ch]">
-            <p class="text-[#feee00] font-black text-xs uppercase tracking-wider">{{ portal_content('how-it-works', 'seller-hub', 'eyebrow', 'Seller Hub', 'مركز البائعين') }}</p>
+            <p class="text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('how-it-works', 'seller-hub', 'eyebrow', 'Seller Hub', 'مركز البائعين') }}</p>
             <h2 class="text-white font-black text-xl lg:text-2xl mt-1 mb-6">
                 {{ portal_content('how-it-works', 'seller-hub', 'title', 'Your command centre for selling on noon', 'مركز قيادتك للبيع على نون') }}
             </h2>

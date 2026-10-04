@@ -1,7 +1,7 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
 <footer class="text-center">
-    <div class="bg-[#feee00] text-black">
+    <div class="bg-[#0F807E] text-white">
         <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
             <div class="py-12">
                 <p class="font-black text-[11px] uppercase tracking-wider">{{ portal_content('cta_footer', 'main', 'eyebrow', 'Get Started', 'ابدأ الآن') }}</p>

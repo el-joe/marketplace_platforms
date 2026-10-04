@@ -31,7 +31,7 @@
 
 <section class="bg-gray-50 py-12 lg:py-16">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        <p class="text-center text-yellow-500 font-black text-xs sm:text-sm uppercase tracking-wider mb-8 lg:mb-10">
+        <p class="text-center text-[#0F807E] font-black text-xs sm:text-sm uppercase tracking-wider mb-8 lg:mb-10">
             {{ portal_content('sellers', 'testimonials', 'eyebrow', 'Hear from our satisfied customers', 'استمع إلى آراء عملائنا') }}
         </p>
 

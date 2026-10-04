@@ -97,7 +97,7 @@
                                     <span>{{ $isAr ? 'الخطوة '.$i.':' : 'Step '.$i.':' }}</span>
                                     <span>{{ $isAr ? $step['title_ar'] : $step['title_en'] }}</span>
                                 </div>
-                                <span class="text-[12px] font-bold uppercase tracking-wider text-[#feee00]">
+                                <span class="text-[12px] font-bold uppercase tracking-wider text-[#0F807E]">
                                     {{ $isAr ? $step['caption_ar'] : $step['caption_en'] }}
                                 </span>
                             </div>
@@ -120,7 +120,7 @@
                                                 <div class="flex flex-wrap items-center gap-1">
                                                     <span>{{ $isAr ? $item['text_ar'] : $item['text_en'] }}</span>
                                                     @if(isset($item['inline_link_route']))
-                                                        <a href="{{ route($item['inline_link_route']) }}" class="text-[#feee00] font-bold text-[13px] hover:underline flex items-center gap-1 group">
+                                                        <a href="{{ route($item['inline_link_route']) }}" class="text-[#0F807E] font-bold text-[13px] hover:underline flex items-center gap-1 group">
                                                             {{ $isAr ? $item['inline_link_ar'] : $item['inline_link_en'] }}
                                                             @if(isset($item['inline_link_arrow']) && $item['inline_link_arrow'])
                                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" class="animate-bounce-x {{ $isAr ? '-scale-x-100' : '' }}">
@@ -131,7 +131,7 @@
                                                     @endif
                                                 </div>
                                                 @if(isset($item['link_route']))
-                                                    <a href="{{ route($item['link_route']) }}" class="text-[#feee00] font-bold text-[13px] hover:underline flex items-center gap-1 group">
+                                                    <a href="{{ route($item['link_route']) }}" class="text-[#0F807E] font-bold text-[13px] hover:underline flex items-center gap-1 group">
                                                         {{ $isAr ? $item['link_ar'] : $item['link_en'] }}
                                                         @if(isset($item['link_arrow']) && $item['link_arrow'])
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" class="animate-bounce-x {{ $isAr ? '-scale-x-100' : '' }}">

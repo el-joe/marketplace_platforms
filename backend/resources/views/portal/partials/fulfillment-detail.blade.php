@@ -16,7 +16,7 @@
 <section id="fbn" class="bg-[#1c1c1c] pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl sm:text-[32px] font-extrabold mb-6 lg:mb-8">
-            <span class="text-[#feee00]">{{ portal_content('fulfillment', 'fbn', 'title_prefix', 'Fulfilled by noon: ', 'التنفيذ من قبل نون: ') }}</span>
+            <span class="text-[#0F807E]">{{ portal_content('fulfillment', 'fbn', 'title_prefix', 'Fulfilled by noon: ', 'التنفيذ من قبل نون: ') }}</span>
             @php($fbnHighlight = portal_content('fulfillment', 'fbn', 'title_highlight', 'Built for Speed', 'مصمم للسرعة'))
             <span class="relative inline-block"
                   x-data="{
@@ -55,21 +55,21 @@
                     {{ portal_content('fulfillment', 'fbn', 'description', 'Store your products in our fulfillment centers, and watch orders take off.', 'خزن منتجاتك في مراكز تنفيذ الطلبات لدينا، وشاهد الطلبات تنطلق.') }}
                 </p>
 
-                <p class="mt-5 text-[#feee00] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbn', 'included_label', "What's included:", 'الإضافة:') }}</p>
+                <p class="mt-5 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbn', 'included_label', "What's included:", 'الإضافة:') }}</p>
                 <p class="mt-1 text-gray-300 font-medium">
                     {{ portal_content('fulfillment', 'fbn', 'included_text',
                         'Fast inbound shipping, monthly storage in state-of-the-art facilities, product removal services, and returns processing.',
                         'شحن وارد سريع، تخزين شهري في منشآت متطورة، خدمات إزالة المنتجات، ومعالجة المرتجعات.') }}
                 </p>
 
-                <p class="mt-4 text-[#feee00] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbn', 'ideal_label', 'Ideal for:', 'مثالي لـ:') }}</p>
+                <p class="mt-4 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbn', 'ideal_label', 'Ideal for:', 'مثالي لـ:') }}</p>
                 <p class="mt-1 text-gray-300 font-medium">
                     {{ portal_content('fulfillment', 'fbn', 'ideal_text', 'Best-selling products, new products, and any seller ready to grow.', 'المنتجات الأكثر مبيعا، المنتجات الجديدة، وكل بائع جاهز للنمو.') }}
                 </p>
 
                 @php($fbnCta = portal_link('fulfillment', 'fbn', 'cta_button', 'Get started with Fulfilled by noon', 'ابدأ مع التنفيذ من قبل نون', route('portal.register')))
                 <a href="{{ $fbnCta['url'] }}"
-                   class="inline-flex items-center mt-8 bg-[#feee00] hover:bg-[#e5d600] text-black
+                   class="inline-flex items-center mt-8 bg-[#0F807E] hover:bg-[#0c6665] text-white
                           font-black text-sm px-6 py-3 rounded-full transition-colors">
                     {{ $fbnCta['label'] }}
                 </a>
@@ -100,7 +100,7 @@
                     "They took on this cost and eased the burden on me — by God's grace, they played a huge role in the success of my project and my work",
                     'هي تحملت التكلفة هذه وخففت العبء عني لعبت دور كبير بفضل الله في أنها نجحت مشروعي ونجحتني في عملي') }}
             </p>
-            <p class="mt-4 text-xs font-bold text-[#feee00]">- {{ portal_content('fulfillment', 'fbn_testimonial', 'author', 'Aflak Al Thurayya', 'أفلاك الثريا') }}</p>
+            <p class="mt-4 text-xs font-bold text-[#0F807E]">- {{ portal_content('fulfillment', 'fbn_testimonial', 'author', 'Aflak Al Thurayya', 'أفلاك الثريا') }}</p>
         </div>
     </section>
 </div>
@@ -119,7 +119,7 @@
                  }
              }"
              @hashchange.window="if (location.hash === '#fbp') triggerAnimation()">
-            <span class="text-[#feee00]">{{ portal_content('fulfillment', 'fbp', 'title_prefix', 'Fulfilled by partner: ', 'التنفيذ من قبل الشريك: ') }}</span>
+            <span class="text-[#0F807E]">{{ portal_content('fulfillment', 'fbp', 'title_prefix', 'Fulfilled by partner: ', 'التنفيذ من قبل الشريك: ') }}</span>
             <span class="inline-block">
                 <template x-for="(char, index) in text.split('')" :key="index">
                     <span class="inline-block text-white"
@@ -157,14 +157,14 @@
                     @endforeach
                 </ul>
 
-                <p class="mt-5 text-[#feee00] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbp', 'ideal_label', 'Ideal for:', 'مثالي لـ:') }}</p>
+                <p class="mt-5 text-[#0F807E] font-black text-xs uppercase tracking-wider">{{ portal_content('fulfillment', 'fbp', 'ideal_label', 'Ideal for:', 'مثالي لـ:') }}</p>
                 <p class="mt-1 text-gray-300 font-medium">
                     {{ portal_content('fulfillment', 'fbp', 'ideal_text', 'Heavy, bulky, or specialized products that require a personal touch.', 'المنتجات الثقيلة، الكبيرة، أو المتخصصة التي تتطلب لمسة شخصية.') }}
                 </p>
 
                 @php($fbpCta = portal_link('fulfillment', 'fbp', 'cta_button', 'Get started with Fulfilled by partner', 'ابدأ مع التنفيذ من قبل الشريك', route('portal.register')))
                 <a href="{{ $fbpCta['url'] }}"
-                   class="inline-flex items-center mt-8 bg-[#feee00] hover:bg-[#e5d600] text-black
+                   class="inline-flex items-center mt-8 bg-[#0F807E] hover:bg-[#0c6665] text-white
                           font-black text-sm px-6 py-3 rounded-full transition-colors">
                     {{ $fbpCta['label'] }}
                 </a>
@@ -190,7 +190,7 @@
                     'The noon team handles every step – from receiving products, to neatly packaging them, to delivering them to the customer. All you have to do as a seller is focus on your business and manage your store on the platform with ease!',
                     'فريق نون بيتكفّل بكل الخطوات – من استلام المنتجات، لتغليفها بشكل مرتب، وتوصيلها للعميل. كل اللي عليك كَبائع هو تركّز على شغلك وتدير متجرك على المنصة بكل سهولة!') }}
             </p>
-            <p class="mt-4 text-xs font-bold text-[#feee00]">- {{ portal_content('fulfillment', 'fbp_testimonial', 'author', 'Hekayat Sahab', 'حكايات سحاب') }}</p>
+            <p class="mt-4 text-xs font-bold text-[#0F807E]">- {{ portal_content('fulfillment', 'fbp_testimonial', 'author', 'Hekayat Sahab', 'حكايات سحاب') }}</p>
         </div>
     </section>
 </div>

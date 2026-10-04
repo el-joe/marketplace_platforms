@@ -9,7 +9,7 @@
                  class="absolute inset-0 w-full h-full object-cover">
         </div>
         <div class="pt-8 px-6 pb-8 md:pt-10 md:px-10 md:pb-10">
-            <h2 class="text-[#feee00] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('home', 'fulfillment_teaser', 'title', 'Shipping and Fulfilment', 'الشحن والتوصيل') }}</h2>
+            <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('home', 'fulfillment_teaser', 'title', 'Shipping and Fulfilment', 'الشحن والتوصيل') }}</h2>
             <h3 class="text-white font-bold text-[22px] lg:text-[26px] leading-tight mb-8 lg:mb-10">
                 {{ portal_content('home', 'fulfillment_teaser', 'subtitle', 'Flexible fulfilment options that work for you', 'خيارات تنفيذ مرنة تناسبك') }}
             </h3>
@@ -30,7 +30,7 @@
                 @endforeach
             </ul>
             @php($homeFulfillmentLearnMore = portal_link('home', 'fulfillment_teaser', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.fulfillment')))
-            <a href="{{ $homeFulfillmentLearnMore['url'] }}" class="inline-flex items-center gap-2 text-[#feee00] font-bold text-[15px] hover:text-[#e5d600] transition-colors">
+            <a href="{{ $homeFulfillmentLearnMore['url'] }}" class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-[15px] hover:text-[#e5d600] transition-colors">
                 {{ $homeFulfillmentLearnMore['label'] }}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" class="{{ $isAr ? '-scale-x-100' : '' }}">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
