@@ -75,9 +75,11 @@
     }
 @endphp
 
-<header class="fixed inset-x-0 top-0 z-50 transition-all duration-300" x-data="{ mobileOpen: false, scrolled: false }"
+<div x-data="{ mobileOpen: false, scrolled: false }"
     x-effect="document.body.style.overflow = mobileOpen ? 'hidden' : ''"
-    @resize.window="window.innerWidth >= 1024 ? mobileOpen = false : null"
+    @resize.window="window.innerWidth >= 1024 ? mobileOpen = false : null">
+
+<header class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
     @scroll.window="scrolled = (window.pageYOffset > 20)"
     :class="scrolled ? 'bg-gray-900/80 backdrop-blur-lg shadow-lg' : 'bg-gray-900/50 backdrop-blur-md'">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -297,3 +299,81 @@
         </div>
     </div>
 </header>
+
+{{-- Mobile drawer — outside <header> so z-[100] is not clipped by z-50 stacking context --}}
+<div x-show="mobileOpen"
+    x-cloak
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="{{ $isAr ? 'translate-x-[-100%]' : 'translate-x-full' }} opacity-0"
+    x-transition:enter-end="translate-x-0 opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="translate-x-0 opacity-100"
+    x-transition:leave-end="{{ $isAr ? 'translate-x-[-100%]' : 'translate-x-full' }} opacity-0"
+    class="fixed inset-0 z-[100] bg-gray-900 lg:hidden flex flex-col overflow-y-auto">
+
+    {{-- Drawer top bar --}}
+    <div class="px-4 sm:px-6 shrink-0">
+        <div class="flex items-center justify-between h-[72px]">
+            <a href="{{ route('portal.home') }}" @click="mobileOpen = false" class="flex items-center shrink-0">
+                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Logo" class="w-[76px] h-auto">
+            </a>
+            <button @click="mobileOpen = false" class="text-white p-1 focus:outline-none"
+                aria-label="{{ $isAr ? 'إغلاق القائمة' : 'Close menu' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" width="28" height="28">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="w-full h-px bg-white/10 shrink-0"></div>
+
+    {{-- Nav links with accordion submenus --}}
+    <nav class="px-6 mt-6 flex flex-col gap-1 pb-10">
+        @foreach ($navLinks as $link)
+            @if (isset($link['submenu']))
+                <div x-data="{ subOpen: false }">
+                    <button @click="subOpen = !subOpen"
+                        class="w-full flex items-center justify-between py-4 font-bold text-[20px] tracking-wide transition-colors
+                               {{ request()->routeIs($link['route']) ? 'text-[#0F807E]' : 'text-white' }}">
+                        <span>{{ $link['label'] }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" width="18" height="18"
+                            :class="subOpen ? '{{ $isAr ? '-rotate-90' : 'rotate-90' }}' : ''"
+                            class="transition-transform duration-200 {{ $isAr ? 'rotate-0' : '' }}">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
+                    <div x-show="subOpen" x-collapse x-cloak class="pl-4 {{ $isAr ? 'pr-4 pl-0' : '' }} flex flex-col gap-1 pb-2">
+                        @foreach ($link['submenu'] as $sub)
+                            <a href="{{ $sub['route'] }}" @click="mobileOpen = false"
+                                class="flex items-center gap-3 py-3 text-[16px] font-semibold text-gray-300 hover:text-white transition-colors">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#0F807E] shrink-0"></span>
+                                {{ $isAr ? $sub['label_ar'] : $sub['label_en'] }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <a href="{{ route($link['route']) }}" @click="mobileOpen = false"
+                    class="block py-4 font-bold text-[20px] tracking-wide transition-colors
+                           {{ request()->routeIs($link['route']) ? 'text-[#0F807E]' : 'text-white' }}">
+                    {{ $link['label'] }}
+                </a>
+            @endif
+        @endforeach
+    </nav>
+
+    {{-- Bottom CTA --}}
+    <div class="mt-auto px-6 pb-10 shrink-0">
+        <div class="w-full h-px bg-white/10 mb-6"></div>
+        <a href="{{ route('portal.register') }}"
+            class="flex items-center justify-center w-full bg-[#0F807E] hover:bg-[#0c6665] text-white
+                   font-bold text-base py-3 rounded-full transition-colors">
+            {{ $isAr ? 'سجل الآن' : 'Sign Up Now' }}
+        </a>
+    </div>
+</div>
+
+</div>{{-- /root Alpine wrapper --}}

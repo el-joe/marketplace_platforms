@@ -3,12 +3,14 @@
 <section class="relative overflow-hidden bg-gray-900">
     {{-- Background photo --}}
     <div class="h-[560px] sm:h-[620px] lg:h-[440px] xl:h-[420px] relative">
-        <img src="{{ asset('images/nawy_ui.jpeg') }}"
-            alt="{{ portal_content('home', 'hero', 'bg_image_alt', 'A noon delivery agent carrying a box for delivery in Dubai', 'مندوب توصيل نون يحمل طرداً في دبي') }}"
-            class="absolute inset-0 w-full h-full object-cover md:hidden {{ $isAr ? '-scale-x-100' : '' }}">
-        <img src="{{ asset('images/nawy_ui.jpeg') }}"
-            alt="{{ portal_content('home', 'hero', 'bg_image_alt', 'A noon delivery agent carrying a box for delivery in Dubai', 'مندوب توصيل نون يحمل طرداً في دبي') }}"
-            class="absolute inset-0 w-full h-full object-cover object-[75%_center] hidden md:block {{ $isAr ? '-scale-x-100' : '' }}">
+        @php($heroImgMobile = portal_image('home', 'hero', 'photo', asset('images/nawy_hero.jpg'), 'A Nawy delivery agent carrying a box', 'مندوب توصيل ناوي يحمل طرداً'))
+        <img src="{{ $heroImgMobile['src'] }}"
+            alt="{{ $heroImgMobile['alt'] }}"
+            class="absolute inset-0 w-full h-full object-cover object-[70%_center] md:hidden">
+        @php($heroImgDesktop = portal_image('home', 'hero', 'photo', asset('images/nawy_hero.jpg'), 'A Nawy delivery agent carrying a box', 'مندوب توصيل ناوي يحمل طرداً'))
+        <img src="{{ $heroImgDesktop['src'] }}"
+            alt="{{ $heroImgDesktop['alt'] }}"
+            class="absolute inset-0 w-full h-full object-cover object-[70%_center] hidden md:block">
 
         {{-- Gradient overlay: dark on the text side, transparent toward the photo --}}
         <div

@@ -3,9 +3,12 @@
  * Loaded by @vite(['resources/css/app.css', 'resources/js/portal/app.js'])
  */
 import Alpine from 'alpinejs';
+import Collapse from '@alpinejs/collapse';
 
 // ── Alpine global setup ──────────────────────────────────────────────────
 window.Alpine = Alpine;
+
+Alpine.plugin(Collapse);
 
 // Language switcher store
 Alpine.store('locale', {
@@ -18,8 +21,7 @@ Alpine.store('locale', {
 
 Alpine.start();
 
-/* ---------- Reverb / Echo + notification bell ---------- */
-import '../shared/echo-setup.js';
+/* ---------- Scroll-to-top button ---------- */
 
 // ── Scroll-to-top button ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
