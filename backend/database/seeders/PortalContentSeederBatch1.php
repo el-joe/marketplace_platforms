@@ -84,10 +84,13 @@ class PortalContentSeederBatch1 extends Seeder
         $rows[] = ['how-it-works', 'hero', 'photo', 'image', 'noon employees working', 'موظفو نون في العمل', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-hero.jpg', 4];
 
         $rows[] = ['how-it-works', 'why-sell', 'title', 'text', 'Why Join Us?', 'لماذا تنضم إلينا؟', null, 10];
+        $rows[] = ['how-it-works', 'why-sell-item-1', 'image', 'image', 'Reach Millions', 'وصل الملايين', 'why-sell/1.jpg', 10];
         $rows[] = ['how-it-works', 'why-sell-item-1', 'title', 'text', 'Reach Millions', 'وصل الملايين', null, 11];
         $rows[] = ['how-it-works', 'why-sell-item-1', 'description', 'text', 'Millions of shoppers, one app. Nawy puts your products in front of more people, every single day.', 'ملايين المتسوقين، تطبيق واحد. ناوي تعرض منتجاتك لعدد أكبر من الناس، كل يوم.', null, 12];
+        $rows[] = ['how-it-works', 'why-sell-item-2', 'image', 'image', 'Fast, Flexible Delivery', 'توصيل سريع ومرن', 'why-sell/2.jpg', 12];
         $rows[] = ['how-it-works', 'why-sell-item-2', 'title', 'text', 'Fast, Flexible Delivery', 'توصيل سريع ومرن', null, 13];
         $rows[] = ['how-it-works', 'why-sell-item-2', 'description', 'text', 'Choose how you ship. Nawy handles the speed, care, and customer smiles.', 'اختر طريقة الشحن التي تناسبك. ناوي تهتم بالسرعة، العناية، ورضا العملاء.', null, 14];
+        $rows[] = ['how-it-works', 'why-sell-item-3', 'image', 'image', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر', 'why-sell/3.jpg', 14];
         $rows[] = ['how-it-works', 'why-sell-item-3', 'title', 'text', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر', null, 15];
         $rows[] = ['how-it-works', 'why-sell-item-3', 'description', 'text', "Unlock growth with Nawy's seller tools — built to turn your hustle into real results.", 'حقق النمو مع أدوات البيع من ناوي — صُممت لتحوّل شغفك إلى نتائج حقيقية.', null, 16];
 

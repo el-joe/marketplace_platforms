@@ -9,17 +9,17 @@
         @php
             $cards = [
                 [
-                    'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-01.jpg',
+                    'image' => portal_image('how-it-works', 'why-sell-item-1', 'image', 'why-sell/1.jpg', 'Reach Millions', 'وصل الملايين')['src'],
                     'title' => portal_content('how-it-works', 'why-sell-item-1', 'title', 'Reach Millions', 'وصل الملايين'),
                     'desc' => portal_content('how-it-works', 'why-sell-item-1', 'description', 'Millions of shoppers, one app. Nawy puts your products in front of more people, every single day.', 'ملايين المتسوقين، تطبيق واحد. ناوي تعرض منتجاتك لعدد أكبر من الناس، كل يوم.'),
                 ],
                 [
-                    'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-02.jpg',
+                    'image' => portal_image('how-it-works', 'why-sell-item-2', 'image', 'why-sell/2.jpg', 'Fast, Flexible Delivery', 'توصيل سريع ومرن')['src'],
                     'title' => portal_content('how-it-works', 'why-sell-item-2', 'title', 'Fast, Flexible Delivery', 'توصيل سريع ومرن'),
                     'desc' => portal_content('how-it-works', 'why-sell-item-2', 'description', 'Choose how you ship. Nawy handles the speed, care, and customer smiles.', 'اختر طريقة الشحن التي تناسبك. ناوي تهتم بالسرعة، العناية، ورضا العملاء.'),
                 ],
                 [
-                    'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-03.jpg',
+                    'image' => portal_image('how-it-works', 'why-sell-item-3', 'image', 'why-sell/3.jpg', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر')['src'],
                     'title' => portal_content('how-it-works', 'why-sell-item-3', 'title', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر'),
                     'desc' => portal_content('how-it-works', 'why-sell-item-3', 'description', 'Unlock growth with Nawy\'s seller tools — built to turn your hustle into real results.', 'حقق النمو مع أدوات البيع من ناوي — صُممت لتحوّل شغفك إلى نتائج حقيقية.'),
                 ],
