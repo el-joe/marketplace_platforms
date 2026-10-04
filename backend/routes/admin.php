@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AdCampaignController;
 use App\Http\Controllers\Admin\AdminController;
@@ -119,6 +118,7 @@ use App\Http\Controllers\Admin\WarrantyClaimController;
 use App\Http\Controllers\Admin\WarrantyPlanController;
 use App\Http\Controllers\Admin\WarrantyPurchaseController;
 use App\Http\Controllers\Admin\WishlistOverviewController;
+use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
@@ -238,8 +238,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
 
     // ─── Branded QR Code Downloads (Admin) ───────────────────────────────────────
     Route::prefix('qr')->name('qr.')->middleware('admin.permission:products.view')->group(function () {
-        Route::get('/product/{slug}',  [QrCodeController::class, 'product'])->name('product');
-        Route::get('/vendor/{slug}',   [QrCodeController::class, 'vendor'])->name('vendor');
+        Route::get('/product/{slug}', [QrCodeController::class, 'product'])->name('product');
+        Route::get('/vendor/{slug}', [QrCodeController::class, 'vendor'])->name('vendor');
         Route::get('/marketer/{slug}', [QrCodeController::class, 'marketer'])->name('marketer');
     });
 
@@ -1097,6 +1097,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::patch('/{marketerCampaign}/invitations/{invitation}/mark-fee-paid', [MarketerCampaignController::class, 'markInvitationFeePaid'])->name('invitations.mark-fee-paid');
         Route::post('/{marketerCampaign}/category-rules/sync', [MarketerCampaignController::class, 'syncCategoryRules'])->name('category-rules.sync')
             ->middleware('admin.permission:marketer_campaigns.create');
+        Route::patch('/{marketerCampaign}/commission', [MarketerCampaignController::class, 'updateCommission'])->name('commission.update')
+            ->middleware('can:marketer_campaigns.approve');
+        Route::post('/{marketerCampaign}/approve-request', [MarketerCampaignController::class, 'approveRequest'])->name('approve-request')
+            ->middleware('can:marketer_campaigns.approve');
     });
 
     // ─── Marketer Settings (Commission & Fees) ────────────────────────────────────

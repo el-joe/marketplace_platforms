@@ -242,24 +242,26 @@
                     {{-- Location map (shown if category requires_location_map) --}}
                     <div id="cl-location-section" class="space-y-3">
                         <label class="block text-sm font-semibold text-gray-800">{{ __('partner.classifieds_extra.wizard.location_title') }}</label>
-                        <div class="rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
-                            <p class="font-medium mb-1">{{ __('partner.classifieds_extra.wizard.enter_coordinates') }}</p>
-                            <p class="text-xs text-blue-600">{{ __('partner.classifieds_extra.wizard.coordinates_hint') }}</p>
+
+                        {{-- Places search input --}}
+                        <div class="relative">
+                            <input type="text" id="cl-map-search"
+                                class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                                placeholder="{{ __('partner.classifieds_extra.wizard.map_search_placeholder', ['default' => 'Search for a location…']) }}">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('partner.classifieds_extra.wizard.latitude') }}</label>
-                                <input type="number" id="cl-latitude" step="0.0000001" min="-90" max="90"
-                                    class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                                    placeholder="24.7136">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('partner.classifieds_extra.wizard.longitude') }}</label>
-                                <input type="number" id="cl-longitude" step="0.0000001" min="-180" max="180"
-                                    class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                                    placeholder="46.6753">
-                            </div>
+
+                        {{-- Map container --}}
+                        <div id="cl-map" style="height: 380px; border-radius: 12px; overflow: hidden; background: #e5e7eb;"></div>
+
+                        {{-- Coordinate confirmation row --}}
+                        <div class="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                            <span>Lat: <span id="cl-lat-display" class="font-mono font-medium text-gray-700">—</span></span>
+                            <span>Lng: <span id="cl-lng-display" class="font-mono font-medium text-gray-700">—</span></span>
                         </div>
+
+                        {{-- Hidden inputs — same IDs as before so form JS still works --}}
+                        <input type="hidden" id="cl-latitude">
+                        <input type="hidden" id="cl-longitude">
                     </div>
 
                     {{-- Category attributes (dynamic) --}}
@@ -358,3 +360,7 @@
     </div>
 
 @endsection
+
+@push('scripts')
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_key') }}&libraries=places&callback=initClassifiedMap"></script>
+@endpush

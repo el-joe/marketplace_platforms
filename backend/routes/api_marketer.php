@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Api\Marketer\AdBookingController;
 use App\Http\Controllers\Api\Marketer\AdPackageController;
 use App\Http\Controllers\Api\Marketer\AdSlotController;
@@ -23,6 +22,7 @@ use App\Http\Controllers\Api\Marketer\ProfileController;
 use App\Http\Controllers\Api\Marketer\ReportController;
 use App\Http\Controllers\Api\Marketer\SpecialRequestController;
 use App\Http\Controllers\Api\Marketer\WantedListingController;
+use App\Http\Controllers\Api\QrCodeController;
 use Illuminate\Support\Facades\Route;
 
 // ── Auth (no guard) ───────────────────────────────────────────────────────
@@ -53,11 +53,13 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/special-requests/{id}', [SpecialRequestController::class, 'show']);
 
     Route::get('/invitations', [InvitationController::class, 'index']);
+    Route::get('/invitations/{invitation}', [InvitationController::class, 'show']);
     Route::post('/invitations/{invitation}/accept', [InvitationController::class, 'accept']);
     Route::post('/invitations/{invitation}/reject', [InvitationController::class, 'reject']);
 
     Route::get('/campaigns/active', [CampaignController::class, 'active']);
     Route::get('/campaigns/finished', [CampaignController::class, 'finished']);
+    Route::post('/campaigns/request', [CampaignController::class, 'request']);
 
     Route::get('/reports', [ReportController::class, 'index']);
 

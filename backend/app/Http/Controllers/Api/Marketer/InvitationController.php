@@ -19,7 +19,17 @@ class InvitationController extends Controller
             ->with(['campaign.country'])
             ->latest()
             ->paginate(20);
+
         return response()->json(['success' => true, 'data' => $invitations]);
+    }
+
+    public function show(MarketerCampaignInvitation $invitation)
+    {
+        $marketer = Auth::guard('marketer_api')->user()->marketer;
+        abort_unless($invitation->marketer_id === $marketer->id, 403);
+        $invitation->load(['campaign.country', 'marketer', 'replacedInvitation']);
+
+        return response()->json(['success' => true, 'data' => $invitation]);
     }
 
     public function accept(Request $request, MarketerCampaignInvitation $invitation)
@@ -28,6 +38,7 @@ class InvitationController extends Controller
         abort_unless($invitation->marketer_id === $marketer->id, 403);
         abort_unless($invitation->isPending(), 422);
         $this->service->acceptInvitation($invitation, $request->input('note'));
+
         return response()->json(['success' => true, 'message' => 'تم قبول الدعوة.']);
     }
 
@@ -37,6 +48,7 @@ class InvitationController extends Controller
         abort_unless($invitation->marketer_id === $marketer->id, 403);
         abort_unless($invitation->isPending(), 422);
         $this->service->rejectInvitation($invitation, $request->input('reason'));
+
         return response()->json(['success' => true, 'message' => 'تم رفض الدعوة.']);
     }
 }

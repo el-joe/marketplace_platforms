@@ -213,6 +213,7 @@ class LastClickAttributionService
                 'order_item_id' => $item->id,
                 'referral_clicked_at' => $click['clicked_at'] ?? null,
                 'commission_amount' => $commissionAmount,
+                'platform_commission_amount' => (int) $campaign->platform_commission_amount * $item->quantity,
                 'currency' => $campaign->currency,
                 'status' => 'pending',
                 'commissioned' => false,

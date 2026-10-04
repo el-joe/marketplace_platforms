@@ -1339,6 +1339,10 @@
     "closeLightbox": "Close lightbox",
     "expandedView": "Expanded view"
   },
+  "classifiedLocationMap": {
+    "locationOnMap": "Location on Map",
+    "locationApproximate": "Approximate location"
+  },
   "sellerInfoSidebar": {
     "sellerRating": "Seller Rating",
     "positiveRatings": "{pct}% Positive Ratings",

@@ -36,7 +36,7 @@ return [
     ],
 
     'firebase' => [
-        'project_id'  => env('FIREBASE_PROJECT_ID'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
         'credentials' => env('FIREBASE_CREDENTIALS_PATH', storage_path('app/firebase-service-account.json')),
     ],
 
@@ -109,9 +109,13 @@ return [
     'ai_provider' => env('AI_PROVIDER', 'mock'),
 
     'turn' => [
-        'url'        => env('TURN_URL', ''),
-        'username'   => env('TURN_USERNAME', ''),
+        'url' => env('TURN_URL', ''),
+        'username' => env('TURN_USERNAME', ''),
         'credential' => env('TURN_CREDENTIAL', ''),
+    ],
+
+    'google' => [
+        'maps_key' => env('GOOGLE_MAPS_API_KEY', ''),
     ],
 
 ];

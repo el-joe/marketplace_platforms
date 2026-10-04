@@ -1,15 +1,15 @@
 <?php
 
+use App\Http\Controllers\Marketer\AdPackageController;
 use App\Http\Controllers\Marketer\AuthController;
 use App\Http\Controllers\Marketer\CampaignController;
-use App\Http\Controllers\Marketer\ContractController;
 use App\Http\Controllers\Marketer\ClassifiedInquiryController;
 use App\Http\Controllers\Marketer\ClassifiedListingController;
+use App\Http\Controllers\Marketer\ContractController;
 use App\Http\Controllers\Marketer\ConversationController;
 use App\Http\Controllers\Marketer\CouponParticipationController;
-use App\Http\Controllers\Marketer\ExclusiveContractController;
-use App\Http\Controllers\Marketer\WantedListingController;
 use App\Http\Controllers\Marketer\DashboardController;
+use App\Http\Controllers\Marketer\ExclusiveContractController;
 use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
 use App\Http\Controllers\Marketer\InvitationController;
@@ -23,6 +23,7 @@ use App\Http\Controllers\Marketer\ReportController;
 use App\Http\Controllers\Marketer\SampleController;
 use App\Http\Controllers\Marketer\SpecialRequestController;
 use App\Http\Controllers\Marketer\SupportController;
+use App\Http\Controllers\Marketer\WantedListingController;
 use App\Http\Controllers\NotificationController;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -161,10 +162,10 @@ Route::middleware('web')->group(function () {
 
         // Ad packages (Nawy packages)
         Route::prefix('ad-packages')->name('ad-packages.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Marketer\AdPackageController::class, 'index'])->name('index');
-            Route::get('/success', [\App\Http\Controllers\Marketer\AdPackageController::class, 'success'])->name('success');
-            Route::get('/contract/{package}', [\App\Http\Controllers\Marketer\AdPackageController::class, 'contract'])->name('contract');
-            Route::post('/{package}/subscribe', [\App\Http\Controllers\Marketer\AdPackageController::class, 'subscribe'])->name('subscribe');
+            Route::get('/', [AdPackageController::class, 'index'])->name('index');
+            Route::get('/success', [AdPackageController::class, 'success'])->name('success');
+            Route::get('/contract/{package}', [AdPackageController::class, 'contract'])->name('contract');
+            Route::post('/{package}/subscribe', [AdPackageController::class, 'subscribe'])->name('subscribe');
         });
 
         // Active campaigns (accepted invitations)
@@ -172,6 +173,9 @@ Route::middleware('web')->group(function () {
 
         // Finished campaigns
         Route::get('/campaigns/finished', [CampaignController::class, 'finished'])->name('campaigns.finished');
+
+        // Request a campaign (marketer proposes to promote a listing)
+        Route::post('/campaigns/request', [CampaignController::class, 'request'])->name('campaigns.request');
 
         // Samples
         Route::get('/samples', [SampleController::class, 'index'])->name('samples.index');

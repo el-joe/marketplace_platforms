@@ -72,6 +72,8 @@ export interface ClassifiedDetail {
     column2: ClassifiedSpecItem[];
   };
   description: string;
+  latitude?: number | null;
+  longitude?: number | null;
   features: FeatureGroup[];
   seller: ClassifiedSeller;
   recommended: RecommendedClassifiedItem[];

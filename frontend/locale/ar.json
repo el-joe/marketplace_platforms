@@ -1328,6 +1328,10 @@
     "closeLightbox": "إغلاق العرض",
     "expandedView": "عرض مكبر"
   },
+  "classifiedLocationMap": {
+    "locationOnMap": "الموقع على الخريطة",
+    "locationApproximate": "الموقع تقريبي"
+  },
   "sellerInfoSidebar": {
     "sellerRating": "تقييم البائع",
     "positiveRatings": "{pct}% تقييمات إيجابية",

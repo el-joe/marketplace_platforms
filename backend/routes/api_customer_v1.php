@@ -102,6 +102,9 @@ Route::get('travel', [BrowseController::class, 'travelIndex'])->name('customer.t
 // GET /classified — all active classified listings, unfiltered (same as browse/classified/all)
 Route::get('classified', [BrowseController::class, 'classifiedIndex'])->name('customer.classified.index');
 
+// GET /classified/map-pins — lightweight pin data for active classified listings with coordinates
+Route::get('classified/map-pins', [BrowseController::class, 'classifiedMapPins'])->name('customer.classified.map-pins');
+
 // ── Payment gateways (public) ──────────────────────────────────────────
 // GET /payment-gateways — all active gateways for this country, for info screens
 Route::get('payment-gateways', [ApiCheckoutController::class, 'availableGateways'])

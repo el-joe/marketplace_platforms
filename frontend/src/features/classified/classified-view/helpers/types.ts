@@ -47,6 +47,8 @@ export interface Image {
 
 export interface Location {
   city: Description;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface Seller {

@@ -18,6 +18,7 @@ use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MarketerCampaignController extends Controller
@@ -298,6 +299,22 @@ class MarketerCampaignController extends Controller
         }
     }
 
+    public function updateCommission(Request $request, MarketerCampaign $campaign): JsonResponse
+    {
+        $request->validate([
+            'marketer_commission_amount' => ['required', 'integer', 'min:1'],
+            'platform_commission_amount' => ['required', 'integer', 'min:0'],
+        ]);
+
+        abort_unless($campaign->status === 'pending_admin', 422, 'Campaign is not pending admin review');
+
+        $campaign->marketer_commission_amount = $request->marketer_commission_amount;
+        $campaign->platform_commission_amount = $request->platform_commission_amount;
+        $campaign->save();
+
+        return response()->json(['success' => true]);
+    }
+
     public function searchVendorListings(Request $request)
     {
         abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
@@ -363,5 +380,27 @@ class MarketerCampaignController extends Controller
         return view('admin.marketer_campaigns.financials', compact(
             'summaryByCurrency', 'campaigns', 'countries', 'dateFrom', 'dateTo'
         ));
+    }
+
+    public function approveRequest(Request $request, MarketerCampaign $marketerCampaign)
+    {
+        abort_unless(auth('admin')->user()->can('marketer_campaigns.approve'), 403);
+
+        $request->validate([
+            'marketer_commission_amount' => ['required', 'integer', 'min:1'],
+            'platform_commission_amount' => ['required', 'integer', 'min:0'],
+        ]);
+
+        abort_unless($marketerCampaign->status === 'marketer_requested', 422,
+            'هذه الحملة لا يمكن قبول طلبها في حالتها الحالية.');
+
+        $this->service->approveMarketerRequest(
+            $marketerCampaign,
+            $request->only(['marketer_commission_amount', 'platform_commission_amount'])
+        );
+
+        return redirect()
+            ->route('admin.marketer-campaigns.index')
+            ->with('success', 'تم قبول طلب الماركتر وأصبحت الحملة نشطة.');
     }
 }

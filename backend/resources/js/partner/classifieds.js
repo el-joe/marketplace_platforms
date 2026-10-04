@@ -1306,6 +1306,77 @@ window.updateInquiryStatus = async function (inquiryId, status) {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Google Maps — classified listing location picker
+// ─────────────────────────────────────────────────────────────────────────────
+window.initClassifiedMap = function () {
+    const mapEl = el('cl-map');
+    if (!mapEl) return; // Not on the classified wizard page
+
+    const existingLat = parseFloat(el('cl-latitude')?.value) || null;
+    const existingLng = parseFloat(el('cl-longitude')?.value) || null;
+
+    const defaultCenter = { lat: 24.7136, lng: 46.6753 }; // Riyadh
+    const center        = (existingLat && existingLng) ? { lat: existingLat, lng: existingLng } : defaultCenter;
+    const zoom          = (existingLat && existingLng) ? 15 : 12;
+
+    const map = new google.maps.Map(mapEl, { center, zoom });
+
+    const marker = new google.maps.Marker({
+        position: center,
+        map,
+        draggable: true,
+    });
+
+    // Pre-populate display if editing an existing listing
+    if (existingLat && existingLng) {
+        setCoords(existingLat, existingLng);
+    }
+
+    function setCoords(lat, lng) {
+        const latInput = el('cl-latitude');
+        const lngInput = el('cl-longitude');
+        if (latInput) latInput.value = lat;
+        if (lngInput) lngInput.value = lng;
+
+        const latDisplay = el('cl-lat-display');
+        const lngDisplay = el('cl-lng-display');
+        if (latDisplay) latDisplay.textContent = lat.toFixed(6);
+        if (lngDisplay) lngDisplay.textContent = lng.toFixed(6);
+    }
+
+    // Map click → move marker + update coords
+    map.addListener('click', (e) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        marker.setPosition(e.latLng);
+        setCoords(lat, lng);
+    });
+
+    // Marker drag end → update coords
+    marker.addListener('dragend', () => {
+        const pos = marker.getPosition();
+        setCoords(pos.lat(), pos.lng());
+    });
+
+    // Google Places Autocomplete wired to search input
+    const searchInput = el('cl-map-search');
+    if (searchInput && google.maps.places) {
+        const autocomplete = new google.maps.places.Autocomplete(searchInput);
+        autocomplete.bindTo('bounds', map);
+
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry || !place.geometry.location) return;
+
+            map.panTo(place.geometry.location);
+            map.setZoom(15);
+            marker.setPosition(place.geometry.location);
+            setCoords(place.geometry.location.lat(), place.geometry.location.lng());
+        });
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

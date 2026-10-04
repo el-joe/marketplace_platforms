@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\ClassifiedBrowseCategoryResource;
 use App\Http\Resources\Customer\ProductBrowseCategoryResource;
@@ -9,6 +10,7 @@ use App\Http\Resources\Customer\TravelBrowseCategoryResource;
 use App\Http\Resources\Customer\TravelCategorySummaryResource;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
+use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Models\TravelCategory;
 use App\Services\Customer\CategoryService;
@@ -73,6 +75,72 @@ class BrowseController extends Controller
         $country = $request->attributes->get('country');
 
         return $this->browseClassified($request, $country, 'all');
+    }
+
+    /**
+     * GET /api/customer/v1/{country}/classified/map-pins
+     * Returns lightweight pin data for active classified listings with coordinates.
+     */
+    public function classifiedMapPins(Request $request, $country): JsonResponse
+    {
+        $query = ClassifiedListing::query()
+            ->where('status', ClassifiedListingStatus::Active)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->with(['images' => fn ($q) => $q->where('is_primary', true)->limit(1)]);
+
+        // Bounds filter
+        if ($request->has('bounds')) {
+            $bounds = $request->input('bounds');
+            if (isset($bounds['south'], $bounds['north'])) {
+                $query->whereBetween('latitude', [(float) $bounds['south'], (float) $bounds['north']]);
+            }
+            if (isset($bounds['east'], $bounds['west'])) {
+                $query->whereBetween('longitude', [(float) $bounds['west'], (float) $bounds['east']]);
+            }
+        }
+
+        if ($request->filled('category')) {
+            $query->where('classified_category_id', $request->input('category'));
+        }
+
+        if ($request->filled('purpose')) {
+            $query->where('listing_purpose', $request->input('purpose'));
+        }
+
+        if ($request->filled('city_id')) {
+            $query->where('city_id', $request->input('city_id'));
+        }
+
+        if ($request->filled('country')) {
+            $query->whereHas('country', fn ($q) => $q->where('iso2', strtoupper($request->input('country'))));
+        }
+
+        $locale = app()->getLocale();
+
+        $pins = $query->limit(300)->get()->map(function (ClassifiedListing $listing) use ($locale): array {
+            $primaryImage = $listing->images->first();
+            $thumbnail = $primaryImage ? asset('storage/'.$primaryImage->file_path) : null;
+
+            $title = $locale === 'ar' && ! empty($listing->title_ar)
+                ? $listing->title_ar
+                : ($listing->title_en ?? $listing->title_ar ?? '');
+
+            return [
+                'id' => $listing->id,
+                'number' => $listing->listing_number,
+                'slug' => $listing->slug,
+                'title' => $title,
+                'price' => (int) $listing->price,
+                'currency' => $listing->currency,
+                'purpose' => $listing->listing_purpose,
+                'lat' => (float) $listing->latitude,
+                'lng' => (float) $listing->longitude,
+                'thumbnail' => $thumbnail,
+            ];
+        });
+
+        return response()->json(['data' => $pins]);
     }
 
     // ── Products ──────────────────────────────────────────────────────────────

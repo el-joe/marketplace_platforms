@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\LedgerEntry;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignConversion;
 use App\Models\Wallet;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Log;
  */
 class MarketerConversionReversalService
 {
+    public function __construct(private readonly LedgerService $ledgerService) {}
+
     /**
      * @param  array<int, string>  $orderItemIds
      */
@@ -75,6 +78,31 @@ class MarketerConversionReversalService
                     } else {
                         $wallet->decrement('pending_balance', $totalCommission);
                     }
+                }
+            }
+
+            // Reverse the platform commission ledger entry posted when the conversion
+            // was approved. Only approved conversions have a ledger entry; pending
+            // conversions were never approved so no ledger entry exists to reverse.
+            if ($conversion->wallet_credited_at && (int) $conversion->platform_commission_amount > 0) {
+                $original = LedgerEntry::where('reference_type', 'marketer_conversion')
+                    ->where('reference_id', $conversion->id)
+                    ->get();
+
+                if ($original->isNotEmpty()) {
+                    $reversalEntries = $original->map(fn (LedgerEntry $e) => [
+                        'account_type' => $e->account_type,
+                        'account_holder_type' => $e->account_holder_type,
+                        'account_holder_id' => $e->account_holder_id,
+                        'debit' => (int) $e->credit,
+                        'credit' => (int) $e->debit,
+                        'currency' => $e->currency,
+                        'reference_type' => 'marketer_conversion_reversal',
+                        'reference_id' => (string) $conversion->id,
+                        'description' => "Reversal of platform commission for conversion {$conversion->id}",
+                    ])->all();
+
+                    $this->ledgerService->record($this->ledgerService->newGroupId(), $reversalEntries);
                 }
             }
 

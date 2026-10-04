@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\MarketerCampaignConversion;
 use App\Models\Wallet;
+use App\Services\LedgerService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,7 +34,7 @@ class ApproveMarketerConversionsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(): void
+    public function handle(LedgerService $ledgerService): void
     {
         MarketerCampaignConversion::where('status', 'pending')
             ->whereHas('orderItem.subOrder', fn ($q) => $q->whereIn('status', ['delivered', 'completed']))
@@ -41,17 +42,17 @@ class ApproveMarketerConversionsJob implements ShouldQueue
                 $q->whereHas('orderItem', fn ($i) => $i->whereNull('return_eligible_until'))
                     ->orWhereHas('orderItem', fn ($i) => $i->where('return_eligible_until', '<', today()));
             })
-            ->with('invitation')
-            ->chunkById(200, function ($conversions) {
+            ->with(['invitation', 'orderItem.subOrder'])
+            ->chunkById(200, function ($conversions) use ($ledgerService) {
                 foreach ($conversions as $conversion) {
-                    $this->approveOne($conversion);
+                    $this->approveOne($conversion, $ledgerService);
                 }
             });
     }
 
-    private function approveOne(MarketerCampaignConversion $conversion): void
+    private function approveOne(MarketerCampaignConversion $conversion, LedgerService $ledgerService): void
     {
-        DB::transaction(function () use ($conversion) {
+        DB::transaction(function () use ($conversion, $ledgerService) {
             $locked = MarketerCampaignConversion::where('id', $conversion->id)->lockForUpdate()->first();
             if (! $locked || $locked->status !== 'pending') {
                 return;
@@ -76,6 +77,35 @@ class ApproveMarketerConversionsJob implements ShouldQueue
                 'approved_at' => now(),
                 'wallet_credited_at' => now(),
             ]);
+
+            $platformCommission = (int) $locked->platform_commission_amount;
+            if ($platformCommission > 0) {
+                $vendorId = $locked->orderItem?->subOrder?->vendor_id;
+                $ledgerService->record($ledgerService->newGroupId(), [
+                    [
+                        'account_type' => 'seller_payable',
+                        'account_holder_type' => 'vendor',
+                        'account_holder_id' => $vendorId,
+                        'debit' => $platformCommission,
+                        'credit' => 0,
+                        'currency' => $locked->currency,
+                        'reference_type' => 'marketer_conversion',
+                        'reference_id' => (string) $locked->id,
+                        'description' => "Platform commission deducted from vendor payable for conversion {$locked->id}",
+                    ],
+                    [
+                        'account_type' => 'platform_commission',
+                        'account_holder_type' => null,
+                        'account_holder_id' => null,
+                        'debit' => 0,
+                        'credit' => $platformCommission,
+                        'currency' => $locked->currency,
+                        'reference_type' => 'marketer_conversion',
+                        'reference_id' => (string) $locked->id,
+                        'description' => "Platform commission earned on marketer conversion {$locked->id}",
+                    ],
+                ]);
+            }
         });
     }
 }

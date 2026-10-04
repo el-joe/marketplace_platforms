@@ -28,7 +28,8 @@ class ClassifiedListingDetailResource extends JsonResource
             'attributes' => $this->attributes ?? [],
             'location' => [
                 'city' => $this->relationLoaded('city') ? Bilingual::pair($this->city, 'name') : null,
-                // lat/lng intentionally omitted from public detail — approximate area only
+                'latitude' => $this->latitude !== null ? (float) $this->latitude : null,
+                'longitude' => $this->longitude !== null ? (float) $this->longitude : null,
             ],
             'category' => $this->relationLoaded('classifiedCategory') ? [
                 'id' => $this->classifiedCategory?->id,

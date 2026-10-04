@@ -12,10 +12,11 @@ class MarketerCampaignConversion extends Model
 
     protected $fillable = [
         'campaign_id', 'invitation_id', 'order_id', 'order_item_id',
-        'referral_clicked_at', 'commission_amount', 'currency',
+        'referral_clicked_at', 'commission_amount', 'platform_commission_amount', 'currency',
         'commissioned', 'paid_at', 'sale_number_in_campaign', 'tiered_rule_id',
         'flash_sale_id', 'flash_sale_bonus_amount',
         'status', 'approved_at', 'reversed_at', 'wallet_credited_at', 'wallet_released_at',
+        'payout_id',
     ];
 
     protected $casts = [

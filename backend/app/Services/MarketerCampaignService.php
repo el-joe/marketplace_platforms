@@ -60,12 +60,13 @@ class MarketerCampaignService
      */
     public function markConversionsPaid(array $conversionIds, string $payoutId): void
     {
-        DB::transaction(function () use ($conversionIds) {
+        DB::transaction(function () use ($conversionIds, $payoutId) {
             MarketerCampaignConversion::whereIn('id', $conversionIds)
                 ->where('commissioned', false)
                 ->update([
                     'commissioned' => true,
                     'paid_at' => now(),
+                    'payout_id' => $payoutId,
                 ]);
 
             $conversions = MarketerCampaignConversion::whereIn('id', $conversionIds)
@@ -1004,8 +1005,12 @@ class MarketerCampaignService
             ->where('global_status', 'active')
             ->withCount(['campaignInvitations as accepted_count' => fn ($q) => $q->where('status', 'accepted')])
             ->having('accepted_count', '>=', $minAccepted)
-            ->orderBy('accepted_count', 'desc')
+            ->orderBy('accepted_count', 'asc')
             ->first();
+
+        $oldInvitation->marketer->marketerAdmins->each(
+            fn ($ma) => $ma->notify(new CampaignInvitationRejectedNotification($oldInvitation))
+        );
 
         $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation))

@@ -9,6 +9,7 @@ import ClassifiedFeatures from "./classified-features";
 import ClassifiedInquiry from "./classified-inquiry";
 import ClassifiedSidebar from "./classified-sidebar";
 import ClassifiedRecommended from "./classified-recommended";
+import ClassifiedLocationMap from "./classified-location-map";
 import { ClassifiedDetail } from "./types";
 
 interface ClassifiedViewProps {
@@ -43,10 +44,18 @@ export default function ClassifiedView({ initialData }: ClassifiedViewProps) {
             {/* 4. Description */}
             <ClassifiedDescription description={listing.description} />
 
-            {/* 5. Features Checklist */}
+            {/* 5. Location Map */}
+            {listing.latitude && listing.longitude && (
+              <ClassifiedLocationMap
+                latitude={listing.latitude}
+                longitude={listing.longitude}
+              />
+            )}
+
+            {/* 7. Features Checklist */}
             <ClassifiedFeatures features={listing.features} />
 
-            {/* 6. Ask the Lister */}
+            {/* 8. Ask the Lister */}
             <ClassifiedInquiry sellerName={listing.seller.name} slug={listing.slug} />
           </div>
 

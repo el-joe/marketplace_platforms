@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Marketer;
 use App\Models\MarketerCampaignInvitation;
+use App\Services\MarketerCampaignService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class CampaignController extends Controller
 {
-    private function marketer(): \App\Models\Marketer
+    public function __construct(private readonly MarketerCampaignService $campaignService) {}
+
+    private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
     }
@@ -68,5 +72,23 @@ class CampaignController extends Controller
             ->paginate(20);
 
         return view('marketer.campaigns.finished', compact('marketer', 'invitations'));
+    }
+
+    public function request(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'listing_id' => ['required', 'uuid'],
+            'listing_type' => ['required', 'in:vendor_listing,admin_listing'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $source = $validated['listing_type'] === 'vendor_listing'
+            ? CampaignSource::vendorListing($validated['listing_id'])
+            : CampaignSource::adminListing($validated['listing_id']);
+
+        $this->campaignService->requestCampaign($this->marketer(), $source, $validated);
+
+        return redirect()->route('marketer.campaigns.active')
+            ->with('success', __('Campaign request submitted successfully.'));
     }
 }

@@ -84,6 +84,8 @@ export function toClassifiedDetail(
       column2: specItems.slice(mid),
     },
     description: listing.description?.[isAr ? "ar" : "en"] ?? "",
+    latitude: listing.location?.latitude ?? null,
+    longitude: listing.location?.longitude ?? null,
     features: [],
     seller: {
       id: `${listing.slug}-seller`,

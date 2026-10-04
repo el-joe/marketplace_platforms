@@ -221,6 +221,24 @@ class MarketerCampaignController extends Controller
         return back()->with('success', $message);
     }
 
+    public function cancelActive(Request $request, MarketerCampaign $marketerCampaign)
+    {
+        abort_unless(
+            auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.cancel'),
+            403
+        );
+        abort_unless($marketerCampaign->vendor_id === $this->vendorId(), 403);
+        abort_unless(in_array($marketerCampaign->status, ['active', 'auto_approved', 'paused'], true), 422, 'Campaign cannot be cancelled in its current status');
+
+        $request->validate([
+            'reason' => ['required', 'string', 'min:10'],
+        ]);
+
+        $this->marketerCampaignService->cancelCampaign($marketerCampaign);
+
+        return back()->with('success', __('partner.marketer_campaigns_my.cancel_success'));
+    }
+
     public function cancel(MarketerCampaign $marketerCampaign)
     {
         abort_unless(
@@ -265,5 +283,23 @@ class MarketerCampaignController extends Controller
             'marketer_type' => $m->marketerJobs->first()?->key,
             'type_label' => $m->isInfluencer() ? 'مؤثر' : 'أفيليت',
         ]));
+    }
+
+    public function approveRequest(Request $request, MarketerCampaign $campaign)
+    {
+        $request->validate([
+            'marketer_commission_amount' => ['required', 'integer', 'min:1'],
+            'platform_commission_amount' => ['required', 'integer', 'min:0'],
+        ]);
+
+        abort_unless($campaign->status === 'marketer_requested', 422);
+        abort_unless($campaign->vendor_id === $this->vendor()->id, 403);
+
+        $this->marketerCampaignService->approveMarketerRequest(
+            $campaign,
+            $request->only(['marketer_commission_amount', 'platform_commission_amount'])
+        );
+
+        return back()->with('success', 'تم قبول طلب الماركتر وأصبحت الحملة نشطة.');
     }
 }
