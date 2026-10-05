@@ -13,6 +13,7 @@ import {
   LucideProps,
   MapPinIcon,
   Package2Icon,
+  ShoppingCartIcon,
   UserCircleIcon,
 } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -106,7 +107,7 @@ const Header = () => {
     <header className="md:fixed top-0 inset-x-0 z-20 bg-white">
       {/* main header */}
       <div className="flex items-center justify-center pt-2 md:pb-2 md:h-15 md:bg-main">
-        <div className="flex items-center gap-x-2 container flex-wrap">
+        <div className="flex items-center gap-x-2 container flex-wrap h-full md:text-white">
           {/* side categories list for small screens */}
           <SideCategoriesList />
           {/* logo */}
@@ -285,14 +286,15 @@ const Header = () => {
           />
           {/* cart link */}
           <HeaderButton
-            Icon={() => (
-              <Image
-                src="/images/Cart_Header_icon.svg"
-                alt={t("cart")}
-                width={24}
-                height={24}
-              />
-            )}
+            Icon={ShoppingCartIcon}
+            // Icon={() => (
+            //   <Image
+            //     src="/images/Cart_Header_icon.svg"
+            //     alt={t("cart")}
+            //     width={24}
+            //     height={24}
+            //   />
+            // )}
             text={t("cart")}
             title={t("cartLinkLabel")}
             href="/cart"

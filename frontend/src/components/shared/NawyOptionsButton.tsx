@@ -21,7 +21,7 @@ export default function NawyOptionsButton() {
     <Link
       href={NAWY_OPTIONS_PATH}
       aria-label={t("ariaLabel")}
-      className="fixed bottom-36 inset-e-4 md:bottom-24 md:inset-e-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full shadow-xl font-semibold text-sm bg-amber-500 text-white transition-all hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600"
+      className="fixed bottom-36 inset-e-4 md:bottom-24 md:inset-e-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full shadow-xl font-semibold text-sm bg-main text-white transition-all hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600"
     >
       <span aria-hidden="true" className="text-base">
         {BOLT}
