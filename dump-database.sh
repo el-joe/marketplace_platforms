@@ -1,0 +1,1 @@
+mysqldump -u root -p --no-data marketplace_platform_live > marketplace_platform_live_schema.sql
