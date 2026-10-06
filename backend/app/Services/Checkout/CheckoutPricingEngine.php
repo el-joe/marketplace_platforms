@@ -9,6 +9,7 @@ use App\Enums\CouponType;
 use App\Enums\OrderStatus;
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\CategoryCommissionTier;
 use App\Models\Commission;
 use App\Models\Country;
 use App\Models\CountryCategory;
@@ -689,9 +690,6 @@ class CheckoutPricingEngine
 
         if ($vendor !== null && (float) $vendor->commission_rate > 0) {
             $amount = (int) round($baseAmountCents * ((float) $vendor->commission_rate) / 100);
-            if ($category !== null && (int) $category->commission_min_amount > 0) {
-                $amount = max($amount, (int) $category->commission_min_amount * $quantity);
-            }
 
             return [$amount, $categoryId];
         }
@@ -729,12 +727,19 @@ class CheckoutPricingEngine
             ? ($countryCategory?->commission_fbn_fixed ?? $resolved->commission_fbn_fixed)
             : ($countryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
 
+        // Price tiers: a tier matching the unit price overrides the FBP/FBN pct and adds a per-unit floor.
+        // TODO: eager-load commissionTiers where categories are loaded to avoid an extra query per line.
+        $safeQty = max(1, $quantity);
+        $unitPrice = intdiv($baseAmountCents + $safeQty - 1, $safeQty);
+        $tiers = $resolved->relationLoaded('commissionTiers')
+            ? $resolved->commissionTiers
+            : CategoryCommissionTier::where('category_id', $resolved->id)->orderBy('price_from')->get();
+        $tier = CategoryCommissionTier::resolveForUnitPrice($tiers, $unitPrice);
+
         $amount = CommissionCalculator::calculate(
             baseAmount: $baseAmountCents,
-            standardRate: $pct,
-            thresholdPrice: (int) $resolved->commission_threshold_price,
-            highRate: (float) $resolved->commission_high_rate,
-            minCommission: (int) $resolved->commission_min_amount,
+            standardRate: $tier !== null ? (float) $tier->commission_rate : $pct,
+            minCommission: $tier !== null ? (int) $tier->min_commission : 0,
             quantity: $quantity,
             flatAmount: $fixed,
             includeFlat: true,

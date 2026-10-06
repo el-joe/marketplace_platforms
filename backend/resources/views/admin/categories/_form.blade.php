@@ -200,30 +200,11 @@
                         {{ __('admin.categories.commission_formula_note') }}
                     </p>
 
-                    <div class="mt-4 border-t border-gray-200 pt-4">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-1">{{ __('admin.categories.variable_commission') }}</h4>
-                        <p class="text-xs text-gray-500 mb-3">{{ __('admin.categories.variable_commission_hint') }}</p>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.categories.commission_threshold_price') }}</label>
-                                <input type="number" name="commission_threshold_price" min="0" step="1"
-                                    value="{{ old('commission_threshold_price', $category->commission_threshold_price ?? 0) }}"
-                                    class="input w-full text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.categories.commission_high_rate') }}</label>
-                                <input type="number" name="commission_high_rate" min="0" max="100" step="0.01"
-                                    value="{{ old('commission_high_rate', $category->commission_high_rate ?? 0) }}"
-                                    class="input w-full text-sm">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.categories.commission_min_amount') }}</label>
-                                <input type="number" name="commission_min_amount" min="0" step="1"
-                                    value="{{ old('commission_min_amount', $category->commission_min_amount ?? 0) }}"
-                                    class="input w-full text-sm">
-                            </div>
-                        </div>
-                    </div>
+                    @if($isEdit ?? false)
+                        @include('admin.categories._commission_tiers', ['category' => $category])
+                    @else
+                        <p class="mt-4 text-xs text-gray-400 italic">{{ __('admin.categories.save_category_first_for_tiers') }}</p>
+                    @endif
                 </div>
 
                 <script>

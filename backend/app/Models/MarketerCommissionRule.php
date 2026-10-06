@@ -22,7 +22,7 @@ class MarketerCommissionRule extends Model
     protected $fillable = [
         'marketer_id', 'scope', 'category_type', 'category_id',
         'commission_mode', 'commission_rate', 'commission_flat_amount', 'updated_by_admin_id',
-        'commission_threshold_price', 'commission_min_amount',
+        'commission_min_amount',
         'rule_key', 'excluded_category_ids',
     ];
 
@@ -44,7 +44,6 @@ class MarketerCommissionRule extends Model
     protected $casts = [
         'commission_rate' => 'decimal:2',
         'commission_flat_amount' => 'integer',
-        'commission_threshold_price' => 'integer',
         'commission_min_amount' => 'integer',
         'excluded_category_ids' => 'array',
     ];

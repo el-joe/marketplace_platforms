@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CarrierClaimController;
 use App\Http\Controllers\Admin\CarrierScorecardController;
 use App\Http\Controllers\Admin\CartCardOfferController;
+use App\Http\Controllers\Admin\CategoryCommissionTierController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryShippingMethodController;
 use App\Http\Controllers\Admin\CityController;
@@ -326,6 +327,15 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{category}/marketer-commission', [CategoryController::class, 'updateMarketerCommission'])->name('marketer-commission.update');
         Route::post('/{category}/upload-image', [CategoryController::class, 'uploadImage'])->name('upload-image');
         Route::delete('/{category}/delete-image', [CategoryController::class, 'deleteImage'])->name('delete-image');
+
+        Route::prefix('{category}/commission-tiers')->name('commission-tiers.')->group(function () {
+            Route::get('/', [CategoryCommissionTierController::class, 'index'])->name('index');
+            Route::middleware('admin.permission:categories.edit')->group(function () {
+                Route::post('/', [CategoryCommissionTierController::class, 'store'])->name('store');
+                Route::put('/{tier}', [CategoryCommissionTierController::class, 'update'])->name('update');
+                Route::delete('/{tier}', [CategoryCommissionTierController::class, 'destroy'])->name('destroy');
+            });
+        });
 
         Route::prefix('{category}/shipping-methods')->name('shipping-methods.')->group(function () {
             Route::get('/', [CategoryShippingMethodController::class, 'index'])->name('index');

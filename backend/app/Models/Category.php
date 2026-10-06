@@ -70,9 +70,6 @@ class Category extends Model
         'commission_fbp_fixed',
         'commission_fbn_pct',
         'commission_fbn_fixed',
-        'commission_threshold_price',
-        'commission_high_rate',
-        'commission_min_amount',
         'sort_order',
         'product_count',
         'is_active',
@@ -100,9 +97,6 @@ class Category extends Model
         'commission_fbp_fixed' => 'integer',
         'commission_fbn_pct' => 'decimal:2',
         'commission_fbn_fixed' => 'integer',
-        'commission_threshold_price' => 'integer',
-        'commission_high_rate' => 'decimal:2',
-        'commission_min_amount' => 'integer',
         'sort_order' => 'integer',
         'product_count' => 'integer',
         'is_active' => 'boolean',
@@ -153,6 +147,11 @@ class Category extends Model
     public function contractTemplate(): BelongsTo
     {
         return $this->belongsTo(ClassifiedContractTemplate::class, 'contract_template_id');
+    }
+
+    public function commissionTiers(): HasMany
+    {
+        return $this->hasMany(CategoryCommissionTier::class)->orderBy('price_from');
     }
 
     public function children(): HasMany
