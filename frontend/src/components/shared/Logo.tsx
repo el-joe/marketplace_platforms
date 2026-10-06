@@ -1,20 +1,27 @@
 "use client";
 import { Link } from "@/i18n/navigation";
-import useLocale from "@/src/hooks/use-locale";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
-const Logo = () => {
-  const locale = useLocale();
+type LogoProps = {
+  attribute?: "short" | "full";
+};
+
+const logoSrc = {
+  short: "/images/logos/logo.webp",
+  full: "/images/logos/logo-text.webp",
+};
+
+const Logo = ({ attribute = "short" }: LogoProps) => {
   const t = useTranslations("pageBuilder");
   return (
-    <Link href={"/"} className="w-14 lg:w-20 relative">
+    <Link href={"/"} className="w-14 lg:w-20 relative h-full ">
       <Image
-        src={`/images/noon-logo-${locale}.svg`}
+        src={logoSrc[attribute]}
         alt={t("logo")}
-        fill
-        sizes="100%"
-        className="relative!"
+        width="80"
+        height="80"
+        className="object-contain w-full h-full"
       />
     </Link>
   );

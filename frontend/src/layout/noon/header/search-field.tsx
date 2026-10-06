@@ -140,7 +140,7 @@ const SearchField = () => {
       visibleSuggestions.vendors?.length > 0);
 
   return (
-    <div ref={containerRef} className="flex-1 relative min-w-35">
+    <div ref={containerRef} className="flex-1 relative min-w-35 text-black">
       <InputGroup
         className={cn(
           "h-10 md:h-11 text-base bg-white! shadow-xs focus-within:ring-0! transition-all rounded-lg ",

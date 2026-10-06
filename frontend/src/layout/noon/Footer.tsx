@@ -132,7 +132,7 @@ const Footer = async () => {
                   <Link
                     href={link.url ?? "/"}
                     key={link.id}
-                    className="aspect-square w-10 rounded-full bg-yellow-400 grid place-items-center"
+                    className="aspect-square w-10 rounded-full bg-main grid place-items-center"
                   >
                     <Image
                       src={
@@ -143,6 +143,7 @@ const Footer = async () => {
                       width={20}
                       height={20}
                       alt=""
+                      className="invert-100"
                     />
                   </Link>
                 ))}
