@@ -1,0 +1,12 @@
+---- figure that if any module into admin panel and not used anywhere
+
+Everything is actually wired up. The audit found no dead modules — every feature has at least one consumer (storefront route, partner panel, API endpoint, or service in the checkout/display flow).
+
+The two you already removed (radio channels + content-settings) were genuinely the only unused ones — both had no downstream consumers anywhere outside the admin itself.
+
+A couple worth noting if you want to investigate further:
+
+bestsellers — admin curates it, but worth confirming the product listing API actually reads the flag
+flash-sales — no dedicated storefront page, but it feeds into the marketer campaign conversion flow
+Everything else: legitimately live.
+
