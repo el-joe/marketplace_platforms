@@ -34,7 +34,8 @@ class CategoryCommissionTier extends Model
     }
 
     /**
-     * Find the tier covering the given unit price (price_from inclusive, price_to exclusive).
+     * Find the tier covering the given unit price.
+     * price_from is inclusive, price_to is inclusive (NULL = open-ended / no upper bound).
      * Tiers must be sorted by price_from ASC. Returns null when none matches.
      *
      * @param  Collection<int, self>  $tiers
@@ -45,7 +46,7 @@ class CategoryCommissionTier extends Model
             if ($unitPrice < $tier->price_from) {
                 continue;
             }
-            if ($tier->price_to !== null && $unitPrice >= $tier->price_to) {
+            if ($tier->price_to !== null && $unitPrice > $tier->price_to) {
                 continue;
             }
 

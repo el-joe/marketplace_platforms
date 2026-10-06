@@ -444,6 +444,14 @@ class CheckoutPricingEngine
         $lineResults = [];
         $groups = [];
 
+        // Eager-load categories with their commission tiers to avoid N+1 queries
+        // (one query per line item) inside resolveCommission().
+        $categoryIds = collect($lines)->pluck('category_id')->filter()->unique()->values();
+        $categoriesWithTiers = Category::with('commissionTiers')
+            ->whereIn('id', $categoryIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($lines as $l) {
             $key = $l['key'];
             $groupKey = $l['vendor_id'] ?? 'platform';
@@ -463,7 +471,7 @@ class CheckoutPricingEngine
             } else {
                 $vendor = Vendor::find($l['vendor_id']);
                 $base = $l['commission_base_unit_price'] * $l['quantity']; // D1 + marketer-listing fix: gross, before coupon, vendor listing price
-                [$rawCommission, $commissionCategoryId] = $this->resolveCommission($vendor, $l['category_id'], $l['fulfillment_model'], $country, $base, $l['quantity']);
+                [$rawCommission, $commissionCategoryId] = $this->resolveCommission($vendor, $l['category_id'], $l['fulfillment_model'], $country, $base, $l['quantity'], $categoriesWithTiers);
             }
 
             // Marketer commission (D5): owner pays; base is the vendor
@@ -623,12 +631,17 @@ class CheckoutPricingEngine
      *
      * @return array{0: int, 1: ?string} [commission amount, category id used]
      */
-    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1): array
+    /**
+     * @param  \Illuminate\Support\Collection<string, Category>|null  $categoryCache  pre-loaded categories keyed by id (with commissionTiers eager-loaded)
+     */
+    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?\Illuminate\Support\Collection $categoryCache = null): array
     {
         $today = Carbon::today()->toDateString();
 
         $categoryChainIds = [];
-        $category = $categoryId ? Category::find($categoryId) : null;
+        $category = $categoryId
+            ? ($categoryCache?->get($categoryId) ?? Category::find($categoryId))
+            : null;
         $walker = $category;
         $levels = 0;
         while ($walker !== null && $levels < 6) {
@@ -728,7 +741,7 @@ class CheckoutPricingEngine
             : ($countryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
 
         // Price tiers: a tier matching the unit price overrides the FBP/FBN pct and adds a per-unit floor.
-        // TODO: eager-load commissionTiers where categories are loaded to avoid an extra query per line.
+        // commissionTiers is eager-loaded via $categoryCache in computeMoneySplit() to avoid N+1.
         $safeQty = max(1, $quantity);
         $unitPrice = intdiv($baseAmountCents + $safeQty - 1, $safeQty);
         $tiers = $resolved->relationLoaded('commissionTiers')

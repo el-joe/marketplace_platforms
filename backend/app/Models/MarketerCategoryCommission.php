@@ -16,12 +16,14 @@ class MarketerCategoryCommission extends Model
         'commission_mode',
         'commission_rate',
         'commission_flat_amount',
+        'commission_min_amount',
         'updated_by_admin_id',
     ];
 
     protected $casts = [
         'commission_rate' => 'decimal:2',
         'commission_flat_amount' => 'integer',
+        'commission_min_amount' => 'integer',
     ];
 
     /**
