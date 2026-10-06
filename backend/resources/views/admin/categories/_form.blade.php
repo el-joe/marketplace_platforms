@@ -302,6 +302,170 @@
                     })();
                 </script>
 
+                {{-- Per-country Commission Rate Overrides (saved immediately via fetch) --}}
+                @if($isEdit && isset($activeCountries) && $activeCountries->isNotEmpty())
+                    <div
+                        x-data="categoryCountryRates({
+                            saveUrl: '{{ route('admin.categories.country-commission.update', $category->id) }}',
+                            countries: {{ $activeCountries->map(fn($c) => [
+                                'id'            => $c->id,
+                                'name'          => $c->name_en,
+                                'flag'          => $c->flag_emoji ?? '',
+                                'currency_code' => $c->currency_code ?? '—',
+                                'overrides'     => (function() use ($c, $countryCommissions) {
+                                    $cc = $countryCommissions->get($c->id);
+                                    return [
+                                        'fbp_pct'   => $cc?->commission_fbp_pct,
+                                        'fbp_fixed' => $cc?->commission_fbp_fixed,
+                                        'fbn_pct'   => $cc?->commission_fbn_pct,
+                                        'fbn_fixed' => $cc?->commission_fbn_fixed,
+                                    ];
+                                })(),
+                            ])->values()->toJson() }}
+                        })"
+                        class="bg-gray-50 rounded-xl p-4 border border-gray-200"
+                    >
+                        <h4 class="text-sm font-semibold text-gray-700 mb-1">
+                            {{ __('admin.categories.country_commission_rates') }}
+                        </h4>
+                        <p class="text-xs text-gray-400 mb-4">{{ __('admin.categories.country_commission_rates_hint') }}</p>
+
+                        <div class="space-y-3">
+                            <template x-for="country in countries" :key="country.id">
+                                <div class="bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-base" x-text="country.flag"></span>
+                                            <span class="text-sm font-semibold text-gray-700" x-text="country.name"></span>
+                                            <span class="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded" x-text="country.currency_code"></span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span x-show="country.saved" x-cloak class="text-xs text-green-600 font-medium">✓ {{ __('admin.saved') }}</span>
+                                            <span x-show="country.error" x-cloak class="text-xs text-red-500 font-medium" x-text="country.error"></span>
+                                            <button
+                                                type="button"
+                                                @click="save(country)"
+                                                :disabled="country.saving"
+                                                class="btn btn-sm btn-primary text-xs px-3 py-1.5"
+                                            >
+                                                <span x-show="!country.saving">{{ __('admin.save') }}</span>
+                                                <span x-show="country.saving" x-cloak>…</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {{-- FBP --}}
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-wide text-blue-600 mb-2">{{ __('admin.categories.fbp_label') }}</p>
+                                            <div class="space-y-2">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.categories.percentage_rate') }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number"
+                                                            x-model="country.overrides.fbp_pct"
+                                                            step="0.01" min="0" max="100"
+                                                            :placeholder="'{{ __('admin.categories.inherit_global') }}'"
+                                                            class="input w-full text-sm">
+                                                        <span class="text-xs text-gray-400">%</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.categories.fixed_fee_per_unit') }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number"
+                                                            x-model="country.overrides.fbp_fixed"
+                                                            step="1" min="0"
+                                                            :placeholder="'{{ __('admin.categories.inherit_global') }}'"
+                                                            class="input w-full text-sm">
+                                                        <span class="text-xs text-gray-400 font-mono whitespace-nowrap" x-text="country.currency_code"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- FBN --}}
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-wide text-green-600 mb-2">{{ __('admin.categories.fbn_label') }}</p>
+                                            <div class="space-y-2">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.categories.percentage_rate') }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number"
+                                                            x-model="country.overrides.fbn_pct"
+                                                            step="0.01" min="0" max="100"
+                                                            :placeholder="'{{ __('admin.categories.inherit_global') }}'"
+                                                            class="input w-full text-sm">
+                                                        <span class="text-xs text-gray-400">%</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.categories.fixed_fee_per_unit') }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number"
+                                                            x-model="country.overrides.fbn_fixed"
+                                                            step="1" min="0"
+                                                            :placeholder="'{{ __('admin.categories.inherit_global') }}'"
+                                                            class="input w-full text-sm">
+                                                        <span class="text-xs text-gray-400 font-mono whitespace-nowrap" x-text="country.currency_code"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <script>
+                        function categoryCountryRates(config) {
+                            return {
+                                saveUrl: config.saveUrl,
+                                countries: config.countries.map(c => ({
+                                    ...c,
+                                    saving: false,
+                                    saved: false,
+                                    error: null,
+                                })),
+
+                                async save(country) {
+                                    country.saving = true;
+                                    country.saved  = false;
+                                    country.error  = null;
+                                    try {
+                                        const body = {
+                                            _method: 'PUT',
+                                            country_id:           country.id,
+                                            commission_fbp_pct:   country.overrides.fbp_pct   !== '' ? country.overrides.fbp_pct   : null,
+                                            commission_fbp_fixed: country.overrides.fbp_fixed !== '' ? country.overrides.fbp_fixed : null,
+                                            commission_fbn_pct:   country.overrides.fbn_pct   !== '' ? country.overrides.fbn_pct   : null,
+                                            commission_fbn_fixed: country.overrides.fbn_fixed !== '' ? country.overrides.fbn_fixed : null,
+                                        };
+                                        const res = await fetch(this.saveUrl, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                                'Accept': 'application/json',
+                                            },
+                                            body: JSON.stringify(body),
+                                        });
+                                        if (!res.ok) throw new Error(await res.text());
+                                        country.saved = true;
+                                        setTimeout(() => { country.saved = false; }, 3000);
+                                    } catch (e) {
+                                        country.error = '{{ __('admin.save_failed') }}';
+                                        setTimeout(() => { country.error = null; }, 5000);
+                                    } finally {
+                                        country.saving = false;
+                                    }
+                                },
+                            };
+                        }
+                    </script>
+                @endif
+
                 {{-- Commission Tiers (per-country, saved immediately via fetch) --}}
                 @if(!$isEdit)
                     <p class="text-sm text-gray-400 italic">{{ __('admin.categories.save_category_first_for_tiers') }}</p>

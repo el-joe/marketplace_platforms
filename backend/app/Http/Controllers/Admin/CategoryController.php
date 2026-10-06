@@ -10,6 +10,7 @@ use App\Models\Admin;
 use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Country;
+use App\Models\CountryCategory;
 use App\Models\File;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Slug;
@@ -195,6 +196,9 @@ class CategoryController extends Controller
             ->get()
             ->keyBy('country_id');
         $activeCountries = Country::where('is_active', true)->orderBy('name_en')->get();
+        $countryCommissions = CountryCategory::where('category_id', $categoryModel->id)
+            ->get()
+            ->keyBy('country_id');
 
         return view('admin.categories.edit', array_merge($this->formData(), [
             'breadcrumbs' => [
@@ -205,6 +209,7 @@ class CategoryController extends Controller
             'category' => $categoryModel,
             'marketerCommissions' => $marketerCommissions,
             'activeCountries' => $activeCountries,
+            'countryCommissions' => $countryCommissions,
         ]));
     }
 

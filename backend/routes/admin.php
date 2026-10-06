@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\CarrierClaimController;
 use App\Http\Controllers\Admin\CarrierScorecardController;
 use App\Http\Controllers\Admin\CartCardOfferController;
 use App\Http\Controllers\Admin\CategoryCommissionTierController;
+use App\Http\Controllers\Admin\CategoryCountryCommissionController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryShippingMethodController;
 use App\Http\Controllers\Admin\CityController;
@@ -325,6 +326,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{category}/toggle-footer-visible', [CategoryController::class, 'toggleFooterVisible'])->name('toggle-footer-visible');
         Route::post('/{category}/sync-attributes', [CategoryController::class, 'syncAttributes'])->name('sync-attributes');
         Route::post('/{category}/marketer-commission', [CategoryController::class, 'updateMarketerCommission'])->name('marketer-commission.update');
+        Route::put('/{category}/country-commission', [CategoryCountryCommissionController::class, 'update'])->name('country-commission.update')->middleware('admin.permission:categories.edit');
         Route::post('/{category}/upload-image', [CategoryController::class, 'uploadImage'])->name('upload-image');
         Route::delete('/{category}/delete-image', [CategoryController::class, 'deleteImage'])->name('delete-image');
 
