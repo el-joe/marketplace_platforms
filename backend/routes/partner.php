@@ -37,6 +37,7 @@ use App\Http\Controllers\Partner\SubscriptionController as PartnerSubscriptionCo
 use App\Http\Controllers\Partner\SupportController;
 use App\Http\Controllers\Partner\TeamController;
 use App\Http\Controllers\Partner\ToolsController;
+use App\Http\Controllers\Partner\VendorCategoryContractController;
 use App\Http\Controllers\Partner\VendorChangeRequestController;
 use App\Http\Controllers\Partner\WalletController;
 use App\Http\Controllers\Partner\WarehouseController;
@@ -128,7 +129,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     Route::prefix('listings')->name('listings.')->controller(ListingController::class)->middleware('vendor.type:product_vendor')->group(function () {
         Route::get('/', 'index')->name('index')->middleware('vendor.can:listings.view');
         Route::get('/datatable', 'datatable')->name('datatable')->middleware('vendor.can:listings.view');
-        Route::get('/create', 'create')->name('create')->middleware('vendor.can:listings.create');
+        Route::get('/create', 'create')->name('create')->middleware(['vendor.can:listings.create', 'vendor.contracts.enforce']);
         Route::post('/', 'store')->name('store')->middleware('vendor.can:listings.create');
         Route::get('/product-search', 'productSearch')->name('product-search')->middleware('vendor.can:listings.view');
         Route::get('/products/{product}/variants/{variant}/slug-preview', 'slugPreview')->name('slug-preview')->middleware('vendor.can:listings.view');
@@ -515,7 +516,9 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
 
     // ─── السوق المفتوح (Classifieds) ─────────────────────────────────────────
     Route::prefix('classifieds')->name('classifieds.')->middleware('vendor.type:classified_vendor')->group(function () {
-        Route::get('/', [ClassifiedListingController::class, 'index'])->name('index');
+        Route::get('/', [ClassifiedListingController::class, 'index'])
+            ->name('index')
+            ->middleware('vendor.contracts.enforce');
         Route::post('/datatable', [ClassifiedListingController::class, 'datatable'])->name('datatable');
         Route::get('/categories', [ClassifiedListingController::class, 'categories'])->name('categories');
         Route::post('/', [ClassifiedListingController::class, 'store'])->name('store');
@@ -534,6 +537,14 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
             Route::get('/', [ClassifiedListingController::class, 'contractShow'])->name('show');
             Route::post('/', [ClassifiedListingController::class, 'contractAccept'])->name('accept');
         });
+    });
+
+    // Category-level contracts (one acceptance per template version, see CategoryContractService)
+    Route::prefix('contracts')->name('contracts.')->group(function () {
+        Route::get('pending', [VendorCategoryContractController::class, 'pending'])->name('pending');
+        Route::get('history', [VendorCategoryContractController::class, 'history'])->name('history');
+        Route::get('{templateId}/preview', [VendorCategoryContractController::class, 'preview'])->name('preview');
+        Route::post('{templateId}/accept', [VendorCategoryContractController::class, 'accept'])->name('accept');
     });
 });
 

@@ -28,6 +28,7 @@ class UpdateCategoryRequest extends FormRequest
             'commission_fbp_fixed' => ['nullable', 'integer', 'min:0'],
             'commission_fbn_pct' => ['nullable', 'numeric', 'between:0,100'],
             'commission_fbn_fixed' => ['nullable', 'integer', 'min:0'],
+            'contract_template_id' => ['nullable', 'uuid', Rule::exists('classified_contract_templates', 'id')->where('category_scope', 'product')->where('is_published', true)],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_visible' => ['boolean'],

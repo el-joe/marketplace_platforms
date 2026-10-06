@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Services\Customer\CategoryService;
+use App\Services\Customer\UnifiedCategoryService;
+use App\Services\FooterService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use App\Models\ShippingMethod;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Kalnoy\Nestedset\NodeTrait;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Category extends Model
 {
@@ -22,10 +25,12 @@ class Category extends Model
     {
         return 'lft';
     }
+
     public function getRgtName(): string
     {
         return 'rgt';
     }
+
     public function getDepthName(): string
     {
         return 'depth';
@@ -43,13 +48,13 @@ class Category extends Model
 
     private static function flushNavCaches(): void
     {
-        \App\Services\Customer\CategoryService::flushCache();
-        \App\Services\Customer\UnifiedCategoryService::flushCache();
-        \App\Services\FooterService::flushCache();
+        CategoryService::flushCache();
+        UnifiedCategoryService::flushCache();
+        FooterService::flushCache();
     }
 
-
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -68,6 +73,7 @@ class Category extends Model
         'sort_order',
         'product_count',
         'is_active',
+        'contract_template_id',
         'is_visible',
         'is_featured',
         'show_in_footer',
@@ -110,7 +116,8 @@ class Category extends Model
     public function getNameAttribute(): string
     {
         $locale = app()->getLocale();
-        return $this->{'name_' . $locale} ?? $this->name_en ?? '';
+
+        return $this->{'name_'.$locale} ?? $this->name_en ?? '';
     }
 
     /**
@@ -135,6 +142,11 @@ class Category extends Model
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    public function contractTemplate(): BelongsTo
+    {
+        return $this->belongsTo(ClassifiedContractTemplate::class, 'contract_template_id');
     }
 
     public function children(): HasMany
@@ -169,7 +181,7 @@ class Category extends Model
      * products -> variants -> vendor_listings (no direct FK, so a plain
      * hasMany/hasManyThrough won't reach three hops — a scoped builder does).
      */
-    public function vendorListings(): \Illuminate\Database\Eloquent\Builder
+    public function vendorListings(): Builder
     {
         return VendorListing::whereHas('productVariant.product', function ($query) {
             $query->where('category_id', $this->id);
@@ -225,7 +237,7 @@ class Category extends Model
     public function brandsInSubtree()
     {
         return Brand::query()
-            ->whereHas('categories', fn($q) => $q->where('categories.is_active', true)->whereIn('categories.id', array_merge([$this->id], $this->descendantIds())));
+            ->whereHas('categories', fn ($q) => $q->where('categories.is_active', true)->whereIn('categories.id', array_merge([$this->id], $this->descendantIds())));
     }
 
     public function shippingMethods(): BelongsToMany
@@ -250,6 +262,7 @@ class Category extends Model
             $path[] = ['id' => $ancestor->id, 'name' => $ancestor->name_en];
         }
         $path[] = ['id' => $this->id, 'name' => $this->name_en];
+
         return $path;
     }
 }

@@ -82,6 +82,8 @@
         @if($isClassifiedVendor)
         <x-partner-nav-group label="{{ __('partner.nav.open_market') }}">
             <x-partner-nav-item route="partner.classifieds.index" icon="squares-plus" label="{{ __('partner.nav.my_classifieds') }}" />
+            <x-partner-nav-item route="partner.contracts.pending" icon="pencil-square" label="{{ __('partner.contracts.nav_pending') }}" />
+            <x-partner-nav-item route="partner.contracts.history" icon="archive-box" label="{{ __('partner.contracts.nav_history') }}" />
         </x-partner-nav-group>
         @endif
 

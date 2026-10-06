@@ -6,6 +6,7 @@ use App\Http\Controllers\Vendor\AdCampaignController;
 use App\Http\Controllers\Vendor\AdSlotController;
 use App\Http\Controllers\Vendor\AuthController;
 use App\Http\Controllers\Vendor\ClassifiedListingController;
+use App\Http\Controllers\Vendor\ContractController;
 use App\Http\Controllers\Vendor\CouponController;
 use App\Http\Controllers\Vendor\CouponParticipationController;
 use App\Http\Controllers\Vendor\DashboardController;
@@ -250,6 +251,13 @@ Route::prefix('v1')->group(function (): void {
             });
 
             // Classified listings (vendor-owned)
+            // Category contracts: signed once per template version, shared across all of the vendor's listings
+            Route::prefix('contracts')->name('vendor.contracts.')->group(function (): void {
+                Route::get('pending', [ContractController::class, 'pending'])->name('pending');
+                Route::get('check-category', [ContractController::class, 'checkCategory'])->name('check-category');
+                Route::post('{templateId}/accept', [ContractController::class, 'accept'])->name('accept');
+            });
+
             Route::prefix('classifieds')->name('vendor.classifieds.')->group(function (): void {
                 Route::get('categories', [ClassifiedListingController::class, 'categories'])->name('categories');
                 Route::get('/', [ClassifiedListingController::class, 'index'])->name('index');

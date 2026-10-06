@@ -60,4 +60,9 @@ return [
         ],
     ],
 
+    'vendor' => [
+        'contract_updated_title' => 'Contract Updated — Action Required',
+        'contract_updated_message' => 'The contract ":name" has been updated to version :version. Please review and re-accept.',
+    ],
+
 ];

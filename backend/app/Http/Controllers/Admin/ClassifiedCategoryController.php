@@ -8,6 +8,7 @@ use App\Models\ClassifiedContractTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ClassifiedCategoryController extends Controller
@@ -15,7 +16,7 @@ class ClassifiedCategoryController extends Controller
     public function index(): View
     {
         $roots = ClassifiedCategory::with(['children.contractTemplate', 'contractTemplate'])
-            ->withCount(['listings as active_listing_count' => fn($q) => $q->where('status', 'active')])
+            ->withCount(['listings as active_listing_count' => fn ($q) => $q->where('status', 'active')])
             ->whereNull('parent_id')
             ->orderBy('sort_order')
             ->get();
@@ -23,11 +24,11 @@ class ClassifiedCategoryController extends Controller
         // Also eager-load children listing counts
         $roots->each(function ($root) {
             $root->children->each(function ($child) {
-                $child->loadCount(['listings as active_listing_count' => fn($q) => $q->where('status', 'active')]);
+                $child->loadCount(['listings as active_listing_count' => fn ($q) => $q->where('status', 'active')]);
             });
         });
 
-        $templates = ClassifiedContractTemplate::where('is_active', true)->orderBy('name')->get();
+        $templates = ClassifiedContractTemplate::forScope('classified')->enforceable()->orderBy('name')->get();
 
         return view('admin.classified-categories.index', compact('roots', 'templates'));
     }
@@ -35,24 +36,24 @@ class ClassifiedCategoryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name_en'                     => 'required|string|max:150',
-            'name_ar'                     => 'required|string|max:150',
-            'slug'                        => 'nullable|string|max:150|unique:classified_categories,slug',
-            'icon'                        => 'nullable|string|max:50',
-            'parent_id'                   => 'nullable|uuid|exists:classified_categories,id',
-            'requires_location_map'       => 'boolean',
-            'requires_sketch_upload'      => 'boolean',
-            'contract_template_id'        => 'nullable|uuid|exists:classified_contract_templates,id',
-            'required_attachment_types'   => 'nullable|array',
+            'name_en' => 'required|string|max:150',
+            'name_ar' => 'required|string|max:150',
+            'slug' => 'nullable|string|max:150|unique:classified_categories,slug',
+            'icon' => 'nullable|string|max:50',
+            'parent_id' => 'nullable|uuid|exists:classified_categories,id',
+            'requires_location_map' => 'boolean',
+            'requires_sketch_upload' => 'boolean',
+            'contract_template_id' => ['nullable', 'uuid', Rule::exists('classified_contract_templates', 'id')->where('category_scope', 'classified')->where('is_published', true)],
+            'required_attachment_types' => 'nullable|array',
             'required_attachment_types.*' => 'string|max:100',
-            'is_active'                   => 'boolean',
-            'sort_order'                  => 'integer|min:0',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer|min:0',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name_en']);
 
         // Cycle guard: a category cannot be its own ancestor
-        if (!empty($validated['parent_id'])) {
+        if (! empty($validated['parent_id'])) {
             if ($this->wouldCreateCycle(null, $validated['parent_id'])) {
                 return response()->json(['message' => __('admin.classified_categories.parent_cycle')], 422);
             }
@@ -61,7 +62,7 @@ class ClassifiedCategoryController extends Controller
         $category = ClassifiedCategory::create($validated);
 
         return response()->json([
-            'message'  => __('admin.classified_categories.created'),
+            'message' => __('admin.classified_categories.created'),
             'category' => $category->load('contractTemplate'),
         ], 201);
     }
@@ -69,21 +70,21 @@ class ClassifiedCategoryController extends Controller
     public function update(Request $request, ClassifiedCategory $category): JsonResponse
     {
         $validated = $request->validate([
-            'name_en'                     => 'required|string|max:150',
-            'name_ar'                     => 'required|string|max:150',
-            'slug'                        => 'nullable|string|max:150|unique:classified_categories,slug,' . $category->id,
-            'icon'                        => 'nullable|string|max:50',
-            'parent_id'                   => 'nullable|uuid|exists:classified_categories,id',
-            'requires_location_map'       => 'boolean',
-            'requires_sketch_upload'      => 'boolean',
-            'contract_template_id'        => 'nullable|uuid|exists:classified_contract_templates,id',
-            'required_attachment_types'   => 'nullable|array',
+            'name_en' => 'required|string|max:150',
+            'name_ar' => 'required|string|max:150',
+            'slug' => 'nullable|string|max:150|unique:classified_categories,slug,'.$category->id,
+            'icon' => 'nullable|string|max:50',
+            'parent_id' => 'nullable|uuid|exists:classified_categories,id',
+            'requires_location_map' => 'boolean',
+            'requires_sketch_upload' => 'boolean',
+            'contract_template_id' => ['nullable', 'uuid', Rule::exists('classified_contract_templates', 'id')->where('category_scope', 'classified')->where('is_published', true)],
+            'required_attachment_types' => 'nullable|array',
             'required_attachment_types.*' => 'string|max:100',
-            'is_active'                   => 'boolean',
-            'sort_order'                  => 'integer|min:0',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer|min:0',
         ]);
 
-        if (!empty($validated['parent_id'])) {
+        if (! empty($validated['parent_id'])) {
             if ($this->wouldCreateCycle($category->id, $validated['parent_id'])) {
                 return response()->json(['message' => __('admin.classified_categories.parent_cycle')], 422);
             }
@@ -92,7 +93,7 @@ class ClassifiedCategoryController extends Controller
         $category->update($validated);
 
         return response()->json([
-            'message'  => __('admin.classified_categories.updated'),
+            'message' => __('admin.classified_categories.updated'),
             'category' => $category->load('contractTemplate'),
         ]);
     }
@@ -118,14 +119,14 @@ class ClassifiedCategoryController extends Controller
 
     public function toggleActive(ClassifiedCategory $category): JsonResponse
     {
-        $category->update(['is_active' => !$category->is_active]);
+        $category->update(['is_active' => ! $category->is_active]);
 
         $statusLabel = $category->is_active
             ? __('admin.classified_categories.activated')
             : __('admin.classified_categories.deactivated');
 
         return response()->json([
-            'message'   => __('admin.classified_categories.status_toggled', ['status' => $statusLabel]),
+            'message' => __('admin.classified_categories.status_toggled', ['status' => $statusLabel]),
             'is_active' => $category->is_active,
         ]);
     }
@@ -133,7 +134,7 @@ class ClassifiedCategoryController extends Controller
     public function reorder(Request $request): JsonResponse
     {
         $request->validate([
-            'ids'   => 'required|array',
+            'ids' => 'required|array',
             'ids.*' => 'uuid',
         ]);
 

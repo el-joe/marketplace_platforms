@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Vendor\Classified\AcceptClassifiedContractRequest;
 use App\Http\Requests\Vendor\Classified\IndexClassifiedListingRequest;
 use App\Http\Requests\Vendor\Classified\StoreClassifiedListingRequest;
 use App\Http\Requests\Vendor\Classified\UpdateClassifiedListingRequest;
@@ -17,6 +16,8 @@ use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedInquiry;
 use App\Models\ClassifiedListing;
 use App\Models\Vendor;
+use App\Models\VendorAdmin;
+use App\Services\Vendor\CategoryContractService;
 use App\Services\Vendor\ClassifiedInquiryService;
 use App\Services\Vendor\ClassifiedListingService;
 use Illuminate\Http\JsonResponse;
@@ -47,7 +48,7 @@ class ClassifiedListingController extends Controller
         $query = ClassifiedListing::forVendors()
             ->where('seller_id', $vendorId)
             ->with(['images'])
-            ->when($request->status,      fn ($q) => $q->where('status', $request->status))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->category_id, fn ($q) => $q->where('classified_category_id', $request->category_id))
             ->latest();
 
@@ -65,11 +66,18 @@ class ClassifiedListingController extends Controller
 
     public function store(StoreClassifiedListingRequest $request): JsonResponse
     {
-        /** @var \App\Models\VendorAdmin $vendorAdmin */
+        /** @var VendorAdmin $vendorAdmin */
         $vendorAdmin = auth('vendor')->user();
-        $vendor      = Vendor::findOrFail($vendorAdmin->vendor_id);
+        $vendor = Vendor::findOrFail($vendorAdmin->vendor_id);
 
-        $listing = $this->listingService->create($vendor, $request->validated());
+        $data = $request->validated();
+        $category = ClassifiedCategory::findOrFail($data['classified_category_id']);
+
+        // Already-signed category contracts are not asked again; unsigned ones stay pending_contract until /contract/accept
+        $data['contract_accepted'] = app(CategoryContractService::class)
+            ->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_CLASSIFIED, $category->id) === null;
+
+        $listing = $this->listingService->create($vendor, $data);
 
         return ApiResponse::success(new ClassifiedListingDetailResource($listing), 'Listing created.', 201);
     }
@@ -91,31 +99,20 @@ class ClassifiedListingController extends Controller
 
         Gate::authorize('viewContract', $listing);
 
-        $template = $listing->classifiedCategory?->contractTemplate;
+        $contracts = app(CategoryContractService::class);
 
-        if (! $template) {
-            return ApiResponse::error('No contract template found for this listing.', [], 404);
+        if ($contracts->unsignedTemplateFor($listing->seller, CategoryContractService::SCOPE_CLASSIFIED, $listing->classified_category_id)) {
+            $contracts->sign(
+                vendor: $listing->seller,
+                signer: auth('vendor')->user(),
+                scope: CategoryContractService::SCOPE_CLASSIFIED,
+                categoryId: $listing->classified_category_id,
+                language: $request->input('language', 'en'),
+                signerName: auth('vendor')->user()->name,
+                ipAddress: $request->ip(),
+                userAgent: $request->userAgent() ?? '',
+            );
         }
-
-        return ApiResponse::success([
-            'template_id' => $template->id,
-            'name'        => $template->name,
-            'version'     => $template->version,
-            'content_en'  => $template->content_en,
-            'content_ar'  => $template->content_ar,
-        ]);
-    }
-
-    public function acceptContract(AcceptClassifiedContractRequest $request, string $id): JsonResponse
-    {
-        $listing = $this->findOwnedListing($id);
-
-        Gate::authorize('acceptContract', $listing);
-
-        $listing = $this->listingService->acceptContract(
-            $listing,
-            $request->signature_data,
-        );
 
         return ApiResponse::success(['status' => $listing->status?->value], 'Contract accepted. Listing submitted for review.');
     }

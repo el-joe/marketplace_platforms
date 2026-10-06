@@ -8,6 +8,7 @@ use App\Enums\InventoryMovementType;
 use App\Enums\ProductStatus;
 use App\Enums\VendorListingStatus;
 use App\Enums\WarehouseType;
+use App\Events\ListingStockChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Country;
@@ -16,6 +17,7 @@ use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
+use App\Models\PaymentGateway;
 use App\Models\PlatformShippingSubsidy;
 use App\Models\Product;
 use App\Models\ProductCountry;
@@ -30,12 +32,14 @@ use App\Models\VendorProductCertification;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use App\Notifications\Admin\ListingResubmittedNotification;
+use App\Services\CommissionRuleResolver;
 use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignService;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
+use App\Services\Vendor\CategoryContractService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use App\Traits\HasDataTable;
@@ -385,7 +389,7 @@ class ListingController extends Controller
 
         $currency = Country::find($countryId)?->currency_code ?? '';
 
-        $resolver = app(\App\Services\CommissionRuleResolver::class);
+        $resolver = app(CommissionRuleResolver::class);
         if ($request->input('scope') === 'open_market') {
             $rule = $request->filled('classified_category_id')
                 ? $resolver->resolve(null, 'open_market', (string) $request->input('classified_category_id'))
@@ -755,7 +759,7 @@ class ListingController extends Controller
             ->with('marketerJobs')
             ->get(['id', 'name']);
 
-        $fbmGateways = \App\Models\PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
+        $fbmGateways = PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
 
         return view('partner.listings.create', compact(
             'fbmGateways',
@@ -775,6 +779,17 @@ class ListingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $vendor = $this->vendor();
+
+        $productId = $request->input('product_id') ?: ProductVariant::whereKey($request->input('product_variant_id'))->value('product_id');
+        $productCategoryId = $productId ? Product::whereKey($productId)->value('category_id') : null;
+
+        if ($productCategoryId && app(CategoryContractService::class)->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_PRODUCT, $productCategoryId)) {
+            return response()->json([
+                'success' => false,
+                'message' => __('partner.contracts.product_signature_required'),
+                'redirect' => route('partner.contracts.pending'),
+            ], 422);
+        }
 
         $request->validate([
             'product_variant_id' => ['nullable', 'required_without:product_id', 'uuid', 'exists:product_variants,id'],
@@ -959,7 +974,7 @@ class ListingController extends Controller
         });
         // Inventory is created after the listing row (so the observer's buy-box
         // rebuild saw stock 0); re-sync buy-box total_stock, status and caches now.
-        event(new \App\Events\ListingStockChanged($listing->id, null));
+        event(new ListingStockChanged($listing->id, null));
 
         // } catch (\Throwable $e) {
         //     Log::error('ListingController::store failed', ['error' => $e->getMessage()]);
@@ -1052,7 +1067,7 @@ class ListingController extends Controller
 
         $missingCertification = $requiresLocalCert && ! $hasApprovedCert;
 
-        $fbmGateways = \App\Models\PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
+        $fbmGateways = PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
 
         return view('partner.listings.edit', compact('listing', 'fbmGateways', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'marketerVendors', 'missingCertification'));
     }

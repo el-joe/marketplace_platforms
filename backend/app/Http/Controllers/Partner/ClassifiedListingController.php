@@ -2,22 +2,26 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
 use App\Models\Country;
 use App\Models\Vendor;
-use App\Enums\ClassifiedListingStatus;
 use App\Notifications\Admin\NewClassifiedListingPendingReview;
 use App\Services\Shared\ClassifiedListingService;
+use App\Services\Vendor\CategoryContractService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClassifiedListingController extends Controller
 {
@@ -41,7 +45,7 @@ class ClassifiedListingController extends Controller
 
     // ── Pages ─────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportClassifieds($request);
@@ -50,6 +54,7 @@ class ClassifiedListingController extends Controller
         $countries = Country::where('is_active', true)
             ->orderBy('name_en')
             ->get(['id', 'name_en', 'name_ar', 'currency_code']);
+
         return view('partner.classifieds.index', compact('countries'));
     }
 
@@ -57,7 +62,7 @@ class ClassifiedListingController extends Controller
     // Shared query builder
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function buildClassifiedsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildClassifiedsQuery(Request $request): Builder
     {
         $query = ClassifiedListing::forVendors()
             ->where('seller_id', $this->vendor()->id)
@@ -66,7 +71,7 @@ class ClassifiedListingController extends Controller
         if ($request->filled('search_term') || $request->filled('search')) {
             $term = $request->input('search_term', $request->input('search'));
             $query->where(fn ($q) => $q->where('title_ar', 'like', "%{$term}%")
-                                       ->orWhere('title_en', 'like', "%{$term}%"));
+                ->orWhere('title_en', 'like', "%{$term}%"));
         }
 
         if ($request->filled('status')) {
@@ -88,13 +93,13 @@ class ClassifiedListingController extends Controller
     // Export
     // ─────────────────────────────────────────────────────────────────────────
 
-    private function exportClassifieds(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportClassifieds(Request $request): StreamedResponse
     {
         $items = $this->buildClassifiedsQuery($request)->orderByDesc('created_at')->get();
 
         $headers = ['Listing #', 'Title', 'Status', 'Date'];
 
-        $rows = $items->map(fn($row) => [
+        $rows = $items->map(fn ($row) => [
             $row->listing_number,
             $row->title_ar ?: $row->title_en,
             $row->status->value,
@@ -125,10 +130,10 @@ class ClassifiedListingController extends Controller
     {
         $columns = [
             ['searchable_columns' => ['classified_listings.title_ar', 'classified_listings.title_en']],
-            ['orderable_column'   => 'classified_listings.status'],
-            ['orderable_column'   => 'classified_listings.price'],
-            ['orderable_column'   => 'classified_listings.views_count'],
-            ['orderable_column'   => 'classified_listings.created_at'],
+            ['orderable_column' => 'classified_listings.status'],
+            ['orderable_column' => 'classified_listings.price'],
+            ['orderable_column' => 'classified_listings.views_count'],
+            ['orderable_column' => 'classified_listings.created_at'],
             [],
             [],
         ];
@@ -136,20 +141,20 @@ class ClassifiedListingController extends Controller
         $query = $this->buildClassifiedsQuery($request);
 
         return $this->dataTableResponse($request, $query, $columns, fn (ClassifiedListing $l) => [
-            'id'               => $l->id,
-            'listing_number'   => $l->listing_number,
-            'title_ar'         => $l->title_ar,
-            'title_en'         => $l->title_en,
-            'status'           => $l->status->value,
-            'price'      => $l->price,
-            'currency'         => $l->currency,
+            'id' => $l->id,
+            'listing_number' => $l->listing_number,
+            'title_ar' => $l->title_ar,
+            'title_en' => $l->title_en,
+            'status' => $l->status->value,
+            'price' => $l->price,
+            'currency' => $l->currency,
             'price_negotiable' => $l->price_negotiable,
-            'listing_purpose'  => $l->listing_purpose,
-            'views_count'      => $l->views_count,
-            'created_at'       => $l->created_at?->toISOString(),
-            'expires_at'       => $l->expires_at?->toISOString(),
-            'primary_image'    => $l->primary_image_url,
-            'category_name'    => $l->classifiedCategory?->name_ar ?? $l->classifiedCategory?->name_en,
+            'listing_purpose' => $l->listing_purpose,
+            'views_count' => $l->views_count,
+            'created_at' => $l->created_at?->toISOString(),
+            'expires_at' => $l->expires_at?->toISOString(),
+            'primary_image' => $l->primary_image_url,
+            'category_name' => $l->classifiedCategory?->name_ar ?? $l->classifiedCategory?->name_en,
         ]);
     }
 
@@ -157,13 +162,40 @@ class ClassifiedListingController extends Controller
 
     public function categories(): JsonResponse
     {
+        $vendor = $this->vendor();
+        $contracts = app(CategoryContractService::class);
+
         $categories = ClassifiedCategory::where('is_active', true)
             ->whereNull('parent_id')
-            ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->with([
+                'contractTemplate',
+                'children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->with('contractTemplate'),
+            ])
             ->orderBy('sort_order')
             ->get();
 
+        $categories->each(function (ClassifiedCategory $category) use ($vendor, $contracts) {
+            $this->appendContractState($category, $vendor, $contracts);
+            $category->children->each(fn (ClassifiedCategory $child) => $this->appendContractState($child, $vendor, $contracts));
+        });
+
         return response()->json(['data' => $categories]);
+    }
+
+    /**
+     * Tells the wizard whether this vendor must sign the category contract. A contract the vendor
+     * already accepted for the current version is not shown again.
+     */
+    private function appendContractState(ClassifiedCategory $category, Vendor $vendor, CategoryContractService $contracts): void
+    {
+        $template = $contracts->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_CLASSIFIED, $category->id);
+
+        $category->setAttribute('contract_pending', $template !== null);
+        $category->setAttribute(
+            'contract_template_content',
+            $template ? $contracts->render($template->content_ar, $contracts->variablesFor($vendor, $category, $template)) : null,
+        );
+        $category->unsetRelation('contractTemplate');
     }
 
     // ── Store ─────────────────────────────────────────────────────────────────
@@ -173,27 +205,27 @@ class ClassifiedListingController extends Controller
         $vendor = $this->vendor();
 
         $data = $request->validate([
-            'classified_category_id'  => 'required|uuid|exists:classified_categories,id',
-            'country_id'              => 'required|exists:countries,id',
-            'city_id'                 => 'nullable|exists:cities,id',
-            'listing_purpose'         => 'required|in:sale,rent',
-            'title_ar'                => 'required|string|max:255',
-            'title_en'                => 'required|string|max:255',
-            'description_ar'          => 'nullable|string|max:5000',
-            'description_en'          => 'nullable|string|max:5000',
-            'price'                   => 'required|numeric|min:0',
-            'currency'                => 'required|string|size:3',
-            'price_negotiable'        => 'boolean',
-            'attributes'              => 'nullable|array',
-            'latitude'                => 'nullable|numeric|between:-90,90',
-            'longitude'               => 'nullable|numeric|between:-180,180',
-            'images'                  => 'required|array|min:1|max:10',
-            'images.*'                => 'image|max:10240',
-            'sketch_file'             => 'nullable|file|max:10240',
-            'attachments'             => 'nullable|array',
-            'attachments.*'           => 'file|max:10240',
-            'vendor_listing_reference'    => 'nullable|uuid|exists:vendor_listings,id',
-            'marketer_promotion_enabled'  => 'boolean',
+            'classified_category_id' => 'required|uuid|exists:classified_categories,id',
+            'country_id' => 'required|exists:countries,id',
+            'city_id' => 'nullable|exists:cities,id',
+            'listing_purpose' => 'required|in:sale,rent',
+            'title_ar' => 'required|string|max:255',
+            'title_en' => 'required|string|max:255',
+            'description_ar' => 'nullable|string|max:5000',
+            'description_en' => 'nullable|string|max:5000',
+            'price' => 'required|numeric|min:0',
+            'currency' => 'required|string|size:3',
+            'price_negotiable' => 'boolean',
+            'attributes' => 'nullable|array',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'images' => 'required|array|min:1|max:10',
+            'images.*' => 'image|max:10240',
+            'sketch_file' => 'nullable|file|max:10240',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:10240',
+            'vendor_listing_reference' => 'nullable|uuid|exists:vendor_listings,id',
+            'marketer_promotion_enabled' => 'boolean',
         ]);
 
         // Derive currency from the selected country server-side, regardless of what was submitted
@@ -203,11 +235,47 @@ class ClassifiedListingController extends Controller
         // Convert price → price for the service
         $data['price'] = (int) $data['price'];
         // Include uploaded files in the data array for the shared service
-        $data['images']      = $request->file('images', []);
+        $data['images'] = $request->file('images', []);
         $data['sketch_file'] = $request->file('sketch_file');
         $data['attachments'] = $request->file('attachments', []);
 
-        $listing = app(ClassifiedListingService::class)->create($vendor, $data);
+        $category = ClassifiedCategory::findOrFail($data['classified_category_id']);
+        $contracts = app(CategoryContractService::class);
+        $unsignedTemplate = $contracts->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_CLASSIFIED, $category->id);
+
+        if ($unsignedTemplate) {
+            $request->validate([
+                'signature_name' => 'required|string|max:150',
+                'language' => 'nullable|in:en,ar',
+                'agreed' => 'accepted',
+            ]);
+        }
+
+        $data['contract_accepted'] = true;
+        $data['contract_signature_data'] = $unsignedTemplate ? json_encode([
+            'name' => $request->signature_name,
+            'ip' => $request->ip(),
+            'at' => now()->toISOString(),
+        ]) : null;
+
+        $listing = DB::transaction(function () use ($vendor, $data, $request, $category, $contracts, $unsignedTemplate) {
+            $listing = app(ClassifiedListingService::class)->create($vendor, $data);
+
+            if ($unsignedTemplate) {
+                $contracts->sign(
+                    vendor: $vendor,
+                    signer: Auth::guard('vendor')->user(),
+                    scope: CategoryContractService::SCOPE_CLASSIFIED,
+                    categoryId: $category->id,
+                    language: $request->input('language', 'en'),
+                    signerName: $request->signature_name,
+                    ipAddress: $request->ip(),
+                    userAgent: $request->userAgent() ?? '',
+                );
+            }
+
+            return $listing;
+        });
 
         if ($listing->status === ClassifiedListingStatus::PendingReview) {
             Notification::send(
@@ -217,8 +285,8 @@ class ClassifiedListingController extends Controller
         }
 
         return response()->json([
-            'success'  => true,
-            'message'  => $listing->status === ClassifiedListingStatus::PendingContract
+            'success' => true,
+            'message' => $listing->status === ClassifiedListingStatus::PendingContract
                 ? 'يرجى قبول العقد لإكمال نشر الإعلان.'
                 : 'تم إرسال إعلانك للمراجعة بنجاح.',
             'redirect' => route('partner.classifieds.show', $listing->id),
@@ -286,7 +354,7 @@ class ClassifiedListingController extends Controller
 
     public function inquiriesIndex(string $id): JsonResponse
     {
-        $listing   = $this->ownedListing($id);
+        $listing = $this->ownedListing($id);
         $inquiries = $listing->inquiries()->with('customer')->latest()->get();
 
         return response()->json(['data' => $inquiries]);
@@ -317,7 +385,7 @@ class ClassifiedListingController extends Controller
 
         return response()->json([
             'data' => [
-                'text'    => $template?->content ?? '',
+                'text' => $template?->content ?? '',
                 'version' => $template?->version ?? null,
             ],
         ]);
@@ -327,8 +395,9 @@ class ClassifiedListingController extends Controller
     {
         $listing = $this->ownedListing($id);
         $request->validate([
-            'signature_name' => 'required|string|max:255',
-            'agreed'         => 'accepted',
+            'signature_name' => 'required|string|max:150',
+            'language' => 'nullable|in:en,ar',
+            'agreed' => 'accepted',
         ]);
 
         if ($listing->status !== ClassifiedListingStatus::PendingContract) {
@@ -337,11 +406,29 @@ class ClassifiedListingController extends Controller
 
         $signatureData = json_encode([
             'name' => $request->signature_name,
-            'ip'   => $request->ip(),
-            'at'   => now()->toISOString(),
+            'ip' => $request->ip(),
+            'at' => now()->toISOString(),
         ]);
 
-        app(ClassifiedListingService::class)->acceptContract($listing, $signatureData);
+        $contracts = app(CategoryContractService::class);
+        $unsignedTemplate = $contracts->unsignedTemplateFor($this->vendor(), CategoryContractService::SCOPE_CLASSIFIED, $listing->classified_category_id);
+
+        DB::transaction(function () use ($listing, $signatureData, $request, $contracts, $unsignedTemplate) {
+            if ($unsignedTemplate) {
+                $contracts->sign(
+                    vendor: $this->vendor(),
+                    signer: Auth::guard('vendor')->user(),
+                    scope: CategoryContractService::SCOPE_CLASSIFIED,
+                    categoryId: $listing->classified_category_id,
+                    language: $request->input('language', 'en'),
+                    signerName: $request->signature_name,
+                    ipAddress: $request->ip(),
+                    userAgent: $request->userAgent() ?? '',
+                );
+            }
+
+            app(ClassifiedListingService::class)->acceptContract($listing, $signatureData);
+        });
 
         $listing->refresh();
         if ($listing->status === ClassifiedListingStatus::PendingReview) {
@@ -362,45 +449,45 @@ class ClassifiedListingController extends Controller
             ?? $listing->images->first();
 
         $thumb = $primaryImage
-            ? '<img src="' . asset('storage/' . $primaryImage->file_path) . '" class="w-10 h-10 rounded object-cover mr-2" alt="">'
+            ? '<img src="'.asset('storage/'.$primaryImage->file_path).'" class="w-10 h-10 rounded object-cover mr-2" alt="">'
             : '<div class="w-10 h-10 rounded bg-gray-200 mr-2 shrink-0"></div>';
 
-        $title  = e($listing->title_ar ?: $listing->title_en);
+        $title = e($listing->title_ar ?: $listing->title_en);
         $number = e($listing->listing_number);
 
         return '<div class="flex items-center">'
-            . $thumb
-            . '<div><div class="font-medium text-sm">' . $title . '</div>'
-            . '<div class="text-xs text-gray-400">' . $number . '</div></div></div>';
+            .$thumb
+            .'<div><div class="font-medium text-sm">'.$title.'</div>'
+            .'<div class="text-xs text-gray-400">'.$number.'</div></div></div>';
     }
 
     private function statusBadge(string $status): string
     {
         $classes = match ($status) {
-            'active'           => 'bg-green-100 text-green-700',
-            'paused'           => 'bg-yellow-100 text-yellow-700',
-            'pending_review'   => 'bg-blue-100 text-blue-700',
+            'active' => 'bg-green-100 text-green-700',
+            'paused' => 'bg-yellow-100 text-yellow-700',
+            'pending_review' => 'bg-blue-100 text-blue-700',
             'pending_contract' => 'bg-indigo-100 text-indigo-700',
-            'draft'            => 'bg-gray-100 text-gray-500',
-            'sold'             => 'bg-purple-100 text-purple-700',
-            'expired'          => 'bg-orange-100 text-orange-600',
-            'rejected'         => 'bg-red-100 text-red-600',
-            default            => 'bg-gray-100 text-gray-600',
+            'draft' => 'bg-gray-100 text-gray-500',
+            'sold' => 'bg-purple-100 text-purple-700',
+            'expired' => 'bg-orange-100 text-orange-600',
+            'rejected' => 'bg-red-100 text-red-600',
+            default => 'bg-gray-100 text-gray-600',
         };
 
         $label = match ($status) {
-            'active'           => 'نشط',
-            'paused'           => 'موقوف',
-            'pending_review'   => 'قيد المراجعة',
+            'active' => 'نشط',
+            'paused' => 'موقوف',
+            'pending_review' => 'قيد المراجعة',
             'pending_contract' => 'بانتظار العقد',
-            'draft'            => 'مسودة',
-            'sold'             => 'تم البيع/التأجير',
-            'expired'          => 'منتهي الصلاحية',
-            'rejected'         => 'مرفوض',
-            default            => $status,
+            'draft' => 'مسودة',
+            'sold' => 'تم البيع/التأجير',
+            'expired' => 'منتهي الصلاحية',
+            'rejected' => 'مرفوض',
+            default => $status,
         };
 
-        return '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $classes . '">'
-            . $label . '</span>';
+        return '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium '.$classes.'">'
+            .$label.'</span>';
     }
 }

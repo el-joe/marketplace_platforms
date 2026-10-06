@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCategoryRequest;
 use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Activity;
+use App\Models\Admin;
 use App\Models\Attribute;
 use App\Models\Category;
+use App\Models\Country;
 use App\Models\File;
+use App\Models\MarketerCommissionCountrySetting;
+use App\Models\Slug;
 use App\Services\CategoryService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
@@ -24,9 +28,7 @@ class CategoryController extends Controller
 {
     use HasDataTable;
 
-    public function __construct(private CategoryService $service)
-    {
-    }
+    public function __construct(private CategoryService $service) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index / Tree
@@ -78,13 +80,13 @@ class CategoryController extends Controller
         DB::beginTransaction();
         // try {
         $id = (string) Str::uuid();
-        $slug = $request->slug ?: Str::slug($request->name_en) . '-' . Str::lower(Str::random(5));
+        $slug = $request->slug ?: Str::slug($request->name_en).'-'.Str::lower(Str::random(5));
 
         // Ensure slug uniqueness against categories AND custom pages (shared `slugs` table)
         $i = 1;
         $baseSlug = $slug;
-        while (\App\Models\Slug::isTaken($slug)) {
-            $slug = $baseSlug . '-' . $i++;
+        while (Slug::isTaken($slug)) {
+            $slug = $baseSlug.'-'.$i++;
         }
 
         // Insert the node; NestedSet will set lft/rgt after fixTree() or via parent
@@ -105,6 +107,7 @@ class CategoryController extends Controller
                 'sort_order' => (int) ($request->sort_order ?? 0),
                 'is_active' => $request->boolean('is_active', true),
                 'is_visible' => $request->boolean('is_visible', true),
+                'contract_template_id' => $request->input('contract_template_id') ?: null,
                 'is_featured' => $request->boolean('is_featured'),
                 'has_filters' => $request->boolean('has_filters'),
                 'seo_title_en' => $request->seo_title_en ?: null,
@@ -112,7 +115,7 @@ class CategoryController extends Controller
                 'seo_description_en' => $request->seo_description_en ?: null,
                 'seo_description_ar' => $request->seo_description_ar ?: null,
             ]);
-            if (!$parent->getLft() || !$parent->getRgt()) {
+            if (! $parent->getLft() || ! $parent->getRgt()) {
                 Category::fixTree();
                 $parent->refresh();
             }
@@ -133,6 +136,7 @@ class CategoryController extends Controller
                 'sort_order' => (int) ($request->sort_order ?? 0),
                 'is_active' => $request->boolean('is_active', true),
                 'is_visible' => $request->boolean('is_visible', true),
+                'contract_template_id' => $request->input('contract_template_id') ?: null,
                 'is_featured' => $request->boolean('is_featured'),
                 'has_filters' => $request->boolean('has_filters'),
                 'seo_title_en' => $request->seo_title_en ?: null,
@@ -144,11 +148,11 @@ class CategoryController extends Controller
             $category->refresh();
         }
 
-        \App\Models\Slug::upsertFor($category, $category->slug);
+        Slug::upsertFor($category, $category->slug);
 
         // Sync attribute assignments if provided
         if ($request->filled('attributes')) {
-            $attributes = array_filter($request->input('attributes', []), fn($a) => isset($a['attribute_id']));
+            $attributes = array_filter($request->input('attributes', []), fn ($a) => isset($a['attribute_id']));
             $this->service->syncAttributes($category, $attributes);
         }
 
@@ -186,11 +190,11 @@ class CategoryController extends Controller
             ->whereNull('deleted_at')
             ->findOrFail($category);
 
-        $marketerCommissions = \App\Models\MarketerCommissionCountrySetting::where('category_id', $categoryModel->id)
+        $marketerCommissions = MarketerCommissionCountrySetting::where('category_id', $categoryModel->id)
             ->with('country')
             ->get()
             ->keyBy('country_id');
-        $activeCountries = \App\Models\Country::where('is_active', true)->orderBy('name_en')->get();
+        $activeCountries = Country::where('is_active', true)->orderBy('name_en')->get();
 
         return view('admin.categories.edit', array_merge($this->formData(), [
             'breadcrumbs' => [
@@ -208,7 +212,6 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
 
-
         DB::beginTransaction();
         // try {
         $data = [
@@ -224,6 +227,7 @@ class CategoryController extends Controller
             'sort_order' => (int) ($request->sort_order ?? 0),
             'is_active' => $request->boolean('is_active'),
             'is_visible' => $request->boolean('is_visible'),
+            'contract_template_id' => $request->input('contract_template_id') ?: null,
             'is_featured' => $request->boolean('is_featured'),
             'has_filters' => $request->boolean('has_filters'),
             'seo_title_en' => $request->seo_title_en ?: null,
@@ -234,8 +238,9 @@ class CategoryController extends Controller
         ];
 
         if ($request->filled('slug') && $request->slug !== $categoryModel->slug) {
-            if (\App\Models\Slug::isTaken($request->slug, Category::class, $categoryModel->id)) {
+            if (Slug::isTaken($request->slug, Category::class, $categoryModel->id)) {
                 DB::rollBack();
+
                 return response()->json(['message' => 'This slug is already in use.'], 422);
             }
             $data['slug'] = $request->slug;
@@ -244,18 +249,18 @@ class CategoryController extends Controller
         // Handle parent change via NestedSet
         if ($request->filled('parent_id') && $request->parent_id !== $categoryModel->parent_id) {
             $parent = Category::findOrFail($request->parent_id);
-            if (!$parent->getLft() || !$parent->getRgt()) {
+            if (! $parent->getLft() || ! $parent->getRgt()) {
                 Category::fixTree();
                 $parent->refresh();
             }
             $categoryModel->appendToNode($parent);
-        } elseif (!$request->filled('parent_id') && $categoryModel->parent_id) {
+        } elseif (! $request->filled('parent_id') && $categoryModel->parent_id) {
             $categoryModel->makeRoot();
         }
 
         $categoryModel->update($data);
 
-        \App\Models\Slug::upsertFor($categoryModel, $categoryModel->slug);
+        Slug::upsertFor($categoryModel, $categoryModel->slug);
 
         $categoryModel->update($request->only([
             'influencer_sample_qty',
@@ -275,7 +280,7 @@ class CategoryController extends Controller
                     'description' => 'commission_changed',
                     'subject_type' => Category::class,
                     'subject_id' => $categoryModel->id,
-                    'causer_type' => \App\Models\Admin::class,
+                    'causer_type' => Admin::class,
                     'causer_id' => auth('admin')->id(),
                     'properties' => json_encode(['old' => $oldRate, 'new' => $newRate]),
                     'event' => 'commission_changed',
@@ -287,7 +292,7 @@ class CategoryController extends Controller
         // Sync attribute assignments if provided
         if ($request->has('attributes')) {
             // get attributes which have attribute_id
-            $attributes = array_filter($request->input('attributes', []), fn($a) => isset($a['attribute_id']));
+            $attributes = array_filter($request->input('attributes', []), fn ($a) => isset($a['attribute_id']));
             $this->service->syncAttributes($categoryModel, $attributes);
         }
 
@@ -327,13 +332,13 @@ class CategoryController extends Controller
         $uploadedFile = $request->file('image');
         $ext = $uploadedFile->getClientOriginalExtension() ?: $uploadedFile->guessExtension();
         $path = $uploadedFile->storeAs(
-            'categories/' . $categoryModel->id,
-            'image_' . Str::random(8) . '.' . $ext,
+            'categories/'.$categoryModel->id,
+            'image_'.Str::random(8).'.'.$ext,
             'public'
         );
 
         $file = File::create([
-            'key' => 'categories/' . $categoryModel->id . '/image',
+            'key' => 'categories/'.$categoryModel->id.'/image',
             'path' => $path,
             'storage_type' => 'public',
             'file_type' => 'category_image',
@@ -368,7 +373,7 @@ class CategoryController extends Controller
         $file = $categoryModel->primaryImage()->first()
             ?? $categoryModel->files()->orderBy('position')->first();
 
-        if (!$file) {
+        if (! $file) {
             return response()->json(['message' => __('admin.categories.image_not_found')], 404);
         }
 
@@ -388,6 +393,7 @@ class CategoryController extends Controller
 
         try {
             $this->service->delete($categoryModel, auth('admin')->id());
+
             return response()->json(['success' => true, 'message' => __('admin.categories.category_deleted')]);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -420,7 +426,8 @@ class CategoryController extends Controller
         $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
 
         try {
-            $this->service->setFeatured($categoryModel, !$categoryModel->is_featured, auth('admin')->id());
+            $this->service->setFeatured($categoryModel, ! $categoryModel->is_featured, auth('admin')->id());
+
             return response()->json(['success' => true, 'is_featured' => $categoryModel->fresh()->is_featured]);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -435,10 +442,10 @@ class CategoryController extends Controller
     {
         $categoryModel = Category::whereNull('deleted_at')->findOrFail($category);
 
-        $this->service->setVisible($categoryModel, !$categoryModel->is_visible, auth('admin')->id());
+        $this->service->setVisible($categoryModel, ! $categoryModel->is_visible, auth('admin')->id());
 
         return response()->json([
-            'success'    => true,
+            'success' => true,
             'is_visible' => (bool) $categoryModel->fresh()->is_visible,
         ]);
     }
@@ -455,10 +462,10 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Only parent categories can be toggled in the footer.'], 422);
         }
 
-        $this->service->setShowInFooter($categoryModel, !$categoryModel->show_in_footer, auth('admin')->id());
+        $this->service->setShowInFooter($categoryModel, ! $categoryModel->show_in_footer, auth('admin')->id());
 
         return response()->json([
-            'success'        => true,
+            'success' => true,
             'show_in_footer' => (bool) $categoryModel->fresh()->show_in_footer,
         ]);
     }
@@ -518,7 +525,7 @@ class CategoryController extends Controller
             'currency' => 'required|string|size:3',
         ]);
 
-        \App\Models\MarketerCommissionCountrySetting::updateOrCreate(
+        MarketerCommissionCountrySetting::updateOrCreate(
             ['category_id' => $category->id, 'country_id' => $request->country_id],
             [
                 'influencer_commission_amount' => $request->integer('influencer_commission_amount'),
@@ -540,9 +547,9 @@ class CategoryController extends Controller
         $parents = Category::whereNull('deleted_at')
             ->orderBy('name_en')
             ->get(['id', 'name_en', 'depth'])
-            ->map(fn($c) => [
+            ->map(fn ($c) => [
                 'id' => $c->id,
-                'name' => str_repeat('— ', $c->depth ?? 0) . $c->name_en,
+                'name' => str_repeat('— ', $c->depth ?? 0).$c->name_en,
             ]);
 
         $allAttributes = Attribute::query()

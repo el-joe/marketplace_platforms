@@ -9,6 +9,7 @@ use App\Http\Middleware\DeliveryApiActive;
 use App\Http\Middleware\DeliveryApiAuth;
 use App\Http\Middleware\DeliveryAuth;
 use App\Http\Middleware\DetectCountry;
+use App\Http\Middleware\EnforceVendorCategoryContracts;
 use App\Http\Middleware\GuestCartToken;
 use App\Http\Middleware\MarketerApiActive;
 use App\Http\Middleware\MarketerApiAuth;
@@ -111,6 +112,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'vendor.locale' => SetVendorLocale::class,
             'vendor.can' => VendorPermissionMiddleware::class,
             'vendor.type' => VendorTypeMiddleware::class,
+            'vendor.contracts.enforce' => EnforceVendorCategoryContracts::class,
             'auth.delivery' => DeliveryAuth::class,
             'delivery.api.auth' => DeliveryApiAuth::class,
             'delivery.api.active' => DeliveryApiActive::class,

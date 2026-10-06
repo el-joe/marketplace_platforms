@@ -29,6 +29,7 @@ class StoreCategoryRequest extends FormRequest
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_visible' => ['boolean'],
+            'contract_template_id' => ['nullable', 'uuid', Rule::exists('classified_contract_templates', 'id')->where('category_scope', 'product')->where('is_published', true)],
             'is_featured' => ['boolean'],
             'has_filters' => ['boolean'],
             'seo_title_en' => ['nullable', 'string', 'max:70'],

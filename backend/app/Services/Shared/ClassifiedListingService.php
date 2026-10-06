@@ -14,9 +14,6 @@ use Illuminate\Validation\ValidationException;
 
 class ClassifiedListingService
 {
-    /**
-     * @param  Customer|Vendor  $owner
-     */
     public function create(Customer|Vendor $owner, array $data): ClassifiedListing
     {
         /** @var ClassifiedCategory $category */
@@ -24,30 +21,36 @@ class ClassifiedListingService
 
         $this->validateCategoryRequirements($category, $data, partial: true);
 
-        $status = $category->contract_template_id
-            ? ClassifiedListingStatus::PendingContract
-            : ClassifiedListingStatus::PendingReview;
+        // Vendors pass contract_accepted when the category contract is already signed (or was signed with this request)
+        $contractAccepted = ! $category->contract_template_id || ! empty($data['contract_accepted']);
+
+        $status = $contractAccepted
+            ? ClassifiedListingStatus::PendingReview
+            : ClassifiedListingStatus::PendingContract;
 
         /** @var ClassifiedListing $listing */
         $listing = $owner->classifiedListings()->create([
-            'listing_number'         => 'CL-' . strtoupper(Str::random(8)),
+            'listing_number' => 'CL-'.strtoupper(Str::random(8)),
             'classified_category_id' => $category->id,
-            'country_id'             => $data['country_id'],
-            'city_id'                => $data['city_id'] ?? null,
-            'listing_purpose'        => $data['listing_purpose'],
-            'title_en'               => $data['title_en'],
-            'title_ar'               => $data['title_ar'],
-            'description_en'         => $data['description_en'] ?? null,
-            'description_ar'         => $data['description_ar'] ?? null,
-            'price'            => $data['price'],
-            'currency'               => $data['currency'],
-            'price_negotiable'       => $data['price_negotiable'] ?? false,
-            'attributes'               => $data['attributes'] ?? null,
-            'latitude'                 => $data['latitude'] ?? null,
-            'longitude'               => $data['longitude'] ?? null,
-            'vendor_listing_reference'   => $data['vendor_listing_reference'] ?? null,
+            'country_id' => $data['country_id'],
+            'city_id' => $data['city_id'] ?? null,
+            'listing_purpose' => $data['listing_purpose'],
+            'title_en' => $data['title_en'],
+            'title_ar' => $data['title_ar'],
+            'description_en' => $data['description_en'] ?? null,
+            'description_ar' => $data['description_ar'] ?? null,
+            'price' => $data['price'],
+            'currency' => $data['currency'],
+            'price_negotiable' => $data['price_negotiable'] ?? false,
+            'attributes' => $data['attributes'] ?? null,
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'vendor_listing_reference' => $data['vendor_listing_reference'] ?? null,
             'marketer_promotion_enabled' => $data['marketer_promotion_enabled'] ?? false,
-            'status'                     => $status,
+            'status' => $status,
+            'contract_template_id' => $contractAccepted ? $category->contract_template_id : null,
+            'contract_accepted_at' => $contractAccepted && $category->contract_template_id ? now() : null,
+            'contract_signature_data' => $contractAccepted ? ($data['contract_signature_data'] ?? null) : null,
         ]);
 
         $this->storeImages($listing, $data['images'] ?? []);
@@ -71,31 +74,31 @@ class ClassifiedListingService
 
         $listing->update(array_filter([
             'classified_category_id' => $data['classified_category_id'] ?? $listing->classified_category_id,
-            'country_id'             => $data['country_id'] ?? $listing->country_id,
-            'city_id'                => array_key_exists('city_id', $data) ? $data['city_id'] : $listing->city_id,
-            'listing_purpose'        => $data['listing_purpose'] ?? $listing->listing_purpose,
-            'title_en'               => $data['title_en'] ?? $listing->title_en,
-            'title_ar'               => $data['title_ar'] ?? $listing->title_ar,
-            'description_en'         => $data['description_en'] ?? $listing->description_en,
-            'description_ar'         => $data['description_ar'] ?? $listing->description_ar,
-            'price'            => $data['price'] ?? $listing->price,
-            'currency'               => $data['currency'] ?? $listing->currency,
-            'price_negotiable'       => $data['price_negotiable'] ?? $listing->price_negotiable,
-            'attributes'             => $data['attributes'] ?? $listing->attributes,
-            'latitude'               => array_key_exists('latitude', $data) ? $data['latitude'] : $listing->latitude,
-            'longitude'              => array_key_exists('longitude', $data) ? $data['longitude'] : $listing->longitude,
+            'country_id' => $data['country_id'] ?? $listing->country_id,
+            'city_id' => array_key_exists('city_id', $data) ? $data['city_id'] : $listing->city_id,
+            'listing_purpose' => $data['listing_purpose'] ?? $listing->listing_purpose,
+            'title_en' => $data['title_en'] ?? $listing->title_en,
+            'title_ar' => $data['title_ar'] ?? $listing->title_ar,
+            'description_en' => $data['description_en'] ?? $listing->description_en,
+            'description_ar' => $data['description_ar'] ?? $listing->description_ar,
+            'price' => $data['price'] ?? $listing->price,
+            'currency' => $data['currency'] ?? $listing->currency,
+            'price_negotiable' => $data['price_negotiable'] ?? $listing->price_negotiable,
+            'attributes' => $data['attributes'] ?? $listing->attributes,
+            'latitude' => array_key_exists('latitude', $data) ? $data['latitude'] : $listing->latitude,
+            'longitude' => array_key_exists('longitude', $data) ? $data['longitude'] : $listing->longitude,
         ], fn ($v) => $v !== null));
 
-        if (!empty($data['images'])) {
+        if (! empty($data['images'])) {
             $listing->images()->delete();
             $this->storeImages($listing, $data['images']);
         }
 
-        if (!empty($data['sketch_file'])) {
+        if (! empty($data['sketch_file'])) {
             $this->storeSketch($listing, $data['sketch_file']);
         }
 
-        if (!empty($data['attachments'])) {
+        if (! empty($data['attachments'])) {
             $this->storeAttachments($listing, $data['attachments']);
         }
 
@@ -113,10 +116,10 @@ class ClassifiedListingService
         }
 
         $listing->update([
-            'contract_template_id'    => $template->id,
-            'contract_accepted_at'    => now(),
+            'contract_template_id' => $template->id,
+            'contract_accepted_at' => now(),
             'contract_signature_data' => $signatureData,
-            'status'                  => 'pending_review',
+            'status' => 'pending_review',
         ]);
 
         NotifyAdminNewClassifiedListingJob::dispatch($listing->fresh());
@@ -161,7 +164,7 @@ class ClassifiedListingService
 
         if ($category->requires_location_map && ! $partial) {
             if (empty($data['latitude']) || empty($data['longitude'])) {
-                $errors['latitude']  = 'Location coordinates are required for this category.';
+                $errors['latitude'] = 'Location coordinates are required for this category.';
                 $errors['longitude'] = 'Location coordinates are required for this category.';
             }
         }
@@ -175,7 +178,7 @@ class ClassifiedListingService
         $requiredTypes = $category->required_attachment_types ?? [];
         if (! empty($requiredTypes) && ! $partial) {
             $provided = array_keys($data['attachments'] ?? []);
-            $missing  = array_diff($requiredTypes, $provided);
+            $missing = array_diff($requiredTypes, $provided);
             foreach ($missing as $type) {
                 $errors["attachments.{$type}"] = "Attachment type '{$type}' is required for this category.";
             }
@@ -192,8 +195,8 @@ class ClassifiedListingService
             /** @var UploadedFile $image */
             $path = $image->store('classified-images', 'public');
             $listing->images()->create([
-                'file_path'  => $path,
-                'position'   => $index,
+                'file_path' => $path,
+                'position' => $index,
                 'is_primary' => $index === 0,
             ]);
         }
@@ -216,8 +219,8 @@ class ClassifiedListingService
             $path = $file->store('classified-attachments', 'public');
             $listing->attachments()->create([
                 'attachment_type' => $type,
-                'file_path'       => $path,
-                'status'          => 'pending',
+                'file_path' => $path,
+                'status' => 'pending',
             ]);
         }
     }

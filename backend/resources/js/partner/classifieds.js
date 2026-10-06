@@ -270,7 +270,8 @@ let wizContractLoaded = false;
 const STEP_LABELS_FULL        = cfg().stepLabelsFull        || ['Category', 'Basics', 'Location & Attributes', 'Images & Attachments', 'Contract', 'Review'];
 const STEP_LABELS_NO_CONTRACT = cfg().stepLabelsNoContract  || ['Category', 'Basics', 'Location & Attributes', 'Images & Attachments', 'Review'];
 
-function wizHasContract()      { return !!wizSelectedCategory?.contract_template_id; }
+// Server decides per vendor: a contract already signed for the current version is not shown again.
+function wizHasContract()      { return !!wizSelectedCategory?.contract_pending; }
 function wizNeedsLocation()    { return !!wizSelectedCategory?.requires_location_map; }
 function wizNeedsSketch()      { return !!wizSelectedCategory?.requires_sketch_upload; }
 function wizNeedsAttachments() { return (wizSelectedCategory?.required_attachment_types?.length ?? 0) > 0; }

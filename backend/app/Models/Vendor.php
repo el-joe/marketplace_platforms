@@ -187,6 +187,16 @@ class Vendor extends Model
         return $this->hasMany(VendorAdmin::class);
     }
 
+    public function categoryEnrollments(): HasMany
+    {
+        return $this->hasMany(VendorCategoryEnrollment::class);
+    }
+
+    public function vendorContracts(): HasMany
+    {
+        return $this->hasMany(VendorContract::class);
+    }
+
     public function accountManagerAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'account_manager_admin_id');

@@ -68,6 +68,7 @@ class DatabaseSeeder extends Seeder
             CartCardOfferSeeder::class,
 
             // ── All guard user accounts ────────────────────────────────────
+            ContractTemplateSeeder::class,
             VendorSeeder::class,
 
             // ── Vendor guard permissions & role migration ──────────────────

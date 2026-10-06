@@ -29,10 +29,11 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CategoryShippingMethodController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ClassifiedCategoryController;
-use App\Http\Controllers\Admin\ClassifiedContractTemplateController;
 use App\Http\Controllers\Admin\ClassifiedListingController;
 use App\Http\Controllers\Admin\CodSettlementController;
 use App\Http\Controllers\Admin\ContentSettingsController;
+use App\Http\Controllers\Admin\ContractSignatureController;
+use App\Http\Controllers\Admin\ContractTemplateController;
 use App\Http\Controllers\Admin\CountryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CouponParticipationInvitationController;
@@ -106,6 +107,7 @@ use App\Http\Controllers\Admin\TravelPackageInquiryController;
 use App\Http\Controllers\Admin\VendorAcquisitionController;
 use App\Http\Controllers\Admin\VendorApplicationController;
 use App\Http\Controllers\Admin\VendorChangeRequestController;
+use App\Http\Controllers\Admin\VendorContractAcceptanceController;
 use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\VendorDocumentTypeController;
 use App\Http\Controllers\Admin\VendorListingController;
@@ -620,6 +622,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('vendors')->name('vendors.')->middleware('admin.permission:vendors.view')->group(function () {
         Route::post('/datatable', [VendorController::class, 'datatable'])->name('datatable');
         Route::post('/bulk', [VendorController::class, 'bulkAction'])->name('bulk');
+
+        Route::get('/{vendor}/contracts', [VendorContractAcceptanceController::class, 'index'])->name('contracts.index');
 
         Route::post('/documents/{document}/verify', [VendorController::class, 'verifyDocument'])->name('documents.verify');
         Route::post('/documents/{document}/reject', [VendorController::class, 'rejectDocument'])->name('documents.reject');
@@ -1597,6 +1601,26 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{subscription}/cancel', [SubscriptionController::class, 'cancelSubscription'])->name('cancel');
     });
     // ─── Classifieds ──────────────────────────────────────────────────────────
+    // ─── Contracts: vendor agreements for classified and product categories ───
+    Route::get('classifieds/contract-templates', fn () => redirect()->route('admin.contracts.templates.index'));
+
+    Route::prefix('contracts')->name('contracts.')->group(function () {
+        Route::prefix('templates')->name('templates.')->middleware('admin.permission:classifieds.view')->group(function () {
+            Route::get('/', [ContractTemplateController::class, 'index'])->name('index');
+            Route::get('/create', [ContractTemplateController::class, 'create'])->name('create');
+            Route::post('/', [ContractTemplateController::class, 'store'])->name('store');
+            Route::get('/{contractTemplate}/edit', [ContractTemplateController::class, 'edit'])->name('edit');
+            Route::put('/{contractTemplate}', [ContractTemplateController::class, 'update'])->name('update');
+            Route::post('/{contractTemplate}/publish', [ContractTemplateController::class, 'publish'])->name('publish');
+            Route::delete('/{contractTemplate}', [ContractTemplateController::class, 'destroy'])->name('destroy');
+            Route::get('/{contractTemplate}/signatures', [ContractTemplateController::class, 'signatures'])->name('signatures');
+        });
+
+        Route::get('/signatures', [ContractSignatureController::class, 'index'])
+            ->name('signatures.index')
+            ->middleware('admin.permission:vendors.view');
+    });
+
     Route::prefix('classifieds')->name('classifieds.')->group(function () {
 
         // Categories
@@ -1607,14 +1631,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             Route::delete('/{category}', [ClassifiedCategoryController::class, 'destroy'])->name('destroy');
             Route::post('/{category}/toggle', [ClassifiedCategoryController::class, 'toggleActive'])->name('toggle');
             Route::post('/reorder', [ClassifiedCategoryController::class, 'reorder'])->name('reorder');
-        });
-
-        // Contract Templates
-        Route::prefix('contract-templates')->name('contract-templates.')->group(function () {
-            Route::get('/', [ClassifiedContractTemplateController::class, 'index'])->name('index');
-            Route::post('/', [ClassifiedContractTemplateController::class, 'store'])->name('store');
-            Route::put('/{contractTemplate}', [ClassifiedContractTemplateController::class, 'update'])->name('update');
-            Route::delete('/{contractTemplate}', [ClassifiedContractTemplateController::class, 'destroy'])->name('destroy');
         });
 
         // Listings (review queue)

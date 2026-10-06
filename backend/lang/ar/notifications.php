@@ -60,4 +60,9 @@ return [
         ],
     ],
 
+    'vendor' => [
+        'contract_updated_title' => 'تحديث العقد — يتطلب إجراءً',
+        'contract_updated_message' => 'تم تحديث العقد ":name" إلى الإصدار :version. يرجى مراجعته وإعادة قبوله.',
+    ],
+
 ];

@@ -510,6 +510,21 @@
                 @endif
             </div>
 
+            {{-- Contract --}}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-gray-900">{{ __('admin.contracts.contract_template') }}</h3>
+                @php($productTemplates = \App\Models\ClassifiedContractTemplate::forScope('product')->enforceable()->orderBy('name')->get())
+                <select name="contract_template_id" class="form-input w-full text-sm">
+                    <option value="">{{ __('admin.contracts.no_template') }}</option>
+                    @foreach ($productTemplates as $productTemplate)
+                        <option value="{{ $productTemplate->id }}" @selected(old('contract_template_id', $category?->contract_template_id) === $productTemplate->id)>
+                            {{ $productTemplate->name }} (v{{ $productTemplate->version }})
+                        </option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-400">{{ __('admin.contracts.product_template_hint') }}</p>
+            </div>
+
             {{-- Visibility --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-3">
                 <h3 class="text-sm font-semibold text-gray-900">{{ __('admin.visibility') }}</h3>

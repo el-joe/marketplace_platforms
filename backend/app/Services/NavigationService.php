@@ -468,18 +468,31 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
-                        'label' => __('admin.nav.contract_templates'),
-                        'route' => 'admin.classifieds.contract-templates.index',
-                        'icon' => 'document-text',
-                        'permission' => 'classifieds.view',
-                        'badge' => null,
-                    ],
-                    [
                         'label' => __('admin.nav.listings'),
                         'route' => 'admin.classifieds.listings.index',
                         'icon' => 'list-bullet',
                         'permission' => 'classifieds.view',
                         'badge' => $this->cachedBadge('pending_classifieds', fn () => $this->countPendingClassifieds()),
+                    ],
+                ],
+            ],
+            [
+                'group' => __('admin.nav.contracts'),
+                'icon' => 'document-text',
+                'items' => [
+                    [
+                        'label' => __('admin.nav.contract_templates'),
+                        'route' => 'admin.contracts.templates.index',
+                        'icon' => 'document-text',
+                        'permission' => 'classifieds.view',
+                        'badge' => null,
+                    ],
+                    [
+                        'label' => __('admin.nav.contract_signatures'),
+                        'route' => 'admin.contracts.signatures.index',
+                        'icon' => 'pencil-square',
+                        'permission' => 'vendors.view',
+                        'badge' => null,
                     ],
                 ],
             ],
