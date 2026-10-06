@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('category_commission_tiers')) {
+            return;
+        }
+
         Schema::create('category_commission_tiers', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('category_id')->constrained('categories')->cascadeOnDelete();
