@@ -1558,10 +1558,10 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::prefix('inbound')->name('inbound.')->group(function () {
             Route::get('/', [FbnController::class, 'inboundIndex'])->name('index');
             Route::post('/datatable', [FbnController::class, 'inboundDatatable'])->name('datatable');
-            Route::post('/{request}/approve', [FbnController::class, 'approveInbound'])->name('approve');
-            Route::post('/{request}/reject', [FbnController::class, 'rejectInbound'])->name('reject');
-            Route::post('/{request}/tracking', [FbnController::class, 'updateTracking'])->name('tracking');
-            Route::post('/{request}/receive', [FbnController::class, 'receiveInbound'])->name('receive');
+            Route::post('/{inboundRequest}/approve', [FbnController::class, 'approveInbound'])->name('approve');
+            Route::post('/{inboundRequest}/reject', [FbnController::class, 'rejectInbound'])->name('reject');
+            Route::post('/{inboundRequest}/tracking', [FbnController::class, 'updateTracking'])->name('tracking');
+            Route::post('/{inboundRequest}/receive', [FbnController::class, 'receiveInbound'])->name('receive');
         });
 
         // Storage fees
