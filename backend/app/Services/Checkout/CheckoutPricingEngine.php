@@ -707,20 +707,40 @@ class CheckoutPricingEngine
             return [$amount, $categoryId];
         }
 
-        // Category chain fallback (FBN/FBP-specific pct/fixed on the
-        // category itself, walking up to the nearest ancestor that has one),
-        // optionally overridden per-country via country_categories.
+        // Category chain fallback: walk up to the nearest ancestor (self first)
+        // that has a per-country override or a non-zero base rate, then apply
+        // the country_categories override (if any) on top of the resolved node.
+        // All rates are now stored in country_categories; the base-table columns
+        // on `categories` serve only as a last-resort fallback for categories
+        // that pre-date per-country rates or were bulk-imported.
         $isFBN = $fulfillmentModel === 'fbn';
-        $resolved = $category;
+        $resolved = null;
+        $resolvedCountryCategory = null;
         $walker = $category;
         $levels = 0;
+
         while ($walker !== null && $levels < 6) {
-            $pct = (float) ($isFBN ? $walker->commission_fbn_pct : $walker->commission_fbp_pct);
-            $fixed = (int) ($isFBN ? $walker->commission_fbn_fixed : $walker->commission_fbp_fixed);
-            if ($pct > 0 || $fixed > 0) {
+            // Prefer the country-specific override for this walker node
+            $cc = CountryCategory::where('country_id', $country->id)
+                ->where('category_id', $walker->id)
+                ->first();
+
+            $ccPct   = $isFBN ? ($cc?->commission_fbn_pct)   : ($cc?->commission_fbp_pct);
+            $ccFixed = $isFBN ? ($cc?->commission_fbn_fixed)  : ($cc?->commission_fbp_fixed);
+
+            // Base-table fallback (non-null and non-zero means it was explicitly set)
+            $basePct   = (float) ($isFBN ? $walker->commission_fbn_pct   : $walker->commission_fbp_pct);
+            $baseFixed = (int)   ($isFBN ? $walker->commission_fbn_fixed  : $walker->commission_fbp_fixed);
+
+            $effectivePct   = $ccPct   ?? $basePct;
+            $effectiveFixed = $ccFixed ?? $baseFixed;
+
+            if ((float) $effectivePct > 0 || (int) $effectiveFixed > 0) {
                 $resolved = $walker;
+                $resolvedCountryCategory = $cc;
                 break;
             }
+
             $walker = $walker->parent;
             $levels++;
         }
@@ -729,16 +749,12 @@ class CheckoutPricingEngine
             return [0, null];
         }
 
-        $countryCategory = CountryCategory::where('country_id', $country->id)
-            ->where('category_id', $resolved->id)
-            ->first();
-
         $pct = (float) ($isFBN
-            ? ($countryCategory?->commission_fbn_pct ?? $resolved->commission_fbn_pct)
-            : ($countryCategory?->commission_fbp_pct ?? $resolved->commission_fbp_pct)) ?: 0.0;
+            ? ($resolvedCountryCategory?->commission_fbn_pct   ?? $resolved->commission_fbn_pct)
+            : ($resolvedCountryCategory?->commission_fbp_pct   ?? $resolved->commission_fbp_pct)) ?: 0.0;
         $fixed = (int) ($isFBN
-            ? ($countryCategory?->commission_fbn_fixed ?? $resolved->commission_fbn_fixed)
-            : ($countryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
+            ? ($resolvedCountryCategory?->commission_fbn_fixed ?? $resolved->commission_fbn_fixed)
+            : ($resolvedCountryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
 
         // Price tiers: a tier matching the unit price overrides the FBP/FBN pct and adds a per-unit floor.
         // commissionTiers is eager-loaded via $categoryCache in computeMoneySplit() to avoid N+1.
