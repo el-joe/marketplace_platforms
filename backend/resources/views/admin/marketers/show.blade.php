@@ -448,6 +448,11 @@
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
                 @error('commission_rate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_min') }} ({{ $commissionCurrency }})</label>
+                <input type="number" step="1" min="0" name="commission_min_amount" value="{{ old('commission_min_amount') }}"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
+            </div>
             <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.marketers.add_or_update') }}</button>
         </form>
     </div>

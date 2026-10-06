@@ -12,13 +12,17 @@ class MarketerCommissionRule extends Model
     use HasUuids;
 
     public const SCOPE_PRODUCTS = 'products';
+
     public const SCOPE_OPEN_MARKET = 'open_market';
+
     public const SCOPE_TRAVEL = 'travel';
+
     public const SCOPES = [self::SCOPE_PRODUCTS, self::SCOPE_OPEN_MARKET, self::SCOPE_TRAVEL];
 
     protected $fillable = [
         'marketer_id', 'scope', 'category_type', 'category_id',
         'commission_mode', 'commission_rate', 'commission_flat_amount', 'updated_by_admin_id',
+        'commission_threshold_price', 'commission_min_amount',
         'rule_key', 'excluded_category_ids',
     ];
 
@@ -40,6 +44,8 @@ class MarketerCommissionRule extends Model
     protected $casts = [
         'commission_rate' => 'decimal:2',
         'commission_flat_amount' => 'integer',
+        'commission_threshold_price' => 'integer',
+        'commission_min_amount' => 'integer',
         'excluded_category_ids' => 'array',
     ];
 
@@ -78,7 +84,8 @@ class MarketerCommissionRule extends Model
 
     /**
      * fixed = flat*qty; percentage = base*rate%; both = sum. Percentage is
-     * floored, or rounded when $round is true. Flat is per unit.
+     * floored, or rounded when $round is true. Flat is per unit. An optional
+     * commission_min_amount is a per-unit floor on the final amount.
      */
     public function resolveAmount(int|string $base, int $quantity = 1, bool $round = false): int
     {
@@ -94,6 +101,13 @@ class MarketerCommissionRule extends Model
             $flat = (int) ($this->commission_flat_amount ?? 0) * max(1, $quantity);
         }
 
-        return $percent + $flat;
+        $calculated = $percent + $flat;
+
+        $minCommission = (int) ($this->commission_min_amount ?? 0);
+        if ($minCommission > 0) {
+            $calculated = max($calculated, $minCommission * max(1, $quantity));
+        }
+
+        return $calculated;
     }
 }

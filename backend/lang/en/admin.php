@@ -2083,6 +2083,11 @@ return [
         'fbp_pct_hint' => 'e.g. 8.00 = 8% of item sale price',
         'fixed_fee_label' => 'Fixed Fee (per unit)',
         'fixed_fee_unit' => 'Fixed Fee Unit',
+        'variable_commission' => 'Variable Commission (Price Tier)',
+        'variable_commission_hint' => 'If the threshold is above 0, units priced at or below it use the High Rate; units above it use the percentage rates above. The minimum is a per-unit floor on the final commission. Leave at 0 to disable.',
+        'commission_threshold_price' => 'Price Threshold (0 = disabled)',
+        'commission_high_rate' => 'High Rate % (price ≤ threshold)',
+        'commission_min_amount' => 'Minimum Commission per unit (0 = no floor)',
         'fixed_fee_hint' => 'e.g. 5 = 5.00 added per unit sold',
         'example_calc_label' => 'Example',
         'example_calc_body' => '100.00 item × 2 qty:',
@@ -11043,7 +11048,6 @@ return [
         'button' => 'Contracts',
     ],
 
-
     // ─── Classified Listings ───────────────────────────────────────────────────
     'classified_listings' => [
         'approved_active' => 'Listing approved and set to active.',
@@ -11159,6 +11163,7 @@ return [
 
     'marketer_commission_required' => 'Enter a percentage, a fixed amount, or both.',
     'marketer_commission_flat' => 'Fixed amount',
+    'marketer_commission_min' => 'Minimum per unit',
     'marketer_commission_type' => 'Type',
     'marketer_commission_type_products' => 'Products',
     'marketer_commission_type_open_market' => 'Open market (classified)',

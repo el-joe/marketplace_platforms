@@ -10,13 +10,17 @@ use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerCategoryCommission;
+use App\Models\MarketerCommissionRule;
 use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
 use App\Models\MarketerMarketerJobCategory;
+use App\Models\OpenMarketCategoryCommission;
+use App\Models\TravelCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class MarketerController extends Controller
 {
@@ -134,8 +138,8 @@ class MarketerController extends Controller
         $cities = City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
         $classifiedCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
-        $travelCategories = \App\Models\TravelCategory::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
-        $commissionRules = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)
+        $travelCategories = TravelCategory::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $commissionRules = MarketerCommissionRule::where('marketer_id', $marketer->id)
             ->with('category')->orderBy('scope')->get();
         $commissionCategories = collect([
             'products' => $categories,
@@ -273,12 +277,13 @@ class MarketerController extends Controller
             'excluded_category_ids.*' => ['uuid'],
             'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'commission_flat_amount' => ['nullable', 'integer', 'min:0'],
+            'commission_min_amount' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $rate = (float) ($validated['commission_rate'] ?? 0);
         $flat = (int) ($validated['commission_flat_amount'] ?? 0);
         if ($rate <= 0 && $flat <= 0) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'commission_rate' => __('admin.marketer_commission_required'),
             ]);
         }
@@ -287,29 +292,30 @@ class MarketerController extends Controller
             'commission_mode' => $mode,
             'commission_rate' => $rate,
             'commission_flat_amount' => $flat > 0 ? $flat : null,
+            'commission_min_amount' => ($validated['commission_min_amount'] ?? 0) > 0 ? (int) $validated['commission_min_amount'] : null,
         ];
 
         $categoryId = $validated['category_id'] ?? null;
         $scope = $validated['scope'] ?? 'products';
-        $catClass = \App\Models\MarketerCommissionRule::categoryClassFor($scope);
+        $catClass = MarketerCommissionRule::categoryClassFor($scope);
         if ($categoryId && ! $catClass::whereKey($categoryId)->exists()) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['category_id' => __('validation.exists', ['attribute' => 'category_id'])]);
+            throw ValidationException::withMessages(['category_id' => __('validation.exists', ['attribute' => 'category_id'])]);
         }
 
         // "All categories except ..." only makes sense on the scope default.
         $excluded = $categoryId ? [] : array_values(array_unique($validated['excluded_category_ids'] ?? []));
         if ($excluded && $catClass::whereKey($excluded)->count() !== count($excluded)) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['excluded_category_ids' => __('validation.exists', ['attribute' => 'excluded_category_ids'])]);
+            throw ValidationException::withMessages(['excluded_category_ids' => __('validation.exists', ['attribute' => 'excluded_category_ids'])]);
         }
 
-        $ruleQuery = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', $scope)
+        $ruleQuery = MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', $scope)
             ->when($categoryId, fn ($q) => $q->where('category_type', $catClass)->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'));
         $rule = $ruleQuery->first();
         $ruleData = $payload + ['updated_by_admin_id' => auth('admin')->id(), 'excluded_category_ids' => $excluded ?: null];
         if ($rule) {
             $rule->update($ruleData);
         } else {
-            \App\Models\MarketerCommissionRule::create($ruleData + [
+            MarketerCommissionRule::create($ruleData + [
                 'marketer_id' => $marketer->id, 'scope' => $scope,
                 'category_type' => $categoryId ? $catClass : null, 'category_id' => $categoryId,
             ]);
@@ -319,7 +325,7 @@ class MarketerController extends Controller
             return back()->with('success', 'تم حفظ نسبة العمولة.');
         }
         if ($scope === 'open_market') {
-            \App\Models\OpenMarketCategoryCommission::updateOrCreate(
+            OpenMarketCategoryCommission::updateOrCreate(
                 ['marketer_id' => $marketer->id, 'classified_category_id' => $categoryId],
                 $payload + ['updated_by_admin_id' => auth('admin')->id()]
             );
@@ -348,14 +354,14 @@ class MarketerController extends Controller
     {
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
 
-        $rule = \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->find($commission);
+        $rule = MarketerCommissionRule::where('marketer_id', $marketer->id)->find($commission);
         if ($rule) {
             $catId = $rule->category_id;
             if ($rule->scope === 'products') {
                 MarketerCategoryCommission::where('marketer_id', $marketer->id)
                     ->when($catId, fn ($q) => $q->where('category_id', $catId), fn ($q) => $q->whereNull('category_id'))->delete();
             } elseif ($rule->scope === 'open_market') {
-                \App\Models\OpenMarketCategoryCommission::where('marketer_id', $marketer->id)
+                OpenMarketCategoryCommission::where('marketer_id', $marketer->id)
                     ->when($catId, fn ($q) => $q->where('classified_category_id', $catId), fn ($q) => $q->whereNull('classified_category_id'))->delete();
             }
             $rule->delete();
@@ -365,7 +371,7 @@ class MarketerController extends Controller
 
         // Backward compatible: legacy row id.
         $legacy = MarketerCategoryCommission::where('marketer_id', $marketer->id)->findOrFail($commission);
-        \App\Models\MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', 'products')
+        MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', 'products')
             ->when($legacy->category_id, fn ($q) => $q->where('category_id', $legacy->category_id), fn ($q) => $q->whereNull('category_id'))->delete();
         $legacy->delete();
 

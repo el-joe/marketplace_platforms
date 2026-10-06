@@ -2083,6 +2083,11 @@ return [
         'fbp_pct_hint' => 'مثال: 8.00 = 8% من سعر بيع العنصر',
         'fixed_fee_label' => 'رسوم ثابتة (لكل وحدة)',
         'fixed_fee_unit' => 'وحدة الرسوم الثابتة',
+        'variable_commission' => 'عمولة متغيرة (حسب شريحة السعر)',
+        'variable_commission_hint' => 'إذا كان الحد أكبر من 0، تُطبَّق النسبة المرتفعة على الوحدات التي سعرها أقل من الحد أو يساويه، وتُطبَّق النسب أعلاه على الأعلى منه. الحد الأدنى هو حد أدنى للعمولة لكل وحدة. اتركه 0 للتعطيل.',
+        'commission_threshold_price' => 'حد السعر (0 = معطل)',
+        'commission_high_rate' => 'النسبة المرتفعة % (السعر ≤ الحد)',
+        'commission_min_amount' => 'الحد الأدنى للعمولة لكل وحدة (0 = بلا حد)',
         'fixed_fee_hint' => 'مثال: 5 = يُضاف 5.00 لكل وحدة مباعة',
         'example_calc_label' => 'مثال',
         'example_calc_body' => '100.00 للعنصر × 2 كمية:',
@@ -11046,7 +11051,6 @@ return [
         'button' => 'العقود',
     ],
 
-
     // ─── Classified Listings ───────────────────────────────────────────────────
     'classified_listings' => [
         'approved_active' => 'تمت الموافقة على الإعلان وتفعيله.',
@@ -11162,6 +11166,7 @@ return [
 
     'marketer_commission_required' => 'أدخل نسبة أو مبلغًا ثابتًا أو كليهما.',
     'marketer_commission_flat' => 'مبلغ ثابت',
+    'marketer_commission_min' => 'الحد الأدنى لكل وحدة',
     'marketer_commission_type' => 'النوع',
     'marketer_commission_type_products' => 'المنتجات',
     'marketer_commission_type_open_market' => 'السوق المفتوح',

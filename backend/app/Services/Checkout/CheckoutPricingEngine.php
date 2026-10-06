@@ -18,6 +18,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Vendor;
 use App\Models\WarrantyPlan;
+use App\Services\Shared\CommissionCalculator;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -687,7 +688,12 @@ class CheckoutPricingEngine
         }
 
         if ($vendor !== null && (float) $vendor->commission_rate > 0) {
-            return [(int) round($baseAmountCents * ((float) $vendor->commission_rate) / 100), $categoryId];
+            $amount = (int) round($baseAmountCents * ((float) $vendor->commission_rate) / 100);
+            if ($category !== null && (int) $category->commission_min_amount > 0) {
+                $amount = max($amount, (int) $category->commission_min_amount * $quantity);
+            }
+
+            return [$amount, $categoryId];
         }
 
         // Category chain fallback (FBN/FBP-specific pct/fixed on the
@@ -723,7 +729,16 @@ class CheckoutPricingEngine
             ? ($countryCategory?->commission_fbn_fixed ?? $resolved->commission_fbn_fixed)
             : ($countryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
 
-        $amount = (int) floor($baseAmountCents * $pct / 100) + $fixed * $quantity;
+        $amount = CommissionCalculator::calculate(
+            baseAmount: $baseAmountCents,
+            standardRate: $pct,
+            thresholdPrice: (int) $resolved->commission_threshold_price,
+            highRate: (float) $resolved->commission_high_rate,
+            minCommission: (int) $resolved->commission_min_amount,
+            quantity: $quantity,
+            flatAmount: $fixed,
+            includeFlat: true,
+        );
 
         return [$amount, $resolved->id];
     }
