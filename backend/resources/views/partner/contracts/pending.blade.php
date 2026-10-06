@@ -14,7 +14,7 @@
     @if ($pending->isEmpty())
         <div class="rounded-2xl bg-white p-8 text-center shadow-sm">
             <p class="text-base font-semibold text-gray-900">{{ __('partner.contracts.none_pending') }}</p>
-            <a href="{{ route('partner.classifieds.index') }}" class="mt-4 inline-block text-sm text-blue-600 underline">{{ __('partner.contracts.back_to_classifieds') }}</a>
+            <a href="{{ route('partner.dashboard') }}" class="mt-4 inline-block text-sm text-blue-600 underline">{{ __('partner.contracts.back_to_dashboard') }}</a>
         </div>
     @else
         <p class="text-sm text-gray-600">{{ __('partner.contracts.pending_intro') }}</p>
@@ -35,8 +35,8 @@
                     </div>
                 </div>
 
-                <div x-show="lang === 'en'" dir="ltr" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border p-4 text-sm leading-relaxed text-gray-700">{{ $item['resolved_content_en'] }}</div>
-                <div x-show="lang === 'ar'" x-cloak dir="rtl" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border p-4 text-sm leading-relaxed text-gray-700">{{ $item['resolved_content_ar'] }}</div>
+                <div x-show="lang === 'en'" dir="ltr" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border p-4 text-sm leading-relaxed text-gray-700">{!! $item['resolved_content_en'] !!}</div>
+                <div x-show="lang === 'ar'" x-cloak dir="rtl" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border p-4 text-sm leading-relaxed text-gray-700">{!! $item['resolved_content_ar'] !!}</div>
 
                 <form method="POST" action="{{ route('partner.contracts.accept', $item['template']->id) }}" class="space-y-3">
                     @csrf

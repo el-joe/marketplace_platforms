@@ -543,6 +543,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     Route::prefix('contracts')->name('contracts.')->group(function () {
         Route::get('pending', [VendorCategoryContractController::class, 'pending'])->name('pending');
         Route::get('history', [VendorCategoryContractController::class, 'history'])->name('history');
+        Route::get('signed/{contract}', [\App\Http\Controllers\Partner\VendorCategoryContractController::class, 'signed'])->name('signed');
         Route::get('{templateId}/preview', [VendorCategoryContractController::class, 'preview'])->name('preview');
         Route::post('{templateId}/accept', [VendorCategoryContractController::class, 'accept'])->name('accept');
     });

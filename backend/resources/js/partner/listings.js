@@ -476,6 +476,98 @@ async function loadWarehousesByCountry(countryId, fulfillmentModel) {
     select.disabled = false;
 }
 
+// ─── Inline category contract on the product create form ─────────────────────
+
+let inlineContract = null;
+let inlinePanelLanguage = 'en';
+
+function showContractPanel(contract) {
+    const labels = window.LISTINGS_CREATE.contractLabels;
+    inlineContract = contract;
+
+    document.getElementById('contract-panel-title').textContent =
+        `${labels.title}: ${contract.name} · v${contract.version} · ${contract.category_name}`;
+    document.getElementById('contract-body-en').innerHTML = contract.content_en;
+    document.getElementById('contract-body-ar').innerHTML = contract.content_ar;
+    document.getElementById('contract-error').classList.add('hidden');
+    document.getElementById('contract-panel').classList.remove('hidden');
+    selectContractLanguage(inlinePanelLanguage);
+    document.getElementById('contract-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function selectContractLanguage(lang) {
+    inlinePanelLanguage = lang;
+    document.getElementById('contract-body-en').classList.toggle('hidden', lang !== 'en');
+    document.getElementById('contract-body-ar').classList.toggle('hidden', lang !== 'ar');
+
+    document.querySelectorAll('[data-contract-lang]').forEach((btn) => {
+        const active = btn.dataset.contractLang === lang;
+        btn.classList.toggle('bg-blue-600', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('bg-gray-100', !active);
+        btn.classList.toggle('text-gray-700', !active);
+    });
+}
+
+function initContractPanel(form) {
+    const labels = window.LISTINGS_CREATE.contractLabels;
+    const signBtn = document.getElementById('contract-sign-btn');
+    const errorEl = document.getElementById('contract-error');
+    const fail = (message) => {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+    };
+
+    document.querySelectorAll('[data-contract-lang]').forEach((btn) => {
+        btn.addEventListener('click', () => selectContractLanguage(btn.dataset.contractLang));
+    });
+
+    signBtn?.addEventListener('click', async () => {
+        if (!inlineContract) return;
+
+        const signerName = document.getElementById('contract-signer-name').value.trim();
+        if (!signerName) return fail(labels.signerRequired);
+        if (!document.getElementById('contract-agree').checked) return fail(labels.agreeRequired);
+
+        signBtn.disabled = true;
+        signBtn.textContent = labels.signing;
+        errorEl.classList.add('hidden');
+
+        try {
+            const res = await fetch(inlineContract.accept_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    signature_name: signerName,
+                    language: inlinePanelLanguage,
+                    agreed: 1,
+                    category_scope: inlineContract.category_scope,
+                    category_id: inlineContract.category_id,
+                }),
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data.success) {
+                throw new Error(data.message ?? labels.signError);
+            }
+
+            inlineContract = null;
+            document.getElementById('contract-panel').classList.add('hidden');
+            toast(labels.signedSubmitting);
+            form.requestSubmit();
+        } catch (error) {
+            fail(error.message || labels.signError);
+        } finally {
+            signBtn.disabled = false;
+            signBtn.textContent = labels.signAndSubmit;
+        }
+    });
+}
+
 function initCreateForm() {
     const form = document.getElementById('listing-create-form');
     const cfg = window.LISTINGS_CREATE;
@@ -499,6 +591,8 @@ function initCreateForm() {
         const variantId = document.getElementById('form-product-variant-id')?.value;
         if (variantId) loadShippingMethods(variantId, fulfillmentSelect.value);
     });
+
+    initContractPanel(form);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -554,6 +648,7 @@ function initCreateForm() {
             setTimeout(() => { window.location.href = data.redirect; }, 1000);
         } else {
             showError('create-error', data.message ?? 'حدث خطأ. يرجى التحقق من البيانات.');
+            if (data.contract) showContractPanel(data.contract);
             submitBtn.disabled = false;
             submitBtn.textContent = 'إنشاء القائمة';
         }

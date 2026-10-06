@@ -166,10 +166,39 @@ class CategoryContractTest extends TestCase
         $this->actingAs($admin, 'vendor')
             ->postJson(route('partner.listings.store'), ['product_id' => $scenario->product->id])
             ->assertStatus(422)
-            ->assertJsonPath('redirect', route('partner.contracts.pending'));
+            ->assertJsonPath('redirect', route('partner.contracts.pending'))
+            ->assertJsonPath('contract.template_id', $template->id)
+            ->assertJsonPath('contract.category_scope', 'product')
+            ->assertJsonPath('contract.category_id', $scenario->category->id)
+            ->assertJsonPath('contract.accept_url', route('partner.contracts.accept', $template));
 
         $this->service()->sign($scenario->vendor, $admin, 'product', $scenario->category->id, 'en', 'Owner', '127.0.0.1', 'phpunit');
 
+        $this->assertNull($this->service()->unsignedTemplateFor($scenario->vendor, 'product', $scenario->category->id));
+    }
+
+    public function test_inline_signing_from_listing_form_signs_the_named_category(): void
+    {
+        $scenario = $this->activeScenario();
+        $scenario->vendor->update(['vendor_type' => 'product_vendor']);
+        $template = $this->template('product', 'Product terms');
+        $scenario->category->update(['contract_template_id' => $template->id]);
+        $admin = $this->vendorAdmin($scenario);
+
+        $this->actingAs($admin, 'vendor')
+            ->postJson(route('partner.contracts.accept', $template), [
+                'signature_name' => 'Owner',
+                'language' => 'ar',
+                'agreed' => 1,
+                'category_scope' => 'product',
+                'category_id' => $scenario->category->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $contract = VendorContract::where('vendor_id', $scenario->vendor->id)->sole();
+        $this->assertSame('ar', $contract->language_signed);
+        $this->assertSame($scenario->category->id, $contract->product_category_id);
         $this->assertNull($this->service()->unsignedTemplateFor($scenario->vendor, 'product', $scenario->category->id));
     }
 
@@ -244,5 +273,59 @@ class CategoryContractTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->get(route('admin.vendors.contracts.index', $scenario->vendor))
             ->assertOk();
+    }
+    public function test_preview_fills_every_variable_and_history_opens_the_signed_text(): void
+    {
+        $scenario = $this->activeScenario();
+        $scenario->vendor->update(['vendor_type' => 'product_vendor']);
+        $template = $this->template('product', 'Product terms');
+        $scenario->category->update(['contract_template_id' => $template->id]);
+        $admin = $this->vendorAdmin($scenario);
+
+        $this->actingAs($admin, 'vendor')
+            ->get(route('partner.contracts.preview', $template))
+            ->assertOk()
+            ->assertSee('EN '.$scenario->vendor->store_name)
+            ->assertDontSee('{{vendor.store_name}}')
+            ->assertDontSee('{{vendor.signer_name}}');
+
+        $contract = $this->service()->sign($scenario->vendor, $admin, 'product', $scenario->category->id, 'en', 'Owner Name', '127.0.0.1', 'phpunit');
+
+        $this->actingAs($admin, 'vendor')
+            ->get(route('partner.contracts.signed', $contract))
+            ->assertOk()
+            ->assertSee('EN '.$scenario->vendor->store_name.' signed by Owner Name');
+
+        $otherVendor = Vendor::factory()->create(['global_status' => 'active', 'onboarding_completed_at' => now()]);
+        $otherAdmin = VendorAdmin::create([
+            'vendor_id' => $otherVendor->id, 'name' => 'Other', 'email' => 'other-'.Str::random(6).'@example.test',
+            'password' => bcrypt('password'), 'role' => 'owner', 'is_owner' => true, 'is_active' => true,
+        ]);
+        $this->actingAs($otherAdmin, 'vendor')
+            ->get(route('partner.contracts.signed', $contract))
+            ->assertNotFound();
+    }
+    public function test_admin_edit_page_uses_the_rich_editor_and_vendor_values_are_escaped_in_contracts(): void
+    {
+        $scenario = $this->activeScenario();
+        $scenario->vendor->update(['store_name' => '<img src=x onerror=alert(1)>']);
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo(['classifieds.view', 'vendors.view', 'vendors.assigned_only']);
+        $template = ClassifiedContractTemplate::create([
+            'name' => 'Editor terms', 'category_scope' => 'product', 'version' => 1,
+            'content_en' => "<p>Store: {{vendor.store_name}}</p>", 'content_ar' => '<p>AR</p>',
+            'is_active' => true, 'is_published' => true, 'created_by_admin_id' => $admin->id,
+        ]);
+        $scenario->category->update(['contract_template_id' => $template->id]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.contracts.templates.edit', $template))
+            ->assertOk()
+            ->assertSee('data-rich-editor', false);
+
+        $contract = $this->service()->sign($scenario->vendor, null, 'product', $scenario->category->id, 'en', 'Owner', '127.0.0.1', 'phpunit');
+
+        $this->assertStringNotContainsString('<img', $contract->rendered_content);
+        $this->assertStringContainsString('&lt;img', $contract->rendered_content);
     }
 }

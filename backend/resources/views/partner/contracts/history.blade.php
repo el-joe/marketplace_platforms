@@ -25,7 +25,7 @@
                     <td class="px-4 py-3 text-gray-500">{{ $loop->iteration + ($contracts->currentPage() - 1) * $contracts->perPage() }}</td>
                     <td class="px-4 py-3">
                         @if ($contract->contractTemplate)
-                            <a href="{{ route('partner.contracts.preview', $contract->contract_template_id) }}" class="text-blue-600 hover:underline">{{ $contract->contractTemplate->name }}</a>
+                            <a href="{{ route('partner.contracts.signed', $contract) }}" class="text-blue-600 hover:underline">{{ $contract->contractTemplate->name }}</a>
                         @else
                             —
                         @endif

@@ -1,4 +1,8 @@
 @extends('layouts.admin')
+@push('scripts')
+    @vite(['resources/js/components/rich-editor.js'])
+@endpush
+
 @section('title', __('admin.contracts.template_form_title'))
 
 @section('content')
@@ -52,14 +56,21 @@
             </div>
         </div>
 
-        <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('admin.contracts.body_en') }}</label>
-            <textarea name="content_en" rows="12" required dir="ltr" class="form-input w-full font-mono text-sm">{{ old('content_en', $template?->content_en) }}</textarea>
-        </div>
-        <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">{{ __('admin.contracts.body_ar') }}</label>
-            <textarea name="content_ar" rows="12" required dir="rtl" class="form-input w-full font-mono text-sm">{{ old('content_ar', $template?->content_ar) }}</textarea>
-        </div>
+        <x-form.rich-editor
+            name="content_en"
+            label="{{ __('admin.contracts.body_en') }}"
+            :required="true"
+            profile="default"
+            :value="$template?->editorHtml('content_en') ?? ''"
+            helpText="{{ __('admin.contracts.editor_help') }}"
+        />
+        <x-form.rich-editor
+            name="content_ar"
+            label="{{ __('admin.contracts.body_ar') }}"
+            :required="true"
+            profile="default"
+            :value="$template?->editorHtml('content_ar') ?? ''"
+        />
 
         <div class="flex justify-end gap-3">
             <a href="{{ route('admin.contracts.templates.index') }}" class="btn btn-ghost">{{ __('common.cancel') }}</a>

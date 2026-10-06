@@ -193,7 +193,7 @@ class ClassifiedListingController extends Controller
         $category->setAttribute('contract_pending', $template !== null);
         $category->setAttribute(
             'contract_template_content',
-            $template ? $contracts->render($template->content_ar, $contracts->variablesFor($vendor, $category, $template)) : null,
+            $template ? $contracts->renderContent($template->content_ar, $contracts->variablesFor($vendor, $category, $template)) : null,
         );
         $category->unsetRelation('contractTemplate');
     }

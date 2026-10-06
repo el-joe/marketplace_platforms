@@ -783,11 +783,30 @@ class ListingController extends Controller
         $productId = $request->input('product_id') ?: ProductVariant::whereKey($request->input('product_variant_id'))->value('product_id');
         $productCategoryId = $productId ? Product::whereKey($productId)->value('category_id') : null;
 
-        if ($productCategoryId && app(CategoryContractService::class)->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_PRODUCT, $productCategoryId)) {
+        $contracts = app(CategoryContractService::class);
+        $unsignedTemplate = $productCategoryId
+            ? $contracts->unsignedTemplateFor($vendor, CategoryContractService::SCOPE_PRODUCT, $productCategoryId)
+            : null;
+
+        if ($unsignedTemplate) {
+            $category = $contracts->categoryFor(CategoryContractService::SCOPE_PRODUCT, $productCategoryId);
+            $variables = $contracts->variablesFor($vendor, $category, $unsignedTemplate);
+
             return response()->json([
                 'success' => false,
                 'message' => __('partner.contracts.product_signature_required'),
                 'redirect' => route('partner.contracts.pending'),
+                'contract' => [
+                    'template_id' => $unsignedTemplate->id,
+                    'name' => $unsignedTemplate->name,
+                    'version' => $unsignedTemplate->version,
+                    'category_scope' => CategoryContractService::SCOPE_PRODUCT,
+                    'category_id' => $productCategoryId,
+                    'category_name' => $category->name_en,
+                    'content_en' => $contracts->renderContent($unsignedTemplate->content_en, $variables),
+                    'content_ar' => $contracts->renderContent($unsignedTemplate->content_ar, $variables),
+                    'accept_url' => route('partner.contracts.accept', $unsignedTemplate),
+                ],
             ], 422);
         }
 

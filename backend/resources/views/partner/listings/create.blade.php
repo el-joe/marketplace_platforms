@@ -17,6 +17,15 @@
             influencerFeeUrl: '{{ route("partner.listings.marketer-fee") }}',
             storeUrl: '{{ route("partner.listings.store") }}',
             csrf: '{{ csrf_token() }}',
+            contractLabels: {
+                title: @js(__('partner.contracts.inline_title')),
+                signing: @js(__('partner.contracts.signing')),
+                signedSubmitting: @js(__('partner.contracts.signed_submitting')),
+                signerRequired: @js(__('partner.contracts.signer_required')),
+                agreeRequired: @js(__('partner.contracts.agree_required')),
+                signError: @js(__('partner.contracts.sign_failed')),
+                signAndSubmit: @js(__('partner.contracts.sign_and_submit')),
+            },
         };
     </script>
 @endpush
@@ -471,6 +480,30 @@
                                 <span class="block text-xs text-gray-500 mt-1" id="sample-breakdown-text"></span>
                             </div>
                         </div>
+                    </div>
+
+                    <div id="contract-panel" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-4">
+                        <div>
+                            <h3 id="contract-panel-title" class="text-sm font-semibold text-gray-900"></h3>
+                            <p class="mt-1 text-xs text-gray-600">{{ __('partner.contracts.inline_hint') }}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" data-contract-lang="en" class="rounded px-3 py-1 text-xs font-medium bg-blue-600 text-white">EN</button>
+                            <button type="button" data-contract-lang="ar" class="rounded px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700">AR</button>
+                        </div>
+                        <div id="contract-body-en" dir="ltr" class="max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border bg-white p-3 text-sm leading-relaxed text-gray-700"></div>
+                        <div id="contract-body-ar" dir="rtl" class="hidden max-h-64 overflow-y-auto whitespace-pre-line rounded-lg border bg-white p-3 text-sm leading-relaxed text-gray-700"></div>
+                        <input type="text" id="contract-signer-name" maxlength="150" placeholder="{{ __('partner.contracts.full_name_label') }}"
+                               class="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                        <label class="flex items-start gap-2 text-sm text-gray-700">
+                            <input type="checkbox" id="contract-agree" class="mt-1">
+                            <span>{{ __('partner.contracts.agree_label') }}</span>
+                        </label>
+                        <p id="contract-error" class="hidden text-sm text-red-600"></p>
+                        <button type="button" id="contract-sign-btn"
+                            class="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                            {{ __('partner.contracts.sign_and_submit') }}
+                        </button>
                     </div>
 
                     <div id="create-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-4"></div>

@@ -631,7 +631,7 @@ async function wizLoadContractInWizard() {
 
     if (textEl) {
         if (templateText) {
-            textEl.textContent = templateText;
+            textEl.innerHTML = templateText;
         } else {
             // NOTE: contractShow() requires an existing listing ID, so we cannot fetch the full
             // contract before creation. Display terms summary; detailed contract sent after creation.

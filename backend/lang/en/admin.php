@@ -3018,6 +3018,7 @@ return [
         'excerpt_en' => 'Excerpt (English)',
         'excerpt_ar' => 'Excerpt (Arabic)',
         'body_en' => 'Body (English)',
+        'editor_help' => 'Use the toolbar for headings and lists. Insert variables from the helper above; they are filled in for each vendor.',
         'body_ar' => 'Body (Arabic)',
         'author' => 'Author',
         'published_at' => 'Published At',

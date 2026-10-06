@@ -96,6 +96,16 @@ class ClassifiedContractTemplate extends Model
         return $query->where('is_published', true)->where('is_active', true);
     }
 
+    /**
+     * Stored content as editor HTML. Plain-text templates from before the editor are converted for display.
+     */
+    public function editorHtml(string $field): string
+    {
+        $content = (string) $this->{$field};
+
+        return $content === strip_tags($content) ? nl2br(e($content)) : $content;
+    }
+
     public function getContentAttribute(): string
     {
         return app()->getLocale() === 'ar' ? $this->content_ar : $this->content_en;

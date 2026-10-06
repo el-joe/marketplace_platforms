@@ -73,6 +73,12 @@
         </x-partner-nav-group>
         @endif
 
+        {{-- Contracts: category agreements for classified and product vendors --}}
+        <x-partner-nav-group label="{{ __('partner.contracts.nav_group') }}">
+            <x-partner-nav-item route="partner.contracts.pending" icon="pencil-square" label="{{ __('partner.contracts.nav_pending') }}" />
+            <x-partner-nav-item route="partner.contracts.history" icon="archive-box" label="{{ __('partner.contracts.nav_history') }}" />
+        </x-partner-nav-group>
+
         {{-- Advertising (both vendor types — classified vendors advertise classified listings) --}}
         <x-partner-nav-group label="{{ __('partner.nav.advertising') }}">
             <x-partner-nav-item route="partner.ad-slots.index" icon="megaphone" label="Nawi Ads" />
@@ -82,8 +88,6 @@
         @if($isClassifiedVendor)
         <x-partner-nav-group label="{{ __('partner.nav.open_market') }}">
             <x-partner-nav-item route="partner.classifieds.index" icon="squares-plus" label="{{ __('partner.nav.my_classifieds') }}" />
-            <x-partner-nav-item route="partner.contracts.pending" icon="pencil-square" label="{{ __('partner.contracts.nav_pending') }}" />
-            <x-partner-nav-item route="partner.contracts.history" icon="archive-box" label="{{ __('partner.contracts.nav_history') }}" />
         </x-partner-nav-group>
         @endif
 

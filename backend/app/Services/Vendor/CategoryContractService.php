@@ -126,7 +126,7 @@ class CategoryContractService
 
         $language = $language === 'ar' ? 'ar' : 'en';
         $variables = $this->variablesFor($vendor, $category, $template, $signerName);
-        $content = $this->render($language === 'ar' ? $template->content_ar : $template->content_en, $variables);
+        $content = $this->renderContent($language === 'ar' ? $template->content_ar : $template->content_en, $variables);
 
         return DB::transaction(function () use ($vendor, $signer, $scope, $category, $template, $language, $variables, $content, $signerName, $ipAddress, $userAgent, $signaturePath) {
             $enrollment = $this->enrollmentFor($vendor, $scope, $category);
@@ -207,7 +207,7 @@ class CategoryContractService
     /**
      * @return array<string, string> variable values keyed without braces
      */
-    public function variablesFor(Vendor $vendor, ClassifiedCategory|Category $category, ClassifiedContractTemplate $template, string $signerName = ''): array
+    public function variablesFor(Vendor $vendor, ClassifiedCategory|Category|null $category, ClassifiedContractTemplate $template, string $signerName = ''): array
     {
         $vendor->loadMissing(['country', 'businessAddress.city']);
 
@@ -226,11 +226,26 @@ class CategoryContractService
             'vendor.signer_name' => $signerName,
             'platform.name_en' => (string) config('app.name'),
             'platform.name_ar' => (string) config('app.name'),
-            'category.name_en' => (string) $category->name_en,
-            'category.name_ar' => (string) $category->name_ar,
+            'category.name_en' => (string) ($category?->name_en ?? ''),
+            'category.name_ar' => (string) ($category?->name_ar ?? ''),
             'contract.version' => (string) $template->version,
             'contract.date' => now()->format('d/m/Y'),
         ];
+    }
+
+    /**
+     * Contract content as HTML. Editor-authored content is HTML; older plain-text content is converted.
+     * Vendor-supplied values are escaped, so the signed text can be shown with {!! !!} safely.
+     *
+     * @param  array<string, string>  $variables
+     */
+    public function renderContent(string $content, array $variables): string
+    {
+        if ($content === strip_tags($content)) {
+            return nl2br(e($this->render($content, $variables)));
+        }
+
+        return $this->render($content, array_map(fn (string $value) => e($value), $variables));
     }
 
     /**

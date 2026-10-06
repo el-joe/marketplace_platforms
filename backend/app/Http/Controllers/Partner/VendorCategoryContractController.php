@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedContractTemplate;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
@@ -39,8 +41,8 @@ class VendorCategoryContractController extends Controller
             ->unique(fn (array $item) => $item['template']->id)
             ->map(function (array $item) use ($vendor) {
                 $variables = $this->contracts->variablesFor($vendor, $item['category'], $item['template']);
-                $item['resolved_content_en'] = $this->contracts->render($item['template']->content_en, $variables);
-                $item['resolved_content_ar'] = $this->contracts->render($item['template']->content_ar, $variables);
+                $item['resolved_content_en'] = $this->contracts->renderContent($item['template']->content_en, $variables);
+                $item['resolved_content_ar'] = $this->contracts->renderContent($item['template']->content_ar, $variables);
 
                 return $item;
             })
@@ -49,22 +51,33 @@ class VendorCategoryContractController extends Controller
         return view('partner.contracts.pending', compact('pending'));
     }
 
+    /**
+     * Shows a template with every variable filled in for this vendor. The category is the one the template is assigned to.
+     */
     public function preview(string $templateId): View
     {
         $template = ClassifiedContractTemplate::findOrFail($templateId);
         $vendor = $this->vendor();
-        $category = $template->category_scope === CategoryContractService::SCOPE_PRODUCT
-            ? $template->productCategory
-            : $template->category;
 
-        $variables = $category
-            ? $this->contracts->variablesFor($vendor, $category, $template)
-            : [];
+        $category = ClassifiedCategory::where('contract_template_id', $template->id)->first()
+            ?? Category::where('contract_template_id', $template->id)->first();
 
-        $resolvedEn = $this->contracts->render($template->content_en, $variables);
-        $resolvedAr = $this->contracts->render($template->content_ar, $variables);
+        $variables = $this->contracts->variablesFor($vendor, $category, $template, $this->vendorAdmin()->name);
+
+        $resolvedEn = $this->contracts->renderContent($template->content_en, $variables);
+        $resolvedAr = $this->contracts->renderContent($template->content_ar, $variables);
 
         return view('partner.contracts.preview', compact('template', 'category', 'resolvedEn', 'resolvedAr'));
+    }
+
+    /**
+     * The exact text this vendor signed, frozen at signing time.
+     */
+    public function signed(VendorContract $contract): View
+    {
+        abort_unless($contract->vendor_id === $this->vendor()->id, 404);
+
+        return view('partner.contracts.signed', compact('contract'));
     }
 
     /**
@@ -76,12 +89,23 @@ class VendorCategoryContractController extends Controller
             'signature_name' => 'required|string|max:150',
             'language' => 'required|in:en,ar',
             'agreed' => 'accepted',
+            'category_scope' => 'nullable|in:classified,product',
+            'category_id' => 'nullable|uuid',
         ]);
 
         $vendor = $this->vendor();
 
-        $pendingItem = $this->contracts->pendingForVendor($vendor)
-            ->first(fn (array $item) => $item['template']->id === $templateId);
+        // Inline signing from a listing form names the category; the vendor may not list there yet.
+        if (! empty($validated['category_id'])) {
+            $scope = $validated['category_scope'] ?? CategoryContractService::SCOPE_CLASSIFIED;
+            $template = $this->contracts->unsignedTemplateFor($vendor, $scope, $validated['category_id']);
+            $pendingItem = $template && $template->id === $templateId
+                ? ['scope' => $scope, 'category' => $this->contracts->categoryFor($scope, $validated['category_id'])]
+                : null;
+        } else {
+            $pendingItem = $this->contracts->pendingForVendor($vendor)
+                ->first(fn (array $item) => $item['template']->id === $templateId);
+        }
 
         if (! $pendingItem) {
             return $this->respond($request, false, __('partner.contracts.not_pending'), route('partner.contracts.pending'));
@@ -108,7 +132,7 @@ class VendorCategoryContractController extends Controller
             $request,
             true,
             __('partner.contracts.all_accepted'),
-            session()->pull('url.intended', route('partner.classifieds.index')),
+            session()->pull('url.intended', route('partner.dashboard')),
         );
     }
 

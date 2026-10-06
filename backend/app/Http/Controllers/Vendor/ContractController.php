@@ -37,8 +37,8 @@ class ContractController extends Controller
                     'version' => $item['template']->version,
                     'category_scope' => $item['scope'],
                     'category_name' => $item['category']->name_en,
-                    'content_en' => $this->contracts->render($item['template']->content_en, $variables),
-                    'content_ar' => $this->contracts->render($item['template']->content_ar, $variables),
+                    'content_en' => $this->contracts->renderContent($item['template']->content_en, $variables),
+                    'content_ar' => $this->contracts->renderContent($item['template']->content_ar, $variables),
                 ];
             })
             ->values();
@@ -71,8 +71,8 @@ class ContractController extends Controller
             'template_id' => $template->id,
             'name' => $template->name,
             'version' => $template->version,
-            'content_en' => $this->contracts->render($template->content_en, $variables),
-            'content_ar' => $this->contracts->render($template->content_ar, $variables),
+            'content_en' => $this->contracts->renderContent($template->content_en, $variables),
+            'content_ar' => $this->contracts->renderContent($template->content_ar, $variables),
         ]);
     }
 
