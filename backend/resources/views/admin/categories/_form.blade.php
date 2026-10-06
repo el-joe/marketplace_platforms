@@ -39,6 +39,7 @@
                         ['id' => 'general',    'label' => __('admin.general'),    'icon' => 'information-circle'],
                         ['id' => 'attributes', 'label' => __('admin.categories.attributes_tab'), 'icon' => 'tag'],
                         ['id' => 'shipping',   'label' => __('admin.categories.shipping_methods_tab'), 'icon' => 'truck'],
+                        ['id' => 'commissions','label' => __('admin.categories.commissions_tab'), 'icon' => 'banknotes'],
                         ['id' => 'seo',        'label' => __('admin.categories.seo_tab'),        'icon' => 'magnifying-glass'],
                         ['id' => 'marketers',  'label' => __('admin.categories.marketers_tab'),  'icon' => 'user-group'],
                     ] as $tab)
@@ -200,11 +201,7 @@
                         {{ __('admin.categories.commission_formula_note') }}
                     </p>
 
-                    @if($isEdit ?? false)
-                        @include('admin.categories._commission_tiers', ['category' => $category])
-                    @else
-                        <p class="mt-4 text-xs text-gray-400 italic">{{ __('admin.categories.save_category_first_for_tiers') }}</p>
-                    @endif
+                    {{-- Commission tiers moved to dedicated "Commissions" tab --}}
                 </div>
 
                 <script>
@@ -297,6 +294,21 @@
                     <p class="text-sm text-gray-400 italic">{{ __('admin.categories.save_category_first_for_shipping') }}</p>
                 @else
                     @include('admin.categories._shipping_methods_tab', ['category' => $category])
+                @endif
+            </div>
+
+            {{-- TAB: Commission Tiers --}}
+            <div
+                x-show="activeTab === 'commissions'"
+                class="bg-white rounded-b-xl border border-t-0 border-gray-200 p-6 shadow-sm space-y-4"
+            >
+                @if(!$isEdit)
+                    <p class="text-sm text-gray-400 italic">{{ __('admin.categories.save_category_first_for_tiers') }}</p>
+                @else
+                    @include('admin.categories._commission_tiers_tab', [
+                        'category'        => $category,
+                        'activeCountries' => $activeCountries,
+                    ])
                 @endif
             </div>
 

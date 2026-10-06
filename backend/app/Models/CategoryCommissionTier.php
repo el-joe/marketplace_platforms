@@ -13,6 +13,7 @@ class CategoryCommissionTier extends Model
 
     protected $fillable = [
         'category_id',
+        'country_id',
         'price_from',
         'price_to',
         'commission_rate',
@@ -31,6 +32,11 @@ class CategoryCommissionTier extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
     }
 
     /**

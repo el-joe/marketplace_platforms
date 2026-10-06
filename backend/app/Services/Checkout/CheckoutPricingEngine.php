@@ -742,12 +742,23 @@ class CheckoutPricingEngine
 
         // Price tiers: a tier matching the unit price overrides the FBP/FBN pct and adds a per-unit floor.
         // commissionTiers is eager-loaded via $categoryCache in computeMoneySplit() to avoid N+1.
+        // Country-specific tiers (country_id = $country->id) take precedence over global tiers (country_id IS NULL).
         $safeQty = max(1, $quantity);
         $unitPrice = intdiv($baseAmountCents + $safeQty - 1, $safeQty);
-        $tiers = $resolved->relationLoaded('commissionTiers')
+        $allTiers = $resolved->relationLoaded('commissionTiers')
             ? $resolved->commissionTiers
             : CategoryCommissionTier::where('category_id', $resolved->id)->orderBy('price_from')->get();
-        $tier = CategoryCommissionTier::resolveForUnitPrice($tiers, $unitPrice);
+
+        // Try country-specific tiers first, then fall back to global tiers
+        $countryTiers = $allTiers->where('country_id', $country->id)->sortBy('price_from')->values();
+        $tier = $countryTiers->isNotEmpty()
+            ? CategoryCommissionTier::resolveForUnitPrice($countryTiers, $unitPrice)
+            : null;
+
+        if ($tier === null) {
+            $globalTiers = $allTiers->whereNull('country_id')->sortBy('price_from')->values();
+            $tier = CategoryCommissionTier::resolveForUnitPrice($globalTiers, $unitPrice);
+        }
 
         $amount = CommissionCalculator::calculate(
             baseAmount: $baseAmountCents,
