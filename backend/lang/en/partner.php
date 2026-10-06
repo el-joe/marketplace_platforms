@@ -2477,6 +2477,8 @@ return [
         'title' => 'My Campaigns',
         'subtitle' => 'Campaigns you created to invite marketers and affiliates to promote your products.',
         'no_campaigns' => 'You have not created any marketer campaigns yet.',
+        'new_campaign_btn' => 'New Campaign',
+        'new_campaign_hint' => 'Open a product listing and click "Create Campaign" to get started.',
         'view' => 'View',
         'cancel' => 'Cancel Campaign',
         'confirm_cancel' => 'Are you sure you want to cancel this campaign?',
