@@ -61,7 +61,7 @@ class MarketerCampaignController extends Controller
         $marketerVendors = Marketer::where('global_status', 'active')
             ->where('country_id', $vendorListing->country_id)
             ->orderBy('name')
-            ->with('marketerJobs')
+            ->with(['marketerJobs', 'marketerProfile'])
             ->get(['id', 'name']);
 
         return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors'));
@@ -78,6 +78,9 @@ class MarketerCampaignController extends Controller
             'marketer_ids' => ['required', 'array', 'min:1'],
             'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
             'tiered_rules' => ['nullable', 'array'],
+            'selected_ad_types' => ['nullable', 'array'],
+            'selected_ad_types.*' => ['string', 'in:story,post,video'],
+            'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $listing = VendorListing::where('id', $request->vendor_listing_id)
@@ -99,6 +102,8 @@ class MarketerCampaignController extends Controller
                         'currency' => $listing->currency,
                         'marketer_ids' => $request->input('marketer_ids', []),
                         'tiered_rules' => $request->input('tiered_rules', []),
+                        'selected_ad_types' => $request->input('selected_ad_types') ?: null,
+                        'vendor_ad_notes' => $request->input('vendor_ad_notes') ?: null,
                     ]
                 )
             );

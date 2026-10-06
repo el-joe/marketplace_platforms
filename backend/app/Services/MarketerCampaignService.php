@@ -211,6 +211,8 @@ class MarketerCampaignService
                     : $marketerVendors->pluck('id')->values()->all(),
                 'title' => $data['title'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'selected_ad_types' => $data['selected_ad_types'] ?? null,
+                'vendor_ad_notes' => $data['vendor_ad_notes'] ?? null,
             ]);
 
             if ($data['commission_type'] === 'tiered' && ! empty($data['tiered_rules'])) {

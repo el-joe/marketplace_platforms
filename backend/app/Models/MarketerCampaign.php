@@ -25,6 +25,7 @@ class MarketerCampaign extends Model
         'auto_approve_at', 'auto_approved',
         'platform_sample_qty_snapshot', 'per_marketer_sample_qty_snapshot',
         'title', 'notes',
+        'selected_ad_types', 'vendor_ad_notes',
     ];
 
     protected $attributes = [
@@ -37,6 +38,7 @@ class MarketerCampaign extends Model
         'auto_approved' => 'boolean',
         'requested_marketer_vendor_ids' => 'array',
         'campaign_category' => 'string',
+        'selected_ad_types' => 'array',
     ];
 
     public function vendor(): BelongsTo

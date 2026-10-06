@@ -62,7 +62,12 @@
                     x-on:change="updateSelectedMarketers($event)"
                 >
                     @foreach($marketerVendors as $m)
-                        <option value="{{ $m->id }}" data-type="{{ $m->marketerJobs->first()?->key }}" data-name="{{ $m->name }}">
+                        <option value="{{ $m->id }}"
+                                data-type="{{ $m->marketerJobs->first()?->key }}"
+                                data-name="{{ $m->name }}"
+                                data-story-price="{{ $m->marketerProfile?->story_price }}"
+                                data-post-price="{{ $m->marketerProfile?->post_price }}"
+                                data-video-price="{{ $m->marketerProfile?->video_price }}">
                             {{ $m->name }} — {{ $m->isInfluencer() ? __('partner.marketer_campaigns.influencer_label') : __('partner.marketer_campaigns.affiliate_label') }}
                         </option>
                     @endforeach
@@ -172,6 +177,54 @@
                     {{ __('partner.marketer_campaigns.samples_auto_note') }}
                 </span>
             </div>
+
+            {{-- Ad type selection — shown only when influencers are selected --}}
+            <div x-show="hasInfluencers" x-cloak>
+                <div class="border-t border-gray-200 pt-4">
+                    <h5 class="text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-photo-film text-purple-500 mr-1"></i>
+                        {{ __('partner.marketer_campaigns.ad_types_label') }}
+                    </h5>
+                    <div class="space-y-3">
+                        <template x-for="type in availableAdTypes" :key="type.key">
+                            <label class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 cursor-pointer hover:bg-purple-50 transition-colors"
+                                   :class="selectedAdTypes.includes(type.key) ? 'border-purple-400 bg-purple-50' : ''">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox"
+                                           name="selected_ad_types[]"
+                                           :value="type.key"
+                                           @change="toggleAdType(type.key)"
+                                           :checked="selectedAdTypes.includes(type.key)"
+                                           class="rounded border-gray-300 text-purple-600 focus:ring-purple-400">
+                                    <span class="font-medium text-gray-800 text-sm" x-text="type.label"></span>
+                                </div>
+                                <div class="text-sm font-semibold" x-show="type.minPrice !== null">
+                                    <span class="text-purple-700" x-text="type.priceRange"></span>
+                                    <span class="text-gray-400 text-xs ms-1" x-text="currency"></span>
+                                </div>
+                                <div class="text-xs text-gray-400" x-show="type.minPrice === null">
+                                    {{ __('partner.marketer_campaigns.ad_type_price_varies') }}
+                                </div>
+                            </label>
+                        </template>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        {{ __('partner.marketer_campaigns.ad_types_note') }}
+                    </p>
+                </div>
+            </div>
+
+            {{-- Notes for influencer --}}
+            <div x-show="hasInfluencers" x-cloak>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ __('partner.marketer_campaigns.vendor_ad_notes_label') }}
+                    <span class="text-xs text-gray-400">({{ __('partner.marketer_campaigns.optional') }})</span>
+                </label>
+                <textarea name="vendor_ad_notes" rows="3"
+                          class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+                          placeholder="{{ __('partner.marketer_campaigns.vendor_ad_notes_placeholder') }}"></textarea>
+            </div>
         </div>
 
         <div class="mt-6 flex gap-3">
@@ -196,9 +249,42 @@
                 selectedMarketers: [],
                 feePerInfluencer: 0,
                 currency: '',
+                selectedAdTypes: [],
+                get hasInfluencers() {
+                    return this.selectedMarketers.some(m => m.type === 'influencer');
+                },
                 get totalInfluencerFee() {
                     const count = this.selectedMarketers.filter(m => m.type === 'influencer').length;
                     return count * this.feePerInfluencer;
+                },
+                get availableAdTypes() {
+                    const influencers = this.selectedMarketers.filter(m => m.type === 'influencer');
+                    const adTypeKeys = ['story', 'post', 'video'];
+                    const labels = {
+                        story: '{{ __("partner.marketer_campaigns.ad_type_story") }}',
+                        post:  '{{ __("partner.marketer_campaigns.ad_type_post") }}',
+                        video: '{{ __("partner.marketer_campaigns.ad_type_video") }}',
+                    };
+                    return adTypeKeys.map(key => {
+                        const prices = influencers
+                            .map(m => m[key + 'Price'])
+                            .filter(p => p !== null && p !== undefined && p !== '');
+                        const minPrice = prices.length ? Math.min(...prices) : null;
+                        const maxPrice = prices.length ? Math.max(...prices) : null;
+                        let priceRange = null;
+                        if (minPrice !== null) {
+                            priceRange = minPrice === maxPrice ? String(minPrice) : minPrice + ' – ' + maxPrice;
+                        }
+                        return { key, label: labels[key], minPrice, priceRange };
+                    });
+                },
+                toggleAdType(key) {
+                    const idx = this.selectedAdTypes.indexOf(key);
+                    if (idx === -1) {
+                        this.selectedAdTypes.push(key);
+                    } else {
+                        this.selectedAdTypes.splice(idx, 1);
+                    }
                 },
                 updateSelectedMarketers(event) {
                     const select = event.target;
@@ -206,7 +292,14 @@
                         id: opt.value,
                         name: opt.dataset.name || opt.text,
                         type: opt.dataset.type || 'affiliate',
+                        storyPrice: opt.dataset.storyPrice ? parseInt(opt.dataset.storyPrice) : null,
+                        postPrice: opt.dataset.postPrice ? parseInt(opt.dataset.postPrice) : null,
+                        videoPrice: opt.dataset.videoPrice ? parseInt(opt.dataset.videoPrice) : null,
                     }));
+                    // Reset ad types if no influencers remain
+                    if (!this.hasInfluencers) {
+                        this.selectedAdTypes = [];
+                    }
                 },
                 async fetchInfluencerFee() {
                     try {

@@ -115,6 +115,27 @@
                         <dd class="mt-0.5 text-gray-700">{{ $marketerCampaign->notes }}</dd>
                     </div>
                 @endif
+                @if ($marketerCampaign->selected_ad_types && count($marketerCampaign->selected_ad_types) > 0)
+                    <div class="col-span-2 md:col-span-3">
+                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">{{ __('partner.marketer_campaigns_my.field.selected_ad_types') }}</dt>
+                        <dd class="flex flex-wrap gap-2 mt-1">
+                            @php
+                                $adTypeLabels = ['story' => __('partner.marketer_campaigns.ad_type_story'), 'post' => __('partner.marketer_campaigns.ad_type_post'), 'video' => __('partner.marketer_campaigns.ad_type_video')];
+                            @endphp
+                            @foreach ($marketerCampaign->selected_ad_types as $adType)
+                                <span class="inline-flex items-center rounded-full bg-purple-100 text-purple-700 px-3 py-1 text-xs font-semibold">
+                                    {{ $adTypeLabels[$adType] ?? $adType }}
+                                </span>
+                            @endforeach
+                        </dd>
+                    </div>
+                @endif
+                @if ($marketerCampaign->vendor_ad_notes)
+                    <div class="col-span-2 md:col-span-3">
+                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ __('partner.marketer_campaigns_my.field.vendor_ad_notes') }}</dt>
+                        <dd class="mt-0.5 text-gray-700 whitespace-pre-wrap">{{ $marketerCampaign->vendor_ad_notes }}</dd>
+                    </div>
+                @endif
                 @if ($marketerCampaign->status === 'rejected' && $marketerCampaign->rejection_reason)
                     <div class="col-span-2 md:col-span-3">
                         <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ __('partner.marketer_campaigns_my.field.rejection_reason') }}</dt>
