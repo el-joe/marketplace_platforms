@@ -15,18 +15,29 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('category_commission_tiers', function (Blueprint $table) {
-            $table->uuid('country_id')->nullable()->after('category_id')
-                ->comment('NULL = global tier; non-null = applies to this country only');
-            $table->foreign('country_id')->references('id')->on('countries')->onDelete('cascade');
-        });
+        // Re-runnable: an earlier attempt added the column + FK before failing on the index step.
+        if (! Schema::hasColumn('category_commission_tiers', 'country_id')) {
+            Schema::table('category_commission_tiers', function (Blueprint $table) {
+                $table->uuid('country_id')->nullable()->after('category_id')
+                    ->comment('NULL = global tier; non-null = applies to this country only');
+            });
+        }
 
-        // Drop the old (category_id, sort_order) index and replace with one that
-        // includes country_id so queries filtering by category + country are indexed.
-        Schema::table('category_commission_tiers', function (Blueprint $table) {
-            $table->dropIndex('category_commission_tiers_category_sort_index');
-            $table->index(['category_id', 'country_id', 'sort_order'], 'cct_category_country_sort_index');
-        });
+        $hasForeign = collect(Schema::getForeignKeys('category_commission_tiers'))
+            ->contains(fn ($fk) => $fk['columns'] === ['country_id']);
+        if (! $hasForeign) {
+            Schema::table('category_commission_tiers', function (Blueprint $table) {
+                $table->foreign('country_id')->references('id')->on('countries')->onDelete('cascade');
+            });
+        }
+
+        $indexes = collect(Schema::getIndexes('category_commission_tiers'))->pluck('name');
+
+        if (! $indexes->contains('cct_category_country_sort_index')) {
+            Schema::table('category_commission_tiers', function (Blueprint $table) {
+                $table->index(['category_id', 'country_id', 'sort_order'], 'cct_category_country_sort_index');
+            });
+        }
     }
 
     public function down(): void
@@ -35,7 +46,6 @@ return new class extends Migration
             $table->dropForeign(['country_id']);
             $table->dropIndex('cct_category_country_sort_index');
             $table->dropColumn('country_id');
-            $table->index(['category_id', 'sort_order'], 'category_commission_tiers_category_sort_index');
         });
     }
 };
