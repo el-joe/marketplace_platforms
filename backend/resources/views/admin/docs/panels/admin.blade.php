@@ -189,7 +189,6 @@
                 <li><code>/admin/helpcenter/articles</code> — {{ __('docs/panels/admin.content.helpcenter_articles') }}</li>
                 <li><code>/admin/faqs</code> — {{ __('docs/panels/admin.content.faqs') }}</li>
                 <li><code>/admin/portal-content</code> — {{ __('docs/panels/admin.content.portal_content') }}</li>
-                <li><code>/admin/content-settings</code> — {{ __('docs/panels/admin.content.content_settings') }}</li>
                 <li><code>/admin/radio</code> — {{ __('docs/panels/admin.content.radio') }}</li>
             </ul>
         </section>

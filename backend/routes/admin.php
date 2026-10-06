@@ -33,7 +33,6 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ClassifiedCategoryController;
 use App\Http\Controllers\Admin\ClassifiedListingController;
 use App\Http\Controllers\Admin\CodSettlementController;
-use App\Http\Controllers\Admin\ContentSettingsController;
 use App\Http\Controllers\Admin\ContractSignatureController;
 use App\Http\Controllers\Admin\ContractTemplateController;
 use App\Http\Controllers\Admin\CountryController;
@@ -1212,13 +1211,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/datatable', [NewsletterController::class, 'datatable'])->name('datatable');
         Route::get('/export', [NewsletterController::class, 'export'])->name('export');
         Route::delete('/{subscriber}', [NewsletterController::class, 'destroy'])->name('destroy');
-    });
-
-    // ─── Content Settings ─────────────────────────────────────────────────────
-    Route::prefix('content-settings')->name('content-settings.')->middleware('admin.permission:settings.content')->group(function () {
-        Route::get('/', [ContentSettingsController::class, 'index'])->name('index');
-        Route::get('/{group}', [ContentSettingsController::class, 'showGroup'])->name('group');
-        Route::post('/update', [ContentSettingsController::class, 'update'])->name('update');
     });
 
     // ─── Footer Settings ──────────────────────────────────────────────────────

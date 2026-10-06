@@ -8,7 +8,7 @@ return [
         'heading' => 'What It Is',
         'body_prefix' => "Everything in the admin sidebar's",
         'content_group' => 'Content',
-        'body_suffix' => 'group: page builder, storefront/app configuration, reviews moderation, the blog, the vendor knowledge hub, FAQs, static portal pages, dynamic content settings, and radio channels.',
+        'body_suffix' => 'group: page builder, storefront/app configuration, reviews moderation, the blog, the vendor knowledge hub, FAQs, and static portal pages.',
     ],
 
     'pages' => [
@@ -61,14 +61,6 @@ return [
         'editor' => 'Summernote editor for each language',
     ],
 
-    'settings' => [
-        'heading' => 'Content Settings',
-        'body' => 'all dynamic media, text, and URLs across the platform.',
-        'types' => '12 setting types: text, textarea, editor, file, url, email, phone, number, boolean, color, select, json',
-        'groups' => 'Groups: general, appearance, homepage, footer, auth_pages, vendor_portal, emails, seo, policies, notifications',
-        'cache' => 'Changes apply instantly via View Composer cache (5-minute TTL, cleared on save)',
-    ],
-
     'radio' => [
         'heading' => 'Radio Channels',
         'body_prefix' => 'Online radio stations embedded in the storefront',
@@ -83,6 +75,6 @@ return [
         'admin_label' => 'Admin',
         'admin_owns' => 'owns all content entries; nothing here is editable by vendors or customers',
         'bilingual' => 'All bilingual content requires both EN and AR before it can be marked active in most sections',
-        'cache_note' => 'Content settings changes are cached (5 min) and cleared automatically on save &mdash; no manual cache-busting needed',
+        'cache_note' => 'Page builder changes are cached and cleared automatically on save &mdash; no manual cache-busting needed',
     ],
 ];

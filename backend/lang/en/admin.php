@@ -459,7 +459,6 @@ return [
         'docs_roles' => 'Roles & Permissions',
         'docs_content_pages' => 'Content Pages',
         'docs_system_pages' => 'System Pages',
-        'content_settings' => 'Content Settings',
         'footer_settings' => 'Footer Settings',
         'vendor_listings' => 'Vendor Listings',
         'celebrity_monthly_report' => 'Celebrity Monthly Report',
@@ -10616,17 +10615,6 @@ return [
     ],
 
     // ─── Content Settings ─────────────────────────────────────────────────
-    'content_settings' => [
-        'title' => 'Content Settings',
-        'subtitle' => 'Manage platform-wide content, appearance and page settings.',
-        'public_api' => 'Public API',
-        'enabled' => 'Enabled',
-        'current_file' => 'Current File',
-        'default_value' => 'Default:',
-        'save_all' => 'Save All',
-        'saved_success' => 'Content settings saved successfully.',
-    ],
-
     // ─── Footer Settings ──────────────────────────────────────────────────
     'footer_settings' => [
         'title' => 'Footer Settings',

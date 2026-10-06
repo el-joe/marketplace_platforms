@@ -32,7 +32,7 @@
         {{-- Delivery fee --}}
         <section>
             <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/packaging.delivery_fee.heading') }}</h2>
-            <p class="text-gray-600">{{ __('docs/features/packaging.delivery_fee.p1') }} <code>'packaging_delivery_fee_{country_code}'</code> ({{ __('docs/features/packaging.delivery_fee.p2') }}). {{ __('docs/features/packaging.delivery_fee.p3') }} <a href="{{ route('admin.content-settings.index') }}" class="text-primary-600 hover:underline">admin/content-settings</a>.</p>
+            <p class="text-gray-600">{{ __('docs/features/packaging.delivery_fee.p1') }} <code>'packaging_delivery_fee_{country_code}'</code> ({{ __('docs/features/packaging.delivery_fee.p2') }}). {{ __('docs/features/packaging.delivery_fee.p3') }} <code>admin/content-settings</code>.</p>
         </section>
 
         {{-- Stock snapshot --}}

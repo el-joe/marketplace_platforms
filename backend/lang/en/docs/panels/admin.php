@@ -147,7 +147,6 @@ return [
         'helpcenter_articles' => 'Customer-facing help center articles',
         'faqs' => 'Platform FAQs',
         'portal_content' => 'Static page content editor (About, Terms, Privacy, etc.)',
-        'content_settings' => 'All portal media/text settings (logo, banners, colors, etc.)',
         'radio' => 'Radio channel + slot scheduling',
     ],
 

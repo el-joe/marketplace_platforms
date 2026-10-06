@@ -73,17 +73,6 @@
             </ul>
         </section>
 
-        {{-- Content Settings --}}
-        <section>
-            <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/content-pages.settings.heading') }}</h2>
-            <p class="text-gray-600"><a href="{{ route('admin.content-settings.index') }}" class="text-primary-600 hover:underline">admin/content-settings</a>: {{ __('docs/features/content-pages.settings.body') }}</p>
-            <ul class="list-disc list-inside text-gray-600 space-y-1">
-                <li>{{ __('docs/features/content-pages.settings.types') }}</li>
-                <li>{{ __('docs/features/content-pages.settings.groups') }}</li>
-                <li>{{ __('docs/features/content-pages.settings.cache') }}</li>
-            </ul>
-        </section>
-
         {{-- Who uses it / rules --}}
         <section>
             <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/content-pages.rules.heading') }}</h2>

@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\View\Composers\SettingsComposer;
 use App\Http\View\Composers\TravelAgencySidebarComposer;
 use App\View\Components\Form\AsyncSelect;
 use App\View\Components\Form\FileUpload;
@@ -268,8 +267,6 @@ class AppServiceProvider extends ServiceProvider
         // the layout's sidebar.
         View::composer('travel-agency.*', TravelAgencySidebarComposer::class);
         View::composer('layouts.travel-agency', TravelAgencySidebarComposer::class);
-
-        View::composer('*', SettingsComposer::class);
 
         // Product detail routes: /products/{productSlug}/{variantSlug}
         // Binds the active Product by slug, then the active, non-deleted variant

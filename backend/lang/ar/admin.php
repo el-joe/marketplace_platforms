@@ -458,7 +458,6 @@ return [
         'docs_roles' => 'الأدوار والصلاحيات',
         'docs_content_pages' => 'صفحات المحتوى',
         'docs_system_pages' => 'صفحات النظام',
-        'content_settings' => 'إعدادات المحتوى',
         'footer_settings' => 'إعدادات التذييل',
         'vendor_listings' => 'قوائم البائعين',
         'celebrity_monthly_report' => 'التقرير الشهري للمشاهير',
@@ -10619,17 +10618,6 @@ return [
     ],
 
     // ─── Content Settings ─────────────────────────────────────────────────
-    'content_settings' => [
-        'title' => 'إعدادات المحتوى',
-        'subtitle' => 'إدارة إعدادات المحتوى والمظهر والصفحات على مستوى المنصة.',
-        'public_api' => 'واجهة برمجة عامة',
-        'enabled' => 'مفعّل',
-        'current_file' => 'الملف الحالي',
-        'default_value' => 'القيمة الافتراضية:',
-        'save_all' => 'حفظ الكل',
-        'saved_success' => 'تم حفظ إعدادات المحتوى بنجاح.',
-    ],
-
     // ─── Footer Settings ──────────────────────────────────────────────────
     'footer_settings' => [
         'title' => 'إعدادات التذييل',

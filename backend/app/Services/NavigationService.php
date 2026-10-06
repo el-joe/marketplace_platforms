@@ -764,13 +764,6 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
-                        'label' => __('admin.nav.content_settings'),
-                        'route' => 'admin.content-settings.index',
-                        'icon' => 'cog',
-                        'permission' => 'settings.content',
-                        'badge' => null,
-                    ],
-                    [
                         'label' => __('admin.nav.footer_settings'),
                         'route' => 'admin.footer-settings.index',
                         'icon' => 'view-columns',
