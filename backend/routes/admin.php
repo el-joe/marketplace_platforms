@@ -82,7 +82,6 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\ProductHighlightController;
 use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\Admin\RadioChannelController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\RoleController;
@@ -1906,17 +1905,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy');
     });
 
-    Route::prefix('radio')->name('radio.')->group(function () {
-        Route::resource('channels', RadioChannelController::class)
-            ->names('channels')
-            ->except(['show']);
-
-        Route::get('/channels/{channel}/schedule', [RadioChannelController::class, 'schedule'])->name('schedule');
-        Route::get('/channels/{channel}/schedule/events', [RadioChannelController::class, 'scheduleEvents'])->name('schedule.events');
-        Route::post('/channels/{channel}/slots', [RadioChannelController::class, 'storeSlot'])->name('slots.store');
-        Route::put('/channels/{channel}/slots/{slot}', [RadioChannelController::class, 'updateSlot'])->name('slots.update');
-        Route::delete('/channels/{channel}/slots/{slot}', [RadioChannelController::class, 'destroySlot'])->name('slots.destroy');
-    });
 
     // ─── Carrier Claims ───────────────────────────────────────────────────────
     Route::prefix('carrier-claims')->name('carrier-claims.')->group(function () {
@@ -2065,7 +2053,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/features/warranties', [DocsController::class, 'warranties'])->name('features.warranties');
         Route::get('/features/classifieds', [DocsController::class, 'classifieds'])->name('features.classifieds');
         Route::get('/features/travel', [DocsController::class, 'travelFeature'])->name('features.travel');
-        Route::get('/features/radio', [DocsController::class, 'radioFeature'])->name('features.radio');
     });
 
 }); // end auth.admin middleware group

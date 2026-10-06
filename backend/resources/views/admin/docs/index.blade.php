@@ -88,7 +88,6 @@
                 <ul class="space-y-1.5 text-sm">
                     <li><a class="text-primary-600 hover:underline" href="{{ route('admin.docs.features.content-pages') }}">{{ __('admin.nav.docs_content_pages') }}</a></li>
                     <li><a class="text-primary-600 hover:underline" href="{{ route('admin.docs.features.system-pages') }}">{{ __('admin.nav.docs_system_pages') }}</a></li>
-                    <li><a class="text-primary-600 hover:underline" href="{{ route('admin.docs.features.radio') }}">{{ __('admin.nav.docs_radio') }}</a></li>
                     <li><a class="text-primary-600 hover:underline" href="{{ route('admin.docs.features.classifieds') }}">{{ __('admin.nav.docs_classifieds') }}</a></li>
                     <li><a class="text-primary-600 hover:underline" href="{{ route('admin.docs.features.travel') }}">{{ __('admin.nav.docs_travel') }}</a></li>
                 </ul>

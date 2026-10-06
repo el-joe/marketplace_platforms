@@ -84,12 +84,6 @@
             </ul>
         </section>
 
-        {{-- Radio --}}
-        <section>
-            <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/content-pages.radio.heading') }}</h2>
-            <p class="text-gray-600">{{ __('docs/features/content-pages.radio.body_prefix') }} &mdash; {{ __('docs/features/content-pages.radio.see') }} <a href="{{ route('admin.docs.features.radio') }}" class="text-primary-600 hover:underline">{{ __('docs/features/content-pages.radio.link') }}</a> {{ __('docs/features/content-pages.radio.doc') }} {{ __('docs/features/content-pages.radio.customer_route') }}: <code>{country}.domain/radio/{channel}</code>.</p>
-        </section>
-
         {{-- Who uses it / rules --}}
         <section>
             <h2 class="text-lg font-semibold text-gray-900">{{ __('docs/features/content-pages.rules.heading') }}</h2>

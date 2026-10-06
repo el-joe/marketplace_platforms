@@ -40,5 +40,4 @@ class DocsController extends Controller
     public function warranties(): View          { return view('admin.docs.features.warranties'); }
     public function classifieds(): View         { return view('admin.docs.features.classifieds'); }
     public function travelFeature(): View       { return view('admin.docs.features.travel'); }
-    public function radioFeature(): View        { return view('admin.docs.features.radio'); }
 }
