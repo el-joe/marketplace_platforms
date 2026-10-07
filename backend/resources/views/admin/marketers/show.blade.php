@@ -639,6 +639,79 @@
         </form>
     </div>
 
+    {{-- Marketer Listings --}}
+    @php
+        $listingStatusStyles = [
+            'draft'          => 'bg-gray-100 text-gray-600',
+            'pending_review' => 'bg-amber-50 text-amber-700',
+            'active'         => 'bg-emerald-50 text-emerald-700',
+            'paused'         => 'bg-blue-50 text-blue-700',
+            'rejected'       => 'bg-red-50 text-red-700',
+            'out_of_stock'   => 'bg-orange-50 text-orange-700',
+            'archived'       => 'bg-gray-100 text-gray-400',
+        ];
+        $pendingListings = $marketer->listings->filter(fn ($l) => $l->status?->value === 'pending_review');
+    @endphp
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">🏷️</span>
+                <h3 class="font-bold text-gray-800">{{ __('admin.marketers.listings') }} ({{ $marketer->listings->count() }})</h3>
+                @if($pendingListings->isNotEmpty())
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                        {{ $pendingListings->count() }} {{ __('admin.marketer_listings.pending_badge') }}
+                    </span>
+                @endif
+            </div>
+            <a href="{{ route('admin.marketer-listings.index', ['search' => $marketer->name]) }}" class="text-xs text-blue-600 hover:underline">{{ __('admin.marketer_listings.view_all') }}</a>
+        </div>
+        @if($marketer->listings->isNotEmpty())
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs">
+                <tr>
+                    <th class="px-6 py-3 text-start">{{ __('admin.marketer_listings.col_product') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketer_listings.col_country') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketer_listings.col_price') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketer_listings.col_status') }}</th>
+                    <th class="px-6 py-3 text-center">{{ __('admin.marketer_listings.col_created') }}</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($marketer->listings as $listing)
+                <tr class="hover:bg-gray-50/60 transition-colors">
+                    <td class="px-6 py-3 font-medium">{{ $listing->getDisplayTitle() }}</td>
+                    <td class="px-6 py-3 text-center text-gray-500">{{ $listing->country?->name_ar ?? '-' }}</td>
+                    <td class="px-6 py-3 text-center font-semibold text-gray-800">{{ number_format($listing->price) }} {{ $listing->currency }}</td>
+                    <td class="px-6 py-3 text-center">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $listingStatusStyles[$listing->status?->value] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ $listing->status?->value }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-center text-gray-400 text-xs">{{ $listing->created_at->format('Y-m-d') }}</td>
+                    <td class="px-6 py-3 text-end space-x-2">
+                        <a href="{{ route('admin.marketer-listings.show', $listing) }}" class="text-xs font-semibold text-blue-600 hover:underline">{{ __('admin.view') }}</a>
+                        @if($listing->status?->value === 'pending_review' && auth('admin')->user()->can('marketers.manage'))
+                            <form method="POST" action="{{ route('admin.marketer-listings.approve', $listing) }}" class="inline">
+                                @csrf
+                                <button class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">✓ {{ __('admin.marketer_listings.approve') }}</button>
+                            </form>
+                        @endif
+                        @if($listing->rejection_reason)
+                            <span class="text-xs text-red-500 italic" title="{{ $listing->rejection_reason }}">{{ __('admin.marketer_listings.rejected_badge') }}</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        </div>
+        @else
+            <p class="px-6 py-8 text-center text-gray-400 text-sm">{{ __('admin.marketer_listings.no_listings') }}</p>
+        @endif
+    </div>
+
     {{-- Campaign invitations --}}
     @if($marketer->invitations->isNotEmpty())
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">

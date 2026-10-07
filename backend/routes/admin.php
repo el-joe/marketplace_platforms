@@ -26,8 +26,8 @@ use App\Http\Controllers\Admin\CarrierClaimController;
 use App\Http\Controllers\Admin\CarrierScorecardController;
 use App\Http\Controllers\Admin\CartCardOfferController;
 use App\Http\Controllers\Admin\CategoryCommissionTierController;
-use App\Http\Controllers\Admin\CategoryCountryCommissionController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CategoryCountryCommissionController;
 use App\Http\Controllers\Admin\CategoryShippingMethodController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ClassifiedCategoryController;
@@ -67,6 +67,7 @@ use App\Http\Controllers\Admin\MarketerCampaignController;
 use App\Http\Controllers\Admin\MarketerContractController;
 use App\Http\Controllers\Admin\MarketerController;
 use App\Http\Controllers\Admin\MarketerJobController;
+use App\Http\Controllers\Admin\MarketerListingController;
 use App\Http\Controllers\Admin\MarketerSettingsController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
@@ -1076,6 +1077,16 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->name('exclusive-contracts.destroy')->middleware('admin.permission:marketers.manage');
     });
 
+    // ── Marketer Listings (approve/reject workflow) ────────────────────────
+    Route::prefix('marketer-listings')->name('marketer-listings.')->middleware('admin.permission:marketers.view')->group(function () {
+        Route::get('/', [MarketerListingController::class, 'index'])->name('index');
+        Route::get('/{listing}', [MarketerListingController::class, 'show'])->name('show');
+        Route::post('/{listing}/approve', [MarketerListingController::class, 'approve'])
+            ->name('approve')->middleware('admin.permission:marketers.manage');
+        Route::post('/{listing}/reject', [MarketerListingController::class, 'reject'])
+            ->name('reject')->middleware('admin.permission:marketers.manage');
+    });
+
     // ── Marketer Jobs (lookup CRUD) ────────────────────────────────────────
     Route::prefix('marketer-jobs')->name('marketer-jobs.')->middleware('admin.permission:marketers.view')->group(function () {
         Route::get('/', [MarketerJobController::class, 'index'])->name('index');
@@ -1896,7 +1907,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/{liveStream}/comments', [LiveStreamController::class, 'comments'])->name('comments');
         Route::delete('/{liveStream}/comments/{comment}', [LiveStreamController::class, 'deleteComment'])->name('comments.destroy');
     });
-
 
     // ─── Carrier Claims ───────────────────────────────────────────────────────
     Route::prefix('carrier-claims')->name('carrier-claims.')->group(function () {
