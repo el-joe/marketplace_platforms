@@ -416,17 +416,19 @@ class MarketerProfileController extends Controller
 
         PromoBadgeResolver::instance()->prime(PromoBadgeResolver::tuplesForListings($allListings));
 
-        $ownCards = collect($ownListings)->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
-            $card = $this->listings->toMarketerCardShape(
-                listing: $listing,
-                product: $listing->productVariant->product,
-                country: $country,
-                isWishlisted: in_array($listing->id, $wishlistIds, true),
-            );
-            $card['campaign'] = null;
+        $ownCards = collect($ownListings)
+            ->unique('source_listing_id')
+            ->map(function (MarketerListing $listing) use ($country, $wishlistIds) {
+                $card = $this->listings->toMarketerCardShape(
+                    listing: $listing,
+                    product: $listing->productVariant->product,
+                    country: $country,
+                    isWishlisted: in_array($listing->id, $wishlistIds, true),
+                );
+                $card['campaign'] = null;
 
-            return $card;
-        })->values()->all();
+                return $card;
+            })->values()->all();
 
         $toCampaignCard = function (MarketerListing $listing) use ($country, $wishlistIds) {
             $card = $this->listings->toMarketerCardShape(
@@ -444,8 +446,14 @@ class MarketerProfileController extends Controller
             return $card;
         };
 
-        $vendorCampaignCards = collect($vendorCampaignListings)->map($toCampaignCard)->values()->all();
-        $marketerCampaignCards = collect($marketerCampaignListings)->map($toCampaignCard)->values()->all();
+        // Deduplicate: if a marketer is in multiple campaigns for the same source listing,
+        // only show the first occurrence per section.
+        $vendorCampaignCards = collect($vendorCampaignListings)
+            ->unique('source_listing_id')
+            ->map($toCampaignCard)->values()->all();
+        $marketerCampaignCards = collect($marketerCampaignListings)
+            ->unique('source_listing_id')
+            ->map($toCampaignCard)->values()->all();
 
         $ownLastPage = (int) max(1, ceil($ownTotal / $perPage));
         $vendorCampaignLastPage = (int) max(1, ceil($vendorCampaignTotal / $perPage));

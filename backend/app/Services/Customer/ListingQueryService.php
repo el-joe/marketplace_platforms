@@ -664,8 +664,12 @@ class ListingQueryService
         $marketer = $listing->marketer;
         $profile = $marketer?->marketerProfile;
 
-        $url = route('customer.listing.show', [$country->site_code, $variant->id.'--'.$listing->id]);
-        $urlParam = $variant->id.'--'.$listing->id;
+        // Use the source (vendor/admin) listing ID for the URL so ProductDetailController
+        // can resolve the listing correctly. The marketer listing ID is kept in listing_id
+        // for cart attribution and referral tracking.
+        $sourceLinkId = $listing->source_listing_id ?? $listing->id;
+        $url = route('customer.listing.show', [$country->site_code, $variant->id.'--'.$sourceLinkId]);
+        $urlParam = $variant->id.'--'.$sourceLinkId;
 
         return [
             'listing_id' => $listing->id,
