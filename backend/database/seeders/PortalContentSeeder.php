@@ -67,15 +67,15 @@ class PortalContentSeeder extends Seeder
         // ─── page_key = 'cta_footer' ───────────────────────────────────────
         $rows[] = ['cta_footer', 'main', 'eyebrow', 'text', 'Start now', 'ابدأ الآن', null, 1];
         $rows[] = ['cta_footer', 'main', 'title', 'text', 'Ready to sell?', 'جاهز للبيع؟', null, 2];
-        $rows[] = ['cta_footer', 'main', 'subtitle', 'text', 'Join thousands of sellers across the region who are growing and thriving with noon.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع نون.', null, 3];
+        $rows[] = ['cta_footer', 'main', 'subtitle', 'text', 'Join thousands of sellers across the region who are growing and thriving with Nawy.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع ناوي.', null, 3];
         $rows[] = ['cta_footer', 'main', 'button', 'link', 'Register now', 'سجل الآن', '/register', 4];
-        $rows[] = ['cta_footer', 'main', 'copyright', 'text', 'noon. All rights reserved', 'نون. جميع الحقوق محفوظة', null, 5];
+        $rows[] = ['cta_footer', 'main', 'copyright', 'text', 'Nawy. All rights reserved', 'ناوي. جميع الحقوق محفوظة', null, 5];
 
         // ─── page_key = 'home' ──────────────────────────────────────────────
         // NOTE: partials/hero.blade.php renders the headline as two separate
         // lines for its typewriter animation, so it reads title_line1/title_line2.
         $rows[] = ['home', 'hero', 'title_line1', 'text', 'Start selling on', 'ابدأ البيع على', null, 1];
-        $rows[] = ['home', 'hero', 'title_line2', 'text', 'noon today!', 'نون اليوم!', null, 2];
+        $rows[] = ['home', 'hero', 'title_line2', 'text', 'Nawy today!', 'ناوي اليوم!', null, 2];
         $rows[] = ['home', 'hero', 'cta_button', 'link', 'Register now', 'سجل الآن', '/register', 2];
 
         // ─── page_key = 'faq' ───────────────────────────────────────────────
@@ -84,7 +84,7 @@ class PortalContentSeeder extends Seeder
         // static header/CTA copy around the accordion stays here.
         $rows[] = ['faq', 'header', 'eyebrow', 'text', 'FAQ', 'الأسئلة الشائعة', null, 1];
         $rows[] = ['faq', 'header', 'title', 'text', 'Questions Sellers Ask', 'أسئلة يسألها البائعون', null, 2];
-        $rows[] = ['faq', 'header', 'subtitle', 'text', 'Answers to the most common questions about selling on Noon.', 'إجابات لأكثر الأسئلة شيوعاً حول البيع على نون.', null, 3];
+        $rows[] = ['faq', 'header', 'subtitle', 'text', 'Answers to the most common questions about selling on Nawy.', 'إجابات لأكثر الأسئلة شيوعاً حول البيع على ناوي.', null, 3];
 
         $rows[] = ['faq', 'contact_cta', 'title', 'text', 'Have Another Question?', 'لديك سؤال آخر؟', null, 100];
         $rows[] = ['faq', 'contact_cta', 'subtitle', 'text', 'Our dedicated support team is available 24/7 to answer all your inquiries.', 'فريق الدعم المخصص لدينا متاح ٢٤/٧ للإجابة على جميع استفساراتك.', null, 101];

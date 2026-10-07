@@ -19,6 +19,7 @@
         "vite": "^8.0.0"
     },
     "dependencies": {
+        "@alpinejs/collapse": "^3.17.4",
         "@tiptap/core": "^2.4.0",
         "@tiptap/extension-image": "^2.4.0",
         "@tiptap/extension-link": "^2.4.0",

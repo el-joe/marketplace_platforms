@@ -50,7 +50,7 @@
             </template>
         </select>
         <p x-show="errors.city_id" x-text="errors.city_id?.[0]" class="mt-1 text-xs text-red-400" x-cloak></p>
-        <p x-show="cities.length === 0 && form.country_id" class="mt-1 text-xs text-[#feee00]" x-cloak>{{ portal_content('register', 'step_3', 'no_cities_notice', 'No cities are currently registered for this country.', 'لا توجد مدن مسجلة لهذه الدولة حالياً.') }}</p>
+        <p x-show="cities.length === 0 && form.country_id" class="mt-1 text-xs text-[#0F807E]" x-cloak>{{ portal_content('register', 'step_3', 'no_cities_notice', 'No cities are currently registered for this country.', 'لا توجد مدن مسجلة لهذه الدولة حالياً.') }}</p>
     </div>
 
     {{-- Row: Area + Street Address --}}

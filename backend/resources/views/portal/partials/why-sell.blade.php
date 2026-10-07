@@ -1,7 +1,7 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
 <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 mt-4 lg:mt-0">
-    <h2 class="text-[#feee00] font-bold text-[28px] lg:text-[36px] mb-4 lg:mb-5">
+    <h2 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-4 lg:mb-5">
         {{ portal_content('how-it-works', 'why-sell', 'title', 'Why Join Us?', 'لماذا تنضم إلينا؟') }}
     </h2>
 
@@ -9,19 +9,19 @@
         @php
             $cards = [
                 [
-                    'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-01.jpg',
+                    'image' => portal_image('how-it-works', 'why-sell-item-1', 'image', 'why-sell/1.jpg', 'Reach Millions', 'وصل الملايين')['src'],
                     'title' => portal_content('how-it-works', 'why-sell-item-1', 'title', 'Reach Millions', 'وصل الملايين'),
-                    'desc' => portal_content('how-it-works', 'why-sell-item-1', 'description', 'Millions of shoppers, one app. noon puts your products in front of more people, every single day.', 'ملايين المتسوقين، تطبيق واحد. نون تعرض منتجاتك لعدد أكبر من الناس، كل يوم.'),
+                    'desc' => portal_content('how-it-works', 'why-sell-item-1', 'description', 'Millions of shoppers, one app. Nawy puts your products in front of more people, every single day.', 'ملايين المتسوقين، تطبيق واحد. ناوي تعرض منتجاتك لعدد أكبر من الناس، كل يوم.'),
                 ],
                 [
-                    'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-02.jpg',
+                    'image' => portal_image('how-it-works', 'why-sell-item-2', 'image', 'why-sell/2.jpg', 'Fast, Flexible Delivery', 'توصيل سريع ومرن')['src'],
                     'title' => portal_content('how-it-works', 'why-sell-item-2', 'title', 'Fast, Flexible Delivery', 'توصيل سريع ومرن'),
-                    'desc' => portal_content('how-it-works', 'why-sell-item-2', 'description', 'Choose how you ship. noon handles the speed, care, and customer smiles.', 'اختر طريقة الشحن التي تناسبك. نون تهتم بالسرعة، العناية، ورضا العملاء.'),
+                    'desc' => portal_content('how-it-works', 'why-sell-item-2', 'description', 'Choose how you ship. Nawy handles the speed, care, and customer smiles.', 'اختر طريقة الشحن التي تناسبك. ناوي تهتم بالسرعة، العناية، ورضا العملاء.'),
                 ],
                 [
-                    'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-03.jpg',
+                    'image' => portal_image('how-it-works', 'why-sell-item-3', 'image', 'why-sell/3.jpg', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر')['src'],
                     'title' => portal_content('how-it-works', 'why-sell-item-3', 'title', 'Grow Fast, Earn More', 'نمِّ أعمالك بسرعة، واربح أكثر'),
-                    'desc' => portal_content('how-it-works', 'why-sell-item-3', 'description', 'Unlock growth with noon\'s seller tools — built to turn your hustle into real results.', 'حقق النمو مع أدوات البيع من نون — صُممت لتحوّل شغفك إلى نتائج حقيقية.'),
+                    'desc' => portal_content('how-it-works', 'why-sell-item-3', 'description', 'Unlock growth with Nawy\'s seller tools — built to turn your hustle into real results.', 'حقق النمو مع أدوات البيع من ناوي — صُممت لتحوّل شغفك إلى نتائج حقيقية.'),
                 ],
             ];
         @endphp

@@ -49,8 +49,8 @@
                     'text_en' => portal_content('account_setup', 'step_2', 'item_3_text', 'Verify them', 'قم بالتحقق منها'),
                 ],
             ],
-            'after_list_text_ar' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the noon family', 'وهكذا، أصبحت الآن جزءاً من عائلة نون'),
-            'after_list_text_en' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the noon family', 'وهكذا، أصبحت الآن جزءاً من عائلة نون'),
+            'after_list_text_ar' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the Nawy family', 'وهكذا، أصبحت الآن جزءاً من عائلة ناوي'),
+            'after_list_text_en' => portal_content('account_setup', 'step_2', 'after_list_text', 'And just like that, you are now part of the Nawy family', 'وهكذا، أصبحت الآن جزءاً من عائلة ناوي'),
         ],
         [
             'title_ar' => portal_content('account_setup', 'step_3', 'title', 'Set up your store', 'إعداد متجرك'),
@@ -63,8 +63,8 @@
                     'text_en' => portal_content('account_setup', 'step_3', 'paragraph_1', 'Create your store for the country that you wish to sell in and add your business documents for a quick and seamless approval', 'قم بإنشاء متجرك للبلد الذي ترغب في البيع فيه وأضف مستندات عملك للحصول على موافقة سريعة وسلسة'),
                 ],
                 [
-                    'text_ar' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything noon', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بنون'),
-                    'text_en' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything noon', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بنون'),
+                    'text_ar' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything Nawy', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بناوي'),
+                    'text_en' => portal_content('account_setup', 'step_3', 'paragraph_2', 'Once you create your store, seller lab becomes your control center for everything Nawy', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بناوي'),
                 ],
             ],
         ],
@@ -97,7 +97,7 @@
                                     <span>{{ $isAr ? 'الخطوة '.$i.':' : 'Step '.$i.':' }}</span>
                                     <span>{{ $isAr ? $step['title_ar'] : $step['title_en'] }}</span>
                                 </div>
-                                <span class="text-[12px] font-bold uppercase tracking-wider text-[#feee00]">
+                                <span class="text-[12px] font-bold uppercase tracking-wider text-[#0F807E]">
                                     {{ $isAr ? $step['caption_ar'] : $step['caption_en'] }}
                                 </span>
                             </div>
@@ -120,7 +120,7 @@
                                                 <div class="flex flex-wrap items-center gap-1">
                                                     <span>{{ $isAr ? $item['text_ar'] : $item['text_en'] }}</span>
                                                     @if(isset($item['inline_link_route']))
-                                                        <a href="{{ route($item['inline_link_route']) }}" class="text-[#feee00] font-bold text-[13px] hover:underline flex items-center gap-1 group">
+                                                        <a href="{{ route($item['inline_link_route']) }}" class="text-[#0F807E] font-bold text-[13px] hover:underline flex items-center gap-1 group">
                                                             {{ $isAr ? $item['inline_link_ar'] : $item['inline_link_en'] }}
                                                             @if(isset($item['inline_link_arrow']) && $item['inline_link_arrow'])
                                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" class="animate-bounce-x {{ $isAr ? '-scale-x-100' : '' }}">
@@ -131,7 +131,7 @@
                                                     @endif
                                                 </div>
                                                 @if(isset($item['link_route']))
-                                                    <a href="{{ route($item['link_route']) }}" class="text-[#feee00] font-bold text-[13px] hover:underline flex items-center gap-1 group">
+                                                    <a href="{{ route($item['link_route']) }}" class="text-[#0F807E] font-bold text-[13px] hover:underline flex items-center gap-1 group">
                                                         {{ $isAr ? $item['link_ar'] : $item['link_en'] }}
                                                         @if(isset($item['link_arrow']) && $item['link_arrow'])
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" class="animate-bounce-x {{ $isAr ? '-scale-x-100' : '' }}">

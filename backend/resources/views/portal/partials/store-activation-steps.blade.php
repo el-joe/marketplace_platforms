@@ -15,7 +15,7 @@
 <section class="bg-black relative pt-8 pb-10 lg:pb-12 md:py-10 lg:py-12">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <h2 class="text-[32px] sm:text-[40px] lg:text-[48px] font-black mb-6 lg:mb-8 text-white leading-tight">
-            {{ portal_content('how-it-works', 'steps', 'title_prefix', 'Steps to ', 'خطوات لـ ') }}<span class="text-[#feee00] animate-blink-4 inline-block">{{ portal_content('how-it-works', 'steps', 'title_highlight', 'Go Live', 'البدء') }}</span>
+            {{ portal_content('how-it-works', 'steps', 'title_prefix', 'Steps to ', 'خطوات لـ ') }}<span class="text-[#0F807E] animate-blink-4 inline-block">{{ portal_content('how-it-works', 'steps', 'title_highlight', 'Go Live', 'البدء') }}</span>
         </h2>
 
         <div class="rounded-2xl overflow-hidden bg-[#1c1c1c] md:bg-transparent md:grid md:grid-cols-[1.5fr_2fr] md:gap-10 lg:gap-14">
@@ -27,7 +27,7 @@
             </div>
             <div class="pt-8 px-6 pb-10 md:px-0 md:py-6">
                 <h3 class="text-white font-black text-xl lg:text-2xl">
-                    {{ portal_content('how-it-works', 'steps', 'subtitle', 'Start selling on noon in three easy steps', 'ابدأ البيع على نون بثلاث خطوات سهلة') }}
+                    {{ portal_content('how-it-works', 'steps', 'subtitle', 'Start selling on Nawy in three easy steps', 'ابدأ البيع على ناوي بثلاث خطوات سهلة') }}
                 </h3>
 
                 <ul class="mt-6 space-y-3">

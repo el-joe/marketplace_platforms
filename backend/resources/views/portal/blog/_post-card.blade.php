@@ -19,7 +19,7 @@
             <span class="text-xs text-gray-500">· {{ $post->reading_time_minutes }} {{ __('portal.blog.min_read') }}</span>
         </div>
 
-        <h3 class="font-bold text-white leading-snug line-clamp-2 flex-1 group-hover:text-[#feee00] transition-colors">
+        <h3 class="font-bold text-white leading-snug line-clamp-2 flex-1 group-hover:text-[#0F807E] transition-colors">
             <a href="{{ route('portal.blog.show', $post->slug) }}">
                 {{ $post->{'title_' . $locale} }}
             </a>
@@ -31,7 +31,7 @@
 
         <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800">
             <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full bg-[#feee00]/10 flex items-center justify-center text-[#feee00] text-xs font-bold">
+                <div class="w-6 h-6 rounded-full bg-[#0F807E]/10 flex items-center justify-center text-[#0F807E] text-xs font-bold">
                     {{ mb_substr($post->author->name, 0, 1) }}
                 </div>
                 <span class="text-xs text-gray-400">{{ $post->author->name }}</span>

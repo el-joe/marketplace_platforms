@@ -2,7 +2,7 @@
 
 <div class="flex flex-col gap-y-[48px] lg:gap-y-[64px] pt-[48px] lg:pt-[64px] pb-[48px] lg:pb-[64px]">
 
-    {{-- noon Ads --}}
+    {{-- Nawy Ads --}}
     <section id="ads" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div class="rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-12 flex flex-col lg:grid lg:grid-cols-[1fr_auto] items-center gap-8 lg:gap-16">
             <div class="order-2 lg:order-1 w-full">
@@ -10,15 +10,15 @@
                      class="h-7 w-auto my-2">
                 <p class="text-[16px] font-medium text-gray-300">
                     {{ portal_content('smart-tools', 'ads', 'description_1',
-                        'Ads that work as hard as you do. noon Ads is built for sellers serious about growth and expansion.',
-                        'إعلانات تشتغل بجهدك نفسه. إعلانات نون مصممة للبائعين الجادين في النمو والتوسّع.') }}
+                        'Ads that work as hard as you do. Nawy Ads is built for sellers serious about growth and expansion.',
+                        'إعلانات تشتغل بجهدك نفسه. إعلانات ناوي مصممة للبائعين الجادين في النمو والتوسّع.') }}
                 </p>
                 <p class="mt-2 text-[16px] font-medium text-gray-300">
                     {{ portal_content('smart-tools', 'ads', 'description_2',
                         'Reach more customers, grow your sales, and scale your business faster.',
                         'وصل لعدد أكبر من العملاء، زوّد مبيعاتك، ووسّع شغلك بشكل أسرع.') }}
                 </p>
-                <p class="text-[#feee00] font-black text-xs uppercase tracking-wider mt-5">
+                <p class="text-[#0F807E] font-black text-xs uppercase tracking-wider mt-5">
                     {{ portal_content('smart-tools', 'ads', 'formats_label', 'With our multi-format solutions, you get access to:', 'مع حلولنا متعددة الصيغ، ستحصل على إمكانية الوصول إلى:') }}
                 </p>
                 <ul class="mt-2 text-[16px] font-medium text-gray-300 list-disc list-inside space-y-1">
@@ -28,7 +28,7 @@
                 <div class="mt-6">
                     @php($adsLearnMore = portal_link('smart-tools', 'ads', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.sellers', $country ?? 'ae')))
                     <a href="{{ $adsLearnMore['url'] }}"
-                       class="inline-flex items-center gap-2 text-[#feee00] font-bold text-sm">
+                       class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-sm">
                         {{ $adsLearnMore['label'] }}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="18" class="{{ $isAr ? '-scale-x-100' : '' }}">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
@@ -47,7 +47,7 @@
     {{-- Fee structure --}}
     <section id="fees" class="bg-[#1c1c1c] py-12 lg:py-16 w-full">
         <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-[#feee00] font-black text-xl lg:text-2xl">{{ portal_content('smart-tools', 'fee-structure', 'title', 'Fee structure', 'هيكل الرسوم') }}</h2>
+            <h2 class="text-[#0F807E] font-black text-xl lg:text-2xl">{{ portal_content('smart-tools', 'fee-structure', 'title', 'Fee structure', 'هيكل الرسوم') }}</h2>
             <h3 class="text-white font-black text-lg lg:text-xl mt-1 mb-8 text-pretty">
                 {{ portal_content('smart-tools', 'fee-structure', 'subtitle',
                     'A transparent, simple fee structure with no hidden costs - built for sustainable growth.',
@@ -67,7 +67,7 @@
                     <div class="mt-8">
                         @php($feeStructureCta = portal_link('smart-tools', 'fee-structure', 'learn_more_button', 'Learn more', 'اعرف أكثر', 'https://support.noon.partners/portal/' . ($isAr ? 'ar' : 'en') . '/kb/search/' . ($isAr ? 'رسوم' : 'fees')))
                         <a href="{{ $feeStructureCta['url'] }}" target="_blank" rel="noopener"
-                           class="inline-flex items-center justify-center w-full sm:w-auto bg-[#feee00] hover:bg-[#e5d600] text-black
+                           class="inline-flex items-center justify-center w-full sm:w-auto bg-[#0F807E] hover:bg-[#0c6665] text-white
                                   font-black text-sm px-6 py-3 rounded-full transition-colors">
                             {{ $feeStructureCta['label'] }}
                         </a>
@@ -136,7 +136,7 @@
                         <p class="mt-1.5 text-gray-300 text-sm font-medium text-pretty">{{ $card['desc'] }}</p>
                         <div class="flex flex-col gap-1 mt-3">
                             @foreach($card['links'] as $link)
-                                <a href="{{ $link['url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-[#feee00] font-bold text-sm">
+                                <a href="{{ $link['url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-sm">
                                     {{ $link['label'] }}
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" class="{{ $isAr ? '-scale-x-100' : '' }}">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
@@ -155,7 +155,7 @@
         <div class="rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-12 grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-6 lg:gap-16">
             <div>
                 <h2 class="text-2xl sm:text-[26px] font-bold leading-tight mb-4 lg:mb-6">
-                    {{ portal_content('smart-tools', 'payouts', 'title_prefix', 'Receiving', 'استلام') }} <span class="text-[#feee00]">{{ portal_content('smart-tools', 'payouts', 'title_highlight', 'Payouts', 'الأرباح') }}</span>
+                    {{ portal_content('smart-tools', 'payouts', 'title_prefix', 'Receiving', 'استلام') }} <span class="text-[#0F807E]">{{ portal_content('smart-tools', 'payouts', 'title_highlight', 'Payouts', 'الأرباح') }}</span>
                 </h2>
                 <h3 class="text-[16px] font-bold leading-tight">{{ portal_content('smart-tools', 'payouts', 'subtitle', 'All you have to do is link your bank account.', 'كل اللي عليك تربط حسابك البنكي.') }}</h3>
                 <p class="text-[14px] font-medium mt-3 text-gray-300">
@@ -167,7 +167,7 @@
             <div class="mt-2 md:mt-0">
                 @php($payoutsCta = portal_link('smart-tools', 'payouts', 'cta_button', 'Discover how', 'اكتشف كيف', 'https://support.noon.partners/portal/' . ($isAr ? 'ar' : 'en') . '/kb/articles/how-do-i-receive-my-payouts'))
                 <a href="{{ $payoutsCta['url'] }}" target="_blank" rel="noopener"
-                   class="inline-flex items-center justify-center w-full sm:w-auto bg-[#feee00] hover:bg-[#e5d600] text-black
+                   class="inline-flex items-center justify-center w-full sm:w-auto bg-[#0F807E] hover:bg-[#0c6665] text-white
                           font-black text-sm px-6 py-3 rounded-full transition-colors">
                     {{ $payoutsCta['label'] }}
                 </a>
@@ -185,7 +185,7 @@
                      class="absolute inset-0 w-full h-full object-cover">
             </div>
             <div class="pt-8 px-6 pb-10 md:px-8">
-                <h2 class="text-[#feee00] font-black text-xl lg:text-2xl">{{ portal_content('smart-tools', 'insights', 'title', 'Analytics & insights', 'التحليلات والرؤى') }}</h2>
+                <h2 class="text-[#0F807E] font-black text-xl lg:text-2xl">{{ portal_content('smart-tools', 'insights', 'title', 'Analytics & insights', 'التحليلات والرؤى') }}</h2>
                 <h3 class="text-white font-black text-lg lg:text-xl mt-3 mb-3 leading-tight">
                     {{ portal_content('smart-tools', 'insights', 'subtitle',
                         'Track your customer behaviour and sales performance, and improve your business with powerful analytics across:',
@@ -219,8 +219,8 @@
             <h2 class="text-xl font-bold leading-tight mb-4">{{ portal_content('smart-tools', 'vantage', 'title', 'Vantage Analytics - your growth command centre', 'فانتج للتحليلات – مركز القيادة لنموك') }}</h2>
             <p class="text-[16px] font-medium text-gray-300">
                 {{ portal_content('smart-tools', 'vantage', 'description',
-                    'Vantage is noon\'s advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.',
-                    'فانتج هو منصة نون المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.') }}
+                    'Vantage is Nawy\'s advanced analytics and growth platform, built for sellers who want to scale smart. Think of it as your premium intelligence and analytics platform, with a set of free insights available to all sellers.',
+                    'فانتج هو منصة ناوي المتقدمة للتحليلات والنمو، مصممة للبائعين الذين يرغبون في التوسع بذكاء. تخيّله كمنصتك المميزة للذكاء والتحليلات، مع مجموعة من الرؤى المجانية المتاحة لجميع البائعين.') }}
             </p>
         </div>
     </section>

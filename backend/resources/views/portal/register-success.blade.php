@@ -2,7 +2,7 @@
 
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
-@section('title', portal_content('register', 'success', 'page_title', 'Application Submitted — noon for Sellers', 'تم إرسال طلبك — نون للبائعين'))
+@section('title', portal_content('register', 'success', 'page_title', 'Application Submitted — Nawy for Sellers', 'تم إرسال طلبك — ناوي للبائعين'))
 
 @section('content')
     <div class="min-h-screen bg-gray-950 flex items-center justify-center py-16 px-4" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
@@ -10,8 +10,8 @@
 
             {{-- Success Icon --}}
             <div
-                class="w-20 h-20 bg-[#feee00]/10 border-2 border-[#feee00]/40 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg class="w-10 h-10 text-[#feee00]" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                class="w-20 h-20 bg-[#0F807E]/10 border-2 border-[#feee00]/40 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10 text-[#0F807E]" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -20,7 +20,7 @@
             <h1 class="text-3xl font-black text-white mb-3">{{ portal_content('register', 'success', 'title', 'Thank you for registering!', 'شكراً لتسجيلك!') }}</h1>
             <p class="text-gray-400 text-base mb-8 leading-relaxed">
                 {{ portal_content('register', 'success', 'intro_prefix', "We've received your application successfully. Our team will review your information and documents within", 'استلمنا طلبك بنجاح. سيقوم فريقنا بمراجعة بياناتك ووثائقك خلال') }}
-                <span class="text-[#feee00] font-semibold">{{ portal_content('register', 'success', 'intro_days', '3–5 business days', '٣–٥ أيام عمل') }}</span>{{ $isAr ? '،' : ',' }}
+                <span class="text-[#0F807E] font-semibold">{{ portal_content('register', 'success', 'intro_days', '3–5 business days', '٣–٥ أيام عمل') }}</span>{{ $isAr ? '،' : ',' }}
                 {{ portal_content('register', 'success', 'intro_suffix', "and we'll reach out via email as soon as a decision is made.", 'وسنتواصل معك عبر البريد الإلكتروني فور اتخاذ القرار.') }}
             </p>
 
@@ -30,7 +30,7 @@
                 <ul class="space-y-4">
                     <li class="flex items-start gap-4">
                         <span
-                            class="shrink-0 w-8 h-8 bg-[#feee00]/20 rounded-full flex items-center justify-center text-[#feee00] font-bold text-sm">{{ $isAr ? '١' : '1' }}</span>
+                            class="shrink-0 w-8 h-8 bg-[#0F807E]/20 rounded-full flex items-center justify-center text-[#0F807E] font-bold text-sm">{{ $isAr ? '١' : '1' }}</span>
                         <div>
                             <p class="text-sm text-white font-medium">{{ portal_content('register', 'success', 'step_1_title', 'Application review', 'مراجعة الطلب') }}</p>
                             <p class="text-xs text-gray-400 mt-0.5">{{ portal_content('register', 'success', 'step_1_text', 'Our team will review your information and documents within 3–5 business days', 'سيراجع فريقنا بياناتك ووثائقك خلال ٣–٥ أيام عمل') }}</p>
@@ -38,7 +38,7 @@
                     </li>
                     <li class="flex items-start gap-4">
                         <span
-                            class="shrink-0 w-8 h-8 bg-[#feee00]/20 rounded-full flex items-center justify-center text-[#feee00] font-bold text-sm">{{ $isAr ? '٢' : '2' }}</span>
+                            class="shrink-0 w-8 h-8 bg-[#0F807E]/20 rounded-full flex items-center justify-center text-[#0F807E] font-bold text-sm">{{ $isAr ? '٢' : '2' }}</span>
                         <div>
                             <p class="text-sm text-white font-medium">{{ portal_content('register', 'success', 'step_2_title', 'Decision notification', 'إشعار القرار') }}</p>
                             <p class="text-xs text-gray-400 mt-0.5">{{ portal_content('register', 'success', 'step_2_text', 'You will receive an email with the approval decision or a request for additional information', 'ستتلقى بريداً إلكترونياً يتضمن قرار القبول أو طلب معلومات إضافية') }}</p>
@@ -46,7 +46,7 @@
                     </li>
                     <li class="flex items-start gap-4">
                         <span
-                            class="shrink-0 w-8 h-8 bg-[#feee00]/20 rounded-full flex items-center justify-center text-[#feee00] font-bold text-sm">{{ $isAr ? '٣' : '3' }}</span>
+                            class="shrink-0 w-8 h-8 bg-[#0F807E]/20 rounded-full flex items-center justify-center text-[#0F807E] font-bold text-sm">{{ $isAr ? '٣' : '3' }}</span>
                         <div>
                             <p class="text-sm text-white font-medium">{{ portal_content('register', 'success', 'step_3_title', 'Start selling!', 'ابدأ البيع!') }}</p>
                             <p class="text-xs text-gray-400 mt-0.5">{{ portal_content('register', 'success', 'step_3_text', 'Once approved, you get full access to the seller dashboard to add your products', 'بعد الموافقة تحصل على وصول كامل للوحة تحكم البائع لإضافة منتجاتك') }}</p>
@@ -59,7 +59,7 @@
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
                 @php($successHomeCta = portal_link('register', 'success', 'home_button', 'Back to Home', 'العودة للرئيسية', route('portal.home')))
                 <a href="{{ $successHomeCta['url'] }}"
-                    class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#feee00] hover:bg-[#e5d600] text-gray-900 font-bold rounded-xl text-sm transition-colors">
+                    class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0F807E] hover:bg-[#0c6665] text-gray-900 font-bold rounded-xl text-sm transition-colors">
                     {{ $successHomeCta['label'] }}
                 </a>
                 @php($successSupportCta = portal_link('register', 'success', 'support_button', 'Contact Support', 'تواصل مع الدعم', 'mailto:vendors@noon.com'))

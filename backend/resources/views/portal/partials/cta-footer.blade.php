@@ -1,7 +1,7 @@
 @php $isAr = session('locale', 'ar') === 'ar'; @endphp
 
 <footer class="text-center">
-    <div class="bg-[#feee00] text-black">
+    <div class="bg-[#0F807E] text-white">
         <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
             <div class="py-12">
                 <p class="font-black text-[11px] uppercase tracking-wider">{{ portal_content('cta_footer', 'main', 'eyebrow', 'Get Started', 'ابدأ الآن') }}</p>
@@ -9,7 +9,7 @@
                     {{ portal_content('cta_footer', 'main', 'title', 'Ready to Sell?', 'جاهز للبيع؟') }}
                 </p>
                 <p class="text-[15px] font-medium max-w-[60ch] mx-auto text-[#1f1f1f]">
-                    {{ portal_content('cta_footer', 'main', 'subtitle', 'Join thousands of sellers across the region who are growing with noon.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع نون.') }}
+                    {{ portal_content('cta_footer', 'main', 'subtitle', 'Join thousands of sellers across the region who are growing with Nawy.', 'انضم إلى آلاف البائعين في جميع أنحاء المنطقة الذين ينمون ويكبرون مع ناوي.') }}
                 </p>
                 @php($registerCta = portal_link('cta_footer', 'main', 'button', 'Sign Up Now', 'سجل الآن', route('portal.register')))
                 <a href="{{ $registerCta['url'] }}"
@@ -25,7 +25,7 @@
 
         <div class="flex justify-end px-4 pb-3">
             <p class="text-xs font-medium">
-                &copy; {{ date('Y') }} {{ portal_content('cta_footer', 'main', 'copyright', 'noon. All rights reserved', 'نون. جميع الحقوق محفوظة') }}
+                &copy; {{ date('Y') }} {{ portal_content('cta_footer', 'main', 'copyright', 'Nawy. All rights reserved', 'ناوي. جميع الحقوق محفوظة') }}
             </p>
         </div>
     </div>

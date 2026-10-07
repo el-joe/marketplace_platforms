@@ -37,8 +37,8 @@
         [
             'title' => portal_content('sellers', 'solution_brand_ads', 'title', 'Brand Ads', 'إعلانات العلامة التجارية'),
             'desc' => portal_content('sellers', 'solution_brand_ads', 'description',
-                "Promote your products and brand in a visually appealing and prominent way within noon's browse, search, and relevant product detail pages. Display multiple products within one ad, showcasing a wider range of offerings and potentially attracting a broader audience.",
-                'قم بالترويج لمنتجاتك وعلامتك التجارية بطريقة بصرية جذابة وبارزة داخل صفحات نون للتصفح، البحث، وصفحات تفاصيل المنتج ذات الصلة. بإمكانك أيضا عرض منتجات متعددة داخل إعلان واحد، وإبراز مجموعة واسعة من منتجاتك وجذب جمهور أكبر.'),
+                "Promote your products and brand in a visually appealing and prominent way within Nawy's browse, search, and relevant product detail pages. Display multiple products within one ad, showcasing a wider range of offerings and potentially attracting a broader audience.",
+                'قم بالترويج لمنتجاتك وعلامتك التجارية بطريقة بصرية جذابة وبارزة داخل صفحات ناوي للتصفح، البحث، وصفحات تفاصيل المنتج ذات الصلة. بإمكانك أيضا عرض منتجات متعددة داخل إعلان واحد، وإبراز مجموعة واسعة من منتجاتك وجذب جمهور أكبر.'),
             'link_label' => portal_content('sellers', 'solution_brand_ads', 'link_label', 'Learn More', 'اعرف أكثر'),
             'link' => route('portal.advertise.brands', $country),
             'internal' => true,

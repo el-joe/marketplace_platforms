@@ -5,7 +5,7 @@
     $totalArticles = $category->articles->count() + $category->children->sum(fn ($c) => $c->articles->count());
 @endphp
 
-@section('title', $category->localizedName() . ' | ' . portal_content('helpcenter', 'category', 'site_title', 'noon Seller Help Center', 'مركز مساعدة البائع'))
+@section('title', $category->localizedName() . ' | ' . portal_content('helpcenter', 'category', 'site_title', 'Nawy Seller Help Center', 'مركز مساعدة البائع'))
 @section('description', $category->localizedDescription())
 
 @section('header')
