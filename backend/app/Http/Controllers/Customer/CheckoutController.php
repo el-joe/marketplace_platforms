@@ -1150,7 +1150,14 @@ class CheckoutController extends Controller
                     $firstSource = $cartLineSources[$items->first()->id];
                     $sellerParty = $firstSource->sellerParty;
                     $isPlatformSubOrder = $firstSource->isAdminSeller();
-                    $vendorId = $isPlatformSubOrder ? null : $sellerParty;
+                    $isMarketerSubOrder = $firstSource->isMarketerSeller();
+                    // For marketer own-FBN sub-orders the seller_type is 'marketer'
+                    // and vendor_id must be null — the sellerParty key 'marketer:{id}'
+                    // is only used for pricing-engine group lookups, not stored on the row.
+                    $vendorId = ($isPlatformSubOrder || $isMarketerSubOrder) ? null : $sellerParty;
+                    $marketerSubOrderId = $isMarketerSubOrder
+                        ? substr($sellerParty, strlen('marketer:'))
+                        : null;
                     $subOrderShippingMethodId = $items->first()->selected_shipping_method_id;
                     $subOrderShippingMethod = $resolveShippingMethod($subOrderShippingMethodId);
                     $vendorSubtotal = (int) $items->sum(fn ($i) => $i->unit_price * $i->quantity);
@@ -1287,7 +1294,9 @@ class CheckoutController extends Controller
                         // enhancement.md P-02 task 4: platform (admin-listing)
                         // sub-orders carry seller_type='platform' and a null
                         // vendor_id instead of being mis-attributed to a vendor.
-                        'seller_type' => $isPlatformSubOrder ? 'platform' : 'vendor',
+                        // Marketer own-FBN sub-orders carry seller_type='marketer'.
+                        'seller_type' => $isPlatformSubOrder ? 'platform' : ($isMarketerSubOrder ? 'marketer' : 'vendor'),
+                        'marketer_id' => $marketerSubOrderId,
                         'warehouse_id' => $warehouseId,
                         'status' => 'placed',
                         'fulfillment_model' => $fulfillmentModel,
@@ -1363,7 +1372,7 @@ class CheckoutController extends Controller
                             'admin_listing_id' => $itemSource->adminListingIdForOrderItem,
                             'marketer_listing_id' => $itemSource->marketerListingIdForOrderItem,
                             'product_snapshot' => $productSnapshot,
-                            'vendor_id' => $isPlatformSubOrder ? null : $listing->vendor_id,
+                            'vendor_id' => ($isPlatformSubOrder || $isMarketerSubOrder) ? null : $listing->vendor_id,
                             'sku' => $listing->productVariant->sku,
                             'quantity' => $cartItem->quantity,
                             'unit_price' => $cartItem->unit_price,

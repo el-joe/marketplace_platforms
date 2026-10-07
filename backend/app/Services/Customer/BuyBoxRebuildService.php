@@ -3,6 +3,7 @@
 namespace App\Services\Customer;
 
 use App\Models\Country;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -70,14 +71,14 @@ class BuyBoxRebuildService
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int,string>  $productIds
+     * @param  Collection<int,string>  $productIds
      */
     private function rebuildProductSet(
-        \Illuminate\Support\Collection $productIds,
+        Collection $productIds,
         Country $country,
-        \Illuminate\Support\Collection $admin,
-        \Illuminate\Support\Collection $vendor,
-        \Illuminate\Support\Collection $marketer,
+        Collection $admin,
+        Collection $vendor,
+        Collection $marketer,
         array $stock,
     ): int {
         $adminByProduct = $admin->groupBy('product_id');
@@ -99,6 +100,7 @@ class BuyBoxRebuildService
 
             if ($all->isEmpty()) {
                 $toDelete[] = $productId;
+
                 continue;
             }
 
@@ -107,8 +109,8 @@ class BuyBoxRebuildService
             $brandId = $winner->brand_id;
 
             $totalStock = 0;
-            foreach ($a->concat($v) as $cand) {
-                $totalStock += $stock[$cand->listing_type . ':' . $cand->listing_id] ?? 0;
+            foreach ($a->concat($v)->concat($m) as $cand) {
+                $totalStock += $stock[$cand->listing_type.':'.$cand->listing_id] ?? 0;
             }
 
             $ratingNumerator = 0.0;
@@ -143,7 +145,9 @@ class BuyBoxRebuildService
                 'total_stock' => $totalStock,
                 'rating_avg' => $ratingAvg,
                 'rating_count' => $ratingDenominator,
-                'fulfillment_model' => $winner->listing_type === 'marketer' ? null : $winner->fulfillment_model,
+                // marketer candidates are always own-FBN (source_listing_id IS NULL —
+                // see marketerCandidates()), so their fulfillment_model is 'fbn'.
+                'fulfillment_model' => $winner->fulfillment_model,
                 'shipping_method_id' => $shippingMethodId,
                 'is_express' => $shippingMethodId ? (bool) ($expressFlags[$shippingMethodId] ?? false) : false,
                 'category_id' => $categoryId,
@@ -159,13 +163,13 @@ class BuyBoxRebuildService
                 $chunk,
                 ['product_id', 'country_id'],
                 ['listing_type', 'listing_id', 'variant_id', 'price', 'compare_at_price', 'min_price',
-                 'max_price', 'seller_count', 'admin_listing_count', 'total_stock', 'rating_avg',
-                 'rating_count', 'fulfillment_model', 'shipping_method_id', 'is_express', 'category_id',
-                 'brand_id', 'total_sold', 'score', 'updated_at'],
+                    'max_price', 'seller_count', 'admin_listing_count', 'total_stock', 'rating_avg',
+                    'rating_count', 'fulfillment_model', 'shipping_method_id', 'is_express', 'category_id',
+                    'brand_id', 'total_sold', 'score', 'updated_at'],
             );
         }
 
-        if (!empty($toDelete)) {
+        if (! empty($toDelete)) {
             DB::table('product_country_buybox')
                 ->where('country_id', $country->id)
                 ->whereIn('product_id', $toDelete)
@@ -287,6 +291,11 @@ class BuyBoxRebuildService
 
     private function marketerCandidates(string $countryId, ?array $productIds = null)
     {
+        // Only own-FBN marketer listings (source_listing_id IS NULL) are buy-box
+        // candidates. Promotion-proxy listings (source_listing_id IS NOT NULL) are
+        // already counted via the source vendor/admin listing and must not be
+        // double-counted here. Stock > 0 is enforced via a subquery on
+        // warehouse_inventories.marketer_listing_id.
         $q = DB::table('marketer_listings as ml')
             ->join('product_variants as pv', 'pv.id', '=', 'ml.product_variant_id')
             ->join('products as p', 'p.id', '=', 'pv.product_id')
@@ -294,15 +303,22 @@ class BuyBoxRebuildService
             ->where('ml.country_id', $countryId)
             ->where('ml.status', 'active')
             ->where('ml.listing_category', 'product')
+            ->whereNull('ml.source_listing_id')
             ->whereNull('ml.deleted_at')
             ->where('mk.global_status', 'active')
             ->where('p.status', 'active')
             ->whereNull('p.deleted_at')
+            ->whereExists(function ($s) {
+                $s->select(DB::raw(1))
+                    ->from('warehouse_inventories as wi')
+                    ->whereColumn('wi.marketer_listing_id', 'ml.id')
+                    ->where('wi.quantity_available', '>', 0);
+            })
             ->select([
                 'ml.id as listing_id', 'pv.id as variant_id', 'p.id as product_id',
                 'p.category_id', 'p.brand_id', 'p.total_sold as product_total_sold',
                 'ml.price', 'ml.compare_at_price', 'ml.rating_avg', 'ml.rating_count',
-                'ml.score', DB::raw('NULL as fulfillment_model'), DB::raw('NULL as primary_shipping_method_id'),
+                'ml.score', DB::raw("'fbn' as fulfillment_model"), DB::raw('NULL as primary_shipping_method_id'),
                 DB::raw("'marketer' as listing_type"),
             ]);
 
@@ -330,12 +346,21 @@ class BuyBoxRebuildService
             ->selectRaw('admin_listing_id, SUM(quantity_available) as stock')
             ->pluck('stock', 'admin_listing_id');
 
+        $marketer = DB::table('warehouse_inventories')
+            ->whereNotNull('marketer_listing_id')
+            ->groupBy('marketer_listing_id')
+            ->selectRaw('marketer_listing_id, SUM(quantity_available) as stock')
+            ->pluck('stock', 'marketer_listing_id');
+
         $map = [];
         foreach ($vendor as $id => $qty) {
-            $map['vendor:' . $id] = (int) $qty;
+            $map['vendor:'.$id] = (int) $qty;
         }
         foreach ($admin as $id => $qty) {
-            $map['admin:' . $id] = (int) $qty;
+            $map['admin:'.$id] = (int) $qty;
+        }
+        foreach ($marketer as $id => $qty) {
+            $map['marketer:'.$id] = (int) $qty;
         }
 
         return $map;

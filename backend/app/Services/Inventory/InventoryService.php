@@ -5,6 +5,7 @@ namespace App\Services\Inventory;
 use App\Events\ListingStockChanged;
 use App\Models\AdminListing;
 use App\Models\InventoryMovement;
+use App\Models\MarketerListing;
 use App\Models\OrderItemAllocation;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
@@ -41,7 +42,7 @@ class InventoryService
      * @return array<int, array{warehouse_inventory_id:string, quantity:int}>
      */
     public function reserve(
-        VendorListing|AdminListing $listing,
+        VendorListing|AdminListing|MarketerListing $listing,
         int $qty,
         string $referenceType,
         ?string $referenceId,
@@ -55,7 +56,11 @@ class InventoryService
         }
 
         return DB::transaction(function () use ($listing, $qty, $referenceType, $referenceId, $actorType, $actorId, $preferredWarehouseId, $reason) {
-            $column = $listing instanceof VendorListing ? 'vendor_listing_id' : 'admin_listing_id';
+            $column = match (true) {
+                $listing instanceof VendorListing => 'vendor_listing_id',
+                $listing instanceof MarketerListing => 'marketer_listing_id',
+                default => 'admin_listing_id',
+            };
 
             $query = WarehouseInventory::where($column, $listing->id)
                 ->lockForUpdate();

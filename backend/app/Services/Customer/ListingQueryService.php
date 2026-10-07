@@ -711,7 +711,9 @@ class ListingQueryService
             'condition' => $listing->condition,
             'is_admin_listing' => false,
             'is_express_fbn' => false,
-            'fulfillment_model' => 'marketer',
+            // Own-FBN listings (source_listing_id IS NULL) ship from a platform
+            // warehouse; promotion-proxy listings fulfil via their source listing.
+            'fulfillment_model' => $listing->source_listing_id === null ? 'fbn' : 'marketer',
             'vendor' => null,
             'marketer' => $marketer ? [
                 'id' => $marketer->id,
@@ -1098,10 +1100,16 @@ class ListingQueryService
         if (! empty($filters['condition'])) {
             $q->where('l.condition', $filters['condition']);
         }
-        if (! empty($filters['fulfillment_model']) && $type !== 'marketer') {
-            $q->where('l.fulfillment_model', $filters['fulfillment_model']);
-        } elseif (! empty($filters['fulfillment_model'])) {
-            $q->whereRaw('1 = 0'); // marketer listings have no fulfillment model
+        if (! empty($filters['fulfillment_model'])) {
+            if ($type !== 'marketer') {
+                $q->where('l.fulfillment_model', $filters['fulfillment_model']);
+            } elseif ($filters['fulfillment_model'] === 'fbn') {
+                // Own-FBN marketer listings (source_listing_id IS NULL) are effectively
+                // fbn; promotion-proxy marketer listings have no stored fulfillment_model.
+                $q->whereNull('l.source_listing_id');
+            } else {
+                $q->whereRaw('1 = 0'); // marketer listings do not carry other fulfillment models
+            }
         }
         if (empty($filters['include_oos']) && $type !== 'admin') {
             // vendor: own stock; marketer: stock of its source listing
@@ -1111,8 +1119,11 @@ class ListingQueryService
                     $s->whereColumn('wi.vendor_listing_id', 'l.id');
                 } else {
                     $s->where(function ($w) {
+                        // Promotion-proxy marketer listings: stock lives on the source listing.
                         $w->where(fn ($x) => $x->where('l.source_type', 'vendor_listing')->whereColumn('wi.vendor_listing_id', 'l.source_listing_id'))
-                            ->orWhere(fn ($x) => $x->where('l.source_type', 'admin_listing')->whereColumn('wi.admin_listing_id', 'l.source_listing_id'));
+                            ->orWhere(fn ($x) => $x->where('l.source_type', 'admin_listing')->whereColumn('wi.admin_listing_id', 'l.source_listing_id'))
+                            // Own-FBN marketer listings: stock is keyed directly by marketer_listing_id.
+                            ->orWhere(fn ($x) => $x->whereNull('l.source_listing_id')->whereColumn('wi.marketer_listing_id', 'l.id'));
                     });
                 }
             });

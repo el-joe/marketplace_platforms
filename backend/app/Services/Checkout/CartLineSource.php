@@ -21,9 +21,10 @@ use Illuminate\Support\Collection;
  * - `sellable`: the listing the customer actually bought (vendor, admin or
  *   marketer listing). This is what gets recorded on the order item.
  * - `fulfilmentListing`: the listing that owns the warehouse stock — the
- *   vendor or admin listing. For a marketer listing this is always its
- *   explicit `source_type`/`source_listing_id` (enhancement.md P-15),
- *   whether the marketer listing is campaign-linked or independent.
+ *   vendor or admin listing. For a promotion-proxy marketer listing this is
+ *   the explicit source listing (enhancement.md P-15). For an own-FBN
+ *   marketer listing (source_listing_id IS NULL) this IS the marketer
+ *   listing itself, since the marketer carries their own warehouse stock.
  * - `sellerParty`: the vendor's id, or the literal string 'platform' for
  *   admin-listing / platform-sourced fulfilment.
  */
@@ -35,7 +36,7 @@ class CartLineSource
     private function __construct(
         public readonly CartItem $cartItem,
         public readonly VendorListing|AdminListing|MarketerListing $sellable,
-        public readonly VendorListing|AdminListing $fulfilmentListing,
+        public readonly VendorListing|AdminListing|MarketerListing $fulfilmentListing,
         public readonly string $sellerParty,
         public readonly int $price,
         public readonly int $quantity,
@@ -156,6 +157,27 @@ class CartLineSource
                 );
             }
 
+            // Own FBN marketer listing (source_listing_id IS NULL): the marketer
+            // physically ships from a platform warehouse using their own stock in
+            // warehouse_inventories keyed by marketer_listing_id.
+            if ($marketerListing->source_listing_id === null) {
+                return new self(
+                    cartItem: $item,
+                    sellable: $marketerListing,
+                    fulfilmentListing: $marketerListing,
+                    sellerParty: 'marketer:'.$marketerListing->marketer_id,
+                    price: (int) $item->unit_price,
+                    quantity: (int) $item->quantity,
+                    fulfillmentModel: 'fbn',
+                    warehouseInventories: $marketerListing->relationLoaded('warehouseInventories')
+                        ? $marketerListing->warehouseInventories
+                        : $marketerListing->warehouseInventories()->get(),
+                    vendorListingIdForOrderItem: null,
+                    adminListingIdForOrderItem: null,
+                    marketerListingIdForOrderItem: $marketerListing->id,
+                );
+            }
+
             return null;
         }
 
@@ -165,6 +187,11 @@ class CartLineSource
     public function isAdminSeller(): bool
     {
         return $this->sellerParty === 'platform';
+    }
+
+    public function isMarketerSeller(): bool
+    {
+        return str_starts_with($this->sellerParty, 'marketer:');
     }
 
     public function availableQuantity(): int
@@ -245,6 +272,8 @@ class CartLineSource
 
         if ($this->fulfilmentListing instanceof VendorListing) {
             $eligibilityQuery->where('vendor_listing_id', $this->fulfilmentListing->id);
+        } elseif ($this->fulfilmentListing instanceof MarketerListing) {
+            $eligibilityQuery->where('marketer_listing_id', $this->fulfilmentListing->id);
         } else {
             $eligibilityQuery->where('admin_listing_id', $this->fulfilmentListing->id);
         }
