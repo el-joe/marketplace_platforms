@@ -7,11 +7,21 @@
 
     {{-- Header + Add button --}}
     <div class="flex items-center justify-between">
-        <div class="flex gap-2">
-            @foreach(['', 'active', 'paused'] as $s)
+        <div class="flex flex-wrap gap-2">
+            @php
+                $filterLabels = [
+                    ''               => __('marketer.listings.filter_all'),
+                    'active'         => 'نشط',
+                    'pending_review' => 'قيد المراجعة',
+                    'paused'         => 'موقوف',
+                    'rejected'       => 'مرفوض',
+                    'draft'          => 'مسودة',
+                ];
+            @endphp
+            @foreach($filterLabels as $s => $label)
                 <a href="{{ route('marketer.listings.index', $s ? ['status' => $s] : []) }}"
                    class="px-3 py-1 rounded-full text-xs font-semibold border {{ request('status') === $s || (!request('status') && !$s) ? 'bg-gray-800 text-white border-gray-800' : 'border-gray-300 text-gray-600' }}">
-                    {{ $s ?: __('marketer.listings.filter_all') }}
+                    {{ $label }}
                 </a>
             @endforeach
         </div>
@@ -91,13 +101,32 @@
                         <td class="px-4 py-3 text-center text-xs text-gray-400">
                             @if($listing->invitation_id)
                                 <span class="text-blue-500">{{ __('marketer.listings.from_campaign') }}</span>
+                            @elseif(!$isClassified)
+                                @php $stockQty = $listing->warehouseInventories->sum(fn($wi) => $wi->quantity_on_hand - $wi->quantity_reserved); @endphp
+                                <span class="{{ $stockQty <= 0 ? 'text-red-500 font-bold' : ($stockQty <= 5 ? 'text-orange-500 font-semibold' : 'text-gray-700') }}">
+                                    {{ number_format($stockQty) }}
+                                </span>
                             @else
                                 <span class="text-gray-300">—</span>
                             @endif
                         </td>
+                        @php
+                            $statusMap = [
+                                'draft'          => ['bg-gray-100 text-gray-500',    'مسودة'],
+                                'pending_review' => ['bg-yellow-100 text-yellow-700','قيد المراجعة'],
+                                'active'         => ['bg-green-100 text-green-700',  'نشط'],
+                                'paused'         => ['bg-gray-100 text-gray-500',    'موقوف'],
+                                'rejected'       => ['bg-red-100 text-red-700',      'مرفوض'],
+                                'out_of_stock'   => ['bg-orange-100 text-orange-600','نفد المخزون'],
+                                'archived'       => ['bg-gray-100 text-gray-400',    'مؤرشف'],
+                            ];
+                            $sv = $listing->status instanceof \BackedEnum ? $listing->status->value : (string) $listing->status;
+                            [$statusClass, $statusLabel] = $statusMap[$sv] ?? ['bg-gray-100 text-gray-500', $sv];
+                            $isActive = $sv === 'active';
+                        @endphp
                         <td class="px-4 py-3 text-center">
-                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $listing->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                                {{ $listing->status === 'active' ? __('marketer.listings.status_active') : __('marketer.listings.status_paused') }}
+                            <span class="px-2 py-0.5 rounded text-xs font-semibold {{ $statusClass }}">
+                                {{ $statusLabel }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-center">
@@ -109,11 +138,15 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
+                                {{-- View link --}}
+                                <a href="{{ route('marketer.listings.show', $listing) }}"
+                                   class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:opacity-80">عرض</a>
+
                                 {{-- Toggle status --}}
                                 <form method="POST" action="{{ route('marketer.listings.toggle-status', $listing) }}">
                                     @csrf
-                                    <button class="text-xs px-2 py-1 rounded {{ $listing->status === 'active' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700' }} hover:opacity-80">
-                                        {{ $listing->status === 'active' ? __('marketer.listings.toggle_pause') : __('marketer.listings.toggle_activate') }}
+                                    <button class="text-xs px-2 py-1 rounded {{ $isActive ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700' }} hover:opacity-80">
+                                        {{ $isActive ? __('marketer.listings.toggle_pause') : __('marketer.listings.toggle_activate') }}
                                     </button>
                                 </form>
 

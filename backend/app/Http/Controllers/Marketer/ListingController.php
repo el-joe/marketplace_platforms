@@ -66,6 +66,7 @@ class ListingController extends Controller
                 'classifiedListing:id,classified_category_id,title_ar',
                 'invitation.campaign.vendor:id,store_name',
                 'country:id,name_ar,name_en,currency_code',
+                'warehouseInventories',
             ])
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest()

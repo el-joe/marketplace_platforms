@@ -12,6 +12,7 @@ use App\Http\Controllers\Marketer\DashboardController;
 use App\Http\Controllers\Marketer\ExclusiveContractController;
 use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
+use App\Http\Controllers\Marketer\InventoryController;
 use App\Http\Controllers\Marketer\InvitationController;
 use App\Http\Controllers\Marketer\ListingController;
 use App\Http\Controllers\Marketer\OnboardingController;
@@ -247,6 +248,13 @@ Route::middleware('web')->group(function () {
             Route::get('/', [FlashSaleController::class, 'index'])->name('index');
             Route::post('/{invitation}/accept', [FlashSaleController::class, 'accept'])->name('accept');
             Route::post('/{invitation}/decline', [FlashSaleController::class, 'decline'])->name('decline');
+        });
+
+        // Inventory
+        Route::prefix('inventory')->name('inventory.')->group(function () {
+            Route::get('/', [InventoryController::class, 'index'])->name('index');
+            Route::get('/low-stock', [InventoryController::class, 'lowStock'])->name('low-stock');
+            Route::get('/out-of-stock', [InventoryController::class, 'outOfStock'])->name('out-of-stock');
         });
 
         // Support tickets
