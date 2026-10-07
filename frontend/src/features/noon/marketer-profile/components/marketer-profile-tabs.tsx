@@ -36,7 +36,6 @@ interface Props {
     tabVendorCampaigns: string;
     tabMarketerCampaigns: string;
     tabClassifieds: string;
-    productsCount: (count: number) => string;
     emptyProducts: string;
     loadMore: string;
     priceNegotiable: string;

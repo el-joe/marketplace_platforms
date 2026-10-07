@@ -63,7 +63,6 @@ export default async function MarketerProfileView({ data }: Props) {
                 tabVendorCampaigns: t("tabVendorCampaigns"),
                 tabMarketerCampaigns: t("tabMarketerCampaigns"),
                 tabClassifieds: t("tabClassifieds"),
-                productsCount: (count: number) => t("productsCount", { count }),
                 emptyProducts: t("emptyProducts"),
                 loadMore: t("loadMore"),
                 priceNegotiable: t("priceNegotiable"),
