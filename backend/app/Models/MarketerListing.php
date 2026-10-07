@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\FulfillmentModel;
+use App\Enums\MarketerListingStatus;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -37,15 +39,28 @@ class MarketerListing extends Model
         'classified_listing_id',
         'listing_category',
         'country_id',
+        'warehouse_id',
         'invitation_id',
         'source_type',
         'source_listing_id',
+        'fulfillment_model',
         'paused_reason',
+        'rejection_reason',
+        'approved_by_admin_id',
+        'approved_at',
         'price',
         'compare_at_price',
         'currency',
         'status',
         'condition',
+        'condition_notes',
+        'vendor_sku',
+        'low_stock_threshold',
+        'declared_weight_grams',
+        'declared_length_cm',
+        'declared_width_cm',
+        'declared_height_cm',
+        'handling_class',
         'score',
         'score_calculated_at',
         'referral_code',
@@ -58,14 +73,22 @@ class MarketerListing extends Model
     protected function casts(): array
     {
         return [
-            'price'               => 'integer',
-            'compare_at_price'    => 'integer',
-            'score'               => 'float',
+            'status' => MarketerListingStatus::class,
+            'fulfillment_model' => FulfillmentModel::class,
+            'price' => 'integer',
+            'compare_at_price' => 'integer',
+            'approved_at' => 'datetime',
+            'low_stock_threshold' => 'integer',
+            'declared_weight_grams' => 'integer',
+            'declared_length_cm' => 'decimal:2',
+            'declared_width_cm' => 'decimal:2',
+            'declared_height_cm' => 'decimal:2',
+            'score' => 'float',
             'score_calculated_at' => 'datetime',
-            'rating_avg'          => 'float',
-            'total_sold'          => 'integer',
-            'rating_count'        => 'integer',
-            'listing_category'    => 'string',
+            'rating_avg' => 'float',
+            'total_sold' => 'integer',
+            'rating_count' => 'integer',
+            'listing_category' => 'string',
         ];
     }
 
@@ -74,6 +97,21 @@ class MarketerListing extends Model
     public function marketer(): BelongsTo
     {
         return $this->belongsTo(Marketer::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'approved_by_admin_id');
+    }
+
+    public function warehouseInventories(): HasMany
+    {
+        return $this->hasMany(WarehouseInventory::class);
     }
 
     public function productVariant(): BelongsTo
@@ -133,9 +171,9 @@ class MarketerListing extends Model
     public function getDisplayTitle(): string
     {
         return match ($this->listing_category ?? 'product') {
-            'travel'     => $this->travelPackage?->title_ar ?? '—',
+            'travel' => $this->travelPackage?->title_ar ?? '—',
             'classified' => $this->classifiedListing?->title_ar ?? '—',
-            default      => $this->productVariant?->product?->name_ar ?? '—',
+            default => $this->productVariant?->product?->name_ar ?? '—',
         };
     }
 

@@ -16,6 +16,7 @@ class WarehouseInventory extends Model
     protected $fillable = [
         'vendor_listing_id',
         'admin_listing_id',
+        'marketer_listing_id',
         'warehouse_id',
         'quantity_on_hand',
         'quantity_reserved',
@@ -60,6 +61,11 @@ class WarehouseInventory extends Model
         return $this->belongsTo(AdminListing::class, 'admin_listing_id');
     }
 
+    public function marketerListing(): BelongsTo
+    {
+        return $this->belongsTo(MarketerListing::class, 'marketer_listing_id');
+    }
+
     public function inventoryMovements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);
@@ -93,7 +99,7 @@ class WarehouseInventory extends Model
     public function getPrimaryImageUrlAttribute(): ?string
     {
         $img = $this->vendorListing?->productVariant?->product
-                ?->images()->where('is_primary', 1)->first();
+            ?->images()->where('is_primary', 1)->first();
 
         return $img ? Storage::disk($img->disk)->url($img->path) : null;
     }

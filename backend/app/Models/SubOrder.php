@@ -93,7 +93,8 @@ class SubOrder extends Model
         'order_id',
         'sub_order_number',
         'vendor_id',
-        // 'vendor' or 'platform' — see enhancement.md P-02 task 4 / the
+        'marketer_id',
+        // 'vendor', 'platform', or 'marketer' — see enhancement.md P-02 task 4 / the
         // migration 2026_09_17_000200 for why vendor_id was made nullable
         // instead of seeding a synthetic "platform vendor" row.
         'seller_type',
@@ -146,6 +147,11 @@ class SubOrder extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function marketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class);
     }
 
     public function warehouse(): BelongsTo
