@@ -2,8 +2,8 @@
 
 @php $isAr = app()->getLocale() === 'ar'; @endphp
 
-@section('title', portal_content('helpcenter', 'index', 'page_title', 'noon Seller Help Center', 'مركز مساعدة البائع'))
-@section('description', portal_content('helpcenter', 'index', 'page_description', 'noon Seller Help Center', 'مركز مساعدة البائع في نون'))
+@section('title', portal_content('helpcenter', 'index', 'page_title', 'Nawy Seller Help Center', 'مركز مساعدة البائع'))
+@section('description', portal_content('helpcenter', 'index', 'page_description', 'Nawy Seller Help Center', 'مركز مساعدة البائع في ناوي'))
 
 @section('header')
     @include('portal.partials.helpcenter-header', ['variant' => 'home', 'country' => $country])

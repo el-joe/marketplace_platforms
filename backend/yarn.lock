@@ -5,6 +5,13 @@ __metadata:
   version: 10
   cacheKey: 10c0
 
+"@alpinejs/collapse@npm:^3.17.4":
+  version: 3.17.4
+  resolution: "@alpinejs/collapse@npm:3.17.4"
+  checksum: 10c0/1515ceddb8c384603efa72949e3fcf629cd9ce07c701d79c8aa7001c183329565cef12131775fa57119a57652f478686d665e1322669cc73cdb99bad43d69532
+  languageName: node
+  linkType: hard
+
 "@emnapi/core@npm:1.10.0":
   version: 1.10.0
   resolution: "@emnapi/core@npm:1.10.0"
@@ -1830,6 +1837,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
+    "@alpinejs/collapse": "npm:^3.17.4"
     "@playwright/test": "npm:^1.61.0"
     "@tailwindcss/forms": "npm:^0.5.9"
     "@tailwindcss/typography": "npm:^0.5.15"

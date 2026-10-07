@@ -11,7 +11,7 @@
                             <path d="M98,41.9c11.6,0,21-9.4,21-21S109.5,0,98,0s-21,9.4-21,21,9.4,21,21,21Z"></path>
                             <path d="M582.4,41.9c11.6,0,21-9.4,21-21s-9.4-21-21-21-21,9.4-21,21,9.4,21,21,21Z"></path>
                         </svg>
-                        <span class="text-gray-700 font-medium">{{ portal_content('helpcenter', 'footer', 'brand_label', 'noon Seller Help Center', 'مركز مساعدة البائع') }}</span>
+                        <span class="text-gray-700 font-medium">{{ portal_content('helpcenter', 'footer', 'brand_label', 'Nawy Seller Help Center', 'مركز مساعدة البائع') }}</span>
                     </a>
                 </div>
 
@@ -41,7 +41,7 @@
                 </div>
             </div>
             <div class="mt-12 pt-6 border-t border-gray-200 text-sm text-gray-400">
-                &copy; {{ now()->year }} noon. {{ portal_content('helpcenter', 'footer', 'copyright', 'All rights reserved.', 'جميع الحقوق محفوظة.') }}
+                &copy; {{ now()->year }} Nawy. {{ portal_content('helpcenter', 'footer', 'copyright', 'All rights reserved.', 'جميع الحقوق محفوظة.') }}
             </div>
         </div>
     </div>

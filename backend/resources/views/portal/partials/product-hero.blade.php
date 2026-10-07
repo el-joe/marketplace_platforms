@@ -26,7 +26,7 @@
 
             {{-- Text column --}}
             <div class="order-2 lg:order-1 {{ $isAr ? 'text-center lg:text-right' : 'text-center lg:text-left' }}">
-                <p class="text-xs sm:text-sm font-black uppercase tracking-wider text-yellow-500 mb-2">
+                <p class="text-xs sm:text-sm font-black uppercase tracking-wider text-[#0F807E] mb-2">
                     {{ portal_content('advertise-product', 'hero', 'eyebrow', 'Product Ads', 'إعلانات المنتجات') }}
                 </p>
                 <h1 class="text-3xl sm:text-4xl lg:text-[42px] font-black text-orange-500 leading-tight text-pretty">

@@ -20,34 +20,34 @@ class PortalContentSeederBatch3 extends Seeder
 
         // ─── page_key = 'home' — partials/testimonials.blade.php ───────────
         $rows[] = ['home', 'testimonials', 'heading', 'text', 'Testimonials', 'شهادات', null, 1];
-        $rows[] = ['home', 'testimonials', 'video_title', 'text', 'How PAN Emirates scaled their noon store', 'كيف نمت حول الإمارات متجرها على نون', null, 2];
+        $rows[] = ['home', 'testimonials', 'video_title', 'text', 'How PAN Emirates scaled their Nawy store', 'كيف نمت حول الإمارات متجرها على ناوي', null, 2];
         $rows[] = ['home', 'testimonials', 'eyebrow', 'text', 'Seller success story', 'قصة نجاح بائع', null, 3];
-        $rows[] = ['home', 'testimonials', 'featured_title', 'text', 'PAN Home chose noon\'s Fulfilled by Partner (FBP) model — and became the #1 furniture seller in the region.', 'اختارت بان هوم نموذج التوصيل عن طريق البائع (FBP) من نون — وأصبحت البائع رقم 1 للأثاث في المنطقة.', null, 4];
+        $rows[] = ['home', 'testimonials', 'featured_title', 'text', 'PAN Home chose Nawy\'s Fulfilled by Partner (FBP) model — and became the #1 furniture seller in the region.', 'اختارت بان هوم نموذج التوصيل عن طريق البائع (FBP) من ناوي — وأصبحت البائع رقم 1 للأثاث في المنطقة.', null, 4];
         $rows[] = ['home', 'testimonials', 'featured_subtitle', 'text', 'Discover how dedicated support, tailored account management, and powerful tools helped drive their success.', 'اكتشف كيف ساعد الدعم المخصص، والإدارة المصممة خصيصا، والأدوات القوية في تحقيق نجاحهم.', null, 5];
         $rows[] = ['home', 'testimonials', 'featured_name', 'text', 'PAN Home', 'بان هوم', null, 6];
 
         $rows[] = ['home', 'testimonial_1', 'photo', 'image', 'Hamad Alblooshi, Founder', 'حمد البلوشي، المؤسس', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-testimonial-05.jpg', 10];
-        $rows[] = ['home', 'testimonial_1', 'quote', 'richtext', '“noon Mahali reached out to us quickly and made the whole process easy. Since joining at the launch of Mahali, their support has been incredible. They helped us get our products live, boosted our sales, and focused heavily on promoting local brands. And let’s be honest—when people want to shop, they go to noon first.”', 'تواصل معنا فريق نون محلي بسرعة وسهّلوا علينا كل الإجراءات. من يوم انضمامنا مع إطلاق البرنامج، والدعم اللي قدموه لنا كان رائع. ساعدونا نفعّل منتجاتنا على المنصة، رفعوا مبيعاتنا، وكان تركيزهم كبير على دعم العلامات المحلية. وبصراحة، لما الناس تفكر تشتري، أول مكان يروحون له هو نون.', null, 11];
+        $rows[] = ['home', 'testimonial_1', 'quote', 'richtext', '“Nawy Mahali reached out to us quickly and made the whole process easy. Since joining at the launch of Mahali, their support has been incredible. They helped us get our products live, boosted our sales, and focused heavily on promoting local brands. And let’s be honest—when people want to shop, they go to Nawy first.”', 'تواصل معنا فريق ناوي محلي بسرعة وسهّلوا علينا كل الإجراءات. من يوم انضمامنا مع إطلاق البرنامج، والدعم اللي قدموه لنا كان رائع. ساعدونا نفعّل منتجاتنا على المنصة، رفعوا مبيعاتنا، وكان تركيزهم كبير على دعم العلامات المحلية. وبصراحة، لما الناس تفكر تشتري، أول مكان يروحون له هو ناوي.', null, 11];
         $rows[] = ['home', 'testimonial_1', 'name', 'text', 'Hamad Alblooshi, Founder', 'حمد البلوشي، المؤسس', null, 12];
         $rows[] = ['home', 'testimonial_1', 'company', 'text', 'H2 Games', 'H2 Games', null, 13];
 
         $rows[] = ['home', 'testimonial_2', 'photo', 'image', 'Laila Alsaadi, Founder', 'ليلى السعدي، المؤسسة', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-testimonial-04.jpg', 20];
-        $rows[] = ['home', 'testimonial_2', 'quote', 'richtext', '“I’ve always been passionate about e-commerce, which is why I chose to sell on noon and join Mahali. Getting paid for my first sale was an empowering moment that made me feel truly supported.”', 'لطالما كنت شغوفة بالتجارة الإلكترونية، ولهذا قررت البيع على نون والانضمام إلى برنامج مهلي. حصولي على أول دفعة بعد أول عملية بيع كان لحظة مليئة بالتمكين، وجعلتني أشعر بالدعم الحقيقي.', null, 21];
+        $rows[] = ['home', 'testimonial_2', 'quote', 'richtext', '“I’ve always been passionate about e-commerce, which is why I chose to sell on Nawy and join Mahali. Getting paid for my first sale was an empowering moment that made me feel truly supported.”', 'لطالما كنت شغوفة بالتجارة الإلكترونية، ولهذا قررت البيع على ناوي والانضمام إلى برنامج مهلي. حصولي على أول دفعة بعد أول عملية بيع كان لحظة مليئة بالتمكين، وجعلتني أشعر بالدعم الحقيقي.', null, 21];
         $rows[] = ['home', 'testimonial_2', 'name', 'text', 'Laila Alsaadi, Founder', 'ليلى السعدي، المؤسسة', null, 22];
         $rows[] = ['home', 'testimonial_2', 'company', 'text', 'Heyraat General Trading', 'Heyraat General Trading', null, 23];
 
         $rows[] = ['home', 'testimonial_3', 'photo', 'image', 'Zouban Shalin, Brand Director', 'زوبان شالين، مدير العلامة التجارية', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-testimonial-02.jpg', 30];
-        $rows[] = ['home', 'testimonial_3', 'quote', 'richtext', '“Partnering with noon helped Baybee grow fast and reach more customers across the UAE and KSA. Their support, tools, and reach made launching smooth and scaling easy. We’re excited to keep building on this success together.”', 'الشراكة مع نون ساعدت Baybee على النمو بسرعة والوصول إلى عدد أكبر من العملاء في الإمارات والسعودية. دعمهم، وأدواتهم، وانتشارهم الواسع جعلوا الإطلاق سلس والتوسع سهل. نحن متحمسون لمواصلة هذا النجاح معا.', null, 31];
+        $rows[] = ['home', 'testimonial_3', 'quote', 'richtext', '“Partnering with Nawy helped Baybee grow fast and reach more customers across the UAE and KSA. Their support, tools, and reach made launching smooth and scaling easy. We’re excited to keep building on this success together.”', 'الشراكة مع ناوي ساعدت Baybee على النمو بسرعة والوصول إلى عدد أكبر من العملاء في الإمارات والسعودية. دعمهم، وأدواتهم، وانتشارهم الواسع جعلوا الإطلاق سلس والتوسع سهل. نحن متحمسون لمواصلة هذا النجاح معا.', null, 31];
         $rows[] = ['home', 'testimonial_3', 'name', 'text', 'Zouban Shalin, Brand Director', 'زوبان شالين، مدير العلامة التجارية', null, 32];
         $rows[] = ['home', 'testimonial_3', 'company', 'text', 'Baybee Brand', 'Baybee Brand', null, 33];
 
         $rows[] = ['home', 'testimonial_4', 'photo', 'image', 'Sreeja V.S, Head of e-Commerce', 'سريجا في. إس، رئيسة قسم التجارة الإلكترونية', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-testimonial-01.jpg', 40];
-        $rows[] = ['home', 'testimonial_4', 'quote', 'richtext', '“Big thanks to the noon team for jumping in when our original account got unexpectedly blocked. They acted fast, got us back online, and had our back throughout. In just three months, our sales shot up by over 500% — that kind of growth only happens when you’ve got a team that truly shows up.”', 'نتوجه بجزيل الشكر لفريق نون على دعمهم الفوري عندما تم حظر حسابنا بشكل مفاجئ. تدخلوا بسرعة، أعادونا للعمل خلال وقت قياسي، وكانوا إلى جانبنا في كل خطوة. خلال ثلاثة أشهر فقط، ارتفعت مبيعاتنا بأكثر من 500٪ — هذا النوع من النمو لا يتحقق إلا بوجود فريق حقيقي يلتزم ويقف مع شركائه بكل احترافية.', null, 41];
+        $rows[] = ['home', 'testimonial_4', 'quote', 'richtext', '“Big thanks to the Nawy team for jumping in when our original account got unexpectedly blocked. They acted fast, got us back online, and had our back throughout. In just three months, our sales shot up by over 500% — that kind of growth only happens when you’ve got a team that truly shows up.”', 'نتوجه بجزيل الشكر لفريق ناوي على دعمهم الفوري عندما تم حظر حسابنا بشكل مفاجئ. تدخلوا بسرعة، أعادونا للعمل خلال وقت قياسي، وكانوا إلى جانبنا في كل خطوة. خلال ثلاثة أشهر فقط، ارتفعت مبيعاتنا بأكثر من 500٪ — هذا النوع من النمو لا يتحقق إلا بوجود فريق حقيقي يلتزم ويقف مع شركائه بكل احترافية.', null, 41];
         $rows[] = ['home', 'testimonial_4', 'name', 'text', 'Sreeja V.S, Head of e-Commerce', 'سريجا في. إس، رئيسة قسم التجارة الإلكترونية', null, 42];
         $rows[] = ['home', 'testimonial_4', 'company', 'text', 'SAMS Global LLC', 'SAMS Global LLC', null, 43];
 
         $rows[] = ['home', 'testimonial_5', 'photo', 'image', 'Hossain Al-Hasan, Founder', 'حسين الحسن، المؤسس', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-testimonial-03.jpg', 50];
-        $rows[] = ['home', 'testimonial_5', 'quote', 'richtext', '“Partnering with noon has been a game-changer, driving an incredible 45% over-year growth. This wouldn’t have been possible without the unwavering support and dedication of noon team, who stood by me every step of the way.”', 'الشراكة مع نون كانت نقطة تحول، حيث ساهمت في تحقيق نمو مذهل بنسبة 45% مقارنة بالعام الماضي. هذا النجاح لم يكن ليتحقق لولا الدعم المستمر والتفاني من فريق نون، الذين ساندوني في كل خطوة على الطريق.', null, 51];
+        $rows[] = ['home', 'testimonial_5', 'quote', 'richtext', '“Partnering with Nawy has been a game-changer, driving an incredible 45% over-year growth. This wouldn’t have been possible without the unwavering support and dedication of Nawy team, who stood by me every step of the way.”', 'الشراكة مع ناوي كانت نقطة تحول، حيث ساهمت في تحقيق نمو مذهل بنسبة 45% مقارنة بالعام الماضي. هذا النجاح لم يكن ليتحقق لولا الدعم المستمر والتفاني من فريق ناوي، الذين ساندوني في كل خطوة على الطريق.', null, 51];
         $rows[] = ['home', 'testimonial_5', 'name', 'text', 'Hossain Al-Hasan, Founder', 'حسين الحسن، المؤسس', null, 52];
         $rows[] = ['home', 'testimonial_5', 'company', 'text', 'Golden Technology Trading', 'Golden Technology Trading', null, 53];
 
@@ -74,17 +74,17 @@ class PortalContentSeederBatch3 extends Seeder
         $rows[] = ['account_setup', 'step_2', 'item_1_inline_link', 'text', 'Sign up now', 'سجل الآن', null, 23];
         $rows[] = ['account_setup', 'step_2', 'item_2_text', 'text', 'Provide us with a few details', 'زودنا ببعض التفاصيل', null, 24];
         $rows[] = ['account_setup', 'step_2', 'item_3_text', 'text', 'Verify them', 'قم بالتحقق منها', null, 25];
-        $rows[] = ['account_setup', 'step_2', 'after_list_text', 'text', 'And just like that, you are now part of the noon family', 'وهكذا، أصبحت الآن جزءاً من عائلة نون', null, 26];
+        $rows[] = ['account_setup', 'step_2', 'after_list_text', 'text', 'And just like that, you are now part of the Nawy family', 'وهكذا، أصبحت الآن جزءاً من عائلة ناوي', null, 26];
 
         $rows[] = ['account_setup', 'step_3', 'title', 'text', 'Set up your store', 'إعداد متجرك', null, 30];
         $rows[] = ['account_setup', 'step_3', 'caption', 'text', 'CREATE YOUR STORE AND ADD YOUR BUSINESS DOCUMENTS', 'قم بإنشاء متجرك وإضافة مستندات عملك', null, 31];
         $rows[] = ['account_setup', 'step_3', 'paragraph_1', 'text', 'Create your store for the country that you wish to sell in and add your business documents for a quick and seamless approval', 'قم بإنشاء متجرك للبلد الذي ترغب في البيع فيه وأضف مستندات عملك للحصول على موافقة سريعة وسلسة', null, 32];
-        $rows[] = ['account_setup', 'step_3', 'paragraph_2', 'text', 'Once you create your store, seller lab becomes your control center for everything noon', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بنون', null, 33];
+        $rows[] = ['account_setup', 'step_3', 'paragraph_2', 'text', 'Once you create your store, seller lab becomes your control center for everything Nawy', 'بمجرد إنشاء متجرك، يصبح مختبر البائع مركز التحكم الخاص بك لكل ما يتعلق بناوي', null, 33];
 
         // ─── page_key = 'register' — register.blade.php ────────────────────
-        $rows[] = ['register', 'meta', 'title', 'text', 'Register as a Seller — noon', 'سجّل كبائع — نون', null, 1];
+        $rows[] = ['register', 'meta', 'title', 'text', 'Register as a Seller — Nawy', 'سجّل كبائع — ناوي', null, 1];
         $rows[] = ['register', 'header', 'logo_tagline', 'text', 'for Sellers', 'للبائعين', null, 2];
-        $rows[] = ['register', 'header', 'title', 'text', 'Join noon as a Seller', 'انضم إلى منصة نون كبائع', null, 3];
+        $rows[] = ['register', 'header', 'title', 'text', 'Join Nawy as a Seller', 'انضم إلى منصة ناوي كبائع', null, 3];
         $rows[] = ['register', 'header', 'subtitle', 'text', 'Complete the following steps to create your business account', 'أكمل الخطوات التالية لإنشاء حسابك التجاري', null, 4];
         $rows[] = ['register', 'progress', 'step_label', 'text', 'Step', 'الخطوة', null, 5];
         $rows[] = ['register', 'progress', 'of_label', 'text', 'of', 'من', null, 6];
@@ -97,7 +97,7 @@ class PortalContentSeederBatch3 extends Seeder
         $rows[] = ['register', 'login_prompt', 'link', 'link', 'Log in', 'تسجيل الدخول', '/partner/login', 13];
 
         // ─── page_key = 'register' — register-success.blade.php ───────────
-        $rows[] = ['register', 'success', 'page_title', 'text', 'Application Submitted — noon for Sellers', 'تم إرسال طلبك — نون للبائعين', null, 20];
+        $rows[] = ['register', 'success', 'page_title', 'text', 'Application Submitted — Nawy for Sellers', 'تم إرسال طلبك — ناوي للبائعين', null, 20];
         $rows[] = ['register', 'success', 'title', 'text', 'Thank you for registering!', 'شكراً لتسجيلك!', null, 21];
         $rows[] = ['register', 'success', 'intro_prefix', 'text', "We've received your application successfully. Our team will review your information and documents within", 'استلمنا طلبك بنجاح. سيقوم فريقنا بمراجعة بياناتك ووثائقك خلال', null, 22];
         $rows[] = ['register', 'success', 'intro_days', 'text', '3–5 business days', '٣–٥ أيام عمل', null, 23];
@@ -202,12 +202,12 @@ class PortalContentSeederBatch3 extends Seeder
         $rows[] = ['register', 'step_5', 'optional_label', 'text', '(optional)', '(اختياري)', null, 226];
         $rows[] = ['register', 'step_5', 'missing_docs_warning', 'text', 'Please go back to the previous step and upload the required documents before submitting.', 'يرجى العودة للخطوة السابقة ورفع الوثائق المطلوبة قبل الإرسال.', null, 227];
         $rows[] = ['register', 'step_5', 'agree_terms_heading', 'text', 'Agree to Terms', 'الموافقة على الشروط', null, 228];
-        $rows[] = ['register', 'step_5', 'terms_prefix', 'text', "I agree to noon's", 'أوافق على', null, 229];
+        $rows[] = ['register', 'step_5', 'terms_prefix', 'text', "I agree to Nawy's", 'أوافق على', null, 229];
         $rows[] = ['register', 'step_5', 'terms_link', 'link', 'Terms and Conditions', 'الشروط والأحكام', '#', 230];
-        $rows[] = ['register', 'step_5', 'terms_suffix', 'text', 'for sellers', 'الخاصة ببائعي نون', null, 231];
+        $rows[] = ['register', 'step_5', 'terms_suffix', 'text', 'for sellers', 'الخاصة ببائعي ناوي', null, 231];
         $rows[] = ['register', 'step_5', 'privacy_prefix', 'text', 'I agree to the', 'أوافق على', null, 232];
         $rows[] = ['register', 'step_5', 'privacy_link', 'link', 'Privacy Policy', 'سياسة الخصوصية', '#', 233];
-        $rows[] = ['register', 'step_5', 'privacy_suffix', 'text', 'and authorize noon to process my business data', 'وأذن لنون بمعالجة بياناتي التجارية', null, 234];
+        $rows[] = ['register', 'step_5', 'privacy_suffix', 'text', 'and authorize Nawy to process my business data', 'وأذن لناوي بمعالجة بياناتي التجارية', null, 234];
 
         foreach ($rows as [$pageKey, $blockKey, $fieldKey, $type, $valueEn, $valueAr, $valueUrl, $sortOrder]) {
             PortalContent::updateOrCreate(

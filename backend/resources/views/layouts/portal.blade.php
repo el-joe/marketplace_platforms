@@ -44,8 +44,8 @@
 
 
     {{-- Scroll-to-top --}}
-    <button id="scroll-top" class="fixed bottom-6 end-6 z-50 p-3 bg-[#feee00] text-gray-950 rounded-full shadow-lg
-               opacity-0 pointer-events-none transition-opacity duration-300 hover:bg-[#e5d600]">
+    <button id="scroll-top" class="fixed bottom-6 end-6 z-50 p-3 bg-[#0F807E] text-gray-950 rounded-full shadow-lg
+               opacity-0 pointer-events-none transition-opacity duration-300 hover:bg-[#0c6665]">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="m18 15-6-6-6 6" />

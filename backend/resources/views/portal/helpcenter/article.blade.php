@@ -9,7 +9,7 @@
     $crumbArrow = $isAr ? 'rotate-180' : '';
 @endphp
 
-@section('title', $article->localizedTitle() . ' | ' . portal_content('helpcenter', 'article', 'site_title', 'noon Seller Help Center', 'مركز مساعدة البائع'))
+@section('title', $article->localizedTitle() . ' | ' . portal_content('helpcenter', 'article', 'site_title', 'Nawy Seller Help Center', 'مركز مساعدة البائع'))
 @section('description', $article->localizedExcerpt() ?? '')
 
 @section('header')

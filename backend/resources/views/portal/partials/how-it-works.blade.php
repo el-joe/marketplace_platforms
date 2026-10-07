@@ -2,7 +2,7 @@
 
 <div class="bg-[#151515] py-10 lg:py-12">
     <section class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-[#feee00] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('how-it-works', 'checklist', 'eyebrow', 'Getting Started', 'البدء') }}</h1>
+        <h1 class="text-[#0F807E] font-bold text-[28px] lg:text-[36px] mb-2">{{ portal_content('how-it-works', 'checklist', 'eyebrow', 'Getting Started', 'البدء') }}</h1>
         <h2 class="text-white font-bold text-[22px] lg:text-[26px] leading-tight mb-8 lg:mb-10">
             {{ portal_content('how-it-works', 'checklist', 'title', 'Ready to start selling?', 'جاهز انك تبدأ البيع؟') }}<br>
             {{ portal_content('how-it-works', 'checklist', 'subtitle', "It's quick and easy — here's what you'll need", 'انه سريع و سهل — اليك ما تحتاجه') }}
@@ -52,7 +52,7 @@
 
                 @php($docsFaqCta = portal_link('how-it-works', 'checklist', 'documents_faq_button', 'Documents FAQs', 'الأسئلة الشائعة حول المستندات', route('portal.faq')))
                 <a href="{{ $docsFaqCta['url'] }}"
-                   class="inline-block bg-[#feee00] text-black text-[15px] font-bold w-full sm:w-[260px] text-center py-2.5 rounded-full hover:bg-[#e5d600] transition-colors mb-10">
+                   class="inline-block bg-[#0F807E] text-white text-[15px] font-bold w-full sm:w-[260px] text-center py-2.5 rounded-full hover:bg-[#0c6665] transition-colors mb-10">
                     {{ $docsFaqCta['label'] }}
                 </a>
 
@@ -79,7 +79,7 @@
                 </p>
 
                 @php($checklistLearnMore = portal_link('how-it-works', 'checklist', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.how-it-works')))
-                <a href="{{ $checklistLearnMore['url'] }}" class="inline-flex items-center gap-2 text-[#feee00] font-bold text-[15px] hover:text-[#e5d600] transition-colors">
+                <a href="{{ $checklistLearnMore['url'] }}" class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-[15px] hover:text-[#e5d600] transition-colors">
                     {{ $checklistLearnMore['label'] }}
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" class="{{ $isAr ? '-scale-x-100' : '' }}">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />

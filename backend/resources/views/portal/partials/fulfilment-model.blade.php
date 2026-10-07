@@ -21,10 +21,10 @@
                 </h3>
                 <p class="mt-4 text-gray-300 text-[14px] font-medium">
                     {{ portal_content('how-it-works', 'fulfilment-model', 'description',
-                        'You can fulfil orders yourself (FBP) or leave it to noon with Fulfilled by noon (FBN).',
-                        'يمكنك تنفيذ الطلبات بنفسك (FBP) أو ترك المهمة لنون من خلال التنفيذ من قِبل نون (FBN).') }}
+                        'You can fulfil orders yourself (FBP) or leave it to Nawy with Fulfilled by Nawy (FBN).',
+                        'يمكنك تنفيذ الطلبات بنفسك (FBP) أو ترك المهمة لناوي من خلال التنفيذ من قِبل ناوي (FBN).') }}
                 </p>
-                <p class="text-[#feee00] font-black text-xs uppercase tracking-wider mt-5">{{ portal_content('how-it-works', 'fulfilment-model', 'tip_label', 'Pro tip:', 'نصيحة احترافية:') }}</p>
+                <p class="text-[#0F807E] font-black text-xs uppercase tracking-wider mt-5">{{ portal_content('how-it-works', 'fulfilment-model', 'tip_label', 'Pro tip:', 'نصيحة احترافية:') }}</p>
                 <p class="text-gray-300 text-[14px] font-medium">
                     {{ portal_content('how-it-works', 'fulfilment-model', 'tip_text',
                         'You can mix models — pick the best one for each product to optimise your operations.',
@@ -35,11 +35,11 @@
                     @php($explainerVideosCta = portal_link('how-it-works', 'fulfilment-model', 'explainer_videos_button', 'Watch explainer videos', 'شاهد فيديوهات الشرح', 'https://www.youtube.com/@noonsellerlab7442/videos'))
                     <a target="_blank" rel="noopener" title="{{ portal_content('how-it-works', 'fulfilment-model', 'new_window_title', 'Opens in a new window', 'يفتح في نافذة جديدة') }}"
                        href="{{ $explainerVideosCta['url'] }}"
-                       class="w-full sm:w-auto text-center bg-[#feee00] hover:bg-[#e5d600] text-black font-black text-sm px-6 py-2.5 rounded-full transition-colors">
+                       class="w-full sm:w-auto text-center bg-[#0F807E] hover:bg-[#0c6665] text-white font-black text-sm px-6 py-2.5 rounded-full transition-colors">
                         {{ $explainerVideosCta['label'] }}
                     </a>
                     @php($fulfilmentModelLearnMore = portal_link('how-it-works', 'fulfilment-model', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.fulfillment')))
-                    <a href="{{ $fulfilmentModelLearnMore['url'] }}" class="inline-flex items-center gap-2 text-[#feee00] font-bold text-sm">
+                    <a href="{{ $fulfilmentModelLearnMore['url'] }}" class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-sm">
                         {{ $fulfilmentModelLearnMore['label'] }}
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="18" class="{{ $isAr ? '-scale-x-100' : '' }}">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
