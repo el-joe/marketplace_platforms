@@ -197,6 +197,11 @@ Route::middleware('web')->group(function () {
             Route::get('/create', [ListingController::class, 'create'])->name('create');
             Route::post('/', [ListingController::class, 'store'])->name('store');
             Route::get('/search-products', [ListingController::class, 'searchProducts'])->name('search-products');
+            Route::get('/{listing}', [ListingController::class, 'show'])->name('show');
+            Route::get('/{listing}/edit', [ListingController::class, 'edit'])->name('edit');
+            Route::put('/{listing}', [ListingController::class, 'update'])->name('update');
+            Route::post('/{listing}/adjust-stock', [ListingController::class, 'adjustStock'])->name('adjust-stock');
+            Route::post('/{listing}/resubmit', [ListingController::class, 'resubmit'])->name('resubmit');
             Route::post('/{listing}/toggle-status', [ListingController::class, 'toggleStatus'])->name('toggle-status');
             Route::patch('/{listing}/price', [ListingController::class, 'updatePrice'])->name('update-price');
             Route::get('/{listing}/promo-badges', [ListingController::class, 'promoBadges'])->name('promo-badges.edit');

@@ -8,6 +8,12 @@
     results: [],
     selected: null,
     loading: false,
+    countryId: '{{ old('country_id') }}',
+    warehouseId: '{{ old('warehouse_id') }}',
+    allWarehouses: {{ Js::from($fbnWarehouses->groupBy('country_id')) }},
+    get filteredWarehouses() {
+        return this.countryId ? (this.allWarehouses[this.countryId] ?? []) : [];
+    },
     async search() {
         if (this.query.length < 2) { this.results = []; return; }
         this.loading = true;
@@ -24,8 +30,15 @@
 }">
 
     <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-        <h2 class="text-lg font-bold text-gray-900">{{ __('marketer.listings.create_heading') }}</h2>
-        <p class="text-sm text-gray-500">{{ __('marketer.listings.create_hint') }}</p>
+        <div>
+            <h2 class="text-lg font-bold text-gray-900">{{ __('marketer.listings.create_heading') }}</h2>
+            <p class="text-sm text-gray-500 mt-1">{{ __('marketer.listings.create_hint') }}</p>
+        </div>
+
+        {{-- FBN notice --}}
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+            <strong>تنبيه:</strong> جميع قوائمك مخزّنة في مستودعات المنصة (FBN). ستُراجَع قائمتك من قِبَل الإدارة قبل ظهورها للعملاء.
+        </div>
 
         <form method="POST" action="{{ route('marketer.listings.store') }}" class="space-y-4">
             @csrf
@@ -55,7 +68,7 @@
             {{-- Country --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.listings.country_label') }} <span class="text-red-500">*</span></label>
-                <select name="country_id" required
+                <select name="country_id" required x-model="countryId" @change="warehouseId = ''"
                         class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
                     <option value="">{{ __('marketer.listings.choose_country') }}</option>
                     @foreach($countries as $c)
@@ -65,6 +78,24 @@
                     @endforeach
                 </select>
                 @error('country_id') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- FBN Warehouse --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">مستودع FBN <span class="text-red-500">*</span></label>
+                <select name="warehouse_id" required x-model="warehouseId"
+                        :disabled="!countryId || filteredWarehouses.length === 0"
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-50 disabled:text-gray-400">
+                    <option value="">
+                        <template x-if="!countryId">اختر الدولة أولاً</template>
+                        <template x-if="countryId && filteredWarehouses.length === 0">لا يوجد مستودع FBN في هذه الدولة</template>
+                        <template x-if="countryId && filteredWarehouses.length > 0">اختر المستودع</template>
+                    </option>
+                    <template x-for="w in filteredWarehouses" :key="w.id">
+                        <option :value="w.id" x-text="w.name"></option>
+                    </template>
+                </select>
+                @error('warehouse_id') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             {{-- Price --}}
@@ -86,12 +117,36 @@
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.listings.condition_label') }}</label>
                 <select name="condition" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
-                    <option value="new">{{ __('marketer.listings.condition_new') }}</option>
-                    <option value="like_new">{{ __('marketer.listings.condition_like_new') }}</option>
-                    <option value="good">{{ __('marketer.listings.condition_good') }}</option>
-                    <option value="acceptable">{{ __('marketer.listings.condition_acceptable') }}</option>
-                    <option value="refurbished">{{ __('marketer.listings.condition_refurbished') }}</option>
+                    <option value="new" {{ old('condition') === 'new' ? 'selected' : '' }}>{{ __('marketer.listings.condition_new') }}</option>
+                    <option value="like_new" {{ old('condition') === 'like_new' ? 'selected' : '' }}>{{ __('marketer.listings.condition_like_new') }}</option>
+                    <option value="good" {{ old('condition') === 'good' ? 'selected' : '' }}>{{ __('marketer.listings.condition_good') }}</option>
+                    <option value="acceptable" {{ old('condition') === 'acceptable' ? 'selected' : '' }}>{{ __('marketer.listings.condition_acceptable') }}</option>
+                    <option value="refurbished" {{ old('condition') === 'refurbished' ? 'selected' : '' }}>{{ __('marketer.listings.condition_refurbished') }}</option>
                 </select>
+            </div>
+
+            {{-- Condition Notes --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">ملاحظات الحالة</label>
+                <textarea name="condition_notes" rows="2" maxlength="500"
+                          placeholder="صف حالة المنتج بتفصيل أكثر (اختياري)"
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">{{ old('condition_notes') }}</textarea>
+            </div>
+
+            {{-- Vendor SKU --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">SKU الخاص بك <span class="text-xs text-gray-400">(اختياري)</span></label>
+                <input type="text" name="vendor_sku" value="{{ old('vendor_sku') }}" maxlength="100"
+                       placeholder="رمز المنتج في نظامك الداخلي"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+            </div>
+
+            {{-- Low Stock Threshold --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">حد التنبيه للمخزون <span class="text-xs text-gray-400">(افتراضي: 5)</span></label>
+                <input type="number" name="low_stock_threshold" value="{{ old('low_stock_threshold', 5) }}" min="0" max="9999"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
+                <p class="text-xs text-gray-400 mt-1">ستصلك تنبيهات عندما ينخفض المخزون عن هذا الرقم.</p>
             </div>
 
             <button type="submit"
