@@ -240,7 +240,7 @@
                     special_handling_notes: $('#rm-notes').val() || null,
                 };
 
-                const url = id ? `/admin/fbn/marketplace/${id}` : '{{ route('admin.fbn.marketplace.store') }}';
+                const url = id ? `/fbn/marketplace/${id}` : '{{ route('admin.fbn.marketplace.store') }}';
                 const method = id ? 'PUT' : 'POST';
 
                 fetch(url, {
@@ -260,7 +260,7 @@
                     title: T.deleteRuleTitle,
                     text: T.deleteRuleText,
                     onConfirm: () => {
-                        fetch(`/admin/fbn/marketplace/${id}`, {
+                        fetch(`/fbn/marketplace/${id}`, {
                             method: 'DELETE',
                             headers: { 'X-CSRF-TOKEN': tok, 'Content-Type': 'application/json' },
                             body: '{}',

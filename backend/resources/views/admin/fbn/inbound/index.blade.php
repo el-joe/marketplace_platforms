@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $('#approve-close').on('click', () => $('#approve-modal').hide());
     $('#approve-confirm').on('click', () => {
         const id = $('#approve-id').val();
-        jsonPost(`/admin/fbn/inbound/${id}/approve`, { expected_arrival: $('#approve-expected').val() || null },
+        jsonPost(`/fbn/inbound/${id}/approve`, { expected_arrival: $('#approve-expected').val() || null },
             () => $('#approve-modal').hide());
     });
 
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const id = $('#reject-id').val();
         const reason = $('#reject-reason').val().trim();
         if (!reason) { window.Toast.error(T.enterRejectionReason); return; }
-        jsonPost(`/admin/fbn/inbound/${id}/reject`, { rejection_reason: reason },
+        jsonPost(`/fbn/inbound/${id}/reject`, { rejection_reason: reason },
             () => $('#reject-modal').hide());
     });
 
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const id = $('#tracking-id').val();
         const tn = $('#tracking-number').val().trim();
         if (!tn) { window.Toast.error(T.enterTrackingNumber); return; }
-        jsonPost(`/admin/fbn/inbound/${id}/tracking`, { tracking_number: tn, expected_arrival: $('#tracking-expected').val() || null },
+        jsonPost(`/fbn/inbound/${id}/tracking`, { tracking_number: tn, expected_arrival: $('#tracking-expected').val() || null },
             () => $('#tracking-modal').hide());
     });
 
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const id = $('#receive-id').val();
         const qty = parseInt($('#receive-qty').val());
         if (!qty || qty < 1) { window.Toast.error(T.enterQuantityReceived); return; }
-        jsonPost(`/admin/fbn/inbound/${id}/receive`, { quantity_received: qty },
+        jsonPost(`/fbn/inbound/${id}/receive`, { quantity_received: qty },
             () => $('#receive-modal').hide());
     });
 }, { once: true });

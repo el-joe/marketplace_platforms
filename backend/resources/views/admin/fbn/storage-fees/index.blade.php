@@ -195,10 +195,10 @@
 
             // ── Status updates ─────────────────────────────────────────────────────────
             $(document).on('click', '.btn-mark-invoiced', function () {
-                jsonPost(`/admin/fbn/storage-fees/${$(this).data('id')}/status`, { status: 'invoiced' });
+                jsonPost(`/fbn/storage-fees/${$(this).data('id')}/status`, { status: 'invoiced' });
             });
             $(document).on('click', '.btn-mark-fee-paid', function () {
-                jsonPost(`/admin/fbn/storage-fees/${$(this).data('id')}/status`, { status: 'paid' });
+                jsonPost(`/fbn/storage-fees/${$(this).data('id')}/status`, { status: 'paid' });
             });
 
             // ── Generate monthly fees ──────────────────────────────────────────────────
