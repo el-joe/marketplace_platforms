@@ -18,7 +18,7 @@
 
             {{-- Logo --}}
             <a href="{{ route('portal.sellers', $country) }}" class="flex items-center shrink-0" aria-label="Nawy ads">
-                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy ads" width="94" height="29"
+                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy ads" height="29"
                     class="h-7 w-auto">
             </a>
 

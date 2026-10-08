@@ -89,7 +89,7 @@
                 {{-- Logo --}}
                 <a href="{{ route('portal.home') }}" class="flex items-center shrink-0"
                     aria-label="{{ $isAr ? 'الصفحة الرئيسية' : 'Home' }}">
-                    <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy" class="w-[110px] h-auto" style="mix-blend-mode:screen;filter:drop-shadow(0 0 6px rgba(255,255,255,0.18))">
+                    <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy" class="h-[40px] w-auto">
                 </a>
 
                 {{-- Desktop nav links --}}
@@ -315,7 +315,7 @@
     <div class="px-4 sm:px-6 shrink-0">
         <div class="flex items-center justify-between h-[72px]">
             <a href="{{ route('portal.home') }}" @click="mobileOpen = false" class="flex items-center shrink-0">
-                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy" class="w-[100px] h-auto" style="mix-blend-mode:screen;filter:drop-shadow(0 0 6px rgba(255,255,255,0.18))">
+                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy" class="h-[36px] w-auto">
             </a>
             <button @click="mobileOpen = false" class="text-white p-1 focus:outline-none"
                 aria-label="{{ $isAr ? 'إغلاق القائمة' : 'Close menu' }}">
