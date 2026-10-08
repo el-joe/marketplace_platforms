@@ -85,7 +85,7 @@
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-[72px] gap-6">
 
-            <div class="flex items-center gap-[48px] h-full">
+            <div class="flex items-center gap-6 xl:gap-[48px] h-full">
                 {{-- Logo --}}
                 <a href="{{ route('portal.home') }}" class="flex items-center shrink-0"
                     aria-label="{{ $isAr ? 'الصفحة الرئيسية' : 'Home' }}">
@@ -93,7 +93,7 @@
                 </a>
 
                 {{-- Desktop nav links --}}
-                <nav class="hidden lg:flex items-center gap-[32px] h-full">
+                <nav class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
                     @foreach ($navLinks as $link)
                         <div class="relative group h-full flex items-center" x-data="{ open: false }"
                             @mouseenter="open = true" @mouseleave="open = false">
@@ -136,7 +136,7 @@
                 </nav>
             </div>
 
-            <div class="hidden lg:flex items-center gap-[32px] h-full">
+            <div class="hidden lg:flex items-center gap-4 xl:gap-[32px] h-full">
                 <div class="w-px h-[24px] bg-white/20 self-center"></div>
 
                 {{-- Country --}}
@@ -160,7 +160,7 @@
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 translate-y-4"
-                        class="absolute {{ $isAr ? 'start-0' : 'end-0' }} top-full w-48 pt-6 -mt-6 z-50" x-cloak>
+                        class="absolute end-0 top-full w-48 pt-6 -mt-6 z-50" x-cloak>
                         <div class="bg-[#1c1c1c] border border-white/5 shadow-2xl rounded-xl py-2 overflow-hidden mt-1">
                             @foreach ($countries as $country)
                                 <a href="{{ route('portal.country', $country->site_code) }}"
@@ -201,7 +201,7 @@
                         x-transition:leave="transition ease-in duration-150"
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 translate-y-4"
-                        class="absolute {{ $isAr ? 'start-0' : 'end-0' }} top-full w-40 pt-6 -mt-6 z-50" x-cloak>
+                        class="absolute end-0 top-full w-40 pt-6 -mt-6 z-50" x-cloak>
                         <div
                             class="bg-[#1c1c1c] border border-white/5 shadow-2xl rounded-xl py-2 overflow-hidden mt-1">
                             <a href="{{ route('portal.language', 'en') }}"
@@ -240,7 +240,7 @@
                     <div x-show="mobileCountryOpen" x-cloak x-transition:enter="transition ease-out duration-150"
                         x-transition:enter-start="opacity-0 -translate-y-1"
                         x-transition:enter-end="opacity-100 translate-y-0"
-                        class="absolute {{ $isAr ? 'start-0' : 'end-0' }} top-full mt-3 w-48 rounded-xl bg-[#1c1c1c] border border-white/10 shadow-2xl py-2 z-50">
+                        class="absolute end-0 top-full mt-3 w-48 rounded-xl bg-[#1c1c1c] border border-white/10 shadow-2xl py-2 z-50">
                         @foreach ($countries as $country)
                             <a href="{{ route('portal.country', $country->site_code) }}"
                                 class="flex items-center gap-[10px] px-4 py-2 text-[14px] font-bold transition-colors
