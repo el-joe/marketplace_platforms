@@ -26,7 +26,7 @@
                     <li>{{ portal_content('smart-tools', 'ads', 'format_item_2', 'Display ads - to promote campaigns like new launches, clearance, or seasonal offers', 'إعلانات العرض - للترويج للحملات مثل الإطلاق الجديد، التصفية أو العروض الموسمية') }}</li>
                 </ul>
                 <div class="mt-6">
-                    @php($adsLearnMore = portal_link('smart-tools', 'ads', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.sellers', $country ?? 'ae')))
+                    @php($adsLearnMore = portal_link('smart-tools', 'ads', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')))
                     <a href="{{ $adsLearnMore['url'] }}"
                        class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-sm">
                         {{ $adsLearnMore['label'] }}
@@ -65,7 +65,7 @@
                     <p class="text-[16px] font-bold mb-2">{{ portal_content('smart-tools', 'fee-structure', 'description', 'Your costs depend on your product category and fulfilment model.', 'تعتمد تكاليفك على فئة منتجك ونموذج التنفيذ.') }}</p>
                     <p class="text-[16px] font-medium text-gray-300">{{ portal_content('smart-tools', 'fee-structure', 'note', 'Fees are transparent, flexible, and designed to grow with you.', 'الإعدادات شفافة، مرنة، ومصممة لتنمو معك.') }}</p>
                     <div class="mt-8">
-                        @php($feeStructureCta = portal_link('smart-tools', 'fee-structure', 'learn_more_button', 'Learn more', 'اعرف أكثر', 'https://support.noon.partners/portal/' . ($isAr ? 'ar' : 'en') . '/kb/search/' . ($isAr ? 'رسوم' : 'fees')))
+                        @php($feeStructureCta = portal_link('smart-tools', 'fee-structure', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')))
                         <a href="{{ $feeStructureCta['url'] }}" target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center w-full sm:w-auto bg-[#0F807E] hover:bg-[#0c6665] text-white
                                   font-black text-sm px-6 py-3 rounded-full transition-colors">
@@ -97,7 +97,7 @@
                         'sub' => portal_content('smart-tools', 'fee-card-referral', 'tagline', 'We only earn when you do.', 'نحن نربح فقط عندما تحقق انت ربحا'),
                         'desc' => portal_content('smart-tools', 'fee-card-referral', 'description', 'A referral fee applies per sale — based on your product category.', 'تطبق رسوم الاحالة علي كل عملية بيع - وفقا لفئة منتجك'),
                         'links' => [
-                            portal_link('smart-tools', 'fee-card-referral', 'link_1', 'Learn more', 'اعرف أكثر', 'https://support.noon.partners/portal/' . ($isAr ? 'ar' : 'en') . '/kb/articles/referral-fees-in-noon-mena'),
+                            portal_link('smart-tools', 'fee-card-referral', 'link_1', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')),
                         ],
                     ],
                     [
@@ -116,7 +116,7 @@
                         'sub' => portal_content('smart-tools', 'fee-card-other', 'tagline', 'Only if you opt in.', 'تطبق فقط اذا اخترت الاستفادة منها'),
                         'desc' => portal_content('smart-tools', 'fee-card-other', 'description', 'Extra fees apply for things like long-term storage etc. — which are applied when you choose to avail these services.', 'تُضاف رسوم إضافية لأمور مثل التخزين طويل الأمد وغيرها – وتُطبق عند اختيارك استخدام هذه الخدمات.'),
                         'links' => [
-                            portal_link('smart-tools', 'fee-card-other', 'link_1', 'Learn more', 'اعرف أكثر', 'https://advertise.noon.com/' . ($isAr ? 'ar' : 'en') . '/'),
+                            portal_link('smart-tools', 'fee-card-other', 'link_1', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')),
                         ],
                     ],
                 ];
@@ -165,7 +165,7 @@
                 </p>
             </div>
             <div class="mt-2 md:mt-0">
-                @php($payoutsCta = portal_link('smart-tools', 'payouts', 'cta_button', 'Discover how', 'اكتشف كيف', 'https://support.noon.partners/portal/' . ($isAr ? 'ar' : 'en') . '/kb/articles/how-do-i-receive-my-payouts'))
+                @php($payoutsCta = portal_link('smart-tools', 'payouts', 'cta_button', 'Discover how', 'اكتشف كيف', route('portal.helpcenter.index', $country ?? 'ae')))
                 <a href="{{ $payoutsCta['url'] }}" target="_blank" rel="noopener"
                    class="inline-flex items-center justify-center w-full sm:w-auto bg-[#0F807E] hover:bg-[#0c6665] text-white
                           font-black text-sm px-6 py-3 rounded-full transition-colors">
