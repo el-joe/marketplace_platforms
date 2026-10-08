@@ -18,10 +18,10 @@
         @if($articles->isNotEmpty())
             <section class="flex flex-col rounded-[10px] border border-solid border-[#e6e6e6] bg-white p-2 sm:p-3">
                 @foreach($articles as $article)
-                    <a class="group/article flex flex-row justify-between gap-2 rounded-[10px] px-3 py-3 no-underline transition ease-linear hover:bg-orange-50"
+                    <a class="group/article flex flex-row justify-between gap-2 rounded-[10px] px-3 py-3 no-underline transition ease-linear hover:bg-[#0F807E]/5"
                        href="{{ route('portal.helpcenter.article.show', ['country' => $country, 'article' => $article->slug]) }}">
                         <div>
-                            <span class="m-0 text-base text-black group-hover/article:text-orange-600 font-medium">{{ $article->localizedTitle() }}</span>
+                            <span class="m-0 text-base text-black group-hover/article:text-[#0B6866] font-medium">{{ $article->localizedTitle() }}</span>
                             @if($article->localizedExcerpt())
                                 <p class="m-0 mt-1 text-sm text-gray-500 line-clamp-1">{{ $article->localizedExcerpt() }}</p>
                             @endif
