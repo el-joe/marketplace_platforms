@@ -111,7 +111,7 @@ const Header = () => {
           {/* side categories list for small screens */}
           <SideCategoriesList />
           {/* logo */}
-          <Logo />
+          <Logo attribute="full" />
           {/* location */}
           <AddressDialog
             triggerButton={

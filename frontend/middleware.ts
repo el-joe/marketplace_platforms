@@ -69,7 +69,6 @@ export async function middleware(request: NextRequest) {
         `https://api.ipinfo.io/lite/${!!clientIp && clientIp !== "::1" ? clientIp : "me"}?token=${IPINFO_TOKEN}`,
       );
       const geoData = await geoRes.json();
-      console.log("geoData", geoData);
       country =
         data
           .find(
