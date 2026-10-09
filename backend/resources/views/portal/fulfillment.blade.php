@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', session('locale', 'ar') === 'ar' ? 'الشحن والتوصيل' : 'Shipping & Fulfilment')
+@section('title', portal_content('fulfillment', 'meta', 'title', 'Shipping & Fulfilment', 'الشحن والتوصيل'))
 
 @section('content')
     @include('portal.partials.fulfillment-hero')

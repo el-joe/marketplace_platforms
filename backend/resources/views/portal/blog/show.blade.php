@@ -21,13 +21,13 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- ── Breadcrumb ───────────────────────────────────────────── --}}
-        <nav class="flex items-center gap-2 text-xs text-gray-500 mb-6 flex-wrap" aria-label="{{ __('portal.blog.breadcrumb') }}">
+        <nav class="flex items-center gap-2 text-xs text-gray-500 mb-6 flex-wrap" aria-label="{{ portal_content('blog', 'show', 'breadcrumb_aria', 'Breadcrumb', 'مسار التنقل') }}">
             <a href="{{ route('portal.home') }}" class="hover:text-gray-300 transition-colors">
-                {{ __('portal.nav.home') }}
+                {{ portal_content('blog', 'show', 'home_label', 'Home', 'الرئيسية') }}
             </a>
             <span>/</span>
             <a href="{{ route('portal.blog.index') }}" class="hover:text-gray-300 transition-colors">
-                {{ __('portal.blog.title') }}
+                {{ portal_content('blog', 'header', 'title', 'Blog', 'المدونة') }}
             </a>
             @if($post->category)
                 <span>/</span>
@@ -74,7 +74,7 @@
                     <span>·</span>
                     <span>{{ $post->published_at->format('d M Y') }}</span>
                     <span>·</span>
-                    <span>{{ $post->reading_time_minutes }} {{ __('portal.blog.min_read') }}</span>
+                    <span>{{ $post->reading_time_minutes }} {{ portal_content('blog', 'index', 'min_read', 'min read', 'دقائق قراءة') }}</span>
                     @if($post->views_count)
                         <span>·</span>
                         <span>{{ number_format($post->views_count) }} {{ portal_content('blog', 'show', 'views_label', 'views', 'مشاهدة') }}</span>
@@ -143,7 +143,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 uppercase font-medium mb-0.5 tracking-wide">
-                            {{ __('portal.blog.written_by') }}
+                            {{ portal_content('blog', 'show', 'written_by', 'Written by', 'كتب بواسطة') }}
                         </p>
                         <p class="font-semibold text-white">{{ $post->author->name }}</p>
                     </div>
@@ -156,7 +156,7 @@
         @if($relatedPosts->isNotEmpty())
             <div class="mt-14 mb-20">
                 <h2 class="text-xl font-bold text-white mb-6">
-                    {{ __('portal.blog.related_posts') }}
+                    {{ portal_content('blog', 'show', 'related_posts', 'Related Posts', 'مقالات ذات صلة') }}
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     @foreach($relatedPosts as $related)

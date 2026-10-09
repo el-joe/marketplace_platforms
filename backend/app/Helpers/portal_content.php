@@ -3,7 +3,7 @@
 use App\Enums\PortalContentType;
 use App\Models\PortalContent;
 
-if (!function_exists('portal_content')) {
+if (! function_exists('portal_content')) {
     /**
      * Get a localized plain-text/richtext value from the admin-editable
      * "Portal Content" CMS, falling back to a hardcoded string if the row
@@ -23,9 +23,9 @@ if (!function_exists('portal_content')) {
         $isAr = session('locale', 'ar') === 'ar';
         $fallback = ($isAr ? $fallbackAr : $fallbackEn) ?? $fallbackAr ?? $fallbackEn ?? '';
 
-        $row = PortalContent::forPage($pageKey)->get($blockKey . '.' . $fieldKey);
+        $row = PortalContent::forPage($pageKey)->get($blockKey.'.'.$fieldKey);
 
-        if (!$row || !$row->is_active) {
+        if (! $row || ! $row->is_active) {
             return $fallback;
         }
 
@@ -35,7 +35,7 @@ if (!function_exists('portal_content')) {
     }
 }
 
-if (!function_exists('portal_link')) {
+if (! function_exists('portal_link')) {
     /**
      * Get a localized link (label + url) from the admin-editable "Portal
      * Content" CMS. Always returns ['label' => string, 'url' => string],
@@ -43,6 +43,7 @@ if (!function_exists('portal_link')) {
      * inactive, or of the wrong type.
      *
      * Usage in Blade:
+     *
      *   @php($cta = portal_link('home', 'hero', 'cta_button', 'Get Started', 'ابدأ الآن', '/register'))
      *   <a href="{{ $cta['url'] }}">{{ $cta['label'] }}</a>
      */
@@ -58,9 +59,9 @@ if (!function_exists('portal_link')) {
         $fallbackLabel = ($isAr ? $fallbackLabelAr : $fallbackLabelEn) ?? $fallbackLabelAr ?? $fallbackLabelEn ?? '';
         $fallback = ['label' => $fallbackLabel, 'url' => $fallbackUrl ?? '#'];
 
-        $row = PortalContent::forPage($pageKey)->get($blockKey . '.' . $fieldKey);
+        $row = PortalContent::forPage($pageKey)->get($blockKey.'.'.$fieldKey);
 
-        if (!$row || !$row->is_active || $row->type !== PortalContentType::Link) {
+        if (! $row || ! $row->is_active || $row->type !== PortalContentType::Link) {
             return $fallback;
         }
 
@@ -72,7 +73,7 @@ if (!function_exists('portal_link')) {
     }
 }
 
-if (!function_exists('portal_image')) {
+if (! function_exists('portal_image')) {
     /**
      * Get a localized image (src + alt) from the admin-editable "Portal
      * Content" CMS. Always returns ['src' => string, 'alt' => string],
@@ -80,6 +81,7 @@ if (!function_exists('portal_image')) {
      * inactive, or of the wrong type.
      *
      * Usage in Blade:
+     *
      *   @php($img = portal_image('home', 'hero', 'photo', 'https://.../fallback.jpg', 'A delivery agent', 'مندوب توصيل'))
      *   <img src="{{ $img['src'] }}" alt="{{ $img['alt'] }}">
      */
@@ -95,9 +97,9 @@ if (!function_exists('portal_image')) {
         $fallbackAlt = ($isAr ? $fallbackAltAr : $fallbackAltEn) ?? $fallbackAltAr ?? $fallbackAltEn ?? '';
         $fallback = ['src' => $fallbackSrc ?? '', 'alt' => $fallbackAlt];
 
-        $row = PortalContent::forPage($pageKey)->get($blockKey . '.' . $fieldKey);
+        $row = PortalContent::forPage($pageKey)->get($blockKey.'.'.$fieldKey);
 
-        if (!$row || !$row->is_active || $row->type !== PortalContentType::Image) {
+        if (! $row || ! $row->is_active || $row->type !== PortalContentType::Image) {
             return $fallback;
         }
 
@@ -105,12 +107,6 @@ if (!function_exists('portal_image')) {
         $alt = ($alt === null || $alt === '') ? $fallbackAlt : $alt;
         $src = ($row->value_url === null || $row->value_url === '') ? ($fallbackSrc ?? '') : $row->value_url;
 
-        // Uploaded files are stored as relative paths on the "public" disk;
-        // CMS rows seeded with an external CDN URL stay untouched.
-        if ($src !== '' && !str_starts_with($src, 'http://') && !str_starts_with($src, 'https://')) {
-            $src = \Illuminate\Support\Facades\Storage::disk('public')->url($src);
-        }
-
-        return ['src' => $src, 'alt' => $alt];
+        return ['src' => PortalContent::resolveUrl($src), 'alt' => $alt];
     }
 }

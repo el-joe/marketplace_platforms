@@ -28,22 +28,26 @@
                 }
              }">
 
-            <video x-ref="video" class="absolute inset-0 w-full h-full object-contain bg-black" preload="auto" playsinline
+            @php($quickGuideVideo = portal_link('advertise-display', 'quick_guide', 'video', 'Display Ads quick guide video', 'فيديو الدليل السريع لإعلانات العرض', 'https://advertise.noon.com/videos/display-ads2.mp4'))
+            @php($rewindIcon = portal_image('advertise-display', 'quick_guide', 'rewind_icon', 'https://advertise.noon.com/icons/rewind10.svg', 'Skip backward 10 seconds', 'إرجاع 10 ثوانٍ'))
+            @php($playIcon = portal_image('advertise-display', 'quick_guide', 'play_icon', 'https://advertise.noon.com/icons/play.png', 'Play', 'تشغيل'))
+            @php($forwardIcon = portal_image('advertise-display', 'quick_guide', 'forward_icon', 'https://advertise.noon.com/icons/forward10.svg', 'Skip forward 10 seconds', 'تقديم 10 ثوانٍ'))
+            <video x-ref="video" aria-label="{{ $quickGuideVideo['label'] }}" class="absolute inset-0 w-full h-full object-contain bg-black" preload="auto" playsinline
                    @play="playing = true" @pause="playing = false" @ended="playing = false"
                    @timeupdate="onTimeUpdate" @click="toggle">
-                <source src="https://advertise.noon.com/videos/display-ads2.mp4" type="video/mp4">
+                <source src="{{ $quickGuideVideo['url'] }}" type="video/mp4">
             </video>
 
             {{-- Skip back 10s --}}
             <button x-show="playing" x-cloak @click.stop="seek(-10)"
                     class="absolute {{ $isAr ? 'end-1/2 me-16 sm:me-24' : 'start-1/2 ms-16 sm:ms-24' }} top-1/2 -translate-y-1/2
                            w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                <img src="https://advertise.noon.com/icons/rewind10.svg" alt="{{ portal_content('advertise-display', 'quick_guide', 'rewind_alt', 'Skip backward 10 seconds', 'إرجاع 10 ثوانٍ') }}" class="w-full h-full">
+                <img src="{{ $rewindIcon['src'] }}" alt="{{ portal_content('advertise-display', 'quick_guide', 'rewind_alt', 'Skip backward 10 seconds', 'إرجاع 10 ثوانٍ') }}" class="w-full h-full">
             </button>
 
             {{-- Center play / pause --}}
             <button @click="toggle" class="absolute inset-0 flex items-center justify-center" aria-label="{{ portal_content('advertise-display', 'quick_guide', 'play_pause_label', 'Play / Pause', 'تشغيل / إيقاف') }}">
-                <img x-show="!playing" src="https://advertise.noon.com/icons/play.png" alt="{{ portal_content('advertise-display', 'quick_guide', 'play_alt', 'Play', 'تشغيل') }}"
+                <img x-show="!playing" src="{{ $playIcon['src'] }}" alt="{{ portal_content('advertise-display', 'quick_guide', 'play_alt', 'Play', 'تشغيل') }}"
                      class="w-14 h-14 sm:w-16 sm:h-16">
             </button>
 
@@ -51,7 +55,7 @@
             <button x-show="playing" x-cloak @click.stop="seek(10)"
                     class="absolute {{ $isAr ? 'start-1/2 ms-16 sm:ms-24' : 'end-1/2 me-16 sm:me-24' }} top-1/2 -translate-y-1/2
                            w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                <img src="https://advertise.noon.com/icons/forward10.svg" alt="{{ portal_content('advertise-display', 'quick_guide', 'forward_alt', 'Skip forward 10 seconds', 'تقديم 10 ثوانٍ') }}" class="w-full h-full">
+                <img src="{{ $forwardIcon['src'] }}" alt="{{ portal_content('advertise-display', 'quick_guide', 'forward_alt', 'Skip forward 10 seconds', 'تقديم 10 ثوانٍ') }}" class="w-full h-full">
             </button>
 
             {{-- Bottom bar: mute + progress --}}

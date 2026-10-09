@@ -1,7 +1,7 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
     $advertisersHeroImg = portal_image('advertise-advertisers', 'hero', 'image', asset('images/nawy_ui.jpeg'), 'Advertisers', 'المعلنين');
-    $advertisersHeroCta = portal_link('advertise-advertisers', 'hero', 'cta_button', 'Contact us', 'اتصل بنا', route('portal.advertise.request', $country ?? 'ae'));
+    $advertisersHeroCta = portal_link('advertise-advertisers', 'hero', 'cta_button', 'Contact us', 'اتصل بنا', route('portal.advertise.request', $country ?? \App\Models\Country::resolveSiteCode(null)));
 @endphp
 
 <section class="bg-white">

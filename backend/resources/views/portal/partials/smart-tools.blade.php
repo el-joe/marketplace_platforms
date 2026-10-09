@@ -11,17 +11,17 @@
             @php
                 $cards = [
                     [
-                        'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-01.jpg',
+                        'image' => portal_image('home', 'smart_tools_teaser_item_1', 'image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-join-01.jpg', 'Ads that deliver results', 'إعلانات تحقق نتائج'),
                         'title' => portal_content('home', 'smart_tools_teaser_item_1', 'title', 'Ads that deliver results', 'إعلانات تحقق نتائج'),
                         'desc' => portal_content('home', 'smart_tools_teaser_item_1', 'description', 'Use Nawy Ads, our in-house advertising suite, to put your products in front of more customers.', 'استفد من إعلانات ناوي، مجموعتنا الإعلانية الداخلية لعرض منتجاتك أمام المزيد من العملاء.'),
                     ],
                     [
-                        'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbp.jpg',
+                        'image' => portal_image('home', 'smart_tools_teaser_item_2', 'image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbp.jpg', 'Know your costs', 'اعرف تكاليفك'),
                         'title' => portal_content('home', 'smart_tools_teaser_item_2', 'title', 'Know your costs', 'اعرف تكاليفك'),
                         'desc' => portal_content('home', 'smart_tools_teaser_item_2', 'description', 'With Nawy\'s competitive, transparent fee structure, you\'ll always know what you\'ll earn - no surprises, just growth', 'مع هيكل الرسوم التنافسي والشفاف من ناوي، ستعرف دائمًا ما ستكسبه - لا مفاجآت، فقط نمو'),
                     ],
                     [
-                        'image' => asset('images/nawy_ui.jpeg'),
+                        'image' => portal_image('home', 'smart_tools_teaser_item_3', 'image', asset('images/nawy_ui.jpeg'), 'Scale with insights', 'توسع مع الرؤى'),
                         'title' => portal_content('home', 'smart_tools_teaser_item_3', 'title', 'Scale with insights', 'توسع مع الرؤى'),
                         'desc' => portal_content('home', 'smart_tools_teaser_item_3', 'description', 'Turn data into smarter decisions with our powerful reporting and insights tools', 'حوّل البيانات إلى قرارات أذكى باستخدام أدوات التقارير والرؤى القوية لدينا'),
                     ],
@@ -30,7 +30,7 @@
 
             @foreach($cards as $card)
                 <div class="relative rounded-xl overflow-hidden flex flex-col justify-center sm:justify-end min-h-[140px] sm:min-h-0 sm:aspect-square md:aspect-[4/3] lg:aspect-[16/9]">
-                    <img src="{{ $card['image'] }}" alt="{{ $card['title'] }}"
+                    <img src="{{ $card['image']['src'] }}" alt="{{ $card['image']['alt'] }}"
                          class="absolute inset-0 w-full h-full object-cover object-bottom">
                     <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
                     <div class="relative px-4 py-4 sm:pb-5 lg:px-5 lg:pb-6">

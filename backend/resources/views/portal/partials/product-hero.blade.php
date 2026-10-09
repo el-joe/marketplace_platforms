@@ -1,18 +1,18 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
-    $country = $country ?? 'ae';
+    $country = $country ?? \App\Models\Country::resolveSiteCode(null);
 
     $features = [
         [
-            'icon' => 'https://advertise.noon.com/images/targetAds.png',
+            'icon' => portal_image('advertise-product', 'hero_feature_1', 'icon', 'https://advertise.noon.com/images/targetAds.png', 'Targeted audience', 'الجمهور المستهدف'),
             'label' => portal_content('advertise-product', 'hero_feature_1', 'label', 'Targeted audience', 'الجمهور المستهدف'),
         ],
         [
-            'icon' => 'https://advertise.noon.com/images/productVisibilityWatch.png',
+            'icon' => portal_image('advertise-product', 'hero_feature_2', 'icon', 'https://advertise.noon.com/images/productVisibilityWatch.png', 'Product visibility', 'رؤية المنتج'),
             'label' => portal_content('advertise-product', 'hero_feature_2', 'label', 'Product visibility', 'رؤية المنتج'),
         ],
         [
-            'icon' => 'https://advertise.noon.com/images/growIncreaseConversion.png',
+            'icon' => portal_image('advertise-product', 'hero_feature_3', 'icon', 'https://advertise.noon.com/images/growIncreaseConversion.png', 'Increase conversion', 'زيادة التحويل'),
             'label' => portal_content('advertise-product', 'hero_feature_3', 'label', 'Increase conversion', 'زيادة التحويل'),
         ],
     ];
@@ -38,7 +38,7 @@
                     @foreach($features as $feature)
                         <div class="flex-1 max-w-[140px] flex flex-col items-center gap-2 px-2 sm:px-4 py-3
                                     {{ !$loop->first ? ($isAr ? 'border-e border-gray-100' : 'border-s border-gray-100') : '' }}">
-                            <img src="{{ $feature['icon'] }}" alt="{{ $feature['label'] }}"
+                            <img src="{{ $feature['icon']['src'] }}" alt="{{ $feature['icon']['alt'] }}"
                                  loading="eager" class="w-10 h-10 sm:w-12 sm:h-12 object-contain">
                             <span class="text-xs sm:text-sm font-bold text-gray-800 text-center text-pretty leading-tight">
                                 {{ $feature['label'] }}
@@ -51,10 +51,11 @@
                     {{ portal_content('advertise-product', 'hero', 'subtitle', 'Amplify your products visibility on the lower funnel with targeted ads that reach a larger customer base and enable growth.', 'قم بتعزيز رؤية منتجاتك على مسار التحويل السفلي من خلال الإعلانات المستهدفة التي تصل إلى قاعدة عملاء أكبر وتمكّن النمو.') }}
                 </p>
 
-                <a href="https://admanager.noon.partners/en-ae?utm_source=ad_site&utm_medium=product" target="_blank" rel="noopener"
+                @php($heroCta = portal_link('advertise-product', 'hero', 'cta_button', 'Start now', 'ابدأ الآن', 'https://admanager.noon.partners/en-ae?utm_source=ad_site&utm_medium=product'))
+                <a href="{{ $heroCta['url'] }}" target="_blank" rel="noopener"
                    class="mt-6 inline-flex items-center justify-center bg-white hover:bg-gray-900 hover:text-white text-gray-900
                           border-2 border-gray-900 font-black text-sm sm:text-base px-8 py-3 rounded-full transition-colors">
-                    {{ portal_content('advertise-product', 'hero', 'cta_button', 'Start now', 'ابدأ الآن') }}
+                    {{ $heroCta['label'] }}
                 </a>
             </div>
 

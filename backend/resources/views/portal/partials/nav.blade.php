@@ -11,16 +11,19 @@
             'route' => 'portal.how-it-works',
             'submenu' => [
                 [
+                    'field' => 'sub_registering',
                     'label_ar' => 'إعداد حسابك',
                     'label_en' => 'Setting up your account',
                     'route' => route('portal.how-it-works') . '#registering',
                 ],
                 [
+                    'field' => 'sub_listings',
                     'label_ar' => 'إدراج منتجاتك',
                     'label_en' => 'Listing your products',
                     'route' => route('portal.how-it-works') . '#listings',
                 ],
                 [
+                    'field' => 'sub_fulfilment',
                     'label_ar' => 'اختيار نموذج الشحن الخاص بك',
                     'label_en' => 'Choosing your fulfilment model',
                     'route' => route('portal.how-it-works') . '#fulfilment',
@@ -34,11 +37,13 @@
             'route' => 'portal.fulfillment',
             'submenu' => [
                 [
+                    'field' => 'sub_fbn',
                     'label_ar' => 'مشحون من ناوي (FBN)',
                     'label_en' => 'Fulfilled by Nawy (FBN)',
                     'route' => route('portal.fulfillment') . '#fbn',
                 ],
                 [
+                    'field' => 'sub_fbp',
                     'label_ar' => 'مشحون من الشريك (FBP)',
                     'label_en' => 'Fulfilled by Partner (FBP)',
                     'route' => route('portal.fulfillment') . '#fbp',
@@ -52,16 +57,19 @@
             'route' => 'portal.smart-tools',
             'submenu' => [
                 [
+                    'field' => 'sub_ads',
                     'label_ar' => 'الإعلان على ناوي',
                     'label_en' => 'Advertising on Nawy',
                     'route' => route('portal.smart-tools') . '#ads',
                 ],
                 [
+                    'field' => 'sub_fees',
                     'label_ar' => 'هيكل رسوم ناوي',
                     'label_en' => 'Nawy\'s Fee Structure',
                     'route' => route('portal.smart-tools') . '#fees',
                 ],
                 [
+                    'field' => 'sub_insights',
                     'label_ar' => 'النمو باستخدام التحليلات',
                     'label_en' => 'Scale with Insights',
                     'route' => route('portal.smart-tools') . '#insights',
@@ -72,7 +80,15 @@
     ];
     foreach ($navLinks as $i => $l) {
         $navLinks[$i]['label'] = portal_content('nav', $l['block'], 'label', $l['label_en'], $l['label_ar']);
+        foreach ($l['submenu'] ?? [] as $j => $sub) {
+            $navLinks[$i]['submenu'][$j]['label'] = portal_content('nav', $l['block'], $sub['field'], $sub['label_en'], $sub['label_ar']);
+        }
     }
+    $navLogo = portal_image('nav', 'logo', 'image', asset('images/nawy_logo_transparent.png'), 'Nawy', 'Nawy');
+    $navLogoAria = portal_content('nav', 'logo', 'aria_label', 'Home', 'الصفحة الرئيسية');
+    $navMenuAria = portal_content('nav', 'mobile', 'menu_aria', 'Menu', 'القائمة');
+    $navCloseAria = portal_content('nav', 'mobile', 'close_aria', 'Close menu', 'إغلاق القائمة');
+    $navMobileCta = portal_link('nav', 'mobile', 'cta_button', 'Sign Up Now', 'سجل الآن', route('portal.register'));
 @endphp
 
 <div x-data="{ mobileOpen: false, scrolled: false }"
@@ -88,8 +104,8 @@
             <div class="flex items-center gap-6 xl:gap-[48px] h-full">
                 {{-- Logo --}}
                 <a href="{{ route('portal.home') }}" class="flex items-center shrink-0"
-                    aria-label="{{ $isAr ? 'الصفحة الرئيسية' : 'Home' }}">
-                    <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy" class="h-[40px] w-auto">
+                    aria-label="{{ $navLogoAria }}">
+                    <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" class="h-[40px] w-auto">
                 </a>
 
                 {{-- Desktop nav links --}}
@@ -125,7 +141,7 @@
                                                     class="w-[3px] h-0 bg-[#0F807E] absolute {{ $isAr ? 'right-0' : 'left-0' }} top-1/2 -translate-y-1/2 transition-all duration-300 group-hover/sub:h-[70%] {{ $isAr ? 'rounded-l-full' : 'rounded-r-full' }}">
                                                 </div>
                                                 <span
-                                                    class="transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">{{ $isAr ? $sub['label_ar'] : $sub['label_en'] }}</span>
+                                                    class="transition-transform duration-300 group-hover/sub:{{ $isAr ? '-translate-x-2' : 'translate-x-2' }}">{{ $sub['label'] }}</span>
                                             </a>
                                         @endforeach
                                     </div>
@@ -261,7 +277,7 @@
                     </svg>
                 </a>
                 <button @click="mobileOpen = true" class="text-white p-1"
-                    aria-label="{{ $isAr ? 'القائمة' : 'Menu' }}">
+                    aria-label="{{ $navMenuAria }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" width="24" height="24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
@@ -280,7 +296,7 @@
         <div class="px-4 sm:px-6">
             <div class="flex items-center justify-end h-[72px] gap-6">
                 <button @click="mobileOpen = false" class="text-white p-1 focus:outline-none"
-                    aria-label="{{ $isAr ? 'إغلاق القائمة' : 'Close menu' }}">
+                    aria-label="{{ $navCloseAria }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" width="28" height="28">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -315,10 +331,10 @@
     <div class="px-4 sm:px-6 shrink-0">
         <div class="flex items-center justify-between h-[72px]">
             <a href="{{ route('portal.home') }}" @click="mobileOpen = false" class="flex items-center shrink-0">
-                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy" class="h-[36px] w-auto">
+                <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" class="h-[36px] w-auto">
             </a>
             <button @click="mobileOpen = false" class="text-white p-1 focus:outline-none"
-                aria-label="{{ $isAr ? 'إغلاق القائمة' : 'Close menu' }}">
+                aria-label="{{ $navCloseAria }}">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" width="28" height="28">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -350,7 +366,7 @@
                             <a href="{{ $sub['route'] }}" @click="mobileOpen = false"
                                 class="flex items-center gap-3 py-3 text-[16px] font-semibold text-gray-300 hover:text-white transition-colors">
                                 <span class="w-1.5 h-1.5 rounded-full bg-[#0F807E] shrink-0"></span>
-                                {{ $isAr ? $sub['label_ar'] : $sub['label_en'] }}
+                                {{ $sub['label'] }}
                             </a>
                         @endforeach
                     </div>
@@ -368,10 +384,10 @@
     {{-- Bottom CTA --}}
     <div class="mt-auto px-6 pb-10 shrink-0">
         <div class="w-full h-px bg-white/10 mb-6"></div>
-        <a href="{{ route('portal.register') }}"
+        <a href="{{ $navMobileCta['url'] }}"
             class="flex items-center justify-center w-full bg-[#0F807E] hover:bg-[#0c6665] text-white
                    font-bold text-base py-3 rounded-full transition-colors">
-            {{ $isAr ? 'سجل الآن' : 'Sign Up Now' }}
+            {{ $navMobileCta['label'] }}
         </a>
     </div>
 </div>

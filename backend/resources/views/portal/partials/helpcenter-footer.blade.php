@@ -4,8 +4,9 @@
         <div class="mx-auto max-w-[1000px]">
             <div class="flex flex-col md:flex-row">
                 <div class="mb-6 max-w-xs shrink-0 md:mb-0 {{ $isAr ? 'md:ms-16' : 'md:me-16' }}">
-                    <a class="no-underline flex items-center gap-2" href="{{ route('portal.helpcenter.index', $country ?? 'ae') }}">
-                        <img src="{{ asset('images/nawi-logo.png') }}" alt="Nawy" class="h-[24px] w-auto">
+                    <a class="no-underline flex items-center gap-2" href="{{ route('portal.helpcenter.index', $country ?? \App\Models\Country::resolveSiteCode(null)) }}">
+                        @php($helpcenterFooterLogo = portal_image('helpcenter', 'footer', 'logo', asset('images/nawi-logo.png'), 'Nawy', 'Nawy'))
+                        <img src="{{ $helpcenterFooterLogo['src'] }}" alt="{{ $helpcenterFooterLogo['alt'] }}" class="h-[24px] w-auto">
                         <span class="text-gray-700 font-medium">{{ portal_content('helpcenter', 'footer', 'brand_label', 'Nawy Seller Help Center', 'مركز مساعدة البائع') }}</span>
                     </a>
                 </div>

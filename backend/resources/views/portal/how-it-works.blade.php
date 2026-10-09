@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', session('locale', 'ar') === 'ar' ? 'كيف تبدأ' : 'Getting Started')
+@section('title', portal_content('how-it-works', 'meta', 'title', 'Getting Started', 'كيف تبدأ'))
 
 @section('content')
     @include('portal.partials.getting-started-hero')

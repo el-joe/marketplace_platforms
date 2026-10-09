@@ -1,7 +1,7 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
     $locale = $isAr ? 'ar' : 'en';
-    $country = $country ?? 'ae';
+    $country = $country ?? \App\Models\Country::resolveSiteCode(null);
 
     $solutions = [
         [

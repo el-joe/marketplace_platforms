@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Generic, admin-editable bilingual content block used to power static
@@ -64,7 +65,7 @@ class PortalContent extends Model
      */
     public static function forPage(string $pageKey): Collection
     {
-        $rows = Cache::remember('portal_content:' . $pageKey, 3600, function () use ($pageKey) {
+        $rows = Cache::remember('portal_content:'.$pageKey, 3600, function () use ($pageKey) {
             return static::where('page_key', $pageKey)
                 ->orderBy('block_key')
                 ->orderBy('sort_order')
@@ -76,13 +77,13 @@ class PortalContent extends Model
 
         return collect($rows)
             ->map(function (array $attributes) {
-                $model = new static();
+                $model = new static;
                 $model->setRawAttributes($attributes, true);
                 $model->exists = true;
 
                 return $model;
             })
-            ->keyBy(fn (PortalContent $row) => $row->block_key . '.' . $row->field_key);
+            ->keyBy(fn (PortalContent $row) => $row->block_key.'.'.$row->field_key);
     }
 
     /**
@@ -90,6 +91,27 @@ class PortalContent extends Model
      */
     public static function flush(string $pageKey): void
     {
-        Cache::forget('portal_content:' . $pageKey);
+        Cache::forget('portal_content:'.$pageKey);
+    }
+
+    /**
+     * Turn a stored value_url into a browser-usable URL.
+     *
+     * Absolute URLs (http/https, protocol-relative), mailto:/tel:/# and
+     * site-absolute paths ("/images/logo.png") are returned untouched;
+     * anything else is treated as a path on the "public" disk (admin
+     * uploads are stored that way, e.g. "portal-content/home/x.jpg").
+     */
+    public static function resolveUrl(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        if (preg_match('#^(https?:)?//|^(mailto:|tel:|\#|/)#i', $value)) {
+            return $value;
+        }
+
+        return Storage::disk('public')->url($value);
     }
 }

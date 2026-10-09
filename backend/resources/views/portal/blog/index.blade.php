@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', __('portal.blog.title'))
+@section('title', portal_content('blog', 'meta', 'title', 'Blog', 'المدونة'))
 
 @section('content')
 
@@ -13,7 +13,7 @@
             {{ portal_content('blog', 'header', 'eyebrow', 'Nawy Sellers Blog', 'مدونة ناوي للبائعين') }}
         </span>
         <h1 class="text-4xl sm:text-5xl font-black text-white leading-tight">
-            {{ __('portal.blog.title') }}
+            {{ portal_content('blog', 'header', 'title', 'Blog', 'المدونة') }}
         </h1>
         <p class="text-gray-400 mt-3 text-lg max-w-2xl">
             {{ portal_content('blog', 'header', 'subtitle', 'News, guides and tips from the Nawy platform', 'أخبار وتوجيهات ونصائح من منصة ناوي') }}
@@ -28,14 +28,14 @@
                     <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
-                       placeholder="{{ __('portal.blog.search_blog') }}"
+                       placeholder="{{ portal_content('blog', 'index', 'search_placeholder', 'Search the blog...', 'ابحث في المدونة...') }}"
                        class="w-full rounded-xl border border-gray-700 bg-gray-900 ps-10 pe-4 py-2.5 text-sm text-white
                               placeholder-gray-500 focus:border-[#feee00] focus:ring-1 focus:ring-[#feee00] transition-colors">
             </div>
             <button type="submit"
                     class="text-sm font-bold bg-[#0F807E] hover:bg-[#0c6665] text-gray-950 px-6 py-2.5 rounded-xl
                            transition-colors shadow-lg shadow-[#feee00]/20">
-                {{ __('portal.blog.search') }}
+                {{ portal_content('blog', 'index', 'search_button', 'Search', 'بحث') }}
             </button>
         </form>
     </div>
@@ -78,7 +78,7 @@
                         <span>{{ $featuredPost->published_at->format('d M Y') }}</span>
                         <span>·</span>
                         <span>{{ $featuredPost->reading_time_minutes }}
-                            {{ __('portal.blog.min_read') }}</span>
+                            {{ portal_content('blog', 'index', 'min_read', 'min read', 'دقائق قراءة') }}</span>
                     </div>
                 </div>
             </div>
@@ -93,7 +93,7 @@
               {{ !request('category')
                   ? 'bg-[#0F807E] text-gray-950 border-[#feee00]'
                   : 'bg-gray-900 text-gray-400 border-gray-800 hover:border-gray-600 hover:text-white' }}">
-        {{ __('portal.blog.all') }}
+        {{ portal_content('blog', 'index', 'all_filter', 'All', 'الكل') }}
     </a>
 
     @foreach($categories as $cat)
@@ -115,7 +115,7 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-20">
     @if($posts->isEmpty())
         <div class="py-20 text-center text-gray-500">
-            <p class="text-lg">{{ __('portal.blog.no_posts') }}</p>
+            <p class="text-lg">{{ portal_content('blog', 'index', 'no_posts', 'No posts yet.', 'لا توجد مقالات بعد.') }}</p>
         </div>
     @else
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -1,7 +1,7 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
     $locale = $isAr ? 'ar' : 'en';
-    $country = $country ?? 'ae';
+    $country = $country ?? \App\Models\Country::resolveSiteCode(null);
 
     $solutions = [
         [
@@ -12,7 +12,7 @@
             'link_label' => portal_content('sellers', 'solution_product_ads', 'link_label', 'Learn More', 'اعرف أكثر'),
             'link' => route('portal.advertise.product', $country),
             'internal' => true,
-            'image' => 'https://advertise.noon.com/images/productAds_ar.png',
+            'image' => portal_image('sellers', 'solution_product_ads', 'image', 'https://advertise.noon.com/images/productAds_ar.png', 'Product Ads', 'إعلانات المنتجات'),
         ],
         [
             'title' => portal_content('sellers', 'solution_display_ads', 'title', 'Display Ads', 'إعلانات العرض'),
@@ -22,7 +22,7 @@
             'link_label' => portal_content('sellers', 'solution_display_ads', 'link_label', 'Learn More', 'اعرف أكثر'),
             'link' => route('portal.advertise.display', $country),
             'internal' => true,
-            'image' => 'https://advertise.noon.com/images/productPhone_ar.png',
+            'image' => portal_image('sellers', 'solution_display_ads', 'image', 'https://advertise.noon.com/images/productPhone_ar.png', 'Display Ads', 'إعلانات العرض'),
         ],
         [
             'title' => portal_content('sellers', 'solution_crm_social', 'title', 'CRM and Social Media', 'إدارة العلاقات مع العملاء ووسائل التواصل الاجتماعي'),
@@ -32,7 +32,7 @@
             'link_label' => portal_content('sellers', 'solution_crm_social', 'link_label', 'Contact us to learn more', 'اتصل بنا لمعرفة المزيد'),
             'link' => route('portal.advertise.request', $country),
             'internal' => true,
-            'image' => 'https://advertise.noon.com/images/crm.png',
+            'image' => portal_image('sellers', 'solution_crm_social', 'image', 'https://advertise.noon.com/images/crm.png', 'CRM and Social Media', 'إدارة العلاقات مع العملاء ووسائل التواصل الاجتماعي'),
         ],
         [
             'title' => portal_content('sellers', 'solution_brand_ads', 'title', 'Brand Ads', 'إعلانات العلامة التجارية'),
@@ -42,7 +42,7 @@
             'link_label' => portal_content('sellers', 'solution_brand_ads', 'link_label', 'Learn More', 'اعرف أكثر'),
             'link' => route('portal.advertise.brands', $country),
             'internal' => true,
-            'image' => 'https://advertise.noon.com/images/brandproduct_ar.png',
+            'image' => portal_image('sellers', 'solution_brand_ads', 'image', 'https://advertise.noon.com/images/brandproduct_ar.png', 'Brand Ads', 'إعلانات العلامة التجارية'),
         ],
     ];
 @endphp
@@ -70,7 +70,7 @@
                         </a>
                     </div>
                     <div class="shrink-0 order-1 sm:order-2 w-2/3 sm:w-[160px] lg:w-[200px]">
-                        <img src="{{ $item['image'] }}" alt="{{ $item['title'] }}"
+                        <img src="{{ $item['image']['src'] }}" alt="{{ $item['image']['alt'] }}"
                              loading="lazy" class="w-full h-auto object-contain">
                     </div>
                 </div>

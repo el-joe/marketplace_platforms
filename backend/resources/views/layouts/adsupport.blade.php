@@ -5,12 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __('common.adsupport_home_title'))</title>
-    <meta name="description" content="@yield('description', __('common.adsupport_tagline'))">
+    <title>@yield('title', portal_content('layout', 'adsupport', 'default_title', 'Home | Advertise smarter, grow faster', 'الرئيسية | إعلانات أذكى، نمو أسرع'))</title>
+    <meta name="description" content="@yield('description', portal_content('layout', 'adsupport', 'default_description', 'Advertise smarter, grow faster', 'إعلانات أذكى، نمو أسرع'))">
     <meta name="robots" content="index,follow">
 
-    <link rel="icon" href="https://intercom.help/noon-adsupport/assets/favicon">
-    <link rel="apple-touch-icon" href="https://intercom.help/noon-adsupport/assets/favicon">
+    @php($adsupportFavicon = portal_image('layout', 'adsupport', 'favicon', 'https://intercom.help/noon-adsupport/assets/favicon', 'Favicon', 'أيقونة الموقع'))
+    @php($adsupportHeaderBg = portal_image('layout', 'adsupport', 'header_background', 'https://downloads.intercomcdn.com/i/o/yba8j1xj/658728/3437377f61322d3a669607ae399d/e0dac85e46853ea09592337a020576a3.png', 'Header background', 'خلفية الترويسة'))
+    <link rel="icon" href="{{ $adsupportFavicon['src'] }}">
+    <link rel="apple-touch-icon" href="{{ $adsupportFavicon['src'] }}">
 
     {{-- Inter — same typeface noon's Knowledge Hub uses --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,7 +57,7 @@
                 rgba(255, 255, 255, .84436) 78.58%,
                 rgba(255, 255, 255, .9551) 88.2%,
                 rgba(255, 255, 255, 1) 100%),
-                url(https://downloads.intercomcdn.com/i/o/yba8j1xj/658728/3437377f61322d3a669607ae399d/e0dac85e46853ea09592337a020576a3.png);
+                url('{{ $adsupportHeaderBg['src'] }}');
             background-size: cover;
             background-position-x: center;
         }

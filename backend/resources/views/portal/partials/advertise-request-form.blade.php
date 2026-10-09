@@ -1,7 +1,7 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
     $success = session('advertise_request_success');
-    $country = $country ?? 'ae';
+    $country = $country ?? \App\Models\Country::resolveSiteCode(null);
 
     $fieldClass = fn (string $field) => 'w-full rounded-xl border px-4 py-3 text-sm text-gray-900 placeholder-gray-400 '
         . 'focus:outline-none focus:ring-2 focus:ring-[#feee00]/30 transition-colors '

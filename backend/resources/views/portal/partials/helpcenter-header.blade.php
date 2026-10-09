@@ -12,15 +12,16 @@
             <section class="relative flex w-full flex-col mb-6 pb-6 border-b border-black/5">
                 <div class="flex justify-center px-4 pt-6 leading-none sm:px-8">
                     <div class="flex items-center justify-between w-full lg:w-[1000px]">
-                        <a href="{{ $homeUrl }}" class="flex items-center gap-2" aria-label="Nawy Seller Help Center">
-                            <img src="{{ asset('images/nawi-logo.png') }}" alt="Nawy" class="h-[28px] w-auto">
+                        <a href="{{ $homeUrl }}" class="flex items-center gap-2" aria-label="{{ portal_content('helpcenter', 'header', 'home_aria', 'Nawy Seller Help Center', 'مركز مساعدة بائعي ناوي') }}">
+                            @php($helpcenterLogo = portal_image('helpcenter', 'header', 'logo', asset('images/nawi-logo.png'), 'Nawy', 'Nawy'))
+                            <img src="{{ $helpcenterLogo['src'] }}" alt="{{ $helpcenterLogo['alt'] }}" class="h-[28px] w-auto">
                             <span class="hidden sm:block text-sm font-semibold text-gray-800">{{ portal_content('helpcenter', 'header', 'brand_label', 'Seller Help Center', 'مركز مساعدة البائع') }}</span>
                         </a>
 
                         <div class="flex items-center gap-1 font-medium text-sm">
                             {{-- Language switcher --}}
                             <div class="hidden sm:flex items-center gap-1 me-2">
-                                @php($langToggle = portal_link('helpcenter', 'header', 'language_toggle_desktop', 'English', 'العربية', route('portal.language', $isAr ? 'en' : 'ar')))
+                                @php($langToggle = portal_link('helpcenter', 'header', 'language_toggle_desktop', 'العربية', 'English', route('portal.language', $isAr ? 'en' : 'ar')))
                                 <a href="{{ $langToggle['url'] }}" class="px-2 py-1 rounded hover:bg-black/5 no-underline text-gray-700">
                                     {{ $langToggle['label'] }}
                                 </a>
@@ -58,7 +59,7 @@
                                 <a href="{{ $registerLinkMobile['url'] }}" class="mb-4 no-underline hover:text-[#0B6866]">{{ $registerLinkMobile['label'] }}</a>
                                 @php($contactLinkMobile = portal_link('helpcenter', 'header', 'contact_us', 'Contact us', 'تواصل معنا', 'mailto:seller@noon.com'))
                                 <a href="{{ $contactLinkMobile['url'] }}" class="mb-4 no-underline hover:text-[#0B6866]">{{ $contactLinkMobile['label'] }}</a>
-                                @php($langToggleMobile = portal_link('helpcenter', 'header', 'language_toggle_mobile', 'English', 'العربية', route('portal.language', $isAr ? 'en' : 'ar')))
+                                @php($langToggleMobile = portal_link('helpcenter', 'header', 'language_toggle_mobile', 'العربية', 'English', route('portal.language', $isAr ? 'en' : 'ar')))
                                 <a href="{{ $langToggleMobile['url'] }}" class="mb-4 no-underline hover:text-[#0B6866]">{{ $langToggleMobile['label'] }}</a>
                             </nav>
                         </div>

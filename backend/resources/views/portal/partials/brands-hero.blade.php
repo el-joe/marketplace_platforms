@@ -14,7 +14,7 @@
         'cta_button',
         'Contact us',
         'اتصل بنا',
-        route('portal.advertise.request', $country ?? 'ae'),
+        route('portal.advertise.request', $country ?? \App\Models\Country::resolveSiteCode(null)),
     );
 @endphp
 

@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', session('locale', 'ar') === 'ar' ? 'الأدوات الذكية' : 'Smart Tools')
+@section('title', portal_content('smart-tools', 'meta', 'title', 'Smart Tools', 'الأدوات الذكية'))
 
 @section('content')
     @include('portal.partials.smart-tools-hero')

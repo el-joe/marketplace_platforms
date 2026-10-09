@@ -19,7 +19,7 @@
 @section('content')
     <div class="justify-between flex">
         <div class="relative z-3 w-full lg:max-w-[660px]">
-            <nav class="pb-4 text-base" aria-label="{{ $isAr ? 'مسار التنقل' : 'Breadcrumb' }}">
+            <nav class="pb-4 text-base" aria-label="{{ portal_content('helpcenter', 'common', 'breadcrumb_aria', 'Breadcrumb', 'مسار التنقل') }}">
                 <ol class="m-0 flex list-none flex-wrap items-baseline gap-2 p-0">
                     <li class="flex items-center gap-2">
                         <a href="{{ route('portal.helpcenter.index', $country) }}" class="text-black no-underline hover:text-[#0B6866]">{{ portal_content('helpcenter', 'article', 'all_categories', 'All Categories', 'كل الفئات') }}</a>

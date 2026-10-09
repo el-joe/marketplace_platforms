@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __('common.advertise_title'))</title>
-    <meta name="description" content="@yield('description', __('common.advertise_description'))">
+    <title>@yield('title', portal_content('layout', 'advertise', 'default_title', 'Ad Solutions for Sellers | Nawy', 'حلول الإعلانات للبائعين | ناوي'))</title>
+    <meta name="description" content="@yield('description', portal_content('layout', 'advertise', 'default_description', 'Welcome to the Nawy ads', 'مرحبًا بكم في إعلانات ناوي'))">
     <meta name="robots" content="index,follow">
 
     <link rel="preconnect" href="https://fonts.bunny.net">

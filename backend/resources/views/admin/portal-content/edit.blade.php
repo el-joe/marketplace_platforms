@@ -63,20 +63,32 @@
                             @if($row->type === \App\Enums\PortalContentType::Link)
                                 <div>
                                     <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.url') }}</label>
-                                    <input type="text" name="fields[{{ $row->id }}][value_url]" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
+                                    <input type="text" name="fields[{{ $row->id }}][value_url]" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
                                 </div>
                             @endif
 
                             @if($row->type === \App\Enums\PortalContentType::Image)
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.image_file') }}</label>
-                                    <input type="file" name="fields[{{ $row->id }}][value_file]" accept="image/*" class="w-full rounded-lg border-gray-300 text-sm">
-                                    @error("fields.{$row->id}.value_file")
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
+                                <div class="space-y-2">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.image_url') }}</label>
+                                        <input type="text" name="fields[{{ $row->id }}][value_url]" value="{{ old("fields.{$row->id}.value_url", $row->value_url) }}" placeholder="{{ __('admin.portal_content.image_url_hint') }}" class="w-full rounded-lg border-gray-300 text-sm font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.portal_content.image_file') }}</label>
+                                        <input type="file" name="fields[{{ $row->id }}][value_file]" accept="image/*" class="w-full rounded-lg border-gray-300 text-sm">
+                                        @error("fields.{$row->id}.value_file")
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
                                     @if($row->value_url)
-                                        <img src="{{ \Illuminate\Support\Str::startsWith($row->value_url, ['http://', 'https://']) ? $row->value_url : \Illuminate\Support\Facades\Storage::disk('public')->url($row->value_url) }}"
-                                             alt="" class="mt-2 h-16 rounded border border-gray-200 object-cover">
+                                        <div class="flex items-center gap-3">
+                                            <img src="{{ \App\Models\PortalContent::resolveUrl($row->value_url) }}"
+                                                 alt="" class="h-16 rounded border border-gray-200 object-cover">
+                                            <label class="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                                                <input type="checkbox" name="fields[{{ $row->id }}][reset_image]" value="1" class="rounded border-gray-300">
+                                                {{ __('admin.portal_content.reset_image') }}
+                                            </label>
+                                        </div>
                                     @endif
                                 </div>
                             @endif
