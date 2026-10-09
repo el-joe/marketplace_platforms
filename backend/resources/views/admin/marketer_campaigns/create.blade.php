@@ -68,7 +68,7 @@
                     <input type="text" name="currency" id="currency" readonly required
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm bg-gray-50 cursor-not-allowed uppercase" />
                     <p class="text-xs text-gray-500 mt-1">
-                        Automatically set from the selected country.
+                        {{ __('admin.static_text.admin_marketer_campaigns_create.automatically_set_from_the_selected_coun') }}
                     </p>
                 </div>
 

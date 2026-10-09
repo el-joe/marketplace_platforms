@@ -51,7 +51,7 @@
                 <h2 class="text-lg font-bold text-gray-900">{{ $listing->title }}</h2>
                 <p class="text-2xl font-bold text-primary-600 mt-1">{{ $listing->price_formatted }}</p>
                 @if($listing->price_negotiable)
-                    <p class="text-xs text-gray-500 mt-0.5">السعر قابل للتفاوض</p>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ __('common.static_text.storefront_classifieds_show.price_is_negotiable') }}</p>
                 @endif
             </div>
         </div>
@@ -81,7 +81,7 @@
         {{-- Category attributes --}}
         @if(!empty($listing->attributes))
         <div class="bg-gray-50 rounded-xl p-4">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">التفاصيل</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('common.static_text.storefront_classifieds_show.details') }}</h3>
             <dl class="grid grid-cols-2 gap-2">
                 @foreach($listing->attributes as $key => $value)
                 <div>
@@ -96,7 +96,7 @@
         {{-- Description --}}
         @if($listing->description_ar || $listing->description_en)
         <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-2">الوصف</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">{{ __('common.static_text.storefront_classifieds_show.description') }}</h3>
             <p class="text-sm text-gray-600 leading-relaxed">
                 {{ app()->getLocale() === 'ar' ? $listing->description_ar : $listing->description_en }}
             </p>
@@ -106,7 +106,7 @@
         {{-- Map --}}
         @if($listing->latitude && $listing->longitude)
         <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-2">الموقع</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">{{ __('common.static_text.storefront_classifieds_show.location') }}</h3>
             <div id="detail-map" class="w-full h-48 rounded-xl overflow-hidden border border-gray-200"
                  data-lat="{{ $listing->latitude }}" data-lng="{{ $listing->longitude }}"
                  data-title="{{ $listing->title }}">
@@ -117,12 +117,12 @@
         {{-- Sketch --}}
         @if($listing->sketch_file_path)
         <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-2">المخطط / الكروكي</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">{{ __('common.static_text.storefront_classifieds_show.floor_plan_sketch') }}</h3>
             <a href="{{ \Illuminate\Support\Facades\Storage::url($listing->sketch_file_path) }}"
                target="_blank"
                class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl text-sm text-primary-600">
                 <x-heroicon name="document" class="w-5 h-5" />
-                عرض المخطط
+                {{ __('common.static_text.storefront_classifieds_show.view_plan') }}
             </a>
         </div>
         @endif
@@ -137,27 +137,27 @@
 
         {{-- Inquiry form --}}
         <div class="bg-primary-50 rounded-xl p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">تواصل مع البائع</h3>
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">{{ __('common.static_text.storefront_classifieds_show.contact_the_seller') }}</h3>
             <form id="inquiry-form" class="space-y-3">
                 @csrf
-                <textarea name="message" rows="3" placeholder="اكتب رسالتك هنا..."
+                <textarea name="message" rows="3" placeholder="{{ __('common.static_text.storefront_classifieds_show.write_your_message_here') }}"
                           class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
                 <input name="contact_phone" type="tel" placeholder="رقم هاتفك (اختياري)"
                        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <button type="submit"
                         class="w-full py-2.5 bg-primary-600 text-white rounded-lg text-sm font-semibold">
-                    إرسال الاستفسار
+                    {{ __('common.static_text.storefront_classifieds_show.send_inquiry') }}
                 </button>
             </form>
             <p id="inquiry-success" class="hidden text-center text-sm text-emerald-700 mt-2 font-medium">
-                تم إرسال استفسارك بنجاح ✓
+                {{ __('common.static_text.storefront_classifieds_show.your_inquiry_was_sent_successfully') }}
             </p>
         </div>
 
         {{-- Related listings --}}
         @if($related->isNotEmpty())
         <div>
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">إعلانات مشابهة</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('common.static_text.storefront_classifieds_show.similar_ads') }}</h3>
             <div class="grid grid-cols-2 gap-3">
                 @foreach($related as $rel)
                 <a href="{{ route('classifieds.show', [$country, $rel->listing_number]) }}"

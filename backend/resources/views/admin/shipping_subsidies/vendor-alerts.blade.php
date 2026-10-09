@@ -5,7 +5,7 @@
 @section('content')
 
     <div class="mb-6 flex items-center gap-2">
-        <h1 class="text-2xl font-bold text-gray-900">Vendor Exceptional Zone Alerts</h1>
+        <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.vendor_exceptional_zone_alerts') }}</h1>
         @if($pending->count())
             <span class="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">{{ $pending->count() }} pending</span>
         @endif
@@ -38,7 +38,7 @@
                         <p>Warehouse: <strong>{{ $alert->warehouse->name }}</strong> ({{ $alert->warehouse->code }})</p>
                         <p>Carrier: <strong>{{ $alert->carrier->name ?? 'All carriers' }}</strong></p>
                         <p class="text-orange-700">
-                            Reported carrier fee: <strong>{{ $alert->reported_carrier_fee }} {{ $alert->currency }}</strong>
+                            {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.reported_carrier_fee') }} <strong>{{ $alert->reported_carrier_fee }} {{ $alert->currency }}</strong>
                         </p>
                     </div>
                     <div class="mt-2 flex flex-wrap gap-1">
@@ -90,7 +90,7 @@
                                 <div class="mb-4 p-3 bg-gray-50 border rounded-lg grid grid-cols-2 gap-4">
                                     @if(collect($zonesDetected)->contains(fn($g) => !$g['has_zone']))
                                         <div>
-                                            <label class="text-xs text-gray-500">Apply one zone to all unassigned zones</label>
+                                            <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.apply_one_zone_to_all_unassigned') }}</label>
                                             <div class="flex gap-2 mt-1">
                                                 <select id="bulk-zone-{{ $alert->id }}" class="w-full border rounded-lg px-3 py-2 text-sm">
                                                     <option value="">Select a zone&hellip;</option>
@@ -100,13 +100,13 @@
                                                 </select>
                                                 <button type="button" onclick="applyZoneToAll('{{ $alert->id }}')"
                                                         class="px-3 py-2 border rounded-lg text-sm whitespace-nowrap hover:bg-gray-100">
-                                                    Apply to all
+                                                    {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.apply_to_all') }}
                                                 </button>
                                             </div>
                                         </div>
                                     @endif
                                     <div>
-                                        <label class="text-xs text-gray-500">Apply one shipping method to all zones</label>
+                                        <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.apply_one_shipping_method_to_all') }}</label>
                                         <div class="flex gap-2 mt-1">
                                             <select id="bulk-method-{{ $alert->id }}" class="w-full border rounded-lg px-3 py-2 text-sm">
                                                 <option value="">Select a method&hellip;</option>
@@ -116,7 +116,7 @@
                                             </select>
                                             <button type="button" onclick="applyMethodToAll('{{ $alert->id }}')"
                                                     class="px-3 py-2 border rounded-lg text-sm whitespace-nowrap hover:bg-gray-100">
-                                                Apply to all
+                                                {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.apply_to_all') }}
                                             </button>
                                         </div>
                                     </div>
@@ -137,7 +137,7 @@
                                     @else
                                         <div class="mb-3">
                                             <label class="text-xs text-gray-500">
-                                                These cities have no zone assigned — pick a zone to configure the subsidy for
+                                                {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.these_cities_have_no_zone_assigned') }}
                                             </label>
                                             <select name="zone_configs[{{ $i }}][zone_id]" required
                                                     class="mt-1 w-full border rounded-lg px-3 py-2 text-sm zone-select-{{ $alert->id }}">
@@ -151,7 +151,7 @@
 
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label class="text-xs text-gray-500">Shipping Method</label>
+                                            <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.shipping_method') }}</label>
                                             <select name="zone_configs[{{ $i }}][shipping_method_id]" required
                                                     class="mt-1 w-full border rounded-lg px-3 py-2 text-sm method-select-{{ $alert->id }}">
                                                 <option value="all">{{ __('admin.shipping_subsidies.all_methods') }}</option>
@@ -161,7 +161,7 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="text-xs text-gray-500">Carrier Base Fee</label>
+                                            <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.carrier_base_fee') }}</label>
                                             <input type="number" name="zone_configs[{{ $i }}][carrier_rate]" min="1" required
                                                    value="{{ $alert->reported_carrier_fee }}"
                                                    class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
@@ -169,7 +169,7 @@
                                     </div>
                                     <div class="grid grid-cols-2 gap-4 mt-3">
                                         <div>
-                                            <label class="text-xs text-gray-500">Carrier Rate per KG</label>
+                                            <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.carrier_rate_per_kg') }}</label>
                                             <input type="number" name="zone_configs[{{ $i }}][carrier_rate_per_kg]" min="0" value="0" required
                                                    class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                         </div>
@@ -184,7 +184,7 @@
                                     </div>
 
                                     <div class="mt-3">
-                                        <label class="text-xs text-gray-500">Admin Cap per Delivery</label>
+                                        <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.admin_cap_per_delivery') }}</label>
                                         <input type="number" name="zone_configs[{{ $i }}][subsidy_cap]" min="0" value="0" required
                                                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                     </div>
@@ -198,7 +198,7 @@
                                         <label class="flex items-center gap-2 text-sm cursor-pointer">
                                             <input type="radio" name="zone_configs[{{ $i }}][split_type]" value="fixed"
                                                    onchange="setSplitType('{{ $alert->id }}-{{ $i }}', 'fixed')">
-                                            Fixed Amounts
+                                            {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.fixed_amounts') }}
                                         </label>
                                     </div>
 
@@ -208,18 +208,18 @@
                                             <div class="flex items-center gap-2 mt-1">
                                                 <input type="number" name="zone_configs[{{ $i }}][vendor_share_pct]" min="0" max="100" value="50" class="w-20 border rounded-lg px-3 py-2 text-sm">
                                                 <span class="text-sm text-gray-500">%</span>
-                                                <span class="text-xs text-gray-400">Admin absorbs the rest</span>
+                                                <span class="text-xs text-gray-400">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.admin_absorbs_the_rest') }}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div id="split-fixed-{{ $alert->id }}-{{ $i }}" class="hidden grid grid-cols-2 gap-4">
                                         <div>
-                                            <label class="text-xs text-gray-500">Vendor fixed per delivery</label>
+                                            <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.vendor_fixed_per_delivery') }}</label>
                                             <input type="number" name="zone_configs[{{ $i }}][vendor_fixed_amount]" min="0" value="0" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                         </div>
                                         <div>
-                                            <label class="text-xs text-gray-500">Admin fixed per delivery</label>
+                                            <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.admin_fixed_per_delivery') }}</label>
                                             <input type="number" name="zone_configs[{{ $i }}][admin_fixed_amount]" min="0" value="0" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                         </div>
                                     </div>
@@ -229,11 +229,11 @@
                             <div class="mb-4">
                                 <label class="text-xs text-gray-500">Note to Vendor (optional)</label>
                                 <input type="text" name="admin_note" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" maxlength="500"
-                                       placeholder="e.g. Configured 50/50 split based on zone volume">
+                                       placeholder="{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.e_g_configured_50_50_split') }}">
                             </div>
 
                             <button type="submit" class="w-full bg-green-600 text-white rounded-lg py-2.5 text-sm font-semibold">
-                                Accept & Create All Records
+                                {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.accept_create_all_records') }}
                             </button>
                         </form>
                     </div>
@@ -244,24 +244,24 @@
             <div id="reject-{{ $alert->id }}" class="hidden mt-4 border-t pt-4">
                 <form method="POST" action="{{ route('admin.shipping-subsidies.alerts.reject', $alert) }}">
                     @csrf
-                    <label class="text-xs text-gray-500">Rejection Reason <span class="text-red-500">*</span></label>
+                    <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.rejection_reason') }} <span class="text-red-500">*</span></label>
                     <input type="text" name="admin_note" required maxlength="500"
                            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm mb-3"
-                           placeholder="e.g. Zone not eligible for subsidy at this time">
+                           placeholder="{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.e_g_zone_not_eligible_for') }}">
                     <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm rounded-lg">
-                        Confirm Rejection
+                        {{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.confirm_rejection') }}
                     </button>
                 </form>
             </div>
 
         </div>
     @empty
-        <p class="text-gray-400 text-sm py-4">No pending alerts from vendors.</p>
+        <p class="text-gray-400 text-sm py-4">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.no_pending_alerts_from_vendors') }}</p>
     @endforelse
 
     @if($reviewed->isNotEmpty())
         <div class="mt-10">
-            <h2 class="text-base font-semibold text-gray-900 mb-4">Reviewed Alerts</h2>
+            <h2 class="text-base font-semibold text-gray-900 mb-4">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.reviewed_alerts') }}</h2>
             <x-card padding="none">
                 <table class="table-base w-full">
                     <thead>

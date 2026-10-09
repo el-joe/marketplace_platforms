@@ -79,12 +79,12 @@ export default function CustomAttributesModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm md:text-base font-semibold">
-          {t.has("customize") ? t("customize") : "Customize your item"}
+          {t("customize")}
         </h3>
 
         {sizeGuide && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={sizeGuide} alt="Size guide" className="max-h-48 object-contain rounded-md border" />
+          <img src={sizeGuide} alt={t("sizeGuide")} className="max-h-48 object-contain rounded-md border" />
         )}
         <div className="flex flex-col gap-3">
           {sorted.map((attr) => (
@@ -141,10 +141,10 @@ export default function CustomAttributesModal({
 
         <div className="flex gap-2 justify-end">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            Add to cart
+            {t("addToCart")}
           </Button>
         </div>
       </div>

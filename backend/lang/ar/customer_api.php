@@ -141,4 +141,11 @@ return [
         'items_moved'           => 'تم نقل :count عنصر.',
     ],
 
+    'wallet' => [
+        'not_found_for_currency' => 'لا توجد محفظة لهذه العملة.',
+        'frozen' => 'محفظتك مجمّدة. يرجى التواصل مع الدعم.',
+        'insufficient_balance' => 'رصيد المحفظة غير كافٍ.',
+        'pending_withdrawal_exists' => 'لديك طلب سحب قيد المعالجة بالفعل.',
+        'withdrawal_submitted' => 'تم إرسال طلب السحب بنجاح.',
+    ],
 ];

@@ -66,7 +66,7 @@
                 <div>
                     <div class="font-semibold text-gray-900 text-sm">{{ $product?->name_ar ?? $invitation->campaign->title ?? __('marketer.invitations.campaign_default_label') }}</div>
                     <div class="text-xs text-gray-500">
-                        {{ $invitation->campaign->vendor->name ?? 'نون' }} •
+                        {{ $invitation->campaign->vendor->name ?? 'ناوي' }} •
                         {{ $invitation->campaign->country->name_ar ?? '' }} •
                         {{ __('marketer.dashboard.expires_in') }} {{ $invitation->expires_at?->diffForHumans() ?? __('marketer.dashboard.soon') }}
                     </div>

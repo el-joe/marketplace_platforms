@@ -9,7 +9,7 @@
         <h2 class="text-xl font-bold text-gray-900">Contract for {{ $marketer->name }}</h2>
         <a href="{{ route('admin.marketers.contract.acceptances', $marketer) }}"
            class="text-sm px-3 py-1.5 rounded border text-gray-600 hover:bg-gray-50">
-            View Acceptance Log
+            {{ __('admin.static_text.admin_marketers_contract.view_acceptance_log') }}
         </a>
     </div>
 
@@ -23,7 +23,7 @@
     <form method="POST" action="{{ route('admin.marketers.contract.required', $marketer) }}" class="bg-white rounded-xl border p-4 flex items-center gap-3">
         @csrf
         <input type="hidden" name="is_required" value="0">
-        <label class="text-sm flex items-center gap-2"><input type="checkbox" name="is_required" value="1" @checked($contract->is_required) onchange="this.form.submit()"> Contract required at checkout</label>
+        <label class="text-sm flex items-center gap-2"><input type="checkbox" name="is_required" value="1" @checked($contract->is_required) onchange="this.form.submit()"> {{ __('admin.static_text.admin_marketers_contract.contract_required_at_checkout') }}</label>
     </form>
     @endif
 
@@ -39,7 +39,7 @@
             @if($activeVersion->content_type === 'pdf')
                 <a href="{{ route('admin.marketers.contract.download', [$marketer, $activeVersion]) }}"
                    class="inline-block text-sm px-3 py-1.5 rounded border text-blue-600 hover:bg-blue-50">
-                    Download PDF
+                    {{ __('admin.static_text.admin_marketers_contract.download_pdf') }}
                 </a>
             @else
                 <div class="border rounded-lg p-3 bg-gray-50 text-sm max-h-72 overflow-auto">
@@ -48,13 +48,13 @@
             @endif
         @else
             <div class="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                No contract uploaded yet.
+                {{ __('admin.static_text.admin_marketers_contract.no_contract_uploaded_yet') }}
             </div>
         @endif
     </div>
 
         <div class="bg-white rounded-xl border p-6">
-        <div class="font-semibold text-gray-900 mb-3">Version History</div>
+        <div class="font-semibold text-gray-900 mb-3">{{ __('admin.static_text.admin_marketers_contract.version_history') }}</div>
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 border-b">
@@ -92,12 +92,12 @@
     </div>
 
     <div class="bg-white rounded-xl border p-6" x-data="{ type: 'pdf' }">
-        <div class="font-semibold text-gray-900 mb-3">Upload New Version</div>
+        <div class="font-semibold text-gray-900 mb-3">{{ __('admin.static_text.admin_marketers_contract.upload_new_version') }}</div>
         <form method="POST" action="{{ route('admin.marketers.contract.upload', $marketer) }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Contract Type</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_marketers_contract.contract_type') }}</label>
                 <select name="content_type" x-model="type" class="w-full border rounded-lg px-3 py-2 text-sm">
                     <option value="pdf">{{ __('admin.marketers.pdf_file') }}</option>
                     <option value="text">Text (plain, escaped)</option>
@@ -110,7 +110,7 @@
             </div>
 
             <div x-show="type === 'text'">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Contract Text</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_marketers_contract.contract_text') }}</label>
                 <textarea name="text_content" rows="8" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
             </div>
 
@@ -126,11 +126,11 @@
             </div>
 
             <div class="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                Uploading a new version deactivates the current version. Existing customer acceptances remain linked to their original version.
+                {{ __('admin.static_text.admin_marketers_contract.uploading_a_new_version_deactivates_the') }}
             </div>
 
             <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
-                Upload New Version
+                {{ __('admin.static_text.admin_marketers_contract.upload_new_version') }}
             </button>
         </form>
     </div>

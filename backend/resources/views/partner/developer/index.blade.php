@@ -12,8 +12,8 @@
         <div class="flex items-start gap-3">
             <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
             <div class="flex-1 min-w-0">
-                <p class="font-semibold text-green-800">Token generated — copy it now</p>
-                <p class="text-sm text-green-700 mt-0.5">This is the only time it will be displayed. Store it securely.</p>
+                <p class="font-semibold text-green-800">{{ __('partner.static_text.partner_developer_index.token_generated_copy_it_now') }}</p>
+                <p class="text-sm text-green-700 mt-0.5">{{ __('partner.static_text.partner_developer_index.this_is_the_only_time_it') }}</p>
                 <div class="mt-3 flex items-center gap-2">
                     <code id="new-token-value" class="flex-1 break-all rounded-lg bg-green-100 px-3 py-2 text-sm font-mono text-green-900 select-all">{{ session('new_token') }}</code>
                     <button onclick="copyToken()" class="flex-shrink-0 rounded-lg border border-green-300 bg-white px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-50 transition">Copy</button>
@@ -29,15 +29,15 @@
 
     {{-- Page header --}}
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Developer API</h1>
-        <p class="mt-1 text-sm text-gray-500">Manage your permanent API tokens and browse the Partner API documentation.</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ __('partner.static_text.partner_developer_index.developer_api') }}</h1>
+        <p class="mt-1 text-sm text-gray-500">{{ __('partner.static_text.partner_developer_index.manage_your_permanent_api_tokens_and') }}</p>
     </div>
 
     {{-- Tabs --}}
     <div class="mb-6 border-b border-gray-200">
         <nav class="-mb-px flex gap-6">
             <button @click="tab = 'tokens'" :class="tab === 'tokens' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="border-b-2 pb-3 text-sm font-medium transition whitespace-nowrap">
-                API Tokens
+                {{ __('partner.static_text.partner_developer_index.api_tokens') }}
             </button>
             <button @click="tab = 'docs'" :class="tab === 'docs' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="border-b-2 pb-3 text-sm font-medium transition whitespace-nowrap">
                 Documentation
@@ -51,13 +51,13 @@
     <div x-show="tab === 'tokens'">
         <div class="mb-4 flex items-center justify-between">
             <div>
-                <h2 class="text-base font-semibold text-gray-900">Permanent API Tokens</h2>
-                <p class="text-sm text-gray-500 mt-0.5">Use these tokens to authenticate external partner integrations (prefix: <code class="text-xs bg-gray-100 rounded px-1">vnd_</code>).</p>
+                <h2 class="text-base font-semibold text-gray-900">{{ __('partner.static_text.partner_developer_index.permanent_api_tokens') }}</h2>
+                <p class="text-sm text-gray-500 mt-0.5">{{ __('partner.static_text.partner_developer_index.use_these_tokens_to_authenticate_externa') }} <code class="text-xs bg-gray-100 rounded px-1">vnd_</code>).</p>
             </div>
             @if(auth()->guard('vendor')->user()->is_owner || auth()->guard('vendor')->user()->isManager())
             <button @click="showCreate = true" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                Generate Token
+                {{ __('partner.static_text.partner_developer_index.generate_token') }}
             </button>
             @endif
         </div>
@@ -66,7 +66,7 @@
         @if($tokens->isEmpty())
         <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 py-12 text-center">
             <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 18.75 8.25Z" /></svg>
-            <p class="mt-3 text-sm text-gray-500">No API tokens yet.</p>
+            <p class="mt-3 text-sm text-gray-500">{{ __('partner.static_text.partner_developer_index.no_api_tokens_yet') }}</p>
         </div>
         @else
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -75,7 +75,7 @@
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Name</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Prefix</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Last Used</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">{{ __('partner.static_text.partner_developer_index.last_used') }}</th>
                         <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Created</th>
                         @if(auth()->guard('vendor')->user()->is_owner || auth()->guard('vendor')->user()->isManager())
                         <th class="px-4 py-3"></th>
@@ -103,10 +103,10 @@
 
         {{-- Auth info --}}
         <div class="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
-            <h3 class="text-sm font-semibold text-blue-900 mb-2">How to authenticate</h3>
-            <p class="text-sm text-blue-800 mb-3">Pass your token as a Bearer token in the <code class="bg-blue-100 rounded px-1">Authorization</code> header:</p>
+            <h3 class="text-sm font-semibold text-blue-900 mb-2">{{ __('partner.static_text.partner_developer_index.how_to_authenticate') }}</h3>
+            <p class="text-sm text-blue-800 mb-3">{{ __('partner.static_text.partner_developer_index.pass_your_token_as_a_bearer') }} <code class="bg-blue-100 rounded px-1">Authorization</code> header:</p>
             <pre class="rounded-lg bg-blue-900 text-blue-100 text-xs p-4 overflow-x-auto">Authorization: Bearer vnd_YOUR_TOKEN_HERE</pre>
-            <p class="text-xs text-blue-700 mt-3">Mobile app users authenticate with email/password via <code class="bg-blue-100 rounded px-1">POST /api/partner/v1/auth/login</code> (JWT).</p>
+            <p class="text-xs text-blue-700 mt-3">{{ __('partner.static_text.partner_developer_index.mobile_app_users_authenticate_with_email') }} <code class="bg-blue-100 rounded px-1">POST /api/partner/v1/auth/login</code> (JWT).</p>
         </div>
     </div>
 
@@ -117,11 +117,11 @@
 
         <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-100 bg-gray-50">
-                <h3 class="font-semibold text-gray-900">Base URL</h3>
+                <h3 class="font-semibold text-gray-900">{{ __('partner.static_text.partner_developer_index.base_url') }}</h3>
             </div>
             <div class="px-5 py-4">
                 <code class="text-sm bg-gray-100 rounded px-3 py-2 block">{{ rtrim(config('app.url'), '/') }}/api/partner/v1</code>
-                <p class="mt-3 text-sm text-gray-600">All requests must include <code class="bg-gray-100 rounded px-1 text-xs">Accept: application/json</code>.</p>
+                <p class="mt-3 text-sm text-gray-600">{{ __('partner.static_text.partner_developer_index.all_requests_must_include') }} <code class="bg-gray-100 rounded px-1 text-xs">Accept: application/json</code>.</p>
             </div>
         </div>
 
@@ -169,14 +169,14 @@
     {{-- Generate token modal --}}
     <div x-show="showCreate" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" @keydown.escape.window="showCreate = false" style="display:none">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" @click.stop>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Generate API Token</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('partner.static_text.partner_developer_index.generate_api_token') }}</h3>
             <form method="POST" action="{{ route('partner.developer.tokens.store') }}">
                 @csrf
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Token Name</label>
-                    <input type="text" name="name" required maxlength="100" placeholder="e.g. Production Integration"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.static_text.partner_developer_index.token_name') }}</label>
+                    <input type="text" name="name" required maxlength="100" placeholder="{{ __('partner.static_text.partner_developer_index.e_g_production_integration') }}"
                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none">
-                    <p class="mt-1 text-xs text-gray-500">Give it a descriptive name to identify where it is used.</p>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('partner.static_text.partner_developer_index.give_it_a_descriptive_name_to') }}</p>
                 </div>
                 @error('name')
                 <p class="mb-3 text-sm text-red-600">{{ $message }}</p>
@@ -192,8 +192,8 @@
     {{-- Revoke confirmation modal --}}
     <div x-show="showRevoke" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" @keydown.escape.window="showRevoke = false" style="display:none">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" @click.stop>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Revoke Token</h3>
-            <p class="text-sm text-gray-600 mb-5">Are you sure you want to revoke <strong x-text="revokeTokenName"></strong>? Any integration using it will stop working immediately.</p>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('partner.static_text.partner_developer_index.revoke_token') }}</h3>
+            <p class="text-sm text-gray-600 mb-5">{{ __('partner.static_text.partner_developer_index.are_you_sure_you_want_to') }} <strong x-text="revokeTokenName"></strong>{{ __('partner.static_text.partner_developer_index.any_integration_using_it_will_stop') }}</p>
             <form :action="`{{ url('partner/developer/tokens') }}/${revokeTokenId}`" method="POST" class="flex justify-end gap-3">
                 @csrf
                 @method('DELETE')

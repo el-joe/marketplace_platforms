@@ -187,7 +187,7 @@
                         </div>
 
                         <div class="pt-2 border-t border-gray-100">
-                            <div class="text-xs text-gray-500">{{ __('admin.blog.reading_time') }}: <span id="reading-time-display" class="font-medium text-gray-700">~1 min read</span></div>
+                            <div class="text-xs text-gray-500">{{ __('admin.blog.reading_time') }}: <span id="reading-time-display" class="font-medium text-gray-700">{{ __('admin.static_text.admin_blog_posts_create.1_min_read') }}</span></div>
                         </div>
                     </div>
                 </x-card>

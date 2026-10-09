@@ -564,7 +564,7 @@
 
                 <div class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center" style="min-height:120px">
                     <template x-if="imageUrl">
-                        <img :src="imageUrl" alt="Category image" class="max-w-full max-h-48 object-contain" />
+                        <img :src="imageUrl" alt="{{ __('admin.static_text.admin_categories_form.category_image') }}" class="max-w-full max-h-48 object-contain" />
                     </template>
                     <template x-if="!imageUrl">
                         <span class="text-xs text-gray-400">{{ __('admin.categories.no_image_yet') }}</span>

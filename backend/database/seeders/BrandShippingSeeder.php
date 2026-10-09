@@ -31,7 +31,7 @@ class BrandShippingSeeder extends Seeder
             ['name_en' => 'Dove', 'name_ar' => 'دوف', 'website_url' => 'https://dove.com'],
             ['name_en' => 'Tefal', 'name_ar' => 'تيفال', 'website_url' => 'https://tefal.com'],
             ['name_en' => 'IKEA', 'name_ar' => 'إيكيا', 'website_url' => 'https://ikea.com'],
-            ['name_en' => 'Noon Brand', 'name_ar' => 'ماركة نون', 'website_url' => 'https://noon.com'],
+            ['name_en' => 'Nawy Brand', 'name_ar' => 'ماركة ناوي', 'website_url' => 'https://noon.com'],
         ];
 
         $brandIds = [];

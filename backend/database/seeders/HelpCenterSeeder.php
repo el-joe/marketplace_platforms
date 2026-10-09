@@ -16,8 +16,8 @@ class HelpCenterSeeder extends Seeder
         $ae = Country::find('AE') ?? Country::where('iso_code_2', 'AE')->first();
 
         $categories = [
-            ['slug' => 'getting-started', 'name' => 'Getting Started', 'description' => 'Everything you need to start selling on noon — account setup, listing your first product, and understanding the seller portal.', 'icon' => null, 'sort_order' => 1],
-            ['slug' => 'fulfilled-by-noon-fbn', 'name' => 'Fulfilled by noon (FBN)', 'description' => 'Learn how noon stores, picks, packs and ships your products for you, and how FBN fees are calculated.', 'icon' => null, 'sort_order' => 2],
+            ['slug' => 'getting-started', 'name' => 'Getting Started', 'description' => 'Everything you need to start selling on Nawy — account setup, listing your first product, and understanding the seller portal.', 'icon' => null, 'sort_order' => 1],
+            ['slug' => 'fulfilled-by-noon-fbn', 'name' => 'Fulfilled by Nawy (FBN)', 'description' => 'Learn how Nawy stores, picks, packs and ships your products for you, and how FBN fees are calculated.', 'icon' => null, 'sort_order' => 2],
             ['slug' => 'orders-shipping', 'name' => 'Orders & Shipping', 'description' => 'Manage orders, print shipping labels, and track deliveries.', 'icon' => null, 'sort_order' => 3],
             ['slug' => 'returns', 'name' => 'Returns', 'description' => 'How customer returns work and how to process them.', 'icon' => null, 'sort_order' => 4],
             ['slug' => 'finance-and-payments', 'name' => 'Finance & Payments', 'description' => 'Statements, payouts, invoices and everything related to getting paid.', 'icon' => null, 'sort_order' => 5],
@@ -53,8 +53,8 @@ class HelpCenterSeeder extends Seeder
                 'help_center_category_id' => $fbnFeesSub->id,
                 'author_admin_id' => $author?->id,
                 'country_id' => $ae?->site_code,
-                'title' => 'رسوم الاستيفاء بواسطة نون (FBN) في الإمارات العربية المتحدة',
-                'excerpt' => 'تفاصيل كافة الرسوم المطبقة على العناصر التي يتم شحنها بواسطة نون (FBN) في دولة الإمارات العربية المتحدة، اعتباراً من 1 سبتمبر 2025.',
+                'title' => 'رسوم الاستيفاء بواسطة ناوي (FBN) في الإمارات العربية المتحدة',
+                'excerpt' => 'تفاصيل كافة الرسوم المطبقة على العناصر التي يتم شحنها بواسطة ناوي (FBN) في دولة الإمارات العربية المتحدة، اعتباراً من 1 سبتمبر 2025.',
                 'body' => $this->fbnFeesUaeBody(),
                 'status' => 'published',
                 'published_at' => now()->subMonths(3),
@@ -69,7 +69,7 @@ class HelpCenterSeeder extends Seeder
         $this->stub($fbnFeesSub->id, $author?->id, $ae?->site_code, 'how-can-i-track-my-rtv-shipments-and-notifications', 'كيف يمكنني تتبع شحنات المرتجعات إلى البائع (RTV) والإشعارات الخاصة بها؟');
         $this->stub($created['fulfilled-by-noon-fbn']->id, $author?->id, null, 'how-to-calculate-the-fbn-outbound-fee-and-the-inventory-removal-fee-in-uae', 'كيفية حساب رسوم FBN الصادرة ورسوم إزالة المخزون في الإمارات');
         $this->stub($created['fulfilled-by-noon-fbn']->id, $author?->id, null, 'receiving-methods-for-rtv-delivery', 'طرق استلام المرتجعات');
-        $this->stub($created['fulfilled-by-noon-fbn']->id, $author?->id, null, 'partial-rtv-handover-in-noon-hubs', 'عملية تسليم المرتجعات الجزئية في مستودعات نون');
+        $this->stub($created['fulfilled-by-noon-fbn']->id, $author?->id, null, 'partial-rtv-handover-in-noon-hubs', 'عملية تسليم المرتجعات الجزئية في مستودعات ناوي');
 
         // ── Getting Started stubs ────────────────────────────────────────────
         $this->stub($created['getting-started']->id, $author?->id, null, 'how-to-create-a-seller-account', 'How to Create a Seller Account');
@@ -80,7 +80,7 @@ class HelpCenterSeeder extends Seeder
         $this->stub($created['orders-shipping']->id, $author?->id, null, 'how-to-print-a-shipping-label', 'How to Print a Shipping Label');
 
         // ── Returns stubs ─────────────────────────────────────────────────────
-        $this->stub($created['returns']->id, $author?->id, null, 'how-returns-work-on-noon', 'How Returns Work on noon');
+        $this->stub($created['returns']->id, $author?->id, null, 'how-returns-work-on-noon', 'How Returns Work on Nawy');
 
         // ── Finance stubs ────────────────────────────────────────────────────
         $this->stub($created['finance-and-payments']->id, $author?->id, null, 'new-statement-detail-report', 'New Statement Detail Report');
@@ -122,9 +122,9 @@ class HelpCenterSeeder extends Seeder
     private function fbnFeesUaeBody(): string
     {
         return <<<'HTML'
-<div><p>يشترط لمنحك خدمة "الحقيق بواسطة نون" (FBN) على شروط وأحكام البائع وتخضع لها. يشكل الجمع بين شروط وأحكام البائع وأحكام فريق الخدمة هذا معاً العقد بين الطرفين.</p></div>
+<div><p>يشترط لمنحك خدمة "الحقيق بواسطة ناوي" (FBN) على شروط وأحكام البائع وتخضع لها. يشكل الجمع بين شروط وأحكام البائع وأحكام فريق الخدمة هذا معاً العقد بين الطرفين.</p></div>
 
-<div class="hc-callout hc-callout-info"><p>اعتباراً من 1 سبتمبر 2025، سيتم تطبيق الرسوم التالية على جميع العناصر التي يتم شحنها بواسطة نون (FBN).</p></div>
+<div class="hc-callout hc-callout-info"><p>اعتباراً من 1 سبتمبر 2025، سيتم تطبيق الرسوم التالية على جميع العناصر التي يتم شحنها بواسطة ناوي (FBN).</p></div>
 
 <div class="hc-callout hc-callout-note"><p><strong>ملاحظة:</strong></p><p>- جميع الرسوم لا تشمل ضريبة القيمة المضافة، وسيتم فرضها على كل وحدة بناءً على أبعاد ووزن المنتج.</p></div>
 
@@ -132,7 +132,7 @@ class HelpCenterSeeder extends Seeder
 
 <h2 id="h_fees_1_1">1. رسوم الإحالة</h2>
 <div class="hc-callout hc-callout-info"><p>تطبق نسب العمولة أدناه اعتباراً من 1 سبتمبر 2025.</p></div>
-<div class="hc-callout hc-callout-note"><p>1. توجد بعض الاستثناءات الخاصة بفئات المنتجات (PST) وبمستوى العلامة التجارية تطبق على الرسوم المذكورة أدناه.</p><p>2. سيتم فرض رسوم إحالة بحد أدنى 1 درهم إماراتي لكل منتج تبيعه على نون.</p></div>
+<div class="hc-callout hc-callout-note"><p>1. توجد بعض الاستثناءات الخاصة بفئات المنتجات (PST) وبمستوى العلامة التجارية تطبق على الرسوم المذكورة أدناه.</p><p>2. سيتم فرض رسوم إحالة بحد أدنى 1 درهم إماراتي لكل منتج تبيعه على ناوي.</p></div>
 
 <div class="hc-table"><table>
 <thead><tr><th>الفئة</th><th>نسبة العمولة % من سعر البيع</th></tr></thead>
@@ -191,7 +191,7 @@ class HelpCenterSeeder extends Seeder
 <p><em>ملاحظة: يُضاف 1 درهم لكل كيلوجرام إضافي حتى 10-12 كجم حسب الفئة، وتزداد الشرائح تدريجياً للطرود الأكبر حجماً ووزناً — راجع الحاسبة أعلاه للحصول على القيمة الدقيقة لمنتجك.</em></p>
 
 <h2 id="h_fees_1_3">3. رسوم التخزين الشهرية</h2>
-<p>رسوم شهرية تطبق على كل عنصر يتم تخزينه في مركز استيفاء نون. تُحتسب الرسوم بناءً على حجم العنصر بالأقدام المكعبة × عدد أيام التخزين.</p>
+<p>رسوم شهرية تطبق على كل عنصر يتم تخزينه في مركز استيفاء ناوي. تُحتسب الرسوم بناءً على حجم العنصر بالأقدام المكعبة × عدد أيام التخزين.</p>
 <div class="hc-table"><table>
 <thead><tr><th>الفئة</th><th>الإمارات (التكلفة لكل قدم مكعب شهرياً، درهم)</th></tr></thead>
 <tbody><tr><td>جميع الفئات</td><td>1.5</td></tr></tbody>
@@ -202,24 +202,24 @@ class HelpCenterSeeder extends Seeder
 <hr>
 
 <h1 id="h_fees_2">II. الرسوم العرضية</h1>
-<p>الرسوم العرضية هي رسوم تُطبَّق أو تُعكَس في مجموعة متنوعة من السيناريوهات غير العادية التي قد تحدث أثناء بيع منتجاتك على موقع نون. تُخصم في نهاية الشهر أو في بدايته أيهما أقرب. يمكنك الاطلاع على هذه الرسوم من صفحة المدفوعات الخاصة بك في موقع البائعين، من علامة تبويب "كشوفات الحساب".</p>
+<p>الرسوم العرضية هي رسوم تُطبَّق أو تُعكَس في مجموعة متنوعة من السيناريوهات غير العادية التي قد تحدث أثناء بيع منتجاتك على موقع ناوي. تُخصم في نهاية الشهر أو في بدايته أيهما أقرب. يمكنك الاطلاع على هذه الرسوم من صفحة المدفوعات الخاصة بك في موقع البائعين، من علامة تبويب "كشوفات الحساب".</p>
 
 <h2 id="h_fees_2_1">1. تخزين طويل الأمد</h2>
-<p>رسوم قابلة للتطبيق على كل عنصر مخزن في مركز شحن نون لأكثر من 365 يوماً.</p>
+<p>رسوم قابلة للتطبيق على كل عنصر مخزن في مركز شحن ناوي لأكثر من 365 يوماً.</p>
 <div class="hc-table"><table>
 <thead><tr><th>الفئات</th><th>الإمارات (التكلفة لكل قدم مكعب، درهم)</th></tr></thead>
 <tbody><tr><td>جميع الفئات</td><td>25</td></tr></tbody>
 </table></div>
 
 <h2 id="h_fees_2_2">2. رسوم تخزين السلع غير القابلة للبيع</h2>
-<p>تُطبَّق هذه الرسوم على المخزون غير القابل للبيع والمخزَّن في مراكز الاستيفاء لدى نون لمدة تزيد عن 30 يوماً <strong>(اعتباراً من 1 أبريل 2024)</strong>.</p>
+<p>تُطبَّق هذه الرسوم على المخزون غير القابل للبيع والمخزَّن في مراكز الاستيفاء لدى ناوي لمدة تزيد عن 30 يوماً <strong>(اعتباراً من 1 أبريل 2024)</strong>.</p>
 <div class="hc-table"><table>
 <thead><tr><th>الفئات</th><th>الإمارات (التكلفة لكل قدم مكعب، درهم)</th></tr></thead>
 <tbody><tr><td>مخزون غير قابل للبيع</td><td>12</td></tr></tbody>
 </table></div>
 
 <h2 id="h_fees_2_3">3. رسوم الضمان (WNTY)</h2>
-<p>رسوم على مطالبات الضمان المقدمة من العملاء والتي لا يستطيع البائع الوفاء بها وفقاً للوائح المحلية وسياسات نون.</p>
+<p>رسوم على مطالبات الضمان المقدمة من العملاء والتي لا يستطيع البائع الوفاء بها وفقاً للوائح المحلية وسياسات ناوي.</p>
 
 <h2 id="h_fees_2_4">4. رسوم غرامة الاحتفاظ (RETP)</h2>
 <p>تُحمَّل رسوم غرامة الاحتفاظ (RETP) على البائع لتعويض عملائه في حالة مواجهة أو شكاوى بسبب عدم الالتزام باللوائح المحلية وسياساتها، مثل عناصر بها أجزاء/ملحقات مفقودة، أو مزيفة، أو تالفة، أو معيبة، أو مستعملة، أو منتهية الصلاحية، أو غير مطابقة للمنتج المدرج على الموقع أو بها بعض أخطاء التسعير.</p>
@@ -260,7 +260,7 @@ class HelpCenterSeeder extends Seeder
 <hr>
 
 <h1 id="h_fees_4">IV. خدمات القيمة المضافة</h1>
-<p>يجب أن تلتزم جميع البضائع المرسلة إلى FBN بإرشادات نون الخاصة بالتغليف وضمان سلامة منتجاتك. لتجنب رفض المنتجات التي لا تلبي هذه المعايير، نقدم الآن خدمات ذات قيمة مضافة لراحتك.</p>
+<p>يجب أن تلتزم جميع البضائع المرسلة إلى FBN بإرشادات ناوي الخاصة بالتغليف وضمان سلامة منتجاتك. لتجنب رفض المنتجات التي لا تلبي هذه المعايير، نقدم الآن خدمات ذات قيمة مضافة لراحتك.</p>
 <div class="hc-table"><table>
 <thead><tr><th>خدمات القيمة المضافة الواردة</th><th>نوع العنصر</th><th>الإمارات — التكلفة لكل وحدة (درهم)</th></tr></thead>
 <tbody>

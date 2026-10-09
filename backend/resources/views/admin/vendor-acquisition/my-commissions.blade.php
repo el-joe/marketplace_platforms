@@ -16,8 +16,8 @@
                 <tr class="text-left text-gray-500 border-b border-gray-100">
                     <th class="py-2 pr-4">{{ __('admin.vendors.title') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.vendors.commission_rate') }}</th>
-                    <th class="py-2 pr-4">Sales This Month</th>
-                    <th class="py-2 pr-4">Earned This Month</th>
+                    <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.sales_this_month') }}</th>
+                    <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendor_acquisition_my_commissions.earned_this_month') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.vendors.total_earned') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.vendors.expires_on') }}</th>
                 </tr>

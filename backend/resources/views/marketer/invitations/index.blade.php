@@ -34,7 +34,7 @@
                     </div>
                     <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $invitation->campaign->title ?? __('marketer.invitations.campaign_default_label') }}</h4>
                     <div class="text-sm text-gray-500 mt-1">
-                        {{ $invitation->campaign->vendor->name ?? 'نون' }} •
+                        {{ $invitation->campaign->vendor->name ?? 'ناوي' }} •
                         {{ $invitation->campaign->country->name_ar ?? '' }} •
                         {{ __('marketer.invitations.commission_type_label') }} {{ [
                             'fixed'      => __('marketer.invitations.commission_type_fixed'),

@@ -52,7 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const Icon(Icons.flight_takeoff, size: 56, color: AppColors.primary),
                   const SizedBox(height: 12),
                   Text(
-                    'Noon Travel',
+                    'Nawy Travel',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),

@@ -8,7 +8,7 @@
 
         <div class="rounded-2xl overflow-hidden bg-[#1c1c1c] grid md:grid-cols-[1.5fr_2fr]">
             <div class="relative aspect-[4/3] md:aspect-auto">
-                @php($fulfilmentModelImg = portal_image('how-it-works', 'fulfilment-model', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-fulfillment-model.jpg', 'A noon employee instructing a fleet of delivery vans', 'موظف نون يوجه أسطول توصيل'))
+                @php($fulfilmentModelImg = portal_image('how-it-works', 'fulfilment-model', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-fulfillment-model.jpg', 'A Nawy employee instructing a fleet of delivery vans', 'موظف ناوي يوجه أسطول توصيل'))
                 <img src="{{ $fulfilmentModelImg['src'] }}"
                      alt="{{ $fulfilmentModelImg['alt'] }}"
                      class="absolute inset-0 w-full h-full object-cover">

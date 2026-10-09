@@ -92,6 +92,7 @@ return [
             'critical_strike_warning'      => 'الإنذار الحرج سيؤدي إلى تعليق التاجر تلقائيًا فورًا.',
             'view_label'                  => 'عرض',
             'more_actions_label'          => 'إجراءات إضافية',
+            'revoke_acquisition_agent_confirm' => 'هل تريد إلغاء تعيين وكيل الاستقطاب لهذا البائع؟',
         ],
 
         'banners' => [
@@ -259,6 +260,11 @@ return [
             'validation_error'               => 'خطأ في التحقق.',
             'save_failed_retry'              => 'فشل الحفظ، يرجى المحاولة مرة أخرى.',
             'save_changes_label'             => 'حفظ التغييرات',
+            'swatch_uploaded' => 'تم رفع صورة العينة.',
+            'swatch_upload_failed' => 'فشل رفع صورة العينة.',
+            'delete_swatch_confirm' => 'هل تريد إزالة صورة العينة هذه؟',
+            'swatch_removed' => 'تمت إزالة صورة العينة.',
+            'swatch_remove_failed' => 'فشلت إزالة صورة العينة.',
         ],
 
         'brands' => [
@@ -954,6 +960,9 @@ return [
                 'resolved'           => 'تم الحل',
             ],
         ],
+        'custom_pages' => [
+            'no_categories_yet' => 'لا توجد تصنيفات بعد',
+        ],
     ],
 
     // ─── بوابة الشريك ───
@@ -1000,6 +1009,8 @@ return [
             'cancel_transfer_confirm'     => 'هل أنت متأكد أنك تريد إلغاء هذا التحويل؟',
             'transfer_cancelled'          => 'تم إلغاء التحويل.',
             'failed_cancel_transfer'      => 'فشل إلغاء التحويل.',
+            'no_warehouse_yet' => 'لا توجد مستودعات بعد.',
+            'no_platform_stock' => 'لا يوجد مخزون للمنصة في هذا المستودع.',
         ],
 
         'coupons' => [
@@ -1012,6 +1023,11 @@ return [
             'edit'                => 'تعديل',
             'saved'               => 'تم حفظ الكوبون.',
             'save_failed'         => 'فشل حفظ الكوبون.',
+        ],
+        'marketer_reports' => [
+            'chart' => [
+                'earnings_label' => 'الأرباح',
+            ],
         ],
     ],
 

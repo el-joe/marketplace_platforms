@@ -108,7 +108,7 @@
 
                     <div class="relative rounded-lg overflow-hidden bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center" style="min-height:80px">
                         <template x-if="imageUrl">
-                            <img :src="imageUrl" alt="Currency symbol" class="max-h-16 object-contain" />
+                            <img :src="imageUrl" alt="{{ __('admin.static_text.admin_currencies_edit.currency_symbol') }}" class="max-h-16 object-contain" />
                         </template>
                         <template x-if="!imageUrl">
                             <span class="text-xs text-gray-400">{{ __('admin.currencies_section.no_symbol_image_yet') }}</span>

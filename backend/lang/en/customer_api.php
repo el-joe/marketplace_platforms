@@ -154,4 +154,11 @@ return [
         'items_moved'           => ':count item(s) moved.',
     ],
 
+    'wallet' => [
+        'not_found_for_currency' => 'No wallet found for this currency.',
+        'frozen' => 'Your wallet is frozen. Please contact support.',
+        'insufficient_balance' => 'Insufficient wallet balance.',
+        'pending_withdrawal_exists' => 'You already have a pending withdrawal request.',
+        'withdrawal_submitted' => 'Withdrawal request submitted successfully.',
+    ],
 ];

@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-3xl mx-auto px-4 py-8 space-y-6">
 
-    <h1 class="text-2xl font-black text-gray-900">إتمام الحجز</h1>
+    <h1 class="text-2xl font-black text-gray-900">{{ __('common.static_text.storefront_travel_book.complete_booking') }}</h1>
 
     {{-- Package summary --}}
     <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex gap-4">
@@ -16,7 +16,7 @@
         <div>
             <p class="font-bold text-gray-900">{{ $package->title_ar ?: $package->title_en }}</p>
             <p class="text-sm text-blue-600">{{ $package->destination_country }} · {{ $package->departure_date->format('d M Y') }}</p>
-            <p class="text-sm font-medium text-gray-700 mt-1">{{ $package->priceFormatted() }} <span class="font-normal text-gray-500">للفرد</span></p>
+            <p class="text-sm font-medium text-gray-700 mt-1">{{ $package->priceFormatted() }} <span class="font-normal text-gray-500">{{ __('common.static_text.storefront_travel_book.per_person') }}</span></p>
         </div>
     </div>
 
@@ -32,7 +32,7 @@
 
         {{-- Travelers count --}}
         <div class="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 class="font-bold text-gray-900 mb-4">عدد المسافرين</h3>
+            <h3 class="font-bold text-gray-900 mb-4">{{ __('common.static_text.storefront_travel_book.number_of_travelers') }}</h3>
             <div class="flex items-center gap-4">
                 <button type="button" id="dec-btn"
                         class="w-10 h-10 rounded-full border-2 border-gray-300 text-gray-600 text-xl font-bold hover:border-blue-400 hover:text-blue-600 flex items-center justify-center">
@@ -45,7 +45,7 @@
                     +
                 </button>
                 <div class="mr-4">
-                    <p class="text-sm text-gray-500">الإجمالي</p>
+                    <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_travel_book.total') }}</p>
                     <p id="total-price" class="text-xl font-black text-blue-600">{{ $package->priceFormatted() }}</p>
                 </div>
             </div>
@@ -54,8 +54,8 @@
         {{-- Passport upload --}}
         <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
             <div>
-                <h3 class="font-bold text-gray-900">صورة جواز السفر *</h3>
-                <p class="text-sm text-gray-500 mt-1">ارفع صورة واضحة من صفحة البيانات الشخصية في جواز السفر</p>
+                <h3 class="font-bold text-gray-900">{{ __('common.static_text.storefront_travel_book.passport_photo') }}</h3>
+                <p class="text-sm text-gray-500 mt-1">{{ __('common.static_text.storefront_travel_book.upload_a_clear_photo_of_the') }}</p>
             </div>
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer" onclick="document.getElementById('passport-input').click()">
                 <div id="passport-preview" class="hidden mb-3">
@@ -63,8 +63,8 @@
                 </div>
                 <div id="passport-placeholder">
                     <p class="text-4xl mb-2">📄</p>
-                    <p class="text-sm text-gray-500">انقر لرفع صورة جواز السفر</p>
-                    <p class="text-xs text-gray-400 mt-1">JPG, PNG, PDF — الحد الأقصى 5MB</p>
+                    <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_travel_book.click_to_upload_the_passport_photo') }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ __('common.static_text.storefront_travel_book.jpg_png_pdf_max_5mb') }}</p>
                 </div>
                 <input type="file" id="passport-input" name="passport_file" accept=".jpg,.jpeg,.png,.pdf" required class="hidden"
                        onchange="previewPassport(this)">
@@ -74,22 +74,22 @@
 
         {{-- Contract / E-signature --}}
         <div class="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <h3 class="font-bold text-gray-900">توقيع العقد إلكترونياً *</h3>
+            <h3 class="font-bold text-gray-900">{{ __('common.static_text.storefront_travel_book.sign_the_contract_electronically') }}</h3>
 
             <div class="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 max-h-40 overflow-y-auto leading-relaxed">
-                <p class="font-semibold mb-2">شروط وأحكام الباقة السياحية</p>
+                <p class="font-semibold mb-2">{{ __('common.static_text.storefront_travel_book.tour_package_terms_conditions') }}</p>
                 <p>يوافق العميل على الشروط والأحكام الخاصة بهذه الباقة السياحية، بما يشمل سياسة الإلغاء والاسترداد والتغييرات على البرنامج. تسري هذه الاتفاقية بين العميل ووكالة {{ $package->agency->name }} المعتمدة.</p>
-                <p class="mt-2">سياسة الإلغاء: الإلغاء قبل 30 يوماً من السفر يسترد 80٪ من المبلغ. الإلغاء قبل 15 يوماً يسترد 50٪. لا يسترد أي مبلغ عند الإلغاء خلال أقل من 15 يوماً من موعد السفر.</p>
+                <p class="mt-2">{{ __('common.static_text.storefront_travel_book.cancellation_policy_cancelling_30_days_o') }}</p>
             </div>
 
             <div>
-                <p class="text-sm font-medium text-gray-700 mb-2">وقّع هنا بكتابة اسمك الكامل كما في جواز السفر</p>
+                <p class="text-sm font-medium text-gray-700 mb-2">{{ __('common.static_text.storefront_travel_book.sign_here_by_typing_your_full') }}</p>
                 <canvas id="signature-canvas" width="600" height="120"
                         class="w-full border-2 border-gray-300 rounded-xl cursor-crosshair bg-white"></canvas>
                 <div class="flex gap-2 mt-2">
                     <button type="button" onclick="clearSignature()"
                             class="text-xs text-gray-500 hover:text-red-500 border border-gray-300 rounded-lg px-3 py-1.5">
-                        مسح التوقيع
+                        {{ __('common.static_text.storefront_travel_book.clear_signature') }}
                     </button>
                 </div>
                 <input type="hidden" name="contract_signature_data" id="signature-data">

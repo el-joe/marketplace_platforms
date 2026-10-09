@@ -26,7 +26,7 @@ Object.assign(window.TRANSLATIONS, {
         </div>
         @if(auth('admin')->user()->can('warehouses.view'))
             <div class="flex items-center gap-2">
-                <a href="{{ route('admin.warehouses.shipping-surcharges.index') }}" class="btn btn-secondary btn-sm">Shipping Surcharges</a>
+                <a href="{{ route('admin.warehouses.shipping-surcharges.index') }}" class="btn btn-secondary btn-sm">{{ __('admin.static_text.admin_warehouses_index.shipping_surcharges') }}</a>
                 <a href="{{ route('admin.warehouses.create') }}" class="btn btn-primary btn-sm">+ {{ __('admin.warehouses_section.add_warehouse') }}</a>
             </div>
         @endif

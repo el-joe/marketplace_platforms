@@ -27,7 +27,7 @@
                 <tr>
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">Stream</th>
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">Status</th>
-                    <th class="px-4 py-3 text-start font-semibold text-gray-700">Scheduled At</th>
+                    <th class="px-4 py-3 text-start font-semibold text-gray-700">{{ __('admin.static_text.admin_live_streams_index.scheduled_at') }}</th>
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">Viewers</th>
                     <th class="px-4 py-3 text-start font-semibold text-gray-700">Likes</th>
                     <th class="px-4 py-3"></th>

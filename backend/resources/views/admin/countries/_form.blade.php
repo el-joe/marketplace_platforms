@@ -252,7 +252,7 @@
                 label="{{ __('admin.geography.site_domain') }}"
                 :value="$val('site_domain')"
                 maxlength="100"
-                placeholder="noon.com"
+                placeholder="nawy.com"
             />
             <x-form.select
                 name="currency_code"

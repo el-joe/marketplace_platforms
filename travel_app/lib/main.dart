@@ -28,7 +28,7 @@ class _TravelAppState extends ConsumerState<TravelApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Noon Travel',
+      title: 'Nawy Travel',
       theme: AppTheme.dark,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

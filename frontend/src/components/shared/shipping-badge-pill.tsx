@@ -51,7 +51,7 @@ export function ShippingBadgePill({
   locale: string;
   className?: string;
 }) {
-  const t = useTranslations();
+  const t = useTranslations("productView");
   const key = badge.icon === undefined ? "bolt" : badge.icon;
   const Icon = key ? ICONS[key] : undefined;
   let text = getShippingBadgeText(badge, locale);

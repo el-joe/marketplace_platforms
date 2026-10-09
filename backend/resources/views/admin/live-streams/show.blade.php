@@ -70,7 +70,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                               d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
                     </svg>
-                    <p class="text-sm">Start camera or share screen to preview</p>
+                    <p class="text-sm">{{ __('admin.static_text.admin_live_streams_show.start_camera_or_share_screen_to') }}</p>
                 </div>
                 <div class="absolute top-3 left-3 flex items-center gap-2">
                     <span id="viewer-count"
@@ -114,7 +114,7 @@
                     <div class="text-2xl font-bold text-gray-900" id="stat-viewers">
                         {{ number_format($liveStream->total_viewers) }}
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">Total Viewers</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ __('admin.static_text.admin_live_streams_show.total_viewers') }}</div>
                 </div>
                 <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
                     <div class="text-2xl font-bold text-gray-900" id="stat-likes">
@@ -135,7 +135,7 @@
         <div class="bg-white rounded-xl border border-gray-200 flex flex-col overflow-hidden"
              style="height: 600px">
             <div class="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800 text-sm flex items-center justify-between">
-                💬 Live Comments
+                {{ __('admin.static_text.admin_live_streams_show.live_comments') }}
                 <span class="text-xs text-gray-400 font-normal" id="comment-count">
                     {{ $comments->count() }}
                 </span>

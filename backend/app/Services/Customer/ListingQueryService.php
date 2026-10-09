@@ -219,7 +219,7 @@ class ListingQueryService
 
     /**
      * Resolve the best buy-box listing for a product variant in a country.
-     * Admin listings (Noon Express / platform stock) always win over vendor listings.
+     * Admin listings (Nawy Express / platform stock) always win over vendor listings.
      *
      * Returns an object with:
      *   ->id             listing UUID

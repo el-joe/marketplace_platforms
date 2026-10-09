@@ -20,7 +20,7 @@
 
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">
-                Grid Columns <span class="text-gray-400">(across)</span>
+                {{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.grid_columns') }} <span class="text-gray-400">(across)</span>
             </label>
             <select name="grid_cols"
                     class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500">
@@ -35,7 +35,7 @@
 
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">
-                Grid Rows <span class="text-gray-400">(down)</span>
+                {{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.grid_rows') }} <span class="text-gray-400">(down)</span>
             </label>
             <select name="grid_rows"
                     class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500">
@@ -53,7 +53,7 @@
     <div class="mt-4">
         <div class="flex items-center justify-between mb-2">
             <label class="text-sm font-medium text-gray-700">Tiles</label>
-            <button type="button" id="add-promo-tile" class="text-xs text-primary-600">+ Add Tile</button>
+            <button type="button" id="add-promo-tile" class="text-xs text-primary-600">{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.add_tile') }}</button>
         </div>
         <div id="promo-tiles-list" class="space-y-2">
             @foreach($tiles as $i => $tile)
@@ -87,7 +87,7 @@
                         </x-slot:en>
                         <x-slot:ar>
                             <input type="text" name="tiles[{{ $i }}][label_ar]"
-                                value="{{ $tile['label_ar'] ?? '' }}" placeholder="التسمية" dir="rtl"
+                                value="{{ $tile['label_ar'] ?? '' }}" placeholder="{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.label') }}" dir="rtl"
                                 class="w-full text-sm border border-gray-300 rounded px-2 py-1">
                             <div>
                                 <label class="block text-xs font-medium text-gray-600 mb-1">Image (AR)</label>
@@ -104,7 +104,7 @@
                                 </label>
                             </div>
                             <input type="text" name="tiles[{{ $i }}][badge_label_ar]"
-                                value="{{ $tile['badge_label_ar'] ?? '' }}" placeholder="الشارة" dir="rtl"
+                                value="{{ $tile['badge_label_ar'] ?? '' }}" placeholder="{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.badge') }}" dir="rtl"
                                 class="w-full text-sm border border-gray-300 rounded px-2 py-1">
                         </x-slot:ar>
                     </x-form.lang-tabs>
@@ -115,9 +115,9 @@
                         <input type="checkbox" name="tiles[{{ $i }}][is_paid]" value="1"
                             {{ !empty($tile['is_paid']) ? 'checked' : '' }}
                             class="rounded border-gray-300 text-primary-600">
-                        <span>Paid / <span dir="rtl">مدفوع</span></span>
+                        <span>Paid / <span dir="rtl">{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.paid') }}</span></span>
                     </label>
-                    <button type="button" class="text-xs text-rose-500 remove-tile">Remove tile</button>
+                    <button type="button" class="text-xs text-rose-500 remove-tile">{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.remove_tile') }}</button>
                 </div>
             @endforeach
         </div>
@@ -155,7 +155,7 @@
                         <input type="text" name="tiles[${idx}][badge_label_en]" placeholder="Badge (EN)" class="w-full text-sm border border-gray-300 rounded px-2 py-1">
                     </div>
                     <div data-lang-panel="ar" data-tabs-id="${tabsId}" class="lang-panel space-y-2 hidden" dir="rtl">
-                        <input type="text" name="tiles[${idx}][label_ar]" placeholder="التسمية" dir="rtl" class="w-full text-sm border border-gray-300 rounded px-2 py-1">
+                        <input type="text" name="tiles[${idx}][label_ar]" placeholder="{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.label') }}" dir="rtl" class="w-full text-sm border border-gray-300 rounded px-2 py-1">
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Image (AR)</label>
                             <input type="hidden" data-tile-image-ar-url name="tiles[${idx}][image_url_ar]" value="">
@@ -167,15 +167,15 @@
                                 <span>Upload AR</span><input type="file" accept="image/*" class="sr-only" data-tile-image-ar-upload>
                             </label>
                         </div>
-                        <input type="text" name="tiles[${idx}][badge_label_ar]" placeholder="الشارة" dir="rtl" class="w-full text-sm border border-gray-300 rounded px-2 py-1">
+                        <input type="text" name="tiles[${idx}][badge_label_ar]" placeholder="{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.badge') }}" dir="rtl" class="w-full text-sm border border-gray-300 rounded px-2 py-1">
                     </div>
                 </div>
                 <input type="text" name="tiles[${idx}][link_url]" placeholder="Link URL" class="w-full text-sm border border-gray-300 rounded px-2 py-1">
                 <label class="flex items-center gap-2 text-sm text-gray-700 mt-1">
                     <input type="checkbox" name="tiles[${idx}][is_paid]" value="1" class="rounded border-gray-300 text-primary-600">
-                    <span>Paid / <span dir="rtl">مدفوع</span></span>
+                    <span>Paid / <span dir="rtl">{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.paid') }}</span></span>
                 </label>
-                <button type="button" class="text-xs text-rose-500 remove-tile">Remove tile</button>
+                <button type="button" class="text-xs text-rose-500 remove-tile">{{ __('admin.static_text.admin_page_builder_config_forms_promo_tiles.remove_tile') }}</button>
             `;
             document.getElementById('promo-tiles-list').appendChild(row);
             idx++;

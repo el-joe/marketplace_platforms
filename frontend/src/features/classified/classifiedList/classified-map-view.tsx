@@ -8,6 +8,7 @@ import {
   MapCameraChangedEvent,
 } from "@vis.gl/react-google-maps";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { MapPin } from "./api/get";
@@ -36,6 +37,7 @@ export default function ClassifiedMapView({
   hoveredId,
   onPinClick,
 }: ClassifiedMapViewProps) {
+  const t = useTranslations("classified");
   const [activePin, setActivePin] = useState<MapPin | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -124,7 +126,7 @@ export default function ClassifiedMapView({
                 href={`/classified/find/${activePin.slug}`}
                 className="block text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-1.5 rounded-lg transition-colors"
               >
-                عرض الإعلان
+                {t("viewAd")}
               </Link>
             </div>
           </div>

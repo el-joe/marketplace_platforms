@@ -16,9 +16,9 @@
     $listingsHeadingAr = portal_content('advertise-product', 'listings', 'heading', null, 'جهز قوائم منتجاتك');
     $listingsHeadingEnPlain = portal_content('advertise-product', 'listings', 'heading_en_plain', 'Get Your', null);
     $listingsHeadingEnHighlight = portal_content('advertise-product', 'listings', 'heading_en_highlight', 'Listings Ready', null);
-    $listingsImg1 = portal_image('advertise-product', 'listings', 'catalog_image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-listings-ready.jpg', 'A noon delivery agent scanning a package', 'مندوب توصيل نون');
+    $listingsImg1 = portal_image('advertise-product', 'listings', 'catalog_image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-listings-ready.jpg', 'A Nawy delivery agent scanning a package', 'مندوب توصيل ناوي');
     $listingsBrandImg = portal_image('advertise-product', 'listings', 'brand_details_image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-brand-details.jpg', 'Toys on top of a cabinet', 'ألعاب على رف');
-    $listingsCategoryImg = portal_image('advertise-product', 'listings', 'category_info_image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-category-info.jpg', 'A noon employee walking through the warehouse', 'موظف نون في المستودع');
+    $listingsCategoryImg = portal_image('advertise-product', 'listings', 'category_info_image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-category-info.jpg', 'A Nawy employee walking through the warehouse', 'موظف ناوي في المستودع');
 
     $uploadOptions = [
         portal_content('advertise-product', 'listings', 'upload_option_1', 'Single SKU — for curated catalogues', 'منتج واحد — للكتالوجات المنسقة'),

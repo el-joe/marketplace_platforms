@@ -180,7 +180,7 @@
     <section id="insights" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <section class="rounded-2xl border-2 border-[#1c1c1c] overflow-hidden md:grid md:grid-cols-[1.5fr_2fr] lg:gap-x-6">
             <div class="relative aspect-[4/3] md:aspect-auto">
-                @php($insightsImg = portal_image('smart-tools', 'insights', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-paid.jpg', 'A noon van in the street', 'شاحنة نون في الشارع'))
+                @php($insightsImg = portal_image('smart-tools', 'insights', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-paid.jpg', 'A Nawy van in the street', 'شاحنة ناوي في الشارع'))
                 <img src="{{ $insightsImg['src'] }}"
                      alt="{{ $insightsImg['alt'] }}"
                      class="absolute inset-0 w-full h-full object-cover">

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { IRatingBreakdown } from "./types";
 
 interface SellerRatingsSummaryProps {
@@ -23,11 +24,12 @@ export default function SellerRatingsSummary({
   totalRatingsCount,
   breakdown,
 }: SellerRatingsSummaryProps) {
+  const t = useTranslations("sellerRatings");
   return (
     <div className="pt-6 pb-6">
       {/* Section Title */}
       <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">
-        Seller Ratings & Reviews
+        {t("title")}
       </h2>
 
       {/* Ratings Overview & Breakdown Grid */}

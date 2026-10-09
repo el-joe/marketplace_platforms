@@ -22,7 +22,7 @@
                 <div>
                     <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $inv->campaign->title }}</h4>
                     <div class="text-sm text-gray-500 mt-0.5">
-                        {{ $inv->campaign->vendor->name ?? 'نون' }} • {{ $inv->campaign->country->name_ar ?? '' }}
+                        {{ $inv->campaign->vendor->name ?? 'ناوي' }} • {{ $inv->campaign->country->name_ar ?? '' }}
                     </div>
                 </div>
                 <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded">{{ __('marketer.campaigns.status_badge_active') }}</span>

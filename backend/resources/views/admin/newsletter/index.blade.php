@@ -13,14 +13,14 @@
     <div class="mb-6 flex items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.nav.newsletter') }}</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Manage email subscribers from the platform newsletter blocks.</p>
+            <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.static_text.admin_newsletter_index.manage_email_subscribers_from_the_platfo') }}</p>
         </div>
         <a href="{{ route('admin.newsletter.export') }}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-500">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
-            Export CSV
+            {{ __('admin.static_text.admin_newsletter_index.export_csv') }}
         </a>
     </div>
 
@@ -28,7 +28,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-5 text-center">
             <p class="text-2xl font-bold text-gray-900">{{ number_format($totalActive) }}</p>
-            <p class="text-sm text-gray-500 mt-1">Active Subscribers</p>
+            <p class="text-sm text-gray-500 mt-1">{{ __('admin.static_text.admin_newsletter_index.active_subscribers') }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5 text-center">
             <p class="text-2xl font-bold text-gray-900">{{ number_format($last30Days) }}</p>
@@ -60,7 +60,7 @@
                         <th class="px-4 py-3 text-left">Source</th>
                         <th class="px-4 py-3 text-left">Locale</th>
                         <th class="px-4 py-3 text-left">Status</th>
-                        <th class="px-4 py-3 text-left">Subscribed At</th>
+                        <th class="px-4 py-3 text-left">{{ __('admin.static_text.admin_newsletter_index.subscribed_at') }}</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

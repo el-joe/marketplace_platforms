@@ -252,7 +252,7 @@
                         {{ __('admin.shipping_section.section_logo') }}
                     </h4>
                     <div id="current-logo-wrap" class="hidden mb-3">
-                        <img id="current-logo-img" src="" alt="Logo"
+                        <img id="current-logo-img" src="" alt="{{ __('admin.static_text.admin_shipping_companies_index.logo') }}"
                              class="h-14 w-auto object-contain rounded border border-gray-200 p-1">
                         <label class="flex items-center gap-2 mt-2 text-sm text-red-500 cursor-pointer">
                             <input type="checkbox" name="remove_logo" value="1" id="field-remove-logo"

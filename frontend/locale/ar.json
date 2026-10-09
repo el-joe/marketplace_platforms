@@ -2,7 +2,7 @@
   "header": {
     "other": "أخرى",
     "signOut": "تسجيل الخروج",
-    "noonCredits": "أرصدة نون",
+    "noonCredits": "أرصدة ناوي",
     "warrantyClaims": "مطالبات الضمان",
     "locationButtonLabel": "اختر الموقع",
     "otherLang": "english",
@@ -47,14 +47,16 @@
       "noSavedAddressesMessage": "أضف عنوانًا لتوصيل طلباتك مباشرة إلى بابك.",
       "addPickupPoint": "إضافة خزانة/نقطة استلام جديدة",
       "getPickupPoint": "احصل على طلبك في خزانة/نقطة استلام",
-      "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب."
+      "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب.",
+      "savedAddresses": "العناوين المحفوظة"
     },
     "categoriesNav": {
       "topBrands": "أفضل الماركات",
       "openSouq": "المتجر المفتوح",
       "travel": "السفر",
       "marketers": "الماركترز"
-    }
+    },
+    "deliverTo": "التوصيل إلى"
   },
   "authDialog": {
     "title": "هلا! لنبدأ",
@@ -194,7 +196,7 @@
     "returnCondition4Default": "طلب الإرجاع يتم خلال 14 يومًا من تاريخ التوصيل",
     "returnNotAllowed1": "المنتج مستخدم",
     "returnNotAllowed2": "المنتجات أو الخدمات الرقمية التي تم تفعيلها",
-    "returnNotAllowed3": "إذا تعرض تغليف نون المحكم ضد العبث للتلف (إن وجد)",
+    "returnNotAllowed3": "إذا تعرض تغليف ناوي المحكم ضد العبث للتلف (إن وجد)",
     "learnMoreAboutReturnPolicy": "تعرف على المزيد حول سياسة الإرجاع",
     "monthWarranty": "ضمان {value} شهر",
     "coveredBy": "مشمول بالضمان من {brand}",
@@ -204,10 +206,10 @@
     "validAcrossRegion": "صالح في جميع أنحاء {country}",
     "validAcrossRegionDefault": "صالح في جميع أنحاء الإمارات العربية المتحدة",
     "validAcrossRegionDesc": "معتمد في مراكز الخدمة المعتمدة من {brand}",
-    "backedByNoon": "مدعوم من نون",
+    "backedByNoon": "مدعوم من ناوي",
     "backedByNoonDesc": "إذا لم تتمكن من العثور على مركز خدمة أو تم رفض طلبك",
-    "noonWarrantyPolicy": "سياسة الضمان لدى نون",
-    "noonWarrantyPolicyDesc": "كيفية التعامل مع مطالبات الضمان على نون",
+    "noonWarrantyPolicy": "سياسة الضمان لدى ناوي",
+    "noonWarrantyPolicyDesc": "كيفية التعامل مع مطالبات الضمان على ناوي",
     "securePayments": "مدفوعات آمنة",
     "addToCart": "أضف إلى السلة",
     "productOverview": "نظرة عامة على المنتج",
@@ -218,7 +220,7 @@
     "HowDoIReviewThisProduct?": "كيف يمكنني تقييم هذا المنتج؟",
     "HowDoIReviewThisProductDescription": "إذا اشتريت هذا المنتج مؤخرًا من نون، يمكنك الانتقال إلى صفحة طلباتك والنقر على زر إرسال تقييم",
     "WhereDoTeReviewsComeFrom?": "من أين تأتي المراجعات؟",
-    "WhereDoTeReviewsComeFromDescription": "تأتي مراجعاتنا من عملاء نون الذين اشتروا المنتج وأرسلوا تقييمًا",
+    "WhereDoTeReviewsComeFromDescription": "تأتي مراجعاتنا من عملاء ناوي الذين اشتروا المنتج وأرسلوا تقييمًا",
     "noReviewsFound": "لا توجد أي مراجعات لهذا المنتج بعد",
     "allReviews": "جميع المراجعات",
     "translateAllReviews": "ترجمة جميع المراجعات",
@@ -247,8 +249,12 @@
     "megaDeal": "صفقة ضخمة 📣",
     "flashSale": "عرض برق ⚡",
     "freeDelivery": "توصيل مجاني",
-    "noonExpress": "نون إكسبريس",
-    "close": "إغلاق"
+    "noonExpress": "ناوي إكسبريس",
+    "close": "إغلاق",
+    "customize": "خصّص منتجك",
+    "inclusiveOfVat": "شامل ضريبة القيمة المضافة",
+    "sizeGuide": "دليل المقاسات",
+    "cancel": "إلغاء"
   },
   "profile": {
     "disputes": "النزاعات",
@@ -263,7 +269,7 @@
     "profile": "الملف الشخصي",
     "addresses": "العناوين",
     "payments": "المدفوعات",
-    "noonCredits": "أرصدة نون",
+    "noonCredits": "أرصدة ناوي",
     "warrantyClaims": "مطالبات الضمان",
     "myWarranties": "ضماناتي",
     "giftCards": "بطاقات الهدايا",
@@ -284,7 +290,7 @@
     "last3Months": "آخر 3 أشهر",
     "noReturnsRequested": "لا توجد مرتجعات مطلوبة",
     "noReturnsRequestedMessage": "لم تطلب أي مرتجعات في {period}",
-    "creditsTitle": "أرصدة نون",
+    "creditsTitle": "أرصدة ناوي",
     "withdrawToBank": "السحب إلى البنك",
     "availableBalance": "الرصيد المتاح",
     "withdrawalRequested": "تم طلب السحب",
@@ -304,7 +310,7 @@
     "close": "إغلاق",
     "redeemGiftcards": "استبدال بطاقات الهدايا",
     "transactionsEmptyTitle": "ستظهر معاملاتك هنا",
-    "transactionsEmptyMessage": "أضف أرصدة أو استبدل بطاقات هدايا لبدء استخدام أرصدة نون عند الدفع.",
+    "transactionsEmptyMessage": "أضف أرصدة أو استبدل بطاقات هدايا لبدء استخدام أرصدة ناوي عند الدفع.",
     "addCredits": "إضافة أرصدة",
     "addCreditsModalTitle": "إضافة أرصدة",
     "giftcardsAndVouchers": "بطاقات الهدايا وقسائم الشراء",
@@ -329,7 +335,7 @@
     "contactInformation": "معلومات الاتصال",
     "email": "البريد الإلكتروني",
     "phoneNumber": "رقم الهاتف",
-    "addPhoneHint": "يمكن استخدام هذا لتسجيل الدخول عبر جميع تطبيقات نون.",
+    "addPhoneHint": "يمكن استخدام هذا لتسجيل الدخول عبر جميع تطبيقات ناوي.",
     "add": "إضافة",
     "personalInformation": "المعلومات الشخصية",
     "firstName": "الاسم الأول",
@@ -432,7 +438,7 @@
     "allDevicesSignedOut": "تم تسجيل الخروج من جميع الأجهزة الأخرى",
     "allDevicesSignOutFailed": "فشل تسجيل الخروج من الأجهزة الأخرى. يرجى المحاولة مرة أخرى.",
     "qrCodeTitle": "رمز الاستجابة السريعة",
-    "qrCodeSubtitle": "استخدم رمز نون للاستجابة السريعة لاستلام طلباتك من نقاط التجميع",
+    "qrCodeSubtitle": "استخدم رمز ناوي للاستجابة السريعة لاستلام طلباتك من نقاط التجميع",
     "qrCodeUnavailable": "رمز الاستجابة السريعة غير متاح حاليًا",
     "qrCopyLink": "نسخ الرابط",
     "qrCopied": "تم النسخ!",
@@ -451,7 +457,7 @@
     "deleteAccountReasonSecurityConcerns": "مخاوف أمنية",
     "deleteAccountReasonPrivacyConcerns": "مخاوف تتعلق بالخصوصية",
     "deleteAccountReasonOther": "لا شيء مما سبق",
-    "deleteAccountWarning": "يرجى ملاحظة أنه لن يكون بإمكانك إنشاء حساب جديد باستخدام نفس البريد الإلكتروني المرتبط بالحساب المحذوف، ولن يعد بالإمكان الوصول إلى جميع المعلومات ذات الصلة، بما في ذلك على سبيل المثال لا الحصر الطلبات والمرتجعات ومطالبات الضمان وسجلات التحويل البنكي ورصيد الحساب وأرصدة نون. وبينما لا يمكن إعادة استخدام نفس البريد الإلكتروني فورًا، قد يتم الاحتفاظ ببعض البيانات وفقًا لما يقتضيه القانون.",
+    "deleteAccountWarning": "يرجى ملاحظة أنه لن يكون بإمكانك إنشاء حساب جديد باستخدام نفس البريد الإلكتروني المرتبط بالحساب المحذوف، ولن يعد بالإمكان الوصول إلى جميع المعلومات ذات الصلة، بما في ذلك على سبيل المثال لا الحصر الطلبات والمرتجعات ومطالبات الضمان وسجلات التحويل البنكي ورصيد الحساب وأرصدة ناوي. وبينما لا يمكن إعادة استخدام نفس البريد الإلكتروني فورًا، قد يتم الاحتفاظ ببعض البيانات وفقًا لما يقتضيه القانون.",
     "deleteAccountTimingNote": "قد تستغرق هذه التغييرات من 3 إلى 5 دقائق لتنعكس على جميع الأجهزة",
     "deleteAccountTermsLabel": "لقد قرأت الشروط والأحكام",
     "paymentsTitle": "سجل المدفوعات",
@@ -637,29 +643,29 @@
   "giftCards": {
     "home": "الرئيسية",
     "giftCards": "بطاقات الهدايا",
-    "heroTitle": "بطاقات هدايا نون",
+    "heroTitle": "بطاقات هدايا ناوي",
     "heroSubtitle": "هدية واحدة، خيارات لا حصر لها",
-    "redeemAcross": "استبدل بطاقة هدايا نون عبر",
+    "redeemAcross": "استبدل بطاقة هدايا ناوي عبر",
     "shopByCategory": "تسوق حسب الفئة",
     "searchByCategory": "ابحث حسب الفئة",
     "redeemGiftCard": "استبدال بطاقة هدايا",
     "viewPastOrders": "عرض الطلبات السابقة",
     "viewAllCategories": "عرض جميع الفئات",
-    "useBalanceAcrossBrands": "استخدم رصيد بطاقة هدايا نون عبر جميع العلامات التجارية",
-    "redeemBannerTitle": "استبدل بطاقة هدايا نون هنا",
+    "useBalanceAcrossBrands": "استخدم رصيد بطاقة هدايا ناوي عبر جميع العلامات التجارية",
+    "redeemBannerTitle": "استبدل بطاقة هدايا ناوي هنا",
     "redeemNow": "استبدل الآن",
     "faqTitle": "الأسئلة الشائعة",
     "viewAllFaqs": "عرض جميع الأسئلة الشائعة",
     "readTerms": "اطّلع على الشروط والأحكام",
     "faqWhatIsGiftCard": "ما هي بطاقة هدايا نون؟",
-    "faqWhatIsGiftCardAnswer": "بطاقة هدايا نون هي بطاقة مدفوعة مسبقًا يمكن استبدالها بمنتجات عبر نون، نون فود، نمشي، سيفي، ونون مينتس.",
+    "faqWhatIsGiftCardAnswer": "بطاقة هدايا ناوي هي بطاقة مدفوعة مسبقًا يمكن استبدالها بمنتجات عبر نون، ناوي فود، نمشي، سيفي، وناوي مينتس.",
     "faqHowDelivered": "كيف سيتم تسليم بطاقة هدايا نون؟",
     "faqHowDeliveredAnswer": "يتم تسليم بطاقات الهدايا فورًا عبر البريد الإلكتروني إلى المستلم بمجرد إتمام الطلب.",
     "faqHowLongValid": "ما هي مدة صلاحية بطاقة الهدايا؟",
     "faqHowLongValidAnswer": "تكون بطاقات الهدايا صالحة لمدة سنة واحدة من تاريخ الشراء.",
     "categoryAnyOccasion": "أي مناسبة",
     "categoryEidAlAdha": "عيد الأضحى",
-    "categoryNoonGiftCard": "بطاقة هدايا نون",
+    "categoryNoonGiftCard": "بطاقة هدايا ناوي",
     "categoryEidMubarak": "عيد مبارك",
     "categoryCongratulations": "تهنئة",
     "categoryThankYou": "شكرًا وامتنان",
@@ -826,11 +832,18 @@
     "receiverAddedSuccessfully": "تمت إضافة المستلم بنجاح",
     "receiverSetDefaultSuccessfully": "تم تحديث المستلم الأساسي بنجاح",
     "receiverSelectedSuccessfully": "تم اختيار المستلم بنجاح",
-    "noSavedReceivers": "لا توجد جهات اتصال محفوظة"
+    "noSavedReceivers": "لا توجد جهات اتصال محفوظة",
+    "$$AllRightsReserved": "© {date} {brand}، جميع الحقوق محفوظة",
+    "footerAssistanceNumber$": "للمساعدة، اتصل على {number}",
+    "cart": "السلة",
+    "privacyPolicy": "سياسة الخصوصية",
+    "secureCheckout": "دفع آمن",
+    "termsOfSale": "شروط البيع",
+    "termsOfUse": "شروط الاستخدام"
   },
   "checkoutSuccess": {
     "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!",
-    "thankYouMessage": "شكرًا لتسوقك مع نون! لقد استلمنا طلبك ونقوم بتجهيزه للشحن.",
+    "thankYouMessage": "شكرًا لتسوقك مع ناوي! لقد استلمنا طلبك ونقوم بتجهيزه للشحن.",
     "orderNumber": "رقم الطلب",
     "copyOrderNumber": "نسخ رقم الطلب",
     "copied": "تم النسخ!",
@@ -841,7 +854,7 @@
     "shipmentCount": "الشحنة {current} من {total}",
     "vendor": "البائع",
     "fulfilledBy": "التنفيذ بواسطة",
-    "noonExpress": "نون إكسبريس",
+    "noonExpress": "ناوي إكسبريس",
     "standardDelivery": "توصيل عادي",
     "freeDelivery": "توصيل مجاني",
     "deliveryFee": "رسوم التوصيل",
@@ -864,7 +877,7 @@
     "fastDeliveryTitle": "توصيل سريع وموثوق",
     "fastDeliveryDesc": "توصيل متتبع مباشرة إلى باب منزلك",
     "genuineTitle": "منتجات أصلية 100%",
-    "genuineDesc": "منتجات ذات جودة موثقة من نون",
+    "genuineDesc": "منتجات ذات جودة موثقة من ناوي",
     "easyReturnsTitle": "إرجاع سهل وبدون تعقيد",
     "easyReturnsDesc": "سياسة إرجاع لمدة 15 يومًا على المنتجات المؤهلة",
     "supportTitle": "دعم عملاء على مدار الساعة",
@@ -912,7 +925,8 @@
         "noSavedAddressesMessage": "أضف عنوانًا لتوصيل طلباتك مباشرة إلى بابك.",
         "addPickupPoint": "إضافة خزانة/نقطة استلام جديدة",
         "getPickupPoint": "احصل على طلبك في خزانة/نقطة استلام",
-        "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب."
+        "getPickupPointMessage": "احصل عليه مجانًا في الوقت والمكان الذي تفضله. بدون حد أدنى لقيمة الطلب.",
+        "savedAddresses": "العناوين المحفوظة"
       },
       "authDialog": {
         "title": "هلا! لنبدأ",
@@ -1046,7 +1060,8 @@
       "noPhoto": "لا توجد صورة",
       "retry": "إعادة المحاولة",
       "from": "ابتداءً من",
-      "perPerson": "للشخص الواحد"
+      "perPerson": "للشخص الواحد",
+      "previousMonth": "الشهر السابق"
     },
     "myBookings": {
       "title": "حجوزاتي",
@@ -1100,7 +1115,12 @@
       "allCities": "كل المدن",
       "dateRange": "تواريخ السفر",
       "clearFilters": "مسح الفلاتر"
-    }
+    },
+    "unitDays": "أيام الوحدات",
+    "unitDaysBreakdown": "تفصيل أيام الوحدات",
+    "overnight": "مبيت",
+    "dayOnly": "نهاري فقط",
+    "unitDaysSubtotal": "المجموع الفرعي لأيام الوحدات ({count, plural, one {يوم} two {يومان} few {# أيام} many {# يومًا} other {# يوم}})"
   },
   "vewAll": "عرض الكل",
   "ad": "إعلان",
@@ -1205,7 +1225,7 @@
     "tryAdjustingFilters": "حاول تعديل عوامل التصفية",
     "listingSource": "مصدر المنتج",
     "listingSourceAll": "الكل",
-    "listingSourceAdmin": "المنصة (نون إكسبريس)",
+    "listingSourceAdmin": "المنصة (ناوي إكسبريس)",
     "listingSourceVendor": "البائعون",
     "listingSourceMarketer": "المشاهير والمؤثرون"
   },
@@ -1279,7 +1299,10 @@
     "recommendedForYou": "موصى به لك",
     "contactViaChat": "التواصل عبر الشات",
     "addToFavorites": "إضافة إلى المفضلة",
-    "noProductsFound": "لا توجد منتجات"
+    "noProductsFound": "لا توجد منتجات",
+    "viewAd": "عرض الإعلان",
+    "listView": "قائمة",
+    "mapView": "خريطة"
   },
   "classifiedSidebar": {
     "chat": "محادثة",
@@ -1375,8 +1398,8 @@
     "customerSupport": "خدمة العملاء"
   },
   "marketers": {
-    "pageTitle": "الماركترز | نون",
-    "pageDescription": "تسوّق من صفحات المؤثرين والماركترز على نون",
+    "pageTitle": "الماركترز | ناوي",
+    "pageDescription": "تسوّق من صفحات المؤثرين والماركترز على ناوي",
     "heading": "الماركترز والمؤثرين",
     "subtitle": "تسوّق منتجات مختارة من أبرز المؤثرين",
     "countLabel": "{count} ماركتر",
@@ -1396,9 +1419,9 @@
     "classifiedListings": "إعلانات السوق المفتوح",
     "activeExclusiveContracts": "عقود حصرية نشطة",
     "priceNegotiable": "قابل للتفاوض",
-    "pageTitleFallback": "ماركتر | نون",
-    "pageDescriptionFallback": "تسوّق منتجات مختارة من هذا الماركتر على نون",
-    "brandName": "نون",
+    "pageTitleFallback": "ماركتر | ناوي",
+    "pageDescriptionFallback": "تسوّق منتجات مختارة من هذا الماركتر على ناوي",
+    "brandName": "ناوي",
     "selectedProducts": "المنتجات المختارة",
     "productsCount": "{count} منتج",
     "emptyProducts": "لا توجد منتجات مضافة بعد",
@@ -1516,5 +1539,8 @@
       "in_progress": "قيد التنفيذ",
       "closed": "مغلق"
     }
+  },
+  "sellerRatings": {
+    "title": "تقييمات البائع ومراجعاته"
   }
 }

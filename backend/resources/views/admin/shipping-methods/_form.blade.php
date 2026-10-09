@@ -310,7 +310,7 @@
                             :style="imageUrl ? 'border-style:solid' : ''"
                         >
                             <template x-if="imageUrl">
-                                <img :src="imageUrl" alt="Badge image" class="max-w-full max-h-full object-contain p-1" />
+                                <img :src="imageUrl" alt="{{ __('admin.static_text.admin_shipping_methods_form.badge_image') }}" class="max-w-full max-h-full object-contain p-1" />
                             </template>
                             <template x-if="!imageUrl">
                                 <x-heroicon name="photo" class="w-8 h-8 text-gray-300" />

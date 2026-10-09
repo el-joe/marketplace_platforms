@@ -205,7 +205,7 @@
                         style="min-height: 100px"
                     >
                         <template x-if="logoUrl">
-                            <img :src="logoUrl" alt="Brand logo" class="max-w-full max-h-32 object-contain p-2" />
+                            <img :src="logoUrl" alt="{{ __('admin.static_text.admin_brands_form.brand_logo') }}" class="max-w-full max-h-32 object-contain p-2" />
                         </template>
                         <template x-if="!logoUrl">
                             <span class="text-xs text-gray-400">{{ __('admin.brands_section.no_logo_yet') }}</span>

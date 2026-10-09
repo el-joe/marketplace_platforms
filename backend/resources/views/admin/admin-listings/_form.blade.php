@@ -327,7 +327,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.express_badge_label_en') }}</label>
                 <input type="text" name="express_badge_label_en" dir="ltr" maxlength="100"
-                       value="{{ $val('express_badge_label_en', 'Noon Express') }}"
+                       value="{{ $val('express_badge_label_en', 'Nawy Express') }}"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 @error('express_badge_label_en')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>
@@ -335,7 +335,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.express_badge_label_ar') }}</label>
                 <input type="text" name="express_badge_label_ar" dir="rtl" maxlength="100"
-                       value="{{ $val('express_badge_label_ar', 'نون إكسبرس') }}"
+                       value="{{ $val('express_badge_label_ar', 'ناوي إكسبرس') }}"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 @error('express_badge_label_ar')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
             </div>

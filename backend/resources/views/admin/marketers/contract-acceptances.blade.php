@@ -9,7 +9,7 @@
         <h2 class="text-xl font-bold text-gray-900">Acceptance Log — {{ $marketer->name }}</h2>
         <a href="{{ route('admin.marketers.contract.show', $marketer) }}"
            class="text-sm px-3 py-1.5 rounded border text-gray-600 hover:bg-gray-50">
-            Back to Contract
+            {{ __('admin.static_text.admin_marketers_contract_acceptances.back_to_contract') }}
         </a>
     </div>
 
@@ -24,21 +24,21 @@
         <div><label class="block text-xs text-gray-500">From</label><input type="date" name="from" value="{{ request('from') }}" class="border rounded px-2 py-1"></div>
         <div><label class="block text-xs text-gray-500">To</label><input type="date" name="to" value="{{ request('to') }}" class="border rounded px-2 py-1"></div>
         <button class="px-3 py-1.5 rounded bg-blue-600 text-white">Filter</button>
-        <a href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}" class="px-3 py-1.5 rounded border text-gray-600">Export CSV</a>
+        <a href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}" class="px-3 py-1.5 rounded border text-gray-600">{{ __('admin.static_text.admin_marketers_contract_acceptances.export_csv') }}</a>
     </form>
 
     @unless($contract)
-        <div class="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">No contract has been created for this marketer yet.</div>
+        <div class="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">{{ __('admin.static_text.admin_marketers_contract_acceptances.no_contract_has_been_created_for') }}</div>
     @endunless
 
     <div class="bg-white rounded-xl border overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 border-b">
-                    <th class="py-2 px-3">Acceptance ID</th>
+                    <th class="py-2 px-3">{{ __('admin.static_text.admin_marketers_contract_acceptances.acceptance_id') }}</th>
                     <th class="py-2 px-3">Customer</th>
                     <th class="py-2 px-3">Version</th>
-                    <th class="py-2 px-3">Accepted At</th>
+                    <th class="py-2 px-3">{{ __('admin.static_text.admin_marketers_contract_acceptances.accepted_at') }}</th>
                     <th class="py-2 px-3">IP Address</th>
                     <th class="py-2 px-3">Order</th>
                 </tr>
@@ -64,7 +64,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="py-6 text-center text-gray-400">No acceptances yet.</td></tr>
+                <tr><td colspan="6" class="py-6 text-center text-gray-400">{{ __('admin.static_text.admin_marketers_contract_acceptances.no_acceptances_yet') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

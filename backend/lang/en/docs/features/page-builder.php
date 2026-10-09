@@ -53,7 +53,7 @@ return [
 
     'ad_images' => [
         'heading' => '5. Ad Images',
-        'body' => "Each ad_images block has ad images. Used for promotional grid (like Noon's category banners). Each: image, click URL, alt text, sort order.",
+        'body' => "Each ad_images block has ad images. Used for promotional grid (like Nawy's category banners). Each: image, click URL, alt text, sort order.",
     ],
 
     'product_pickers' => [

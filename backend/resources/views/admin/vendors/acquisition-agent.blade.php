@@ -51,7 +51,7 @@
                 <thead>
                     <tr class="text-left text-gray-500 border-b border-gray-100">
                         <th class="py-2 pr-4">{{ __('common.month') ?? 'Month' }}</th>
-                        <th class="py-2 pr-4">Sales in Month</th>
+                        <th class="py-2 pr-4">{{ __('admin.static_text.admin_vendors_acquisition_agent.sales_in_month') }}</th>
                         <th class="py-2 pr-4">{{ __('admin.vendors.total_earned') }}</th>
                         <th class="py-2 pr-4">{{ __('common.status') }}</th>
                     </tr>

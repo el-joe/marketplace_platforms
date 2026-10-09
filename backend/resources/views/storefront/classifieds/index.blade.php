@@ -12,14 +12,14 @@
     {{-- ─── Sidebar: categories ───────────────────────────────────────────── --}}
     <aside class="hidden md:flex flex-col w-56 shrink-0 border-e border-gray-100 bg-white overflow-y-auto">
         <div class="px-4 pt-5 pb-2">
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">الأقسام</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">{{ __('common.static_text.storefront_classifieds_index.categories') }}</p>
         </div>
         <nav class="flex-1 px-2 pb-4 space-y-0.5">
             <a href="{{ route('classifieds.index', $countryModel->iso_code_2) }}"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors
                       {{ !request('category') ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600 hover:bg-gray-50' }}">
                 <x-heroicon name="squares-2x2" class="w-5 h-5 shrink-0" />
-                الكل
+                {{ __('common.static_text.storefront_classifieds_index.all') }}
             </a>
             @foreach($categories as $cat)
             <a href="{{ route('classifieds.index', $countryModel->iso_code_2) }}?category={{ $cat->slug }}"
@@ -42,17 +42,17 @@
         {{-- Header + search --}}
         <div class="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 space-y-2">
             <div class="flex items-center justify-between">
-                <h1 class="text-base font-bold text-gray-900">الإعلانات المبوبة</h1>
+                <h1 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_index.classified_ads') }}</h1>
                 @auth('customer')
                 <a href="{{ route('classifieds.create', $countryModel->iso_code_2) }}"
                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm font-medium">
                     <x-heroicon name="plus" class="w-4 h-4" />
-                    أضف إعلانك
+                    {{ __('common.static_text.storefront_classifieds_index.post_your_ad') }}
                 </a>
                 @endauth
             </div>
             <form method="GET" class="flex gap-2">
-                <input name="q" value="{{ request('q') }}" placeholder="ابحث في الإعلانات..."
+                <input name="q" value="{{ request('q') }}" placeholder="{{ __('common.static_text.storefront_classifieds_index.search_ads') }}"
                        class="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <button type="submit" class="px-3 py-2 bg-primary-600 text-white rounded-lg">
                     <x-heroicon name="magnifying-glass" class="w-4 h-4" />
@@ -76,7 +76,7 @@
             <button onclick="toggleMap()" id="map-toggle-btn"
                     class="inline-flex items-center gap-1.5 text-xs text-primary-600 font-medium">
                 <x-heroicon name="map" class="w-4 h-4" />
-                عرض الخريطة
+                {{ __('common.static_text.storefront_classifieds_index.show_map') }}
             </button>
         </div>
 
@@ -122,7 +122,7 @@
                 @empty
                 <div class="col-span-2 py-16 text-center text-gray-400">
                     <x-heroicon name="inbox" class="w-12 h-12 mx-auto mb-2" />
-                    <p class="text-sm">لا توجد إعلانات حالياً</p>
+                    <p class="text-sm">{{ __('common.static_text.storefront_classifieds_index.no_ads_at_the_moment') }}</p>
                 </div>
                 @endforelse
             </div>

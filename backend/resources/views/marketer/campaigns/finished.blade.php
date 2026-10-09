@@ -24,7 +24,7 @@
             <div class="flex items-start justify-between mb-3">
                 <div>
                     <h4 class="font-bold text-gray-900">{{ $product?->name_ar ?? $inv->campaign->title }}</h4>
-                    <div class="text-sm text-gray-500 mt-0.5">{{ $inv->campaign->vendor->name ?? 'نون' }} • {{ $inv->campaign->country->name_ar ?? '' }}</div>
+                    <div class="text-sm text-gray-500 mt-0.5">{{ $inv->campaign->vendor->name ?? 'ناوي' }} • {{ $inv->campaign->country->name_ar ?? '' }}</div>
                 </div>
                 <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded">{{ $statusLabel }}</span>
             </div>

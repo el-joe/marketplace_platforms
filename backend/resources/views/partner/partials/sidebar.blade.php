@@ -17,7 +17,7 @@
 
     {{-- Logo --}}
     <div class="flex items-center gap-2 px-5 h-16 border-b border-gray-700 shrink-0">
-        <span class="bg-yellow-400 text-gray-950 font-black text-lg px-2 py-0.5 rounded">noon</span>
+        <span class="bg-yellow-400 text-gray-950 font-black text-lg px-2 py-0.5 rounded">Nawy</span>
         <span class="text-white text-xs font-semibold">{{ __('partner.nav.for_sellers') }}</span>
     </div>
 

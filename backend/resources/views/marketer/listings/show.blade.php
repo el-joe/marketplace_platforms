@@ -40,7 +40,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
-            العودة إلى القوائم
+            {{ __('marketer.static_text.marketer_listings_show.back_to_listings') }}
         </a>
     </div>
 
@@ -89,7 +89,7 @@
 
                         <div class="mt-3 flex flex-wrap gap-4 text-sm text-gray-600">
                             <div>
-                                <span class="text-xs text-gray-400 block">النسخة</span>
+                                <span class="text-xs text-gray-400 block">{{ __('marketer.static_text.marketer_listings_show.variant') }}</span>
                                 <span class="font-medium">{{ $variant->variant_name ?: 'النسخة الافتراضية' }}</span>
                             </div>
                             <div>
@@ -98,7 +98,7 @@
                             </div>
                             @if($listing->vendor_sku)
                                 <div>
-                                    <span class="text-xs text-gray-400 block">SKU الخاص بك</span>
+                                    <span class="text-xs text-gray-400 block">{{ __('marketer.static_text.marketer_listings_show.your_sku') }}</span>
                                     <span class="font-mono text-xs">{{ $listing->vendor_sku }}</span>
                                 </div>
                             @endif
@@ -109,61 +109,61 @@
 
             {{-- Listing Details --}}
             <div class="bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 class="font-semibold text-gray-800 mb-4">تفاصيل القائمة</h3>
+                <h3 class="font-semibold text-gray-800 mb-4">{{ __('marketer.static_text.marketer_listings_show.listing_details') }}</h3>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-5 text-sm">
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">السعر</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.price') }}</span>
                         <span class="font-bold text-gray-900 text-lg">{{ number_format($listing->price, 2) }}</span>
                         <span class="text-xs text-gray-500 mr-1">{{ $listing->currency }}</span>
                     </div>
                     @if($listing->compare_at_price)
                         <div>
-                            <span class="text-xs text-gray-400 block mb-0.5">السعر المقارن</span>
+                            <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.compare_at_price') }}</span>
                             <span class="font-medium text-gray-500 line-through">{{ number_format($listing->compare_at_price, 2) }}</span>
                         </div>
                     @endif
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">الحالة</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.status') }}</span>
                         <span class="font-medium">{{ $conditionLabels[$listing->condition] ?? $listing->condition }}</span>
                     </div>
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">نموذج التنفيذ</span>
-                        <span class="font-medium">FBN — التخزين في مستودعاتنا</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.fulfillment_model') }}</span>
+                        <span class="font-medium">{{ __('marketer.static_text.marketer_listings_show.fbn_stored_in_our_warehouses') }}</span>
                     </div>
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">المستودع</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.warehouse') }}</span>
                         <span class="font-medium">{{ $listing->warehouse?->name ?? '—' }}</span>
                     </div>
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">حد التنبيه للمخزون</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.stock_alert_threshold') }}</span>
                         <span class="font-medium">{{ $listing->low_stock_threshold ?? 5 }}</span>
                     </div>
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">الدولة</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.country') }}</span>
                         <span class="font-medium">{{ $listing->country?->name_ar ?: $listing->country?->name_en }}</span>
                     </div>
                     <div>
-                        <span class="text-xs text-gray-400 block mb-0.5">تاريخ الإنشاء</span>
+                        <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.created_at') }}</span>
                         <span class="font-medium">{{ $listing->created_at?->format('Y-m-d') }}</span>
                     </div>
                 </div>
 
                 @if($listing->condition_notes)
                     <div class="mt-4 pt-4 border-t border-gray-50">
-                        <span class="text-xs text-gray-400 block mb-1">ملاحظات الحالة</span>
+                        <span class="text-xs text-gray-400 block mb-1">{{ __('marketer.static_text.marketer_listings_show.condition_notes') }}</span>
                         <p class="text-sm text-gray-700">{{ $listing->condition_notes }}</p>
                     </div>
                 @endif
 
                 @if($listing->rejection_reason)
                     <div class="mt-4 bg-red-50 border border-red-200 rounded-xl p-4">
-                        <p class="text-xs font-semibold text-red-700 mb-1">سبب الرفض</p>
+                        <p class="text-xs font-semibold text-red-700 mb-1">{{ __('marketer.static_text.marketer_listings_show.rejection_reason') }}</p>
                         <p class="text-sm text-red-800 mb-3">{{ $listing->rejection_reason }}</p>
                         <form method="POST" action="{{ route('marketer.listings.resubmit', $listing) }}">
                             @csrf
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-colors">
-                                إعادة تقديم للمراجعة
+                                {{ __('marketer.static_text.marketer_listings_show.resubmit_for_review') }}
                             </button>
                         </form>
                     </div>
@@ -172,7 +172,7 @@
                 @if(in_array($statusVal, [\App\Enums\MarketerListingStatus::Draft->value, \App\Enums\MarketerListingStatus::PendingReview->value]))
                     <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                         <p class="text-sm text-yellow-800">
-                            <strong>ملاحظة:</strong> قائمتك {{ $statusVal === \App\Enums\MarketerListingStatus::Draft->value ? 'مسودة' : 'قيد المراجعة' }}. ستظهر للعملاء بعد موافقة الإدارة.
+                            <strong>{{ __('marketer.static_text.marketer_listings_show.note') }}</strong> قائمتك {{ $statusVal === \App\Enums\MarketerListingStatus::Draft->value ? 'مسودة' : 'قيد المراجعة' }}. ستظهر للعملاء بعد موافقة الإدارة.
                         </p>
                     </div>
                 @endif
@@ -186,7 +186,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M20 7l-8-4-8 4m16 0v10l-8 4m-8-4V7m8 4v10" />
                         </svg>
-                        المخزون في المستودع
+                        {{ __('marketer.static_text.marketer_listings_show.warehouse_stock') }}
                     </h3>
                     @if($warehouseInventory)
                         <button type="button"
@@ -194,13 +194,13 @@
                             data-inv-id="{{ $warehouseInventory->id }}"
                             data-warehouse="{{ $listing->warehouse?->name }}"
                             data-on-hand="{{ $warehouseInventory->quantity_on_hand }}">
-                            تعديل المخزون
+                            {{ __('marketer.static_text.marketer_listings_show.adjust_stock') }}
                         </button>
                     @endif
                 </div>
 
                 @if(! $warehouseInventory)
-                    <p class="text-sm text-gray-400 text-center py-6">لا يوجد مخزون مسجّل بعد.</p>
+                    <p class="text-sm text-gray-400 text-center py-6">{{ __('marketer.static_text.marketer_listings_show.no_stock_recorded_yet') }}</p>
                 @else
                     @php
                         $available = $warehouseInventory->quantity_on_hand - $warehouseInventory->quantity_reserved;
@@ -211,19 +211,19 @@
                     @endphp
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-5 text-sm">
                         <div>
-                            <span class="text-xs text-gray-400 block mb-0.5">متاح للبيع</span>
+                            <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.available_to_sell') }}</span>
                             <span class="{{ $stockCls }} text-2xl font-bold" id="avail-{{ $warehouseInventory->id }}">{{ $available }}</span>
                         </div>
                         <div>
-                            <span class="text-xs text-gray-400 block mb-0.5">في المستودع</span>
+                            <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.in_warehouse') }}</span>
                             <span class="font-medium text-gray-800" id="onhand-{{ $warehouseInventory->id }}">{{ $warehouseInventory->quantity_on_hand }}</span>
                         </div>
                         <div>
-                            <span class="text-xs text-gray-400 block mb-0.5">محجوز</span>
+                            <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.reserved') }}</span>
                             <span class="font-medium text-gray-500">{{ $warehouseInventory->quantity_reserved }}</span>
                         </div>
                         <div>
-                            <span class="text-xs text-gray-400 block mb-0.5">في الطريق</span>
+                            <span class="text-xs text-gray-400 block mb-0.5">{{ __('marketer.static_text.marketer_listings_show.inbound') }}</span>
                             <span class="font-medium text-blue-500">{{ $warehouseInventory->quantity_inbound ?? 0 }}</span>
                         </div>
                     </div>
@@ -232,20 +232,20 @@
 
             {{-- Stock History --}}
             <div class="bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 class="font-semibold text-gray-800 mb-4">سجل المخزون</h3>
+                <h3 class="font-semibold text-gray-800 mb-4">{{ __('marketer.static_text.marketer_listings_show.stock_history') }}</h3>
 
                 @if($movements->isEmpty())
-                    <p class="text-sm text-gray-400 text-center py-4">لا توجد حركات مخزون بعد.</p>
+                    <p class="text-sm text-gray-400 text-center py-4">{{ __('marketer.static_text.marketer_listings_show.no_stock_movements_yet') }}</p>
                 @else
                     <div class="overflow-x-auto">
                         <table class="w-full text-xs">
                             <thead>
                                 <tr class="text-gray-400 border-b border-gray-50">
-                                    <th class="text-right py-2 font-medium">النوع</th>
-                                    <th class="py-2 text-center font-medium">الكمية</th>
-                                    <th class="py-2 text-center font-medium">بعد</th>
-                                    <th class="text-right py-2 font-medium">السبب</th>
-                                    <th class="text-right py-2 font-medium">التاريخ</th>
+                                    <th class="text-right py-2 font-medium">{{ __('marketer.static_text.marketer_listings_show.type') }}</th>
+                                    <th class="py-2 text-center font-medium">{{ __('marketer.static_text.marketer_listings_show.quantity') }}</th>
+                                    <th class="py-2 text-center font-medium">{{ __('marketer.static_text.marketer_listings_show.after') }}</th>
+                                    <th class="text-right py-2 font-medium">{{ __('marketer.static_text.marketer_listings_show.reason') }}</th>
+                                    <th class="text-right py-2 font-medium">{{ __('marketer.static_text.marketer_listings_show.date') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
@@ -289,20 +289,20 @@
                     $totalAvail = $warehouseInventory->quantity_on_hand - $warehouseInventory->quantity_reserved;
                 @endphp
                 <div class="bg-white rounded-2xl border border-gray-200 p-5">
-                    <h4 class="font-semibold text-gray-800 text-sm mb-3">ملخص المخزون</h4>
+                    <h4 class="font-semibold text-gray-800 text-sm mb-3">{{ __('marketer.static_text.marketer_listings_show.stock_summary') }}</h4>
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">متاح للبيع</span>
+                            <span class="text-gray-500">{{ __('marketer.static_text.marketer_listings_show.available_to_sell') }}</span>
                             <span @class(['font-bold', 'text-red-600' => $totalAvail <= 0, 'text-orange-500' => $totalAvail > 0 && $totalAvail <= ($listing->low_stock_threshold ?? 5), 'text-gray-900' => $totalAvail > ($listing->low_stock_threshold ?? 5)])>
                                 {{ $totalAvail }}
                             </span>
                         </div>
                         <div class="flex justify-between text-sm text-gray-600">
-                            <span>في المستودع</span>
+                            <span>{{ __('marketer.static_text.marketer_listings_show.in_warehouse') }}</span>
                             <span>{{ $warehouseInventory->quantity_on_hand }}</span>
                         </div>
                         <div class="flex justify-between text-sm text-gray-600">
-                            <span>محجوز</span>
+                            <span>{{ __('marketer.static_text.marketer_listings_show.reserved') }}</span>
                             <span>{{ $warehouseInventory->quantity_reserved }}</span>
                         </div>
                     </div>
@@ -311,12 +311,12 @@
 
             {{-- Actions --}}
             <div class="bg-white rounded-2xl border border-gray-200 p-5">
-                <h4 class="font-semibold text-gray-800 text-sm mb-3">الإجراءات</h4>
+                <h4 class="font-semibold text-gray-800 text-sm mb-3">{{ __('marketer.static_text.marketer_listings_show.actions') }}</h4>
                 <div class="space-y-2">
 
                     <a href="{{ route('marketer.listings.edit', $listing) }}"
                         class="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                        تعديل القائمة
+                        {{ __('marketer.static_text.marketer_listings_show.edit_listing') }}
                     </a>
 
                     @if($warehouseInventory)
@@ -325,7 +325,7 @@
                             data-inv-id="{{ $warehouseInventory->id }}"
                             data-warehouse="{{ $listing->warehouse?->name }}"
                             data-on-hand="{{ $warehouseInventory->quantity_on_hand }}">
-                            تعديل المخزون
+                            {{ __('marketer.static_text.marketer_listings_show.adjust_stock') }}
                         </button>
                     @endif
 
@@ -344,7 +344,7 @@
                             @csrf
                             <button type="submit"
                                 class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                                إعادة تقديم للمراجعة
+                                {{ __('marketer.static_text.marketer_listings_show.resubmit_for_review') }}
                             </button>
                         </form>
                     @endif
@@ -355,7 +355,7 @@
                         @method('DELETE')
                         <button type="submit"
                             class="w-full border border-red-200 hover:bg-red-50 text-red-600 text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                            حذف القائمة
+                            {{ __('marketer.static_text.marketer_listings_show.delete_listing') }}
                         </button>
                     </form>
 
@@ -371,7 +371,7 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                    <h3 class="font-semibold text-gray-900 text-sm">تعديل المخزون</h3>
+                    <h3 class="font-semibold text-gray-900 text-sm">{{ __('marketer.static_text.marketer_listings_show.adjust_stock') }}</h3>
                     <p id="adjust-warehouse-name" class="text-xs text-gray-400"></p>
                 </div>
                 <button id="adjust-modal-close" class="text-gray-400 hover:text-gray-600">
@@ -383,37 +383,37 @@
             <form id="adjust-form" class="p-5 space-y-4">
                 <input type="hidden" id="adjust-inv-id" name="warehouse_inventory_id">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">المخزون الحالي</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_show.current_stock') }}</label>
                     <p id="adjust-current-qty" class="text-2xl font-bold text-gray-900"></p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">التعديل <span class="text-xs text-gray-400">(موجب للإضافة، سالب للخصم)</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('marketer.static_text.marketer_listings_show.adjustment') }} <span class="text-xs text-gray-400">(موجب للإضافة، سالب للخصم)</span></label>
                     <input type="number" name="adjustment" required
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
-                        placeholder="مثال: +10 أو -5">
+                        placeholder="{{ __('marketer.static_text.marketer_listings_show.e_g_10_or_5') }}">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">السبب <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('marketer.static_text.marketer_listings_show.reason') }} <span class="text-red-500">*</span></label>
                     <select name="reason" required
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
-                        <option value="">اختر السبب</option>
-                        <option value="received_stock">استلام بضاعة</option>
-                        <option value="damaged_goods">بضاعة تالفة</option>
-                        <option value="inventory_count">جرد مخزون</option>
-                        <option value="returned_to_vendor">مرتجع للبائع</option>
-                        <option value="transfer">تحويل</option>
-                        <option value="other">أخرى</option>
+                        <option value="">{{ __('marketer.static_text.marketer_listings_show.select_reason') }}</option>
+                        <option value="received_stock">{{ __('marketer.static_text.marketer_listings_show.goods_received') }}</option>
+                        <option value="damaged_goods">{{ __('marketer.static_text.marketer_listings_show.damaged_goods') }}</option>
+                        <option value="inventory_count">{{ __('marketer.static_text.marketer_listings_show.stock_count') }}</option>
+                        <option value="returned_to_vendor">{{ __('marketer.static_text.marketer_listings_show.return_to_seller') }}</option>
+                        <option value="transfer">{{ __('marketer.static_text.marketer_listings_show.transfer') }}</option>
+                        <option value="other">{{ __('marketer.static_text.marketer_listings_show.other') }}</option>
                     </select>
                 </div>
                 <div id="adjust-error" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-3"></div>
                 <div class="flex gap-2">
                     <button type="submit"
                         class="flex-1 bg-gray-900 hover:bg-gray-700 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-                        تأكيد التعديل
+                        {{ __('marketer.static_text.marketer_listings_show.confirm_adjustment') }}
                     </button>
                     <button type="button" id="adjust-cancel-btn"
                         class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-2.5 rounded-xl text-sm transition-colors">
-                        إلغاء
+                        {{ __('marketer.static_text.marketer_listings_show.cancel') }}
                     </button>
                 </div>
             </form>

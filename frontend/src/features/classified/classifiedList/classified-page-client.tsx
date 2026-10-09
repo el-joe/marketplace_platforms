@@ -68,7 +68,7 @@ export default function ClassifiedsPageClient({
           }`}
         >
           <LayoutList className="w-4 h-4" />
-          <span>قائمة</span>
+          <span>{t("listView")}</span>
         </button>
         <button
           type="button"
@@ -80,7 +80,7 @@ export default function ClassifiedsPageClient({
           }`}
         >
           <MapIcon className="w-4 h-4" />
-          <span>خريطة</span>
+          <span>{t("mapView")}</span>
         </button>
       </div>
 

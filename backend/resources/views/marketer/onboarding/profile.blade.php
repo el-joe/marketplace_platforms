@@ -9,10 +9,10 @@
         @php $inp = 'w-full border border-gray-300 rounded-lg px-4 py-2 text-sm'; @endphp
 
         <div class="grid grid-cols-2 gap-3">
-            <input class="{{ $inp }}" name="specialty_ar" placeholder="التخصص" value="{{ old('specialty_ar', $profile?->specialty_ar) }}">
-            <input class="{{ $inp }}" name="specialty_en" placeholder="Specialty" value="{{ old('specialty_en', $profile?->specialty_en) }}">
-            <textarea class="{{ $inp }}" name="bio_ar" rows="3" placeholder="نبذة">{{ old('bio_ar', $profile?->bio_ar) }}</textarea>
-            <textarea class="{{ $inp }}" name="bio_en" rows="3" placeholder="Bio">{{ old('bio_en', $profile?->bio_en) }}</textarea>
+            <input class="{{ $inp }}" name="specialty_ar" placeholder="{{ __('marketer.static_text.marketer_onboarding_profile.specialty') }}" value="{{ old('specialty_ar', $profile?->specialty_ar) }}">
+            <input class="{{ $inp }}" name="specialty_en" placeholder="{{ __('marketer.static_text.marketer_onboarding_profile.specialty_2') }}" value="{{ old('specialty_en', $profile?->specialty_en) }}">
+            <textarea class="{{ $inp }}" name="bio_ar" rows="3" placeholder="{{ __('marketer.static_text.marketer_onboarding_profile.short_bio') }}">{{ old('bio_ar', $profile?->bio_ar) }}</textarea>
+            <textarea class="{{ $inp }}" name="bio_en" rows="3" placeholder="{{ __('marketer.static_text.marketer_onboarding_profile.bio') }}">{{ old('bio_en', $profile?->bio_en) }}</textarea>
         </div>
         @error('bio_ar') <p class="text-red-600 text-xs">{{ $message }}</p> @enderror
 

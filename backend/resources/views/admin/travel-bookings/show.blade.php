@@ -110,7 +110,7 @@
                     <tr>
                         <th class="text-left px-4 py-2 font-medium text-gray-500">Date</th>
                         <th class="text-left px-4 py-2 font-medium text-gray-500">Overnight</th>
-                        <th class="text-left px-4 py-2 font-medium text-gray-500">Time Slot</th>
+                        <th class="text-left px-4 py-2 font-medium text-gray-500">{{ __('admin.static_text.admin_travel_bookings_show.time_slot') }}</th>
                         <th class="text-right px-4 py-2 font-medium text-gray-500">Price</th>
                     </tr>
                 </thead>

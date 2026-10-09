@@ -101,7 +101,7 @@ export default function StanderWarrantyDialog({
             </div>
           </div>
 
-          {/* Feature 3: Backed by Noon */}
+          {/* Feature 3: Backed by Nawy */}
           <div className="flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
               <svg
@@ -128,7 +128,7 @@ export default function StanderWarrantyDialog({
           </div>
         </div>
 
-        {/* Noon's Warranty Policy Link Card */}
+        {/* Nawy's Warranty Policy Link Card */}
         <Link
           href={policyUrl}
           target="_blank"

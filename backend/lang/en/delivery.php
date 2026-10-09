@@ -24,7 +24,7 @@ return [
 
     'auth' => [
         'brand_name' => 'delivery',
-        'sign_in_title' => 'Sign In | Noon Delivery',
+        'sign_in_title' => 'Sign In | Nawy Delivery',
         'sign_in_subtitle' => 'Sign in to your delivery account',
         'phone_number' => 'Phone Number',
         'password' => 'Password',

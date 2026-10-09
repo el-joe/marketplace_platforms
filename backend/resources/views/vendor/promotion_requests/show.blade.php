@@ -18,25 +18,25 @@
 @section('content')
     <div class="px-4 py-6 sm:px-6 lg:px-8 max-w-4xl">
         <div class="mb-6">
-            <a href="{{ route('partner.promotion-requests.index') }}" class="text-sm text-gray-500 hover:text-gray-700">&larr; الرجوع إلى طلبات الترويج</a>
+            <a href="{{ route('partner.promotion-requests.index') }}" class="text-sm text-gray-500 hover:text-gray-700">{{ __('partner.static_text.vendor_promotion_requests_show.back_to_promotion_requests') }}</a>
         </div>
 
         <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                 <div>
-                    <div class="text-gray-500">القائمة</div>
+                    <div class="text-gray-500">{{ __('partner.static_text.vendor_promotion_requests_show.listing') }}</div>
                     <div class="font-medium text-gray-900">{{ $promotionRequest->vendorListing?->vendor_sku ?? $promotionRequest->vendor_listing_id }}</div>
                 </div>
                 <div>
-                    <div class="text-gray-500">نموذج التنفيذ</div>
+                    <div class="text-gray-500">{{ __('partner.static_text.vendor_promotion_requests_show.fulfillment_model') }}</div>
                     <div class="font-medium text-gray-900">{{ $promotionRequest->listing_fulfillment_model }}</div>
                 </div>
                 <div>
-                    <div class="text-gray-500">إجمالي الرسوم</div>
+                    <div class="text-gray-500">{{ __('partner.static_text.vendor_promotion_requests_show.total_fees') }}</div>
                     <div class="font-medium text-gray-900">{{ $promotionRequest->currency }} {{ number_format($promotionRequest->total_promotion_fee) }}</div>
                 </div>
                 <div>
-                    <div class="text-gray-500">الحالة</div>
+                    <div class="text-gray-500">{{ __('partner.static_text.vendor_promotion_requests_show.status') }}</div>
                     <div class="font-medium text-gray-900">{{ $promotionRequest->status }}</div>
                 </div>
             </div>
@@ -53,10 +53,10 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
-                        <th class="px-4 py-3 text-right">المؤثر</th>
-                        <th class="px-4 py-3 text-right">الحالة</th>
-                        <th class="px-4 py-3 text-right">تاريخ الرد</th>
-                        <th class="px-4 py-3 text-right">تمت إعادة التعيين</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_show.influencer') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_show.status') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_show.response_date') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_show.reassigned') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">

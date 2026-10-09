@@ -50,7 +50,7 @@ export default function UserSummary() {
           {t("tryNoonOne")}{" "}
           <Image
             src="/images/profile/noon-one-logo.svg"
-            alt="noon one"
+            alt="Nawy one"
             width={69}
             height={20}
             className="inline-block align-middle"

@@ -17,20 +17,20 @@ class CartCardOfferSeeder extends Seeder
         // Amounts are BIGINT in the country's base currency minor units. No /100, no *100.
         $offersByIso = [
             'AE' => [
-                ['card_name' => 'noon one Visa', 'pct' => 5.00, 'min_order' => 10000, 'max_cashback' => 5000],
-                ['card_name' => 'noon one Mastercard', 'pct' => 3.00, 'min_order' => 5000, 'max_cashback' => 3000],
+                ['card_name' => 'Nawy one Visa', 'pct' => 5.00, 'min_order' => 10000, 'max_cashback' => 5000],
+                ['card_name' => 'Nawy one Mastercard', 'pct' => 3.00, 'min_order' => 5000, 'max_cashback' => 3000],
             ],
             'SA' => [
-                ['card_name' => 'noon one Visa', 'pct' => 5.00, 'min_order' => 10000, 'max_cashback' => 5000],
-                ['card_name' => 'noon one Mastercard', 'pct' => 3.00, 'min_order' => 5000, 'max_cashback' => 3000],
+                ['card_name' => 'Nawy one Visa', 'pct' => 5.00, 'min_order' => 10000, 'max_cashback' => 5000],
+                ['card_name' => 'Nawy one Mastercard', 'pct' => 3.00, 'min_order' => 5000, 'max_cashback' => 3000],
             ],
             'EG' => [
-                ['card_name' => 'noon one Visa', 'pct' => 5.00, 'min_order' => 100000, 'max_cashback' => 50000],
-                ['card_name' => 'noon one Mastercard', 'pct' => 3.00, 'min_order' => 50000, 'max_cashback' => 30000],
+                ['card_name' => 'Nawy one Visa', 'pct' => 5.00, 'min_order' => 100000, 'max_cashback' => 50000],
+                ['card_name' => 'Nawy one Mastercard', 'pct' => 3.00, 'min_order' => 50000, 'max_cashback' => 30000],
             ],
             'KW' => [
-                ['card_name' => 'noon one Visa', 'pct' => 5.00, 'min_order' => 1000, 'max_cashback' => 500],
-                ['card_name' => 'noon one Mastercard', 'pct' => 3.00, 'min_order' => 500, 'max_cashback' => 300],
+                ['card_name' => 'Nawy one Visa', 'pct' => 5.00, 'min_order' => 1000, 'max_cashback' => 500],
+                ['card_name' => 'Nawy one Mastercard', 'pct' => 3.00, 'min_order' => 500, 'max_cashback' => 300],
             ],
         ];
 

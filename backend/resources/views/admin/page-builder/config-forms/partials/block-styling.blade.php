@@ -9,12 +9,12 @@
 @endphp
 
 <section class="pt-4 mt-4 border-t border-gray-200 space-y-3">
-    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Block Styling</h4>
+    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('admin.static_text.admin_page_builder_config_forms_partials_block_styling.block_styling') }}</h4>
 
     {{-- Background color --}}
     <div class="grid grid-cols-2 gap-3 items-end">
         <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">Background Color</label>
+            <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_page_builder_config_forms_partials_block_styling.background_color') }}</label>
             <div class="flex items-center gap-2">
                 <input
                     type="color"
@@ -38,7 +38,7 @@
                 />
                 <input type="hidden" name="background_color" id="block-bg-color-hidden" value="{{ $bg }}" />
             </div>
-            <p class="text-xs text-gray-400 mt-1">Use a hex color, <code>transparent</code>, or leave blank to inherit the section background.</p>
+            <p class="text-xs text-gray-400 mt-1">{{ __('admin.static_text.admin_page_builder_config_forms_partials_block_styling.use_a_hex_color') }} <code>transparent</code>{{ __('admin.static_text.admin_page_builder_config_forms_partials_block_styling.or_leave_blank_to_inherit_the') }}</p>
         </div>
     </div>
 </section>

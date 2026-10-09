@@ -319,7 +319,7 @@ class GiftCardPurchaseService
     private function generateOrderNumber(): string
     {
         do {
-            $candidate = 'NOON-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
+            $candidate = 'NAWY-'.now()->format('Ymd').'-'.strtoupper(Str::random(6));
         } while (Order::where('order_number', $candidate)->exists());
 
         return $candidate;

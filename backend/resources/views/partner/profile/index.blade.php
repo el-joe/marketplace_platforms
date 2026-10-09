@@ -339,7 +339,7 @@ $businessTypeLabels = [
             <h3 class="font-semibold text-gray-800 mb-4">{{ __('partner.profile.qr_code_heading', [], null) ?: 'Store QR Code' }}</h3>
             <div class="flex items-start gap-5">
                 <img src="{{ \Illuminate\Support\Facades\Storage::url($vendor->qr_code_path) }}"
-                     alt="QR Code"
+                     alt="{{ __('partner.static_text.partner_profile_index.qr_code') }}"
                      class="w-32 h-32 rounded-xl border border-gray-200 shrink-0 object-contain">
                 <div class="flex-1 space-y-3">
                     <div>

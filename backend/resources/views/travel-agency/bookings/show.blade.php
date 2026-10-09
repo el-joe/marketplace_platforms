@@ -216,7 +216,7 @@ $statusLabels = [
                     <tr class="text-left text-gray-500 border-b border-gray-100">
                         <th class="pb-2 font-medium">Date</th>
                         <th class="pb-2 font-medium">Overnight</th>
-                        <th class="pb-2 font-medium">Time Slot</th>
+                        <th class="pb-2 font-medium">{{ __('travel.static_text.travel_agency_bookings_show.time_slot') }}</th>
                         <th class="pb-2 font-medium text-right">Price</th>
                     </tr>
                 </thead>

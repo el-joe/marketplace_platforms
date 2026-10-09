@@ -166,14 +166,14 @@
                 <button @click="tab = 'vendor_limits'"
                     :class="tab === 'vendor_limits' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
-                    Vendor Limits
+                    {{ __('admin.static_text.admin_warehouses_show.vendor_limits') }}
                 </button>
             @endif
             @if($warehouse->type?->value === 'platform_fbn')
                 <button @click="tab = 'overage_fees'"
                     :class="tab === 'overage_fees' ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
-                    Daily Overage Fees
+                    {{ __('admin.static_text.admin_warehouses_show.daily_overage_fees') }}
                 </button>
             @endif
             <button @click="tab = 'exceptional-zones'"

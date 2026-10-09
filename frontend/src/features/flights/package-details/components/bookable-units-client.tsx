@@ -221,6 +221,7 @@ function MonthNavigator({
   onPrev: () => void;
   onNext: () => void;
 }) {
+  const t = useTranslations("flights.packageDetails");
   const label = month.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
     month: "long",
     year: "numeric",
@@ -231,7 +232,7 @@ function MonthNavigator({
       <button
         type="button"
         onClick={onPrev}
-        aria-label="Previous month"
+        aria-label={t("previousMonth")}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
       >
         <ChevronLeftIcon className="size-4" />
@@ -242,7 +243,7 @@ function MonthNavigator({
       <button
         type="button"
         onClick={onNext}
-        aria-label="Next month"
+        aria-label={t("nextMonth")}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-primary"
       >
         <ChevronRightIcon className="size-4" />

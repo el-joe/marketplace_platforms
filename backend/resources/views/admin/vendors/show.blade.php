@@ -782,7 +782,7 @@
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.vendors.easy_returns_enabled') }}</dt>
                     <dd><x-badge :color="$vendor->easy_returns_enabled ? 'success' : 'gray'">{{ $vendor->easy_returns_enabled ? __('admin.vendors.active_badge') : '—' }}</x-badge></dd>
-                    <dt class="text-gray-500">External API Access</dt>
+                    <dt class="text-gray-500">{{ __('admin.static_text.admin_vendors_show.external_api_access') }}</dt>
                     <dd><x-badge :color="$vendor->external_api_enabled ? 'success' : 'gray'">{{ $vendor->external_api_enabled ? 'Enabled' : 'Disabled' }}</x-badge></dd>
                 </div>
                 <div class="flex justify-between">

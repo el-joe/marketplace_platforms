@@ -158,7 +158,7 @@
         @if($sliderPreviewBlocks->isNotEmpty())
             <div class="pb-group-title">{{ __('admin.page_builder.slider_preview') ?? 'Slider Preview' }}</div>
             <div class="px-3 py-2 space-y-3">
-                <p class="text-xs text-gray-500">Live slides with resolved images — verify before publishing. Note: cart banners are managed separately under Banners, not here.</p>
+                <p class="text-xs text-gray-500">{{ __('admin.static_text.admin_page_builder_index.live_slides_with_resolved_images_verify') }}</p>
                 @foreach($sliderPreviewBlocks as $block)
                     <div class="border border-gray-200 rounded-lg p-2">
                         <div class="text-xs font-medium text-gray-700 mb-1">
@@ -232,7 +232,7 @@
                 <button type="button" id="add-section-btn"
                     class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
                     <x-heroicon name="plus" class="w-4 h-4" />
-                    Add Section
+                    {{ __('admin.static_text.admin_page_builder_index.add_section') }}
                 </button>
 
                 {{-- Auto-save indicator --}}
@@ -267,7 +267,7 @@
                 <button type="button" id="clear-page-cache-btn"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors">
                     <x-heroicon name="arrow-path" class="w-4 h-4 text-gray-400" />
-                    Clear Cache
+                    {{ __('admin.static_text.admin_page_builder_index.clear_cache') }}
                 </button>
 
                 <div class="flex-1"></div>

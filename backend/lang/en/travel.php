@@ -384,6 +384,12 @@ return [
         'insufficient_seats' => 'Not enough seats available to confirm this booking.',
         'confirm_success' => 'Booking confirmed.',
         'cancel_success' => 'Booking cancelled.',
+        'bookable_unit' => 'Bookable Unit',
+        'optional' => 'optional',
+        'no_unit' => 'No unit',
+        'full_day' => 'Full day',
+        'includes_overnight' => 'Includes overnight stay',
+        'price' => 'Price',
     ],
 
     'inquiries' => [
@@ -976,4 +982,9 @@ return [
         'no_data' => 'No data for this period.',
     ],
     'bookable_unit_not_available' => 'The selected unit is not available for this package.',
+    'static_text' => [
+        'travel_agency_bookings_show' => [
+            'time_slot' => 'Time Slot',
+        ],
+    ],
 ];

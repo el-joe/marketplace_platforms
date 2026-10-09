@@ -194,7 +194,7 @@
                         @if($product->qr_code_path)
                         <div class="mt-3 flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
                             <img src="{{ \Illuminate\Support\Facades\Storage::url($product->qr_code_path) }}"
-                                 alt="Product QR"
+                                 alt="{{ __('partner.static_text.partner_listings_show.product_qr') }}"
                                  class="w-20 h-20 rounded-lg border border-gray-200 shrink-0 object-contain">
                             <div class="space-y-2">
                                 <p class="text-xs text-gray-500">{{ __('partner.listings.qr_hint') ?? 'Scan to open this product on the storefront.' }}</p>
@@ -482,7 +482,7 @@
                     {{-- Edit Listing --}}
                     <a href="{{ route('partner.listings.edit', $listing->id) }}"
                         class="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors">
-                        تعديل القائمة
+                        {{ __('partner.static_text.partner_listings_show.edit_listing') }}
                     </a>
 
                     {{-- Update Price --}}

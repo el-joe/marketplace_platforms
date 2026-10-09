@@ -92,7 +92,7 @@
         {{-- Logo --}}
         <div class="text-center mb-10">
             <div class="inline-flex items-baseline gap-1 mb-3">
-                <span class="text-yellow-400 font-extrabold text-4xl tracking-tight">noon</span>
+                <span class="text-yellow-400 font-extrabold text-4xl tracking-tight">Nawy</span>
                 <span class="text-slate-400 text-lg font-semibold">{{ __('delivery.auth.brand_name') }}</span>
             </div>
             <p class="text-slate-400 text-sm mt-1">{{ __('delivery.auth.sign_in_subtitle') }}</p>

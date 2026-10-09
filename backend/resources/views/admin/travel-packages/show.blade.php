@@ -310,7 +310,7 @@
             </table>
         </div>
         @else
-        <p class="text-sm text-gray-400">No bookable units attached to this package.</p>
+        <p class="text-sm text-gray-400">{{ __('admin.static_text.admin_travel_packages_show.no_bookable_units_attached_to_this') }}</p>
         @endif
     </x-card>
 

@@ -6,8 +6,8 @@
 <div class="max-w-lg mx-auto py-10 px-4 space-y-6">
 
     <div class="text-center space-y-1">
-        <h1 class="text-2xl font-bold text-gray-900">جرّب المنتج افتراضياً</h1>
-        <p class="text-sm text-gray-500">ارفع صورتك وسنُريك كيف يبدو المنتج عليك</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ __('common.static_text.storefront_tryon_create.virtual_try_on') }}</h1>
+        <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_tryon_create.upload_your_photo_and_we_will') }}</p>
     </div>
 
     {{-- Product preview --}}
@@ -23,12 +23,12 @@
     <div id="upload-section" class="space-y-4">
         <div class="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center space-y-3" id="drop-zone">
             <div class="text-4xl">🤳</div>
-            <p class="text-sm text-gray-600 font-medium">اسحب صورتك هنا أو اضغط للاختيار</p>
-            <p class="text-xs text-gray-400">JPG, PNG, WEBP — حتى 10 ميجابايت</p>
+            <p class="text-sm text-gray-600 font-medium">{{ __('common.static_text.storefront_tryon_create.drag_your_photo_here_or_click') }}</p>
+            <p class="text-xs text-gray-400">{{ __('common.static_text.storefront_tryon_create.jpg_png_webp_up_to_10') }}</p>
             <input type="file" id="photo-input" accept="image/*" class="hidden">
             <button onclick="document.getElementById('photo-input').click()"
                 class="bg-blue-600 text-white rounded-xl px-5 py-2 text-sm font-medium hover:bg-blue-700 transition">
-                اختر صورة
+                {{ __('common.static_text.storefront_tryon_create.choose_a_photo') }}
             </button>
         </div>
 
@@ -36,7 +36,7 @@
             <img id="photo-preview" src="" class="w-full max-h-64 object-contain rounded-2xl border">
             <button onclick="submitTryOn()"
                 class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl py-3 font-semibold text-sm hover:opacity-90 transition">
-                ✨ جرّب المنتج الآن
+                {{ __('common.static_text.storefront_tryon_create.try_it_on_now') }}
             </button>
         </div>
     </div>
@@ -49,21 +49,21 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
         </div>
-        <p class="text-sm text-gray-600 font-medium">الذكاء الاصطناعي يعالج صورتك…</p>
-        <p class="text-xs text-gray-400">قد يستغرق هذا 30–60 ثانية</p>
+        <p class="text-sm text-gray-600 font-medium">{{ __('common.static_text.storefront_tryon_create.ai_is_processing_your_photo') }}</p>
+        <p class="text-xs text-gray-400">{{ __('common.static_text.storefront_tryon_create.this_may_take_30_60_seconds') }}</p>
     </div>
 
     {{-- Result state --}}
     <div id="result-section" class="hidden space-y-4">
-        <h2 class="text-center font-bold text-green-700">✓ النتيجة جاهزة!</h2>
+        <h2 class="text-center font-bold text-green-700">{{ __('common.static_text.storefront_tryon_create.your_result_is_ready') }}</h2>
 
         <div class="grid grid-cols-2 gap-3">
             <div class="space-y-1 text-center">
-                <p class="text-xs text-gray-500 font-medium">صورتك</p>
+                <p class="text-xs text-gray-500 font-medium">{{ __('common.static_text.storefront_tryon_create.your_photo') }}</p>
                 <img id="original-thumb" src="" class="w-full h-48 object-cover rounded-xl border">
             </div>
             <div class="space-y-1 text-center">
-                <p class="text-xs text-purple-600 font-medium">مع المنتج</p>
+                <p class="text-xs text-purple-600 font-medium">{{ __('common.static_text.storefront_tryon_create.with_the_product') }}</p>
                 <img id="result-img" src="" class="w-full h-48 object-cover rounded-xl border-2 border-purple-400 shadow-md">
             </div>
         </div>
@@ -71,11 +71,11 @@
         <div class="flex gap-2">
             <a id="download-link" href="#" download
                class="flex-1 text-center bg-green-600 text-white rounded-xl py-2 text-sm font-medium hover:bg-green-700">
-                حفظ الصورة
+                {{ __('common.static_text.storefront_tryon_create.save_image') }}
             </a>
             <button onclick="resetTryOn()"
                 class="flex-1 bg-gray-100 text-gray-700 rounded-xl py-2 text-sm font-medium hover:bg-gray-200">
-                جرّب صورة أخرى
+                {{ __('common.static_text.storefront_tryon_create.try_another_photo') }}
             </button>
         </div>
     </div>
@@ -84,7 +84,7 @@
     <div id="error-section" class="hidden text-center py-6 space-y-3">
         <div class="text-3xl">⚠️</div>
         <p id="error-msg" class="text-sm text-red-600"></p>
-        <button onclick="resetTryOn()" class="text-sm text-blue-600 underline">حاول مجدداً</button>
+        <button onclick="resetTryOn()" class="text-sm text-blue-600 underline">{{ __('common.static_text.storefront_tryon_create.try_again') }}</button>
     </div>
 
 </div>

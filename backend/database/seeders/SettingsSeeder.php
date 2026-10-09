@@ -12,8 +12,8 @@ class SettingsSeeder extends Seeder
         $settings = [
 
             // ─── general ──────────────────────────────────────────────────────
-            ['key' => 'site_name', 'value' => 'Noon', 'category' => 'general', 'description' => 'Platform display name', 'is_public' => 1],
-            ['key' => 'site_tagline', 'value' => 'Anything you need, Noon delivers', 'category' => 'general', 'description' => 'Short tagline shown on homepage', 'is_public' => 1],
+            ['key' => 'site_name', 'value' => 'Nawy', 'category' => 'general', 'description' => 'Platform display name', 'is_public' => 1],
+            ['key' => 'site_tagline', 'value' => 'Anything you need, Nawy delivers', 'category' => 'general', 'description' => 'Short tagline shown on homepage', 'is_public' => 1],
             ['key' => 'support_email', 'value' => 'support@platform.com', 'category' => 'general', 'description' => 'Customer-facing support email', 'is_public' => 1],
             ['key' => 'support_phone', 'value' => '+20 2 12345678', 'category' => 'general', 'description' => 'Customer-facing support phone', 'is_public' => 1],
             ['key' => 'default_country_code', 'value' => 'egy', 'category' => 'general', 'description' => 'Default country site_code for redirect', 'is_public' => 0],
@@ -118,8 +118,8 @@ class SettingsSeeder extends Seeder
             // ─── appearance ───────────────────────────────────────────────────
             ['key' => 'primary_color', 'value' => '#0284c7', 'category' => 'appearance', 'description' => 'Primary brand color (hex)', 'is_public' => 1],
             ['key' => 'secondary_color', 'value' => '#0f172a', 'category' => 'appearance', 'description' => 'Secondary brand color (hex)', 'is_public' => 1],
-            ['key' => 'footer_text_en', 'value' => '© 2025 Noon. All rights reserved.', 'category' => 'appearance', 'description' => 'Footer copyright text (English)', 'is_public' => 1],
-            ['key' => 'footer_text_ar', 'value' => '© 2025 نون. جميع الحقوق محفوظة.', 'category' => 'appearance', 'description' => 'Footer copyright text (Arabic)', 'is_public' => 1],
+            ['key' => 'footer_text_en', 'value' => '© 2025 Nawy. All rights reserved.', 'category' => 'appearance', 'description' => 'Footer copyright text (English)', 'is_public' => 1],
+            ['key' => 'footer_text_ar', 'value' => '© 2025 ناوي. جميع الحقوق محفوظة.', 'category' => 'appearance', 'description' => 'Footer copyright text (Arabic)', 'is_public' => 1],
             ['key' => 'announcement_bar_enabled', 'value' => false, 'category' => 'appearance', 'description' => 'Show announcement bar at top of storefront', 'is_public' => 0],
             ['key' => 'announcement_bar_text_en', 'value' => 'Free shipping on orders over 200 EGP', 'category' => 'appearance', 'description' => 'Announcement bar message (English)', 'is_public' => 1],
             ['key' => 'announcement_bar_text_ar', 'value' => 'شحن مجاني للطلبات فوق ٢٠٠ جنيه', 'category' => 'appearance', 'description' => 'Announcement bar message (Arabic)', 'is_public' => 1],

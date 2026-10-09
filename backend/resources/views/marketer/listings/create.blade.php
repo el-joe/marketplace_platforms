@@ -37,7 +37,7 @@
 
         {{-- FBN notice --}}
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-            <strong>تنبيه:</strong> جميع قوائمك مخزّنة في مستودعات المنصة (FBN). ستُراجَع قائمتك من قِبَل الإدارة قبل ظهورها للعملاء.
+            <strong>{{ __('marketer.static_text.marketer_listings_create.note') }}</strong> {{ __('marketer.static_text.marketer_listings_create.all_your_listings_are_stored_in') }}
         </div>
 
         <form method="POST" action="{{ route('marketer.listings.store') }}" class="space-y-4">
@@ -82,14 +82,14 @@
 
             {{-- FBN Warehouse --}}
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">مستودع FBN <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.fbn_warehouse') }} <span class="text-red-500">*</span></label>
                 <select name="warehouse_id" required x-model="warehouseId"
                         :disabled="!countryId || filteredWarehouses.length === 0"
                         class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-50 disabled:text-gray-400">
                     <option value="">
-                        <template x-if="!countryId">اختر الدولة أولاً</template>
-                        <template x-if="countryId && filteredWarehouses.length === 0">لا يوجد مستودع FBN في هذه الدولة</template>
-                        <template x-if="countryId && filteredWarehouses.length > 0">اختر المستودع</template>
+                        <template x-if="!countryId">{{ __('marketer.static_text.marketer_listings_create.select_the_country_first') }}</template>
+                        <template x-if="countryId && filteredWarehouses.length === 0">{{ __('marketer.static_text.marketer_listings_create.no_fbn_warehouse_in_this_country') }}</template>
+                        <template x-if="countryId && filteredWarehouses.length > 0">{{ __('marketer.static_text.marketer_listings_create.select_warehouse') }}</template>
                     </option>
                     <template x-for="w in filteredWarehouses" :key="w.id">
                         <option :value="w.id" x-text="w.name"></option>
@@ -127,7 +127,7 @@
 
             {{-- Condition Notes --}}
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">ملاحظات الحالة</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.condition_notes') }}</label>
                 <textarea name="condition_notes" rows="2" maxlength="500"
                           placeholder="صف حالة المنتج بتفصيل أكثر (اختياري)"
                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">{{ old('condition_notes') }}</textarea>
@@ -135,18 +135,18 @@
 
             {{-- Vendor SKU --}}
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">SKU الخاص بك <span class="text-xs text-gray-400">(اختياري)</span></label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.your_sku') }} <span class="text-xs text-gray-400">(اختياري)</span></label>
                 <input type="text" name="vendor_sku" value="{{ old('vendor_sku') }}" maxlength="100"
-                       placeholder="رمز المنتج في نظامك الداخلي"
+                       placeholder="{{ __('marketer.static_text.marketer_listings_create.product_code_in_your_internal_system') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
             </div>
 
             {{-- Low Stock Threshold --}}
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">حد التنبيه للمخزون <span class="text-xs text-gray-400">(افتراضي: 5)</span></label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_create.stock_alert_threshold') }} <span class="text-xs text-gray-400">(افتراضي: 5)</span></label>
                 <input type="number" name="low_stock_threshold" value="{{ old('low_stock_threshold', 5) }}" min="0" max="9999"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400">
-                <p class="text-xs text-gray-400 mt-1">ستصلك تنبيهات عندما ينخفض المخزون عن هذا الرقم.</p>
+                <p class="text-xs text-gray-400 mt-1">{{ __('marketer.static_text.marketer_listings_create.you_will_be_notified_when_stock') }}</p>
             </div>
 
             <button type="submit"

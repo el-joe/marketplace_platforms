@@ -7,14 +7,14 @@
 {{-- Header --}}
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Payment Gateways</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Configure which payment gateways are available per country.</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ __('admin.static_text.admin_payment_gateways_index.payment_gateways') }}</h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ __('admin.static_text.admin_payment_gateways_index.configure_which_payment_gateways_are_ava') }}</p>
     </div>
 </div>
 
 {{-- Global Gateway Registry --}}
 <div class="mb-8">
-    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Available Gateways</h2>
+    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{{ __('admin.static_text.admin_payment_gateways_index.available_gateways') }}</h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         @foreach($gateways as $gw)
             <div class="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-4 text-center shadow-sm">
@@ -36,10 +36,10 @@
                 </span>
                 <div class="flex gap-1.5 text-xs text-gray-400 mt-1">
                     @if($gw->supports_webhook)
-                        <span title="Supports webhooks">🔔</span>
+                        <span title="{{ __('admin.static_text.admin_payment_gateways_index.supports_webhooks') }}">🔔</span>
                     @endif
                     @if($gw->supports_refund)
-                        <span title="Supports refunds">↩️</span>
+                        <span title="{{ __('admin.static_text.admin_payment_gateways_index.supports_refunds') }}">↩️</span>
                     @endif
                 </div>
                 {{-- Image upload --}}
@@ -82,13 +82,13 @@
                 data-country-name="{{ $country->name_en }}"
                 data-currency="{{ $country->currency_code }}"
                 data-existing="{{ json_encode($country->countryPaymentGateways->pluck('gateway_id')->all()) }}">
-                <x-heroicon name="plus" class="w-3.5 h-3.5" /> Add Gateway
+                <x-heroicon name="plus" class="w-3.5 h-3.5" /> {{ __('admin.static_text.admin_payment_gateways_index.add_gateway') }}
             </button>
         </div>
 
         {{-- Configured Gateways List --}}
         @if($country->countryPaymentGateways->isEmpty())
-            <p class="px-6 py-4 text-sm text-gray-400 italic">No gateways configured for this country.</p>
+            <p class="px-6 py-4 text-sm text-gray-400 italic">{{ __('admin.static_text.admin_payment_gateways_index.no_gateways_configured_for_this_country') }}</p>
         @else
             <ul class="divide-y divide-gray-100" id="sortable-{{ $country->id }}">
                 @foreach($country->countryPaymentGateways as $cpg)
@@ -182,11 +182,11 @@
         @endif
     </div>
 @empty
-    <p class="text-gray-400 italic">No active countries found.</p>
+    <p class="text-gray-400 italic">{{ __('admin.static_text.admin_payment_gateways_index.no_active_countries_found') }}</p>
 @endforelse
 
 {{-- ── Add / Edit Modal ──────────────────────────────────────────────────── --}}
-<x-modal id="gateway-modal" title="Configure Gateway" size="lg">
+<x-modal id="gateway-modal" title="{{ __('admin.static_text.admin_payment_gateways_index.configure_gateway') }}" size="lg">
     <form id="gateway-form" novalidate>
         @csrf
         <input type="hidden" id="gw-id">
@@ -199,7 +199,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Gateway</label>
                 <select id="gw-gateway-id" name="gateway_id"
                     class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                    <option value="">— Select gateway —</option>
+                    <option value="">{{ __('admin.static_text.admin_payment_gateways_index.select_gateway') }}</option>
                     @foreach($gateways as $gw)
                         <option value="{{ $gw->id }}"
                             data-code="{{ $gw->code }}"
@@ -240,7 +240,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.sort_order') }}</label>
                     <input type="number" name="sort_order" id="gw-sort-order" value="0" min="0"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                 </div>
@@ -262,28 +262,28 @@
             {{-- API Credentials (dynamic — built from required_fields) --}}
             <div id="gw-credentials-section" class="pt-3 border-t border-gray-100">
                 <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                    <x-heroicon name="key" class="w-4 h-4 text-gray-400" /> API Credentials
+                    <x-heroicon name="key" class="w-4 h-4 text-gray-400" /> {{ __('admin.static_text.admin_payment_gateways_index.api_credentials') }}
                 </label>
-                <p class="text-xs text-gray-400 mb-3">Stored encrypted. Leave blank to keep existing values when editing.</p>
+                <p class="text-xs text-gray-400 mb-3">{{ __('admin.static_text.admin_payment_gateways_index.stored_encrypted_leave_blank_to_keep') }}</p>
                 <div id="gw-credentials-fields" class="space-y-3">
-                    <p class="text-xs text-gray-400 italic">Select a gateway above to see required fields.</p>
+                    <p class="text-xs text-gray-400 italic">{{ __('admin.static_text.admin_payment_gateways_index.select_a_gateway_above_to_see') }}</p>
                 </div>
             </div>
 
             {{-- Webhook Secret --}}
             <div class="pt-3 border-t border-gray-100">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Webhook Secret</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.static_text.admin_payment_gateways_index.webhook_secret') }}</label>
                 <input type="password" name="webhook_secret" id="gw-webhook-secret" autocomplete="off"
-                    placeholder="Leave blank to keep existing"
+                    placeholder="{{ __('admin.static_text.admin_payment_gateways_index.leave_blank_to_keep_existing') }}"
                     class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                <p class="text-xs text-gray-400 mt-1">Used to verify incoming webhook signatures.</p>
+                <p class="text-xs text-gray-400 mt-1">{{ __('admin.static_text.admin_payment_gateways_index.used_to_verify_incoming_webhook_signatur') }}</p>
             </div>
 
             {{-- Test connection --}}
             <div class="flex items-center gap-3 pt-2">
                 <button type="button" id="btn-test-gateway-connection" disabled
                     class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40">
-                    <x-heroicon name="signal" class="w-3.5 h-3.5" /> Test Connection
+                    <x-heroicon name="signal" class="w-3.5 h-3.5" /> {{ __('admin.static_text.admin_payment_gateways_index.test_connection') }}
                 </button>
                 <span id="gw-test-result" class="text-xs text-gray-500"></span>
             </div>
@@ -291,13 +291,13 @@
 
         <x-slot:footer>
             <button type="button" data-modal-close class="btn-secondary">Cancel</button>
-            <button type="submit" form="gateway-form" class="btn-primary">Save Gateway</button>
+            <button type="submit" form="gateway-form" class="btn-primary">{{ __('admin.static_text.admin_payment_gateways_index.save_gateway') }}</button>
         </x-slot:footer>
     </form>
 </x-modal>
 
 {{-- Delete confirm modal --}}
-<x-modal id="delete-gateway-modal" title="Remove Gateway" size="sm">
+<x-modal id="delete-gateway-modal" title="{{ __('admin.static_text.admin_payment_gateways_index.remove_gateway') }}" size="sm">
     <div class="px-6 py-4">
         <p id="delete-gateway-message" class="text-sm text-gray-600"></p>
         <input type="hidden" id="delete-gateway-id">

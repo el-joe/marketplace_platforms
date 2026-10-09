@@ -17,10 +17,10 @@
 @section('content')
     <div class="px-4 py-6 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="text-lg font-semibold text-gray-900">طلبات ترويج المؤثرين</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{{ __('partner.static_text.vendor_promotion_requests_index.influencer_promotion_requests') }}</h2>
             <a href="{{ route('partner.promotion-requests.create') }}"
                class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold text-sm rounded-lg px-4 py-2">
-                + طلب ترويج جديد
+                {{ __('partner.static_text.vendor_promotion_requests_index.new_promotion_request') }}
             </a>
         </div>
 
@@ -28,11 +28,11 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
-                        <th class="px-4 py-3 text-right">القائمة</th>
-                        <th class="px-4 py-3 text-right">عدد المؤثرين</th>
-                        <th class="px-4 py-3 text-right">إجمالي الرسوم</th>
-                        <th class="px-4 py-3 text-right">الحالة</th>
-                        <th class="px-4 py-3 text-right">تاريخ الإنشاء</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_index.listing') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_index.number_of_influencers') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_index.total_fees') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_index.status') }}</th>
+                        <th class="px-4 py-3 text-right">{{ __('partner.static_text.vendor_promotion_requests_index.created_at') }}</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
@@ -49,12 +49,12 @@
                             </td>
                             <td class="px-4 py-3 text-gray-500">{{ $req->created_at->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('partner.promotion-requests.show', $req->id) }}" class="text-yellow-600 hover:text-yellow-700 font-medium">عرض</a>
+                                <a href="{{ route('partner.promotion-requests.show', $req->id) }}" class="text-yellow-600 hover:text-yellow-700 font-medium">{{ __('partner.static_text.vendor_promotion_requests_index.view') }}</a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">لا توجد طلبات ترويج بعد.</td>
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">{{ __('partner.static_text.vendor_promotion_requests_index.no_promotion_requests_yet') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

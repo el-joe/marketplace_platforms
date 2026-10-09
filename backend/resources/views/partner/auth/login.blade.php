@@ -19,7 +19,7 @@
         {{-- Logo --}}
         <div class="text-center mb-8">
             <a href="{{ route('portal.home') }}" class="inline-flex items-center gap-2">
-                <span class="bg-yellow-400 text-gray-950 font-black text-2xl px-3 py-1 rounded">noon</span>
+                <span class="bg-yellow-400 text-gray-950 font-black text-2xl px-3 py-1 rounded">Nawy</span>
                 <span class="text-white font-semibold">{{ __('partner.auth.sellers') }}</span>
             </a>
             <h1 class="mt-6 text-2xl font-black text-white">

@@ -60,7 +60,7 @@ function ShipmentCard({
 
   const isExpress =
     subOrder.fulfillment_model?.toLowerCase().includes("express") ||
-    subOrder.vendor?.toLowerCase().includes("noon");
+    subOrder.vendor?.toLowerCase().includes("nawy");
 
   return (
     <div className="bg-white rounded-2xl border border-border shadow-xs overflow-hidden">
@@ -103,7 +103,7 @@ function ShipmentCard({
           <Store className="size-3.5 text-gray-400" />
           <span>{t("fulfilledBy")}:</span>
           <span className="font-semibold text-gray-800">
-            {subOrder.vendor || "noon"}
+            {subOrder.vendor || "Nawy"}
           </span>
         </div>
 

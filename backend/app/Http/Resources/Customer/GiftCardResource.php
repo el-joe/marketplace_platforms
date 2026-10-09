@@ -38,6 +38,6 @@ class GiftCardResource extends JsonResource
         $segments = explode('-', $this->code);
         $last = end($segments);
 
-        return "NOON-****-****-{$last}";
+        return "NAWY-****-****-{$last}";
     }
 }

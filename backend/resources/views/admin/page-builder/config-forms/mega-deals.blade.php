@@ -20,12 +20,12 @@
     <label class="flex items-center gap-2 mt-3 text-sm cursor-pointer">
         <input type="checkbox" name="show_countdown" value="1"
             {{ ($config['show_countdown'] ?? true) ? 'checked' : '' }} class="rounded border-gray-300">
-        Show countdown timer
+        {{ __('admin.static_text.admin_page_builder_config_forms_mega_deals.show_countdown_timer') }}
     </label>
     <label class="flex items-center gap-2 mt-2 text-sm cursor-pointer">
         <input type="checkbox" name="show_view_all" value="1"
             {{ ($config['show_view_all'] ?? true) ? 'checked' : '' }} class="rounded border-gray-300">
-        Show "View All" button
+        {{ __('admin.static_text.admin_page_builder_config_forms_mega_deals.show_view_all_button') }}
     </label>
     <div class="mt-2">
         <x-form.input name="view_all_url" label="View All URL" :value="$config['view_all_url'] ?? ''" placeholder="/deals" />

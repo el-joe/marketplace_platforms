@@ -14,9 +14,9 @@ class AdSupportSeeder extends Seeder
         $author = Admin::first();
 
         $collections = [
-            ['slug' => 'getting-started', 'name' => 'Getting Started', 'description' => 'Advertising on noon can significantly boost your brand’s visibility and help you connect with high-intent customers actively searching for products like yours.', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:other-rocket-launch', 'sort_order' => 1],
+            ['slug' => 'getting-started', 'name' => 'Getting Started', 'description' => 'Advertising on Nawy can significantly boost your brand’s visibility and help you connect with high-intent customers actively searching for products like yours.', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:other-rocket-launch', 'sort_order' => 1],
             ['slug' => 'quick-guides', 'name' => 'Quick Guides', 'description' => 'Find comprehensive guides that will walk you through the process of creating and launching ad campaigns.', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:content-book-open', 'sort_order' => 2],
-            ['slug' => 'release-notes', 'name' => 'Release Notes', 'description' => 'Stay informed about the latest noon ads updates.', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:sft-megaphone', 'sort_order' => 3],
+            ['slug' => 'release-notes', 'name' => 'Release Notes', 'description' => 'Stay informed about the latest Nawy ads updates.', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:sft-megaphone', 'sort_order' => 3],
             ['slug' => 'manage-campaigns', 'name' => 'Manage Campaigns', 'description' => 'Deep dive into campaign creation steps', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:sft-squares-plus', 'sort_order' => 4],
             ['slug' => 'optimize-campaigns', 'name' => 'Optimize Campaigns', 'description' => "Improve your campaigns' performance by adjusting the necessary parameters to achieve your advertising goals.", 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:sft-adjustments-horizontal', 'sort_order' => 5],
             ['slug' => 'billing-payment', 'name' => 'Billing & Payment', 'description' => 'Effectively manage invoices and payments to ensure a smooth advertising experience.', 'icon' => 'https://intercom.help/noon-adsupport/assets/svg/icon:bizz-fin-currency-dollar', 'sort_order' => 6],
@@ -67,7 +67,7 @@ class AdSupportSeeder extends Seeder
 
         // ── Cross-linked articles referenced from the real article ─────────
         $this->stub($created['quick-guides']->id, $author?->id, 'how-to-create-a-product-ads-campaign', 'How to Create a Product Ads Campaign');
-        $this->stub($created['quick-guides']->id, $author?->id, 'how-to-scale-your-ads-with-noon-ads', 'How to Scale Your Ads with noon ads');
+        $this->stub($created['quick-guides']->id, $author?->id, 'how-to-scale-your-ads-with-noon-ads', 'How to Scale Your Ads with Nawy ads');
         $this->stub($created['quick-guides']->id, $author?->id, 'how-to-create-a-brand-ads-campaign', 'How to Create a Brand Ads Campaign');
         $this->stub($created['quick-guides']->id, $author?->id, 'how-to-create-a-display-ads-campaign', 'How to Create a Display Ads Campaign');
         $this->stub($created['optimize-campaigns']->id, $author?->id, 'what-is-campaign-bidding', 'What Is Campaign Bidding');
@@ -82,7 +82,7 @@ class AdSupportSeeder extends Seeder
                 'ad_support_collection_id' => $created['getting-started']->id,
                 'author_admin_id' => $author?->id,
                 'title' => 'What Is the Seller Accelerator Program',
-                'excerpt' => 'New sellers get 500 ad credits and a chance to earn up to $1,000 in extra credits during their first months advertising on noon.',
+                'excerpt' => 'New sellers get 500 ad credits and a chance to earn up to $1,000 in extra credits during their first months advertising on Nawy.',
                 'body' => '<div><p>The Seller Accelerator Program gives new sellers a head start on advertising: 500 ad credits are applied automatically to your account, and top-performing new advertisers can earn up to an additional $1,000 in credits during their onboarding period.</p><p>To make the most of it, launch a Product Ads campaign on your best-selling SKUs within your first two weeks, and keep an eye on the Campaign Overview Report to see which keywords are converting.</p></div>',
                 'status' => 'published',
                 'published_at' => now()->subMonths(4),
@@ -126,7 +126,7 @@ class AdSupportSeeder extends Seeder
     private function selfServeAdCampaignsBody(): string
     {
         return <<<'HTML'
-<div><p>Self-serve ads allow sellers and brands to create and manage ad campaigns, offering flexibility, control, and cost-effectiveness. Whether you are a small business or a growing enterprise, noon&rsquo;s self-serve ad platform provides tools to promote your products, increase visibility, and drive sales.</p></div>
+<div><p>Self-serve ads allow sellers and brands to create and manage ad campaigns, offering flexibility, control, and cost-effectiveness. Whether you are a small business or a growing enterprise, Nawy&rsquo;s self-serve ad platform provides tools to promote your products, increase visibility, and drive sales.</p></div>
 
 <h2 id="h_64477c7a59">Key Benefits</h2>
 <ol>
@@ -165,7 +165,7 @@ class AdSupportSeeder extends Seeder
 </table>
 
 <h1 id="h_eb7fd47359"><b>Comparison Between Ad Types</b></h1>
-<p>noon ads offers three self-serve ad solutions &mdash; Product Ads, Brand Ads, and Display Ads &mdash; each having unique objectives and catering to different advertising needs.</p>
+<p>Nawy ads offers three self-serve ad solutions &mdash; Product Ads, Brand Ads, and Display Ads &mdash; each having unique objectives and catering to different advertising needs.</p>
 
 <h2 id="h_e7db1e84b4"><b>Product Ads</b></h2>
 <p><a href="/ae/adsupport/articles/how-to-create-a-product-ads-campaign">Product Ads</a> are designed to drive sales and increase individual product visibility by appearing in key placements (see image below).</p>
@@ -183,7 +183,7 @@ class AdSupportSeeder extends Seeder
 <div style="background-color:#e3e7fa80;border:1px solid #334bfa33;padding:16px;border-radius:8px"><p><b>Example: </b>A skincare brand running a clearance sale can use Display Ads on the homepage to capture attention and redirect traffic to the sale page.</p></div>
 <p><img src="https://downloads.intercomcdn.com/i/o/yba8j1xj/1401228719/5ff955af1b98b0e81c3a91eb23b0/Screen+Shot+2025-02-28+at+4_45_07+PM.png?expires=1783600200&signature=2ef14dbc514275f9f819750669f0b672a4556de2200632e8b05d852c544465a2&req=dSQnF8t8lYZeUPMW1HO4zVK54JyCE4dMnr09D9leO40%2FCgdkzBV55veGq7Zm%0A544RV6EUKZQIFvBl6WU%3D%0A" alt="" width="2040" height="1036" loading="lazy"></p>
 
-<p>If you are quick-starting your advertising journey on noon, make sure to head to our <a href="/ae/adsupport/collections/quick-guides">campaign creation guides</a>.</p>
+<p>If you are quick-starting your advertising journey on Nawy, make sure to head to our <a href="/ae/adsupport/collections/quick-guides">campaign creation guides</a>.</p>
 
 <hr>
 

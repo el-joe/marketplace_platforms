@@ -303,7 +303,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.specialized_category') }}</label>
                         <select name="broker_category_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                            <option value="">— بدون تحديد —</option>
+                            <option value="">{{ __('admin.static_text.admin_marketers_show.not_specified') }}</option>
                             @foreach($categories as $cat)
                             <option value="{{ $cat->id }}"
                                 {{ old('broker_category_id', $marketer->marketerProfile?->broker_category_id) === $cat->id ? 'selected' : '' }}>
@@ -316,7 +316,7 @@
                         <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.city') }}</label>
                         <select name="broker_city_id" id="brokerCitySelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                                 {{ old('broker_serves_all_cities', $marketer->marketerProfile?->broker_serves_all_cities) ? 'disabled' : '' }}>
-                            <option value="">— اختر مدينة —</option>
+                            <option value="">{{ __('admin.static_text.admin_marketers_show.select_a_city') }}</option>
                             @foreach($cities as $city)
                             <option value="{{ $city->id }}"
                                 {{ old('broker_city_id', $marketer->marketerProfile?->broker_city_id) === $city->id ? 'selected' : '' }}>
@@ -430,7 +430,7 @@
                               onsubmit="return confirm('حذف نسبة العمولة؟');">
                             @csrf
                             @method('DELETE')
-                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">حذف</button>
+                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">{{ __('admin.static_text.admin_marketers_show.delete') }}</button>
                         </form>
                     </td>
                 </tr>

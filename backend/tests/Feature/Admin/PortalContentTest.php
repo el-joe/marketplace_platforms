@@ -42,7 +42,7 @@ class PortalContentTest extends TestCase
         $admin = Admin::factory()->create();
         PortalContent::create([
             'page_key' => 'zz_test', 'block_key' => 'hero', 'field_key' => 'title', 'type' => 'text',
-            'value_en' => 'Sell on noon', 'value_ar' => 'بيع على نون',
+            'value_en' => 'Sell on Nawy', 'value_ar' => 'بيع على ناوي',
         ]);
         PortalContent::create([
             'page_key' => 'zz_test', 'block_key' => 'hero', 'field_key' => 'cta', 'type' => 'text',

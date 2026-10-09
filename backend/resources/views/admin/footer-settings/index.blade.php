@@ -95,7 +95,7 @@
                                                     <input type="text" name="icon_path" value="{{ $link->icon_path }}" placeholder="{{ __('admin.footer_settings.icon_path') }}" class="form-input">
                                                 @endif
                                                 <input type="url" name="url" value="{{ $link->url }}" placeholder="{{ __('admin.footer_settings.url') }}" class="form-input">
-                                                <input type="number" name="sort_order" value="{{ $link->sort_order }}" class="form-input" placeholder="Sort order">
+                                                <input type="number" name="sort_order" value="{{ $link->sort_order }}" class="form-input" placeholder="{{ __('admin.static_text.admin_footer_settings_index.sort_order') }}">
 
                                                 <label class="flex items-center gap-2">
                                                     <input type="hidden" name="is_active" value="0">

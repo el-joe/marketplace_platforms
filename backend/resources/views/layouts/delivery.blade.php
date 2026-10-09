@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#111827">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>@yield('title', __('common.delivery_title')) | Noon</title>
+    <title>@yield('title', __('common.delivery_title')) | Nawy</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet">
@@ -253,7 +253,7 @@
                     @hasSection('header-left')
                         @yield('header-left')
                     @else
-                        <span class="text-yellow-400 font-bold text-xl tracking-tight">noon</span>
+                        <span class="text-yellow-400 font-bold text-xl tracking-tight">Nawy</span>
                         <span class="text-slate-400 text-sm ml-1 font-medium">delivery</span>
                     @endif
                 </div>

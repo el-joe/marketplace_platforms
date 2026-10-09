@@ -16,7 +16,7 @@
 
         {{-- Logo --}}
         <div class="mb-8">
-            <span class="inline-block bg-yellow-400 text-gray-950 font-black text-3xl px-4 py-1 rounded-lg">noon</span>
+            <span class="inline-block bg-yellow-400 text-gray-950 font-black text-3xl px-4 py-1 rounded-lg">Nawy</span>
         </div>
 
         {{-- Warning icon --}}

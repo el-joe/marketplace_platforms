@@ -8,7 +8,7 @@ import EchoProvider from "@/src/providers/echo-provider";
 import SeriousFeaturedPopup from "@/src/features/noon/ads/serious-featured-popup";
 
 export const metadata: Metadata = {
-  title: "noon",
+  title: "Nawy",
   description: "my e-commerce",
 };
 

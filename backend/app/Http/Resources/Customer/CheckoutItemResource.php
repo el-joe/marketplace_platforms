@@ -38,7 +38,7 @@ class CheckoutItemResource extends JsonResource
             'thumbnail' => $thumbnail,
             'image' => $thumbnail ? ['url' => $thumbnail, 'alt' => $images[0]->alt] : null,
             'images' => array_map(fn ($i) => $i->toArray(), $images),
-            'vendor_name' => $isAdminListing ? 'noon' : $listing->vendor?->store_name,
+            'vendor_name' => $isAdminListing ? 'Nawy' : $listing->vendor?->store_name,
             'is_admin_listing' => $isAdminListing,
         ];
     }

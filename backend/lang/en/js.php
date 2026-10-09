@@ -107,6 +107,7 @@ return [
             'critical_strike_warning'      => 'Critical strike will auto-suspend the vendor immediately.',
             'view_label'                  => 'View',
             'more_actions_label'          => 'More actions',
+            'revoke_acquisition_agent_confirm' => 'Revoke this acquisition agent from the vendor?',
         ],
 
         'banners' => [
@@ -274,6 +275,11 @@ return [
             'validation_error'               => 'Validation error.',
             'save_failed_retry'              => 'Save failed. Please try again.',
             'save_changes_label'             => 'Save changes',
+            'swatch_uploaded' => 'Swatch image uploaded.',
+            'swatch_upload_failed' => 'Failed to upload swatch image.',
+            'delete_swatch_confirm' => 'Remove this swatch image?',
+            'swatch_removed' => 'Swatch image removed.',
+            'swatch_remove_failed' => 'Failed to remove swatch image.',
         ],
 
         'brands' => [
@@ -969,6 +975,9 @@ return [
                 'resolved'           => 'Resolved',
             ],
         ],
+        'custom_pages' => [
+            'no_categories_yet' => 'No categories yet',
+        ],
     ],
 
     // ─── Partner portal ─────────────────────────────────────────────────────
@@ -1015,6 +1024,8 @@ return [
             'cancel_transfer_confirm'     => 'Are you sure you want to cancel this transfer?',
             'transfer_cancelled'          => 'Transfer cancelled.',
             'failed_cancel_transfer'      => 'Failed to cancel transfer.',
+            'no_warehouse_yet' => 'No warehouses yet.',
+            'no_platform_stock' => 'No platform stock in this warehouse.',
         ],
 
         'coupons' => [
@@ -1027,6 +1038,11 @@ return [
             'edit'                => 'Edit',
             'saved'               => 'Coupon saved.',
             'save_failed'         => 'Failed to save coupon.',
+        ],
+        'marketer_reports' => [
+            'chart' => [
+                'earnings_label' => 'Earnings',
+            ],
         ],
     ],
 

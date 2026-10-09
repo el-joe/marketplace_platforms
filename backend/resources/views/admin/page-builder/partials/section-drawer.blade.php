@@ -20,8 +20,8 @@
 
         <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <div>
-                <h3 id="sd-title" class="text-sm font-semibold text-gray-900">Add section</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Group blocks under a labeled, styled section.</p>
+                <h3 id="sd-title" class="text-sm font-semibold text-gray-900">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.add_section') }}</h3>
+                <p class="text-xs text-gray-500 mt-0.5">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.group_blocks_under_a_labeled_styled') }}</p>
             </div>
             <button type="button" id="sd-close" x-on:click="open = false"
                     class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
@@ -38,13 +38,13 @@
                 <x-slot:en>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Name (English)</label>
-                        <input type="text" id="sd-name-en" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. Featured Deals">
+                        <input type="text" id="sd-name-en" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.e_g_featured_deals') }}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Background image (English)</label>
                         <input type="hidden" id="sd-background-image-url-en" name="background_image_url_en">
                         <div id="sd-background-image-preview-en" class="hidden mb-2">
-                            <img id="sd-background-image-img-en" src="" alt="Background image" class="w-full h-28 object-cover rounded border border-gray-200">
+                            <img id="sd-background-image-img-en" src="" alt="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.background_image') }}" class="w-full h-28 object-cover rounded border border-gray-200">
                             <button type="button" data-clear-section-bg-image data-locale="en" class="mt-1 text-xs text-rose-500 hover:text-rose-700">Remove</button>
                         </div>
                         <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
@@ -57,18 +57,18 @@
                 <x-slot:ar>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">الاسم (عربي)</label>
-                        <input type="text" id="sd-name-ar" dir="rtl" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="مثال: عروض مميزة">
+                        <input type="text" id="sd-name-ar" dir="rtl" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.e_g_featured_deals_2') }}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">صورة الخلفية (عربي)</label>
                         <input type="hidden" id="sd-background-image-url-ar" name="background_image_url_ar">
                         <div id="sd-background-image-preview-ar" class="hidden mb-2">
-                            <img id="sd-background-image-img-ar" src="" alt="Background image" class="w-full h-28 object-cover rounded border border-gray-200">
-                            <button type="button" data-clear-section-bg-image data-locale="ar" class="mt-1 text-xs text-rose-500 hover:text-rose-700">إزالة</button>
+                            <img id="sd-background-image-img-ar" src="" alt="{{ __('admin.static_text.admin_page_builder_partials_section_drawer.background_image') }}" class="w-full h-28 object-cover rounded border border-gray-200">
+                            <button type="button" data-clear-section-bg-image data-locale="ar" class="mt-1 text-xs text-rose-500 hover:text-rose-700">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.remove') }}</button>
                         </div>
                         <label class="flex items-center justify-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition text-sm text-gray-500">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                            <span>رفع صورة الخلفية</span>
+                            <span>{{ __('admin.static_text.admin_page_builder_partials_section_drawer.upload_background_image') }}</span>
                             <input type="file" accept="image/*" class="sr-only" data-section-bg-upload data-locale="ar">
                         </label>
                     </div>
@@ -76,7 +76,7 @@
             </x-form.lang-tabs>
 
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Section Layout</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.section_layout') }}</label>
                 <select id="sd-layout" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
                     <option value="stack">Stack (blocks on top of each other)</option>
                     <option value="columns">Columns (blocks side by side)</option>
@@ -84,7 +84,7 @@
             </div>
 
             <div id="sd-columns-config-row" class="hidden">
-                <label class="block text-xs font-medium text-gray-600 mb-1">Column widths</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.column_widths') }}</label>
                 <select id="sd-columns-config" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
                     <option value='{"columns":2,"widths":"1/2 1/2"}'>2 columns — equal (50/50)</option>
                     <option value='{"columns":2,"widths":"1/3 2/3"}'>2 columns — narrow/wide (33/67)</option>
@@ -100,23 +100,23 @@
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Background color</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.background_color') }}</label>
                 <input type="text" id="sd-background-color" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="#ffffff">
             </div>
 
             <div id="sd-bg-image-type-row">
                 <label class="block text-xs font-medium text-gray-600 mb-1">
-                    Background image type
+                    {{ __('admin.static_text.admin_page_builder_partials_section_drawer.background_image_type') }}
                 </label>
                 <select id="sd-background-image-type"
                         class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="section">Section background — covers the whole section</option>
-                    <option value="header">Header background — covers the title / header area only</option>
+                    <option value="section">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.section_background_covers_the_whole_sect') }}</option>
+                    <option value="header">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.header_background_covers_the_title_heade') }}</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Max width</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.static_text.admin_page_builder_partials_section_drawer.max_width') }}</label>
                 <input type="text" id="sd-max-width" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. 1200px">
             </div>
         </div>

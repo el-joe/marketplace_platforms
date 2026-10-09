@@ -14,7 +14,7 @@
     <link rel="icon" href="{{ $adsupportFavicon['src'] }}">
     <link rel="apple-touch-icon" href="{{ $adsupportFavicon['src'] }}">
 
-    {{-- Inter — same typeface noon's Knowledge Hub uses --}}
+    {{-- Inter — same typeface Nawy's Knowledge Hub uses --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

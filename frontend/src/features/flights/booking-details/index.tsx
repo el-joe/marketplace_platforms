@@ -142,7 +142,7 @@ export default function BookingDetails({ booking }: Props) {
             </div>
             {unitDaysTotal > 0 && (
               <div className="flex justify-between text-primary/70">
-                <span>Unit days</span>
+                <span>{t("unitDays")}</span>
                 <span>{formatPrice(unitDaysTotal, currency)}</span>
               </div>
             )}
@@ -262,7 +262,7 @@ export default function BookingDetails({ booking }: Props) {
           {/* Unit days breakdown */}
           {hasUnitDays && (
             <Card className="border border-border p-6">
-              <h3 className="text-base font-bold text-primary mb-4">Unit Days Breakdown</h3>
+              <h3 className="text-base font-bold text-primary mb-4">{t("unitDaysBreakdown")}</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -289,11 +289,11 @@ export default function BookingDetails({ booking }: Props) {
                             </span>
                           ) : day.includes_overnight ? (
                             <span className="flex items-center gap-1.5">
-                              <MoonIcon className="size-3.5" /> Overnight
+                              <MoonIcon className="size-3.5" /> {t("overnight")}
                             </span>
                           ) : (
                             <span className="flex items-center gap-1.5">
-                              <SunIcon className="size-3.5" /> Day only
+                              <SunIcon className="size-3.5" /> {t("dayOnly")}
                             </span>
                           )}
                         </td>
@@ -306,7 +306,7 @@ export default function BookingDetails({ booking }: Props) {
                   <tfoot>
                     <tr className="border-t-2 border-border">
                       <td colSpan={2} className="pt-3 text-sm font-semibold text-primary">
-                        Unit days subtotal ({booking.unit_days.length} day{booking.unit_days.length !== 1 ? "s" : ""})
+                        {t("unitDaysSubtotal", { count: booking.unit_days.length })}
                       </td>
                       <td className="pt-3 text-right font-bold text-primary">
                         {formatPrice(unitDaysTotal, currency)}

@@ -14,7 +14,7 @@ return [
         'warning'          => '⚠️ Please change your password immediately after logging in to keep your account secure.',
         'login_button'     => 'Log In Now',
         'footer_disclaimer'=> 'If you were not expecting this invitation, you can safely ignore this email.',
-        'footer_copyright' => '© :year Noon — All rights reserved.',
+        'footer_copyright' => '© :year Nawy — All rights reserved.',
     ],
 
     'travel_agency_password_reset' => [
@@ -28,7 +28,7 @@ return [
         'warning'          => '⚠️ Please change your password immediately after logging in to keep your account secure.',
         'login_button'     => 'Log In Now',
         'footer_disclaimer'=> 'If you did not expect this change, please contact your agency owner immediately.',
-        'footer_copyright' => '© :year Noon — All rights reserved.',
+        'footer_copyright' => '© :year Nawy — All rights reserved.',
     ],
 
     'vendor_application_received' => [
@@ -36,7 +36,7 @@ return [
         'title'            => 'Your application is under review',
         'header'           => '🎉 Your application has been received!',
         'greeting'         => 'Hello, :name',
-        'intro'            => 'Thank you for registering as a seller on the <strong>Noon</strong> platform. We have successfully received your application and our team will review it shortly.',
+        'intro'            => 'Thank you for registering as a seller on the <strong>Nawy</strong> platform. We have successfully received your application and our team will review it shortly.',
         'details_title'    => 'Application details:',
         'store_name_label' => 'Store name',
         'email_label'      => 'Email',
@@ -46,8 +46,8 @@ return [
         'step_2'           => 'If approved, you will receive an email with your login credentials for the seller dashboard.',
         'step_3'           => 'You can then add your products and start selling right away.',
         'contact'          => 'If you have any questions, feel free to contact us at',
-        'closing'          => 'Best regards,<br><strong>The Noon Sellers Team</strong>',
-        'footer_copyright' => '&copy; :year Noon — All rights reserved',
+        'closing'          => 'Best regards,<br><strong>The Nawy Sellers Team</strong>',
+        'footer_copyright' => '&copy; :year Nawy — All rights reserved',
     ],
 
     'vendor_team_member_invite' => [
@@ -63,7 +63,7 @@ return [
         'warning'          => '⚠️ Please change your password immediately after logging in to keep your account secure.',
         'login_button'     => 'Log In Now',
         'footer_disclaimer'=> 'If you were not expecting this invitation, you can safely ignore this email.',
-        'footer_copyright' => '© :year Noon — All rights reserved.',
+        'footer_copyright' => '© :year Nawy — All rights reserved.',
     ],
 
     'carrier_supervisor_invite' => [
@@ -84,9 +84,9 @@ return [
     ],
 
     'gift_card_purchased' => [
-        'subject'      => 'You\'ve received a noon gift card!',
+        'subject'      => 'You\'ve received a Nawy gift card!',
         'heading'      => 'You\'ve received a gift card!',
-        'intro'        => ':name, someone sent you a noon gift card worth :amount :currency.',
+        'intro'        => ':name, someone sent you a Nawy gift card worth :amount :currency.',
         'code_intro'   => 'Your gift card code:',
         'redeem'       => 'Use it at checkout to redeem your balance.',
         'thanks'       => 'Thanks,<br>:app_name',
@@ -105,11 +105,11 @@ return [
     ],
 
     'gift_card_delivery' => [
-        'image_alt'          => 'Noon Gift Card',
+        'image_alt'          => 'Nawy Gift Card',
         'heading_gift'       => "You've received a gift card from :buyer_name!",
         'heading_self'       => 'Your gift card is ready!',
         'greeting'           => 'Hi :name,',
-        'intro_gift'         => ':buyer_name sent you a Noon gift card. Here are your redemption details:',
+        'intro_gift'         => ':buyer_name sent you a Nawy gift card. Here are your redemption details:',
         'intro_self'         => 'Here are your redemption details:',
         'code_label'         => 'Code',
         'pin_label'          => 'PIN:',
@@ -118,7 +118,7 @@ return [
         'how_to_use_title'   => 'How to use',
         'how_to_use_body'    => 'Go to profile → Wallet → Redeem → Gift Card tab → enter your code and PIN.',
         'thanks'             => 'Thanks,<br>:app_name',
-        'footer_copyright'   => '&copy; :year Noon — All rights reserved',
+        'footer_copyright'   => '&copy; :year Nawy — All rights reserved',
     ],
 
     'marketer_welcome' => [

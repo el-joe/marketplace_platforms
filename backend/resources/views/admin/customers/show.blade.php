@@ -363,7 +363,7 @@
                     {{-- Saved card tokens (gateway_token) are no longer stored. --}}
                     {{-- Payment history is shown in the Orders tab per sub-order. --}}
                     <p class="text-sm text-gray-500 py-4 text-center">
-                        Payment history is available in the Orders tab. Saved cards are not stored — customers pay per order via the selected gateway.
+                        {{ __('admin.static_text.admin_customers_show.payment_history_is_available_in_the') }}
                     </p>
                 </x-card>
             </div>
@@ -473,16 +473,16 @@
 
             {{-- ─── Referrals tab ─────────────────────────────────────────────────────── --}}
             <div x-show="tab === 'referrals'" x-cloak>
-                <x-card title="Referred Customers">
+                <x-card title="{{ __('admin.static_text.admin_customers_show.referred_customers') }}">
                     {{-- Summary stats --}}
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div class="text-2xl font-bold text-gray-900">{{ number_format($referralStats['total_referred']) }}</div>
-                            <div class="text-xs text-gray-500 mt-1">Customers Referred</div>
+                            <div class="text-xs text-gray-500 mt-1">{{ __('admin.static_text.admin_customers_show.customers_referred') }}</div>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div class="text-2xl font-bold text-gray-900">{{ number_format($referralStats['total_referred_orders']) }}</div>
-                            <div class="text-xs text-gray-500 mt-1">Orders by Referrals</div>
+                            <div class="text-xs text-gray-500 mt-1">{{ __('admin.static_text.admin_customers_show.orders_by_referrals') }}</div>
                         </div>
                     </div>
 
@@ -495,7 +495,7 @@
                                         <th class="pb-2 pr-3 font-medium">Name</th>
                                         <th class="pb-2 pr-3 font-medium">Email</th>
                                         <th class="pb-2 pr-3 font-medium">Orders</th>
-                                        <th class="pb-2 pr-3 font-medium">Loyalty Pts</th>
+                                        <th class="pb-2 pr-3 font-medium">{{ __('admin.static_text.admin_customers_show.loyalty_pts') }}</th>
                                         <th class="pb-2 font-medium">Joined</th>
                                     </tr>
                                 </thead>
@@ -511,7 +511,7 @@
                             });
                         </script>
                     @else
-                        <p class="text-sm text-gray-400 text-center py-6">This customer has not referred anyone yet.</p>
+                        <p class="text-sm text-gray-400 text-center py-6">{{ __('admin.static_text.admin_customers_show.this_customer_has_not_referred_anyone') }}</p>
                     @endif
                 </x-card>
             </div>
@@ -851,7 +851,7 @@
         <x-card title="{{ __('admin.customers_section.qr_code') }}">
             <div class="flex flex-col items-center gap-3 text-sm">
                 @if($customer->qr_code_path)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::url($customer->qr_code_path) }}" class="w-40 h-40 rounded-lg border border-gray-200" alt="QR code">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($customer->qr_code_path) }}" class="w-40 h-40 rounded-lg border border-gray-200" alt="{{ __('admin.static_text.admin_customers_show.qr_code') }}">
                 @else
                     <div class="w-40 h-40 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400 text-center px-2">
                         {{ __('admin.customers_section.qr_code_not_generated') }}
@@ -893,8 +893,8 @@
                             <button type="button"
                                 class="text-xs text-primary-500 hover:text-primary-700 js-copy"
                                 data-value="{{ rtrim(config('app.url'), '/') }}/r/{{ $customer->referral_code }}"
-                                title="Copy referral link">
-                                Copy link
+                                title="{{ __('admin.static_text.admin_customers_show.copy_referral_link') }}">
+                                {{ __('admin.static_text.admin_customers_show.copy_link') }}
                             </button>
                         </div>
                     @else

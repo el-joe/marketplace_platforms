@@ -31,11 +31,11 @@
 
     {{-- Tabs --}}
     <div class="border-b border-gray-200">
-        <nav class="-mb-px flex gap-6" aria-label="Tabs">
+        <nav class="-mb-px flex gap-6" aria-label="{{ __('marketer.static_text.marketer_orders_index.tabs') }}">
             <a href="{{ route('marketer.orders.index', array_merge(request()->except('tab', 'own_page', 'campaign_page'), ['tab' => 'own'])) }}"
                class="whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-semibold
                       {{ $activeTab === 'own' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                مبيعاتي
+                {{ __('marketer.static_text.marketer_orders_index.my_sales') }}
                 <span class="ms-1 text-xs rounded-full px-1.5 py-0.5
                              {{ $activeTab === 'own' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500' }}">
                     {{ $summary['own_orders_count'] }}
@@ -44,7 +44,7 @@
             <a href="{{ route('marketer.orders.index', array_merge(request()->except('tab', 'own_page', 'campaign_page'), ['tab' => 'campaign'])) }}"
                class="whitespace-nowrap pb-3 px-1 border-b-2 text-sm font-semibold
                       {{ $activeTab === 'campaign' ? 'border-gray-800 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
-                عمولاتي
+                {{ __('marketer.static_text.marketer_orders_index.my_commissions') }}
                 <span class="ms-1 text-xs rounded-full px-1.5 py-0.5
                              {{ $activeTab === 'campaign' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500' }}">
                     {{ $summary['total_orders'] }}

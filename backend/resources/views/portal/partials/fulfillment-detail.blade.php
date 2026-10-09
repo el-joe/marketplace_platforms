@@ -42,7 +42,7 @@
 
         <div class="md:grid md:grid-cols-[1.5fr_2fr] md:gap-10 lg:gap-14">
             <div class="relative aspect-[4/3] sm:aspect-[2/1] md:aspect-auto rounded-2xl overflow-hidden">
-                @php($fbnImg = portal_image('fulfillment', 'fbn', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbn.jpg', 'A noon employee working in the warehouse', 'موظف نون يعمل في المستودع'))
+                @php($fbnImg = portal_image('fulfillment', 'fbn', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbn.jpg', 'A Nawy employee working in the warehouse', 'موظف ناوي يعمل في المستودع'))
                 <img src="{{ $fbnImg['src'] }}"
                      alt="{{ $fbnImg['alt'] }}"
                      class="absolute inset-0 w-full h-full object-cover">
@@ -133,7 +133,7 @@
 
         <div class="md:grid md:grid-cols-[1.5fr_2fr] md:gap-10 lg:gap-14">
             <div class="relative aspect-[4/3] sm:aspect-[2/1] md:aspect-auto rounded-2xl overflow-hidden">
-                @php($fbpImg = portal_image('fulfillment', 'fbp', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbp.jpg', 'noon boxes', 'صناديق نون'))
+                @php($fbpImg = portal_image('fulfillment', 'fbp', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/03-fbp.jpg', 'Nawy boxes', 'صناديق ناوي'))
                 <img src="{{ $fbpImg['src'] }}"
                      alt="{{ $fbpImg['alt'] }}"
                      class="absolute inset-0 w-full h-full object-cover">

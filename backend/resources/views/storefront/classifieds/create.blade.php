@@ -14,8 +14,8 @@
         <a href="javascript:history.back()" class="text-gray-500">
             <x-heroicon name="arrow-right" class="w-5 h-5" />
         </a>
-        <h1 class="flex-1 text-sm font-bold text-gray-900">إضافة إعلان جديد</h1>
-        <span id="step-badge" class="text-xs text-gray-400">الخطوة 1 من 6</span>
+        <h1 class="flex-1 text-sm font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.add_a_new_ad') }}</h1>
+        <span id="step-badge" class="text-xs text-gray-400">{{ __('common.static_text.storefront_classifieds_create.step_1_of_6') }}</span>
     </div>
 
     {{-- Progress bar --}}
@@ -29,8 +29,8 @@
 
             {{-- ─── Step 1: Category ─────────────────────────────────────────── --}}
             <div data-step="1" class="space-y-4">
-                <h2 class="text-base font-bold text-gray-900">اختر القسم</h2>
-                <p class="text-sm text-gray-500">حدد نوع ما تريد نشر إعلانه</p>
+                <h2 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.choose_a_category') }}</h2>
+                <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_classifieds_create.select_the_type_of_what_you') }}</p>
 
                 <div class="grid grid-cols-2 gap-3">
                     @foreach($categories as $cat)
@@ -51,18 +51,18 @@
                 </div>
 
                 <div class="pt-2">
-                    <label class="text-sm font-medium text-gray-700">الغرض</label>
+                    <label class="text-sm font-medium text-gray-700">{{ __('common.static_text.storefront_classifieds_create.purpose') }}</label>
                     <div class="mt-2 flex gap-3">
                         <label class="flex-1 cursor-pointer">
                             <input type="radio" name="listing_purpose" value="sale" class="sr-only purpose-radio" checked>
                             <div class="purpose-card border-2 border-primary-500 bg-primary-50 rounded-xl p-3 text-center">
-                                <p class="text-sm font-semibold text-primary-700">للبيع</p>
+                                <p class="text-sm font-semibold text-primary-700">{{ __('common.static_text.storefront_classifieds_create.for_sale') }}</p>
                             </div>
                         </label>
                         <label class="flex-1 cursor-pointer">
                             <input type="radio" name="listing_purpose" value="rent" class="sr-only purpose-radio">
                             <div class="purpose-card border-2 border-gray-200 rounded-xl p-3 text-center">
-                                <p class="text-sm font-semibold text-gray-600">للإيجار</p>
+                                <p class="text-sm font-semibold text-gray-600">{{ __('common.static_text.storefront_classifieds_create.for_rent') }}</p>
                             </div>
                         </label>
                     </div>
@@ -71,15 +71,15 @@
 
             {{-- ─── Step 2: Details ──────────────────────────────────────────── --}}
             <div data-step="2" class="hidden space-y-4">
-                <h2 class="text-base font-bold text-gray-900">تفاصيل الإعلان</h2>
+                <h2 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.ad_details') }}</h2>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">العنوان بالعربية *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.title_in_arabic') }}</label>
                     <input type="text" name="title_ar" maxlength="255" required
                            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Title in English *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.title_in_english') }}</label>
                     <input type="text" name="title_en" maxlength="255" required
                            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                 </div>
@@ -95,21 +95,21 @@
                 </div>
                 <div class="flex gap-3">
                     <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">السعر *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.price') }}</label>
                         <input type="number" name="price_display" min="0" step="any" required
                                placeholder="0.00"
                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                         <input type="hidden" name="price" id="price_input">
                     </div>
                     <div class="w-24">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">العملة</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.currency') }}</label>
                         <input type="text" name="currency" value="{{ $countryModel->currency_code ?? '' }}" maxlength="3"
                                class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" name="price_negotiable" id="price_negotiable" value="1" class="rounded">
-                    <label for="price_negotiable" class="text-sm text-gray-700">السعر قابل للتفاوض</label>
+                    <label for="price_negotiable" class="text-sm text-gray-700">{{ __('common.static_text.storefront_classifieds_create.price_is_negotiable') }}</label>
                 </div>
 
                 {{-- Dynamic attributes container --}}
@@ -118,10 +118,10 @@
 
             {{-- ─── Step 3: Location ─────────────────────────────────────────── --}}
             <div data-step="3" class="hidden space-y-4">
-                <h2 class="text-base font-bold text-gray-900">الموقع</h2>
+                <h2 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.location') }}</h2>
 
                 <div id="location-picker-wrapper">
-                    <p class="text-sm text-gray-500 mb-2">اسحب الدبوس لتحديد الموقع الدقيق</p>
+                    <p class="text-sm text-gray-500 mb-2">{{ __('common.static_text.storefront_classifieds_create.drag_the_pin_to_set_the') }}</p>
                     <div id="location-picker" class="w-full h-64 rounded-xl overflow-hidden border border-gray-200"></div>
                     <input type="hidden" name="latitude" id="latitude_input">
                     <input type="hidden" name="longitude" id="longitude_input">
@@ -129,51 +129,51 @@
                 </div>
 
                 <div id="sketch-upload-wrapper" class="hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">المخطط / الكروكي</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.floor_plan_sketch') }}</label>
                     <input type="file" name="sketch_file" accept=".pdf,.jpg,.jpeg,.png"
                            class="w-full text-sm text-gray-600 file:me-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">صور الإعلان</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.ad_photos') }}</label>
                     <input type="file" name="images[]" accept="image/*" multiple
                            class="w-full text-sm text-gray-600 file:me-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700">
-                    <p class="text-xs text-gray-400 mt-1">يمكنك رفع عدة صور. الصورة الأولى ستكون الرئيسية.</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ __('common.static_text.storefront_classifieds_create.you_can_upload_several_photos_the') }}</p>
                 </div>
             </div>
 
             {{-- ─── Step 4: Attachments ──────────────────────────────────────── --}}
             <div data-step="4" class="hidden space-y-4">
-                <h2 class="text-base font-bold text-gray-900">المستندات المطلوبة</h2>
-                <p class="text-sm text-gray-500">يجب رفع المستندات التالية لإتمام الإعلان</p>
+                <h2 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.required_documents') }}</h2>
+                <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_classifieds_create.the_following_documents_must_be_uploaded') }}</p>
                 <div id="attachments-container" class="space-y-3"></div>
             </div>
 
             {{-- ─── Step 5: Marketers ────────────────────────────────────────── --}}
             <div data-step="5" class="hidden space-y-4">
-                <h2 class="text-base font-bold text-gray-900">التسويق بالعمولة</h2>
-                <p class="text-sm text-gray-500">يمكنك اختيار مسوّقين لنشر إعلانك مقابل عمولة</p>
+                <h2 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.affiliate_marketing') }}</h2>
+                <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_classifieds_create.you_can_pick_marketers_to_promote') }}</p>
 
                 <div class="flex gap-3">
                     <label class="flex-1 cursor-pointer">
                         <input type="radio" name="marketer_mode" value="skip" class="sr-only" checked>
                         <div class="marketer-mode-card border-2 border-gray-200 rounded-xl p-3 text-center">
-                            <p class="text-sm font-semibold text-gray-600">تخطي</p>
-                            <p class="text-xs text-gray-400 mt-0.5">بدون مسوّقين</p>
+                            <p class="text-sm font-semibold text-gray-600">{{ __('common.static_text.storefront_classifieds_create.skip') }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">{{ __('common.static_text.storefront_classifieds_create.no_marketers') }}</p>
                         </div>
                     </label>
                     <label class="flex-1 cursor-pointer">
                         <input type="radio" name="marketer_mode" value="all" class="sr-only">
                         <div class="marketer-mode-card border-2 border-gray-200 rounded-xl p-3 text-center">
-                            <p class="text-sm font-semibold text-gray-600">جميع المسوّقين</p>
-                            <p class="text-xs text-gray-400 mt-0.5">مفتوح للكل</p>
+                            <p class="text-sm font-semibold text-gray-600">{{ __('common.static_text.storefront_classifieds_create.all_marketers') }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">{{ __('common.static_text.storefront_classifieds_create.open_to_everyone') }}</p>
                         </div>
                     </label>
                     <label class="flex-1 cursor-pointer">
                         <input type="radio" name="marketer_mode" value="specific" class="sr-only">
                         <div class="marketer-mode-card border-2 border-gray-200 rounded-xl p-3 text-center">
-                            <p class="text-sm font-semibold text-gray-600">مسوّقين محددين</p>
-                            <p class="text-xs text-gray-400 mt-0.5">اختر بالاسم</p>
+                            <p class="text-sm font-semibold text-gray-600">{{ __('common.static_text.storefront_classifieds_create.specific_marketers') }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">{{ __('common.static_text.storefront_classifieds_create.choose_by_name') }}</p>
                         </div>
                     </label>
                 </div>
@@ -181,14 +181,14 @@
                 <div id="commission-fields" class="hidden space-y-3">
                     <div class="flex gap-3">
                         <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">نوع العمولة</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.commission_type') }}</label>
                             <select name="commission_type" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm">
-                                <option value="percentage">نسبة مئوية %</option>
-                                <option value="fixed">مبلغ ثابت</option>
+                                <option value="percentage">{{ __('common.static_text.storefront_classifieds_create.percentage') }}</option>
+                                <option value="fixed">{{ __('common.static_text.storefront_classifieds_create.fixed_amount') }}</option>
                             </select>
                         </div>
                         <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">القيمة</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.value') }}</label>
                             <input type="number" name="commission_value" value="5" min="0" step="0.01"
                                    class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm">
                         </div>
@@ -199,24 +199,24 @@
 
             {{-- ─── Step 6: Contract ─────────────────────────────────────────── --}}
             <div data-step="6" class="hidden space-y-4">
-                <h2 class="text-base font-bold text-gray-900">العقد الإلكتروني</h2>
-                <p class="text-sm text-gray-500">يرجى قراءة العقد بعناية قبل التوقيع</p>
+                <h2 class="text-base font-bold text-gray-900">{{ __('common.static_text.storefront_classifieds_create.electronic_contract') }}</h2>
+                <p class="text-sm text-gray-500">{{ __('common.static_text.storefront_classifieds_create.please_read_the_contract_carefully_befor') }}</p>
 
                 <div id="contract-content"
                      class="max-h-64 overflow-y-auto bg-gray-50 rounded-xl p-4 text-sm text-gray-700 leading-relaxed border border-gray-200">
-                    <p class="text-gray-400 text-center py-4">جاري تحميل العقد...</p>
+                    <p class="text-gray-400 text-center py-4">{{ __('common.static_text.storefront_classifieds_create.loading_contract') }}</p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">التوقيع (اكتب اسمك الكامل) *</label>
-                    <input type="text" id="signature_name" placeholder="الاسم الكامل"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.static_text.storefront_classifieds_create.signature_type_your_full_name') }}</label>
+                    <input type="text" id="signature_name" placeholder="{{ __('common.static_text.storefront_classifieds_create.full_name') }}"
                            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500">
                 </div>
 
                 <div class="flex items-start gap-2">
                     <input type="checkbox" id="contract_agreed" class="mt-0.5 rounded">
                     <label for="contract_agreed" class="text-sm text-gray-700">
-                        أوافق على شروط وأحكام هذا العقد وأتعهد بصحة البيانات المُدخلة
+                        {{ __('common.static_text.storefront_classifieds_create.i_agree_to_the_terms_and') }}
                     </label>
                 </div>
             </div>
@@ -225,15 +225,15 @@
             <div class="flex gap-3 pt-4">
                 <button type="button" id="prev-btn" onclick="prevStep()"
                         class="hidden flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold">
-                    السابق
+                    {{ __('common.static_text.storefront_classifieds_create.previous') }}
                 </button>
                 <button type="button" id="next-btn" onclick="nextStep()"
                         class="flex-1 py-3 bg-primary-600 text-white rounded-xl text-sm font-semibold">
-                    التالي
+                    {{ __('common.static_text.storefront_classifieds_create.next') }}
                 </button>
                 <button type="button" id="submit-btn" onclick="submitListing()"
                         class="hidden flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold">
-                    نشر الإعلان
+                    {{ __('common.static_text.storefront_classifieds_create.publish_ad') }}
                 </button>
             </div>
         </form>

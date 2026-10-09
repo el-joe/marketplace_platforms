@@ -13,7 +13,7 @@ export default async function CheckoutFooter() {
         <p className="text-gray mb-3 text-sm">
           {t("$$AllRightsReserved", {
             date: new Date().getFullYear(),
-            brand: "noon",
+            brand: "Nawy",
           })}
         </p>
         <div className="flex gap-2 items-center">

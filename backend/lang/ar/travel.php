@@ -383,6 +383,12 @@ return [
         'insufficient_seats' => 'لا توجد مقاعد كافية لتأكيد هذا الحجز.',
         'confirm_success' => 'تم تأكيد الحجز.',
         'cancel_success' => 'تم إلغاء الحجز.',
+        'bookable_unit' => 'الوحدة القابلة للحجز',
+        'optional' => 'اختياري',
+        'no_unit' => 'بدون وحدة',
+        'full_day' => 'يوم كامل',
+        'includes_overnight' => 'يشمل المبيت',
+        'price' => 'السعر',
     ],
 
     'inquiries' => [
@@ -975,4 +981,9 @@ return [
         'no_data' => 'لا توجد بيانات لهذه الفترة.',
     ],
     'bookable_unit_not_available' => 'الوحدة المختارة غير متاحة لهذه الباقة.',
+    'static_text' => [
+        'travel_agency_bookings_show' => [
+            'time_slot' => 'الفترة الزمنية',
+        ],
+    ],
 ];

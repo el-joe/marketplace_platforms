@@ -20,7 +20,7 @@
 
         <div class="rounded-2xl overflow-hidden bg-[#1c1c1c] md:bg-transparent md:grid md:grid-cols-[1.5fr_2fr] md:gap-10 lg:gap-14">
             <div class="relative aspect-[4/3] sm:aspect-[2/1] md:aspect-auto md:rounded-2xl md:overflow-hidden">
-                @php($stepsImg = portal_image('how-it-works', 'steps', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-steps-go-live.jpg', 'noon Employees packing items into crates', 'موظفو نون يعبئون الصناديق'))
+                @php($stepsImg = portal_image('how-it-works', 'steps', 'photo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/02-steps-go-live.jpg', 'Nawy Employees packing items into crates', 'موظفو ناوي يعبئون الصناديق'))
                 <img src="{{ $stepsImg['src'] }}"
                      alt="{{ $stepsImg['alt'] }}"
                      class="absolute inset-0 w-full h-full object-cover">

@@ -145,8 +145,8 @@ $warehouse — Warehouse model (edit mode only)
             {{-- FBN Free Storage & Daily Overage Fee (platform_fbn warehouses only) --}}
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm" x-show="type === 'platform_fbn'" x-cloak>
                 <div class="px-5 py-4 border-b border-gray-100">
-                    <h2 class="text-sm font-semibold text-gray-900">FBN Free Storage & Daily Overage Fee</h2>
-                    <p class="text-xs text-gray-500 mt-0.5">After the free storage days expire, a daily fee per unit is charged.</p>
+                    <h2 class="text-sm font-semibold text-gray-900">{{ __('admin.static_text.admin_warehouses_form.fbn_free_storage_daily_overage_fee') }}</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ __('admin.static_text.admin_warehouses_form.after_the_free_storage_days_expire') }}</p>
                 </div>
                 <div class="px-5 py-5 space-y-4">
 
@@ -262,9 +262,9 @@ $warehouse — Warehouse model (edit mode only)
                             <button type="button" id="btn-apply-default-limit"
                                 data-url="{{ route('admin.warehouses.vendor-limits.apply-default', $warehouse->id) }}"
                                 class="btn btn-secondary btn-sm w-full">
-                                Apply Default to All Vendors
+                                {{ __('admin.static_text.admin_warehouses_form.apply_default_to_all_vendors') }}
                             </button>
-                            <p class="mt-1.5 text-xs text-gray-400">Fills the default limit in for any vendor in this warehouse who doesn't already have a custom limit. Save this default first.</p>
+                            <p class="mt-1.5 text-xs text-gray-400">{{ __('admin.static_text.admin_warehouses_form.fills_the_default_limit_in_for') }}</p>
                         </div>
                     @endif
                 </div>

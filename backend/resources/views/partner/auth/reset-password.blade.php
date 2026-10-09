@@ -15,7 +15,7 @@
 
         {{-- Logo --}}
         <div class="text-center mb-8">
-            <span class="inline-block bg-yellow-400 text-gray-950 font-black text-3xl px-4 py-1 rounded-lg">noon</span>
+            <span class="inline-block bg-yellow-400 text-gray-950 font-black text-3xl px-4 py-1 rounded-lg">Nawy</span>
             <p class="text-gray-400 text-sm mt-3">{{ __('partner.auth.vendor_panel_subtitle') }}</p>
         </div>
 

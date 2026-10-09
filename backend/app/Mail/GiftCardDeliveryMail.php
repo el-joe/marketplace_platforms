@@ -25,7 +25,7 @@ class GiftCardDeliveryMail extends Mailable
     {
         return new Envelope(
             to: [$this->purchase->recipient_email],
-            subject: "Your Noon Gift Card — {$this->purchase->currency_code} {$this->purchase->amount_paid}",
+            subject: "Your Nawy Gift Card — {$this->purchase->currency_code} {$this->purchase->amount_paid}",
         );
     }
 

@@ -225,7 +225,7 @@
                                 <input type="checkbox" name="vendor_covers_delivery" value="1"
                                     class="mt-1 rounded border-gray-300 text-yellow-500 focus:ring-yellow-400/40">
                                 <span class="text-sm text-gray-700">
-                                    أتحمل تكاليف التوصيل المتبقية / I cover remaining delivery costs
+                                    {{ __('partner.static_text.partner_listings_create.i_cover_the_remaining_delivery_costs') }}
                                     <span class="block text-xs text-gray-400 mt-0.5">
                                         إذا فعّلت هذا الخيار، سيظهر التوصيل مجانياً للعميل حتى لو كانت هناك فجوة بعد دعم المنصة. /
                                         If enabled, delivery appears free to customer even if there's a gap after platform subsidy.
@@ -363,15 +363,15 @@
                                 class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
                             <span class="text-sm text-gray-700">
                                 <i class="fas fa-bullhorn text-purple-500 mr-1"></i>
-                                تفعيل حملة ماركتر لهذا المنتج
+                                {{ __('partner.static_text.partner_listings_create.enable_a_marketer_campaign_for_this') }}
                                 <span class="block text-xs text-gray-400 mt-0.5">
-                                    متاح فقط لقوائم FBN — يتيح لك دعوة ماركترز للترويج مقابل عمولة.
+                                    {{ __('partner.static_text.partner_listings_create.available_for_fbn_listings_only_lets') }}
                                 </span>
                             </span>
                         </label>
 
                         <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3 hidden" id="campaign-not-fbn-warning">
-                            يجب اختيار نموذج التنفيذ FBN لتفعيل حملة الماركتر.
+                            {{ __('partner.static_text.partner_listings_create.you_must_choose_the_fbn_fulfillment') }}
                         </p>
 
                         <div class="space-y-4 hidden" id="campaign-details">

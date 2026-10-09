@@ -520,7 +520,7 @@
                 if ($contractAccs->isEmpty() && $order->contractAcceptance) { $contractAccs = collect([$order->contractAcceptance]); }
             @endphp
             @if($contractAccs->isNotEmpty())
-            <x-card title="Accepted Marketer Contract">
+            <x-card title="{{ __('admin.static_text.admin_orders_show.accepted_marketer_contract') }}">
                 @foreach($contractAccs as $ca)
                     <div class="text-sm py-1">Version v{{ $ca->contractVersion->version_number ?? '?' }} &mdash; {{ optional($ca->accepted_at)->format('d M Y H:i:s') }}</div>
                 @endforeach

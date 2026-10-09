@@ -140,7 +140,7 @@
                             <div class="flex items-center justify-center gap-2">
                                 {{-- View link --}}
                                 <a href="{{ route('marketer.listings.show', $listing) }}"
-                                   class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:opacity-80">عرض</a>
+                                   class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:opacity-80">{{ __('marketer.static_text.marketer_listings_index.view') }}</a>
 
                                 {{-- Toggle status --}}
                                 <form method="POST" action="{{ route('marketer.listings.toggle-status', $listing) }}">
