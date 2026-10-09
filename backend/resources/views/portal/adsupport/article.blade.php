@@ -18,7 +18,7 @@
     <div class="justify-between flex">
         <div class="relative z-3 w-full lg:max-w-[640px]">
             <div class="flex pb-6 max-md:pb-2 lg:max-w-[640px]">
-                <nav class="pb-4 text-base" aria-label="{{ $isAr ? 'مسار التنقل' : 'Breadcrumb' }}">
+                <nav class="pb-4 text-base" aria-label="{{ portal_content('adsupport', 'common', 'breadcrumb_aria', 'Breadcrumb', 'مسار التنقل') }}">
                     <ol class="m-0 flex list-none flex-wrap items-baseline gap-2 p-0">
                         <li class="flex items-center gap-2">
                             <a href="{{ route('portal.adsupport.index', $country) }}" class="text-black no-underline hover:text-[#737373]">{{ portal_content('adsupport', 'article', 'all_collections', 'All Collections', 'كل المجموعات') }}</a>

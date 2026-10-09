@@ -6,7 +6,8 @@
     <section id="ads" class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div class="rounded-2xl border-2 border-[#1c1c1c] p-6 lg:p-12 flex flex-col lg:grid lg:grid-cols-[1fr_auto] items-center gap-8 lg:gap-16">
             <div class="order-2 lg:order-1 w-full">
-                <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/logo-noon-ads.svg" alt="noon Ads"
+                @php($adsLogo = portal_image('smart-tools', 'ads', 'logo', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/logo-noon-ads.svg', 'Nawy Ads', 'إعلانات ناوي'))
+                <img src="{{ $adsLogo['src'] }}" alt="{{ $adsLogo['alt'] }}"
                      class="h-7 w-auto my-2">
                 <p class="text-[16px] font-medium text-gray-300">
                     {{ portal_content('smart-tools', 'ads', 'description_1',
@@ -26,7 +27,7 @@
                     <li>{{ portal_content('smart-tools', 'ads', 'format_item_2', 'Display ads - to promote campaigns like new launches, clearance, or seasonal offers', 'إعلانات العرض - للترويج للحملات مثل الإطلاق الجديد، التصفية أو العروض الموسمية') }}</li>
                 </ul>
                 <div class="mt-6">
-                    @php($adsLearnMore = portal_link('smart-tools', 'ads', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')))
+                    @php($adsLearnMore = portal_link('smart-tools', 'ads', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? \App\Models\Country::resolveSiteCode(null))))
                     <a href="{{ $adsLearnMore['url'] }}"
                        class="inline-flex items-center gap-2 text-[#0F807E] font-bold text-sm">
                         {{ $adsLearnMore['label'] }}
@@ -65,7 +66,7 @@
                     <p class="text-[16px] font-bold mb-2">{{ portal_content('smart-tools', 'fee-structure', 'description', 'Your costs depend on your product category and fulfilment model.', 'تعتمد تكاليفك على فئة منتجك ونموذج التنفيذ.') }}</p>
                     <p class="text-[16px] font-medium text-gray-300">{{ portal_content('smart-tools', 'fee-structure', 'note', 'Fees are transparent, flexible, and designed to grow with you.', 'الإعدادات شفافة، مرنة، ومصممة لتنمو معك.') }}</p>
                     <div class="mt-8">
-                        @php($feeStructureCta = portal_link('smart-tools', 'fee-structure', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')))
+                        @php($feeStructureCta = portal_link('smart-tools', 'fee-structure', 'learn_more_button', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? \App\Models\Country::resolveSiteCode(null))))
                         <a href="{{ $feeStructureCta['url'] }}" target="_blank" rel="noopener"
                            class="inline-flex items-center justify-center w-full sm:w-auto bg-[#0F807E] hover:bg-[#0c6665] text-white
                                   font-black text-sm px-6 py-3 rounded-full transition-colors">
@@ -92,16 +93,16 @@
             <?php
                 $feeCards = [
                     [
-                        'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-01.jpg',
+                        'image' => portal_image('smart-tools', 'fee-card-referral', 'image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-01.jpg', 'Referral Fees', 'رسوم الاحالة')['src'],
                         'title' => portal_content('smart-tools', 'fee-card-referral', 'title', 'Referral Fees', 'رسوم الاحالة'),
                         'sub' => portal_content('smart-tools', 'fee-card-referral', 'tagline', 'We only earn when you do.', 'نحن نربح فقط عندما تحقق انت ربحا'),
                         'desc' => portal_content('smart-tools', 'fee-card-referral', 'description', 'A referral fee applies per sale — based on your product category.', 'تطبق رسوم الاحالة علي كل عملية بيع - وفقا لفئة منتجك'),
                         'links' => [
-                            portal_link('smart-tools', 'fee-card-referral', 'link_1', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')),
+                            portal_link('smart-tools', 'fee-card-referral', 'link_1', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? \App\Models\Country::resolveSiteCode(null))),
                         ],
                     ],
                     [
-                        'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-02.jpg',
+                        'image' => portal_image('smart-tools', 'fee-card-fulfilment', 'image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-02.jpg', 'Fulfilment Fees', 'رسوم التنفيذ')['src'],
                         'title' => portal_content('smart-tools', 'fee-card-fulfilment', 'title', 'Fulfilment Fees', 'رسوم التنفيذ'),
                         'sub' => portal_content('smart-tools', 'fee-card-fulfilment', 'tagline', 'Your shipping, your call.', 'شحنك، خيارك'),
                         'desc' => portal_content('smart-tools', 'fee-card-fulfilment', 'description', "You pay for what you use, no hidden charges - fee varies based on how you choose to fulfil.", 'تدفع مقابل ما تستخدمه فقط، بدون أي رسوم خفية – الرسوم تختلف حسب طريقة التنفيذ التي تختارها.'),
@@ -111,12 +112,12 @@
                         ],
                     ],
                     [
-                        'image' => 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-03.jpg',
+                        'image' => portal_image('smart-tools', 'fee-card-other', 'image', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/04-transparent-fees-03.jpg', 'Other Costs', 'مصاريف اخري')['src'],
                         'title' => portal_content('smart-tools', 'fee-card-other', 'title', 'Other Costs', 'مصاريف اخري'),
                         'sub' => portal_content('smart-tools', 'fee-card-other', 'tagline', 'Only if you opt in.', 'تطبق فقط اذا اخترت الاستفادة منها'),
                         'desc' => portal_content('smart-tools', 'fee-card-other', 'description', 'Extra fees apply for things like long-term storage etc. — which are applied when you choose to avail these services.', 'تُضاف رسوم إضافية لأمور مثل التخزين طويل الأمد وغيرها – وتُطبق عند اختيارك استخدام هذه الخدمات.'),
                         'links' => [
-                            portal_link('smart-tools', 'fee-card-other', 'link_1', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? 'ae')),
+                            portal_link('smart-tools', 'fee-card-other', 'link_1', 'Learn more', 'اعرف أكثر', route('portal.helpcenter.index', $country ?? \App\Models\Country::resolveSiteCode(null))),
                         ],
                     ],
                 ];
@@ -165,7 +166,7 @@
                 </p>
             </div>
             <div class="mt-2 md:mt-0">
-                @php($payoutsCta = portal_link('smart-tools', 'payouts', 'cta_button', 'Discover how', 'اكتشف كيف', route('portal.helpcenter.index', $country ?? 'ae')))
+                @php($payoutsCta = portal_link('smart-tools', 'payouts', 'cta_button', 'Discover how', 'اكتشف كيف', route('portal.helpcenter.index', $country ?? \App\Models\Country::resolveSiteCode(null))))
                 <a href="{{ $payoutsCta['url'] }}" target="_blank" rel="noopener"
                    class="inline-flex items-center justify-center w-full sm:w-auto bg-[#0F807E] hover:bg-[#0c6665] text-white
                           font-black text-sm px-6 py-3 rounded-full transition-colors">

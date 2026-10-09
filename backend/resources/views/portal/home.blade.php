@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', session('locale', 'ar') === 'ar' ? 'بيع على ناوي' : 'Sell on Nawy')
+@section('title', portal_content('home', 'meta', 'title', 'Sell on Nawy', 'بيع على ناوي'))
 
 @section('content')
     @include('portal.partials.hero')

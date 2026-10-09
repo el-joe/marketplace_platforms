@@ -3,7 +3,7 @@
 
     $testimonials = [
         [
-            'logo' => 'https://advertise.noon.com/images/unicharm.png',
+            'logo' => portal_image('sellers', 'testimonial_1', 'logo', 'https://advertise.noon.com/images/unicharm.png', 'Unicharm', 'Unicharm'),
             'quote' => portal_content('sellers', 'testimonial_1', 'quote',
                 "'Nawy Ads played an instrumental role in enhancing our activities with Nawy. Our investments have had, and continue to have, a material and positive impact to grow our sales and achieve our mutual business goals. We continue to see Nawy as a key player in the e-commerce industry in the region. This is underscored by the high degree of support and dedication by the entire Nawy team.'",
                 "'لعبت إعلانات ناوي دوراً فعالاً في تعزيز أنشطتنا مع ناوي. استثماراتنا كان ولا تزال، تأثيرها مادياً وإيجابياً في تنمية مبيعاتنا وتحقيق أهدافنا التجارية المتبادلة. لا زلنا نرى ناوي وجهة رئيسية في عالم التجارة الإلكترونية في المنطقة. وهذا ما يؤكده المستوى العالي من الدعم والتفاني الذي يقدمه فريق ناوي بأكمله.'"),
@@ -11,7 +11,7 @@
             'position' => portal_content('sellers', 'testimonial_1', 'position', 'Senior Executive, Unicharm Gulf Hygienic Industries', 'مدير تنفيذي أول، شركة يونيتشارم جلف لصناعات الصحة'),
         ],
         [
-            'logo' => 'https://advertise.noon.com/images/funMoment.png',
+            'logo' => portal_image('sellers', 'testimonial_2', 'logo', 'https://advertise.noon.com/images/funMoment.png', 'Fun Moment', 'Fun Moment'),
             'quote' => portal_content('sellers', 'testimonial_2', 'quote',
                 "'We partnered with Nawy to lead our advertising efforts for the launch of our products. The campaign not only gave us significant visibility in offline & onsite but helped cement our partnership by reinforcing Nawy as a key destination for funmoment products. The results are evident in the traffic generated, word of mouth & record sales number that we have witnessed so far.'",
                 "'لقد عقدنا شراكة مع ناوي لقيادة جهودنا الإعلانية لإطلاق منتجاتنا. لم تمنحنا الحملة رؤية كبيرة في الموقع وخارجي فحسب، بل ساعدت في تعزيز شراكتنا من خلال تعزيز ناوي وجهة رئيسية لمنتجات لحظة فرح. وتتجلى النتائج في عدد الزيارات والكلمات الشفوية وأرقام المبيعات القياسية التي شهدناها حتى الآن.'"),
@@ -19,7 +19,7 @@
             'position' => portal_content('sellers', 'testimonial_2', 'position', 'Direct manager, Fun moment', 'المدير المباشر، لحظة متعة'),
         ],
         [
-            'logo' => 'https://advertise.noon.com/images/abdul1.png',
+            'logo' => portal_image('sellers', 'testimonial_3', 'logo', 'https://advertise.noon.com/images/abdul1.png', 'Abdul Wahed', 'Abdul Wahed'),
             'quote' => portal_content('sellers', 'testimonial_3', 'quote',
                 "'Our experience collaborating with Nawy on their website advertising services has been exceptional. From the moment we engaged with their team, we noticed a significant boost in our brand visibility and sales performance. Collaborating with Nawy has not only improved our sales but also created a sustainable brand presence that resonates with customers.'",
                 "'لقد كانت تجربتنا في التعامل مع ناوي في خدمات الإعلان على موقعهم الإلكتروني استثنائية. منذ اللحظة التي تعاملنا فيها مع فريقهم، لاحظنا زيادة كبيرة في رؤية علامتنا التجارية وأداء المبيعات. إن التعامل مع ناوي لم يؤدِ إلى تحسين مبيعاتنا فحسب، بل أدى أيضاً إلى خلق حضور مستدام للعلامة التجارية وتردد صداه مع العملاء.'"),
@@ -41,7 +41,7 @@
                      :style="`transform: translateX(${ {{ $isAr ? '1' : '-1' }} * active * 100}%)`">
                     @foreach($testimonials as $t)
                         <div class="w-full shrink-0 px-2 sm:px-10 text-center">
-                            <img src="{{ $t['logo'] }}" alt="{{ $t['name'] }}"
+                            <img src="{{ $t['logo']['src'] }}" alt="{{ $t['logo']['alt'] }}"
                                  loading="lazy" class="h-8 mx-auto mb-6 object-contain">
                             <p class="text-gray-700 text-base sm:text-lg max-w-[70ch] mx-auto leading-relaxed text-pretty">
                                 {{ $t['quote'] }}

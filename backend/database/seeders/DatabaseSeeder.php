@@ -111,10 +111,6 @@ class DatabaseSeeder extends Seeder
 
             // ── Portal Content CMS (admin-editable bilingual marketing text) ─
             PortalContentSeeder::class,
-            PortalContentSeederBatch1::class,
-            PortalContentSeederBatch2::class,
-            PortalContentSeederBatch3::class,
-            PortalContentSeederBatch4::class,
 
             // ── Light cross-reference demo data (run last) ─────────────────
             DemoDataSeeder::class,

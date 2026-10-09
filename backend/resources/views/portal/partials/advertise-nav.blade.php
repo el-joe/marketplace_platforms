@@ -1,15 +1,18 @@
 @php
     $isAr = session('locale', 'ar') === 'ar';
     $langToggleUrl = route('portal.language', $isAr ? 'en' : 'ar');
-    $country = $country ?? 'ae';
+    $country = $country ?? \App\Models\Country::resolveSiteCode(null);
 
     $navSellers = portal_content('nav', 'advertise_nav', 'sellers', 'Sellers', 'البائعين');
     $navBrands = portal_content('nav', 'advertise_nav', 'brands', 'Brands', 'العلامات التجارية');
     $navAdvertisers = portal_content('nav', 'advertise_nav', 'advertisers', 'Advertisers', 'المعلنين');
     $navKnowledgeHub = portal_content('nav', 'advertise_nav', 'knowledge_hub', 'Knowledge Hub', 'مركز المعلومات');
-    $navStartNow = portal_content('nav', 'advertise_nav', 'start_now', 'Start now', 'ابدأ الآن');
+    $navStartNow = portal_link('nav', 'advertise_nav', 'start_now', 'Start now', 'ابدأ الآن', route('portal.register'));
     $navContactUs = portal_content('nav', 'advertise_nav', 'contact_us', 'Contact us', 'اتصل بنا');
-    $navLangShort = $isAr ? 'EN' : 'AR';
+    $navLangShort = portal_content('nav', 'advertise_nav', 'language_short', 'AR', 'EN');
+    $navLogo = portal_image('nav', 'advertise_nav', 'logo', asset('images/nawy_logo_transparent.png'), 'Nawy ads', 'Nawy ads');
+    $navLogoAria = portal_content('nav', 'advertise_nav', 'logo_aria', 'Nawy ads', 'Nawy ads');
+    $navMenuAria = portal_content('nav', 'advertise_nav', 'menu_aria', 'Menu', 'القائمة');
 @endphp
 
 <header class="sticky top-0 z-50 bg-white border-b border-gray-100" x-data="{ mobileOpen: false }">
@@ -17,8 +20,8 @@
         <div class="flex items-center justify-between h-[72px] gap-4">
 
             {{-- Logo --}}
-            <a href="{{ route('portal.sellers', $country) }}" class="flex items-center shrink-0" aria-label="Nawy ads">
-                <img src="{{ asset('images/nawy_logo_transparent.png') }}" alt="Nawy ads" height="29"
+            <a href="{{ route('portal.sellers', $country) }}" class="flex items-center shrink-0" aria-label="{{ $navLogoAria }}">
+                <img src="{{ $navLogo['src'] }}" alt="{{ $navLogo['alt'] }}" height="29"
                     class="h-7 w-auto">
             </a>
 
@@ -38,9 +41,9 @@
             </nav>
 
             <div class="hidden lg:flex items-center gap-5">
-                <a href="{{ route('portal.register') }}" target="_blank" rel="noopener"
+                <a href="{{ $navStartNow['url'] }}" target="_blank" rel="noopener"
                     class="bg-[#0F807E] hover:bg-[#0c6665] text-white font-black text-sm px-5 py-2.5 rounded-full transition-colors">
-                    {{ $navStartNow }}
+                    {{ $navStartNow['label'] }}
                 </a>
                 <a href="{{ route('portal.advertise.request', $country) }}"
                     class="text-[15px] font-semibold text-gray-700 hover:text-gray-900">{{ $navContactUs }}</a>
@@ -52,7 +55,7 @@
             <div class="flex lg:hidden items-center gap-4">
                 <a href="{{ $langToggleUrl }}" class="text-sm font-bold text-gray-700">{{ $navLangShort }}</a>
                 <button @click="mobileOpen = !mobileOpen" class="text-gray-900 p-1"
-                    aria-label="{{ $isAr ? 'القائمة' : 'Menu' }}">
+                    aria-label="{{ $navMenuAria }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" width="24" height="24">
                         <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round"
@@ -79,9 +82,9 @@
             class="block font-semibold text-gray-600">{{ $navKnowledgeHub }}</a>
         <a href="{{ route('portal.advertise.request', $country) }}"
             class="block font-semibold text-gray-600">{{ $navContactUs }}</a>
-        <a href="https://admanager.noon.partners/en-ae?utm_source=ad_site&utm_medium=header" target="_blank"
+        <a href="{{ $navStartNow['url'] }}" target="_blank"
             rel="noopener" class="inline-flex bg-[#0F807E] text-white font-black text-sm px-5 py-2.5 rounded-full mt-1">
-            {{ $navStartNow }}
+            {{ $navStartNow['label'] }}
         </a>
     </div>
 </header>

@@ -23,7 +23,7 @@
         <div class="flex items-center gap-2">
             <div class="relative flex-1">
                 <input type="text" x-model="form.store_slug" @input.debounce.600ms="checkSlugAvailability()"
-                    placeholder="my-store" dir="ltr"
+                    placeholder="{{ portal_content('register', 'step_2', 'store_slug_placeholder', 'my-store', 'my-store') }}" dir="ltr"
                     class="w-full bg-gray-800 border text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors"
                     :class="{
                         'border-red-500': errors.store_slug || slugStatus === 'taken',
@@ -82,12 +82,12 @@
     <div class="grid grid-cols-2 gap-3">
         <div>
             <label class="block text-sm font-medium text-gray-300 mb-1.5">{{ portal_content('register', 'step_2', 'registration_number_label', 'Trade Registration Number', 'رقم السجل التجاري') }}</label>
-            <input type="text" x-model="form.business_registration_number" placeholder="CR-XXXXXXXX" dir="ltr"
+            <input type="text" x-model="form.business_registration_number" placeholder="{{ portal_content('register', 'step_2', 'registration_number_placeholder', 'CR-XXXXXXXX', 'CR-XXXXXXXX') }}" dir="ltr"
                 class="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#feee00] transition-colors">
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-300 mb-1.5">{{ portal_content('register', 'step_2', 'tax_id_label', 'Tax ID', 'الرقم الضريبي') }}</label>
-            <input type="text" x-model="form.tax_id" placeholder="XXXXXXXXXXXXXXXXX" dir="ltr"
+            <input type="text" x-model="form.tax_id" placeholder="{{ portal_content('register', 'step_2', 'tax_id_placeholder', 'XXXXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXXXX') }}" dir="ltr"
                 class="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#feee00] transition-colors">
         </div>
     </div>

@@ -7,8 +7,11 @@
         {{-- Featured video story --}}
         <div class="grid md:grid-cols-2 gap-8 lg:gap-16 items-center mb-10">
             <div class="relative rounded-2xl overflow-hidden aspect-video shadow-xl">
-                <iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/SKrJq4XZYn8"
-                        title="{{ portal_content('home', 'testimonials', 'video_title', 'How PAN Emirates scaled their Nawy store', 'كيف نمت حول الإمارات متجرها على ناوي') }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                @php
+                    $testimonialVideo = portal_link('home', 'testimonials', 'video', 'How PAN Emirates scaled their Nawy store', 'كيف نمت حول الإمارات متجرها على ناوي', 'https://www.youtube.com/embed/SKrJq4XZYn8');
+                @endphp
+                <iframe class="absolute inset-0 w-full h-full" src="{{ $testimonialVideo['url'] }}"
+                        title="{{ $testimonialVideo['label'] }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
             <div>

@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __('common.helpcenter_title'))</title>
-    <meta name="description" content="@yield('description', __('common.helpcenter_title'))">
+    <title>@yield('title', portal_content('layout', 'helpcenter', 'default_title', 'Nawy Seller Help Center', 'مركز مساعدة بائعي ناوي'))</title>
+    <meta name="description" content="@yield('description', portal_content('layout', 'helpcenter', 'default_description', 'Nawy Seller Help Center', 'مركز مساعدة بائعي ناوي'))">
     <meta name="robots" content="index,follow">
 
-    <link rel="icon" href="{{ asset('images/helpcenter/favicon.svg') }}">
+    @php($helpcenterFavicon = portal_image('layout', 'helpcenter', 'favicon', asset('images/helpcenter/favicon.svg'), 'Favicon', 'أيقونة الموقع'))
+    <link rel="icon" href="{{ $helpcenterFavicon['src'] }}">
 
     {{-- Figtree matches the rest of the admin/portal typography --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

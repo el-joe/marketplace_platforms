@@ -3,19 +3,19 @@
 
     $testimonials = [
         [
-            'logo' => 'https://advertise.noon.com/images/samsungLogo.png',
+            'logo' => portal_image('advertise-brands', 'testimonial_1', 'logo', 'https://advertise.noon.com/images/samsungLogo.png', 'Samsung', 'Samsung'),
             'quote' => portal_content('advertise-brands', 'testimonial_1', 'quote', "'Our partnership with Nawy during Yellow Friday has been a remarkable success, showcasing our growth and innovation. We are proud to exclusively offer our 2nd generation Freestyle Projector through Nawy, and we anticipate outstanding results. Together, we are leading the way in delivering cutting-edge technology to our valued customers.'", "'لقد حققت شراكتنا مع ناوي خلال يوم الجمعة الصفراء نجاحًا ملحوظًا، حيث أظهرت نمونا وابتكارنا. نحن فخورون بأن نقدم حصريًا الجيل الثاني من جهاز العرض فري ستايل في ناوي، ونتوقع نتائج رائعة. معًا، نحن نقود الطريق في تقديم التكنولوجيا المتطورة لعملائنا الكرام.'"),
             'name' => portal_content('advertise-brands', 'testimonial_1', 'name', 'Ahmed Sultan', 'احمد سلطان'),
             'position' => portal_content('advertise-brands', 'testimonial_1', 'position', 'Product Marketing Manager, Samsung', 'مدير تسويق المنتجات سامسونج'),
         ],
         [
-            'logo' => 'https://advertise.noon.com/images/lorealLogo.png',
+            'logo' => portal_image('advertise-brands', 'testimonial_2', 'logo', 'https://advertise.noon.com/images/lorealLogo.png', 'L\'Oreal', 'L\'Oreal'),
             'quote' => portal_content('advertise-brands', 'testimonial_2', 'quote', "'Since integrating Nawy's two new data dashboards in 2022 and 2023, our data sharing capabilities have soared, leading to enhanced ROI across all account media spends. Nawy's innovative solutions have truly optimized our partnership and elevated our strategic decisions to unprecedented levels of success'", "'منذ دمج لوحتي بيانات ناوي الجديدتين في عامي 2022 و 2023، تجاوزت قدراتنا في مشاركة البيانات، مما أدى إلى تعزيز عائد الاستثمار في جميع النفقات الإعلامية للحساب. لقد قامت حلول ناوي المبتكرة حقًا بتحسين شراكتنا ورفع قراراتنا الاستراتيجية إلى مستويات نجاح غير مسبوقة.'"),
             'name' => portal_content('advertise-brands', 'testimonial_2', 'name', 'Dania Elhussein', 'دانيا الحسين'),
             'position' => portal_content('advertise-brands', 'testimonial_2', 'position', "E-Com Manager, L'Oreal LDB Division", "مدير التجارة الإلكترونية، قسم L'Oreal LDB"),
         ],
         [
-            'logo' => 'https://advertise.noon.com/images/motorola.png',
+            'logo' => portal_image('advertise-brands', 'testimonial_3', 'logo', 'https://advertise.noon.com/images/motorola.png', 'Motorola', 'Motorola'),
             'quote' => portal_content('advertise-brands', 'testimonial_3', 'quote', "'We partnered with Nawy to lead our advertising efforts for the launch of our flagship device. The campaign not only gave us significant visibility offline & onsite but helped cement our partnership by reinforcing Nawy as a key destination for Motorola products. The results are evident in the traffic generated, word of mouth & record sales number that we have witnessed so far'", "'تعاونا مع ناوي لقيادة إعلاناتنا لإطلاق جهازنا الرئيسي. لم تمنح الحملة لنا فقط رؤية ملحوظة في الموقع وخارجه، بل ساعدت أيضًا في ترسيخ شراكتنا من خلال تعزيز ناوي كوجهة أساسية لمنتجات موتورولا. كانت النتائج واضحة في رفع حركة المرور، والترويج الشفوي، وأرقام المبيعات القياسية التي شهدناها حتى الآن.'"),
             'name' => portal_content('advertise-brands', 'testimonial_3', 'name', 'Vinayak Shenoy', 'فيناياك شينوي'),
             'position' => portal_content('advertise-brands', 'testimonial_3', 'position', 'Marketing Director, Motorola Mobiles', 'مدير التسويق بشركة موتورولا للهواتف المحمولة'),
@@ -35,7 +35,7 @@
                      :style="`transform: translateX(${ {{ $isAr ? '1' : '-1' }} * active * 100}%)`">
                     @foreach($testimonials as $t)
                         <div class="w-full shrink-0 px-2 sm:px-10 text-center">
-                            <img src="{{ $t['logo'] }}" alt="{{ $t['name'] }}"
+                            <img src="{{ $t['logo']['src'] }}" alt="{{ $t['logo']['alt'] }}"
                                  loading="lazy" class="h-8 mx-auto mb-6 object-contain">
                             <p class="text-gray-700 text-base sm:text-lg max-w-[70ch] mx-auto leading-relaxed text-pretty">
                                 {{ $t['quote'] }}

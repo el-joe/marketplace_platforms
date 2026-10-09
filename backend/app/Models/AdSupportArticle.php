@@ -89,7 +89,7 @@ class AdSupportArticle extends Model
      */
     public function getTableOfContentsAttribute(): array
     {
-        if (!preg_match_all('/<h[12][^>]*\bid="([^"]+)"[^>]*>(.*?)<\/h[12]>/is', (string) $this->localizedBody(), $matches, PREG_SET_ORDER)) {
+        if (! preg_match_all('/<h[12][^>]*\bid="([^"]+)"[^>]*>(.*?)<\/h[12]>/is', (string) $this->localizedBody(), $matches, PREG_SET_ORDER)) {
             return [];
         }
 
@@ -112,6 +112,6 @@ class AdSupportArticle extends Model
 
     public function updatedLabel(): string
     {
-        return ($this->published_at ?? $this->updated_at)->format('F j, Y');
+        return ($this->published_at ?? $this->updated_at)->translatedFormat('F j, Y');
     }
 }

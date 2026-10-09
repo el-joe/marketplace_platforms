@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 
-@section('title', session('locale', 'ar') === 'ar' ? 'الأسئلة الشائعة' : 'FAQ')
+@section('title', portal_content('faq', 'meta', 'title', 'FAQ', 'الأسئلة الشائعة'))
 
 @section('content')
     @include('portal.partials.faq')

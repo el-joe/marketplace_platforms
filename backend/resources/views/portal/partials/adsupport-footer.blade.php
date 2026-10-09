@@ -5,7 +5,7 @@
             <div class="flex flex-col md:flex-row" >
                 <div class="mb-6 me-0 max-w-65 shrink-0 sm:mb-0 sm:me-18 sm:w-auto">
                     <div class="align-middle text-lg text-[#909aa5]">
-                        <a class="no-underline" href="{{ route('portal.adsupport.index', $country ?? 'ae') }}">
+                        <a class="no-underline" href="{{ route('portal.adsupport.index', $country ?? \App\Models\Country::resolveSiteCode(null)) }}">
                             <span>{{ portal_content('adsupport', 'footer', 'brand_label', 'Advertise smarter, grow faster', 'أعلن بذكاء، وانمُ أسرع') }}</span>
                         </a>
                     </div>

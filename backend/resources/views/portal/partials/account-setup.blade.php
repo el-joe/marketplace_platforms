@@ -94,7 +94,7 @@
                                 class="w-full flex items-center justify-between gap-4 px-4 py-4 {{ $isAr ? 'text-right' : 'text-left' }}">
                             <div class="flex flex-col gap-1">
                                 <div class="flex items-center gap-1 text-white font-bold text-[16px] leading-tight">
-                                    <span>{{ $isAr ? 'الخطوة '.$i.':' : 'Step '.$i.':' }}</span>
+                                    <span>{{ portal_content('account_setup', 'main', 'step_prefix', 'Step', 'الخطوة') }} {{ $i }}:</span>
                                     <span>{{ $isAr ? $step['title_ar'] : $step['title_en'] }}</span>
                                 </div>
                                 <span class="text-[12px] font-bold uppercase tracking-wider text-[#0F807E]">

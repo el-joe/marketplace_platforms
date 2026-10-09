@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\PortalContent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class PortalContentController extends Controller
@@ -71,7 +70,8 @@ class PortalContentController extends Controller
         abort_unless($admin->hasPermissionTo('portal_content.edit'), 403);
 
         $request->validate([
-            'fields.*.value_file' => ['nullable', 'image', 'max:5120'],
+            'fields.*.value_url' => ['nullable', 'string', 'max:255'],
+            'fields.*.value_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,svg', 'max:5120'],
         ]);
 
         $fields = $request->input('fields', []);
@@ -80,7 +80,7 @@ class PortalContentController extends Controller
         foreach ($fields as $id => $data) {
             $row = PortalContent::where('page_key', $pageKey)->find($id);
 
-            if (!$row) {
+            if (! $row) {
                 continue;
             }
 
@@ -99,7 +99,12 @@ class PortalContentController extends Controller
                 $uploaded = $request->file("fields.{$id}.value_file");
 
                 if ($uploaded) {
-                    $update['value_url'] = $uploaded->store('portal-content/' . $pageKey, 'public');
+                    $update['value_url'] = $uploaded->store('portal-content/'.$pageKey, 'public');
+                } elseif (! empty($data['reset_image'])) {
+                    // Empty value_url makes portal_image() fall back to the Blade default.
+                    $update['value_url'] = null;
+                } else {
+                    $update['value_url'] = $data['value_url'] ?? null;
                 }
             }
 

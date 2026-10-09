@@ -16,7 +16,7 @@
                   style="background-color: {{ $post->category->color_hex ?? '#F59E0B' }}1F; color: {{ $post->category->color_hex ?? '#FBBF24' }}">
                 {{ $post->category->{'name_' . $locale} }}
             </span>
-            <span class="text-xs text-gray-500">· {{ $post->reading_time_minutes }} {{ __('portal.blog.min_read') }}</span>
+            <span class="text-xs text-gray-500">· {{ $post->reading_time_minutes }} {{ portal_content('blog', 'index', 'min_read', 'min read', 'دقائق قراءة') }}</span>
         </div>
 
         <h3 class="font-bold text-white leading-snug line-clamp-2 flex-1 group-hover:text-[#0F807E] transition-colors">

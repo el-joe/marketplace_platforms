@@ -14,19 +14,24 @@
             <div class="relative mx-auto max-w-[420px] w-full">
                 <div class="grid grid-cols-3 gap-4 items-center">
                     <div class="self-center -mt-6">
-                        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-01.png" alt=""
+                        @php($gridImage1 = portal_image('how-it-works', 'checklist', 'grid_image_1', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-01.png', '', ''))
+                        <img src="{{ $gridImage1['src'] }}" alt="{{ $gridImage1['alt'] }}"
                              class="animate-[float_6s_ease-in-out_infinite] rounded-xl w-full">
                     </div>
                     <div class="flex flex-col gap-4">
-                        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-02.png" alt=""
+                        @php($gridImage2 = portal_image('how-it-works', 'checklist', 'grid_image_2', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-02.png', '', ''))
+                        <img src="{{ $gridImage2['src'] }}" alt="{{ $gridImage2['alt'] }}"
                              class="animate-[float_7s_ease-in-out_infinite] rounded-xl w-full" style="animation-delay:1s">
-                        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-03.png" alt=""
+                        @php($gridImage3 = portal_image('how-it-works', 'checklist', 'grid_image_3', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-03.png', '', ''))
+                        <img src="{{ $gridImage3['src'] }}" alt="{{ $gridImage3['alt'] }}"
                              class="animate-[float_5s_ease-in-out_infinite] rounded-xl w-full" style="animation-delay:.5s">
                     </div>
                     <div class="flex flex-col gap-4 mt-10">
-                        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-04.png" alt=""
+                        @php($gridImage4 = portal_image('how-it-works', 'checklist', 'grid_image_4', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-04.png', '', ''))
+                        <img src="{{ $gridImage4['src'] }}" alt="{{ $gridImage4['alt'] }}"
                              class="animate-[float_6s_ease-in-out_infinite] rounded-xl w-full" style="animation-delay:1.5s">
-                        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-05.png" alt=""
+                        @php($gridImage5 = portal_image('how-it-works', 'checklist', 'grid_image_5', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-sell-grid-05.png', '', ''))
+                        <img src="{{ $gridImage5['src'] }}" alt="{{ $gridImage5['alt'] }}"
                              class="animate-[float_8s_ease-in-out_infinite] rounded-xl w-full" style="animation-delay:.8s">
                     </div>
                 </div>
@@ -93,10 +98,17 @@
 {{-- Dubai Traders Program banner --}}
 <section class="max-w-[1280px] w-full mx-auto px-4 sm:px-6 lg:px-8">
     <a href="{{ route('portal.register') }}" class="block w-full">
-        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-trader-banner-{{ $isAr ? 'ar' : 'en' }}.png"
-             alt="{{ portal_content('how-it-works', 'trader_banner', 'alt', 'Dubai Traders Program', 'برنامج تجار دبي') }}" class="w-full rounded-2xl lg:hidden">
-        <img src="https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-trader-banner-strip-{{ $isAr ? 'ar' : 'en' }}.jpg"
-             alt="{{ portal_content('how-it-works', 'trader_banner', 'alt', 'Dubai Traders Program', 'برنامج تجار دبي') }}" class="w-full rounded-2xl hidden lg:block">
+        @php($traderBannerAlt = portal_content('how-it-works', 'trader_banner', 'alt', 'Dubai Traders Program', 'برنامج تجار دبي'))
+        @php($traderBannerMobile = $isAr
+            ? portal_image('how-it-works', 'trader_banner', 'image_mobile_ar', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-trader-banner-ar.png', 'Dubai Traders Program', 'برنامج تجار دبي')
+            : portal_image('how-it-works', 'trader_banner', 'image_mobile_en', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-trader-banner-en.png', 'Dubai Traders Program', 'برنامج تجار دبي'))
+        @php($traderBannerDesktop = $isAr
+            ? portal_image('how-it-works', 'trader_banner', 'image_desktop_ar', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-trader-banner-strip-ar.jpg', 'Dubai Traders Program', 'برنامج تجار دبي')
+            : portal_image('how-it-works', 'trader_banner', 'image_desktop_en', 'https://f.nooncdn.com/s/app/pr-comms/sell-with-us/01-trader-banner-strip-en.jpg', 'Dubai Traders Program', 'برنامج تجار دبي'))
+        <img src="{{ $traderBannerMobile['src'] }}"
+             alt="{{ $traderBannerAlt }}" class="w-full rounded-2xl lg:hidden">
+        <img src="{{ $traderBannerDesktop['src'] }}"
+             alt="{{ $traderBannerAlt }}" class="w-full rounded-2xl hidden lg:block">
     </a>
 </section>
 
