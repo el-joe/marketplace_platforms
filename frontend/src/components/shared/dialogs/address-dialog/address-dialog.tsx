@@ -121,12 +121,12 @@ const AddressDialog = ({ triggerButton, open, onClose }: props) => {
           >
             <div className="flex flex-col gap-3">
               {/* search field */}
-              <InputGroup className="h-12 text-base! bg-white!">
+              {/* <InputGroup className="h-12 text-base! bg-white!">
                 <InputGroupInput placeholder={t("searchPlaceholder")} />
                 <InputGroupAddon align="inline-start">
                   <SearchIcon className="text-primary size-5" />
                 </InputGroupAddon>
-              </InputGroup>
+              </InputGroup> */}
               {/* map button */}
               {isLogged ? (
                 <AddAddressModal
