@@ -1451,10 +1451,10 @@
     "close": "إغلاق"
   },
   "nawyOptions": {
-    "label": "نوي الآن",
-    "ariaLabel": "تسوق نوي الآن",
+    "label": "ناوي الآن",
+    "ariaLabel": "تسوق ناوي الآن",
     "justForYou": "فقط من أجلك",
-    "nawyToPPicks": "اختيارات نوي الآن",
+    "nawyToPPicks": "اختيارات ناوي الآن",
     "recentlyViewedCategories": "الفئات التي تم عرضها مؤخرًا"
   },
   "liveStreams": {

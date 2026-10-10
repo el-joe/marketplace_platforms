@@ -45,7 +45,7 @@ function isProtectedRoute(pathname: string): boolean {
       pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
   );
 }
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
   const clientIp = forwardedFor?.split(",")[0].trim();
   const { pathname } = request.nextUrl;
