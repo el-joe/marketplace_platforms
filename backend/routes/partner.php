@@ -94,7 +94,7 @@ Route::post('/locale/switch', function (Request $request) {
 })->name('locale.switch')->middleware('web');
 
 // ── Broadcasting auth (Reverb channel authorization for vendor guard) ────────────
-Broadcast::routes(['middleware' => ['web', 'vendor.auth']]);
+Broadcast::routes(['middleware' => ['web', 'vendor.auth'], 'guard' => 'vendor']);
 
 // ── Protected panel ──────────────────────────────────────────────────────
 Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {

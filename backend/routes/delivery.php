@@ -31,7 +31,7 @@ Route::domain('delivery.' . env('APP_DOMAIN', 'localhost'))
     ->name('delivery.')
     ->group(function () {
 
-        Broadcast::routes(['middleware' => ['web', 'auth.delivery']]);
+        Broadcast::routes(['middleware' => ['web', 'auth.delivery'], 'guard' => 'delivery']);
 
         // ── Guest routes ──────────────────────────────────────────────────────
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

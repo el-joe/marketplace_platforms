@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
-Broadcast::routes(['middleware' => ['web', 'auth.marketer']]);
+Broadcast::routes(['middleware' => ['web', 'auth.marketer'], 'guard' => 'marketer']);
 
 // ── Locale switcher ───────────────────────────────────────────────────────
 Route::middleware('web')

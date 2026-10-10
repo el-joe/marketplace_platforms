@@ -42,7 +42,7 @@ Route::middleware('web')
 Route::name('travel-agency.')
     ->group(function () {
 
-        Broadcast::routes(['middleware' => ['web', 'auth.travel_agency']]);
+        Broadcast::routes(['middleware' => ['web', 'auth.travel_agency'], 'guard' => 'travel_agency']);
 
         // ── Guest ─────────────────────────────────────────────────────────────
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

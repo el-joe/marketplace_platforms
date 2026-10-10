@@ -152,7 +152,7 @@ Route::post('/set-locale', function (Request $request) {
 })->name('set-locale');
 
 // ─── Broadcasting auth (Reverb channel authorization for admin guard) ────────────
-Broadcast::routes(['middleware' => ['web', 'auth.admin']]);
+Broadcast::routes(['middleware' => ['web', 'auth.admin'], 'guard' => 'admin']);
 
 // ─── All protected admin routes ───────────────────────────────────────────────────
 Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {

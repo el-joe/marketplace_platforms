@@ -29,7 +29,7 @@ Route::middleware('web')
 Route::name('carrier.')
     ->group(function () {
 
-        Broadcast::routes(['middleware' => ['web', 'auth.carrier']]);
+        Broadcast::routes(['middleware' => ['web', 'auth.carrier'], 'guard' => 'shipping_supervisor']);
 
         // ── Guest ──────────────────────────────────────────────────────────────
         Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
