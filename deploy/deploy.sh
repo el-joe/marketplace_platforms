@@ -2,7 +2,7 @@
 # Redeploy after git push. Run as the deploy user:  bash deploy/deploy.sh [--skip-frontend]
 # NEVER add `php artisan optimize` / config:cache - routes use env('APP_DOMAIN') directly.
 set -euo pipefail
-APP_DIR="${APP_DIR:-/var/www/marketplace}"
+APP_DIR="${APP_DIR:-/var/www/marketplace_platforms}"
 cd "$APP_DIR"
 git pull origin main
 
