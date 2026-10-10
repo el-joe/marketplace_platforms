@@ -136,4 +136,20 @@ return [
         'closing'          => 'مع تحياتنا،<br><strong>فريق المنصة</strong>',
         'footer_copyright' => '&copy; :year — جميع الحقوق محفوظة',
     ],
+
+    'new_vendor_application_admin' => [
+        'subject'              => 'طلب تسجيل بائع جديد: :store',
+        'title'                => 'طلب تسجيل بائع جديد',
+        'header'               => '🆕 تم تقديم طلب تسجيل بائع جديد',
+        'intro'                => 'قدّم بائع جديد طلب تسجيل وهو بانتظار المراجعة.',
+        'store_name_label'     => 'اسم المتجر',
+        'business_name_label'  => 'اسم النشاط التجاري',
+        'contact_name_label'   => 'اسم التواصل',
+        'email_label'          => 'البريد الإلكتروني',
+        'phone_label'          => 'رقم الهاتف',
+        'submitted_at_label'   => 'تاريخ التقديم',
+        'cta_text'             => 'يرجى مراجعة الطلب واتخاذ الإجراء المناسب:',
+        'cta_button'           => 'مراجعة الطلب',
+        'footer_copyright'     => '&copy; :year — جميع الحقوق محفوظة',
+    ],
 ];

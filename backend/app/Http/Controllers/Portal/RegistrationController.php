@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewVendorApplicationAdminMail;
 use App\Mail\VendorApplicationReceivedMail;
-use App\Models\Admin;
-use App\Notifications\Admin\NewVendorApplicationSubmitted;
-use Illuminate\Support\Facades\Notification;
 use App\Models\Address;
+use App\Models\Admin;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Vendor;
 use App\Models\VendorAdmin;
 use App\Models\VendorDocument;
 use App\Models\VendorDocumentType;
+use App\Notifications\Admin\NewVendorApplicationSubmitted;
 use App\Services\ActivityLoggerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -81,6 +82,7 @@ class RegistrationController extends Controller
                 'store_slug.alpha_dash' => __('portal.registration.store_slug_alpha_dash'),
             ];
         }
+
         return [];
     }
 
@@ -149,16 +151,16 @@ class RegistrationController extends Controller
         $country = Country::findOrFail($request->input('country_id'));
 
         $docs = $country->requiredDocumentTypesFor()->map(fn ($item) => [
-            'type_id'             => $item['type']->id,
-            'code'                => $item['type']->code,
-            'name_en'             => $item['type']->name_en,
-            'name_ar'             => $item['type']->name_ar,
-            'description_en'      => $item['type']->description_en ?? null,
-            'description_ar'      => $item['type']->description_ar ?? null,
-            'requirement_level'   => $item['requirement_level'],
+            'type_id' => $item['type']->id,
+            'code' => $item['type']->code,
+            'name_en' => $item['type']->name_en,
+            'name_ar' => $item['type']->name_ar,
+            'description_en' => $item['type']->description_en ?? null,
+            'description_ar' => $item['type']->description_ar ?? null,
+            'requirement_level' => $item['requirement_level'],
             'accepted_file_types' => $item['type']->accepted_file_types ?? ['pdf', 'jpg', 'jpeg', 'png'],
-            'max_file_size_kb'    => $item['type']->max_file_size_kb ?? 5120,
-            'requires_expiry_date'=> (bool) $item['type']->requires_expiry_date,
+            'max_file_size_kb' => $item['type']->max_file_size_kb ?? 5120,
+            'requires_expiry_date' => (bool) $item['type']->requires_expiry_date,
         ]);
 
         return response()->json(['success' => true, 'documents' => $docs]);
@@ -186,7 +188,7 @@ class RegistrationController extends Controller
             ->first();
 
         $acceptedMimes = implode(',', $docType->accepted_file_types ?? ['pdf', 'jpg', 'jpeg', 'png']);
-        $maxKb         = $docType->max_file_size_kb ?? 5120;
+        $maxKb = $docType->max_file_size_kb ?? 5120;
 
         $validator = Validator::make($request->all(), [
             'file' => "required|file|mimes:{$acceptedMimes}|max:{$maxKb}",
@@ -270,7 +272,7 @@ class RegistrationController extends Controller
         $step1 = session('reg_data.step1', []);
         $step2 = session('reg_data.step2', []);
         $step3 = session('reg_data.step3', []);
-        $docs  = session('reg_data.documents', []);
+        $docs = session('reg_data.documents', []);
         $docExpiries = $request->input('doc_expiries', []);
 
         // Guard: all steps must be present
@@ -283,14 +285,14 @@ class RegistrationController extends Controller
 
         // Validate required documents against country's document requirements
         $country = Country::find($step1['country_id'] ?? null);
-        if (!$country) {
+        if (! $country) {
             return response()->json([
                 'success' => false,
                 'message' => __('portal.registration.invalid_country'),
             ], 422);
         }
 
-        $requiredDocs     = $country->requiredDocumentTypesFor();
+        $requiredDocs = $country->requiredDocumentTypesFor();
         $mandatoryMissing = [];
 
         foreach ($requiredDocs as $item) {
@@ -299,10 +301,10 @@ class RegistrationController extends Controller
             }
         }
 
-        if (!empty($mandatoryMissing)) {
+        if (! empty($mandatoryMissing)) {
             return response()->json([
                 'success' => false,
-                'errors'  => [
+                'errors' => [
                     'documents' => [__('portal.registration.documents_required', ['documents' => implode(', ', $mandatoryMissing)])],
                 ],
             ], 422);
@@ -312,7 +314,7 @@ class RegistrationController extends Controller
         $acceptableCodes = $requiredDocs->pluck('type.code')->flip()->all();
 
         // try {
-        DB::transaction(function () use ($step1, $step2, $step3, $docs, $docExpiries, $requiredDocs, $acceptableCodes) {
+        DB::transaction(function () use ($step1, $step2, $step3, $docs, $docExpiries, $acceptableCodes) {
             // ① Create Vendor
             $vendor = Vendor::create([
                 'name' => $step1['name'],
@@ -376,7 +378,7 @@ class RegistrationController extends Controller
                 ->get()->keyBy('code');
 
             foreach ($submittedCodes as $docCode => $tempPath) {
-                $ext      = pathinfo($tempPath, PATHINFO_EXTENSION);
+                $ext = pathinfo($tempPath, PATHINFO_EXTENSION);
                 $permPath = "vendor-docs/{$vendor->id}/{$docCode}.{$ext}";
 
                 if (Storage::disk('public')->exists($tempPath)) {
@@ -384,17 +386,17 @@ class RegistrationController extends Controller
                 }
 
                 $typeRecord = $docTypeDetails[$docCode] ?? null;
-                $expiresAt  = null;
-                if ($typeRecord?->requires_expiry_date && !empty($docExpiries[$docCode])) {
+                $expiresAt = null;
+                if ($typeRecord?->requires_expiry_date && ! empty($docExpiries[$docCode])) {
                     $expiresAt = $docExpiries[$docCode];
                 }
 
                 VendorDocument::create([
-                    'vendor_id'               => $vendor->id,
+                    'vendor_id' => $vendor->id,
                     'vendor_document_type_id' => $docTypeMap[$docCode],
-                    'file_path'               => $permPath,
-                    'status'                  => 'pending',
-                    'expires_at'              => $expiresAt,
+                    'file_path' => $permPath,
+                    'status' => 'pending',
+                    'expires_at' => $expiresAt,
                 ]);
             }
 
@@ -402,17 +404,20 @@ class RegistrationController extends Controller
             try {
                 Mail::to($vendor->email)->send(new VendorApplicationReceivedMail($vendor));
             } catch (\Throwable $e) {
-                Log::warning('VendorApplicationReceivedMail failed: ' . $e->getMessage());
+                Log::warning('VendorApplicationReceivedMail failed: '.$e->getMessage());
             }
 
-            // ⑧ Notify admins of new application
+            // ⑧ Notify admins of new application (in-app + email)
             try {
-                Notification::send(
-                    Admin::permission('vendors.approve')->get(),
-                    new NewVendorApplicationSubmitted($vendor),
-                );
+                $admins = Admin::permission('vendors.approve')->get();
+
+                Notification::send($admins, new NewVendorApplicationSubmitted($vendor));
+
+                foreach ($admins as $admin) {
+                    Mail::to($admin->email)->queue(new NewVendorApplicationAdminMail($vendor));
+                }
             } catch (\Throwable $e) {
-                Log::warning('NewVendorApplicationSubmitted notification failed: ' . $e->getMessage());
+                Log::warning('Admin vendor application notification/email failed: '.$e->getMessage());
             }
 
             // ⑦ Activity log (non-blocking)
@@ -426,7 +431,7 @@ class RegistrationController extends Controller
                     'created'
                 );
             } catch (\Throwable $e) {
-                Log::warning('Activity log failed after vendor registration: ' . $e->getMessage());
+                Log::warning('Activity log failed after vendor registration: '.$e->getMessage());
             }
         });
 
@@ -473,6 +478,6 @@ class RegistrationController extends Controller
         $slug = Str::slug($request->input('slug', ''));
         $taken = Vendor::where('store_slug', $slug)->exists();
 
-        return response()->json(['available' => !$taken, 'slug' => $slug]);
+        return response()->json(['available' => ! $taken, 'slug' => $slug]);
     }
 }

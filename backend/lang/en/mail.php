@@ -136,4 +136,20 @@ return [
         'closing'          => 'Best regards,<br><strong>The Platform Team</strong>',
         'footer_copyright' => '&copy; :year — All rights reserved',
     ],
+
+    'new_vendor_application_admin' => [
+        'subject'              => 'New Vendor Application: :store',
+        'title'                => 'New Vendor Application',
+        'header'               => '🆕 New Vendor Application Submitted',
+        'intro'                => 'A new vendor has submitted a registration application and is awaiting review.',
+        'store_name_label'     => 'Store Name',
+        'business_name_label'  => 'Business Name',
+        'contact_name_label'   => 'Contact Name',
+        'email_label'          => 'Email',
+        'phone_label'          => 'Phone',
+        'submitted_at_label'   => 'Submitted At',
+        'cta_text'             => 'Please review the application and take the appropriate action:',
+        'cta_button'           => 'Review Application',
+        'footer_copyright'     => '&copy; :year — All rights reserved',
+    ],
 ];
