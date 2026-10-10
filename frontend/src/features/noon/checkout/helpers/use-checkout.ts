@@ -63,7 +63,9 @@ export const useCheckout = () => {
     [checkoutData?.available_payment_gateways, checkoutData?.gateway_code],
   );
   const selectedGatewayId = selectedGateway?.id;
-  const isOfflinePaymentMethod = selectedGateway?.type === "offline";
+  // COD is collected on delivery: it never needs a payment-proof upload.
+  const isOfflinePaymentMethod =
+    selectedGateway?.type === "offline" && selectedGateway?.gateway_code !== "cod";
 
   const contractGates = useMemo(() => {
     const gates =

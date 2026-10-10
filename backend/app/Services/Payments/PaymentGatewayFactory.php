@@ -74,6 +74,10 @@ class PaymentGatewayFactory
      */
     public static function isOffline(string $gatewayCode): bool
     {
+        if ($gatewayCode === 'cod') {
+            return false;
+        }
+
         return PaymentGateway::where('code', $gatewayCode)->value('type') === 'offline';
     }
 }

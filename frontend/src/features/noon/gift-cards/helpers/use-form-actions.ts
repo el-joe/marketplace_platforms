@@ -56,7 +56,9 @@ export function useFormActions(batch: GiftCardBatch) {
   const selectedGateway = paymentOptions.find(
     (o) => o.id === selectedGatewayId,
   );
-  const isOfflinePaymentMethod = selectedGateway?.type === "offline";
+  // COD is collected on delivery: it never needs a payment-proof upload.
+  const isOfflinePaymentMethod =
+    selectedGateway?.type === "offline" && selectedGateway?.gateway_code !== "cod";
 
   const canSubmit =
     totalAmount > 0 &&
