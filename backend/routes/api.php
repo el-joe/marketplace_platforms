@@ -46,7 +46,7 @@ Route::prefix('v1/{country}')
         // Public auth, catalog, cart endpoints — wired in Stage 3
         // Route::post('auth/login', [CustomerAuthController::class, 'login']);
         // Route::get('products', [ProductController::class, 'index']);
-    
+
         Route::middleware('auth:sanctum')->group(function (): void {
             // Authenticated customer endpoints — wired in Stage 3
         });
