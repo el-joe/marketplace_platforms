@@ -16,6 +16,11 @@ return [
         'http://127.0.0.1',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
+        'https://api.nawyweb.com',
+        'https://nawyweb.com',
+        'https://admin.nawyweb.com',
+        'https://www.nawyweb.com',
+        'https://api.nawyweb.com',
     ],
 
     'allowed_origins_patterns' => [],
