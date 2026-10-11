@@ -103,6 +103,7 @@ class OrderStateMachine
      *  - some delivered/completed but not all terminal      -> partially_delivered
      *  - all sub-orders in {shipped, out_for_delivery, delivered, completed} -> shipped
      *  - some shipped/out_for_delivery                     -> partially_shipped
+     *  - order 'placed', every non-cancelled sub-order in {confirmed, processing, packed} -> confirmed
      *  - otherwise                                          -> unchanged (null)
      */
     public function rollupOrderStatus(Order $order): ?string
@@ -148,6 +149,17 @@ class OrderStateMachine
 
         if ($statuses->contains(fn ($s) => in_array($s, ['shipped', 'out_for_delivery'], true))) {
             return 'partially_shipped';
+        }
+
+        // placed -> confirmed once every live sub-order is confirmed/processing/packed.
+        // (Order has no processing/packed status; later states are handled above.)
+        $currentStatus = $order->status instanceof \BackedEnum ? $order->status->value : $order->status;
+        $live          = $statuses->reject(fn ($s) => in_array($s, ['cancelled', 'refunded'], true));
+
+        if ($currentStatus === 'placed'
+            && $live->isNotEmpty()
+            && $live->every(fn ($s) => in_array($s, ['confirmed', 'processing', 'packed'], true))) {
+            return 'confirmed';
         }
 
         return null;

@@ -705,6 +705,8 @@ return [
         'via' => 'via',
         'not_yet_assigned' => 'Not yet assigned',
         'reassign' => 'Reassign',
+        'create_shipment' => 'Create shipment / hand to carrier',
+        'cod_status_note' => 'Cash on Delivery: payment is collected by the delivery agent on delivery. No payment approval is needed.',
 
         'no_transactions_recorded' => 'No transactions recorded.',
         'no_history_recorded' => 'No status history recorded.',

@@ -455,6 +455,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::get('/sub-orders/{id}/next-statuses', [OrderController::class, 'nextStatuses'])->middleware('admin.permission:orders.view')->name('sub-orders.next-statuses');
     Route::get('/sub-orders/{subOrder}/shipping-methods', [OrderController::class, 'availableShippingMethods'])->middleware('admin.permission:orders.view')->name('orders.sub-orders.shipping-methods');
     Route::post('/sub-orders/{subOrder}/assign-shipping', [OrderController::class, 'assignShippingMethod'])->middleware('admin.permission:orders.view')->name('orders.sub-orders.assign-shipping');
+    Route::post('/sub-orders/{subOrder}/ship', [OrderController::class, 'ship'])->middleware('admin.permission:orders.edit')->name('orders.sub-orders.ship');
     // ─── Payouts ──────────────────────────────────────────────────────────────────
 
     Route::prefix('payouts')->name('payouts.')->middleware('admin.permission:payouts.view')->group(function () {

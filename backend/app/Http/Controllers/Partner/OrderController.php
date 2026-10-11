@@ -7,13 +7,10 @@ use App\Enums\InventoryMovementType;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryMovement;
 use App\Models\OrderStatusHistory;
-use App\Models\Shipment;
 use App\Models\ShippingCarrier;
-use App\Models\ShippingCompanySupervisor;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
-use App\Notifications\Carrier\NewUnassignedShipmentArrived;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
@@ -312,46 +308,18 @@ class OrderController extends Controller
                     'estimated_delivery_date' => $estimatedDelivery,
                 ]);
 
-                // enhancement.md P-08: go through OrderStateMachine so the
-                // transition is validated, order_items.fulfillment_status
-                // and orders.status roll up, order_status_histories is
-                // written and SubOrderShipped fires (customer notification).
-                $this->stateMachine->transition(
+                // enhancement.md P-08: ShipmentService goes through OrderStateMachine
+                // (validated transition, histories, SubOrderShipped), creates the
+                // shipment and notifies supervisors.
+                app(\App\Services\Shipping\ShipmentService::class)->createForSubOrder(
                     $subOrder,
-                    'shipped',
+                    $request->input('tracking_number'),
                     \App\Enums\CancelActor::Vendor,
                     [
                         'vendor_id' => $vendorId,
                         'vendor_admin' => Auth::guard('vendor')->user()->id,
-                        'tracking_number' => $request->input('tracking_number'),
-                        'carrier_id' => $subOrder->carrier_id,
-                        'action' => 'shipped',
                     ],
                 );
-
-                // 2. Create shipment record — batch-load variant weights to avoid N+1
-                $variantIds = $subOrder->items->pluck('product_variant_id');
-                $variantWeights = \App\Models\ProductVariant::whereIn('id', $variantIds)
-                    ->pluck('weight_grams', 'id');
-                $weightGrams = $subOrder->items->sum(
-                    fn($item) => ($variantWeights[$item->product_variant_id] ?? 0) * $item->quantity
-                );
-
-                $shipment = Shipment::create([
-                    'sub_order_id' => $subOrder->id,
-                    'carrier_id' => $subOrder->carrier_id,
-                    'tracking_number' => $request->input('tracking_number'),
-                    'weight_grams' => $weightGrams,
-                    'shipping_cost_actual' => $subOrder->shipping,
-                    'status' => 'label_created',
-                ]);
-
-                // Notify all active supervisors across all companies — no shipping_company_id
-                // on shipments yet, so any company's supervisors may claim this shipment.
-                $supervisors = ShippingCompanySupervisor::receivingNotifications()->get();
-                if ($supervisors->isNotEmpty()) {
-                    Notification::send($supervisors, new NewUnassignedShipmentArrived($shipment));
-                }
 
                 // enhancement.md P-13 task 3: this was a second,
                 // unlocked, clamp-with-max(0) implementation of the same

@@ -69,7 +69,7 @@ class OrderController extends Controller
             return ApiResponse::error(__('common.exceptions.order.not_found'), [], 404);
         }
 
-        if (!$order->payment_gateway_code || !PaymentGatewayFactory::isOffline($order->payment_gateway_code)) {
+        if (!$order->payment_gateway_code || !PaymentGatewayFactory::requiresProofApproval($order->payment_gateway_code)) {
             return ApiResponse::error(__('common.exceptions.order.not_bank_transfer'), [], 422);
         }
 

@@ -151,7 +151,7 @@
             </x-card>
 
             {{-- ─── Offline Payment Proof (bank transfer, and any other offline gateway) ── --}}
-            @if(\App\Services\Payments\PaymentGatewayFactory::isOffline($transaction->gateway))
+            @if(\App\Services\Payments\PaymentGatewayFactory::requiresProofApproval($transaction->gateway))
                 <x-card title="{{ __('admin.transactions.bank_transfer_proof') }}">
                     @if($transaction->proof_file_path)
                         <div class="space-y-3">

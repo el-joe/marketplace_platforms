@@ -74,10 +74,20 @@ class PaymentGatewayFactory
      */
     public static function isOffline(string $gatewayCode): bool
     {
-        if ($gatewayCode === 'cod') {
+        return self::requiresProofApproval($gatewayCode);
+    }
+
+    /**
+     * True when orders paid via this gateway need customer proof + admin
+     * approval before fulfillment. COD never does: it is captured only on
+     * delivery (App\Listeners\CaptureCodOnDelivery).
+     */
+    public static function requiresProofApproval(string $code): bool
+    {
+        if ($code === 'cod') {
             return false;
         }
 
-        return PaymentGateway::where('code', $gatewayCode)->value('type') === 'offline';
+        return PaymentGateway::where('code', $code)->value('type') === 'offline';
     }
 }

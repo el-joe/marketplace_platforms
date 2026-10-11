@@ -508,6 +508,14 @@
                             @endif>
                             {{ $subOrder->shippingMethod ? __('admin.orders.reassign') : __('admin.orders.assign_shipping') }}
                         </button>
+                        @if($subOrder->carrier_id && in_array($subOrder->status->value, ['confirmed', 'processing', 'packed']) && !$subOrder->shipments()->exists())
+                            <button type="button"
+                                class="btn-ship-sub-order bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors disabled:opacity-40"
+                                data-ship-url="{{ route('admin.orders.sub-orders.ship', $subOrder->id) }}"
+                                data-carrier-id="{{ $subOrder->carrier_id }}">
+                                {{ __('admin.orders.create_shipment') }}
+                            </button>
+                        @endif
                     </div>
                 @empty
                     <p class="text-sm text-gray-400 italic py-4 text-center">{{ __('admin.orders.no_sub_orders_found') }}</p>
@@ -959,6 +967,9 @@
                         {{ $allStatusLabels[$order->status->value] ?? ucwords(str_replace('_', ' ', $order->status->value)) }}
                     </x-badge>
                 </div>
+                @if($order->payment_method === 'cod')
+                    <p class="text-xs text-gray-500">{{ __('admin.orders.cod_status_note') }}</p>
+                @endif
                 <div>
                     <label class="form-label" for="order-new-status">{{ __('admin.orders.new_status') }} <span
                             class="text-danger-500">*</span></label>
@@ -1221,6 +1232,22 @@
 @endsection
 
 @push('scripts')
+    <script>
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-ship-sub-order');
+            if (!btn) return;
+            btn.disabled = true;
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            fetch(btn.dataset.shipUrl, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ carrier_id: btn.dataset.carrierId }),
+            }).then(r => r.json().then(j => ({ ok: r.ok, j }))).then(({ ok, j }) => {
+                if (window.Toast) { (ok ? window.Toast.success : window.Toast.error)(j.message || ''); }
+                if (ok) { location.reload(); } else { btn.disabled = false; }
+            }).catch(() => { btn.disabled = false; if (window.Toast) window.Toast.error(@json(__('admin.orders.generic_error'))); });
+        });
+    </script>
     <script>
         window.TRANSLATIONS = window.TRANSLATIONS || {};
         Object.assign(window.TRANSLATIONS, {

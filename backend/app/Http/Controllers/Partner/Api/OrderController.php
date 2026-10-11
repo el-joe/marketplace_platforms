@@ -11,20 +11,17 @@ use App\Http\Responses\ApiResponse;
 use App\Models\InventoryMovement;
 use App\Models\OrderStatusHistory;
 use App\Models\ProductVariant;
-use App\Models\Shipment;
-use App\Models\ShippingCompanySupervisor;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
 use App\Models\WarehouseInventory;
-use App\Notifications\Carrier\NewUnassignedShipmentArrived;
 use App\Services\Inventory\InventoryService;
 use App\Services\OrderStateMachine;
+use App\Services\Shipping\ShipmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 class OrderController extends Controller
 {
@@ -143,38 +140,15 @@ class OrderController extends Controller
                     : now()->addDays(5)->toDateString(),
             ]);
 
-            $this->stateMachine->transition(
+            app(ShipmentService::class)->createForSubOrder(
                 $subOrder,
-                'shipped',
+                $request->input('tracking_number'),
                 CancelActor::Vendor,
                 [
                     'vendor_id' => $vendorId,
                     'vendor_admin' => $adminId,
-                    'tracking_number' => $request->input('tracking_number'),
-                    'carrier_id' => $subOrder->carrier_id,
-                    'action' => 'shipped',
                 ],
             );
-
-            $variantIds = $subOrder->items->pluck('product_variant_id');
-            $variantWeights = ProductVariant::whereIn('id', $variantIds)->pluck('weight_grams', 'id');
-            $weightGrams = $subOrder->items->sum(
-                fn ($item) => ($variantWeights[$item->product_variant_id] ?? 0) * $item->quantity
-            );
-
-            $shipment = Shipment::create([
-                'sub_order_id' => $subOrder->id,
-                'carrier_id' => $subOrder->carrier_id,
-                'tracking_number' => $request->input('tracking_number'),
-                'weight_grams' => $weightGrams,
-                'shipping_cost_actual' => $subOrder->shipping,
-                'status' => 'label_created',
-            ]);
-
-            $supervisors = ShippingCompanySupervisor::receivingNotifications()->get();
-            if ($supervisors->isNotEmpty()) {
-                Notification::send($supervisors, new NewUnassignedShipmentArrived($shipment));
-            }
 
             $inventoryService = app(InventoryService::class);
             foreach ($subOrder->items as $item) {

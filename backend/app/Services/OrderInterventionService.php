@@ -138,7 +138,7 @@ class OrderInterventionService
 
         $gatewayCode = $order->payment_gateway_code ?? $order->payment_method;
 
-        if (!$gatewayCode || !PaymentGatewayFactory::isOffline((string) $gatewayCode)) {
+        if (!$gatewayCode || !PaymentGatewayFactory::requiresProofApproval((string) $gatewayCode)) {
             return;
         }
 

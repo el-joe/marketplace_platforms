@@ -218,7 +218,7 @@ class TransactionController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
 
-        if (!PaymentGatewayFactory::isOffline($transaction->gateway)) {
+        if (!PaymentGatewayFactory::requiresProofApproval($transaction->gateway)) {
             return response()->json(['message' => 'Not an offline-payment transaction.'], 422);
         }
 
@@ -265,7 +265,7 @@ class TransactionController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('transactions.view'), 403);
 
-        if (!PaymentGatewayFactory::isOffline($transaction->gateway)) {
+        if (!PaymentGatewayFactory::requiresProofApproval($transaction->gateway)) {
             return response()->json(['message' => 'Not an offline-payment transaction.'], 422);
         }
 

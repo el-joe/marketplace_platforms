@@ -13,7 +13,10 @@ use App\Models\ShippingMethod;
 use App\Models\ShippingRate;
 use App\Models\ShippingZone;
 use App\Models\SubOrder;
+use App\Enums\CancelActor;
 use App\Enums\DisputeReason;
+use App\Services\Shipping\ShipmentService;
+use Illuminate\Support\Str;
 use App\Enums\RefundReason;
 use App\Enums\RefundType;
 use App\Services\OrderInterventionService;
@@ -525,7 +528,17 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => __('admin.orders.shipping_method_not_assigned_yet')], 422);
         }
 
+        if ($subOrder->carrier_id === $request->carrier_id) {
+            return response()->json([
+                'success' => true,
+                'unchanged' => true,
+                'message' => __('admin.orders.carrier_assigned', ['carrier' => $subOrder->carrier?->name]),
+                'carrier_name' => $subOrder->carrier?->name,
+            ]);
+        }
+
         $fromStatus = $subOrder->status->value;
+        $previousCarrierId = $subOrder->carrier_id;
 
         $subOrder->update([
             'carrier_id' => $request->carrier_id,
@@ -543,6 +556,7 @@ class OrderController extends Controller
             'metadata' => json_encode([
                 'action' => 'carrier_assigned',
                 'carrier_id' => $request->carrier_id,
+                'previous_carrier_id' => $previousCarrierId,
                 'carrier_name' => $carrier?->name,
                 'assigned_by' => auth('admin')->id(),
                 'assigned_at' => now(),
@@ -553,6 +567,37 @@ class OrderController extends Controller
             'success' => true,
             'message' => __('admin.orders.carrier_assigned', ['carrier' => $carrier?->name]),
             'carrier_name' => $carrier?->name,
+        ]);
+    }
+
+    public function ship(Request $request, SubOrder $subOrder, ShipmentService $shipmentService): JsonResponse
+    {
+        $request->validate([
+            'carrier_id' => 'required|uuid|exists:shipping_carriers,id',
+            'tracking_number' => 'nullable|string|max:100',
+        ]);
+
+        if (!in_array($subOrder->status->value, ['confirmed', 'processing', 'packed'])) {
+            return response()->json(['success' => false, 'message' => 'Sub-order cannot be shipped in its current status.'], 422);
+        }
+
+        $subOrder->loadMissing('items');
+        $subOrder->update(['carrier_id' => $request->carrier_id]);
+        $trackingNumber = $request->input('tracking_number') ?: 'TRK-' . strtoupper(Str::random(10));
+
+        $shipment = DB::transaction(fn () => $shipmentService->createForSubOrder(
+            $subOrder,
+            $trackingNumber,
+            CancelActor::Admin,
+            ['admin_id' => auth('admin')->id()],
+            true,
+        ));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sub-order shipped.',
+            'shipment_id' => $shipment->id,
+            'tracking_number' => $trackingNumber,
         ]);
     }
 
