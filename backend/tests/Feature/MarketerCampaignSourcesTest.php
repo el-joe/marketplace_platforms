@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MarketerListingStatus;
 use App\Models\Admin;
 use App\Models\Cart;
 use App\Models\CartItem;
@@ -70,7 +71,7 @@ class MarketerCampaignSourcesTest extends TestCase
 
         $marketerListing = \App\Models\MarketerListing::where('invitation_id', $invitation->id)->first();
         $this->assertNotNull($marketerListing);
-        $this->assertSame('active', $marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Active, $marketerListing->status);
         $this->assertSame($scenario->vendorListingFbn->product_variant_id, $marketerListing->product_variant_id);
 
         // Sale: the marketer listing resolves to the vendor listing as its
@@ -96,7 +97,7 @@ class MarketerCampaignSourcesTest extends TestCase
         $campaign->refresh();
         $marketerListing->refresh();
         $this->assertSame('done', $campaign->status);
-        $this->assertSame('archived', $marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Archived, $marketerListing->status);
     }
 
     public function test_admin_listing_campaign_full_lifecycle_owned_by_platform(): void
@@ -186,7 +187,7 @@ class MarketerCampaignSourcesTest extends TestCase
 
         $marketerListing = \App\Models\MarketerListing::where('invitation_id', $invitation->id)->first();
         $this->assertNotNull($marketerListing);
-        $this->assertSame('active', $marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Active, $marketerListing->status);
     }
 
     public function test_rejection_cancels_pending_invitations_and_archives_listings(): void
@@ -255,7 +256,7 @@ class MarketerCampaignSourcesTest extends TestCase
         $campaign->refresh();
         $marketerListing->refresh();
         $this->assertSame('paused', $campaign->status);
-        $this->assertSame('paused', $marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Paused, $marketerListing->status);
 
         // Restock above the minimum resumes it.
         $scenario->vendorListingFbnInventory->update(['quantity_on_hand' => 40]);
@@ -264,6 +265,6 @@ class MarketerCampaignSourcesTest extends TestCase
         $campaign->refresh();
         $marketerListing->refresh();
         $this->assertSame('active', $campaign->status);
-        $this->assertSame('active', $marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Active, $marketerListing->status);
     }
 }

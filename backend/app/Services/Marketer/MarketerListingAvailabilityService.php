@@ -2,6 +2,7 @@
 
 namespace App\Services\Marketer;
 
+use App\Enums\MarketerListingStatus;
 use App\Models\AdminListing;
 use App\Models\MarketerListing;
 use App\Models\VendorListing;
@@ -105,11 +106,11 @@ class MarketerListingAvailabilityService
      */
     public function syncListing(MarketerListing $listing): void
     {
-        if ($listing->status === 'archived') {
+        if ($listing->status === MarketerListingStatus::Archived) {
             return; // never touch an archived listing
         }
 
-        if ($listing->status === 'paused' && $listing->paused_reason === 'manual') {
+        if ($listing->status === MarketerListingStatus::Paused && $listing->paused_reason === 'manual') {
             return; // the marketer paused it themselves; leave it alone
         }
 
@@ -122,7 +123,7 @@ class MarketerListingAvailabilityService
             && $this->isPriceInBounds((int) $listing->getRawOriginal('price'), (int) $source->getRawOriginal('price'));
 
         if (! $available || ! $priceOk) {
-            if ($listing->status !== 'paused' || $listing->paused_reason !== 'source_unavailable') {
+            if ($listing->status !== MarketerListingStatus::Paused || $listing->paused_reason !== 'source_unavailable') {
                 $listing->update(['status' => 'paused', 'paused_reason' => 'source_unavailable']);
             }
 
@@ -131,7 +132,7 @@ class MarketerListingAvailabilityService
 
         // Only auto-unpause a listing WE auto-paused; a manually paused
         // listing stays paused until the marketer reactivates it.
-        if ($listing->status === 'paused' && $listing->paused_reason === 'source_unavailable') {
+        if ($listing->status === MarketerListingStatus::Paused && $listing->paused_reason === 'source_unavailable') {
             $listing->update(['status' => 'active', 'paused_reason' => null]);
         }
     }

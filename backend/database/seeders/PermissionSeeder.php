@@ -205,6 +205,8 @@ class PermissionSeeder extends Seeder
             'marketer_campaigns.reject',
             'marketer_commission_settings.view',
             'marketer_commission_settings.edit',
+            // Writer for vendor-specific rows in the `commissions` table (see /commissions).
+            'commission_rules.manage',
             'marketer_fee_settings.view',
             'marketer_fee_settings.edit',
             'vendor_marketer_type.edit',

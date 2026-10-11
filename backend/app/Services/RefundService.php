@@ -246,7 +246,7 @@ class RefundService
             } elseif ($resolvedDestination === 'wallet') {
                 if ($netAmount > 0) {
                     $this->checkoutWalletService->refundToWallet($order->customer, $order, $netAmount);
-                    $order->customer->notify(new WalletCredited($netAmount, 'Refund for order #'.$order->order_number));
+                    $order->customer->notify(new WalletCredited($netAmount, 'Refund for order #'.$order->order_number, $order->customer->id));
                 }
                 $refund->update(['status' => 'completed']);
             } else { // 'bank' — manual payout, no automation exists.

@@ -317,6 +317,7 @@ return [
         'notifications' => 'الإشعارات',
         'vendors' => 'التجار',
         'applications' => 'الطلبات',
+        'commissions' => 'العمولات',
         'acquisition_commissions' => 'عمولات الاستقطاب',
         'my_acquisition_commissions' => 'عمولات الاستقطاب الخاصة بي',
         'admins' => 'المشرفون',

@@ -299,18 +299,18 @@ class MarketerCampaignController extends Controller
         }
     }
 
-    public function updateCommission(Request $request, MarketerCampaign $campaign): JsonResponse
+    public function updateCommission(Request $request, MarketerCampaign $marketerCampaign): JsonResponse
     {
         $request->validate([
             'marketer_commission_amount' => ['required', 'integer', 'min:1'],
             'platform_commission_amount' => ['required', 'integer', 'min:0'],
         ]);
 
-        abort_unless($campaign->status === 'pending_admin', 422, 'Campaign is not pending admin review');
+        abort_unless($marketerCampaign->status === 'pending_admin', 422, 'Campaign is not pending admin review');
 
-        $campaign->marketer_commission_amount = $request->marketer_commission_amount;
-        $campaign->platform_commission_amount = $request->platform_commission_amount;
-        $campaign->save();
+        $marketerCampaign->marketer_commission_amount = $request->marketer_commission_amount;
+        $marketerCampaign->platform_commission_amount = $request->platform_commission_amount;
+        $marketerCampaign->save();
 
         return response()->json(['success' => true]);
     }

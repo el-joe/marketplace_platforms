@@ -17,6 +17,7 @@ use App\Models\MarketerMarketerJobCategory;
 use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -315,44 +316,44 @@ class MarketerController extends Controller
             throw ValidationException::withMessages(['excluded_category_ids' => __('validation.exists', ['attribute' => 'excluded_category_ids'])]);
         }
 
-        $ruleQuery = MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', $scope)
-            ->when($categoryId, fn ($q) => $q->where('category_type', $catClass)->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'));
-        $rule = $ruleQuery->first();
-        $ruleData = $payload + ['updated_by_admin_id' => auth('admin')->id(), 'excluded_category_ids' => $excluded ?: null];
-        if ($rule) {
-            $rule->update($ruleData);
-        } else {
-            MarketerCommissionRule::create($ruleData + [
-                'marketer_id' => $marketer->id, 'scope' => $scope,
-                'category_type' => $categoryId ? $catClass : null, 'category_id' => $categoryId,
-            ]);
-        }
+        DB::transaction(function () use ($marketer, $scope, $categoryId, $catClass, $payload, $excluded) {
+            $ruleQuery = MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', $scope)
+                ->when($categoryId, fn ($q) => $q->where('category_type', $catClass)->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'));
+            $rule = $ruleQuery->first();
+            $ruleData = $payload + ['updated_by_admin_id' => auth('admin')->id(), 'excluded_category_ids' => $excluded ?: null];
+            if ($rule) {
+                $rule->update($ruleData);
+            } else {
+                MarketerCommissionRule::create($ruleData + [
+                    'marketer_id' => $marketer->id, 'scope' => $scope,
+                    'category_type' => $categoryId ? $catClass : null, 'category_id' => $categoryId,
+                ]);
+            }
 
-        if ($scope === 'travel') {
-            return back()->with('success', 'تم حفظ نسبة العمولة.');
-        }
-        if ($scope === 'open_market') {
-            OpenMarketCategoryCommission::updateOrCreate(
-                ['marketer_id' => $marketer->id, 'classified_category_id' => $categoryId],
-                $payload + ['updated_by_admin_id' => auth('admin')->id()]
-            );
+            // The legacy mirror tables have no commission_min_amount column (live schema) and nothing reads them.
+            $mirror = Arr::except($payload, ['commission_min_amount']);
 
-            return back()->with('success', 'تم حفظ نسبة العمولة.');
-        }
+            if ($scope === 'open_market') {
+                OpenMarketCategoryCommission::updateOrCreate(
+                    ['marketer_id' => $marketer->id, 'classified_category_id' => $categoryId],
+                    $mirror + ['updated_by_admin_id' => auth('admin')->id()]
+                );
+            } elseif ($scope === 'products') {
+                $existing = MarketerCategoryCommission::where('marketer_id', $marketer->id)
+                    ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'))
+                    ->first();
 
-        $existing = MarketerCategoryCommission::where('marketer_id', $marketer->id)
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'))
-            ->first();
-
-        if ($existing) {
-            $existing->update($payload + ['updated_by_admin_id' => auth('admin')->id()]);
-        } else {
-            MarketerCategoryCommission::create($payload + [
-                'marketer_id' => $marketer->id,
-                'category_id' => $categoryId,
-                'updated_by_admin_id' => auth('admin')->id(),
-            ]);
-        }
+                if ($existing) {
+                    $existing->update($mirror + ['updated_by_admin_id' => auth('admin')->id()]);
+                } else {
+                    MarketerCategoryCommission::create($mirror + [
+                        'marketer_id' => $marketer->id,
+                        'category_id' => $categoryId,
+                        'updated_by_admin_id' => auth('admin')->id(),
+                    ]);
+                }
+            }
+        });
 
         return back()->with('success', 'تم حفظ نسبة العمولة.');
     }

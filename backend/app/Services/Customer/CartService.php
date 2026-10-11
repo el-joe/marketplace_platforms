@@ -535,7 +535,7 @@ class CartService
             if ($item->marketer_listing_id !== null) {
                 $listing = $item->marketerListing;
 
-                if (!$listing || $listing->status !== 'active') {
+                if (!$listing || $listing->status !== \App\Enums\MarketerListingStatus::Active) {
                     $item->delete();
                     continue;
                 }

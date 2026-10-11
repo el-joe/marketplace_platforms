@@ -12,6 +12,7 @@ use App\Models\Category;
 use App\Models\Country;
 use App\Models\MarketerCategoryCommission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -95,5 +96,21 @@ class MarketerCategoryCommissionStoreTest extends TestCase
         $m->update(['country_id' => $country->id]);
         $this->actingAs(Admin::first(), 'admin')->get(route('admin.marketers.show', $m))
             ->assertOk()->assertSee('5 EGP');
+    }
+
+    public function test_rule_is_rolled_back_when_the_legacy_mirror_write_fails(): void
+    {
+        $event = 'eloquent.creating: '.MarketerCategoryCommission::class;
+        Event::listen($event, fn () => throw new \RuntimeException('mirror write failed'));
+
+        try {
+            [$m, $r] = $this->storeCommission(['commission_rate' => 10]);
+        } finally {
+            Event::forget($event);
+        }
+
+        $r->assertServerError();
+        $this->assertSame(0, MarketerCommissionRule::where('marketer_id', $m->id)->count());
+        $this->assertSame(0, MarketerCategoryCommission::where('marketer_id', $m->id)->count());
     }
 }

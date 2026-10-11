@@ -18,6 +18,23 @@ class UpdateVendorRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Commission fields of the vendor profile. Shared with the /commissions page so both screens
+     * validate vendors.commission_rate and the commission discount identically.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function commissionRules(): array
+    {
+        return [
+            'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_discount_type' => ['nullable', Rule::enum(VendorCommissionDiscountType::class)],
+            'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
+            'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
     public function rules(): array
     {
         $vendor = $this->route('vendor');
@@ -36,11 +53,7 @@ class UpdateVendorRequest extends FormRequest
             'tax_id' => ['nullable', 'string', 'max:100'],
             'contact_email' => ['nullable', 'email', 'max:150'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
-            'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'commission_discount_type' => ['nullable', Rule::enum(VendorCommissionDiscountType::class)],
-            'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
-            'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
+            ...self::commissionRules(),
             'payout_schedule' => ['nullable', Rule::enum(PayoutSchedule::class)],
             'global_status' => ['nullable', Rule::enum(VendorGlobalStatus::class)],
             'vendor_type' => ['nullable', Rule::enum(VendorType::class)],

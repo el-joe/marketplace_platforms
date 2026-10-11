@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Marketer;
 
+use App\Enums\MarketerListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
 use App\Models\MarketerListing;
@@ -41,9 +42,11 @@ class ListingController extends Controller
     {
         abort_unless($listing->marketer_id === $this->marketer()->id, 403);
 
+        $wasActive = $listing->status === MarketerListingStatus::Active;
+
         $listing->update([
-            'status'        => $listing->status === 'active' ? 'paused' : 'active',
-            'paused_reason' => $listing->status === 'active' ? 'manual' : null,
+            'status'        => $wasActive ? MarketerListingStatus::Paused : MarketerListingStatus::Active,
+            'paused_reason' => $wasActive ? 'manual' : null,
         ]);
 
         return response()->json(['success' => true, 'data' => $listing->fresh()]);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\FulfillmentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\AssertsOrderMoney;
 use Tests\Support\MarketplaceScenario;
@@ -42,8 +43,8 @@ class ScenarioTest extends TestCase
         $this->assertSame(0, $scenario->variants[1]->images()->count());
 
         // Vendor listings (FBP + FBN) with warehouse inventory
-        $this->assertSame('fbm', $scenario->vendorListingFbp->fulfillment_model);
-        $this->assertSame('fbn', $scenario->vendorListingFbn->fulfillment_model);
+        $this->assertSame(FulfillmentModel::Fbm, $scenario->vendorListingFbp->fulfillment_model);
+        $this->assertSame(FulfillmentModel::Fbn, $scenario->vendorListingFbn->fulfillment_model);
         $this->assertStock($scenario->vendorListingFbp, 50, 0);
         $this->assertStock($scenario->vendorListingFbn, 40, 0);
 

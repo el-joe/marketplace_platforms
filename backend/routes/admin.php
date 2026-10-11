@@ -33,6 +33,8 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ClassifiedCategoryController;
 use App\Http\Controllers\Admin\ClassifiedListingController;
 use App\Http\Controllers\Admin\CodSettlementController;
+use App\Http\Controllers\Admin\CommissionSettingsController;
+use App\Http\Controllers\Admin\CommissionsController;
 use App\Http\Controllers\Admin\ContractSignatureController;
 use App\Http\Controllers\Admin\ContractTemplateController;
 use App\Http\Controllers\Admin\CountryController;
@@ -672,6 +674,23 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{vendor}/acquisition-agent/{commission}/revoke', [VendorAcquisitionController::class, 'revoke'])->name('acquisition-agent.revoke');
     });
 
+    // ─── Unified Commissions page (one tab per commission type) ────────────────────
+    Route::prefix('commissions')->name('commissions.')->group(function () {
+        Route::get('/', [CommissionsController::class, 'index'])->name('index');
+        Route::middleware('admin.permission:commission_rules.manage')->group(function () {
+            Route::post('/vendor-rules', [CommissionsController::class, 'storeVendorRule'])->name('vendor-rules.store');
+            Route::put('/vendor-rules/{commission}', [CommissionsController::class, 'updateVendorRule'])->name('vendor-rules.update');
+            Route::delete('/vendor-rules/{commission}', [CommissionsController::class, 'destroyVendorRule'])->name('vendor-rules.destroy');
+        });
+        // Vendor-scoped writes: vendors.edit + assigned-vendor scope (see CommissionSettingsController).
+        Route::middleware('admin.permission:vendors.edit')->prefix('vendors/{vendor}')->name('vendors.')->group(function () {
+            Route::patch('/commission', [CommissionSettingsController::class, 'updateVendorCommission'])->name('commission.update');
+            Route::post('/acquisition', [CommissionSettingsController::class, 'storeAcquisition'])->name('acquisition.store');
+            Route::put('/acquisition/{commission}', [CommissionSettingsController::class, 'updateAcquisition'])->name('acquisition.update');
+            Route::post('/acquisition/{commission}/revoke', [CommissionSettingsController::class, 'revokeAcquisition'])->name('acquisition.revoke');
+        });
+    });
+
     // ─── Vendor Acquisition Commissions ───────────────────────────────────────────
     Route::prefix('acquisition-commissions')->name('acquisition-commissions.')->middleware('admin.permission:vendors.view')->group(function () {
         Route::post('/datatable', [VendorAcquisitionController::class, 'datatable'])->name('datatable');
@@ -1124,9 +1143,9 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{marketerCampaign}/category-rules/sync', [MarketerCampaignController::class, 'syncCategoryRules'])->name('category-rules.sync')
             ->middleware('admin.permission:marketer_campaigns.create');
         Route::patch('/{marketerCampaign}/commission', [MarketerCampaignController::class, 'updateCommission'])->name('commission.update')
-            ->middleware('can:marketer_campaigns.approve');
+            ->middleware('admin.permission:marketer_campaigns.approve');
         Route::post('/{marketerCampaign}/approve-request', [MarketerCampaignController::class, 'approveRequest'])->name('approve-request')
-            ->middleware('can:marketer_campaigns.approve');
+            ->middleware('admin.permission:marketer_campaigns.approve');
     });
 
     // ─── Marketer Settings (Commission & Fees) ────────────────────────────────────

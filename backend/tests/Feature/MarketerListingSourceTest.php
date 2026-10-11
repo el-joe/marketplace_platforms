@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MarketerListingStatus;
 use App\Models\CartItem;
 use App\Models\MarketerListing;
 use App\Models\Order;
@@ -97,13 +98,13 @@ class MarketerListingSourceTest extends TestCase
     {
         $scenario = MarketplaceScenario::make()->build();
 
-        $this->assertSame('active', $scenario->marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Active, $scenario->marketerListing->status);
 
         // Pause the campaign-linked marketer listing's source vendor listing.
         $scenario->vendorListingFbp->update(['status' => 'paused']);
 
         $scenario->marketerListing->refresh();
-        $this->assertSame('paused', $scenario->marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Paused, $scenario->marketerListing->status);
         $this->assertSame('source_unavailable', $scenario->marketerListing->paused_reason);
 
         // Storefront query used by ListingQueryService/PDP: no longer visible.
@@ -114,7 +115,7 @@ class MarketerListingSourceTest extends TestCase
         // Re-activating the source unpauses it again.
         $scenario->vendorListingFbp->update(['status' => 'active']);
         $scenario->marketerListing->refresh();
-        $this->assertSame('active', $scenario->marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Active, $scenario->marketerListing->status);
         $this->assertNull($scenario->marketerListing->paused_reason);
     }
 
@@ -129,7 +130,7 @@ class MarketerListingSourceTest extends TestCase
         $scenario->vendorListingFbp->update(['status' => 'active']);
 
         $scenario->marketerListing->refresh();
-        $this->assertSame('paused', $scenario->marketerListing->status);
+        $this->assertSame(MarketerListingStatus::Paused, $scenario->marketerListing->status);
         $this->assertSame('manual', $scenario->marketerListing->paused_reason);
     }
 
@@ -155,8 +156,8 @@ class MarketerListingSourceTest extends TestCase
         // superset of "not purchasable", so we don't downgrade it back to
         // 'paused'. Either outcome satisfies "not visible/purchasable".
         $scenario->marketerListing->refresh();
-        $this->assertContains($scenario->marketerListing->status, ['paused', 'archived']);
-        $this->assertNotSame('active', $scenario->marketerListing->status);
+        $this->assertContains($scenario->marketerListing->status, [MarketerListingStatus::Paused, MarketerListingStatus::Archived]);
+        $this->assertNotSame(MarketerListingStatus::Active, $scenario->marketerListing->status);
     }
 
     public function test_visible_marketer_listing_can_be_bought_end_to_end_and_reserves_source_stock(): void

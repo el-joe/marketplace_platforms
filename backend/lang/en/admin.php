@@ -317,6 +317,7 @@ return [
         'notifications' => 'Notifications',
         'vendors' => 'Vendors',
         'applications' => 'Applications',
+        'commissions' => 'Commissions',
         'acquisition_commissions' => 'Acquisition Commissions',
         'my_acquisition_commissions' => 'My Acquisition Commissions',
         'admins' => 'Admins',

@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  */
 class MarketerConversionReversalService
 {
-    public function __construct(private readonly LedgerService $ledgerService) {}
+    public function __construct(private readonly LedgerService $ledgerService = new LedgerService) {}
 
     /**
      * @param  array<int, string>  $orderItemIds
