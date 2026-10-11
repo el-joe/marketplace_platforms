@@ -29,17 +29,33 @@
     {{-- Top Nav --}}
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <style>[x-cloak] { display: none !important; }</style>
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6" x-data="{ menu: false }">
+        <div class="h-16 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
                 <span class="bg-indigo-600 text-white font-black text-lg px-2.5 py-1 rounded">🚚</span>
-                <div class="leading-tight">
-                    <div class="font-bold text-gray-900 text-sm">{{ auth('shipping_supervisor')->user()?->company?->name }}</div>
-                    <div class="text-xs text-gray-500">{{ auth('shipping_supervisor')->user()?->name }}</div>
+                <div class="leading-tight min-w-0">
+                    <div class="font-bold text-gray-900 text-sm truncate">{{ auth('shipping_supervisor')->user()?->company?->name }}</div>
+                    <div class="text-xs text-gray-500 truncate">{{ auth('shipping_supervisor')->user()?->name }}</div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4 text-sm font-medium">
+            {{-- Mobile: bell + burger --}}
+            <div class="flex items-center gap-1 lg:hidden">
                 <x-notification-bell guard="shipping_supervisor" />
+                <button type="button" @click="menu = !menu" :aria-expanded="menu"
+                        class="p-2 rounded-lg text-gray-600 hover:bg-gray-100" aria-label="Menu">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path x-show="!menu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        <path x-show="menu" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Links: inline on desktop, stacked panel on mobile --}}
+            <div :class="menu ? 'flex' : 'hidden lg:flex'"
+                 class="max-lg:absolute max-lg:inset-x-0 max-lg:top-16 max-lg:bg-white max-lg:border-b max-lg:border-gray-200 max-lg:shadow-md max-lg:px-4 max-lg:py-3 max-lg:flex-col max-lg:items-start
+                        lg:items-center gap-3 lg:gap-4 text-sm font-medium">
+                <div class="hidden lg:block"><x-notification-bell guard="shipping_supervisor" /></div>
                 <a href="{{ route('carrier.dashboard') }}"
                    class="text-gray-600 hover:text-indigo-600 transition {{ request()->routeIs('carrier.dashboard') ? 'text-indigo-600 font-bold' : '' }}">
                     {{ __('carrier.nav.home') }}
@@ -129,21 +145,22 @@
                 </form>
             </div>
         </div>
+        </div>
     </nav>
 
     {{-- Flash messages --}}
     @if(session('success'))
-    <div class="bg-emerald-50 border-b border-emerald-200 px-6 py-3 text-sm text-emerald-700 text-center font-medium">
+    <div class="bg-emerald-50 border-b border-emerald-200 px-4 sm:px-6 py-3 text-sm text-emerald-700 text-center font-medium">
         {{ session('success') }}
     </div>
     @endif
     @if(session('error') || $errors->any())
-    <div class="bg-red-50 border-b border-red-200 px-6 py-3 text-sm text-red-700 text-center font-medium">
+    <div class="bg-red-50 border-b border-red-200 px-4 sm:px-6 py-3 text-sm text-red-700 text-center font-medium">
         {{ session('error') ?? $errors->first() }}
     </div>
     @endif
 
-    <main class="max-w-7xl mx-auto px-6 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         @yield('content')
     </main>
 

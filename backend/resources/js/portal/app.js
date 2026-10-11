@@ -4,6 +4,9 @@
  */
 import Alpine from 'alpinejs';
 import Collapse from '@alpinejs/collapse';
+// Registers window.notificationBell (used by <x-notification-bell> in the carrier layout).
+// ES imports are hoisted, so this runs before Alpine.start() below.
+import '../shared/echo-setup.js';
 
 // ── Alpine global setup ──────────────────────────────────────────────────
 window.Alpine = Alpine;
