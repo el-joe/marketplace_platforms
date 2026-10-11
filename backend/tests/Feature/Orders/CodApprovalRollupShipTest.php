@@ -135,4 +135,28 @@ class CodApprovalRollupShipTest extends TestCase
         $this->actingAs($editor, 'admin')->postJson($url, ['carrier_id' => $carrier->id])->assertSuccessful();
         $this->assertTrue(Shipment::whereDoesntHave('deliveryAssignment')->where('sub_order_id', $sub->id)->exists());
     }
+
+    public function test_admin_order_page_shows_agent_assignment_and_otp(): void
+    {
+        [$s, $order] = $this->place('cod');
+        $sub = $order->subOrders()->first();
+        $sub->update(['status' => 'confirmed', 'carrier_id' => $this->carrier($s)->id]);
+        app(\App\Services\Shipping\ShipmentService::class)
+            ->createForSubOrder($sub->fresh('items'), 'TRK-OTP', \App\Enums\CancelActor::Admin, [], true);
+        $shipment = Shipment::where('sub_order_id', $sub->id)->firstOrFail();
+        $agent = $s->deliveryAgent; $agent->update(['name' => 'Agent Zed']);
+        \App\Models\DeliveryAssignment::create([
+            'shipment_id' => $shipment->id, 'sub_order_id' => $sub->id, 'agent_id' => $agent->id,
+            'status' => 'assigned', 'assigned_at' => now(), 'delivery_otp' => '482915',
+        ]);
+
+        foreach (['orders.view', 'vendors.assigned_only'] as $p) {
+            \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $p, 'guard_name' => 'admin']);
+        }
+        $admin = \App\Models\Admin::factory()->create();
+        $admin->givePermissionTo('orders.view');
+
+        $this->actingAs($admin, 'admin')->get(route('admin.orders.show', $order->id))
+            ->assertOk()->assertSee('Agent Zed')->assertSee('482915')->assertSee('TRK-OTP');
+    }
 }

@@ -191,6 +191,8 @@ class OrderController extends Controller
             'subOrders.shippingMethod',
             'subOrders.originCountry',
             'subOrders.codSettlement.agent',
+            'subOrders.shipments',
+            'subOrders.deliveryAssignments.agent',
             'subOrders.statusHistories.changedByAdmin',
             'statusHistories.changedByAdmin',
             'disputes.messages',

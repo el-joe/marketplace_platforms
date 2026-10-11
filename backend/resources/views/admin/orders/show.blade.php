@@ -479,7 +479,7 @@
             {{-- ──────────────────────────────────── --}}
             <x-card title="{{ __('admin.orders.shipping_assignment') }}">
                 @forelse($order->subOrders as $subOrder)
-                    <div class="border border-gray-200 rounded-xl mb-3 last:mb-0 p-4 flex items-center justify-between gap-4"
+                    <div class="border border-gray-200 rounded-xl mb-3 last:mb-0 p-4 flex flex-wrap items-center justify-between gap-4"
                         data-shipping-sub-order-id="{{ $subOrder->id }}">
                         <div>
                             <div class="flex items-center gap-2 mb-1">
@@ -516,6 +516,52 @@
                                 {{ __('admin.orders.create_shipment') }}
                             </button>
                         @endif
+
+                        {{-- Shipment + delivery agent assignment(s) + OTP --}}
+                        @foreach($subOrder->shipments as $shipment)
+                            <div class="w-full border-t border-gray-100 pt-3 text-sm">
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-600">
+                                    <span>{{ __('admin.orders.tracking_number') }}: <span class="font-mono font-medium text-gray-900">{{ $shipment->tracking_number }}</span></span>
+                                    <x-badge color="gray">{{ ucfirst(str_replace('_', ' ', $shipment->status->value ?? $shipment->status)) }}</x-badge>
+                                </div>
+                                @php $assignments = $subOrder->deliveryAssignments->where('shipment_id', $shipment->id); @endphp
+                                @forelse($assignments as $da)
+                                    <div class="mt-2 rounded-lg bg-gray-50 p-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500">{{ __('admin.orders.delivery_agent') }}</p>
+                                            <p class="font-medium text-gray-900">{{ $da->agent?->name ?? '—' }}</p>
+                                            <p class="text-xs text-gray-500" dir="ltr">{{ $da->agent?->phone }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">{{ __('admin.orders.assignment_status') }}</p>
+                                            <x-badge :color="match($da->status->value) { 'delivered' => 'success', 'failed' => 'danger', default => 'gray' }">
+                                                {{ ucfirst(str_replace('_', ' ', $da->status->value)) }}
+                                            </x-badge>
+                                            <p class="text-xs text-gray-500 mt-1">{{ __('admin.orders.assigned_at') }}: {{ $da->assigned_at?->format('M d, Y H:i') }}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">{{ __('admin.orders.delivery_otp') }}</p>
+                                            @if($da->delivery_otp)
+                                                <p class="font-mono text-lg font-bold tracking-widest text-gray-900" dir="ltr">{{ $da->delivery_otp }}</p>
+                                                <p class="text-xs {{ $da->otp_verified ? 'text-emerald-600' : 'text-gray-500' }}">
+                                                    {{ $da->otp_verified ? __('admin.orders.otp_verified') : __('admin.orders.otp_not_verified') }}
+                                                    @if($da->otp_attempts) · {{ __('admin.orders.otp_attempts') }}: {{ $da->otp_attempts }} @endif
+                                                </p>
+                                            @else
+                                                <p class="text-gray-400">—</p>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500">{{ __('admin.orders.cod_collected') }}</p>
+                                            <p class="font-medium text-gray-900">{{ $da->cod_amount_collected !== null ? $fmt($da->cod_amount_collected) : '—' }}</p>
+                                            @if($da->failure_reason)<p class="text-xs text-red-600">{{ $da->failure_reason }}</p>@endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="mt-2 text-xs font-medium text-amber-600">{{ __('admin.orders.awaiting_agent_assignment') }}</p>
+                                @endforelse
+                            </div>
+                        @endforeach
                     </div>
                 @empty
                     <p class="text-sm text-gray-400 italic py-4 text-center">{{ __('admin.orders.no_sub_orders_found') }}</p>
