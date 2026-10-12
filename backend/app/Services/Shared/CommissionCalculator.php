@@ -27,9 +27,9 @@ class CommissionCalculator
         float $highRate = 0.0,
         int $minCommission = 0,
         int $quantity = 1,
-        int $flatAmount = 0,
+        int|float $flatAmount = 0,
         bool $includeFlat = false,
-    ): int {
+    ): int|float {
         $quantity = max(1, $quantity);
         $unitPrice = intdiv($baseAmount + $quantity - 1, $quantity);
 
@@ -50,6 +50,8 @@ class CommissionCalculator
             $calculated = max($calculated, $minCommission * $quantity);
         }
 
-        return max(0, $calculated);
+        $result = max(0, round((float) $calculated, 4));
+
+        return floor($result) == $result ? (int) $result : $result;
     }
 }

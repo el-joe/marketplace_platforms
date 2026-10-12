@@ -2,9 +2,15 @@
 
 namespace Tests\Unit\Checkout;
 
+use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\ProductVariant;
+use App\Models\Vendor;
+use App\Models\VendorListing;
+use App\Models\Warehouse;
 use App\Services\Checkout\CheckoutPricingEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
 
@@ -24,7 +30,7 @@ class CheckoutPricingEngineSplitTest extends TestCase
         $scenario = MarketplaceScenario::make()->build();
         $engine = app(CheckoutPricingEngine::class);
 
-        $cart = \App\Models\Cart::create(['user_id' => $scenario->customer->id, 'country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
+        $cart = Cart::create(['user_id' => $scenario->customer->id, 'country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
         $item = CartItem::create([
             'cart_id' => $cart->id,
             'vendor_listing_id' => $scenario->vendorListingFbp->id,
@@ -60,9 +66,10 @@ class CheckoutPricingEngineSplitTest extends TestCase
         $sumVendorPayout = array_sum(array_column($split['sub_orders'], 'vendor_payout'));
         $amountPaid = $pricedCart->total;
 
-        $this->assertSame(
+        $this->assertEqualsWithDelta(
             $amountPaid,
-            $sumVendorPayout + $split['platform_net'] + $pricedCart->tax + $split['marketer_commission_total'] + $split['gateway_fee_total'] + $split['carrier_cost_covered_total'],
+            $sumVendorPayout + $split['platform_net'] + $pricedCart->tax + $split['marketer_commission_total'] + $split['gateway_fee_total'] + $split['carrier_cost_covered_total'] + ($split['commission_vat_total'] ?? 0),
+            0.0001,
         );
     }
 
@@ -71,47 +78,47 @@ class CheckoutPricingEngineSplitTest extends TestCase
         $scenario = MarketplaceScenario::make()->build();
         $engine = app(CheckoutPricingEngine::class);
 
-        $vendor2 = \App\Models\Vendor::create([
-            'name' => 'Vendor 2', 'email' => 'v2-'.\Illuminate\Support\Str::random(6).'@example.test',
+        $vendor2 = Vendor::create([
+            'name' => 'Vendor 2', 'email' => 'v2-'.Str::random(6).'@example.test',
             'phone' => '+9715'.fake()->numerify('########'), 'password' => bcrypt('x'),
-            'store_name' => 'Store 2', 'store_slug' => 'store-2-'.\Illuminate\Support\Str::random(6),
+            'store_name' => 'Store 2', 'store_slug' => 'store-2-'.Str::random(6),
             'business_type' => 'llc', 'payout_schedule' => 'monthly', 'global_status' => 'active',
             'country_id' => $scenario->country->id, 'approved_at' => now(), 'warranty_months' => 12,
         ]);
-        $warehouse2 = \App\Models\Warehouse::create([
-            'country_id' => $scenario->country->id, 'name' => 'W2', 'code' => 'W2-'.\Illuminate\Support\Str::random(6),
+        $warehouse2 = Warehouse::create([
+            'country_id' => $scenario->country->id, 'name' => 'W2', 'code' => 'W2-'.Str::random(6),
             'type' => 'seller_owned', 'owner_vendor_id' => $vendor2->id, 'is_active' => true,
         ]);
-        $listing2 = \App\Models\VendorListing::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(), 'vendor_id' => $vendor2->id,
+        $listing2 = VendorListing::create([
+            'id' => (string) Str::uuid(), 'vendor_id' => $vendor2->id,
             'product_variant_id' => $scenario->variants[1]->id, 'country_id' => $scenario->country->id,
             'warehouse_id' => $warehouse2->id, 'price' => 500, 'currency' => 'AED',
             'condition' => 'new', 'fulfillment_model' => 'fbm', 'status' => 'active',
         ]);
 
-        $vendor3 = \App\Models\Vendor::create([
-            'name' => 'Vendor 3', 'email' => 'v3-'.\Illuminate\Support\Str::random(6).'@example.test',
+        $vendor3 = Vendor::create([
+            'name' => 'Vendor 3', 'email' => 'v3-'.Str::random(6).'@example.test',
             'phone' => '+9715'.fake()->numerify('########'), 'password' => bcrypt('x'),
-            'store_name' => 'Store 3', 'store_slug' => 'store-3-'.\Illuminate\Support\Str::random(6),
+            'store_name' => 'Store 3', 'store_slug' => 'store-3-'.Str::random(6),
             'business_type' => 'llc', 'payout_schedule' => 'monthly', 'global_status' => 'active',
             'country_id' => $scenario->country->id, 'approved_at' => now(), 'warranty_months' => 12,
         ]);
-        $warehouse3 = \App\Models\Warehouse::create([
-            'country_id' => $scenario->country->id, 'name' => 'W3', 'code' => 'W3-'.\Illuminate\Support\Str::random(6),
+        $warehouse3 = Warehouse::create([
+            'country_id' => $scenario->country->id, 'name' => 'W3', 'code' => 'W3-'.Str::random(6),
             'type' => 'seller_owned', 'owner_vendor_id' => $vendor3->id, 'is_active' => true,
         ]);
-        $variant3 = \App\Models\ProductVariant::create([
-            'product_id' => $scenario->product->id, 'sku' => 'SKU-'.\Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(10)),
+        $variant3 = ProductVariant::create([
+            'product_id' => $scenario->product->id, 'sku' => 'SKU-'.Str::upper(Str::random(10)),
             'variant_name' => 'Variant 3', 'is_default' => false, 'is_active' => true, 'position' => 2,
         ]);
-        $listing3 = \App\Models\VendorListing::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(), 'vendor_id' => $vendor3->id,
+        $listing3 = VendorListing::create([
+            'id' => (string) Str::uuid(), 'vendor_id' => $vendor3->id,
             'product_variant_id' => $variant3->id, 'country_id' => $scenario->country->id,
             'warehouse_id' => $warehouse3->id, 'price' => 700, 'currency' => 'AED',
             'condition' => 'new', 'fulfillment_model' => 'fbm', 'status' => 'active',
         ]);
 
-        $cart = \App\Models\Cart::create(['user_id' => $scenario->customer->id, 'country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
+        $cart = Cart::create(['user_id' => $scenario->customer->id, 'country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
         $items = [
             CartItem::create(['cart_id' => $cart->id, 'vendor_listing_id' => $scenario->vendorListingFbp->id, 'quantity' => 1, 'unit_price' => (int) $scenario->vendorListingFbp->price, 'added_at' => now()]),
             CartItem::create(['cart_id' => $cart->id, 'vendor_listing_id' => $listing2->id, 'quantity' => 1, 'unit_price' => (int) $listing2->price, 'added_at' => now()]),
@@ -132,9 +139,10 @@ class CheckoutPricingEngineSplitTest extends TestCase
         $this->assertSame((int) $gatewayCfg->fee_fixed, $split['gateway_fee_total'] - (int) floor($pricedCart->total * (float) $gatewayCfg->fee_pct / 100));
 
         $sumVendorPayout = array_sum(array_column($split['sub_orders'], 'vendor_payout'));
-        $this->assertSame(
+        $this->assertEqualsWithDelta(
             $pricedCart->total,
-            $sumVendorPayout + $split['platform_net'] + $pricedCart->tax + $split['marketer_commission_total'] + $split['gateway_fee_total'] + $split['carrier_cost_covered_total'],
+            $sumVendorPayout + $split['platform_net'] + $pricedCart->tax + $split['marketer_commission_total'] + $split['gateway_fee_total'] + $split['carrier_cost_covered_total'] + ($split['commission_vat_total'] ?? 0),
+            0.0001,
         );
     }
 
@@ -143,7 +151,7 @@ class CheckoutPricingEngineSplitTest extends TestCase
         $scenario = MarketplaceScenario::make()->build();
         $engine = app(CheckoutPricingEngine::class);
 
-        $cart = \App\Models\Cart::create(['user_id' => $scenario->customer->id, 'country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
+        $cart = Cart::create(['user_id' => $scenario->customer->id, 'country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
         $item = CartItem::create([
             'cart_id' => $cart->id, 'vendor_listing_id' => $scenario->vendorListingFbp->id,
             'quantity' => 1, 'unit_price' => (int) $scenario->vendorListingFbp->price, 'added_at' => now(),

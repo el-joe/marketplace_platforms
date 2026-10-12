@@ -33,8 +33,8 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ClassifiedCategoryController;
 use App\Http\Controllers\Admin\ClassifiedListingController;
 use App\Http\Controllers\Admin\CodSettlementController;
-use App\Http\Controllers\Admin\CommissionSettingsController;
 use App\Http\Controllers\Admin\CommissionsController;
+use App\Http\Controllers\Admin\CommissionSettingsController;
 use App\Http\Controllers\Admin\ContractSignatureController;
 use App\Http\Controllers\Admin\ContractTemplateController;
 use App\Http\Controllers\Admin\CountryController;
@@ -1152,6 +1152,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('marketer-settings')->name('marketer-settings.')->middleware('admin.permission:marketer_commission_settings.view')->group(function () {
         Route::get('/', [MarketerSettingsController::class, 'index'])->name('index');
         Route::post('/fee', [MarketerSettingsController::class, 'updateInfluencerFee'])->name('update-fee');
+        Route::post('/promotion-targets', [MarketerSettingsController::class, 'updatePromotionTarget'])->name('promotion-targets.update');
+        Route::delete('/promotion-targets/{target}', [MarketerSettingsController::class, 'destroyPromotionTarget'])->name('promotion-targets.destroy');
     });
 
     // ─── Ad Slots ──────────────────────────────────────────────────────────────────

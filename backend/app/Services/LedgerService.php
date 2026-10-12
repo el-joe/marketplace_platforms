@@ -106,6 +106,7 @@ class LedgerService
         $platformCommission = 0;
         $marketerCommissionPayable = 0;
         $gatewayFee = 0;
+        $commissionVat = 0;
         foreach ($order->subOrders as $subOrder) {
             if ($subOrder->vendor_id !== null) {
                 $sellerPayableByVendor[$subOrder->vendor_id] = ($sellerPayableByVendor[$subOrder->vendor_id] ?? 0) + (int) $subOrder->vendor_payout;
@@ -113,9 +114,11 @@ class LedgerService
             $platformCommission += (int) $subOrder->platform_commission;
             $marketerCommissionPayable += (int) $subOrder->marketer_commission;
             $gatewayFee += (int) $subOrder->gateway_fee;
+            $commissionVat += (int) round((float) $subOrder->commission_vat);
         }
 
-        $taxPayable = (int) $order->tax;
+        // Customer VAT plus VAT billed to sellers on the platform commission: both are owed to the tax authority.
+        $taxPayable = (int) $order->tax + $commissionVat;
         $sellerPayableTotal = array_sum($sellerPayableByVendor);
 
         // enhancement.md P-11: warranty premium revenue is broken out of the

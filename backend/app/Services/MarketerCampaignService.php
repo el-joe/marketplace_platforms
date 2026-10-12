@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\InsufficientBalanceException;
 use App\Jobs\ProcessCampaignAutoApproveJob;
 use App\Jobs\ProcessInvitationTimeoutJob;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
@@ -23,6 +24,7 @@ use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Notifications\Admin\CampaignMarketerReassignedNotification;
 use App\Notifications\Admin\NewCampaignPendingNotification;
 use App\Notifications\Marketer\CampaignExpired;
 use App\Notifications\Marketer\CampaignInvitationAcceptedNotification;
@@ -636,7 +638,7 @@ class MarketerCampaignService
      */
     public function dispatchInvitation(MarketerCampaign $campaign, string $marketerId): MarketerCampaignInvitation
     {
-        $timeoutHours = max(168, (int) setting('marketer_invitation_timeout_hours', 168));
+        $timeoutHours = max(1, (int) setting('marketer_invitation_timeout_hours', 12));
         $referralCode = strtoupper(Str::random(10));
 
         $invitation = MarketerCampaignInvitation::create([
@@ -742,6 +744,45 @@ class MarketerCampaignService
     }
 
     /**
+     * Debit the per-influencer platform fee of an accepted invitation from the configured payer's wallet.
+     *
+     * @return bool true when the fee is now paid
+     */
+    public function collectInfluencerFee(MarketerCampaignInvitation $invitation, bool $throwWhenShort = false): bool
+    {
+        if ($invitation->platform_fee_status !== 'pending' || (int) $invitation->platform_fee_amount <= 0) {
+            return false;
+        }
+
+        $payerIsVendor = $invitation->platform_fee_payer === 'vendor';
+        $ownerType = $payerIsVendor ? 'vendor' : 'marketer';
+        $ownerId = $payerIsVendor ? $invitation->campaign->vendor_id : $invitation->marketer_id;
+
+        $walletService = app(WalletService::class);
+        $wallet = $walletService->getOrCreateWallet($ownerType, $ownerId, $invitation->platform_fee_currency ?? $invitation->campaign->currency);
+
+        try {
+            $walletService->debit(
+                $wallet,
+                (int) $invitation->platform_fee_amount,
+                'marketer_campaign_invitation_platform_fee',
+                $invitation->id,
+                'Influencer platform fee for accepted campaign invitation'
+            );
+        } catch (InsufficientBalanceException $e) {
+            if ($throwWhenShort) {
+                throw $e;
+            }
+
+            return false;
+        }
+
+        $invitation->update(['platform_fee_status' => 'paid']);
+
+        return true;
+    }
+
+    /**
      * Marketer accepts an invitation. Samples for the marketer are created now,
      * not at invitation time.
      */
@@ -767,8 +808,10 @@ class MarketerCampaignService
             $marketer = $invitation->marketer;
 
             // Platform fee applies per accepted invitation, influencer type only. Affiliate is always free.
+            // Payer is configurable: the influencer's own wallet (default) or the seller's wallet.
             $feeAmount = 0;
             $feeStatus = 'not_applicable';
+            $feePayer = null;
 
             if ($marketer->isInfluencer()) {
                 $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
@@ -776,6 +819,10 @@ class MarketerCampaignService
 
                 $feeAmount = $feeSetting?->fee_per_influencer ?? 0;
                 $feeStatus = $feeAmount > 0 ? 'pending' : 'waived';
+
+                $feePayer = setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' && $campaign->vendor_id
+                    ? 'vendor'
+                    : 'marketer';
             }
 
             $invitation->update([
@@ -785,25 +832,16 @@ class MarketerCampaignService
                 'platform_fee_amount' => $feeAmount,
                 'platform_fee_currency' => $campaign->currency,
                 'platform_fee_status' => $feeStatus,
+                'platform_fee_payer' => $feeAmount > 0 ? $feePayer : null,
                 'platform_fee_recorded_at' => now(),
             ]);
 
-            // enhancement.md P-16 fix: the influencer platform fee must
-            // actually be debited from the marketer's wallet at acceptance
-            // time, not merely recorded as 'pending' on the invitation —
-            // otherwise it is only ever settled if an admin later remembers
-            // to call markInvitationFeePaid() manually.
+            // enhancement.md P-16 fix: the fee must actually be debited at acceptance time, not merely
+            // recorded as 'pending'. Marketer-paid: a short balance blocks the acceptance (unchanged).
+            // Vendor-paid: a short balance never blocks the promotion; the daily
+            // CollectPendingInfluencerFeesJob retries until the seller tops up.
             if ($feeStatus === 'pending' && $feeAmount > 0) {
-                $walletService = app(WalletService::class);
-                $wallet = $walletService->getOrCreateWallet('marketer', $marketer->id, $campaign->currency);
-                $walletService->debit(
-                    $wallet,
-                    (int) $feeAmount,
-                    'marketer_campaign_invitation_platform_fee',
-                    $invitation->id,
-                    'Influencer platform fee for accepted campaign invitation'
-                );
-                $invitation->update(['platform_fee_status' => 'paid']);
+                $this->collectInfluencerFee($invitation->fresh(), throwWhenShort: $feePayer === 'marketer');
             }
 
             $category = $campaign->vendorListing?->productVariant?->product?->category
@@ -1001,12 +1039,19 @@ class MarketerCampaignService
         $minAccepted = (int) setting('marketer_replacement_min_accepted_campaigns', 0);
 
         $oldJobKeys = $oldMarketer->marketerJobs->pluck('key');
+        $windowStart = now()->subDays(30);
 
+        // Replacement = same job type, active, never invited to this campaign, and the one
+        // who received the fewest invitations in the last 30 days (spreads work evenly).
         $replacement = Marketer::whereHas('marketerJobs', fn ($q) => $q->whereIn('key', $oldJobKeys))
             ->whereNotIn('id', $alreadyInvited)
             ->where('global_status', 'active')
-            ->withCount(['campaignInvitations as accepted_count' => fn ($q) => $q->where('status', 'accepted')])
+            ->withCount([
+                'campaignInvitations as accepted_count' => fn ($q) => $q->where('status', 'accepted'),
+                'campaignInvitations as recent_requests_count' => fn ($q) => $q->where('created_at', '>=', $windowStart),
+            ])
             ->having('accepted_count', '>=', $minAccepted)
+            ->orderBy('recent_requests_count', 'asc')
             ->orderBy('accepted_count', 'asc')
             ->first();
 
@@ -1018,7 +1063,14 @@ class MarketerCampaignService
             fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation))
         );
 
+        $reason = $oldInvitation->status === 'timed_out' ? 'timed_out' : 'rejected';
+        $notifyAdmins = fn (?Marketer $new) => Admin::query()->get()->each(
+            fn ($admin) => $admin->notify(new CampaignMarketerReassignedNotification($campaign, $oldMarketer, $new, $reason))
+        );
+
         if (! $replacement) {
+            $notifyAdmins(null);
+
             return; // No replacement available
         }
 
@@ -1028,6 +1080,7 @@ class MarketerCampaignService
         $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new VendorMarketerReplacedNotification($campaign, $oldMarketer, $replacement))
         );
+        $notifyAdmins($replacement);
     }
 
     /**

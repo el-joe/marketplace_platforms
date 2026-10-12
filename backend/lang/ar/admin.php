@@ -568,6 +568,7 @@ return [
 
     // ─── Orders ──────────────────────────────────────────────────────────────
     'orders' => [
+        'commission_vat' => 'ضريبة القيمة المضافة على العمولة',
         'placed' => 'تم التقديم',
         'title' => 'الطلبات',
         'order_number' => 'رقم الطلب',
@@ -2168,6 +2169,7 @@ return [
         'example_calc' => '100.00 للعنصر × 2 كمية:',
         'failed_load_methods' => 'فشل تحميل الطرق.',
         'featured_homepage' => 'مميز (الصفحة الرئيسية)',
+        'fbm_label' => 'FBM (اتركه فارغاً لاستخدام نسبة FBP)',
         'fixed_fee_per_unit' => 'رسوم ثابتة (لكل وحدة)',
         'has_filters' => 'عرض شريط الفلاتر',
         'has_filters_hint' => 'عند التفعيل، سيظهر شريط الفلاتر (السعر، الماركة، الخصائص) في صفحة هذه الفئة.',
@@ -2356,6 +2358,11 @@ return [
 
     // ─── Marketers ───────────────────────────────────────────────────────────
     'marketers' => [
+        'promotion_obligation' => 'الالتزام الشهري بالترويج',
+        'promotion_category' => 'فئة الترويج',
+        'promotion_category_none' => 'بدون التزام شهري',
+        'monthly_promotion_target' => 'تخصيص الحد الشهري',
+        'monthly_promotion_target_hint' => 'اتركه فارغاً لاستخدام الحد الأدنى للفئة المحدد في صفحة أهداف الترويج. للإدارة السماح بأكثر من الحد الأدنى.',
         'title' => 'المسوّقون',
         'campaigns' => 'الحملات',
         'conversions' => 'التحويلات',
@@ -11155,6 +11162,13 @@ return [
 
     // ─── Marketer Settings ─────────────────────────────────────────────────────
     'marketer_settings' => [
+        'promotion_targets_title' => 'الحد الأدنى الشهري للترويج',
+        'promotion_targets_hint' => 'أقل عدد من الإعلانات يجب أن تفعّله كل فئة مشاهير شهرياً. صف الدولة يتقدّم على صف "كل الدول"، ويمكن تخصيص رقم لكل مسوّق من صفحته.',
+        'all_countries' => 'كل الدول',
+        'monthly_minimum' => 'الحد الأدنى الشهري',
+        'no_promotion_targets' => 'لم يتم تحديد حدود دنيا بعد.',
+        'promotion_target_saved' => 'تم حفظ الحد الأدنى الشهري.',
+        'promotion_target_deleted' => 'تم حذف الحد الأدنى الشهري.',
         'country_column' => 'الدولة',
         'currency_column' => 'العملة',
         'fee_column' => 'الرسوم',

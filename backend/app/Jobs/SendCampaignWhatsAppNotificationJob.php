@@ -3,11 +3,13 @@
 namespace App\Jobs;
 
 use App\Models\MarketerCampaignInvitation;
+use App\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\URL;
 
 class SendCampaignWhatsAppNotificationJob implements ShouldQueue
 {
@@ -15,33 +17,35 @@ class SendCampaignWhatsAppNotificationJob implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(public readonly string $invitationId)
-    {
-    }
+    public function __construct(public readonly string $invitationId) {}
 
-    public function handle(): void
+    public function handle(WhatsAppService $whatsapp): void
     {
         $invitation = MarketerCampaignInvitation::with(['marketer', 'campaign.vendor'])->find($this->invitationId);
-        if (!$invitation || $invitation->whatsapp_sent) {
+        if (! $invitation || $invitation->whatsapp_sent) {
             return;
         }
 
-        $whatsapp = $invitation->marketer->whatsapp_for_campaigns;
-        if (!$whatsapp) {
+        $whatsappNumber = $invitation->marketer->whatsapp_for_campaigns;
+        if (! $whatsappNumber) {
             return;
         }
 
-        $acceptUrl = route('marketer.invitations.accept', $invitation->id);
-        $rejectUrl = route('marketer.invitations.reject', $invitation->id);
+        $link = URL::temporarySignedRoute(
+            'marketer.invitations.whatsapp.show',
+            $invitation->expires_at ?? now()->addHours($invitation->acceptance_window_hours),
+            ['invitation' => $invitation->id],
+        );
 
-        $message = "مرحباً {$invitation->marketer->name}،\n"
-            . "لديك دعوة حملة ترويجية جديدة!\n"
-            . "رابط القبول: {$acceptUrl}\n"
-            . "رابط الرفض: {$rejectUrl}\n"
-            . "تنتهي الدعوة خلال: {$invitation->acceptance_window_hours} ساعة";
+        $message = __('marketer.invitations.whatsapp_message', [
+            'name' => $invitation->marketer->name,
+            'link' => $link,
+            'hours' => $invitation->acceptance_window_hours,
+        ], config('app.locale'));
 
-        // VERIFY: send via the platform's WhatsApp provider (Twilio / Meta Cloud API)
-        // \App\Services\WhatsAppService::send($whatsapp, $message);
+        if (! $whatsapp->send($whatsappNumber, $message)) {
+            return;
+        }
 
         $invitation->update(['whatsapp_sent' => true, 'whatsapp_sent_at' => now()]);
     }

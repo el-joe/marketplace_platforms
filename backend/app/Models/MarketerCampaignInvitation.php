@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MarketerCampaignInvitation extends Model
 {
@@ -20,7 +21,7 @@ class MarketerCampaignInvitation extends Model
         'replaced_invitation_id',
         'total_commission_earned', 'total_conversions',
         'platform_fee_amount', 'platform_fee_currency',
-        'platform_fee_status', 'platform_fee_recorded_at',
+        'platform_fee_status', 'platform_fee_payer', 'platform_fee_recorded_at',
     ];
 
     protected $casts = [
@@ -46,7 +47,7 @@ class MarketerCampaignInvitation extends Model
         return $this->belongsTo(self::class, 'replaced_invitation_id');
     }
 
-    public function marketerListing(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function marketerListing(): HasOne
     {
         return $this->hasOne(MarketerListing::class, 'invitation_id');
     }

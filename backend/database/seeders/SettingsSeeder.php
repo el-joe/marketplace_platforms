@@ -35,11 +35,11 @@ class SettingsSeeder extends Seeder
             ['key' => 'return_window_days', 'value' => 14, 'category' => 'orders', 'description' => 'Days after delivery customer can request return'],
             ['key' => 'cod_fee_flat', 'value' => 0, 'category' => 'orders', 'description' => 'Flat COD fee in cents (0 = free COD)'],
             [
-                'key'         => 'cod_shortfall_policy',
-                'value'       => 'deducted_from_earnings',
-                'category'    => 'orders',
+                'key' => 'cod_shortfall_policy',
+                'value' => 'deducted_from_earnings',
+                'category' => 'orders',
                 'description' => 'How COD collection shortfalls are resolved: deducted_from_earnings (agent bears risk), written_off (platform absorbs), vendor_chargeback (deducted from vendor payout)',
-                'is_public'   => 0,
+                'is_public' => 0,
             ],
             ['key' => 'min_order_amount', 'value' => 0, 'category' => 'orders', 'description' => 'Minimum order value in cents (0 = no minimum)'],
             ['key' => 'auto_complete_order_days', 'value' => 7, 'category' => 'orders', 'description' => 'Days after delivery before order auto-completes'],
@@ -127,7 +127,7 @@ class SettingsSeeder extends Seeder
 
             // ─── marketer ─────────────────────────────────────────────────────
             ['key' => 'marketer_campaign_auto_approve_hours', 'value' => 36, 'category' => 'marketer', 'description' => 'Hours before a pending campaign is auto-approved if admin does not act', 'is_public' => 0],
-            ['key' => 'marketer_invitation_timeout_hours', 'value' => 168, 'category' => 'marketer', 'description' => 'Hours a marketer has to respond to a campaign invitation before auto-rejection (minimum 168 = 7 days)', 'is_public' => 0],
+            ['key' => 'marketer_invitation_timeout_hours', 'value' => 12, 'category' => 'marketer', 'description' => 'Hours a marketer has to accept or reject a campaign invitation before the system picks a replacement marketer', 'is_public' => 0],
             ['key' => 'marketer_replacement_min_accepted_campaigns', 'value' => 0, 'category' => 'marketer', 'description' => 'When replacing a rejected/timed-out marketer, prefer marketers with at least this many accepted campaigns', 'is_public' => 0],
         ];
 

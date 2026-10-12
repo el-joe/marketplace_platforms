@@ -564,6 +564,7 @@ return [
 
     // ─── Orders ──────────────────────────────────────────────────────────────
     'orders' => [
+        'commission_vat' => 'VAT on commission',
         'placed' => 'Placed',
         'title' => 'Orders',
         'order_number' => 'Order #',
@@ -2163,6 +2164,7 @@ return [
         'example_calc' => '100.00 item × 2 qty:',
         'failed_load_methods' => 'Failed to load methods.',
         'featured_homepage' => 'Featured (homepage)',
+        'fbm_label' => 'FBM (leave empty to use FBP)',
         'fixed_fee_per_unit' => 'Fixed Fee (per unit)',
         'has_filters' => 'Show Filters Sidebar',
         'has_filters_hint' => 'When enabled, the filter sidebar (price, brand, attributes) will be shown on this category\'s page.',
@@ -2351,6 +2353,11 @@ return [
 
     // ─── Marketers ───────────────────────────────────────────────────────────
     'marketers' => [
+        'promotion_obligation' => 'Monthly promotion obligation',
+        'promotion_category' => 'Promotion category',
+        'promotion_category_none' => 'No monthly obligation',
+        'monthly_promotion_target' => 'Monthly target override',
+        'monthly_promotion_target_hint' => 'Leave empty to use the category minimum set under Marketers → Promotion targets. The admin may allow more than the minimum.',
         'title' => 'Marketers',
         'campaigns' => 'Campaigns',
         'conversions' => 'Conversions',
@@ -11147,6 +11154,13 @@ return [
 
     // ─── Marketer Settings ─────────────────────────────────────────────────────
     'marketer_settings' => [
+        'promotion_targets_title' => 'Monthly promotion minimums',
+        'promotion_targets_hint' => 'Minimum number of promotions each influencer category must activate per month. A country row overrides the "all countries" row; a per-marketer override can be set on the marketer page.',
+        'all_countries' => 'All countries',
+        'monthly_minimum' => 'Monthly minimum',
+        'no_promotion_targets' => 'No minimums defined yet.',
+        'promotion_target_saved' => 'Monthly minimum saved.',
+        'promotion_target_deleted' => 'Monthly minimum removed.',
         'country_column' => 'Country',
         'currency_column' => 'Currency',
         'fee_column' => 'Fee',

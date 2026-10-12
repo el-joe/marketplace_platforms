@@ -14,6 +14,7 @@ use App\Http\Controllers\Marketer\FinanceController;
 use App\Http\Controllers\Marketer\FlashSaleController;
 use App\Http\Controllers\Marketer\InventoryController;
 use App\Http\Controllers\Marketer\InvitationController;
+use App\Http\Controllers\Marketer\InvitationWhatsAppController;
 use App\Http\Controllers\Marketer\ListingController;
 use App\Http\Controllers\Marketer\OnboardingController;
 use App\Http\Controllers\Marketer\OrderController;
@@ -66,6 +67,12 @@ Route::middleware('web')->group(function () {
         Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('auth.forgot.send');
         Route::get('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('auth.reset');
         Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('auth.reset.update');
+    });
+
+    // ── WhatsApp accept/reject links (signed, no login) ────────────────────
+    Route::middleware('signed')->prefix('invitations/{invitation}/whatsapp')->name('invitations.whatsapp.')->group(function () {
+        Route::get('/', [InvitationWhatsAppController::class, 'show'])->name('show');
+        Route::post('/', [InvitationWhatsAppController::class, 'respond'])->name('respond');
     });
 
     // ── Authenticated routes ───────────────────────────────────────────────

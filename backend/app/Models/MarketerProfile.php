@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MarketerCommissionDiscountType;
+use App\Enums\PromotionCategory;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -56,6 +57,8 @@ class MarketerProfile extends Model
         'broker_category_id',
         'broker_city_id',
         'broker_serves_all_cities',
+        'promotion_category',
+        'monthly_promotion_target',
         'commission_discount_type',
         'commission_discount_flat',
         'commission_discount_percentage',
@@ -79,6 +82,8 @@ class MarketerProfile extends Model
         'sleeve_from_shoulder_cm' => 'float',
         'sleeve_width_cm' => 'float',
         'broker_serves_all_cities' => 'boolean',
+        'promotion_category' => PromotionCategory::class,
+        'monthly_promotion_target' => 'integer',
         'commission_discount_type' => MarketerCommissionDiscountType::class,
         'commission_discount_flat' => 'integer',
         'commission_discount_percentage' => 'float',

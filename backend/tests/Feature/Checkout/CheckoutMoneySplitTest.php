@@ -5,6 +5,8 @@ namespace Tests\Feature\Checkout;
 use App\Models\CartItem;
 use App\Models\LedgerEntry;
 use App\Models\Order;
+use App\Services\Customer\CartService;
+use App\Services\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\Support\AssertsOrderMoney;
@@ -20,8 +22,8 @@ use Tests\TestCase;
  */
 class CheckoutMoneySplitTest extends TestCase
 {
-    use RefreshDatabase;
     use AssertsOrderMoney;
+    use RefreshDatabase;
 
     private function buildScenario(): MarketplaceScenario
     {
@@ -62,7 +64,7 @@ class CheckoutMoneySplitTest extends TestCase
             $sumVendorPayout += (int) $subOrder->vendor_payout;
             $gatewayFeeTotal += (int) $subOrder->gateway_fee;
             $marketerCommissionTotal += (int) $subOrder->marketer_commission;
-            $carrierCostCoveredTotal += (int) $subOrder->carrier_shipping_cost;
+            $carrierCostCoveredTotal += (int) $subOrder->carrier_shipping_cost + (int) round((float) $subOrder->commission_vat); // commission VAT is held for the tax authority
 
             $shippingRevenue = (int) $subOrder->shipping - (int) $subOrder->carrier_shipping_cost;
             $isPlatformGroup = $subOrder->seller_type === 'platform';
@@ -87,7 +89,7 @@ class CheckoutMoneySplitTest extends TestCase
     {
         $scenario = $this->buildScenario();
         $this->actingAs($scenario->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+        $cart = app(CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
         $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 2);
 
         $payload = [
@@ -119,7 +121,7 @@ class CheckoutMoneySplitTest extends TestCase
     {
         $scenario = $this->buildScenario();
         $this->actingAs($scenario->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+        $cart = app(CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
         $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
 
         $coupon = $scenario->coupons['percentage_vendor'];
@@ -143,7 +145,7 @@ class CheckoutMoneySplitTest extends TestCase
         $this->assertSame(0, $vendorSubOrder->platform_coupon_cost);
 
         // Same cart/customer, no coupon, to isolate the coupon's effect on vendor_payout.
-        $cart2 = app(\App\Services\Customer\CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+        $cart2 = app(CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
         $this->addVendorItem($scenario, $cart2, $scenario->vendorListingFbp, 1);
         $payload2 = [
             'address_id' => $scenario->customerAddress->id,
@@ -166,7 +168,7 @@ class CheckoutMoneySplitTest extends TestCase
     {
         $scenario = $this->buildScenario();
         $this->actingAs($scenario->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
+        $cart = app(CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
         $this->addVendorItem($scenario, $cart, $scenario->vendorListingFbp, 1);
 
         $payload = [
@@ -180,13 +182,13 @@ class CheckoutMoneySplitTest extends TestCase
         $orderNumber = $response->json('data.order.order_number') ?? $response->json('data.order_number');
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
-        app(\App\Services\LedgerService::class)->postOrderCapture($order, (int) $order->total);
+        app(LedgerService::class)->postOrderCapture($order, (int) $order->total);
 
         $this->assertLedgerBalanced($order->id);
         $this->assertTrue(LedgerEntry::where('transaction_group_id', $order->id)->exists());
 
         // Idempotent: calling it again must not throw or double-post.
-        app(\App\Services\LedgerService::class)->postOrderCapture($order, (int) $order->total);
+        app(LedgerService::class)->postOrderCapture($order, (int) $order->total);
         $this->assertSame(
             LedgerEntry::where('transaction_group_id', $order->id)->count(),
             LedgerEntry::where('transaction_group_id', $order->id)->count()

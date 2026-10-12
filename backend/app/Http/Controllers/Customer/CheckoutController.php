@@ -1199,6 +1199,8 @@ class CheckoutController extends Controller
                     $carrierShippingCostForSubOrder = $groupSplit['carrier_shipping_cost'] ?? $vendorShippingCents;
                     $shippingGapForSubOrder = $groupSplit['shipping_gap'] ?? 0;
                     $vendorPayoutForSubOrder = $groupSplit['vendor_payout'] ?? 0;
+                    $commissionVatForSubOrder = $groupSplit['commission_vat'] ?? 0;
+                    $commissionVatRateForSubOrder = $groupSplit['commission_vat_rate'] ?? 0;
                     $gatewayFeeForSubOrder = $groupSplit['gateway_fee'] ?? 0;
 
                     $itemCommissions = [];
@@ -1314,6 +1316,8 @@ class CheckoutController extends Controller
                         'billable_weight_grams' => $vendorBillableWeightGrams,
                         'tax' => $vendorTax,
                         'platform_commission' => $totalCommissionAfterDiscount,
+                        'commission_vat' => $commissionVatForSubOrder,
+                        'commission_vat_rate' => $commissionVatRateForSubOrder,
                         'vendor_coupon_cost' => $vendorCouponCostForSubOrder,
                         'platform_coupon_cost' => $platformCouponCostForSubOrder,
                         'marketer_commission' => $marketerCommissionForSubOrder,

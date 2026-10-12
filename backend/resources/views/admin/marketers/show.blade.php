@@ -337,6 +337,31 @@
             </div>
             @endif
 
+            {{-- Monthly promotion obligation --}}
+            <div class="border-t border-gray-100 pt-5">
+                <h4 class="text-sm font-bold text-gray-700 mb-3">{{ __('admin.marketers.promotion_obligation') }}</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.promotion_category') }}</label>
+                        <select name="promotion_category" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="">{{ __('admin.marketers.promotion_category_none') }}</option>
+                            @foreach(\App\Enums\PromotionCategory::cases() as $case)
+                                <option value="{{ $case->value }}" {{ (string) old('promotion_category', $marketer->marketerProfile?->promotion_category?->value) === (string) $case->value ? 'selected' : '' }}>
+                                    {{ $case->value }} — {{ $case->label() }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.monthly_promotion_target') }}</label>
+                        <input type="number" min="0" max="1000" name="monthly_promotion_target"
+                               value="{{ old('monthly_promotion_target', $marketer->marketerProfile?->monthly_promotion_target) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <p class="text-xs text-gray-400 mt-1">{{ __('admin.marketers.monthly_promotion_target_hint') }}</p>
+                    </div>
+                </div>
+            </div>
+
             <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">{{ __('admin.marketers.save') }}</button>
         </form>
     </div>

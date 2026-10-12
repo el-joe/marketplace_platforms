@@ -283,6 +283,16 @@ return [
         'code_label' => 'كود:',
         'accept' => '✓ قبول',
         'reject' => '✕ رفض',
+        'whatsapp_message' => "مرحباً :name،\nلديك دعوة ترويج جديدة.\nافتح الرابط التالي لقبولها أو رفضها:\n:link\nتنتهي الدعوة خلال :hours ساعة، وبعدها سنعرضها على مسوّق آخر.",
+        'whatsapp_title' => 'دعوة حملة ترويجية',
+        'whatsapp_hint' => 'يرجى القبول أو الرفض خلال :hours ساعة، وإلا ستنتقل الدعوة إلى مسوّق آخر.',
+        'whatsapp_accept' => 'قبول الدعوة',
+        'whatsapp_reject' => 'رفض الدعوة',
+        'whatsapp_reason' => 'السبب (اختياري)',
+        'whatsapp_accepted' => 'تم قبول الدعوة. رابط الإحالة الخاص بك جاهز في لوحة التحكم.',
+        'whatsapp_rejected' => 'تم رفض الدعوة. سنبحث عن مسوّق آخر.',
+        'whatsapp_unavailable' => 'هذه الدعوة لم تعد متاحة (تم الرد عليها أو انتهت مدتها).',
+        'whatsapp_login' => 'فتح لوحة التحكم',
     ],
 
     // Listings
@@ -763,5 +773,14 @@ return [
         'marketer_profile' => [
             'qr_code' => 'رمز QR',
         ],
+    ],
+    // Monthly promotion obligation
+    'quota' => [
+        'watch' => 'أنت متأخر عن وتيرة هذا الشهر — لا يزال مطلوباً :remaining إعلان.',
+        'title' => 'هدف الترويج الشهري',
+        'progress' => ':done / :target إعلان هذا الشهر',
+        'warning' => 'أنت أقل من الحد الأدنى الشهري — فعّل :remaining إعلان إضافي قبل نهاية الشهر.',
+        'reminder_title' => 'تذكير الترويج الشهري',
+        'reminder_message' => 'فعّلت :done من أصل :target إعلانات مطلوبة هذا الشهر. يرجى تفعيل الباقي قبل نهاية الشهر.',
     ],
 ];

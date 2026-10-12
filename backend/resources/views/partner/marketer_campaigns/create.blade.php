@@ -11,6 +11,16 @@
         <p class="mt-1 text-sm text-gray-500">{{ __('partner.marketer_campaigns.create_subtitle') }}</p>
     </div>
 
+    <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        {{ __('partner.marketer_campaigns.auto_replace_notice', ['hours' => (int) setting('marketer_invitation_timeout_hours', 12)]) }}
+    </div>
+
+    @if($vendorListing->fulfillment_model !== \App\Enums\FulfillmentModel::Fbn)
+        <div class="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            {{ __('partner.marketer_campaigns.ship_to_warehouse_notice') }}
+        </div>
+    @endif
+
     @if(session('error'))
         <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
             {{ session('error') }}

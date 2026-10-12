@@ -266,6 +266,12 @@
                         <span class="text-red-500">- {{ number_format($subOrder->platform_commission, 2) }}
                             {{ $currency }}</span>
                     </div>
+                    @if((float) $subOrder->commission_vat > 0)
+                        <div class="flex justify-between text-gray-600">
+                            <span>{{ __('partner.orders.commission_vat') }} ({{ (float) $subOrder->commission_vat_rate }}%)</span>
+                            <span class="text-red-500">- {{ number_format($subOrder->commission_vat, 2) }} {{ $currency }}</span>
+                        </div>
+                    @endif
                     @if($subOrder->gateway_fee > 0)
                         <div class="flex justify-between text-gray-600">
                             <span class="inline-flex items-center gap-1">

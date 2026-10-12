@@ -389,6 +389,12 @@
                                         <span class="text-gray-500">{{ __('admin.orders.platform_commission') }} <span class="text-gray-400">({{ __('admin.orders.after_discounts') }})</span></span>
                                         <span class="text-danger-600">−{{ $fmt($subOrder->platform_commission) }}</span>
                                     </div>
+                                    @if((float) $subOrder->commission_vat > 0)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-500">{{ __('admin.orders.commission_vat') }} ({{ (float) $subOrder->commission_vat_rate }}%)</span>
+                                            <span class="text-danger-600">−{{ $fmt($subOrder->commission_vat) }}</span>
+                                        </div>
+                                    @endif
                                     @if($subOrder->gateway_fee > 0)
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-500">{{ __('admin.orders.gateway_fee_vendor_borne') }}</span>

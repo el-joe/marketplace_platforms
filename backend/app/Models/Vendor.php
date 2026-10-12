@@ -126,15 +126,19 @@ class Vendor extends Model
      * commission amount (platform base currency units, BIGINT). Never
      * discounts below zero.
      */
-    public function applyCommissionDiscount(int $grossCommission): int
+    public function applyCommissionDiscount(int|float $grossCommission): int|float
     {
         $discount = match ($this->commission_discount_type) {
             VendorCommissionDiscountType::Flat => min($this->commission_discount_flat, $grossCommission),
-            VendorCommissionDiscountType::Percentage => (int) floor($grossCommission * $this->commission_discount_percentage / 100),
+            VendorCommissionDiscountType::Percentage => is_int($grossCommission)
+                ? (int) floor($grossCommission * $this->commission_discount_percentage / 100)
+                : floor($grossCommission * $this->commission_discount_percentage / 100 * 10000) / 10000,
             default => 0,
         };
 
-        return max(0, $grossCommission - $discount);
+        $net = max(0, round($grossCommission - $discount, 4));
+
+        return floor($net) == $net ? (int) $net : $net;
     }
 
     public function getPositiveRatingPctAttribute(): ?int

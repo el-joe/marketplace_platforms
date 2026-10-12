@@ -22,6 +22,7 @@ use App\Models\WarrantyPlan;
 use App\Services\Shared\CommissionCalculator;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -183,6 +184,24 @@ class CheckoutPricingEngine
         }
 
         return $result;
+    }
+
+    /**
+     * allocateProRata() for amounts that may carry up to 4 decimals (fractional fixed fees such as 1.9):
+     * allocates in 1/10000 units so the parts still sum to exactly $total.
+     *
+     * @param  array<string, int|float>  $weights
+     * @return array<string, int|float>
+     */
+    public function allocateProRataDecimal(int|float $total, array $weights): array
+    {
+        if (floor((float) $total) == $total) {
+            return $this->allocateProRata((int) $total, $weights);
+        }
+
+        $scaled = $this->allocateProRata((int) round($total * 10000), array_map(fn ($w) => (int) round($w * 10000), $weights));
+
+        return array_map(fn ($v) => $v / 10000, $scaled);
     }
 
     /**
@@ -411,7 +430,7 @@ class CheckoutPricingEngine
      *     marketer_commission:int, marketer_commission_owner:?string, warranty_revenue:int, gateway_fee:int,
      *     carrier_shipping_cost:int, shipping_gap:int, vendor_payout:int
      *   }>,
-     *   gateway_fee_total:int, marketer_commission_total:int, carrier_cost_covered_total:int, platform_net:int, tax_total:int
+     *   gateway_fee_total:int, marketer_commission_total:int, carrier_cost_covered_total:int, platform_net:int, commission_vat_total:int|float, tax_total:int
      * }
      */
     public function computeMoneySplit(
@@ -520,6 +539,7 @@ class CheckoutPricingEngine
         $gatewayFeeByGroup = $this->allocateProRata($gatewayFeeTotal, $groupGrossWeights);
 
         $platformNet = 0;
+        $commissionVatTotal = 0;
         $marketerCommissionTotal = 0;
         $carrierCostCoveredTotal = 0;
         $subOrders = [];
@@ -532,6 +552,12 @@ class CheckoutPricingEngine
                 $vendor = Vendor::find($g['vendor_id']);
                 $platformCommissionAfterDiscount = $vendor?->applyCommissionDiscount($g['raw_commission']) ?? $g['raw_commission'];
             }
+
+            // VAT on the platform commission, at the order country's rate. It is billed to the seller
+            // (deducted from vendor_payout below) and owed to the tax authority, so it is not platform income.
+            $commissionVatRate = (! $isPlatformGroup && (bool) setting('commission_vat_enabled', true)) ? (float) $country->vat_rate : 0.0;
+            $commissionVat = $this->wholeIfPossible(round($platformCommissionAfterDiscount * $commissionVatRate / 100, 4));
+            $commissionVatTotal += $commissionVat;
 
             $gatewayFee = (int) ($gatewayFeeByGroup[$groupKey] ?? 0);
             $vendorContribution = (int) ($vendorContributionByGroup[$groupKey] ?? 0);
@@ -553,12 +579,13 @@ class CheckoutPricingEngine
             if ($isPlatformGroup) {
                 $vendorPayout = 0;
             } else {
-                $vendorPayout = $g['gross']
+                $vendorPayout = $this->wholeIfPossible($g['gross']
                     - $g['vendor_coupon_cost']
                     - $platformCommissionAfterDiscount
+                    - $commissionVat
                     - $gatewayFee
                     - $vendorContribution
-                    - ($marketerOwner === 'vendor' ? $marketerCommission : 0);
+                    - ($marketerOwner === 'vendor' ? $marketerCommission : 0));
             }
 
             // cod_fee and warranty_revenue are order-level (added once,
@@ -580,7 +607,7 @@ class CheckoutPricingEngine
             // Sigma(order_items.platform_commission_after_discount) ==
             // sub_orders.platform_commission_after_discount exactly.
             $lineCommissionWeights = array_map(fn ($l) => $l['raw_commission'], $g['lines']);
-            $lineCommissionAfterDiscount = $this->allocateProRata($platformCommissionAfterDiscount, $lineCommissionWeights);
+            $lineCommissionAfterDiscount = $this->allocateProRataDecimal($platformCommissionAfterDiscount, $lineCommissionWeights);
             $groupLines = $g['lines'];
             foreach ($groupLines as $lineKey => $lineData) {
                 $groupLines[$lineKey]['platform_commission_after_discount'] = $lineCommissionAfterDiscount[$lineKey] ?? 0;
@@ -592,6 +619,8 @@ class CheckoutPricingEngine
                 'platform_coupon_cost' => $g['platform_coupon_cost'],
                 'platform_commission' => $g['raw_commission'],
                 'platform_commission_after_discount' => $platformCommissionAfterDiscount,
+                'commission_vat' => $commissionVat,
+                'commission_vat_rate' => $commissionVatRate,
                 'marketer_commission' => $marketerCommission,
                 'marketer_commission_owner' => $marketerOwner,
                 'gateway_fee' => $gatewayFee,
@@ -615,6 +644,7 @@ class CheckoutPricingEngine
             'marketer_commission_total' => $marketerCommissionTotal,
             'carrier_cost_covered_total' => $carrierCostCoveredTotal,
             'platform_net' => $platformNet,
+            'commission_vat_total' => $commissionVatTotal,
             'warranty_revenue_total' => $warrantyTotalCents,
         ];
     }
@@ -632,9 +662,9 @@ class CheckoutPricingEngine
      * @return array{0: int, 1: ?string} [commission amount, category id used]
      */
     /**
-     * @param  \Illuminate\Support\Collection<string, Category>|null  $categoryCache  pre-loaded categories keyed by id (with commissionTiers eager-loaded)
+     * @param  Collection<string, Category>|null  $categoryCache  pre-loaded categories keyed by id (with commissionTiers eager-loaded)
      */
-    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?\Illuminate\Support\Collection $categoryCache = null): array
+    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
     {
         $today = Carbon::today()->toDateString();
 
@@ -713,7 +743,6 @@ class CheckoutPricingEngine
         // All rates are now stored in country_categories; the base-table columns
         // on `categories` serve only as a last-resort fallback for categories
         // that pre-date per-country rates or were bulk-imported.
-        $isFBN = $fulfillmentModel === 'fbn';
         $resolved = null;
         $resolvedCountryCategory = null;
         $walker = $category;
@@ -725,17 +754,9 @@ class CheckoutPricingEngine
                 ->where('category_id', $walker->id)
                 ->first();
 
-            $ccPct   = $isFBN ? ($cc?->commission_fbn_pct)   : ($cc?->commission_fbp_pct);
-            $ccFixed = $isFBN ? ($cc?->commission_fbn_fixed)  : ($cc?->commission_fbp_fixed);
+            [$effectivePct, $effectiveFixed] = $this->commissionPairFor($fulfillmentModel, $cc, $walker);
 
-            // Base-table fallback (non-null and non-zero means it was explicitly set)
-            $basePct   = (float) ($isFBN ? $walker->commission_fbn_pct   : $walker->commission_fbp_pct);
-            $baseFixed = (int)   ($isFBN ? $walker->commission_fbn_fixed  : $walker->commission_fbp_fixed);
-
-            $effectivePct   = $ccPct   ?? $basePct;
-            $effectiveFixed = $ccFixed ?? $baseFixed;
-
-            if ((float) $effectivePct > 0 || (int) $effectiveFixed > 0) {
+            if ((float) $effectivePct > 0 || (float) $effectiveFixed > 0) {
                 $resolved = $walker;
                 $resolvedCountryCategory = $cc;
                 break;
@@ -749,12 +770,9 @@ class CheckoutPricingEngine
             return [0, null];
         }
 
-        $pct = (float) ($isFBN
-            ? ($resolvedCountryCategory?->commission_fbn_pct   ?? $resolved->commission_fbn_pct)
-            : ($resolvedCountryCategory?->commission_fbp_pct   ?? $resolved->commission_fbp_pct)) ?: 0.0;
-        $fixed = (int) ($isFBN
-            ? ($resolvedCountryCategory?->commission_fbn_fixed ?? $resolved->commission_fbn_fixed)
-            : ($resolvedCountryCategory?->commission_fbp_fixed ?? $resolved->commission_fbp_fixed)) ?: 0;
+        [$pct, $fixed] = $this->commissionPairFor($fulfillmentModel, $resolvedCountryCategory, $resolved);
+        $pct = (float) $pct;
+        $fixed = (float) $fixed;
 
         // Price tiers: a tier matching the unit price overrides the FBP/FBN pct and adds a per-unit floor.
         // commissionTiers is eager-loaded via $categoryCache in computeMoneySplit() to avoid N+1.
@@ -786,6 +804,40 @@ class CheckoutPricingEngine
         );
 
         return [$amount, $resolved->id];
+    }
+
+    private function wholeIfPossible(int|float $value): int|float
+    {
+        $rounded = round((float) $value, 4);
+
+        return floor($rounded) == $rounded ? (int) $rounded : $rounded;
+    }
+
+    /**
+     * [pct, fixed] for a fulfilment model at one category node: country override first, then the
+     * category's own columns. FBM has its own pair; when neither level has an FBM value it uses FBP.
+     *
+     * @return array{0: float|string|null, 1: float|string|null}
+     */
+    private function commissionPairFor(string $fulfillmentModel, ?CountryCategory $override, Category $node): array
+    {
+        $pair = fn (string $model) => [
+            $override?->{"commission_{$model}_pct"} ?? $node->{"commission_{$model}_pct"},
+            $override?->{"commission_{$model}_fixed"} ?? $node->{"commission_{$model}_fixed"},
+        ];
+
+        if ($fulfillmentModel === 'fbn') {
+            return $pair('fbn');
+        }
+
+        if ($fulfillmentModel === 'fbm') {
+            [$pct, $fixed] = $pair('fbm');
+            if ((float) $pct > 0 || (float) $fixed > 0) {
+                return [$pct, $fixed];
+            }
+        }
+
+        return $pair('fbp');
     }
 
     // ── Coupon eligibility (non-money) ──────────────────────────────────

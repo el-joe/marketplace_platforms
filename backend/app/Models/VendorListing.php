@@ -27,6 +27,8 @@ class VendorListing extends Model
             'global_system_type' => GlobalSystemType::class,
             'fulfillment_model' => FulfillmentModel::class,
             'vendor_covers_delivery' => 'boolean',
+            'influencer_commission_percentage' => 'decimal:2',
+            'affiliate_commission_percentage' => 'decimal:2',
             // enhancement.md P-03 task 4: price/compare_at_price/cost_price were
             // DECIMAL(12,2), the only money columns in the schema that weren't
             // BIGINT base-currency units — silently truncated when cast to int
@@ -51,6 +53,10 @@ class VendorListing extends Model
     }
 
     protected $fillable = [
+        'influencer_commission_percentage',
+        'affiliate_commission_percentage',
+        'influencer_sample_quota',
+        'affiliate_sample_quota',
         'id',
         'vendor_id',
         'product_variant_id',

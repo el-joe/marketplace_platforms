@@ -7,10 +7,11 @@ enum PromotionCategory: int
     case VendorRequests = 1;
     case PeerInfluencerProducts = 2;
     case AdminIntermediary = 3;
+    case NawyProducts = 4;
 
     public function label(): string
     {
-        return trans('enums/promotion_category.' . $this->name);
+        return trans('enums/promotion_category.'.$this->name);
     }
 
     public static function options(): array

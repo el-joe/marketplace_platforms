@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\MarketerCommissionDiscountType;
+use App\Enums\PromotionCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\City;
@@ -223,6 +224,8 @@ class MarketerController extends Controller
             'broker_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'broker_city_id' => ['nullable', 'uuid', 'exists:cities,id'],
             'broker_serves_all_cities' => ['nullable', 'boolean'],
+            'promotion_category' => ['nullable', Rule::enum(PromotionCategory::class)],
+            'monthly_promotion_target' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'commission_discount_type' => ['nullable', Rule::enum(MarketerCommissionDiscountType::class)],
             'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
             'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -244,6 +247,8 @@ class MarketerController extends Controller
             'commission_discount_notes' => $validated['commission_discount_notes'] ?? null,
             'specialty_ar' => $validated['specialty_ar'] ?? null,
             'specialty_en' => $validated['specialty_en'] ?? null,
+            'promotion_category' => $validated['promotion_category'] ?? null,
+            'monthly_promotion_target' => $validated['monthly_promotion_target'] ?? null,
         ];
 
         // Sample-size measurement fields only apply to influencer marketers.

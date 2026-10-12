@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\CountryCategory;
+use App\Models\CountryPaymentGateway;
 use App\Models\CountryShippingSetting;
 use App\Models\Currency;
 use App\Models\ShippingMethod;
@@ -24,9 +25,7 @@ class CountryController extends Controller
 {
     use HasDataTable;
 
-    public function __construct(private readonly CountryService $countryService)
-    {
-    }
+    public function __construct(private readonly CountryService $countryService) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // Index / Listing
@@ -69,25 +68,25 @@ class CountryController extends Controller
                     ->selectRaw('COUNT(*)')
                     ->whereColumn('country_id', 'countries.id')
                     ->whereNull('deleted_at'),
-                'active_payment_gateways' => \App\Models\CountryPaymentGateway::query()
+                'active_payment_gateways' => CountryPaymentGateway::query()
                     ->selectRaw('COUNT(*)')
                     ->whereColumn('country_id', 'countries.id')
                     ->where('is_active', true),
             ]);
 
         $query = $this->applyFilters($query, $request, [
-            'is_launched' => fn($q, $v) => $q->where('countries.is_launched', (bool) $v),
-            'is_active' => fn($q, $v) => $q->where('countries.is_active', (bool) $v),
+            'is_launched' => fn ($q, $v) => $q->where('countries.is_launched', (bool) $v),
+            'is_active' => fn ($q, $v) => $q->where('countries.is_active', (bool) $v),
         ]);
 
         return $this->dataTableResponse($request, $query, $columns, function ($row) {
             return [
                 'id' => $row->id,
-                'name' => $row->name_en . ' / ' . $row->name_ar,
+                'name' => $row->name_en.' / '.$row->name_ar,
                 'iso_code_2' => $row->iso_code_2,
                 'currency_code' => $row->currency_code,
                 'timezone' => $row->timezone,
-                'vat_rate' => $row->vat_rate . '%',
+                'vat_rate' => $row->vat_rate.'%',
                 'cities_count' => (int) $row->cities_count,
                 'active_payment_gateways' => (int) $row->active_payment_gateways,
                 'is_launched' => (bool) $row->is_launched,
@@ -95,7 +94,7 @@ class CountryController extends Controller
                 'cod_available' => (bool) $row->cod_available,
                 'cod_max_amount' => $row->cod_max_amount,
                 'cod_supermall_max_amount' => $row->cod_supermall_max_amount,
-                'is_deleted' => !is_null($row->deleted_at),
+                'is_deleted' => ! is_null($row->deleted_at),
                 'edit_url' => route('admin.countries.edit', $row->id),
             ];
         });
@@ -231,6 +230,7 @@ class CountryController extends Controller
 
         try {
             $this->countryService->launch($country, auth('admin')->id());
+
             return response()->json([
                 'success' => true,
                 'message' => "{$country->name_en} launched successfully. Products are being made available in the background.",
@@ -260,7 +260,7 @@ class CountryController extends Controller
     {
         $country = Country::findOrFail($id);
 
-        if (!$this->countryService->canDelete($country)) {
+        if (! $this->countryService->canDelete($country)) {
             return response()->json([
                 'message' => 'This country has existing orders and cannot be deleted. Deactivate it instead.',
             ], 422);
@@ -317,49 +317,49 @@ class CountryController extends Controller
                 'title' => 'Category',
                 'data' => 'name_en',
                 'name' => 'name_en',
-                'searchable_columns' => ['c.name_en', 'c.name_ar']
+                'searchable_columns' => ['c.name_en', 'c.name_ar'],
             ],
             [
                 'title' => 'Available',
                 'data' => 'is_available',
                 'name' => 'is_available',
                 'orderable_column' => 'cc.is_available',
-                'searchable' => false
+                'searchable' => false,
             ],
             [
                 'title' => 'FBP %',
                 'data' => 'commission_fbp_pct',
                 'name' => 'commission_fbp_pct',
                 'orderable_column' => 'cc.commission_fbp_pct',
-                'searchable' => false
+                'searchable' => false,
             ],
             [
                 'title' => 'FBP Fixed',
                 'data' => 'commission_fbp_fixed',
                 'name' => 'commission_fbp_fixed',
                 'orderable_column' => 'cc.commission_fbp_fixed',
-                'searchable' => false
+                'searchable' => false,
             ],
             [
                 'title' => 'FBN %',
                 'data' => 'commission_fbn_pct',
                 'name' => 'commission_fbn_pct',
                 'orderable_column' => 'cc.commission_fbn_pct',
-                'searchable' => false
+                'searchable' => false,
             ],
             [
                 'title' => 'FBN Fixed',
                 'data' => 'commission_fbn_fixed',
                 'name' => 'commission_fbn_fixed',
                 'orderable_column' => 'cc.commission_fbn_fixed',
-                'searchable' => false
+                'searchable' => false,
             ],
             [
                 'title' => 'Override Reason',
                 'data' => 'unavailable_reason',
                 'name' => 'unavailable_reason',
                 'orderable' => false,
-                'searchable' => false
+                'searchable' => false,
             ],
         ];
 
@@ -388,7 +388,7 @@ class CountryController extends Controller
                 'cc.notes',
             ]);
 
-        return $this->dataTableResponse($request, $query, $columns, fn($row) => [
+        return $this->dataTableResponse($request, $query, $columns, fn ($row) => [
             'id' => $row->id,
             'override_id' => $row->override_id,
             'name_en' => $row->name_en,
@@ -417,9 +417,11 @@ class CountryController extends Controller
             'overrides.*.category_id' => ['required', 'exists:categories,id'],
             'overrides.*.is_available' => ['boolean'],
             'overrides.*.commission_fbp_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'overrides.*.commission_fbp_fixed' => ['nullable', 'integer', 'min:0'],
+            'overrides.*.commission_fbp_fixed' => ['nullable', 'numeric', 'min:0'],
+            'overrides.*.commission_fbm_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'overrides.*.commission_fbm_fixed' => ['nullable', 'numeric', 'min:0'],
             'overrides.*.commission_fbn_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'overrides.*.commission_fbn_fixed' => ['nullable', 'integer', 'min:0'],
+            'overrides.*.commission_fbn_fixed' => ['nullable', 'numeric', 'min:0'],
             'overrides.*.unavailable_reason' => ['nullable', 'string', 'max:100'],
             'overrides.*.notes' => ['nullable', 'string', 'max:500'],
         ]);
@@ -435,6 +437,8 @@ class CountryController extends Controller
                         'is_available' => (bool) ($row['is_available'] ?? true),
                         'commission_fbp_pct' => $row['commission_fbp_pct'] ?? null,
                         'commission_fbp_fixed' => $row['commission_fbp_fixed'] ?? null,
+                        'commission_fbm_pct' => $row['commission_fbm_pct'] ?? null,
+                        'commission_fbm_fixed' => $row['commission_fbm_fixed'] ?? null,
                         'commission_fbn_pct' => $row['commission_fbn_pct'] ?? null,
                         'commission_fbn_fixed' => $row['commission_fbn_fixed'] ?? null,
                         'unavailable_reason' => $row['unavailable_reason'] ?? null,
@@ -458,6 +462,7 @@ class CountryController extends Controller
         foreach (\DateTimeZone::listIdentifiers() as $tz) {
             $zones[$tz] = $tz;
         }
+
         return $zones;
     }
 

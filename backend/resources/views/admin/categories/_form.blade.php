@@ -221,6 +221,8 @@
                                     return [
                                         'fbp_pct'   => $cc?->commission_fbp_pct,
                                         'fbp_fixed' => $cc?->commission_fbp_fixed,
+                                        'fbm_pct'   => $cc?->commission_fbm_pct,
+                                        'fbm_fixed' => $cc?->commission_fbm_fixed,
                                         'fbn_pct'   => $cc?->commission_fbn_pct,
                                         'fbn_fixed' => $cc?->commission_fbn_fixed,
                                     ];
@@ -258,7 +260,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         {{-- FBP --}}
                                         <div>
                                             <p class="text-xs font-bold uppercase tracking-wide text-blue-600 mb-2">{{ __('admin.categories.fbp_label') }}</p>
@@ -279,7 +281,36 @@
                                                     <div class="flex items-center gap-2">
                                                         <input type="number"
                                                             x-model="country.overrides.fbp_fixed"
-                                                            step="1" min="0"
+                                                            step="0.001" min="0"
+                                                            :placeholder="'{{ __('admin.categories.inherit_global') }}'"
+                                                            class="input w-full text-sm">
+                                                        <span class="text-xs text-gray-400 font-mono whitespace-nowrap" x-text="country.currency_code"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- FBM (empty = uses the FBP rate) --}}
+                                        <div>
+                                            <p class="text-xs font-bold uppercase tracking-wide text-amber-600 mb-2">{{ __('admin.categories.fbm_label') }}</p>
+                                            <div class="space-y-2">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.categories.percentage_rate') }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number"
+                                                            x-model="country.overrides.fbm_pct"
+                                                            step="0.01" min="0" max="100"
+                                                            :placeholder="'{{ __('admin.categories.inherit_global') }}'"
+                                                            class="input w-full text-sm">
+                                                        <span class="text-xs text-gray-400">%</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('admin.categories.fixed_fee_per_unit') }}</label>
+                                                    <div class="flex items-center gap-2">
+                                                        <input type="number"
+                                                            x-model="country.overrides.fbm_fixed"
+                                                            step="0.001" min="0"
                                                             :placeholder="'{{ __('admin.categories.inherit_global') }}'"
                                                             class="input w-full text-sm">
                                                         <span class="text-xs text-gray-400 font-mono whitespace-nowrap" x-text="country.currency_code"></span>
@@ -308,7 +339,7 @@
                                                     <div class="flex items-center gap-2">
                                                         <input type="number"
                                                             x-model="country.overrides.fbn_fixed"
-                                                            step="1" min="0"
+                                                            step="0.001" min="0"
                                                             :placeholder="'{{ __('admin.categories.inherit_global') }}'"
                                                             class="input w-full text-sm">
                                                         <span class="text-xs text-gray-400 font-mono whitespace-nowrap" x-text="country.currency_code"></span>
@@ -343,6 +374,8 @@
                                             country_id:           country.id,
                                             commission_fbp_pct:   country.overrides.fbp_pct   !== '' ? country.overrides.fbp_pct   : null,
                                             commission_fbp_fixed: country.overrides.fbp_fixed !== '' ? country.overrides.fbp_fixed : null,
+                                            commission_fbm_pct:   country.overrides.fbm_pct   !== '' ? country.overrides.fbm_pct   : null,
+                                            commission_fbm_fixed: country.overrides.fbm_fixed !== '' ? country.overrides.fbm_fixed : null,
                                             commission_fbn_pct:   country.overrides.fbn_pct   !== '' ? country.overrides.fbn_pct   : null,
                                             commission_fbn_fixed: country.overrides.fbn_fixed !== '' ? country.overrides.fbn_fixed : null,
                                         };

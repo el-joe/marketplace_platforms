@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Customer\CategoryService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,9 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CountryCategory extends Model
 {
     use HasUuids;
+
     protected $table = 'country_categories';
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -20,6 +23,8 @@ class CountryCategory extends Model
         'is_available',
         'commission_fbp_pct',
         'commission_fbp_fixed',
+        'commission_fbm_pct',
+        'commission_fbm_fixed',
         'commission_fbn_pct',
         'commission_fbn_fixed',
         'unavailable_reason',
@@ -28,11 +33,13 @@ class CountryCategory extends Model
     ];
 
     protected $casts = [
-        'is_available'        => 'boolean',
-        'commission_fbp_pct'  => 'decimal:2',
-        'commission_fbp_fixed'=> 'integer',
-        'commission_fbn_pct'  => 'decimal:2',
-        'commission_fbn_fixed'=> 'integer',
+        'is_available' => 'boolean',
+        'commission_fbp_pct' => 'decimal:2',
+        'commission_fbp_fixed' => 'decimal:4',
+        'commission_fbm_pct' => 'decimal:2',
+        'commission_fbm_fixed' => 'decimal:4',
+        'commission_fbn_pct' => 'decimal:2',
+        'commission_fbn_fixed' => 'decimal:4',
     ];
 
     protected static function booted(): void
@@ -40,8 +47,8 @@ class CountryCategory extends Model
         // enhancement.md P-21 task 5: a country_categories change (a
         // category being made available/unavailable for a country) must
         // invalidate the nav/browse category caches, which are per-country.
-        static::saved(fn () => \App\Services\Customer\CategoryService::flushCache());
-        static::deleted(fn () => \App\Services\Customer\CategoryService::flushCache());
+        static::saved(fn () => CategoryService::flushCache());
+        static::deleted(fn () => CategoryService::flushCache());
     }
 
     public function country(): BelongsTo

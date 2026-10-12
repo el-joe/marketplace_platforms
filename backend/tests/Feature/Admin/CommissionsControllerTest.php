@@ -161,14 +161,14 @@ class CommissionsControllerTest extends TestCase
             ->assertSeeText(__('commissions.notices.plan_discount_not_applied', [], 'en'));
     }
 
-    public function test_listing_percentages_tab_reports_missing_schema_columns(): void
+    public function test_listing_percentages_tab_no_longer_reports_missing_schema_columns(): void
     {
-        // vendor_listings has no influencer/affiliate percentage columns and no migration creates them.
+        // Migration 2026_10_11_100003 creates the four opt-in columns on vendor_listings/admin_listings.
         $this->actingAs($this->admin(['marketer_commission_settings.view']), 'admin')
             ->withSession(['locale' => 'en'])
             ->get(route('admin.commissions.index', ['tab' => 'listing-percentages']))
             ->assertOk()
-            ->assertSeeText(__('commissions.notices.listing_pct_columns_missing', [], 'en'));
+            ->assertDontSeeText(__('commissions.notices.listing_pct_columns_missing', [], 'en'));
     }
 
     public function test_legacy_stores_tab_flags_mirror_rows_without_a_resolver_rule(): void

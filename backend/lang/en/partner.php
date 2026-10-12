@@ -124,6 +124,7 @@ return [
     ],
 
     'orders' => [
+        'commission_vat' => 'VAT on commission',
         'title' => 'Orders',
         'sub_order_number' => 'Sub-order Number',
         'order_details' => 'Order Details',
@@ -2634,6 +2635,8 @@ return [
     ],
 
     'marketer_campaigns' => [
+        'auto_replace_notice' => 'If a celebrity you choose rejects, or does not accept or reject within :hours hours, the system automatically picks another celebrity (the one chosen by sellers the least last month) to promote your product. Choosing celebrity marketing means you agree to this.',
+        'ship_to_warehouse_notice' => 'This listing is not fulfilled by the platform (FBN). Before the promotion starts you must send the units to be promoted (marketer samples + the platform sample) to the platform warehouse; the campaign cannot ship samples from your own stock.',
         'create_title' => 'Create Marketer Campaign',
         'create_subtitle' => 'Invite marketers to promote this product for a commission.',
         'no_marketers_available' => 'No marketers are available in your country yet. An admin can activate marketers from the control panel.',

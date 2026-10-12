@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Marketer;
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Services\Marketer\PromotionQuotaService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -14,7 +15,7 @@ class DashboardController extends Controller
     public function index(): View
     {
         $marketerAdmin = Auth::guard('marketer')->user();
-        $marketer      = $marketerAdmin->marketer;
+        $marketer = $marketerAdmin->marketer;
 
         $stats = Cache::remember("marketer.dashboard.{$marketer->id}", 300, function () use ($marketer) {
             $invitationIds = MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
@@ -65,6 +66,8 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('marketer.dashboard', compact('marketer', 'stats', 'recentInvitations'));
+        $quota = app(PromotionQuotaService::class)->progressFor($marketer);
+
+        return view('marketer.dashboard', compact('marketer', 'stats', 'recentInvitations', 'quota'));
     }
 }

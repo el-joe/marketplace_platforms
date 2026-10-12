@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PromotionCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\MarketerInfluencerFeeCountrySetting;
+use App\Models\PromotionCategoryTarget;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MarketerSettingsController extends Controller
@@ -24,8 +27,12 @@ class MarketerSettingsController extends Controller
             ->get()
             ->keyBy('country_id');
 
+        $promotionTargets = PromotionCategoryTarget::with('country')
+            ->orderBy('promotion_category')
+            ->get();
+
         return view('admin.marketer_settings.index', compact(
-            'countries', 'influencerFees'
+            'countries', 'influencerFees', 'promotionTargets'
         ));
     }
 
@@ -49,5 +56,32 @@ class MarketerSettingsController extends Controller
         );
 
         return back()->with('success', 'تم حفظ رسوم الإنفلوينسر.');
+    }
+
+    public function updatePromotionTarget(Request $request): RedirectResponse
+    {
+        abort_unless(auth('admin')->user()->can('marketer_fee_settings.edit'), 403);
+
+        $validated = $request->validate([
+            'promotion_category' => ['required', Rule::enum(PromotionCategory::class)],
+            'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
+            'monthly_minimum' => ['required', 'integer', 'min:0', 'max:1000'],
+        ]);
+
+        PromotionCategoryTarget::updateOrCreate(
+            ['promotion_category' => $validated['promotion_category'], 'country_id' => $validated['country_id'] ?? null],
+            ['monthly_minimum' => $validated['monthly_minimum']]
+        );
+
+        return back()->with('success', __('admin.marketer_settings.promotion_target_saved'));
+    }
+
+    public function destroyPromotionTarget(PromotionCategoryTarget $target): RedirectResponse
+    {
+        abort_unless(auth('admin')->user()->can('marketer_fee_settings.edit'), 403);
+
+        $target->delete();
+
+        return back()->with('success', __('admin.marketer_settings.promotion_target_deleted'));
     }
 }

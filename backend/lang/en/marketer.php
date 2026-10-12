@@ -283,6 +283,16 @@ return [
         'code_label' => 'Code:',
         'accept' => '✓ Accept',
         'reject' => '✕ Reject',
+        'whatsapp_message' => "Hello :name,\nYou have a new promotion invitation.\nOpen this link to accept or reject it:\n:link\nThe invitation expires in :hours hours; after that we will offer it to another marketer.",
+        'whatsapp_title' => 'Campaign invitation',
+        'whatsapp_hint' => 'Please accept or reject within :hours hours, otherwise the invitation moves to another marketer.',
+        'whatsapp_accept' => 'Accept invitation',
+        'whatsapp_reject' => 'Reject invitation',
+        'whatsapp_reason' => 'Reason (optional)',
+        'whatsapp_accepted' => 'Invitation accepted. Your referral link is ready in your dashboard.',
+        'whatsapp_rejected' => 'Invitation rejected. We will look for another marketer.',
+        'whatsapp_unavailable' => 'This invitation is no longer available (already answered or expired).',
+        'whatsapp_login' => 'Open dashboard',
     ],
 
     // Listings
@@ -763,5 +773,14 @@ return [
         'marketer_profile' => [
             'qr_code' => 'QR Code',
         ],
+    ],
+    // Monthly promotion obligation
+    'quota' => [
+        'watch' => 'You are behind this month\'s pace — :remaining more promotion(s) are still needed.',
+        'title' => 'Monthly promotion target',
+        'progress' => ':done / :target promotions this month',
+        'warning' => 'You are short of your monthly minimum — activate :remaining more promotion(s) before month end.',
+        'reminder_title' => 'Monthly promotion reminder',
+        'reminder_message' => 'You have activated :done of :target required promotions this month. Please activate the rest before the month ends.',
     ],
 ];

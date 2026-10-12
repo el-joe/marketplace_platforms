@@ -1,11 +1,13 @@
 <?php
 
+use App\Jobs\ActivateFulfilledCouponInvitationJob;
 use App\Jobs\Ads\PaidAdSchedulerJob;
 use App\Jobs\AggregateAnalyticsCacheJob;
 use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\AutoCompleteOrdersJob;
 use App\Jobs\BannerSchedulerJob;
 use App\Jobs\CheckSlaBreachJob;
+use App\Jobs\CollectPendingInfluencerFeesJob;
 use App\Jobs\ExpirePendingPaymentsJob;
 use App\Jobs\ExpireWarrantyPurchasesJob;
 use App\Jobs\FbnInboundReminderJob;
@@ -106,7 +108,7 @@ Schedule::command('coupons:close-expired-participation-invitations')
     ->runInBackground()
     ->name('close-expired-coupon-participation-invitations');
 
-Schedule::job(new \App\Jobs\ActivateFulfilledCouponInvitationJob)->dailyAt('00:30')->name('activate-fulfilled-coupon-invitations');
+Schedule::job(new ActivateFulfilledCouponInvitationJob)->dailyAt('00:30')->name('activate-fulfilled-coupon-invitations');
 
 // Expire marketer ad package subscriptions past expires_at (reads also filter by expires_at)
 Schedule::command('ad-packages:expire')->hourly()->withoutOverlapping()->name('expire-ad-package-subscriptions');
@@ -170,3 +172,6 @@ Schedule::call(function () {
     $end = now();
     GenerateVendorPayoutsJob::dispatch($end->copy()->subMonth(), $end->copy(), 'monthly');
 })->monthlyOn(1, '02:00')->name('generate-vendor-payouts-monthly');
+
+Schedule::command('marketers:promotion-quota-reminders')->dailyAt('09:00')->name('marketer-promotion-quota-reminders');
+Schedule::job(new CollectPendingInfluencerFeesJob)->dailyAt('04:00')->name('collect-pending-influencer-fees');

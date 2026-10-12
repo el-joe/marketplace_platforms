@@ -4,11 +4,14 @@ namespace App\Services\Customer;
 
 use App\Enums\GlobalSystemType;
 use App\Models\Address;
+use App\Models\AffiliatePromoCode;
 use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Category;
 use App\Models\City;
-use App\Models\Coupon;
-use App\Models\CouponUsage;
 use App\Models\Country;
+use App\Models\CountryCategory;
+use App\Models\Coupon;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\ShippingRate;
@@ -17,7 +20,6 @@ use App\Models\WarrantyPlan;
 use App\Services\Checkout\CheckoutPricingEngine;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\ValidationException;
 
 /**
  * @deprecated The coupon-discount and warranty-selection math previously
@@ -33,7 +35,7 @@ class CheckoutCalculationService
      * Resolve destination zone, applicable rate, weight fee and COD eligibility
      * for a shipping method and cart.
      *
-     * @param  iterable<\App\Models\CartItem>  $cartItems
+     * @param  iterable<CartItem>  $cartItems
      */
     public function calculateShipping(
         Address $shippingAddress,
@@ -133,7 +135,7 @@ class CheckoutCalculationService
         $resolvedCategory = $this->resolveCommissionCategory($category, $isFBN);
 
         $countryCategory = ($country !== null && $resolvedCategory !== null)
-            ? \App\Models\CountryCategory::where('country_id', $country->id)
+            ? CountryCategory::where('country_id', $country->id)
                 ->where('category_id', $resolvedCategory->id)
                 ->first()
             : null;
@@ -141,9 +143,9 @@ class CheckoutCalculationService
         $pct = (float) ($isFBN
             ? ($countryCategory?->commission_fbn_pct ?? $resolvedCategory?->commission_fbn_pct)
             : ($countryCategory?->commission_fbp_pct ?? $resolvedCategory?->commission_fbp_pct)) ?: 0.0;
-        $fixed = (int) ($isFBN
+        $fixed = (float) ($isFBN
             ? ($countryCategory?->commission_fbn_fixed ?? $resolvedCategory?->commission_fbn_fixed)
-            : ($countryCategory?->commission_fbp_fixed ?? $resolvedCategory?->commission_fbp_fixed)) ?: 0;
+            : ($countryCategory?->commission_fbp_fixed ?? $resolvedCategory?->commission_fbp_fixed)) ?: 0.0;
 
         $lineSubtotal = $unitPriceCents * $quantity;
         $pctComponent = (int) floor($lineSubtotal * $pct / 100);
@@ -164,14 +166,14 @@ class CheckoutCalculationService
      * category with a non-zero commission rate or fixed fee for the given
      * fulfillment type.
      */
-    private function resolveCommissionCategory(?\App\Models\Category $category, bool $isFBN): ?\App\Models\Category
+    private function resolveCommissionCategory(?Category $category, bool $isFBN): ?Category
     {
         $current = $category;
         $levels = 0;
 
         while ($current !== null && $levels < 5) {
             $pct = (float) ($isFBN ? $current->commission_fbn_pct : $current->commission_fbp_pct);
-            $fixed = (int) ($isFBN ? $current->commission_fbn_fixed : $current->commission_fbp_fixed);
+            $fixed = (float) ($isFBN ? $current->commission_fbn_fixed : $current->commission_fbp_fixed);
 
             if ($pct > 0 || $fixed > 0) {
                 return $current;
@@ -188,7 +190,7 @@ class CheckoutCalculationService
      * @deprecated Delegates to CheckoutPricingEngine::applyCoupon() — the
      * single source of truth for coupon discount math (enhancement.md P-01).
      *
-     * @param  array<\App\Models\CartItem>  $cartItems
+     * @param  array<CartItem>  $cartItems
      */
     public function applyCoupon(
         Coupon $coupon,
@@ -208,7 +210,7 @@ class CheckoutCalculationService
      * rules — those codes apply to the whole cart subtotal).
      */
     public function applyAffiliatePromoCode(
-        \App\Models\AffiliatePromoCode $promoCode,
+        AffiliatePromoCode $promoCode,
         int $subtotalCents,
         string $currency,
     ): array {
@@ -288,7 +290,7 @@ class CheckoutCalculationService
      * — the single source of truth for warranty selection resolution
      * (enhancement.md P-01).
      *
-     * @param  array<\App\Models\CartItem>  $cartItems
+     * @param  array<CartItem>  $cartItems
      * @param  array<int, array{listing_id: string, warranty_plan_id: string}>  $warrantySelections
      * @return array{selections: array<string, array{plan: WarrantyPlan, price: int}>, total: int}
      */
