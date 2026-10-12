@@ -58,6 +58,19 @@
         @elseif($quota['level'] === 'watch')
             <p class="text-sm text-yellow-700 mt-2">{{ __('marketer.quota.watch', ['remaining' => $quota['remaining']]) }}</p>
         @endif
+        @if(($quota['penalty'] ?? 0) > 0 && $quota['behind'])
+            <p class="text-xs text-red-600 mt-1" data-quota-penalty>{{ __('marketer.quota.penalty_notice', ['amount' => number_format($quota['penalty'])]) }}</p>
+        @endif
+    </div>
+    @endif
+
+    @if(($pendingFines ?? collect())->isNotEmpty())
+    <div class="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700" data-pending-fines>
+        <div class="font-bold mb-1">{{ __('marketer.quota.pending_fines_title') }}</div>
+        @foreach($pendingFines as $fine)
+            <div>{{ $fine->period }} · {{ $fine->promotion_category->label() }} ({{ $fine->done }}/{{ $fine->target }}) — {{ number_format($fine->amount) }} {{ $fine->currency }}</div>
+        @endforeach
+        <div class="text-xs mt-1">{{ __('marketer.quota.pending_fines_hint') }}</div>
     </div>
     @endif
 

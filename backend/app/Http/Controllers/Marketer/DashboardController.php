@@ -68,6 +68,9 @@ class DashboardController extends Controller
 
         $quota = app(PromotionQuotaService::class)->progressFor($marketer);
 
-        return view('marketer.dashboard', compact('marketer', 'stats', 'recentInvitations', 'quota'));
+        $pendingFines = \App\Models\MarketerPromotionFine::where('marketer_id', $marketer->id)
+            ->where('status', 'pending')->where('amount', '>', 0)->orderBy('period')->get();
+
+        return view('marketer.dashboard', compact('marketer', 'stats', 'recentInvitations', 'quota', 'pendingFines'));
     }
 }

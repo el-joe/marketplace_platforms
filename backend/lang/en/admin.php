@@ -406,6 +406,8 @@ return [
         'marketer_products' => 'Marketer Products',
         'influencer_deals' => 'Influencer Deals',
         'influencer_promotions' => 'Influencer Promotions',
+        'promotion_products' => 'Promotion Category Products',
+        'marketer_fines' => 'Promotion Fines',
         'marketer_quotas' => 'Monthly Quotas',
         'marketer_quotas_progress' => 'Quota Progress',
         'contract_templates' => 'Contract Templates',
@@ -10296,6 +10298,9 @@ return [
         'aplus_infographic_urls_hint' => 'Feature callout banners. One URL per line.',
         'buy_box_eligible' => 'Buy Box Eligible',
         'campaign_enabled' => 'Campaign Enabled',
+        'promotion_category' => 'Promotion category',
+        'promotion_category_none' => 'None',
+        'promotion_category_hint' => 'Show this product in category 3 (intermediaries) or 4 (Nawy products) of the marketers\' monthly promotion quota.',
 
         // Influencer promotion tiers
         'influencer_promotion_tiers' => 'Influencer Promotion Tiers',
@@ -11200,6 +11205,7 @@ return [
 
     // ─── Marketer Settings ─────────────────────────────────────────────────────
     'marketer_settings' => [
+        'penalty_amount' => 'Fine if month closes short',
         'promotion_targets_title' => 'Monthly promotion minimums',
         'promotion_targets_hint' => 'Minimum number of promotions each influencer category must activate per month. A country row overrides the "all countries" row; a per-marketer override can be set on the marketer page.',
         'all_countries' => 'All countries',
@@ -11670,5 +11676,42 @@ return [
             'vendor_limits' => 'Vendor Limits',
             'daily_overage_fees' => 'Daily Overage Fees',
         ],
+    ],
+
+    'promotion_products' => [
+        'title' => 'Promotion category products',
+        'subtitle' => 'Admin-curated products for category 3 (intermediaries) and category 4 (Nawy products). Marketers in these categories fulfil their monthly minimum by promoting them.',
+        'new_product' => 'New product in this category',
+        'convert_title' => 'Add or convert an existing product',
+        'convert_hint' => 'Search a platform product and convert it into this category (it can still be sold normally).',
+        'search_placeholder' => 'Product name',
+        'convert' => 'Convert',
+        'move_here' => 'Move here',
+        'no_results' => 'No matching products.',
+        'product' => 'Product',
+        'remove' => 'Remove',
+        'empty' => 'No products in this category yet.',
+        'assigned' => 'Product added to the category.',
+        'removed' => 'Product removed from the category.',
+    ],
+
+    'marketer_fines' => [
+        'title' => 'Promotion fines',
+        'subtitle' => 'Fines created when a month closes below the marketer\'s promotion minimum. Deducted from the marketer wallet / next withdrawal.',
+        'status_pending' => 'Pending',
+        'status_deducted' => 'Deducted',
+        'status_waived' => 'Waived',
+        'all_statuses' => 'All statuses',
+        'all_categories' => 'All categories',
+        'col_marketer' => 'Marketer',
+        'col_category' => 'Category',
+        'col_period' => 'Month',
+        'col_progress' => 'Done / target',
+        'col_amount' => 'Fine',
+        'col_status' => 'Status',
+        'waive' => 'Waive',
+        'waived' => 'Fine waived.',
+        'cannot_waive' => 'Only pending fines can be waived.',
+        'empty' => 'No fines.',
     ],
 ];

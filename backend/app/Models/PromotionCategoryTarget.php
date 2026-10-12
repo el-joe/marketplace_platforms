@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PromotionCategoryTarget extends Model
 {
-    protected $fillable = ['promotion_category', 'country_id', 'monthly_minimum'];
+    protected $fillable = ['promotion_category', 'country_id', 'monthly_minimum', 'penalty_amount'];
 
     protected $casts = [
         'promotion_category' => PromotionCategory::class,
         'monthly_minimum' => 'integer',
+        'penalty_amount' => 'integer',
     ];
 
     public function country(): BelongsTo

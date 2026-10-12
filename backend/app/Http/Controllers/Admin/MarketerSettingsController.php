@@ -66,11 +66,12 @@ class MarketerSettingsController extends Controller
             'promotion_category' => ['required', Rule::enum(PromotionCategory::class)],
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
             'monthly_minimum' => ['required', 'integer', 'min:0', 'max:1000'],
+            'penalty_amount' => ['nullable', 'integer', 'min:0'],
         ]);
 
         PromotionCategoryTarget::updateOrCreate(
             ['promotion_category' => $validated['promotion_category'], 'country_id' => $validated['country_id'] ?? null],
-            ['monthly_minimum' => $validated['monthly_minimum']]
+            ['monthly_minimum' => $validated['monthly_minimum'], 'penalty_amount' => $validated['penalty_amount'] ?? 0]
         );
 
         return back()->with('success', __('admin.marketer_settings.promotion_target_saved'));

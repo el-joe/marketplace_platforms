@@ -175,3 +175,6 @@ Schedule::call(function () {
 
 Schedule::command('marketers:promotion-quota-reminders')->dailyAt('09:00')->name('marketer-promotion-quota-reminders');
 Schedule::job(new CollectPendingInfluencerFeesJob)->dailyAt('04:00')->name('collect-pending-influencer-fees');
+
+// P12: close the previous month's promotion quotas on the 1st (fine marketers who ended short, once per marketer/category/month)
+Schedule::command('promotion:close-month')->monthlyOn(1, '00:30')->withoutOverlapping()->name('promotion-close-month');

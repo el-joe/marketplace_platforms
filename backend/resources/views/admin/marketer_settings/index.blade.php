@@ -101,6 +101,10 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_settings.monthly_minimum') }}</label>
                 <input type="number" min="0" max="1000" name="monthly_minimum" value="3" class="w-24 rounded-md border-gray-300 text-sm">
             </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_settings.penalty_amount') }}</label>
+                <input type="number" min="0" name="penalty_amount" value="0" class="w-28 rounded-md border-gray-300 text-sm">
+            </div>
             <button type="submit" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700">{{ __('common.save') }}</button>
         </form>
 
@@ -110,6 +114,7 @@
                     <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.marketers.promotion_category') }}</th>
                     <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.marketer_settings.country_column') }}</th>
                     <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.marketer_settings.monthly_minimum') }}</th>
+                    <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.marketer_settings.penalty_amount') }}</th>
                     <th class="px-3 py-2"></th>
                 </tr>
             </thead>
@@ -119,6 +124,7 @@
                         <td class="px-3 py-2">{{ $target->promotion_category->value }} — {{ $target->promotion_category->label() }}</td>
                         <td class="px-3 py-2">{{ $target->country?->name_ar ?? __('admin.marketer_settings.all_countries') }}</td>
                         <td class="px-3 py-2 font-semibold">{{ $target->monthly_minimum }}</td>
+                        <td class="px-3 py-2">{{ number_format($target->penalty_amount) }}</td>
                         <td class="px-3 py-2 text-left">
                             <form method="POST" action="{{ route('admin.marketer-settings.promotion-targets.destroy', $target) }}" onsubmit="return confirm('{{ __('common.delete') }}?')">
                                 @csrf @method('DELETE')
@@ -127,7 +133,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-3 py-4 text-center text-gray-400">{{ __('admin.marketer_settings.no_promotion_targets') }}</td></tr>
+                    <tr><td colspan="5" class="px-3 py-4 text-center text-gray-400">{{ __('admin.marketer_settings.no_promotion_targets') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

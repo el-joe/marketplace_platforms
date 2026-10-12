@@ -7,7 +7,8 @@ use App\Notifications\Marketer\PromotionQuotaBehindNotification;
 use App\Services\Marketer\PromotionQuotaService;
 use App\Contracts\WhatsAppGateway;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
+use App\Models\MarketerPromotionReminder;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class SendPromotionQuotaReminders extends Command
 {
@@ -31,7 +32,16 @@ class SendPromotionQuotaReminders extends Command
                         continue;
                     }
 
-                    if (! Cache::add("promotion-quota-reminder:{$marketer->id}:{$progress['month']}", true, now()->addDays(40))) {
+                    // Claim marketer/category/month first (unique key): a second run or a concurrent worker never re-sends.
+                    try {
+                        $reminder = MarketerPromotionReminder::create([
+                            'marketer_id' => $marketer->id,
+                            'promotion_category' => $progress['category']->value,
+                            'period' => $progress['month'],
+                            'done' => $progress['done'],
+                            'target' => $progress['target'],
+                        ]);
+                    } catch (UniqueConstraintViolationException) {
                         continue;
                     }
 
@@ -40,10 +50,10 @@ class SendPromotionQuotaReminders extends Command
                     );
 
                     if ($marketer->whatsapp_for_campaigns) {
-                        $whatsapp->send($marketer->whatsapp_for_campaigns, __('marketer.quota.reminder_message', [
+                        $reminder->update(['whatsapp_sent' => $whatsapp->send($marketer->whatsapp_for_campaigns, __('marketer.quota.reminder_message', [
                             'done' => $progress['done'],
                             'target' => $progress['target'],
-                        ], config('app.locale')));
+                        ], config('app.locale')))]);
                     }
 
                     $sent++;

@@ -113,6 +113,9 @@ class FinanceController extends Controller
             return back()->with('error', 'لم يتم تحديد الدولة لهذا الحساب، لا يمكن تحديد عملة المحفظة.');
         }
 
+        // Promotion fines still pending are taken first, so the withdrawal is paid out net of them.
+        app(\App\Services\Marketer\PromotionPenaltyService::class)->collect($marketer);
+
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 
         $data = $request->validate([

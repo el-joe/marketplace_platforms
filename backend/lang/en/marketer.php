@@ -793,6 +793,9 @@ return [
     ],
     // Monthly promotion obligation
     'quota' => [
+        'penalty_notice' => 'Finishing the month below the minimum adds a fine of :amount to your account.',
+        'pending_fines_title' => 'Pending promotion fines',
+        'pending_fines_hint' => 'Deducted from your wallet balance, at the latest when you request your next withdrawal.',
         'watch' => 'You are behind this month\'s pace — :remaining more promotion(s) are still needed.',
         'title' => 'Monthly promotion target',
         'progress' => ':done / :target promotions this month',

@@ -1156,6 +1156,20 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::delete('/promotion-targets/{target}', [MarketerSettingsController::class, 'destroyPromotionTarget'])->name('promotion-targets.destroy');
     });
 
+    // ─── P12: promotion category products (3/4) and month-close fines ─────────────────
+    Route::prefix('promotion-products')->name('promotion-products.')->middleware('admin.permission:admin_listings.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PromotionCategoryProductController::class, 'index'])->name('index');
+        Route::post('/assign', [\App\Http\Controllers\Admin\PromotionCategoryProductController::class, 'assign'])
+            ->middleware('admin.permission:admin_listings.edit')->name('assign');
+        Route::delete('/{adminListing}', [\App\Http\Controllers\Admin\PromotionCategoryProductController::class, 'remove'])
+            ->middleware('admin.permission:admin_listings.edit')->name('remove');
+    });
+    Route::prefix('marketer-fines')->name('marketer-fines.')->middleware('admin.permission:marketers.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\MarketerPromotionFineController::class, 'index'])->name('index');
+        Route::post('/{fine}/waive', [\App\Http\Controllers\Admin\MarketerPromotionFineController::class, 'waive'])
+            ->middleware('admin.permission:marketers.manage')->name('waive');
+    });
+
     // ─── Ad Slots ──────────────────────────────────────────────────────────────────
     Route::prefix('ad-slots')->name('ad-slots.')->middleware('admin.permission:ad_slots.view')->group(function () {
         Route::post('/datatable', [AdSlotController::class, 'datatable'])->name('datatable');

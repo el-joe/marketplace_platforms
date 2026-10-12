@@ -405,6 +405,8 @@ return [
         'marketer_products' => 'منتجات المسوقين',
         'influencer_deals' => 'صفقات المؤثرين',
         'influencer_promotions' => 'ترويجات المؤثرين',
+        'promotion_products' => 'منتجات فئات الترويج',
+        'marketer_fines' => 'غرامات الترويج',
         'marketer_quotas' => 'الحصص الشهرية',
         'marketer_quotas_progress' => 'تقدم الحصص',
         'contract_templates' => 'قوالب العقود',
@@ -10304,6 +10306,9 @@ return [
         'aplus_infographic_urls_hint' => 'لافتات الميزات. رابط واحد في كل سطر.',
         'buy_box_eligible' => 'مؤهل لصندوق الشراء',
         'campaign_enabled' => 'الحملة مفعّلة',
+        'promotion_category' => 'فئة الترويج',
+        'promotion_category_none' => 'بدون',
+        'promotion_category_hint' => 'إظهار هذا المنتج في الفئة 3 (الوسطاء) أو 4 (منتجات ناوي) ضمن الحد الشهري لترويج المسوّقين.',
 
         // Influencer promotion tiers
         'influencer_promotion_tiers' => 'مستويات ترويج المؤثرين',
@@ -11208,6 +11213,7 @@ return [
 
     // ─── Marketer Settings ─────────────────────────────────────────────────────
     'marketer_settings' => [
+        'penalty_amount' => 'الغرامة عند إغلاق الشهر ناقصاً',
         'promotion_targets_title' => 'الحد الأدنى الشهري للترويج',
         'promotion_targets_hint' => 'أقل عدد من الإعلانات يجب أن تفعّله كل فئة مشاهير شهرياً. صف الدولة يتقدّم على صف "كل الدول"، ويمكن تخصيص رقم لكل مسوّق من صفحته.',
         'all_countries' => 'كل الدول',
@@ -11678,5 +11684,42 @@ return [
             'vendor_limits' => 'حدود البائعين',
             'daily_overage_fees' => 'رسوم التجاوز اليومية',
         ],
+    ],
+
+    'promotion_products' => [
+        'title' => 'منتجات فئات الترويج',
+        'subtitle' => 'منتجات تختارها الإدارة للفئة 3 (الوسطاء) والفئة 4 (منتجات ناوي). يستوفي المسوّقون في هذه الفئات حدّهم الشهري بالترويج لها.',
+        'new_product' => 'منتج جديد في هذه الفئة',
+        'convert_title' => 'إضافة أو تحويل منتج موجود',
+        'convert_hint' => 'ابحث عن منتج في المنصة وحوّله إلى هذه الفئة (يبقى قابلاً للبيع بشكل طبيعي).',
+        'search_placeholder' => 'اسم المنتج',
+        'convert' => 'تحويل',
+        'move_here' => 'نقل إلى هنا',
+        'no_results' => 'لا توجد منتجات مطابقة.',
+        'product' => 'المنتج',
+        'remove' => 'إزالة',
+        'empty' => 'لا توجد منتجات في هذه الفئة بعد.',
+        'assigned' => 'تمت إضافة المنتج إلى الفئة.',
+        'removed' => 'تمت إزالة المنتج من الفئة.',
+    ],
+
+    'marketer_fines' => [
+        'title' => 'غرامات الترويج',
+        'subtitle' => 'غرامات تُسجَّل عند إغلاق الشهر دون الحد الأدنى للترويج. تُخصم من محفظة المسوّق أو من السحب القادم.',
+        'status_pending' => 'معلّقة',
+        'status_deducted' => 'مخصومة',
+        'status_waived' => 'ملغاة',
+        'all_statuses' => 'كل الحالات',
+        'all_categories' => 'كل الفئات',
+        'col_marketer' => 'المسوّق',
+        'col_category' => 'الفئة',
+        'col_period' => 'الشهر',
+        'col_progress' => 'المنجز / المطلوب',
+        'col_amount' => 'الغرامة',
+        'col_status' => 'الحالة',
+        'waive' => 'إلغاء الغرامة',
+        'waived' => 'تم إلغاء الغرامة.',
+        'cannot_waive' => 'يمكن إلغاء الغرامات المعلّقة فقط.',
+        'empty' => 'لا توجد غرامات.',
     ],
 ];

@@ -80,6 +80,9 @@ class FinanceController extends Controller
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
+        // Pending promotion fines are taken before the payout request.
+        app(\App\Services\Marketer\PromotionPenaltyService::class)->collect($marketer);
+
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 
         $withdrawal = $this->walletService->requestWithdrawal($wallet, (int) $data['amount'], [

@@ -793,6 +793,9 @@ return [
     ],
     // Monthly promotion obligation
     'quota' => [
+        'penalty_notice' => 'إنهاء الشهر دون الحد الأدنى يضيف غرامة بقيمة :amount على حسابك.',
+        'pending_fines_title' => 'غرامات ترويج معلّقة',
+        'pending_fines_hint' => 'تُخصم من رصيد محفظتك، وعلى أبعد تقدير عند طلب السحب القادم.',
         'watch' => 'أنت متأخر عن وتيرة هذا الشهر — لا يزال مطلوباً :remaining إعلان.',
         'title' => 'هدف الترويج الشهري',
         'progress' => ':done / :target إعلان هذا الشهر',
