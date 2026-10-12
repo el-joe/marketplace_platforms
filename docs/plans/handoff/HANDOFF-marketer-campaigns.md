@@ -51,3 +51,18 @@ Conventions: money = BIGINT base units (no /100); UUID PKs; new migrations only;
 
 ### H4 — Live WhatsApp check (only when credentials exist)
 > Repo el-joe/marketplace_platforms (pull main). Read the P10 section of docs/plans/marketer-campaign-tab.md. Configure whatsapp_provider=meta with WHATSAPP_META_PHONE_NUMBER_ID / WHATSAPP_META_ACCESS_TOKEN, create an approved template for the first-contact invitation message (outside Meta's 24h window free text is rejected) and adapt MetaWhatsAppGateway to send a template message with the signed accept/reject URLs; send a test invitation to a real number, verify accept/reject links, delivery status handling and failure banner; document the config in docs/plans.
+
+## Regression triage (H2 run, main after 2c7a6b45..)
+Each failing test was re-run on 3295064f (before the marketer work): all failed there too, so none was introduced by the campaign work. After the fixes below, the H2 suites plus Checkout, Cart, Commission, Admin, Panels, Vendor, Orders, Payout/Refund tests are green (500 tests).
+
+| Test | Class | Action |
+|---|---|---|
+| CommissionsControllerTest (all), CommissionsInPageEditingTest (8), Coupon/Exclusive/MarketerCategory admin tests, PanelSmokeTest (7), PanelSmokeV2Test (~20) 500s | environment (no Vite manifest) | `withoutVite()` in tests/TestCase.php setUp; only the asset lookup is stubbed, so real 500s still surface (all other panel/admin tests kept their results) |
+| MarketerProfileAdPriceTest (2), MarketerSpecialtyDirectoryTest (2 of 3), PanelSmokeV2 marketer_dashboard, CouponParticipationInvitationTest (2) | stale test | fixtures lacked `onboarding_completed_at` (MarketerAuth onboarding gate) |
+| MarketerSpecialtyDirectoryTest directory/API | stale test | directory `?type=` filters by marketerJobs; fixture now attaches a MarketerJob |
+| PaymentMethodMatrix wallet-full, CheckoutFixesF13 wallet, PayoutLedgerReconciliation (2) | real pre-existing bug, fixed | CheckoutController: `$order->total - $walletAmountToUse === 0` never true because orders.total is a decimal string; every wallet-only order was cancelled/rolled back. Now numeric compare |
+| PaymentMethodMatrix partial wallet, CheckoutMoneySplitTest (coupon) | stale test | strict assertSame on decimal(19,4) strings; use assertEquals |
+| CouponShippingTypePersistenceTest | real pre-existing bug, fixed | null `shipping_type_restriction` hit a NOT NULL column (500); admin/vendor CouponService normalise to 'all' |
+| CommissionReconciliationTest qty>1 | stale test | formula ignored commission_vat; fixture mixed fbm + express_fbn (breakdown uses FBN pair, charge uses FBP pair, pinned by CommissionSnapshotInvariantTest) |
+
+Known and left alone: the order-item rate/fixed display snapshot can disagree with commission_amount when a listing's global_system_type and fulfillment_model differ (deliberately characterised by CommissionSnapshotInvariantTest; also feeds sample-line commission via CheckoutCalculationService). Changing it is a product decision.
