@@ -470,6 +470,9 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::get('/create/{vendorListing}', [MarketerCampaignController::class, 'create'])->name('create')->middleware('vendor.can:marketer_campaigns.create');
         Route::post('/', [MarketerCampaignController::class, 'store'])->name('store')->middleware('vendor.can:marketer_campaigns.create');
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show')->middleware('vendor.can:marketer_campaigns.view');
+        Route::get('/{marketerCampaign}/edit', [MarketerCampaignController::class, 'edit'])->name('edit')->middleware('vendor.can:marketer_campaigns.edit');
+        Route::put('/{marketerCampaign}', [MarketerCampaignController::class, 'update'])->name('update')->middleware('vendor.can:marketer_campaigns.edit');
+        Route::delete('/{marketerCampaign}', [MarketerCampaignController::class, 'destroy'])->name('destroy')->middleware('vendor.can:marketer_campaigns.delete');
         Route::post('/{marketerCampaign}/cancel', [MarketerCampaignController::class, 'cancel'])->name('cancel')->middleware('vendor.can:marketer_campaigns.cancel');
         Route::post('/{marketerCampaign}/cancel-active', [MarketerCampaignController::class, 'cancelActive'])->name('cancel-active')->middleware('vendor.can:marketer_campaigns.cancel');
         Route::post('/{marketerCampaign}/invite-marketers', [MarketerCampaignController::class, 'inviteMarketers'])->name('invite-marketers')->middleware('vendor.can:marketer_campaigns.create');
@@ -543,7 +546,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     Route::prefix('contracts')->name('contracts.')->group(function () {
         Route::get('pending', [VendorCategoryContractController::class, 'pending'])->name('pending');
         Route::get('history', [VendorCategoryContractController::class, 'history'])->name('history');
-        Route::get('signed/{contract}', [\App\Http\Controllers\Partner\VendorCategoryContractController::class, 'signed'])->name('signed');
+        Route::get('signed/{contract}', [VendorCategoryContractController::class, 'signed'])->name('signed');
         Route::get('{templateId}/preview', [VendorCategoryContractController::class, 'preview'])->name('preview');
         Route::post('{templateId}/accept', [VendorCategoryContractController::class, 'accept'])->name('accept');
     });

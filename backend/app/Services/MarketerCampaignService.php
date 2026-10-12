@@ -384,6 +384,7 @@ class MarketerCampaignService
             ]);
 
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
+            $this->syncListingCampaignEnabled($campaign);
 
             $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignRejectedNotification($campaign)));
         });
@@ -399,7 +400,92 @@ class MarketerCampaignService
         DB::transaction(function () use ($campaign) {
             $campaign->update(['status' => 'cancelled']);
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
+            $this->syncListingCampaignEnabled($campaign);
         });
+    }
+
+    /**
+     * Statuses after which a campaign no longer occupies its listing.
+     * ('completed' is a legacy spelling of 'done'.)
+     */
+    public const TERMINAL_STATUSES = ['cancelled', 'rejected', 'done', 'completed'];
+
+    /**
+     * Keep listing->campaign_enabled true while ANY non-terminal campaign
+     * exists for the promoted listing, and false only when none remain.
+     */
+    public function syncListingCampaignEnabled(MarketerCampaign $campaign): void
+    {
+        $listing = $campaign->vendorListing ?? $campaign->adminListing;
+        if (! $listing) {
+            return;
+        }
+
+        $column = $campaign->vendor_listing_id ? 'vendor_listing_id' : 'admin_listing_id';
+        $listingId = $campaign->vendor_listing_id ?: $campaign->admin_listing_id;
+
+        $hasOpen = MarketerCampaign::where($column, $listingId)
+            ->whereNotIn('status', self::TERMINAL_STATUSES)
+            ->exists();
+
+        if ((bool) $listing->campaign_enabled !== $hasOpen) {
+            $listing->update(['campaign_enabled' => $hasOpen]);
+        }
+    }
+
+    /**
+     * Edit a still-pending campaign. Marketer list changes are NOT handled
+     * here (use inviteMarketers()/cancel).
+     */
+    public function updateCampaign(MarketerCampaign $campaign, array $data): MarketerCampaign
+    {
+        if (! in_array($campaign->status, ['pending_admin', 'marketer_requested'], true)) {
+            throw new \RuntimeException('Only a pending campaign can be edited.');
+        }
+
+        return DB::transaction(function () use ($campaign, $data) {
+            $campaign->update([
+                'title' => $data['title'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'commission_type' => $data['commission_type'],
+                'max_commission_budget' => $data['max_commission_budget'] ?? $campaign->max_commission_budget,
+                'selected_ad_types' => $data['selected_ad_types'] ?? null,
+                'vendor_ad_notes' => $data['vendor_ad_notes'] ?? null,
+            ]);
+
+            $campaign->tieredRules()->delete();
+            if ($campaign->commission_type === 'tiered') {
+                foreach (array_values($data['tiered_rules'] ?? []) as $i => $rule) {
+                    MarketerCampaignTieredRule::create([
+                        'campaign_id' => $campaign->id,
+                        'from_sale_number' => $rule['from_sale_number'],
+                        'commission_amount' => $rule['commission_amount'],
+                        'currency' => $campaign->currency,
+                        'sort_order' => $i,
+                    ]);
+                }
+            }
+
+            return $campaign->refresh();
+        });
+    }
+
+    /**
+     * Soft-delete a campaign. pending_admin campaigns are cancelled first so
+     * invitations are cleaned up and listing->campaign_enabled is re-synced.
+     */
+    public function deleteCampaign(MarketerCampaign $campaign): void
+    {
+        if (! in_array($campaign->status, ['cancelled', 'rejected', 'done', 'completed', 'pending_admin'], true)) {
+            throw new \RuntimeException('This campaign cannot be deleted in its current status.');
+        }
+
+        if ($campaign->status === 'pending_admin') {
+            $this->cancelCampaign($campaign);
+        }
+
+        $campaign->delete();
+        $this->syncListingCampaignEnabled($campaign);
     }
 
     /**
@@ -1093,6 +1179,7 @@ class MarketerCampaignService
             // enhancement.md P-14 task 4: done cancels pending invitations
             // and archives marketer listings, same as reject/cancel.
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
+            $this->syncListingCampaignEnabled($campaign);
         });
 
         $totalConversions = (int) $campaign->conversions()->count();

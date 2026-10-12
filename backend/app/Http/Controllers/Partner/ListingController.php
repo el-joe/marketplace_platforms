@@ -15,6 +15,7 @@ use App\Models\Country;
 use App\Models\InventoryMovement;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\PaymentGateway;
@@ -583,16 +584,31 @@ class ListingController extends Controller
             ? null
             : $this->shippingResolver->resolvePrimary($listing);
 
-        $marketerCampaign = MarketerCampaign::where('vendor_listing_id', $listing->id)
-            ->with([
-                'invitations.marketer',
-                'tieredRules',
+        $marketerCampaignsBase = MarketerCampaign::where('vendor_listing_id', $listing->id);
+
+        $marketerCampaigns = (clone $marketerCampaignsBase)
+            ->with(['tieredRules'])
+            ->withCount([
+                'invitations',
+                'invitations as accepted_invitations_count' => fn ($q) => $q->where('status', 'accepted'),
+                'invitations as pending_invitations_count' => fn ($q) => $q->where('status', 'pending'),
                 'conversions',
             ])
             ->latest()
-            ->first();
+            ->paginate(10, ['*'], 'campaigns_page')
+            ->fragment('marketer_campaign');
 
-        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaign'));
+        $marketerCampaignStats = [
+            'total' => (clone $marketerCampaignsBase)->count(),
+            'by_status' => (clone $marketerCampaignsBase)->selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status')->all(),
+            'conversions' => MarketerCampaignConversion::whereIn(
+                'campaign_id',
+                (clone $marketerCampaignsBase)->select('id')
+            )->count(),
+            'commission_budget_spent' => (int) (clone $marketerCampaignsBase)->sum('commission_budget_spent'),
+        ];
+
+        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -229,6 +229,7 @@ class PermissionSeeder extends Seeder
             'marketer_campaigns.create',
             'marketer_campaigns.edit',
             'marketer_campaigns.cancel',
+            'marketer_campaigns.delete',
             // Vendor panel — marketer profile management
             'marketer_profile.view',
             'marketer_profile.edit',

@@ -549,6 +549,11 @@
 
     {{-- Marketer Campaign tab --}}
     <div x-show="tab === 'marketer_campaign'" x-cloak>
+        @php
+            // Transitional: P2 rebuilds this tab as a list of $marketerCampaigns.
+            $marketerCampaign = $marketerCampaigns->first();
+            $marketerCampaign?->loadMissing(['invitations.marketer', 'conversions']);
+        @endphp
         @if($marketerCampaign)
             @php
                 $mcStatusMap = [

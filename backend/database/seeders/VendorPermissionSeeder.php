@@ -56,6 +56,7 @@ class VendorPermissionSeeder extends Seeder
             'marketer_campaigns.create',
             'marketer_campaigns.edit',
             'marketer_campaigns.cancel',
+            'marketer_campaigns.delete',
             'marketer_profile.view',
             'marketer_profile.edit',
             'marketer_invitations.view',
@@ -78,7 +79,7 @@ class VendorPermissionSeeder extends Seeder
             'products.view', 'products.create', 'products.edit',
             'reviews.view', 'reviews.respond',
             'customers.view', 'settings.view', 'documents.upload',
-            'marketer_campaigns.view', 'marketer_campaigns.create', 'marketer_campaigns.edit', 'marketer_campaigns.cancel',
+            'marketer_campaigns.view', 'marketer_campaigns.create', 'marketer_campaigns.edit', 'marketer_campaigns.cancel', 'marketer_campaigns.delete',
             'marketer_profile.view', 'marketer_profile.edit',
             'marketer_invitations.view', 'marketer_invitations.respond',
             'marketer_reports.view',
@@ -114,6 +115,6 @@ class VendorPermissionSeeder extends Seeder
         }
 
         $countPermissions = Permission::where('guard_name', $guard)->count();
-        $this->command->info('Vendor permissions seeded: ' . $countPermissions . ' permissions (guard: ' . $guard . ').');
+        $this->command->info('Vendor permissions seeded: '.$countPermissions.' permissions (guard: '.$guard.').');
     }
 }

@@ -33,11 +33,53 @@ class MarketerCampaignController extends Controller
         return Auth::guard('vendor')->user()->vendor;
     }
 
-    private function hasActiveCampaign(string $vendorListingId): bool
+    /**
+     * Marketers already tied to another non-terminal campaign of the same
+     * listing: either a pending/accepted invitation, or (for campaigns still
+     * awaiting review, which have no invitations yet) a requested marketer.
+     *
+     * @return array<string, string> marketer id => name
+     */
+    private function conflictingMarketers(string $vendorListingId, array $marketerIds, ?string $exceptCampaignId = null): array
     {
-        return MarketerCampaign::where('vendor_listing_id', $vendorListingId)
-            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
-            ->exists();
+        if (empty($marketerIds)) {
+            return [];
+        }
+
+        $campaigns = MarketerCampaign::where('vendor_listing_id', $vendorListingId)
+            ->whereNotIn('status', MarketerCampaignService::TERMINAL_STATUSES)
+            ->when($exceptCampaignId, fn ($q) => $q->where('id', '!=', $exceptCampaignId))
+            ->with(['invitations' => fn ($q) => $q->whereIn('status', ['pending', 'accepted'])])
+            ->get();
+
+        $taken = [];
+        foreach ($campaigns as $campaign) {
+            foreach ($campaign->invitations as $invitation) {
+                $taken[$invitation->marketer_id] = true;
+            }
+            if (in_array($campaign->status, ['pending_admin', 'marketer_requested'], true)) {
+                foreach ((array) $campaign->requested_marketer_vendor_ids as $id) {
+                    $taken[$id] = true;
+                }
+            }
+        }
+
+        $conflictIds = array_values(array_intersect($marketerIds, array_keys($taken)));
+
+        return $conflictIds
+            ? Marketer::whereIn('id', $conflictIds)->pluck('name', 'id')->all()
+            : [];
+    }
+
+    private function conflictMessage(array $conflicts): string
+    {
+        return 'الماركتر التالي لديه دعوة قائمة في حملة أخرى لنفس القائمة: '.implode('، ', $conflicts);
+    }
+
+    private function authorizeCampaign(MarketerCampaign $campaign, string $permission): void
+    {
+        abort_unless(auth('vendor')->user()?->hasPermissionTo($permission), 403);
+        abort_unless($campaign->vendor_id === $this->vendorId(), 403);
     }
 
     public function create(VendorListing $vendorListing)
@@ -45,16 +87,6 @@ class MarketerCampaignController extends Controller
         abort_unless($vendorListing->vendor_id === $this->vendorId(), 403);
         $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
         abort_unless(in_array($vendorListing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
-
-        $existing = MarketerCampaign::where('vendor_listing_id', $vendorListing->id)
-            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
-            ->first();
-
-        if ($existing) {
-            return redirect()
-                ->route('partner.marketer-campaigns.show', $existing)
-                ->with('info', 'هذه القائمة لديها حملة نشطة بالفعل. يمكنك دعوة المزيد من الماركترز من هنا.');
-        }
 
         $vendorListing->load('productVariant.product');
 
@@ -89,7 +121,11 @@ class MarketerCampaignController extends Controller
 
         $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
         abort_unless(in_array($listing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
-        abort_if($this->hasActiveCampaign($listing->id), 403, 'هذه القائمة لديها حملة نشطة أو قيد المراجعة بالفعل.');
+
+        $conflicts = $this->conflictingMarketers($listing->id, $request->input('marketer_ids', []));
+        if ($conflicts) {
+            return back()->withInput()->withErrors(['marketer_ids' => $this->conflictMessage($conflicts)]);
+        }
 
         try {
             $this->marketerCampaignService->createCampaign(
@@ -112,11 +148,11 @@ class MarketerCampaignController extends Controller
         }
 
         return redirect()
-            ->route('partner.marketer-campaigns.index')
+            ->to(route('partner.listings.show', $listing->id).'#marketer_campaign')
             ->with('success', 'تم إنشاء حملة الماركتر بنجاح.');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         abort_unless(
             auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.view'),
@@ -124,6 +160,7 @@ class MarketerCampaignController extends Controller
         );
 
         $campaigns = MarketerCampaign::where('vendor_id', $this->vendorId())
+            ->when($request->filled('listing'), fn ($q) => $q->where('vendor_listing_id', $request->input('listing')))
             ->with([
                 'country',
                 'vendorListing.productVariant.product',
@@ -133,7 +170,8 @@ class MarketerCampaignController extends Controller
             ])
             ->withCount('invitations')
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         return view('partner.marketer_campaigns.index', compact('campaigns'));
     }
@@ -158,6 +196,68 @@ class MarketerCampaignController extends Controller
         ]);
 
         return view('partner.marketer_campaigns.show', compact('marketerCampaign'));
+    }
+
+    public function edit(MarketerCampaign $marketerCampaign)
+    {
+        $this->authorizeCampaign($marketerCampaign, 'marketer_campaigns.edit');
+        abort_unless(in_array($marketerCampaign->status, ['pending_admin', 'marketer_requested'], true), 403, 'لا يمكن تعديل الحملة بعد مراجعتها.');
+
+        $marketerCampaign->load(['vendorListing.productVariant.product', 'invitations.marketer', 'tieredRules']);
+
+        return view('partner.marketer_campaigns.edit', compact('marketerCampaign'));
+    }
+
+    public function update(Request $request, MarketerCampaign $marketerCampaign)
+    {
+        $this->authorizeCampaign($marketerCampaign, 'marketer_campaigns.edit');
+        abort_unless(in_array($marketerCampaign->status, ['pending_admin', 'marketer_requested'], true), 403, 'لا يمكن تعديل الحملة بعد مراجعتها.');
+
+        $data = $request->validate([
+            'title' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'commission_type' => ['required', 'in:fixed,tiered,last_click'],
+            'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
+            'tiered_rules' => ['nullable', 'array'],
+            'tiered_rules.*.from_sale_number' => ['required_with:tiered_rules', 'integer', 'min:1'],
+            'tiered_rules.*.commission_amount' => ['required_with:tiered_rules', 'numeric', 'min:0'],
+            'selected_ad_types' => ['nullable', 'array'],
+            'selected_ad_types.*' => ['string', 'in:story,post,video'],
+            'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if ($data['commission_type'] === 'tiered' && empty($data['tiered_rules'])) {
+            return back()->withInput()->withErrors(['tiered_rules' => 'يجب إضافة شريحة واحدة على الأقل للحملة المتدرجة.']);
+        }
+
+        try {
+            $this->marketerCampaignService->updateCampaign($marketerCampaign, $data);
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', 'تعذر تحديث الحملة: '.$e->getMessage());
+        }
+
+        return redirect()
+            ->route('partner.marketer-campaigns.show', $marketerCampaign)
+            ->with('success', 'تم تحديث الحملة بنجاح.');
+    }
+
+    public function destroy(MarketerCampaign $marketerCampaign)
+    {
+        $this->authorizeCampaign($marketerCampaign, 'marketer_campaigns.delete');
+        abort_unless(
+            in_array($marketerCampaign->status, ['cancelled', 'rejected', 'done', 'completed', 'pending_admin'], true),
+            422,
+            'لا يمكن حذف حملة نشطة. قم بإلغائها أولاً.'
+        );
+
+        $listingId = $marketerCampaign->vendor_listing_id;
+
+        $this->marketerCampaignService->deleteCampaign($marketerCampaign);
+
+        return ($listingId
+            ? redirect()->to(route('partner.listings.show', $listingId).'#marketer_campaign')
+            : redirect()->route('partner.marketer-campaigns.index'))
+            ->with('success', 'تم حذف الحملة.');
     }
 
     public function saveSampleCustomAttributes(
@@ -213,6 +313,17 @@ class MarketerCampaignController extends Controller
             'marketer_ids' => ['required', 'array', 'min:1'],
             'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
         ]);
+
+        if ($marketerCampaign->vendor_listing_id) {
+            $conflicts = $this->conflictingMarketers(
+                $marketerCampaign->vendor_listing_id,
+                $request->input('marketer_ids', []),
+                $marketerCampaign->id
+            );
+            if ($conflicts) {
+                return back()->withErrors(['marketer_ids' => $this->conflictMessage($conflicts)]);
+            }
+        }
 
         $result = $this->marketerCampaignService->inviteMarketers(
             $marketerCampaign, $request->input('marketer_ids', [])
