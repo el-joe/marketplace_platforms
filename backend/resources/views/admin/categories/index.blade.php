@@ -12,12 +12,12 @@
         {{-- Toolbar --}}
         <div class="flex items-center justify-between gap-3 flex-wrap">
             <div class="flex items-center gap-2">
-                @can('categories.edit')
+                @if(auth('admin')->user()->can('categories.edit'))
                     <button type="button" id="fixed-commission-btn" class="btn btn-ghost btn-sm">
                         <x-heroicon name="percent-badge" class="w-4 h-4 mr-1" />
                         {{ __('admin.categories.fixed_commission') }}
                     </button>
-                @endcan
+                @endif
             </div>
             <div class="flex items-center gap-2 ms-auto">
                 <div class="relative w-64">
