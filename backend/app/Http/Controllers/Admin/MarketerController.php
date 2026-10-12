@@ -151,7 +151,16 @@ class MarketerController extends Controller
         ]);
         $commissionCurrency = $marketer->country?->currency_code ?: config('app.currency', 'SAR');
 
-        return view('admin.marketers.show', compact('marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
+        $statement = app(\App\Services\MarketerCommissionStatementService::class);
+        $conversions = \App\Models\MarketerCampaignConversion::with(['campaign', 'order', 'invitation.marketer.marketerProfile'])
+            ->whereIn('invitation_id', $marketer->invitations->pluck('id'))
+            ->latest()->limit(25)->get()
+            ->each(fn ($c) => $c->setAttribute('statement', $statement->forConversion($c)));
+        $statementTotals = collect(['gross', 'cut', 'vat', 'net'])->mapWithKeys(
+            fn ($k) => [$k => (int) $conversions->where('status', 'approved')->sum(fn ($c) => $c->statement[$k])]
+        );
+
+        return view('admin.marketers.show', compact('conversions', 'statementTotals', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
     }
 
     /**
@@ -230,6 +239,7 @@ class MarketerController extends Controller
             'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
             'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
+            'platform_cut_percentage' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
         ]);
 
         $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
@@ -270,7 +280,29 @@ class MarketerController extends Controller
                 : ($validated['broker_city_id'] ?? null);
         }
 
+        // Admin cut %: only touched when the field is submitted (other forms post to this action too).
+        $oldCut = (float) $profile->platform_cut_percentage;
+        if ($request->has('platform_cut_percentage')) {
+            $data['platform_cut_percentage'] = $validated['platform_cut_percentage'] ?? 0;
+        }
+
         $profile->fill($data)->save();
+
+        $newCut = (float) $profile->platform_cut_percentage;
+        if ($oldCut !== $newCut) {
+            DB::table('activity_log')->insert([
+                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'log_name' => 'marketers',
+                'description' => 'platform_cut_percentage_changed',
+                'subject_type' => Marketer::class,
+                'subject_id' => $marketer->id,
+                'causer_type' => \App\Models\Admin::class,
+                'causer_id' => auth('admin')->id(),
+                'properties' => json_encode(['old' => $oldCut, 'new' => $newCut]),
+                'event' => 'updated',
+                'created_at' => now(),
+            ]);
+        }
 
         return back()->with('success', 'تم حفظ بيانات البروفايل.');
     }

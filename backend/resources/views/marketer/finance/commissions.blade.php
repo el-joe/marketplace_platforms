@@ -22,6 +22,17 @@
     </div>
     @endif
 
+    <div class="bg-white rounded-xl border p-5" data-statement-totals>
+        <div class="font-bold mb-3">{{ __('marketer.finance.statement_title') }}</div>
+        <dl class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ number_format($totals['gross']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }} ({{ rtrim(rtrim(number_format($cutPct, 2), '0'), '.') }}%)</dt><dd class="font-bold text-red-600">−{{ number_format($totals['cut']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($totals['vat']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ number_format($totals['net']) }}</dd></div>
+        </dl>
+        <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.statement_hint') }}</p>
+    </div>
+
     <div class="grid grid-cols-2 lg:grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border p-5">
             <div class="text-xs text-gray-400 mb-1">{{ __('marketer.finance.total_earned_label') }}</div>
@@ -45,7 +56,10 @@
                         <th class="px-4 py-3 text-start">{{ __('marketer.finance.campaign_header') }}</th>
                         <th class="px-4 py-3 text-start">{{ __('marketer.finance.product_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.order_number_header') }}</th>
-                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.commission_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.gross_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.cut_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.vat_header') }}</th>
+                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.net_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.flash_sale_bonus_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.status_header') }}</th>
                     </tr>
@@ -57,7 +71,11 @@
                         <td class="px-4 py-3">{{ $conv->campaign?->title ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $conv->campaign?->vendorListing?->productVariant?->product?->title_en ?? '—' }}</td>
                         <td class="px-4 py-3 text-center font-mono text-xs">{{ $conv->order?->order_number ?? '—' }}</td>
-                        <td class="px-4 py-3 text-center font-bold text-green-600">{{ number_format($conv->commission_amount) }} {{ $conv->currency }}</td>
+                        @php $st = $statements[$conv->id]; @endphp
+                        <td class="px-4 py-3 text-center" data-gross>{{ number_format($st['gross']) }}</td>
+                        <td class="px-4 py-3 text-center text-red-600" data-cut>−{{ number_format($st['cut']) }}</td>
+                        <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ number_format($st['vat']) }}</td>
+                        <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ number_format($st['net']) }} {{ $conv->currency }}</td>
                         <td class="px-4 py-3 text-center">
                             @if($conv->flash_sale_bonus_amount)
                                 <span class="text-purple-600 font-bold">+{{ number_format($conv->flash_sale_bonus_amount) }}</span>

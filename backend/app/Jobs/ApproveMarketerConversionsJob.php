@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\MarketerCampaignConversion;
 use App\Models\Wallet;
 use App\Services\LedgerService;
+use App\Services\MarketerCommissionStatementService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -63,7 +64,9 @@ class ApproveMarketerConversionsJob implements ShouldQueue
                 return;
             }
 
-            $totalCommission = (int) $locked->commission_amount + (int) ($locked->flash_sale_bonus_amount ?? 0);
+            // P11: snapshot gross -> admin cut -> discount -> VAT -> net once, credit the NET.
+            $snapshot = app(MarketerCommissionStatementService::class)->snapshotAttributes($locked);
+            $totalCommission = $snapshot['net_commission_amount'];
 
             $wallet = Wallet::firstOrCreate(
                 ['owner_type' => 'marketer', 'owner_id' => $marketerId],
@@ -72,7 +75,7 @@ class ApproveMarketerConversionsJob implements ShouldQueue
 
             Wallet::where('id', $wallet->id)->increment('pending_balance', $totalCommission);
 
-            $locked->update([
+            $locked->update($snapshot + [
                 'status' => 'approved',
                 'approved_at' => now(),
                 'wallet_credited_at' => now(),

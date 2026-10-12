@@ -9,6 +9,7 @@ use App\Models\MarketerAdmin;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Notifications\Marketer\PayoutScheduled;
+use App\Services\MarketerCommissionStatementService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,7 +51,28 @@ class FinanceController extends Controller
 
         $commissionRules = CommissionRuleController::rulesFor($marketer);
 
-        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules'));
+        [$statements, $totals] = $this->statementFor($conversions->getCollection());
+        $cutPct = (float) ($marketer->marketerProfile?->platform_cut_percentage ?? 0);
+
+        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'cutPct'));
+    }
+
+    /** @return array{0: array<string, array>, 1: array{gross: int, cut: int, vat: int, net: int}} */
+    private function statementFor($conversions): array
+    {
+        $service = app(MarketerCommissionStatementService::class);
+        $rows = [];
+        $totals = ['gross' => 0, 'cut' => 0, 'vat' => 0, 'net' => 0];
+        foreach ($conversions as $c) {
+            $rows[$c->id] = $b = $service->forConversion($c);
+            if (in_array($c->status, ['pending', 'approved'], true)) {
+                foreach (array_keys($totals) as $k) {
+                    $totals[$k] += $b[$k];
+                }
+            }
+        }
+
+        return [$rows, $totals];
     }
 
     public function wallet(): View
@@ -72,7 +94,13 @@ class FinanceController extends Controller
         $transactions = $wallet->transactions()->paginate(20);
         $withdrawalRequests = $wallet->withdrawalRequests()->latest()->take(10)->get();
 
-        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests'));
+        // Lifetime statement of approved (non-reversed) conversions: gross -> cut -> VAT -> net.
+        $approved = MarketerCampaignConversion::with(['campaign', 'invitation.marketer.marketerProfile'])
+            ->whereIn('invitation_id', MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id'))
+            ->where('status', 'approved')->get();
+        [, $statementTotals] = $this->statementFor($approved);
+
+        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals'));
     }
 
     public function requestWithdrawal(Request $request)

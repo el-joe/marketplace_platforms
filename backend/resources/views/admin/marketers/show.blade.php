@@ -182,6 +182,15 @@
             </div>
             @endif
 
+            <div class="max-w-xs">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.platform_cut_pct') }}</label>
+                <input type="number" step="0.01" min="0" max="100" name="platform_cut_percentage"
+                       value="{{ old('platform_cut_percentage', $marketer->marketerProfile?->platform_cut_percentage ?? 0) }}"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
+                <p class="text-[11px] text-gray-400 mt-1">{{ __('admin.marketers.platform_cut_hint') }}</p>
+                @error('platform_cut_percentage')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+            </div>
+
             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <input type="checkbox" name="can_self_edit_ad_price" value="1"
                        @checked(old('can_self_edit_ad_price', $marketer->marketerProfile?->can_self_edit_ad_price))
@@ -418,6 +427,42 @@
         </div>
     </div>
     @endif
+
+    {{-- Commission statement (P11): gross -> admin cut -> VAT -> net --}}
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden" id="commission-statement">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.statement_title') }}</h3>
+            <p class="text-xs text-gray-500 mt-1">{{ __('admin.marketers.statement_totals', ['gross' => number_format($statementTotals['gross']), 'cut' => number_format($statementTotals['cut']), 'vat' => number_format($statementTotals['vat']), 'net' => number_format($statementTotals['net'])]) }}</p>
+        </div>
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-xs text-gray-500"><tr>
+                <th class="px-4 py-2 text-start">{{ __('admin.marketers.statement_order') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_gross') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_cut') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_discount') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_vat') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_net') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_status') }}</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-100">
+            @forelse($conversions as $conv)
+                <tr data-conversion-row>
+                    <td class="px-4 py-2 font-mono text-xs">{{ $conv->order?->order_number ?? '—' }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['gross']) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['cut']) }} <span class="text-xs text-gray-400">({{ rtrim(rtrim(number_format($conv->statement['cut_percentage'], 2), '0'), '.') }}%)</span></td>
+                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['discount']) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['vat']) }}</td>
+                    <td class="px-4 py-2 text-center font-bold text-green-600">{{ number_format($conv->statement['net']) }}</td>
+                    <td class="px-4 py-2 text-center text-xs">{{ $conv->status }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">{{ __('admin.marketers.statement_empty') }}</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+        </div>
+    </div>
 
     {{-- Category commission overrides --}}
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">

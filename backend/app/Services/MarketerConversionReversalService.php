@@ -55,7 +55,9 @@ class MarketerConversionReversalService
 
             $totalCommission = (int) $conversion->commission_amount + (int) ($conversion->flash_sale_bonus_amount ?? 0);
 
-            // Claw back whatever wallet credit was already given.
+            // Claw back whatever wallet credit was already given (P11: the NET snapshot, not the gross).
+            $walletCredit = MarketerCommissionStatementService::walletAmount($conversion);
+
             if ($conversion->wallet_credited_at) {
                 $marketerId = $conversion->invitation?->marketer_id;
                 $wallet = $marketerId
@@ -68,7 +70,7 @@ class MarketerConversionReversalService
                         // balance — claw back from there (may go negative if
                         // the marketer already withdrew; that's a receivable,
                         // out of scope for this service — logged for finance).
-                        $wallet->decrement('balance', $totalCommission);
+                        $wallet->decrement('balance', $walletCredit);
                         if ($wallet->balance < 0) {
                             Log::warning('Marketer wallet balance went negative reversing a paid-out conversion.', [
                                 'wallet_id' => $wallet->id,
@@ -76,7 +78,7 @@ class MarketerConversionReversalService
                             ]);
                         }
                     } else {
-                        $wallet->decrement('pending_balance', $totalCommission);
+                        $wallet->decrement('pending_balance', $walletCredit);
                     }
                 }
             }

@@ -212,6 +212,13 @@ return [
     'finance' => [
         'commissions_title' => 'Commissions',
         'total_earned_label' => 'Total collected commissions',
+        'gross_header' => 'Gross commission',
+        'cut_header' => 'Platform cut',
+        'vat_header' => 'VAT on cut',
+        'net_header' => 'Net commission',
+        'statement_title' => 'Commission statement (gross to net)',
+        'statement_hint' => 'Net = gross − platform cut − VAT on the cut. Pending rows show an estimate.',
+        'withdraw_net_hint' => 'Your wallet is credited with the net amount, so withdrawals always pay the net.',
         'pending_earnings_label' => 'Pending commissions',
         'no_commissions' => 'No commissions yet',
         'date_header' => 'Date',

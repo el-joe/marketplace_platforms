@@ -53,7 +53,7 @@ class ReleaseMarketerPendingCommissionJob implements ShouldQueue
                 return;
             }
 
-            $totalCommission = (int) $locked->commission_amount + (int) ($locked->flash_sale_bonus_amount ?? 0);
+            $totalCommission = \App\Services\MarketerCommissionStatementService::walletAmount($locked);
 
             $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketerId)->lockForUpdate()->first();
             if ($wallet) {

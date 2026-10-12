@@ -109,10 +109,6 @@ class MarketerCampaignQuoteService
             }
         }
 
-        if ($amount > 0 && $marketer->marketerProfile) {
-            $amount = (int) $marketer->marketerProfile->applyCommissionDiscount($amount);
-        }
-
         return ['amount' => $amount, 'mode' => $mode, 'rate' => $rate, 'flat' => $flat, 'source' => $source];
     }
 

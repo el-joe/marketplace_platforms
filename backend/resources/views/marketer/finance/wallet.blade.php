@@ -22,6 +22,18 @@
             @endif
         </div>
 
+        {{-- Net statement (P11) --}}
+        <div class="bg-white rounded-xl border p-5" data-wallet-statement>
+            <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.statement_title') }}</h2>
+            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ number_format($statementTotals['gross']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($statementTotals['cut']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($statementTotals['vat']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ number_format($statementTotals['net']) }}</dd></div>
+            </dl>
+            <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.withdraw_net_hint') }}</p>
+        </div>
+
         {{-- Withdraw --}}
         @unless($wallet->is_frozen)
         <div class="bg-white rounded-xl border p-5">

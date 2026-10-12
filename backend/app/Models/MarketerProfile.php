@@ -63,6 +63,7 @@ class MarketerProfile extends Model
         'commission_discount_flat',
         'commission_discount_percentage',
         'commission_discount_notes',
+        'platform_cut_percentage',
     ];
 
     protected $casts = [
@@ -87,6 +88,7 @@ class MarketerProfile extends Model
         'commission_discount_type' => MarketerCommissionDiscountType::class,
         'commission_discount_flat' => 'integer',
         'commission_discount_percentage' => 'float',
+        'platform_cut_percentage' => 'decimal:2',
     ];
 
     public function marketer(): BelongsTo
@@ -115,6 +117,10 @@ class MarketerProfile extends Model
     }
 
     /**
+     * LEGACY: no longer used on marketer commissions. Since P11 the discount
+     * discounts the admin CUT (see MarketerCommissionStatementService), it
+     * never lowers the gross commission.
+     *
      * Apply this marketer's admin-granted commission discount to a gross
      * commission amount (platform base currency units, BIGINT). Never
      * discounts below zero.

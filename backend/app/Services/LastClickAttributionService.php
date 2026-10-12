@@ -181,10 +181,8 @@ class LastClickAttributionService
                     break;
             }
 
-            $marketerProfile = $invitation->marketer->marketerProfile;
-            if ($marketerProfile) {
-                $commissionAmount = (int) $marketerProfile->applyCommissionDiscount($commissionAmount);
-            }
+            // P11: the profile's commission discount no longer reduces the gross; it discounts the
+            // admin cut at approval (MarketerCommissionStatementService).
 
             // Flash sale bonus, if this marketer has an accepted invitation to
             // a currently-live flash sale.

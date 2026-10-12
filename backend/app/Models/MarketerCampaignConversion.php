@@ -17,6 +17,8 @@ class MarketerCampaignConversion extends Model
         'flash_sale_id', 'flash_sale_bonus_amount',
         'status', 'approved_at', 'reversed_at', 'wallet_credited_at', 'wallet_released_at',
         'payout_id',
+        'gross_commission_amount', 'platform_cut_percentage', 'platform_cut_base_amount', 'platform_cut_discount_amount',
+        'platform_cut_amount', 'platform_cut_vat_rate', 'platform_cut_vat_amount', 'net_commission_amount',
     ];
 
     protected $casts = [
