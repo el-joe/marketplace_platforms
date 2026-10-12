@@ -280,6 +280,7 @@
 </div>
 
 @push('scripts')
+    @vite(['resources/js/components/select2.js'])
     <script>
         function campaignCreateForm() {
             return {
@@ -385,7 +386,15 @@
                         console.error('Failed to fetch campaign quote', e);
                     }
                 },
-                init() {},
+                init() {
+                    // Select2 fires jQuery-only change events, which Alpine's native x-on:change never sees.
+                    this.$nextTick(() => {
+                        const el = this.$root.querySelector('select[name="marketer_ids[]"]');
+                        if (el && window.jQuery) {
+                            window.jQuery(el).on('change', (e) => this.updateSelectedMarketers(e));
+                        }
+                    });
+                },
             };
         }
     </script>

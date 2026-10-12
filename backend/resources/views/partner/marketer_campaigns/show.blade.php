@@ -641,4 +641,7 @@ function sampleAttributesModal() {
     };
 }
 </script>
+@push('scripts')
+    @vite(['resources/js/components/select2.js'])
+@endpush
 @endsection
