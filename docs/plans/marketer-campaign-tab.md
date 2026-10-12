@@ -91,27 +91,31 @@ Commit: `feat(campaigns): vendor/admin notifications and replacement report`.
 Read-only review of P1–P5 diff against section 2 table; run `php -l` on all changed PHP, check every route name referenced in Blade exists (`grep` route names vs `routes/partner.php`), lang keys exist in both `ar` and `en`. Fix defects found. Then append **"Gap report"** to this file: status of R1–R12 (done / partial / not in scope) with file refs — R11/R12 marketer-side items listed as follow-ups with concrete next steps.
 Commit: `docs(campaigns): QA fixes and requirement gap report`.
 
-## 5. Gap report (P6 QA, after P1-P5)
+## 5. Gap report (FINAL, after phase 2)
 
-QA performed: `php -l` on all changed PHP (clean); every `route()` name in changed Blade verified against `php artisan route:list` (all exist); changed Blade views compile (`view:cache`); controller views/variables checked (`create`: marketerVendors, affiliateCount, quote, minStock, availableStock; `show`: quote, quoteRows; `edit`; tab partial: marketerCampaigns, marketerCampaignStats, marketerCampaignBlock; no `$marketerCampaign` leftover in listing views); both migrations have correct `down()`; static + dynamic `__()` keys checked in `lang/ar` and `lang/en`.
-Defects fixed: missing admin lang keys (ar+en) `admin.marketer_campaigns.transfer_reason_{replaced,pending,cancelled,accepted}` and `status_{marketer_requested,paused,cancelled,completed}` (would print raw keys on admin campaign page/transfer report). Known leftover (legacy values, low risk): `partner.marketer_campaigns_my.status.completed` and `.commission_type.percentage` have no translation.
-
-| # | Status | Where / notes |
+| # | Status | Where |
 |---|---|---|
-| R1 | Done | `MarketerCampaignQuoteService::quote()` (count x `fee_per_influencer`), `ListingController::getInfluencerFee`, create form live total, `show` page |
-| R2 | Partial | Fee charged via wallet + `CollectPendingInfluencerFeesJob`; weekly-statement deduction line exists in `GenerateVendorPayoutsJob` (~L165-178) for legacy promotion requests but NOT verified for `MarketerCampaignInvitation.platform_fee_amount`. Next: confirm invitation fees reach `calc` and a `PayoutItem` (item_type influencer fee) is created; test shortfall-mid-week debit |
-| R3 | Done | Affiliate fee = not_applicable; "Free" shown in create/tab/show |
-| R4 | Done | Commission read-only per marketer from admin rules (quote service, `CommissionRuleResolver`); `store`/`update` force `commission_type=fixed`, ignore client amounts |
-| R5 | Done (P8) | One fixed admin sample per product campaign + one sample per influencer at invitation dispatch + one affiliate row (`CampaignSampleService`); replacement re-points / cancel cancels undispatched samples; stock out once and admin sale commission (`CheckoutCalculationService::calculateCommission` on price x qty) snapshotted at dispatch; charged once as 0-priced `promotion_sample` PayoutItem (`PayoutCalculationService::selectSampleCommissions`, `GenerateVendorPayoutsJob`); feed/finance/admin payout views show it |
-| R6 | Done | Affiliates "open to all" (`open_to_affiliates`), sample qty shown; no individual pick |
-| R7 | Done | Min stock enforced in `create()`, listing tab (`marketerCampaignBlock`) and service, numbers displayed |
-| R8 | Done | FBM/FBP warning banner in create, tab, show |
-| R9 | Done | Consent notice with timeout hours, vendor notification (`CampaignInvitationResponseNotification`), admin transfer report on admin campaign page (`admin/marketer_campaigns/show.blade.php`) |
-| R10 | Partial | `whatsapp_sent` flag and link exist; actual WhatsApp delivery of accept/reject link not verified end to end. Next: trace the send path in `MarketerCampaignService`, add a log/test with a fake gateway |
-| R11 | Deferred (marketer side) | Same-month/same-product exclusivity across marketers not enforced; P1 only blocks the same listing's open campaigns. Next: check in `MarketerCampaignQuoteService::eligibleMarketers()` and `inviteMarketers()` for an accepted invitation in the current month for the same product by a category-2 marketer |
-| R12 | Not in scope / deferred | Marketer categories, monthly quota counter and red alert, WhatsApp last-week reminder, penalty (`PromotionQuotaService`, `PromotionCategoryTarget`), barcode stability on reassignment, per-country VAT on commissions, admin cut in final statement. Next: audit those services against the spec in a separate task; marketer dashboard x/y counter is the first UI gap |
+| R1 fee per influencer (count x fee) | Done | `MarketerCampaignQuoteService`, create form live total, show page |
+| R2 fee as seller deduction (wallet any time, else weekly statement) + VAT | Done | `collectInfluencerFee`, `CollectPendingInfluencerFeesJob`, `GenerateVendorPayoutsJob` (`influencer_fee` line, unique `payout_items.invitation_id`), `countries.vat_rate` |
+| R3 affiliates free | Done | `not_applicable`, "Free" in UI |
+| R4 commission per category from admin settings | Done | read-only per marketer; server forces `fixed`, ignores client amounts |
+| R5 samples: 1 per influencer + fixed admin sample, stock deduction, admin commission, zero-price statement line | Done | `CampaignSampleService`, `InventoryService::deductCampaignSample`, `GenerateVendorPayoutsJob`, `TransactionFeedService` |
+| R6 affiliates open to all | Done | `open_to_affiliates`, one platform sample row of `affiliate_sample_qty` |
+| R7 admin minimum stock | Done | create page, tab, service (samples subtracted) |
+| R8 FBM/FBP warning | Done | create, tab, show |
+| R9 12h window, auto replacement, consent notice, vendor notices, admin transfer report | Done | `MarketerCampaignService`, `CampaignInvitationResponseNotification`, admin campaign page |
+| R10 WhatsApp with accept/reject link | Done (log driver by default) | `WhatsAppGateway`, signed links, retries, admin failures banner + resend. Real sending needs `whatsapp_provider=meta` + Meta phone-number id/token, and an approved Meta template for first contact |
+| R11 influencer-to-influencer, one per owner per month | Done | `CampaignSource::marketerListing()`, `marketer_campaigns.marketer_listing_id`, `PeerPromotionException` |
+| R12 4 categories, monthly targets, red alert, last-week reminder, penalties | Done | `PromotionQuotaService`, `PromotionPenaltyService`, `promotion:close-month`, admin category 3/4 option + products page + fines list |
+| R12 barcode/referral stability | Done | `ReferralCodeResolver`, grace setting `marketer_referral_grace_days`, code history on admin campaign page |
+| R12 admin cut % + VAT + net, ledger | Done | `marketer_profiles.platform_cut_percentage`, `MarketerCommissionStatementService`, ledger entries |
+| Marketer as seller payout | Done | `MarketerSaleSettlementService`, `SettleMarketerSalesJob` |
 
-Other deferred: admin fixed+variable commission on samples (P4, see R5); no automated tests were run (no DB/.env in the container).
+Behaviour changes to be aware of: `commission_discount_*` now discounts the platform cut (not the gross commission);
+peer promotions have no promotion fee; invitations keep `rejected`/`timed_out` status and get `replaced_at`.
+
+Not verified / follow-ups: no live Meta WhatsApp send; the cross-panel end-to-end lifecycle test suite was deliberately postponed (run in a separate task);
+pre-existing failures unrelated to this work (Vite manifest, `CommissionReconciliationTest`, `CheckoutMoneySplitTest`, `PanelSmokeV2Test`, `PayoutLedgerReconciliationTest`, `MarketerProfileAdPriceTest`, `MarketerSpecialtyDirectoryTest`) remain.
 
 ---
 
