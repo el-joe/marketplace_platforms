@@ -1512,8 +1512,11 @@ class CheckoutController extends Controller
                     $this->checkoutWalletService->applyWalletToOrder($customer, $order, $walletAmountToUse);
                     $order->refresh();
 
-                    $remainingToPay = $order->total - $walletAmountToUse;
-                    if ($remainingToPay === 0) {
+                    // orders.total is a decimal(19,4) column cast to a string
+                    // ("500.0000"), so compare numerically: a strict `=== 0`
+                    // never matched and every wallet-only order was rolled back.
+                    $remainingToPay = round((float) $order->total - $walletAmountToUse, 4);
+                    if ($remainingToPay <= 0) {
                         $order->update([
                             'payment_method' => 'wallet',
                             'payment_gateway_code' => 'wallet',
