@@ -21,6 +21,10 @@ class CouponService
     public function create(Vendor $vendor, VendorAdmin $actor, array $data): Coupon
     {
         $data['code'] = strtoupper(trim($data['code']));
+        // The column is NOT NULL DEFAULT 'all'; a cleared field means "no restriction".
+        if (array_key_exists('shipping_type_restriction', $data) && $data['shipping_type_restriction'] === null) {
+            $data['shipping_type_restriction'] = 'all';
+        }
         $this->validateCodeUnique($data['code']);
         $this->validateScope($data['scope']);
 
@@ -44,7 +48,7 @@ class CouponService
                 $data
             ));
 
-            if (!empty($productIds)) {
+            if (! empty($productIds)) {
                 $coupon->products()->sync($productIds);
             }
 
@@ -55,6 +59,10 @@ class CouponService
     public function update(Coupon $coupon, Vendor $vendor, array $data): Coupon
     {
         $data['code'] = strtoupper(trim($data['code']));
+        // The column is NOT NULL DEFAULT 'all'; a cleared field means "no restriction".
+        if (array_key_exists('shipping_type_restriction', $data) && $data['shipping_type_restriction'] === null) {
+            $data['shipping_type_restriction'] = 'all';
+        }
         $this->validateCodeUnique($data['code'], $coupon->id);
         $this->validateScope($data['scope']);
 
@@ -96,7 +104,7 @@ class CouponService
 
     public function validateScope(string $scope): void
     {
-        if (!in_array($scope, self::VENDOR_MANAGEABLE_SCOPES, true)) {
+        if (! in_array($scope, self::VENDOR_MANAGEABLE_SCOPES, true)) {
             throw ValidationException::withMessages([
                 'scope' => __('Vendors may only create vendor or product scoped coupons.'),
             ]);
@@ -104,7 +112,7 @@ class CouponService
     }
 
     /**
-     * @param array<int, string> $productIds
+     * @param  array<int, string>  $productIds
      */
     public function validateProductOwnership(Vendor $vendor, array $productIds): void
     {
@@ -126,7 +134,7 @@ class CouponService
 
         $invalidProductIds = array_diff($productIds, $ownedProductIds);
 
-        if (!empty($invalidProductIds)) {
+        if (! empty($invalidProductIds)) {
             throw ValidationException::withMessages([
                 'product_ids' => __('The following products do not have an active listing owned by you: :ids', [
                     'ids' => implode(', ', $invalidProductIds),

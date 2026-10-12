@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Checkout;
 
+use App\Http\Requests\Admin\StoreCouponRequest;
+use App\Http\Requests\Admin\UpdateCouponRequest;
 use App\Models\Admin;
 use App\Models\Coupon;
 use App\Models\VendorAdmin;
@@ -19,7 +21,7 @@ class CouponShippingTypePersistenceTest extends TestCase
     private function adminPayload(array $o = []): array
     {
         return array_merge([
-            'code' => 'ADM' . random_int(1000, 9999), 'name' => 'Admin coupon', 'type' => 'percentage', 'value' => 10,
+            'code' => 'ADM'.random_int(1000, 9999), 'name' => 'Admin coupon', 'type' => 'percentage', 'value' => 10,
             'scope' => 'platform', 'usage_limit_per_customer' => 1, 'customer_eligibility' => 'all',
             'valid_from' => now()->toDateTimeString(), 'valid_until' => now()->addDay()->toDateTimeString(),
             'funded_by' => 'platform',
@@ -29,7 +31,7 @@ class CouponShippingTypePersistenceTest extends TestCase
     private function vendorPayload(array $o = []): array
     {
         return array_merge([
-            'code' => 'VEN' . random_int(1000, 9999), 'name' => 'Vendor coupon', 'type' => 'percentage', 'value' => 10,
+            'code' => 'VEN'.random_int(1000, 9999), 'name' => 'Vendor coupon', 'type' => 'percentage', 'value' => 10,
             'scope' => 'vendor', 'usage_limit_per_customer' => 1,
             'valid_from' => now()->toDateTimeString(), 'valid_until' => now()->addDay()->toDateTimeString(),
         ], $o);
@@ -48,13 +50,14 @@ class CouponShippingTypePersistenceTest extends TestCase
         $this->assertSame('fbm', $coupon->fresh()->shipping_type_restriction->value);
 
         $svc->update($coupon->fresh(), $this->adminPayload(['code' => $coupon->code, 'shipping_type_restriction' => null]));
-        $this->assertNull($coupon->fresh()->shipping_type_restriction);
+        // Column is NOT NULL DEFAULT 'all': clearing the field means no restriction.
+        $this->assertSame('all', $coupon->fresh()->shipping_type_restriction->value);
     }
 
     public function test_vendor_service_persists_on_create_and_update(): void
     {
         $s = MarketplaceScenario::make()->build();
-        $actor = new VendorAdmin();
+        $actor = new VendorAdmin;
         $actor->id = $s->vendor->id;
         $svc = app(VendorCouponService::class);
 
@@ -68,12 +71,12 @@ class CouponShippingTypePersistenceTest extends TestCase
     public function test_invalid_value_rejected_by_all_requests(): void
     {
         foreach ([
-            \App\Http\Requests\Admin\StoreCouponRequest::class,
-            \App\Http\Requests\Admin\UpdateCouponRequest::class,
+            StoreCouponRequest::class,
+            UpdateCouponRequest::class,
             \App\Http\Requests\Vendor\StoreCouponRequest::class,
             \App\Http\Requests\Vendor\UpdateCouponRequest::class,
         ] as $cls) {
-            $rules = (new $cls())->rules()['shipping_type_restriction'];
+            $rules = (new $cls)->rules()['shipping_type_restriction'];
             $this->assertTrue(\Validator::make(['shipping_type_restriction' => 'bogus'], ['shipping_type_restriction' => $rules])->fails(), $cls);
             $this->assertFalse(\Validator::make(['shipping_type_restriction' => 'fbn'], ['shipping_type_restriction' => $rules])->fails(), $cls);
         }

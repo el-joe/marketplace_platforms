@@ -24,6 +24,10 @@ class CouponService
     public function create(array $data, Admin $admin): Coupon
     {
         $data['code'] = strtoupper(trim($data['code']));
+        // The column is NOT NULL DEFAULT 'all'; a cleared field means "no restriction".
+        if (array_key_exists('shipping_type_restriction', $data) && $data['shipping_type_restriction'] === null) {
+            $data['shipping_type_restriction'] = 'all';
+        }
         $this->validateCodeUnique($data['code']);
 
         if (! in_array($data['scope'], self::ADMIN_MANAGEABLE_SCOPES, true)) {
@@ -92,6 +96,10 @@ class CouponService
     public function update(Coupon $coupon, array $data): Coupon
     {
         $data['code'] = strtoupper(trim($data['code']));
+        // The column is NOT NULL DEFAULT 'all'; a cleared field means "no restriction".
+        if (array_key_exists('shipping_type_restriction', $data) && $data['shipping_type_restriction'] === null) {
+            $data['shipping_type_restriction'] = 'all';
+        }
         $this->validateCodeUnique($data['code'], $coupon->id);
 
         if (! in_array($data['scope'], self::ADMIN_MANAGEABLE_SCOPES, true)) {
