@@ -142,7 +142,7 @@ class CheckoutMoneySplitTest extends TestCase
         $vendorSubOrder = $orderWithCoupon->subOrders->firstWhere('vendor_id', $scenario->vendor->id);
         $this->assertNotNull($vendorSubOrder);
         $this->assertSame($orderWithCoupon->discount, $vendorSubOrder->vendor_coupon_cost, 'funded_by=vendor coupon: 100% of the discount is the vendor\'s cost');
-        $this->assertSame(0, $vendorSubOrder->platform_coupon_cost);
+        $this->assertEquals(0, $vendorSubOrder->platform_coupon_cost);
 
         // Same cart/customer, no coupon, to isolate the coupon's effect on vendor_payout.
         $cart2 = app(CartService::class)->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
@@ -158,7 +158,8 @@ class CheckoutMoneySplitTest extends TestCase
         $orderNoCoupon = Order::where('order_number', $orderNumber2)->firstOrFail();
         $vendorSubOrderNoCoupon = $orderNoCoupon->subOrders->firstWhere('vendor_id', $scenario->vendor->id);
 
-        $this->assertSame(
+        // Money columns are decimal(19,4) strings; compare numerically.
+        $this->assertEquals(
             $vendorSubOrder->vendor_coupon_cost,
             $vendorSubOrderNoCoupon->vendor_payout - $vendorSubOrder->vendor_payout
         );

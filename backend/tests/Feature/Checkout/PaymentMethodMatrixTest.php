@@ -92,7 +92,7 @@ class PaymentMethodMatrixTest extends TestCase
         $this->assertSame('wallet', $order->payment_method);
 
         $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
-        $this->assertSame($balanceBefore - $order->total, $wallet->balance);
+        $this->assertEquals($balanceBefore - $order->total, $wallet->balance);
 
         // enhancement.md P-05 task 3: a wallet-only order must still create
         // a payment_transactions row so idempotency can be detected.
@@ -123,11 +123,11 @@ class PaymentMethodMatrixTest extends TestCase
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
         $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)->where('owner_id', $scenario->customer->id)->first();
-        $this->assertSame($balanceBefore - $walletAmount, $wallet->balance, 'wallet must be debited exactly once for the partial amount');
+        $this->assertEquals($balanceBefore - $walletAmount, $wallet->balance, 'wallet must be debited exactly once for the partial amount');
 
         // The gateway must have been asked to charge total - wallet, never the full total (double charge bug).
         $this->assertCount(1, $fake->initiateCalls);
-        $this->assertSame($order->total - $walletAmount, $fake->initiateCalls[0]['data']->amountCents);
+        $this->assertEquals($order->total - $walletAmount, $fake->initiateCalls[0]['data']->amountCents);
 
         $this->assertSame('card', $order->payment_method);
         $this->assertSame('stripe', $order->payment_gateway_code);
