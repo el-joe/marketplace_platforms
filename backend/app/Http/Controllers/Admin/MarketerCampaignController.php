@@ -103,7 +103,11 @@ class MarketerCampaignController extends Controller
         abort_unless($marketerCampaign->status === 'pending_admin', 422,
             'هذه الحملة لا يمكن قبولها في حالتها الحالية.');
 
-        $this->service->approveCampaign($marketerCampaign, auth()->guard('admin')->user());
+        try {
+            $this->service->approveCampaign($marketerCampaign, auth()->guard('admin')->user());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', 'تم قبول الحملة وأصبحت نشطة.');
     }

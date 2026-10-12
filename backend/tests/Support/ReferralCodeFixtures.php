@@ -51,7 +51,7 @@ class ReferralCodeFixtures
      *
      * @param  array<int, \App\Models\VendorListing>  $listings
      */
-    public static function placeOrder(\Illuminate\Foundation\Testing\TestCase $t, MarketplaceScenario $s, string $session, array $listings = [], array $marketerListingLines = []): Order
+    public static function placeOrder(\Illuminate\Foundation\Testing\TestCase $t, MarketplaceScenario $s, string $session, array $listings = [], array $marketerListingLines = [], string $gateway = 'cod'): Order
     {
         $listings = $listings ?: [$s->vendorListingFbp];
         $t->actingAs($s->customer, 'customer');
@@ -73,7 +73,7 @@ class ReferralCodeFixtures
         $response = $t->withHeaders(['X-Session-Id' => $session])
             ->postJson("/api/customer/v1/{$s->country->site_code}/checkout/place-order", [
                 'address_id' => $s->customerAddress->id,
-                'country_payment_gateway_id' => $s->countryPaymentGateways['cod']->id,
+                'country_payment_gateway_id' => $s->countryPaymentGateways[$gateway]->id,
                 'idempotency_key' => (string) Str::uuid(),
             ]);
         $response->assertStatus(201);

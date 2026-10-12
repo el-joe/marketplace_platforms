@@ -489,6 +489,17 @@ class MarketerCampaignService
      */
     public function approveCampaign(MarketerCampaign $campaign, Admin $admin): void
     {
+        // Seller-created campaigns carry no commission (it is never typed by the vendor): resolve the admin's
+        // country/category default now, exactly like the auto-approval does.
+        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
+            $defaults = $this->resolveDefaultCommission($campaign);
+            if ($defaults !== null) {
+                $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
+                $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
+                $campaign->save();
+            }
+        }
+
         if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
             throw new \RuntimeException(
                 'Cannot approve a campaign with a zero marketer commission amount. Set it first.'
