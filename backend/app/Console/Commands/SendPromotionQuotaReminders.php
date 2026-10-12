@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Marketer;
 use App\Notifications\Marketer\PromotionQuotaBehindNotification;
 use App\Services\Marketer\PromotionQuotaService;
-use App\Services\WhatsAppService;
+use App\Contracts\WhatsAppGateway;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,7 +15,7 @@ class SendPromotionQuotaReminders extends Command
 
     protected $description = 'In the last week of the month, warn marketers who are short of their monthly promotion minimum (in-app + WhatsApp, once per month)';
 
-    public function handle(PromotionQuotaService $quota, WhatsAppService $whatsapp): int
+    public function handle(PromotionQuotaService $quota, WhatsAppGateway $whatsapp): int
     {
         $sent = 0;
 

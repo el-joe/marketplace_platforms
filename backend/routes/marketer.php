@@ -73,6 +73,10 @@ Route::middleware('web')->group(function () {
     Route::middleware('signed')->prefix('invitations/{invitation}/whatsapp')->name('invitations.whatsapp.')->group(function () {
         Route::get('/', [InvitationWhatsAppController::class, 'show'])->name('show');
         Route::post('/', [InvitationWhatsAppController::class, 'respond'])->name('respond');
+        Route::get('/accept', [InvitationWhatsAppController::class, 'confirmAccept'])->name('accept');
+        Route::post('/accept', [InvitationWhatsAppController::class, 'accept'])->name('accept.post');
+        Route::get('/reject', [InvitationWhatsAppController::class, 'confirmReject'])->name('reject');
+        Route::post('/reject', [InvitationWhatsAppController::class, 'reject'])->name('reject.post');
     });
 
     // ── Authenticated routes ───────────────────────────────────────────────

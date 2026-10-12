@@ -989,6 +989,7 @@ class MarketerCampaignService
             $campaign->vendor?->vendorAdmins?->each(
                 fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($invitation, 'accepted'))
             );
+            \App\Jobs\SendVendorInvitationResponseWhatsAppJob::dispatch($invitation->id, 'accepted')->afterCommit();
 
             $this->createMarketerListingFromInvitation($invitation);
         });
@@ -1186,6 +1187,7 @@ class MarketerCampaignService
         $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($oldInvitation, $reason))
         );
+        \App\Jobs\SendVendorInvitationResponseWhatsAppJob::dispatch($oldInvitation->id, $reason);
 
         // The predecessor's sample has not been sent (admin dispatch requires an
         // accepted invitation): hand it to the replacement or cancel it.

@@ -122,12 +122,17 @@ class MarketerPromotionFlowTest extends TestCase
         ]);
 
         $this->assertFalse(app(WhatsAppService::class)->isConfigured());
-        (new SendCampaignWhatsAppNotificationJob($inv->id))->handle(app(WhatsAppService::class));
+        app()->call([new SendCampaignWhatsAppNotificationJob($inv->id), 'handle']);
         $this->assertFalse($inv->fresh()->whatsapp_sent);
 
         $fake = new class extends WhatsAppService
         {
             public ?string $last = null;
+
+            public function isConfigured(): bool
+            {
+                return true;
+            }
 
             public function send(string $to, string $message): bool
             {
@@ -136,9 +141,10 @@ class MarketerPromotionFlowTest extends TestCase
                 return true;
             }
         };
-        (new SendCampaignWhatsAppNotificationJob($inv->id))->handle($fake);
+        $this->app->instance(\App\Contracts\WhatsAppGateway::class, $fake);
+        app()->call([new SendCampaignWhatsAppNotificationJob($inv->id), 'handle']);
         $this->assertTrue($inv->fresh()->whatsapp_sent);
-        $this->assertStringContainsString('/invitations/'.$inv->id.'/whatsapp', $fake->last);
+        $this->assertStringContainsString('/invitations/'.$inv->id.'/whatsapp/accept', $fake->last);
     }
 
     public function test_monthly_quota_resolves_target_progress_and_warns_only_in_the_last_week(): void

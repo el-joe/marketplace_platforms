@@ -88,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ShippingCarrierFactory::class);
+        $this->app->bind(\App\Contracts\WhatsAppGateway::class, \App\Services\WhatsAppService::class);
         $this->app->singleton(PageBuilderService::class);
         $this->app->singleton(ListingQueryService::class);
         $this->app->singleton(\App\Services\Customer\UnifiedListingQueryService::class);

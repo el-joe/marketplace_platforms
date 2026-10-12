@@ -24,6 +24,42 @@ class InvitationWhatsAppController extends Controller
         ]);
     }
 
+    /** GET of the signed accept/reject link: never changes state (link previews/prefetch), only asks for confirmation. */
+    public function confirmAccept(MarketerCampaignInvitation $invitation): View
+    {
+        return $this->confirm($invitation, 'accept');
+    }
+
+    public function confirmReject(MarketerCampaignInvitation $invitation): View
+    {
+        return $this->confirm($invitation, 'reject');
+    }
+
+    public function accept(Request $request, MarketerCampaignInvitation $invitation): View
+    {
+        $request->merge(['action' => 'accept']);
+
+        return $this->respond($request, $invitation);
+    }
+
+    public function reject(Request $request, MarketerCampaignInvitation $invitation): View
+    {
+        $request->merge(['action' => 'reject']);
+
+        return $this->respond($request, $invitation);
+    }
+
+    private function confirm(MarketerCampaignInvitation $invitation, string $action): View
+    {
+        $invitation->load('campaign.vendor', 'marketer');
+
+        return view('marketer.invitations.whatsapp', [
+            'invitation' => $invitation,
+            'outcome' => ($invitation->isPending() && ! $invitation->isTimedOut()) ? null : 'unavailable',
+            'action' => $action,
+        ]);
+    }
+
     public function respond(Request $request, MarketerCampaignInvitation $invitation): View
     {
         $data = $request->validate([

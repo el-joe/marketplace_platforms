@@ -17,7 +17,7 @@ class MarketerCampaignInvitation extends Model
         'acceptance_window_hours', 'expires_at', 'responded_at',
         'marketer_note', 'decline_reason',
         'referral_code', 'referral_link', 'qr_code_path',
-        'whatsapp_sent', 'whatsapp_sent_at',
+        'whatsapp_sent', 'whatsapp_sent_at', 'whatsapp_attempts', 'whatsapp_last_error', 'whatsapp_failed_at',
         'replaced_invitation_id',
         'total_commission_earned', 'total_conversions',
         'platform_fee_amount', 'platform_fee_currency',
@@ -30,6 +30,7 @@ class MarketerCampaignInvitation extends Model
         'responded_at' => 'datetime',
         'whatsapp_sent' => 'boolean',
         'whatsapp_sent_at' => 'datetime',
+        'whatsapp_failed_at' => 'datetime',
         'platform_fee_recorded_at' => 'datetime',
         'platform_fee_paid_at' => 'datetime',
         'platform_fee_vat_rate' => 'decimal:2',
@@ -74,6 +75,11 @@ class MarketerCampaignInvitation extends Model
     public function platformFeeTotal(): int
     {
         return (int) $this->platform_fee_amount + (int) $this->platform_fee_vat_amount;
+    }
+
+    public function whatsappFailed(): bool
+    {
+        return ! $this->whatsapp_sent && $this->whatsapp_failed_at !== null;
     }
 
     public function isPending(): bool

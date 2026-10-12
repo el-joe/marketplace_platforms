@@ -342,6 +342,17 @@
                     </x-slot>
                 @endif
             @endcan
+            @php $waFailed = $marketerCampaign->invitations->filter(fn ($i) => $i->whatsappFailed()); @endphp
+            @if($waFailed->isNotEmpty())
+                <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm" data-testid="whatsapp-failures">
+                    <p class="font-semibold mb-1">{{ __('admin.marketer_campaigns.whatsapp_failures_banner', ['count' => $waFailed->count()]) }}</p>
+                    <ul class="list-disc ps-5 text-xs">
+                        @foreach($waFailed as $f)
+                            <li>{{ $f->marketer?->name }} — {{ $f->whatsapp_last_error }} ({{ __('admin.marketer_campaigns.whatsapp_attempts', ['n' => $f->whatsapp_attempts]) }})</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             @if($marketerCampaign->invitations->isEmpty())
                 <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
             @else
@@ -355,6 +366,7 @@
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_referral_link') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_qr_code') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_sent_at') }}</th>
+                                <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.whatsapp_col') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_responded_at') }}</th>
                                 <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('admin.marketer_campaigns.platform_fees') }}</th>
                                 <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('admin.marketer_campaigns.fees_status') }}</th>
@@ -381,6 +393,15 @@
                                         @endif
                                     </td>
                                     <td class="py-2 pr-4">{{ $invitation->created_at?->format('d M Y H:i') }}</td>
+                                    <td class="py-2 pr-4 text-xs" data-testid="whatsapp-status">
+                                        @if($invitation->whatsapp_sent)
+                                            <span class="text-green-600">{{ __('admin.marketer_campaigns.whatsapp_sent') }} {{ $invitation->whatsapp_sent_at?->format('d M H:i') }}</span>
+                                        @elseif($invitation->whatsappFailed())
+                                            <span class="text-red-600" title="{{ $invitation->whatsapp_last_error }}">{{ __('admin.marketer_campaigns.whatsapp_failed') }}</span>
+                                        @else
+                                            <span class="text-gray-400">{{ __('admin.marketer_campaigns.whatsapp_pending') }}</span>
+                                        @endif
+                                    </td>
                                     <td class="py-2 pr-4">{{ $invitation->responded_at?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="px-4 py-3 text-center">
                                         @if($invitation->platform_fee_status === 'not_applicable')

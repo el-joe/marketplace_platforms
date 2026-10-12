@@ -2,59 +2,43 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use App\Contracts\WhatsAppGateway;
+use App\Services\WhatsApp\LogWhatsAppGateway;
+use App\Services\WhatsApp\MetaWhatsAppGateway;
 
 /**
- * Thin WhatsApp sender. Provider is chosen by the `whatsapp_provider` setting:
- *  - "meta"  : WhatsApp Cloud API (needs whatsapp_meta_phone_number_id + whatsapp_meta_access_token)
- *  - "log"   : (default) nothing is delivered, the message is only logged and send() returns false
- *
- * send() returns true only when the provider accepted the message, so callers can
- * record "sent" honestly.
+ * Default WhatsAppGateway binding: delegates to the driver chosen by the
+ * `whatsapp_provider` setting (fallback config('whatsapp.driver')):
+ *  - "meta": WhatsApp Cloud API (MetaWhatsAppGateway)
+ *  - "log" : (default) nothing is delivered, message only logged, send() returns false
+ * Tests swap the whole contract with a fake (`$this->app->instance(WhatsAppGateway::class, ...)`).
  */
-class WhatsAppService
+class WhatsAppService implements WhatsAppGateway
 {
+    private ?WhatsAppGateway $last = null;
+
+    public function driver(): WhatsAppGateway
+    {
+        return match ((string) (setting('whatsapp_provider') ?: config('whatsapp.driver', 'log'))) {
+            'meta' => new MetaWhatsAppGateway,
+            default => new LogWhatsAppGateway,
+        };
+    }
+
     public function isConfigured(): bool
     {
-        return $this->provider() === 'meta'
-            && filled(setting('whatsapp_meta_phone_number_id'))
-            && filled(setting('whatsapp_meta_access_token'));
+        return $this->driver()->isConfigured();
     }
 
     public function send(string $to, string $message): bool
     {
-        $number = preg_replace('/\D+/', '', $to);
-        if ($number === '') {
-            return false;
-        }
+        $this->last = $this->driver();
 
-        if (! $this->isConfigured()) {
-            Log::info('WhatsApp not configured; message not delivered', ['to' => $number, 'message' => $message]);
-
-            return false;
-        }
-
-        $response = Http::withToken((string) setting('whatsapp_meta_access_token'))
-            ->timeout(15)
-            ->post('https://graph.facebook.com/v20.0/'.setting('whatsapp_meta_phone_number_id').'/messages', [
-                'messaging_product' => 'whatsapp',
-                'to' => $number,
-                'type' => 'text',
-                'text' => ['preview_url' => true, 'body' => $message],
-            ]);
-
-        if ($response->failed()) {
-            Log::warning('WhatsApp send failed', ['to' => $number, 'status' => $response->status(), 'body' => $response->body()]);
-
-            return false;
-        }
-
-        return true;
+        return $this->last->send($to, $message);
     }
 
-    private function provider(): string
+    public function lastError(): ?string
     {
-        return (string) setting('whatsapp_provider', 'log');
+        return $this->last?->lastError();
     }
 }

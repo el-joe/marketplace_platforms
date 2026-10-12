@@ -134,5 +134,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Tampered / expired WhatsApp accept-reject links: friendly page instead of a bare 403.
+        $exceptions->render(function (\Illuminate\Routing\Exceptions\InvalidSignatureException $e, \Illuminate\Http\Request $request) {
+            if (str_starts_with((string) $request->route()?->getName(), 'marketer.invitations.whatsapp.')) {
+                return response()->view('marketer.invitations.whatsapp', ['expiredLink' => true], 403);
+            }
+        });
     })->create();
