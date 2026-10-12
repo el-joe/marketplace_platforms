@@ -54,15 +54,8 @@
                           class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">{{ old('notes', $marketerCampaign->notes) }}</textarea>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.marketer_campaigns.commission_type_label') }}</label>
-                <select name="commission_type" x-model="commissionType"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
-                    <option value="fixed">{{ __('partner.listings.commission_type_fixed') }}</option>
-                    <option value="tiered">{{ __('partner.listings.commission_type_tiered') }}</option>
-                    <option value="last_click">{{ __('partner.listings.commission_type_last_click') }}</option>
-                </select>
-                <p class="mt-1 text-xs text-gray-400">{{ __('partner.marketer_campaigns_my.commission_set_by_platform') }}</p>
+            <div class="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
+                <i class="fas fa-lock me-1"></i>{{ __('partner.marketer_campaigns.commission_set_by_platform_notice') }}
             </div>
 
             <div>
@@ -73,25 +66,6 @@
                 <input type="number" name="max_commission_budget" min="0" value="{{ old('max_commission_budget', $marketerCampaign->max_commission_budget) }}"
                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40"
                        placeholder="0">
-            </div>
-
-            <div x-show="commissionType === 'tiered'" x-cloak>
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('partner.marketer_campaigns.tiered_rules_label') }}</label>
-                <div class="space-y-2">
-                    <template x-for="(rule, i) in tieredRules" :key="i">
-                        <div class="flex gap-2 items-center">
-                            <input type="number" min="1" :name="`tiered_rules[${i}][from_sale_number]`" x-model="rule.from_sale_number"
-                                   placeholder="{{ __('partner.marketer_campaigns.sale_number_placeholder') }}"
-                                   class="w-1/2 border border-gray-200 rounded-xl px-3 py-2 text-sm">
-                            <input type="number" min="0" :name="`tiered_rules[${i}][commission_amount]`" x-model="rule.commission_amount"
-                                   placeholder="{{ __('partner.marketer_campaigns.commission_amount_placeholder') }}"
-                                   class="w-1/2 border border-gray-200 rounded-xl px-3 py-2 text-sm">
-                            <button type="button" @click="tieredRules.splice(i, 1)" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button>
-                        </div>
-                    </template>
-                </div>
-                <button type="button" @click="tieredRules.push({from_sale_number: '', commission_amount: ''})"
-                        class="mt-2 text-sm text-purple-600 hover:underline">{{ __('partner.marketer_campaigns.add_tier_btn') }}</button>
             </div>
 
             <div class="space-y-4">

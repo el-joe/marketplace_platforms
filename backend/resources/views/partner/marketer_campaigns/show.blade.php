@@ -254,6 +254,8 @@
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.marketer') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.type') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.status') }}</th>
+                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns.fees_col') }}</th>
+                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns.commission_col') }} <span class="block text-[10px] font-normal text-gray-400">{{ __('partner.marketer_campaigns.set_by_platform_label') }}</span></th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.referral_link') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.qr_code') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.responded_at') }}</th>
@@ -275,6 +277,13 @@
                                             {{ $ist['label'] }}
                                         </span>
                                     </td>
+                                    @php
+                                        $qRow = $quoteRows[$invitation->marketer_id] ?? null;
+                                        $rowFee = (int) ($invitation->platform_fee_amount ?: ($qRow['fee'] ?? 0));
+                                        $rowCommission = (int) ($qRow['commission']['amount'] ?? 0);
+                                    @endphp
+                                    <td class="px-4 py-3 text-gray-700">{{ $rowFee > 0 ? number_format($rowFee).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.free_label') }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ $rowCommission > 0 ? number_format($rowCommission).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.commission_not_set') }}</td>
                                     <td class="px-4 py-3">
                                         @if ($invitation->referral_link)
                                             <div class="flex items-center gap-2">

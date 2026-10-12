@@ -37,6 +37,7 @@ use App\Services\CommissionRuleResolver;
 use App\Services\Inventory\InventoryService;
 use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
+use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
@@ -424,6 +425,20 @@ class ListingController extends Controller
     {
         $vendor = auth()->guard('vendor')->user()->vendor;
         $countryId = $vendor->country_id;
+
+        // Per-marketer breakdown (fee + admin-set commission, read-only) for the
+        // campaign create form. Only ids are read from the client; every number
+        // is resolved server-side from admin settings.
+        if (request()->filled('listing_id')) {
+            $listing = VendorListing::where('id', request()->input('listing_id'))
+                ->where('vendor_id', $vendor->id)
+                ->with('productVariant.product.category')
+                ->firstOrFail();
+
+            return response()->json(
+                app(MarketerCampaignQuoteService::class)->quote($listing, array_values(array_filter((array) request()->input('marketer_ids', []), 'is_string')))
+            );
+        }
 
         $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
 

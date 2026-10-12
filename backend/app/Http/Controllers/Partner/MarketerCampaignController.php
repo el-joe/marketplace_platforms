@@ -9,6 +9,7 @@ use App\Models\MarketerCampaignSample;
 use App\Models\ProductCustomAttribute;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
@@ -88,28 +89,33 @@ class MarketerCampaignController extends Controller
         $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
         abort_unless(in_array($vendorListing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
 
-        $vendorListing->load('productVariant.product');
+        $vendorListing->load('productVariant.product.category');
 
-        $marketerVendors = Marketer::where('global_status', 'active')
-            ->where('country_id', $vendorListing->country_id)
-            ->orderBy('name')
-            ->with(['marketerJobs', 'marketerProfile'])
-            ->get(['id', 'name']);
+        $quoteService = app(MarketerCampaignQuoteService::class);
+        $allMarketers = $quoteService->eligibleMarketers($vendorListing);
+        $isInfluencer = fn ($m) => $m->marketerJobs->contains('key', 'influencer');
+        // Only influencers are picked one by one; affiliates are "open to all".
+        $marketerVendors = $allMarketers->filter($isInfluencer)->values();
+        $affiliateCount = $allMarketers->reject($isInfluencer)->filter(fn ($m) => $m->marketerJobs->contains('key', 'affiliate'))->count();
+        $quote = $quoteService->quote($vendorListing, []);
 
-        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors'));
+        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'quote'));
     }
 
     public function store(Request $request)
     {
         $vendor = $this->vendor();
 
+        // Commission is NOT vendor-typed: it is resolved from admin settings
+        // (country/category settings, marketer_commission_rules, profile
+        // discount) when the campaign is approved / a sale is attributed.
+        // commission_type / tiered_rules / amounts from the client are ignored.
         $request->validate([
             'vendor_listing_id' => ['required', 'uuid', 'exists:vendor_listings,id'],
-            'commission_type' => ['required', 'in:fixed,tiered,last_click'],
             'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'marketer_ids' => ['required', 'array', 'min:1'],
+            'marketer_ids' => ['nullable', 'array'],
             'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
-            'tiered_rules' => ['nullable', 'array'],
+            'open_to_affiliates' => ['nullable', 'boolean'],
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
@@ -117,27 +123,56 @@ class MarketerCampaignController extends Controller
 
         $listing = VendorListing::where('id', $request->vendor_listing_id)
             ->where('vendor_id', $vendor->id)
+            ->with('productVariant.product.category')
             ->firstOrFail();
 
         $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
         abort_unless(in_array($listing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
 
-        $conflicts = $this->conflictingMarketers($listing->id, $request->input('marketer_ids', []));
+        $quoteService = app(MarketerCampaignQuoteService::class);
+        $eligible = $quoteService->eligibleMarketers($listing)->keyBy('id');
+
+        // Explicitly picked marketers must be eligible (active, same country).
+        $picked = array_values(array_unique((array) $request->input('marketer_ids', [])));
+        if (array_diff($picked, $eligible->keys()->all())) {
+            return back()->withInput()->withErrors(['marketer_ids' => __('partner.marketer_campaigns.marketer_not_eligible')]);
+        }
+        // Affiliates are never picked individually: "open to all" expands to every eligible affiliate.
+        $picked = array_values(array_filter($picked, fn ($id) => $eligible[$id]->marketerJobs->contains('key', 'influencer')));
+
+        $conflicts = $this->conflictingMarketers($listing->id, $picked);
         if ($conflicts) {
             return back()->withInput()->withErrors(['marketer_ids' => $this->conflictMessage($conflicts)]);
         }
+
+        $marketerIds = $picked;
+        if ($request->boolean('open_to_affiliates')) {
+            $affiliateIds = $eligible
+                ->filter(fn ($m) => ! $m->marketerJobs->contains('key', 'influencer') && $m->marketerJobs->contains('key', 'affiliate'))
+                ->keys()->all();
+            $affiliateIds = array_values(array_diff($affiliateIds, array_keys($this->conflictingMarketers($listing->id, $affiliateIds))));
+            $marketerIds = array_values(array_unique(array_merge($marketerIds, $affiliateIds)));
+        }
+
+        if (empty($marketerIds)) {
+            return back()->withInput()->withErrors(['marketer_ids' => __('partner.marketer_campaigns.select_at_least_one')]);
+        }
+
+        // Authoritative figures, recomputed server-side from admin settings.
+        $quote = $quoteService->quote($listing, $marketerIds);
 
         try {
             $this->marketerCampaignService->createCampaign(
                 CampaignOwner::vendor($vendor),
                 CampaignSource::vendorListing($listing->id),
                 array_merge(
-                    $request->only(['commission_type', 'max_commission_budget']),
+                    ['max_commission_budget' => $request->filled('max_commission_budget') ? (int) $request->input('max_commission_budget') : null],
                     [
+                        'commission_type' => 'fixed',
                         'country_id' => $listing->country_id,
                         'currency' => $listing->currency,
-                        'marketer_ids' => $request->input('marketer_ids', []),
-                        'tiered_rules' => $request->input('tiered_rules', []),
+                        'marketer_ids' => $marketerIds,
+                        'tiered_rules' => [],
                         'selected_ad_types' => $request->input('selected_ad_types') ?: null,
                         'vendor_ad_notes' => $request->input('vendor_ad_notes') ?: null,
                     ]
@@ -149,7 +184,9 @@ class MarketerCampaignController extends Controller
 
         return redirect()
             ->to(route('partner.listings.show', $listing->id).'#marketer_campaign')
-            ->with('success', 'تم إنشاء حملة الماركتر بنجاح.');
+            ->with('success', $quote['total_fee'] > 0
+                ? __('partner.marketer_campaigns.created_with_fee', ['fee' => number_format($quote['total_fee']), 'currency' => $quote['currency']])
+                : 'تم إنشاء حملة الماركتر بنجاح.');
     }
 
     public function index(Request $request)
@@ -195,7 +232,16 @@ class MarketerCampaignController extends Controller
             'samples.customAttributeValues',
         ]);
 
-        return view('partner.marketer_campaigns.show', compact('marketerCampaign'));
+        // Read-only fee/commission per marketer, resolved from admin settings.
+        $quote = $marketerCampaign->vendorListing
+            ? app(MarketerCampaignQuoteService::class)->quote(
+                $marketerCampaign->vendorListing,
+                $marketerCampaign->invitations->pluck('marketer_id')->filter()->unique()->values()->all()
+            )
+            : null;
+        $quoteRows = collect($quote['rows'] ?? [])->keyBy('id');
+
+        return view('partner.marketer_campaigns.show', compact('marketerCampaign', 'quote', 'quoteRows'));
     }
 
     public function edit(MarketerCampaign $marketerCampaign)
@@ -216,19 +262,15 @@ class MarketerCampaignController extends Controller
         $data = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'commission_type' => ['required', 'in:fixed,tiered,last_click'],
             'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'tiered_rules' => ['nullable', 'array'],
-            'tiered_rules.*.from_sale_number' => ['required_with:tiered_rules', 'integer', 'min:1'],
-            'tiered_rules.*.commission_amount' => ['required_with:tiered_rules', 'numeric', 'min:0'],
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        if ($data['commission_type'] === 'tiered' && empty($data['tiered_rules'])) {
-            return back()->withInput()->withErrors(['tiered_rules' => 'يجب إضافة شريحة واحدة على الأقل للحملة المتدرجة.']);
-        }
+        // Commission model/amounts are set by the platform, never by the vendor: keep what is stored.
+        $data['commission_type'] = $marketerCampaign->commission_type;
+        $data['tiered_rules'] = $marketerCampaign->tieredRules()->get(['from_sale_number', 'commission_amount'])->toArray();
 
         try {
             $this->marketerCampaignService->updateCampaign($marketerCampaign, $data);
