@@ -60,6 +60,20 @@
                         <div class="text-xs text-gray-500 mt-1">{{ __('marketer.invitations.code_label') }} <strong>{{ $invitation->referral_code }}</strong></div>
                     </div>
                     @endif
+                    @if(in_array($invitation->status, ['rejected', 'timed_out']) && $invitation->referral_code)
+                    @php
+                        $resolver = app(\App\Services\ReferralCodeResolver::class);
+                        $codeState = $resolver->stateFor($invitation);
+                    @endphp
+                    <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600" data-code-inactive>
+                        <div class="font-semibold">{{ __('marketer.invitations.code_inactive_title') }}</div>
+                        @if($codeState === \App\Services\ReferralCodeResolver::STATE_GRACE)
+                            <div class="mt-1">{{ __('marketer.invitations.code_inactive_hint', ['date' => $resolver->graceUntil($invitation)->format('Y-m-d')]) }}</div>
+                        @else
+                            <div class="mt-1">{{ __('marketer.invitations.code_inactive_expired') }}</div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
 
                 {{-- Actions --}}

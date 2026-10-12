@@ -130,6 +130,7 @@ class SettingsSeeder extends Seeder
             ['key' => 'marketer_campaign_min_platform_sample_qty', 'value' => 1, 'category' => 'marketer', 'description' => 'Minimum units of the single fixed platform (admin) sample every campaign sets aside, even if the category quantity is lower', 'is_public' => 0],
             ['key' => 'marketer_campaign_min_influencer_sample_qty', 'value' => 1, 'category' => 'marketer', 'description' => 'Minimum units of the sample each selected influencer receives, even if the category quantity is lower', 'is_public' => 0],
             ['key' => 'marketer_invitation_timeout_hours', 'value' => 12, 'category' => 'marketer', 'description' => 'Hours a marketer has to accept or reject a campaign invitation before the system picks a replacement marketer', 'is_public' => 0],
+            ['key' => 'marketer_referral_grace_days', 'value' => 7, 'category' => 'marketer', 'description' => 'Days a replaced, timed-out or rejected invitation referral code still credits the original marketer for clicks recorded before the replacement (no new attributions after it)', 'is_public' => 0],
             ['key' => 'marketer_replacement_min_accepted_campaigns', 'value' => 0, 'category' => 'marketer', 'description' => 'When replacing a rejected/timed-out marketer, prefer marketers with at least this many accepted campaigns', 'is_public' => 0],
         ];
 

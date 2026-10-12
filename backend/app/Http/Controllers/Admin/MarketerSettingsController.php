@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\PromotionCategoryTarget;
+use App\Models\Setting;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,8 +32,10 @@ class MarketerSettingsController extends Controller
             ->orderBy('promotion_category')
             ->get();
 
+        $referralGraceDays = \App\Services\ReferralCodeResolver::graceDays();
+
         return view('admin.marketer_settings.index', compact(
-            'countries', 'influencerFees', 'promotionTargets'
+            'countries', 'influencerFees', 'promotionTargets', 'referralGraceDays'
         ));
     }
 
@@ -56,6 +59,23 @@ class MarketerSettingsController extends Controller
         );
 
         return back()->with('success', 'تم حفظ رسوم الإنفلوينسر.');
+    }
+
+    public function updateReferralGrace(Request $request): RedirectResponse
+    {
+        abort_unless(auth('admin')->user()->can('marketer_fee_settings.edit'), 403);
+
+        $validated = $request->validate([
+            'marketer_referral_grace_days' => ['required', 'integer', 'min:0', 'max:90'],
+        ]);
+
+        Setting::updateOrCreate(
+            ['key' => 'marketer_referral_grace_days'],
+            ['value' => (int) $validated['marketer_referral_grace_days'], 'category' => 'marketer', 'is_encrypted' => 0, 'is_public' => 0]
+        );
+        Setting::flush();
+
+        return back()->with('success', __('admin.marketer_settings.referral_grace_saved'));
     }
 
     public function updatePromotionTarget(Request $request): RedirectResponse

@@ -43,9 +43,14 @@ class LastClickAttributionService
     /** Default attribution window when no `marketer_attribution_window_days` setting exists. */
     public const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 7;
 
+    private readonly ReferralCodeResolver $resolver;
+
     public function __construct(
         private readonly MarketerCommissionRateService $commissionRates = new MarketerCommissionRateService,
-    ) {}
+        ?ReferralCodeResolver $resolver = null,
+    ) {
+        $this->resolver = $resolver ?? new ReferralCodeResolver;
+    }
 
     /**
      * Record a referral click from a referral code.
@@ -73,19 +78,26 @@ class LastClickAttributionService
         $click = $sessionId ? Cache::get("referral_click:{$sessionId}") : null;
         $windowDays = (int) setting('marketer_attribution_window_days', self::DEFAULT_ATTRIBUTION_WINDOW_DAYS);
 
+        // P14: the click resolves to exactly ONE invitation through ReferralCodeResolver: the live
+        // (accepted) holder of the code, or - inside the grace window - the ORIGINAL holder when the
+        // click was recorded before the ad moved on. Never both, never the replacement.
         $lastClickInvitation = null;
-        if ($click && now()->diffInDays(Carbon::parse($click['clicked_at'])) <= $windowDays) {
-            $lastClickInvitation = MarketerCampaignInvitation::where('referral_code', $click['referral_code'])
-                ->where('status', 'accepted')
+        $clickedAt = $click ? Carbon::parse($click['clicked_at']) : null;
+        if ($click && now()->diffInDays($clickedAt) <= $windowDays) {
+            $candidate = MarketerCampaignInvitation::where('referral_code', $click['referral_code'])
                 ->with(['campaign.tieredRules', 'marketer.marketerProfile'])
                 ->first();
 
-            if ($lastClickInvitation && ! in_array($lastClickInvitation->campaign->status, ['active', 'auto_approved'], true)) {
-                $lastClickInvitation = null;
+            if ($candidate && $this->resolver->isAttributable($candidate, $clickedAt)) {
+                $lastClickInvitation = $candidate;
             }
         }
 
-        foreach ($order->items as $item) {
+        // One order => one marketer per campaign: the first attributed item fixes who is credited.
+        $creditedByCampaign = [];
+
+        // Direct purchases from a marketer's listing outrank a remembered click, so they fix the credited marketer first.
+        foreach ($order->items->sortByDesc(fn ($i) => (bool) $i->marketer_listing_id)->values() as $item) {
             if ($item->marketerConversion()->exists()) {
                 continue; // idempotency: retried place-order call.
             }
@@ -95,6 +107,11 @@ class LastClickAttributionService
             if (! $invitation) {
                 continue;
             }
+
+            if (isset($creditedByCampaign[$invitation->campaign_id]) && $creditedByCampaign[$invitation->campaign_id] !== $invitation->marketer_id) {
+                continue; // never two marketers on one order for the same campaign
+            }
+            $creditedByCampaign[$invitation->campaign_id] = $invitation->marketer_id;
 
             $item->update(['marketer_campaign_invitation_id' => $invitation->id]);
 
@@ -113,7 +130,7 @@ class LastClickAttributionService
             $item->loadMissing('marketerListing.invitation.campaign.tieredRules', 'marketerListing.invitation.marketer.marketerProfile');
             $invitation = $item->marketerListing?->invitation;
 
-            if ($invitation && in_array($invitation->campaign->status, ['active', 'auto_approved'], true)) {
+            if ($invitation && $this->resolver->stateFor($invitation) === ReferralCodeResolver::STATE_ACTIVE) {
                 return $invitation;
             }
 
@@ -135,6 +152,11 @@ class LastClickAttributionService
             /** @var MarketerCampaign $campaign */
             $campaign = MarketerCampaign::where('id', $invitation->campaign_id)->lockForUpdate()->firstOrFail();
             $invitation->refresh();
+
+            // Double-credit guard (retried request / concurrent resolution): one conversion per order item, ever.
+            if (MarketerCampaignConversion::where('order_item_id', $item->id)->exists()) {
+                return;
+            }
 
             $saleNumber = $invitation->total_conversions + 1;
             $commissionAmount = 0;

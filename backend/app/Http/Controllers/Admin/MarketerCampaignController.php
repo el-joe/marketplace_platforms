@@ -89,7 +89,9 @@ class MarketerCampaignController extends Controller
         $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
         $classifiedCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
-        return view('admin.marketer_campaigns.show', compact('marketerCampaign', 'commissionSetting', 'categories', 'classifiedCategories'));
+        $referralChains = app(\App\Services\ReferralCodeResolver::class)->chainsFor($marketerCampaign);
+
+        return view('admin.marketer_campaigns.show', compact('marketerCampaign', 'commissionSetting', 'categories', 'classifiedCategories', 'referralChains'));
     }
 
     public function approve(Request $request, MarketerCampaign $marketerCampaign)

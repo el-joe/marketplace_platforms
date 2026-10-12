@@ -306,6 +306,9 @@ return [
 
     // Invitations
     'invitations' => [
+        'code_inactive_title' => 'This code no longer earns new customers',
+        'code_inactive_hint' => 'The ad moved to another marketer. Orders from customers who clicked your code before that moment are still credited to you until :date.',
+        'code_inactive_expired' => 'This code is no longer active and earns no commission.',
         'title' => 'Campaign Invitations',
         'no_invitations' => 'No invitations yet',
         'no_invitations_hint' => 'Campaign invitations from merchants and brands will appear here',

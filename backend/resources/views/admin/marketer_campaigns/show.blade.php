@@ -497,6 +497,52 @@
             </x-card>
         @endif
 
+        @if(isset($referralChains) && $referralChains->flatten(1)->isNotEmpty())
+            <x-card title="{{ __('admin.marketer_campaigns.code_history_title') }}" id="referral-code-history">
+                <p class="text-xs text-gray-500 mb-3">{{ __('admin.marketer_campaigns.code_history_hint') }}</p>
+                @foreach($referralChains as $n => $chain)
+                    @if($referralChains->count() > 1)
+                        <div class="text-xs font-semibold text-gray-500 mb-1">{{ __('admin.marketer_campaigns.code_chain_n', ['n' => $n + 1]) }}</div>
+                    @endif
+                    <div class="overflow-x-auto mb-4">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-start text-gray-500 border-b">
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_code') }}</th>
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_marketer') }}</th>
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_status') }}</th>
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_issued') }}</th>
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_closed') }}</th>
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_attribution') }}</th>
+                                    <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_col_conversions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($chain as $step)
+                                    @php $inv = $step['invitation']; @endphp
+                                    <tr class="border-b" data-code-row="{{ $inv->referral_code }}" data-code-state="{{ $step['state'] }}">
+                                        <td class="py-2 pe-4 font-mono">
+                                            {{ $inv->referral_code }}
+                                            @if(! $loop->first)<span class="block text-xs text-gray-400">{{ __('admin.marketer_campaigns.code_replaces') }}</span>@endif
+                                            @if($inv->qr_code_path)
+                                                <a href="{{ \Illuminate\Support\Facades\Storage::url($inv->qr_code_path) }}" target="_blank" class="block text-xs text-indigo-600 underline">QR</a>
+                                            @endif
+                                        </td>
+                                        <td class="py-2 pe-4">{{ $inv->marketer?->name ?? '—' }}</td>
+                                        <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason_'.$inv->status) }}</td>
+                                        <td class="py-2 pe-4">{{ $inv->created_at?->format('d M Y H:i') }}</td>
+                                        <td class="py-2 pe-4">{{ $step['closed_at']?->format('d M Y H:i') ?? '—' }}</td>
+                                        <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.code_state_'.$step['state'], ['date' => $step['grace_until']?->format('d M Y')]) }}</td>
+                                        <td class="py-2 pe-4">{{ $inv->conversions_count }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endforeach
+            </x-card>
+        @endif
+
         @can('marketer_campaigns.create')
             @if(in_array($marketerCampaign->status, ['pending_admin', 'active']))
                 @php

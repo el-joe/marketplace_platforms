@@ -306,6 +306,9 @@ return [
 
     // Invitations
     'invitations' => [
+        'code_inactive_title' => 'هذا الكود لم يعد يكسب عملاء جدد',
+        'code_inactive_hint' => 'انتقل الإعلان إلى مسوّق آخر. الطلبات من عملاء نقروا على كودك قبل ذلك ما زالت تُحتسب لك حتى :date.',
+        'code_inactive_expired' => 'هذا الكود لم يعد فعّالاً ولا يحقق عمولة.',
         'title' => 'دعوات الحملات',
         'no_invitations' => 'لا توجد دعوات بعد',
         'no_invitations_hint' => 'ستظهر هنا دعوات الحملات من التجار والبراندات',

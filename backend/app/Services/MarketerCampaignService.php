@@ -883,7 +883,11 @@ class MarketerCampaignService
     public function dispatchInvitation(MarketerCampaign $campaign, string $marketerId, ?MarketerCampaignSample $inheritSample = null): MarketerCampaignInvitation
     {
         $timeoutHours = max(1, (int) setting('marketer_invitation_timeout_hours', 12));
-        $referralCode = strtoupper(Str::random(10));
+        // P14: every invitation (including a replacement) gets its own fresh code, link and QR;
+        // an old code is never reused so a stale scan can never reach the new marketer.
+        do {
+            $referralCode = strtoupper(Str::random(10));
+        } while (MarketerCampaignInvitation::where('referral_code', $referralCode)->exists());
 
         $invitation = MarketerCampaignInvitation::create([
             'campaign_id' => $campaign->id,
