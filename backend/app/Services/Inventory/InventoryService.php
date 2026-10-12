@@ -202,6 +202,42 @@ class InventoryService
         });
     }
 
+    /**
+     * Promotion samples leave the seller's stock like a normal sale: on_hand
+     * drops (outbound movement, reference campaign_sample) across warehouses.
+     */
+    public function deductCampaignSample(VendorListing|AdminListing $listing, int $qty, string $sampleId, string $reason = 'Promotion sample'): void
+    {
+        if ($qty <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($listing, $qty, $sampleId, $reason) {
+            $column = $listing instanceof VendorListing ? 'vendor_listing_id' : 'admin_listing_id';
+            $rows = WarehouseInventory::where($column, $listing->id)->lockForUpdate()
+                ->orderByRaw('(quantity_on_hand - quantity_reserved) DESC')->get();
+
+            $remaining = $qty;
+            foreach ($rows as $row) {
+                $take = min($row->quantity_on_hand - $row->quantity_reserved, $remaining);
+                if ($take <= 0) {
+                    continue;
+                }
+                $this->mutate($row, onHandDelta: -$take, reason: $reason, movementType: 'outbound', referenceType: 'campaign_sample', referenceId: $sampleId, quantityDeltaSign: -1);
+                $remaining -= $take;
+                if ($remaining <= 0) {
+                    break;
+                }
+            }
+
+            if ($remaining > 0) {
+                throw new InsufficientStockException("Insufficient stock for sample of listing {$listing->id}: short by {$remaining}.");
+            }
+
+            $this->fireStockChanged($listing);
+        });
+    }
+
     /** Manual on_hand adjustment (stock count correction, etc). */
     public function adjust(WarehouseInventory $row, int $delta, string $reason, ?string $actorType = null, ?string $actorId = null): void
     {

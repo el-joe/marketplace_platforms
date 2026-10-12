@@ -36,6 +36,12 @@
 @section('content')
 <div class="px-4 py-6 sm:px-6 lg:px-8 space-y-6" x-data="{ tab: 'info' }">
 
+    @if($marketerCampaign->vendorListing && $marketerCampaign->vendorListing->fulfillment_model !== \App\Enums\FulfillmentModel::Fbn)
+        <div class="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            {{ __('partner.marketer_campaigns.ship_to_warehouse_notice') }} {{ __('partner.marketer_campaigns.ship_to_warehouse_notice_extra') }}
+        </div>
+    @endif
+
     {{-- Breadcrumb --}}
     <nav class="flex items-center gap-2 text-sm text-gray-500">
         <a href="{{ route('partner.marketer-campaigns.index') }}" class="hover:text-primary-600">{{ __('partner.marketer_campaigns_my.title') }}</a>

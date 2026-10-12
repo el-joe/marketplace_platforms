@@ -17,9 +17,16 @@
 
     @if($vendorListing->fulfillment_model !== \App\Enums\FulfillmentModel::Fbn)
         <div class="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-            {{ __('partner.marketer_campaigns.ship_to_warehouse_notice') }}
+            {{ __('partner.marketer_campaigns.ship_to_warehouse_notice') }} {{ __('partner.marketer_campaigns.ship_to_warehouse_notice_extra') }}
         </div>
     @endif
+
+    <div class="rounded-lg border px-4 py-3 text-sm {{ $availableStock < $minStock ? 'border-red-300 bg-red-50 text-red-800' : 'border-gray-200 bg-gray-50 text-gray-700' }}">
+        {{ __('partner.marketer_campaigns.stock_requirement', ['min' => $minStock, 'available' => $availableStock]) }}
+        @if($availableStock < $minStock)
+            <strong>{{ __('partner.marketer_campaigns.stock_blocked') }}</strong>
+        @endif
+    </div>
 
     @if(session('error'))
         <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
@@ -232,7 +239,7 @@
         </div>
 
         <div class="mt-6 flex gap-3">
-            <button type="submit" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+            <button type="submit" @disabled($availableStock < $minStock) class="disabled:opacity-50 disabled:cursor-not-allowed bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
                 {{ __('partner.marketer_campaigns.create_btn') }}
             </button>
             <a href="{{ route('partner.marketer-campaigns.index') }}"

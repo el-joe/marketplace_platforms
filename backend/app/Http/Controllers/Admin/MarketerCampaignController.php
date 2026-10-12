@@ -14,6 +14,8 @@ use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Services\Inventory\InsufficientStockException;
+use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
@@ -129,6 +131,20 @@ class MarketerCampaignController extends Controller
         }
         if ($request->status === 'delivered' && ! $sample->delivered_at) {
             $data['delivered_at'] = now();
+        }
+
+        // Promotion samples are stock-out events like a normal sale (once).
+        if ($request->status === 'dispatched' && ! $sample->stock_deducted_at) {
+            $listing = $marketerCampaign->vendorListing ?? $marketerCampaign->adminListing;
+            if ($listing) {
+                try {
+                    app(InventoryService::class)
+                        ->deductCampaignSample($listing, (int) $sample->quantity, $sample->id);
+                    $data['stock_deducted_at'] = now();
+                } catch (InsufficientStockException $e) {
+                    return back()->with('error', $e->getMessage());
+                }
+            }
         }
 
         $sample->update($data);

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class MarketerCampaignSample extends Model
 {
@@ -12,11 +14,12 @@ class MarketerCampaignSample extends Model
 
     protected $fillable = [
         'campaign_id', 'invitation_id', 'sample_owner', 'quantity',
-        'status', 'dispatched_at', 'delivered_at', 'delivery_address_snapshot',
+        'status', 'stock_deducted_at', 'dispatched_at', 'delivered_at', 'delivery_address_snapshot',
     ];
 
     protected $casts = [
         'dispatched_at' => 'datetime',
+        'stock_deducted_at' => 'datetime',
         'delivered_at' => 'datetime',
         'delivery_address_snapshot' => 'array',
     ];
@@ -31,7 +34,7 @@ class MarketerCampaignSample extends Model
         return $this->belongsTo(MarketerCampaignInvitation::class);
     }
 
-    public function marketer(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
+    public function marketer(): HasOneThrough
     {
         return $this->hasOneThrough(
             Marketer::class,
@@ -43,7 +46,7 @@ class MarketerCampaignSample extends Model
         );
     }
 
-    public function customAttributeValues(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function customAttributeValues(): HasMany
     {
         return $this->hasMany(MarketerCampaignSampleCustomAttributeValue::class, 'marketer_campaign_sample_id');
     }

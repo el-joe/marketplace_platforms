@@ -9,6 +9,7 @@ use App\Models\MarketerCampaignSample;
 use App\Models\ProductCustomAttribute;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
@@ -99,7 +100,11 @@ class MarketerCampaignController extends Controller
         $affiliateCount = $allMarketers->reject($isInfluencer)->filter(fn ($m) => $m->marketerJobs->contains('key', 'affiliate'))->count();
         $quote = $quoteService->quote($vendorListing, []);
 
-        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'quote'));
+        // Same rule MarketerCampaignService enforces on submit, surfaced here.
+        $minStock = (int) ($vendorListing->productVariant?->product?->category?->min_stock_for_campaign ?? 10);
+        $availableStock = app(InventoryService::class)->availableStock($vendorListing);
+
+        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'quote', 'minStock', 'availableStock'));
     }
 
     public function store(Request $request)
