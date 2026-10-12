@@ -427,6 +427,7 @@ class PanelSmokeV2Test extends TestCase
     {
         // The marketer web guard authenticates a MarketerAdmin (session
         // login row), not the Marketer record itself.
+        $this->scenario->marketer->forceFill(['onboarding_completed_at' => now()])->save();
         $marketerAdmin = \App\Models\MarketerAdmin::create([
             'marketer_id' => $this->scenario->marketer->id,
             'name'        => 'Marketer Owner',

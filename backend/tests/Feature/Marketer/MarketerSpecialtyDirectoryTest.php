@@ -31,8 +31,11 @@ class MarketerSpecialtyDirectoryTest extends TestCase
         $marketer = Marketer::create(array_merge([
             'name' => 'M ' . Str::random(4), 'email' => Str::random(8) . '@example.test',
             'phone' => '+9715' . fake()->numerify('########'), 'marketer_type' => $type,
-            'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(),
+            'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(), 'onboarding_completed_at' => now(),
         ], $m));
+        // The public directory filters ?type= by the marketer's job assignment, not the legacy marketer_type column.
+        $job = \App\Models\MarketerJob::firstOrCreate(['key' => $type], ['name_ar' => $type, 'name_en' => $type, 'is_active' => true, 'sort_order' => 1]);
+        \App\Models\MarketerMarketerJob::create(['marketer_id' => $marketer->id, 'marketer_job_id' => $job->id]);
         MarketerProfile::create(array_merge(['marketer_id' => $marketer->id, 'profile_slug' => Str::lower(Str::random(8))], $profile));
 
         return MarketerAdmin::create([

@@ -26,6 +26,7 @@ class CouponParticipationInvitationTest extends TestCase
         parent::setUp();
         $this->s = MarketplaceScenario::make()->build();
         $this->s->vendor->forceFill(['onboarding_completed_at' => now()])->save();
+        $this->s->marketer->forceFill(['onboarding_completed_at' => now()])->save();
     }
 
     private function invitation(array $o = []): Inv

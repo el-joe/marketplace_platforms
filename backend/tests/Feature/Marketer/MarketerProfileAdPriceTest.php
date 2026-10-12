@@ -32,7 +32,7 @@ class MarketerProfileAdPriceTest extends TestCase
         $marketer = Marketer::create(array_merge([
             'name' => 'M ' . Str::random(4), 'email' => Str::random(8) . '@example.test',
             'phone' => '+9715' . fake()->numerify('########'), 'marketer_type' => $type,
-            'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(),
+            'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(), 'onboarding_completed_at' => now(),
         ], $m));
         MarketerProfile::create(array_merge(['marketer_id' => $marketer->id, 'profile_slug' => Str::lower(Str::random(8))], $profile));
 
