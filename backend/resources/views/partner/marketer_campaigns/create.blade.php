@@ -55,7 +55,7 @@
                     {{ $vendorListing->productVariant->product->name_en ?? '—' }}
                 </div>
                 <div class="text-xs text-gray-500">
-                    {{ $vendorListing->currency }} {{ number_format($vendorListing->price) }}
+                    {{ $vendorListing->currency }} {{ \App\Support\Money::format($vendorListing->price) }}
                 </div>
             </div>
         </div>
@@ -163,7 +163,7 @@
                         <span x-show="quote.fee_payer === 'vendor'">{{ __('partner.marketer_campaigns.fee_payer_vendor_notice') }}</span>
                         <span x-show="quote.fee_payer !== 'vendor'">{{ __('partner.marketer_campaigns.fee_payer_marketer_notice') }}</span>
                     </p>
-                    <p class="text-xs text-gray-400 mt-1">{{ __('partner.marketer_campaigns.commission_estimate_note', ['price' => number_format($vendorListing->price).' '.$vendorListing->currency]) }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ __('partner.marketer_campaigns.commission_estimate_note', ['price' => \App\Support\Money::format($vendorListing->price).' '.$vendorListing->currency]) }}</p>
                 </div>
             @endif
 
@@ -186,7 +186,7 @@
                     {{ __('partner.marketer_campaigns.max_commission_budget_label') }}
                     <span class="text-xs text-gray-400">({{ auth()->guard('vendor')->user()->vendor->country->currency_code ?? '' }})</span>
                 </label>
-                <input type="number" name="max_commission_budget" min="0" value="{{ old('max_commission_budget') }}"
+                <input type="number" name="max_commission_budget" min="0" step="0.01" value="{{ old('max_commission_budget') }}"
                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40"
                        placeholder="0">
             </div>
@@ -306,7 +306,13 @@
                     return this.selectedMarketers.some(m => m.type === 'influencer');
                 },
                 money(v) {
-                    return Number(v || 0).toLocaleString() + ' ' + this.currency;
+                    // Whole amounts stay "2", fractional ones show two decimals ("0.10").
+                    const n = Number(v || 0);
+                    const hasFraction = Math.abs(n - Math.round(n)) > 0.000001;
+                    return n.toLocaleString(undefined, {
+                        minimumFractionDigits: hasFraction ? 2 : 0,
+                        maximumFractionDigits: 2,
+                    }) + ' ' + this.currency;
                 },
                 commissionLabel(c) {
                     // Read-only, as resolved by the server from admin settings.
@@ -351,9 +357,9 @@
                         id: opt.value,
                         name: opt.dataset.name || opt.text,
                         type: opt.dataset.type || 'affiliate',
-                        storyPrice: opt.dataset.storyPrice ? parseInt(opt.dataset.storyPrice) : null,
-                        postPrice: opt.dataset.postPrice ? parseInt(opt.dataset.postPrice) : null,
-                        videoPrice: opt.dataset.videoPrice ? parseInt(opt.dataset.videoPrice) : null,
+                        storyPrice: opt.dataset.storyPrice ? parseFloat(opt.dataset.storyPrice) : null,
+                        postPrice: opt.dataset.postPrice ? parseFloat(opt.dataset.postPrice) : null,
+                        videoPrice: opt.dataset.videoPrice ? parseFloat(opt.dataset.videoPrice) : null,
                     }));
                     // Reset ad types if no influencers remain
                     if (!this.hasInfluencers) {

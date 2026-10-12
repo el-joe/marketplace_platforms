@@ -40,12 +40,12 @@
                                         @csrf @method('PATCH')
                                         <div>
                                             <label for="mc-{{ $campaign->id }}-m" class="{{ $label }}">{{ __('commissions.columns.marketer_amount') }}</label>
-                                            <input id="mc-{{ $campaign->id }}-m" type="number" name="marketer_commission_amount" min="1" step="1" required value="{{ $campaign->marketer_commission_amount }}" class="{{ $input }} w-28">
+                                            <input id="mc-{{ $campaign->id }}-m" type="number" name="marketer_commission_amount" min="1" step="0.01" required value="{{ $campaign->marketer_commission_amount }}" class="{{ $input }} w-28">
                                             <p data-error-for="marketer_commission_amount" class="hidden text-xs text-red-700"></p>
                                         </div>
                                         <div>
                                             <label for="mc-{{ $campaign->id }}-p" class="{{ $label }}">{{ __('commissions.columns.platform_amount') }}</label>
-                                            <input id="mc-{{ $campaign->id }}-p" type="number" name="platform_commission_amount" min="0" step="1" required value="{{ $campaign->platform_commission_amount }}" class="{{ $input }} w-28">
+                                            <input id="mc-{{ $campaign->id }}-p" type="number" name="platform_commission_amount" min="0" step="0.01" required value="{{ $campaign->platform_commission_amount }}" class="{{ $input }} w-28">
                                             <p data-error-for="platform_commission_amount" class="hidden text-xs text-red-700"></p>
                                         </div>
                                         <button type="submit" class="{{ $btnPrimary }} py-1.5">{{ __('commissions.campaign_form.save_amounts') }}</button>

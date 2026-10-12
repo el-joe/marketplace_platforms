@@ -10,6 +10,7 @@ use App\Models\TravelCategory;
 use App\Services\CommissionRuleResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CommissionRuleResolverTest extends TestCase
@@ -32,12 +33,12 @@ class CommissionRuleResolverTest extends TestCase
     public function test_amounts(): void
     {
         $both = new MarketerCommissionRule(['commission_mode' => 'both', 'commission_rate' => 10, 'commission_flat_amount' => 5]);
-        $this->assertSame(15, $both->resolveAmount(100));
-        $this->assertSame(10 + 15, $both->resolveAmount(100, 3));
+        $this->assertEquals(15, $both->resolveAmount(100));
+        $this->assertEquals(10 + 15, $both->resolveAmount(100, 3));
         $fixed = new MarketerCommissionRule(['commission_mode' => 'fixed', 'commission_rate' => 50, 'commission_flat_amount' => 7]);
-        $this->assertSame(21, $fixed->resolveAmount(1000, 3));
+        $this->assertEquals(21, $fixed->resolveAmount(1000, 3));
         $pct = new MarketerCommissionRule(['commission_mode' => 'percentage', 'commission_rate' => 8, 'commission_flat_amount' => 9]);
-        $this->assertSame(8, $pct->resolveAmount(100, 5));
+        $this->assertEquals(8, $pct->resolveAmount(100, 5));
     }
 
     public function test_precedence_and_parent_chain(): void
@@ -60,7 +61,7 @@ class CommissionRuleResolverTest extends TestCase
 
         $c = $this->rule(['marketer_id' => $m->id, 'scope' => 'products', 'category_type' => Category::class, 'category_id' => $child->id, 'commission_rate' => 4]);
         $this->assertSame($c->id, $r->resolve($m->id, 'products', $child)->id);
-        $this->assertSame(4, $r->calculate($m->id, 'products', $child->id, 100));
+        $this->assertEquals(4, $r->calculate($m->id, 'products', $child->id, 100));
     }
 
     public function test_scopes_are_isolated_and_morph(): void
@@ -80,7 +81,7 @@ class CommissionRuleResolverTest extends TestCase
         $m = $this->marketer();
         $cat = Category::factory()->create();
         DB::table('marketer_category_commissions')->insert([
-            'id' => (string) \Illuminate\Support\Str::uuid(), 'marketer_id' => $m->id, 'category_id' => $cat->id,
+            'id' => (string) Str::uuid(), 'marketer_id' => $m->id, 'category_id' => $cat->id,
             'commission_mode' => 'both', 'commission_rate' => 10, 'commission_flat_amount' => 5,
             'created_at' => now(), 'updated_at' => now(),
         ]);
@@ -89,7 +90,7 @@ class CommissionRuleResolverTest extends TestCase
         $mig->up();
         $rules = MarketerCommissionRule::where('marketer_id', $m->id)->get();
         $this->assertCount(1, $rules);
-        $this->assertSame(15, $rules->first()->resolveAmount(100));
+        $this->assertEquals(15, $rules->first()->resolveAmount(100));
         $this->assertSame('products', $rules->first()->scope);
     }
 
@@ -100,7 +101,7 @@ class CommissionRuleResolverTest extends TestCase
         $b = Category::factory()->create();
         $this->rule(['marketer_id' => $m->id, 'scope' => 'products', 'commission_rate' => 10, 'excluded_category_ids' => [$a->id]]);
 
-        $r = new CommissionRuleResolver();
+        $r = new CommissionRuleResolver;
         $this->assertNull($r->resolve($m->id, 'products', $a));
         $this->assertNotNull($r->resolve($m->id, 'products', $b));
     }

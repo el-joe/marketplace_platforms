@@ -118,9 +118,9 @@ class PayoutCalculationService
         $results = [];
 
         foreach ($byCurrency as $currency => $subOrders) {
-            $grossSales = (int) $subOrders->sum('subtotal');
-            $commission = (int) $subOrders->sum('platform_commission');
-            $gatewayFee = (int) $subOrders->sum('gateway_fee');
+            $grossSales = round((float) $subOrders->sum('subtotal'), 2);
+            $commission = round((float) $subOrders->sum('platform_commission'), 2);
+            $gatewayFee = round((float) $subOrders->sum('gateway_fee'), 2);
             // vendor_payout is CheckoutPricingEngine's already-net figure per
             // sub-order: gross - vendor_coupon_cost - platform_commission -
             // gateway_fee - vendor_contribution_amount - vendor-owned
@@ -130,23 +130,23 @@ class PayoutCalculationService
             // delivery-fee gap the vendor covers, and vendor-campaign
             // marketer commission — all of which the old implementation
             // silently ignored.
-            $vendorPayoutTotal = (int) $subOrders->sum('vendor_payout');
+            $vendorPayoutTotal = round((float) $subOrders->sum('vendor_payout'), 2);
             $subOrderIds = $subOrders->pluck('id')->all();
 
             // Refunds where the vendor bears the cost — filter by matching currency.
-            $refundsDeducted = (int) Refund::whereIn('sub_order_id', $subOrderIds)
+            $refundsDeducted = round((float) Refund::whereIn('sub_order_id', $subOrderIds)
                 ->where('vendor_charged_back', true)
                 ->where('status', RefundStatus::Completed->value)
                 ->where('currency', $currency)
-                ->sum('amount');
+                ->sum('amount'), 2);
 
             // Chargebacks — payment_transactions.currency exists; filter by it.
-            $chargebacksDeducted = (int) PaymentTransaction::where('type', 'chargeback')
+            $chargebacksDeducted = round((float) PaymentTransaction::where('type', 'chargeback')
                 ->whereHas('order', fn ($q) => $q->whereHas('subOrders', fn ($s) => $s->whereIn('id', $subOrderIds)))
                 ->where('status', PaymentTransactionStatus::Succeeded->value)
                 ->where('currency', $currency)
                 ->whereBetween('processed_at', [$from->startOfDay(), $to->endOfDay()])
-                ->sum('amount');
+                ->sum('amount'), 2);
 
             // FBN storage + daily overage fees not yet settled, for this vendor/currency.
             $storageFees = FbnStorageFee::where('vendor_id', $vendor->id)
@@ -157,7 +157,7 @@ class PayoutCalculationService
                 ->where('status', FbnStorageFeeStatus::Pending)
                 ->where('currency', $currency)
                 ->get();
-            $storageFeesTotal = (int) $storageFees->sum('total_fee') + (int) $overageFees->sum('total_fee');
+            $storageFeesTotal = round((float) $storageFees->sum('total_fee') + (float) $overageFees->sum('total_fee'), 2);
 
             // Packaging supply requests delivered but not yet deducted from a payout.
             $packagingRequests = PackagingSupplyRequest::where('vendor_id', $vendor->id)
@@ -165,16 +165,16 @@ class PayoutCalculationService
                 ->whereNull('fee_deducted_at')
                 ->where('currency', $currency)
                 ->get();
-            $packagingTotal = (int) $packagingRequests->sum(fn ($r) => $r->total_cost + $r->delivery_fee);
+            $packagingTotal = round((float) $packagingRequests->sum(fn ($r) => $r->total_cost + $r->delivery_fee), 2);
 
             // Open vendor subscription invoices for this currency.
             $subscriptionInvoices = VendorSubscriptionInvoice::where('vendor_id', $vendor->id)
                 ->where('status', VendorSubscriptionInvoiceStatus::Open)
                 ->where('currency', $currency)
                 ->get();
-            $subscriptionTotal = (int) $subscriptionInvoices->sum('amount');
+            $subscriptionTotal = round((float) $subscriptionInvoices->sum('amount'), 2);
 
-            $netBeforeSamples = $vendorPayoutTotal - $refundsDeducted - $chargebacksDeducted - $storageFeesTotal - $packagingTotal - $subscriptionTotal;
+            $netBeforeSamples = round($vendorPayoutTotal - $refundsDeducted - $chargebacksDeducted - $storageFeesTotal - $packagingTotal - $subscriptionTotal, 2);
 
             // Promotion samples dispatched from stock: 0-priced lines that only
             // carry the admin sale commission (see CampaignSampleService).
@@ -184,24 +184,24 @@ class PayoutCalculationService
             // the week: deducted here against the weekly sales, once.
             [$influencerFees, $feeItems] = $this->selectInfluencerFees($vendor, $currency, $netBeforeSamples - $sampleCommission);
 
-            $netBeforeAds = $netBeforeSamples - $sampleCommission - $influencerFees;
+            $netBeforeAds = round($netBeforeSamples - $sampleCommission - $influencerFees, 2);
 
             [$adFees, $adChargeIds] = $this->selectAdCharges($vendor, $currency, $netBeforeAds);
 
-            $netAmount = $netBeforeAds - $adFees;
+            $netAmount = round($netBeforeAds - $adFees, 2);
 
             $results[$currency] = [
                 'vendor_id' => $vendor->id,
                 'period_start' => $from->toDateString(),
                 'period_end' => $to->toDateString(),
                 'gross_sales' => $grossSales,
-                'commission' => $commission + $sampleCommission,
+                'commission' => round($commission + $sampleCommission, 2),
                 'gateway_fee_deducted' => $gatewayFee,
                 'refunds_deducted' => $refundsDeducted,
                 'chargebacks_deducted' => $chargebacksDeducted,
                 'storage_fees' => $storageFeesTotal,
                 'ad_fees' => $adFees,
-                'other_adjustments' => -($packagingTotal + $subscriptionTotal + $influencerFees),
+                'other_adjustments' => -round($packagingTotal + $subscriptionTotal + $influencerFees, 2),
                 'influencer_fees' => $influencerFees,
                 'influencer_fee_items' => $feeItems,
                 'net_amount' => max(0, $netAmount),
@@ -225,20 +225,20 @@ class PayoutCalculationService
      * is unique, so a sample can never be charged twice), oldest first, as far as
      * the statement can absorb. What does not fit rolls forward to the next run.
      *
-     * @return array{0: int, 1: array<int, array{item: MarketerCampaignSample, commission_amount: int}>}
+     * @return array{0: float, 1: array<int, array{item: MarketerCampaignSample, commission_amount: float}>}
      */
-    private function selectSampleCommissions(Vendor $vendor, string $currency, int $netBefore): array
+    private function selectSampleCommissions(Vendor $vendor, string $currency, float $netBefore): array
     {
-        $cap = max(0, $netBefore);
-        $sum = 0;
+        $cap = max(0.0, $netBefore);
+        $sum = 0.0;
         $items = [];
 
         foreach (app(CampaignSampleService::class)->unsettledFor($vendor, $currency) as $sample) {
-            $amount = (int) $sample->commission_amount;
-            if ($sum + $amount > $cap) {
+            $amount = (float) $sample->commission_amount;
+            if (round($sum + $amount, 2) > $cap) {
                 break;
             }
-            $sum += $amount;
+            $sum = round($sum + $amount, 2);
             $items[] = ['item' => $sample, 'commission_amount' => $amount];
         }
 
@@ -251,12 +251,12 @@ class PayoutCalculationService
      * unique). Oldest first, as far as the statement can absorb; the rest rolls
      * forward. The job re-checks each row under a lock before writing the line.
      *
-     * @return array{0: int, 1: array<int, array{item: MarketerCampaignInvitation, fee: int, vat: int}>}
+     * @return array{0: float, 1: array<int, array{item: MarketerCampaignInvitation, fee: float, vat: float}>}
      */
-    private function selectInfluencerFees(Vendor $vendor, string $currency, int $netBefore): array
+    private function selectInfluencerFees(Vendor $vendor, string $currency, float $netBefore): array
     {
-        $cap = max(0, $netBefore);
-        $sum = 0;
+        $cap = max(0.0, $netBefore);
+        $sum = 0.0;
         $items = [];
 
         $invitations = MarketerCampaignInvitation::query()
@@ -274,11 +274,11 @@ class PayoutCalculationService
 
         foreach ($invitations as $invitation) {
             $total = $invitation->platformFeeTotal();
-            if ($sum + $total > $cap) {
+            if (round($sum + $total, 2) > $cap) {
                 break;
             }
-            $sum += $total;
-            $items[] = ['item' => $invitation, 'fee' => (int) $invitation->platform_fee_amount, 'vat' => (int) $invitation->platform_fee_vat_amount];
+            $sum = round($sum + $total, 2);
+            $items[] = ['item' => $invitation, 'fee' => (float) $invitation->platform_fee_amount, 'vat' => (float) $invitation->platform_fee_vat_amount];
         }
 
         return [$sum, $items];
@@ -290,9 +290,9 @@ class PayoutCalculationService
      * stopping at the first positive row that would push the running sum above
      * max(0, $netBeforeAds). Rows not taken stay unsettled and roll forward.
      *
-     * @return array{0: int, 1: array<int, string>} [ad_fees, charge_ids]
+     * @return array{0: float, 1: array<int, string>} [ad_fees, charge_ids]
      */
-    private function selectAdCharges(Vendor $vendor, string $currency, int $netBeforeAds): array
+    private function selectAdCharges(Vendor $vendor, string $currency, float $netBeforeAds): array
     {
         $charges = $this->adBillingService->unsettledForPayout($vendor, $currency)
             ->sortBy('created_at')

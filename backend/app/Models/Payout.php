@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\PayoutStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,9 +16,18 @@ class Payout extends Model
     {
         return [
             'period_start' => 'date',
-            'period_end'   => 'date',
+            'period_end' => 'date',
             'processed_at' => 'datetime',
-            'status'       => PayoutStatus::class,
+            'status' => PayoutStatus::class,
+            'gross_sales' => DecimalMoney::class,
+            'commission' => DecimalMoney::class,
+            'gateway_fee_deducted' => DecimalMoney::class,
+            'refunds_deducted' => DecimalMoney::class,
+            'chargebacks_deducted' => DecimalMoney::class,
+            'storage_fees' => DecimalMoney::class,
+            'ad_fees' => DecimalMoney::class,
+            'other_adjustments' => DecimalMoney::class,
+            'net_amount' => DecimalMoney::class,
         ];
     }
 

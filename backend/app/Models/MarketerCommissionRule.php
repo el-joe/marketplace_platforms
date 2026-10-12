@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,8 +44,8 @@ class MarketerCommissionRule extends Model
 
     protected $casts = [
         'commission_rate' => 'decimal:2',
-        'commission_flat_amount' => 'integer',
-        'commission_min_amount' => 'integer',
+        'commission_flat_amount' => DecimalMoney::class,
+        'commission_min_amount' => DecimalMoney::class,
         'excluded_category_ids' => 'array',
     ];
 
@@ -83,26 +84,27 @@ class MarketerCommissionRule extends Model
 
     /**
      * fixed = flat*qty; percentage = base*rate%; both = sum. Percentage is
-     * floored, or rounded when $round is true. Flat is per unit. An optional
-     * commission_min_amount is a per-unit floor on the final amount.
+     * floored to 2 decimals, or rounded to 2 decimals when $round is true.
+     * Flat is per unit. An optional commission_min_amount is a per-unit floor
+     * on the final amount.
      */
-    public function resolveAmount(int|string $base, int $quantity = 1, bool $round = false): int
+    public function resolveAmount(int|float|string $base, int $quantity = 1, bool $round = false): float
     {
         $mode = $this->commission_mode ?: 'percentage';
-        $percent = 0;
-        $flat = 0;
+        $percent = 0.0;
+        $flat = 0.0;
 
         if (in_array($mode, ['percentage', 'both'], true) && (float) $this->commission_rate > 0) {
             $raw = bcdiv(bcmul((string) $base, (string) $this->commission_rate, 4), '100', 4);
-            $percent = $round ? (int) round((float) $raw) : (int) floor((float) $raw);
+            $percent = $round ? round((float) $raw, 2) : floor(round((float) $raw * 100, 4)) / 100;
         }
         if (in_array($mode, ['fixed', 'both'], true)) {
-            $flat = (int) ($this->commission_flat_amount ?? 0) * max(1, $quantity);
+            $flat = (float) ($this->commission_flat_amount ?? 0) * max(1, $quantity);
         }
 
-        $calculated = $percent + $flat;
+        $calculated = round($percent + $flat, 2);
 
-        $minCommission = (int) ($this->commission_min_amount ?? 0);
+        $minCommission = (float) ($this->commission_min_amount ?? 0);
         if ($minCommission > 0) {
             $calculated = max($calculated, $minCommission * max(1, $quantity));
         }

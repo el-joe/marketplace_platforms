@@ -11,9 +11,9 @@
         {{-- Balance card --}}
         <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white">
             <p class="text-sm font-medium text-gray-300 mb-1">{{ __('marketer.finance.available_balance') }}</p>
-            <p class="text-4xl font-black">{{ number_format($wallet->balance) }} <span class="text-lg font-semibold text-yellow-400">{{ $wallet->currency }}</span></p>
+            <p class="text-4xl font-black">{{ \App\Support\Money::format($wallet->balance) }} <span class="text-lg font-semibold text-yellow-400">{{ $wallet->currency }}</span></p>
             @if($wallet->pending_balance > 0)
-                <p class="text-sm text-gray-300 mt-2">+ {{ number_format($wallet->pending_balance) }} {{ $wallet->currency }} {{ __('marketer.finance.pending_withdrawal_hint') }}</p>
+                <p class="text-sm text-gray-300 mt-2">+ {{ \App\Support\Money::format($wallet->pending_balance) }} {{ $wallet->currency }} {{ __('marketer.finance.pending_withdrawal_hint') }}</p>
             @endif
             @if($wallet->is_frozen)
                 <div class="mt-3 inline-flex items-center gap-1.5 bg-red-500/30 text-red-100 text-xs font-medium px-3 py-1 rounded-full">
@@ -26,10 +26,10 @@
         <div class="bg-white rounded-xl border p-5" data-wallet-statement>
             <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.statement_title') }}</h2>
             <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ number_format($statementTotals['gross']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($statementTotals['cut']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($statementTotals['vat']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ number_format($statementTotals['net']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ \App\Support\Money::format($statementTotals['gross']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($statementTotals['cut']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($statementTotals['vat']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ \App\Support\Money::format($statementTotals['net']) }}</dd></div>
             </dl>
             <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.withdraw_net_hint') }}</p>
         </div>
@@ -39,11 +39,11 @@
         <div class="bg-white rounded-xl border p-5" data-wallet-sales>
             <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.sales_title') }}</h2>
             <dl class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ number_format($salesTotals['gross']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.sales_commission_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($salesTotals['commission']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($salesTotals['vat']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.sales_peer_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($salesTotals['peer']) }}</dd></div>
-                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ number_format($salesTotals['net']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ \App\Support\Money::format($salesTotals['gross']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.sales_commission_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($salesTotals['commission']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($salesTotals['vat']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.sales_peer_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($salesTotals['peer']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ \App\Support\Money::format($salesTotals['net']) }}</dd></div>
             </dl>
             <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.sales_hint') }}</p>
         </div>
@@ -96,7 +96,7 @@
                     @endphp
                     <div class="px-5 py-3 flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{ number_format($wr->amount) }} {{ $wr->currency }}</p>
+                            <p class="text-sm font-medium text-gray-900">{{ \App\Support\Money::format($wr->amount) }} {{ $wr->currency }}</p>
                             <p class="text-xs text-gray-500">{{ $wr->bank_name }} · {{ $wr->created_at->format('d M Y') }}</p>
                         </div>
                         <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $colors[$wr->status->value] ?? '' }}">
@@ -118,7 +118,7 @@
                         <p class="text-xs text-gray-400">{{ $tx->created_at->format('d M Y H:i') }}</p>
                     </div>
                     <p class="text-sm font-bold {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? 'text-green-600' : 'text-red-500' }}">
-                        {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? '+' : '−' }}{{ number_format($tx->amount) }}
+                        {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? '+' : '−' }}{{ \App\Support\Money::format($tx->amount) }}
                     </p>
                 </div>
             @empty

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,7 +26,15 @@ class MarketerCampaignConversion extends Model
         'referral_clicked_at' => 'datetime',
         'paid_at' => 'datetime',
         'commissioned' => 'boolean',
-        'flash_sale_bonus_amount' => 'integer',
+        'flash_sale_bonus_amount' => DecimalMoney::class,
+        'commission_amount' => DecimalMoney::class,
+        'platform_commission_amount' => DecimalMoney::class,
+        'gross_commission_amount' => DecimalMoney::class,
+        'platform_cut_base_amount' => DecimalMoney::class,
+        'platform_cut_discount_amount' => DecimalMoney::class,
+        'platform_cut_amount' => DecimalMoney::class,
+        'platform_cut_vat_amount' => DecimalMoney::class,
+        'net_commission_amount' => DecimalMoney::class,
         'approved_at' => 'datetime',
         'reversed_at' => 'datetime',
         'wallet_credited_at' => 'datetime',
@@ -33,9 +42,9 @@ class MarketerCampaignConversion extends Model
     ];
 
     /** Total commission this conversion is worth (base rule + any flash-sale bonus). */
-    public function getTotalCommissionAttribute(): int
+    public function getTotalCommissionAttribute(): float
     {
-        return (int) $this->commission_amount + (int) ($this->flash_sale_bonus_amount ?? 0);
+        return round((float) $this->commission_amount + (float) ($this->flash_sale_bonus_amount ?? 0), 2);
     }
 
     public function campaign(): BelongsTo

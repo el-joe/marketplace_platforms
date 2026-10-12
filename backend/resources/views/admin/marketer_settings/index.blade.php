@@ -49,7 +49,7 @@
                                 <input type="hidden" name="country_id" value="{{ $country->id }}">
                                 <td class="px-3 py-2 text-gray-900">{{ $country->name_ar }}</td>
                                 <td class="px-3 py-2">
-                                    <input type="number" min="0" step="1" name="fee_per_influencer"
+                                    <input type="number" min="0" step="0.01" name="fee_per_influencer"
                                         value="{{ old('fee_per_influencer', $fee->fee_per_influencer ?? 0) }}"
                                         class="w-24 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
                                 </td>
@@ -134,7 +134,7 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_settings.penalty_amount') }}</label>
-                <input type="number" min="0" name="penalty_amount" value="0" class="w-28 rounded-md border-gray-300 text-sm">
+                <input type="number" step="0.01" min="0" name="penalty_amount" value="0" class="w-28 rounded-md border-gray-300 text-sm">
             </div>
             <button type="submit" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-xs font-medium text-white hover:bg-primary-700">{{ __('common.save') }}</button>
         </form>

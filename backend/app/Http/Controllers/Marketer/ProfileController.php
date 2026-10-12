@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\City;
 use App\Models\File;
+use App\Models\Marketer;
 use App\Models\MarketerProfile;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\QrCode;
@@ -13,11 +16,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    private function marketer(): \App\Models\Marketer
+    private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
     }
@@ -25,16 +29,16 @@ class ProfileController extends Controller
     public function show(): View
     {
         $marketer = $this->marketer();
-        $profile  = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
 
         if (! $profile->profile_slug) {
             $profile->update([
-                'profile_slug' => Str::slug($marketer->name) . '-' . Str::lower(Str::random(6)),
+                'profile_slug' => Str::slug($marketer->name).'-'.Str::lower(Str::random(6)),
             ]);
         }
 
-        $categories = \App\Models\Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
-        $cities     = \App\Models\City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
+        $cities = City::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
         return view('marketer.profile', compact('marketer', 'profile', 'categories', 'cities'));
     }
@@ -42,25 +46,25 @@ class ProfileController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
-            'bio_ar'          => 'nullable|string|max:1000',
-            'bio_en'          => 'nullable|string|max:1000',
-            'specialty_ar'    => 'nullable|string|max:150',
-            'specialty_en'    => 'nullable|string|max:150',
-            'video_url'       => 'nullable|url|max:500',
-            'social_links'    => 'nullable|array',
-            'social_links.*'  => 'nullable|url|max:500',
+            'bio_ar' => 'nullable|string|max:1000',
+            'bio_en' => 'nullable|string|max:1000',
+            'specialty_ar' => 'nullable|string|max:150',
+            'specialty_en' => 'nullable|string|max:150',
+            'video_url' => 'nullable|url|max:500',
+            'social_links' => 'nullable|array',
+            'social_links.*' => 'nullable|url|max:500',
             'contact_details' => 'nullable|array',
             'contact_details.*' => 'nullable|string|max:255',
             'whatsapp_for_campaigns' => 'nullable|string|max:30',
-            'avatar'          => 'nullable|image|max:5120',
-            'banner'          => 'nullable|image|max:5120',
-            'broker_category_id'       => 'nullable|uuid|exists:categories,id',
-            'broker_city_id'           => 'nullable|uuid|exists:cities,id',
+            'avatar' => 'nullable|image|max:5120',
+            'banner' => 'nullable|image|max:5120',
+            'broker_category_id' => 'nullable|uuid|exists:categories,id',
+            'broker_city_id' => 'nullable|uuid|exists:cities,id',
             'broker_serves_all_cities' => 'nullable|boolean',
         ]);
 
         $marketer = $this->marketer();
-        $profile  = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
 
         // Update WhatsApp on the marketer row itself
         $marketer->update([
@@ -81,9 +85,9 @@ class ProfileController extends Controller
         if ($marketer->isAffiliate()) {
             $serveAll = $request->boolean('broker_serves_all_cities');
             $profile->fill([
-                'broker_category_id'       => $request->input('broker_category_id') ?: null,
+                'broker_category_id' => $request->input('broker_category_id') ?: null,
                 'broker_serves_all_cities' => $serveAll,
-                'broker_city_id'           => $serveAll ? null : ($request->input('broker_city_id') ?: null),
+                'broker_city_id' => $serveAll ? null : ($request->input('broker_city_id') ?: null),
             ]);
         }
         $profile->save();
@@ -105,17 +109,17 @@ class ProfileController extends Controller
     public function updateAdPrice(Request $request): RedirectResponse
     {
         $marketer = $this->marketer();
-        $profile  = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
+        $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
 
         abort_unless($profile->can_self_edit_ad_price, 403, 'غير مسموح لك بتعديل سعر الإعلان.');
 
         $request->validate([
-            'ad_price'          => ['required', 'integer', 'min:0'],
-            'ad_price_currency' => ['nullable', 'string', 'size:3', \Illuminate\Validation\Rule::exists('currencies', 'code')],
+            'ad_price' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'ad_price_currency' => ['nullable', 'string', 'size:3', Rule::exists('currencies', 'code')],
         ]);
 
         $profile->update([
-            'ad_price'          => $request->integer('ad_price'),
+            'ad_price' => round((float) $request->input('ad_price'), 2),
             'ad_price_currency' => $request->input('ad_price_currency', $profile->ad_price_currency),
         ]);
 
@@ -125,30 +129,30 @@ class ProfileController extends Controller
     private function storeProfileImage(Request $request, string $field, string $directory, MarketerProfile $profile): File
     {
         $upload = $request->file($field);
-        $path   = $upload->store($directory . '/' . $profile->marketer_id, 'public');
+        $path = $upload->store($directory.'/'.$profile->marketer_id, 'public');
 
         return File::create([
-            'key'          => Str::uuid(),
-            'path'         => $path,
+            'key' => Str::uuid(),
+            'path' => $path,
             'storage_type' => 'public',
-            'file_type'    => 'image',
-            'mime_type'    => $upload->getClientMimeType(),
-            'extension'    => $upload->getClientOriginalExtension(),
-            'size'         => $upload->getSize(),
-            'model_type'   => MarketerProfile::class,
-            'model_id'     => $profile->id,
+            'file_type' => 'image',
+            'mime_type' => $upload->getClientMimeType(),
+            'extension' => $upload->getClientOriginalExtension(),
+            'size' => $upload->getSize(),
+            'model_type' => MarketerProfile::class,
+            'model_id' => $profile->id,
         ]);
     }
 
     private function generateQrCode(MarketerProfile $profile): void
     {
         // Points to the customer-facing marketer profile page (handled by Next.js frontend)
-        $url = rtrim(config('app.frontend_url', config('app.url')), '/') . '/marketer/' . $profile->profile_slug;
+        $url = rtrim(config('app.frontend_url', config('app.url')), '/').'/marketer/'.$profile->profile_slug;
 
-        $qr     = new QrCode(data: $url, encoding: new Encoding('UTF-8'), size: 300, margin: 10);
-        $result = (new PngWriter())->write($qr);
+        $qr = new QrCode(data: $url, encoding: new Encoding('UTF-8'), size: 300, margin: 10);
+        $result = (new PngWriter)->write($qr);
 
-        $path = 'marketer-profile-qr/' . $profile->marketer_id . '.png';
+        $path = 'marketer-profile-qr/'.$profile->marketer_id.'.png';
         Storage::disk('public')->put($path, $result->getString());
 
         $profile->update(['qr_code_path' => $path]);

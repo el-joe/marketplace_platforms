@@ -50,11 +50,11 @@
             </div>
             <div>
                 <label for="mr-flat" class="{{ $label }}">{{ __('commissions.marketer_form.flat') }}</label>
-                <input id="mr-flat" type="number" name="commission_flat_amount" min="0" step="1" value="{{ $val('commission_flat_amount') }}" class="{{ $input }}">
+                <input id="mr-flat" type="number" name="commission_flat_amount" min="0" step="0.01" value="{{ $val('commission_flat_amount') }}" class="{{ $input }}">
             </div>
             <div>
                 <label for="mr-min" class="{{ $label }}">{{ __('commissions.marketer_form.min') }}</label>
-                <input id="mr-min" type="number" name="commission_min_amount" min="0" step="1" value="{{ $val('commission_min_amount') }}" class="{{ $input }}">
+                <input id="mr-min" type="number" name="commission_min_amount" min="0" step="0.01" value="{{ $val('commission_min_amount') }}" class="{{ $input }}">
             </div>
         </div>
         <p class="mt-3 text-xs text-gray-500">{{ __('commissions.marketer_form.mode_help') }}</p>

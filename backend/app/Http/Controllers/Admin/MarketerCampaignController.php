@@ -291,7 +291,7 @@ class MarketerCampaignController extends Controller
             'country_id' => 'required|uuid|exists:countries,id',
             'currency' => 'required|string|size:3|exists:currencies,code',
             'commission_type' => 'required|in:fixed,percentage,last_click,tiered',
-            'max_commission_budget' => 'required|integer|min:0',
+            'max_commission_budget' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'title' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
             'product_category_selection_mode' => 'nullable|in:all,include,exclude',
@@ -379,8 +379,8 @@ class MarketerCampaignController extends Controller
     public function updateCommission(Request $request, MarketerCampaign $marketerCampaign): JsonResponse
     {
         $request->validate([
-            'marketer_commission_amount' => ['required', 'integer', 'min:1'],
-            'platform_commission_amount' => ['required', 'integer', 'min:0'],
+            'marketer_commission_amount' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
+            'platform_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
         ]);
 
         abort_unless($marketerCampaign->status === 'pending_admin', 422, 'Campaign is not pending admin review');
@@ -464,8 +464,8 @@ class MarketerCampaignController extends Controller
         abort_unless(auth('admin')->user()->can('marketer_campaigns.approve'), 403);
 
         $request->validate([
-            'marketer_commission_amount' => ['required', 'integer', 'min:1'],
-            'platform_commission_amount' => ['required', 'integer', 'min:0'],
+            'marketer_commission_amount' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
+            'platform_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
         ]);
 
         abort_unless($marketerCampaign->status === 'marketer_requested', 422,

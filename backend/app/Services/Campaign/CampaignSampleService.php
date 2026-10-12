@@ -278,17 +278,17 @@ class CampaignSampleService
      * exactly as a normal checkout line would be charged. Platform-owned
      * (admin) listings do not pay commission to themselves.
      */
-    public function commissionFor(VendorListing|AdminListing $listing, MarketerCampaign $campaign, int $qty): int
+    public function commissionFor(VendorListing|AdminListing $listing, MarketerCampaign $campaign, int $qty): float
     {
         if (! $listing instanceof VendorListing) {
-            return 0;
+            return 0.0;
         }
 
         $country = $campaign->country_id ? Country::find($campaign->country_id) : null;
         $result = app(CheckoutCalculationService::class)
-            ->calculateCommission($listing, $qty, (int) $listing->price, $country);
+            ->calculateCommission($listing, $qty, (float) $listing->price, $country);
 
-        return max(0, (int) $result['commission_amount']);
+        return max(0.0, round((float) $result['commission_amount'], 2));
     }
 
     /**

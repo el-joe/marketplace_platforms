@@ -15,6 +15,7 @@ use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
+use App\Support\Money;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -124,7 +125,7 @@ class MarketerCampaignController extends Controller
         // commission_type / tiered_rules / amounts from the client are ignored.
         $request->validate([
             'vendor_listing_id' => ['required', 'uuid', 'exists:vendor_listings,id'],
-            'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
+            'max_commission_budget' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'marketer_ids' => ['nullable', 'array'],
             'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
             'open_to_affiliates' => ['nullable', 'boolean'],
@@ -178,7 +179,7 @@ class MarketerCampaignController extends Controller
                 CampaignOwner::vendor($vendor),
                 CampaignSource::vendorListing($listing->id),
                 array_merge(
-                    ['max_commission_budget' => $request->filled('max_commission_budget') ? (int) $request->input('max_commission_budget') : 0],
+                    ['max_commission_budget' => $request->filled('max_commission_budget') ? round((float) $request->input('max_commission_budget'), 2) : 0.0],
                     [
                         'commission_type' => 'fixed',
                         'country_id' => $listing->country_id,
@@ -197,7 +198,7 @@ class MarketerCampaignController extends Controller
         return redirect()
             ->to(route('partner.listings.show', $listing->id).'#marketer_campaign')
             ->with('success', $quote['total_fee'] > 0
-                ? __('partner.marketer_campaigns.created_with_fee', ['fee' => number_format($quote['total_fee_with_vat']), 'currency' => $quote['currency']])
+                ? __('partner.marketer_campaigns.created_with_fee', ['fee' => Money::format($quote['total_fee_with_vat']), 'currency' => $quote['currency']])
                 : 'تم إنشاء حملة الماركتر بنجاح.');
     }
 
@@ -274,7 +275,7 @@ class MarketerCampaignController extends Controller
         $data = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
+            'max_commission_budget' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'selected_ad_types' => ['nullable', 'array'],
             'selected_ad_types.*' => ['string', 'in:story,post,video'],
             'vendor_ad_notes' => ['nullable', 'string', 'max:2000'],
@@ -458,8 +459,8 @@ class MarketerCampaignController extends Controller
     public function approveRequest(Request $request, MarketerCampaign $campaign)
     {
         $request->validate([
-            'marketer_commission_amount' => ['required', 'integer', 'min:1'],
-            'platform_commission_amount' => ['required', 'integer', 'min:0'],
+            'marketer_commission_amount' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
+            'platform_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
         ]);
 
         abort_unless($campaign->status === 'marketer_requested', 422);

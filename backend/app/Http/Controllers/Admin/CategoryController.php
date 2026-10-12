@@ -15,6 +15,7 @@ use App\Models\File;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Slug;
 use App\Services\CategoryService;
+use App\Services\Shared\FixedCommissionService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -64,6 +65,8 @@ class CategoryController extends Controller
             ],
             'roots' => $roots,
             'defaultShippingByCategory' => $defaultShippingByCategory,
+            'fixedCommissionPct' => app(FixedCommissionService::class)->percentage(),
+            'fixedCommissionCountries' => Country::orderBy('name_en')->get(['id', 'name_en', 'iso_code_2', 'currency_code', 'fixed_commission_amount']),
         ]);
     }
 
@@ -472,24 +475,26 @@ class CategoryController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Bulk Commission Update
+    // Global Fixed Commission (one % for all + a flat amount per country)
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function bulkCommission(Request $request): JsonResponse
+    public function updateFixedCommission(Request $request, FixedCommissionService $fixedCommission): JsonResponse
     {
-        $request->validate([
-            'ids' => 'required|array|min:1',
-            'ids.*' => 'string',
-            'commission_rate' => 'required|numeric|between:0,100',
+        $data = $request->validate([
+            'fixed_commission_pct' => ['required', 'numeric', 'between:0,100'],
+            'amounts' => ['required', 'array'],
+            'amounts.*' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,4'],
         ]);
 
-        $updated = $this->service->bulkUpdateCommission(
-            $request->input('ids'),
-            (float) $request->commission_rate,
+        $validCountryIds = Country::whereIn('id', array_keys($data['amounts']))->pluck('id')->all();
+
+        $fixedCommission->update(
+            (float) $data['fixed_commission_pct'],
+            array_intersect_key($data['amounts'], array_flip($validCountryIds)),
             auth('admin')->id()
         );
 
-        return response()->json(['success' => true, 'message' => trans_choice('admin.categories.bulk_commission_updated', $updated)]);
+        return response()->json(['success' => true, 'message' => __('admin.categories.fixed_commission_saved')]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -521,16 +526,16 @@ class CategoryController extends Controller
         abort_unless(auth('admin')->user()->can('marketer_commission_settings.edit'), 403);
         $request->validate([
             'country_id' => 'required|uuid|exists:countries,id',
-            'influencer_commission_amount' => 'required|integer|min:0',
-            'affiliate_commission_amount' => 'required|integer|min:0',
+            'influencer_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'affiliate_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'currency' => 'required|string|size:3',
         ]);
 
         MarketerCommissionCountrySetting::updateOrCreate(
             ['category_id' => $category->id, 'country_id' => $request->country_id],
             [
-                'influencer_commission_amount' => $request->integer('influencer_commission_amount'),
-                'affiliate_commission_amount' => $request->integer('affiliate_commission_amount'),
+                'influencer_commission_amount' => round((float) $request->input('influencer_commission_amount'), 2),
+                'affiliate_commission_amount' => round((float) $request->input('affiliate_commission_amount'), 2),
                 'currency' => $request->currency,
                 'updated_by_admin_id' => auth()->guard('admin')->id(),
             ]

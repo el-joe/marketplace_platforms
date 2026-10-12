@@ -363,29 +363,29 @@ class MarketerCampaignService
      * platform rule applied on top. Zero is allowed: conversion time then falls back to the
      * promoter's own category rule (MarketerCommissionRateService).
      *
-     * @return array{marketer_commission_amount: int, platform_commission_amount: int}
+     * @return array{marketer_commission_amount: float, platform_commission_amount: float}
      */
     private function resolvePeerCommission(MarketerCampaign $campaign, MarketerListing $listing, Marketer $promoter): array
     {
         $category = $listing->productVariant?->product?->category;
         if (! $category) {
-            return ['marketer_commission_amount' => 0, 'platform_commission_amount' => 0];
+            return ['marketer_commission_amount' => 0.0, 'platform_commission_amount' => 0.0];
         }
 
         $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
             ->where('category_id', $category->id)
             ->first();
 
-        $perUnit = (int) ($promoter->isInfluencer()
+        $perUnit = (float) ($promoter->isInfluencer()
             ? $countrySetting?->influencer_commission_amount
             : $countrySetting?->affiliate_commission_amount);
 
-        $platform = 0;
+        $platform = 0.0;
         if ($perUnit > 0) {
             $rule = app(CommissionRuleResolver::class)->resolve(null, 'products', $category);
             $platform = $rule
                 ? $this->computeCommissionAmount($rule->commission_mode, $rule->commission_flat_amount, (float) $rule->commission_rate, $perUnit)
-                : 0;
+                : 0.0;
         }
 
         return ['marketer_commission_amount' => $perUnit, 'platform_commission_amount' => $platform];
@@ -774,7 +774,7 @@ class MarketerCampaignService
     }
 
     /**
-     * @return array{marketer_commission_amount: int, platform_commission_amount: int}|null
+     * @return array{marketer_commission_amount: float, platform_commission_amount: float}|null
      */
     private function resolveDefaultCommission(MarketerCampaign $campaign): ?array
     {
@@ -796,13 +796,13 @@ class MarketerCampaignService
             ->where('category_id', $category->id)
             ->first();
 
-        $marketerCommission = 0;
+        $marketerCommission = 0.0;
         if ($countrySetting) {
             // Both marketer types default to the affiliate rate here — the
             // campaign is shared across whichever marketers accept the
             // invitation, and per-marketer-type differences are already
             // applied per-conversion in LastClickAttributionService.
-            $marketerCommission = (int) $countrySetting->affiliate_commission_amount;
+            $marketerCommission = (float) $countrySetting->affiliate_commission_amount;
         }
 
         if ($marketerCommission <= 0) {
@@ -816,7 +816,7 @@ class MarketerCampaignService
                 (float) $categoryRate->commission_rate,
                 $marketerCommission
             )
-            : 0;
+            : 0.0;
 
         return [
             'marketer_commission_amount' => $marketerCommission,
@@ -829,7 +829,7 @@ class MarketerCampaignService
      * campaign, using the classified listing's own category tree and the
      * marketer-agnostic OpenMarketCategoryCommission rules.
      *
-     * @return array{marketer_commission_amount: int, platform_commission_amount: int}|null
+     * @return array{marketer_commission_amount: float, platform_commission_amount: float}|null
      */
     private function resolveDefaultOpenMarketCommission(MarketerCampaign $campaign): ?array
     {
@@ -846,9 +846,9 @@ class MarketerCampaignService
             ->where('category_id', $category->id)
             ->first();
 
-        $marketerCommission = 0;
+        $marketerCommission = 0.0;
         if ($countrySetting) {
-            $marketerCommission = (int) $countrySetting->affiliate_commission_amount;
+            $marketerCommission = (float) $countrySetting->affiliate_commission_amount;
         }
 
         if ($marketerCommission <= 0) {
@@ -862,7 +862,7 @@ class MarketerCampaignService
                 (float) $categoryRate->commission_rate,
                 $marketerCommission
             )
-            : 0;
+            : 0.0;
 
         return [
             'marketer_commission_amount' => $marketerCommission,
@@ -879,7 +879,7 @@ class MarketerCampaignService
      *
      * @param  string  $mode  fixed | percentage | both
      */
-    private function computeCommissionAmount(string $mode, ?int $flat, float $rate, int $base): int
+    private function computeCommissionAmount(string $mode, int|float|string|null $flat, float $rate, int|float|string $base): float
     {
         return (new MarketerCommissionRule([
             'commission_mode' => $mode,
@@ -1043,7 +1043,7 @@ class MarketerCampaignService
      */
     public function collectInfluencerFee(MarketerCampaignInvitation $invitation, bool $throwWhenShort = false): bool
     {
-        if ($invitation->platform_fee_status !== 'pending' || (int) $invitation->platform_fee_amount <= 0) {
+        if ($invitation->platform_fee_status !== 'pending' || (float) $invitation->platform_fee_amount <= 0) {
             return false;
         }
 
@@ -1118,9 +1118,9 @@ class MarketerCampaignService
 
             // Platform fee applies per accepted invitation, influencer type only. Affiliate is always free.
             // Payer is configurable: the influencer's own wallet (default) or the seller's wallet.
-            $feeAmount = 0;
+            $feeAmount = 0.0;
             $feeVatRate = 0.0;
-            $feeVat = 0;
+            $feeVat = 0.0;
             $feeStatus = 'not_applicable';
             $feePayer = null;
 
@@ -1129,13 +1129,13 @@ class MarketerCampaignService
                 $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
                     ->first();
 
-                $feeAmount = $feeSetting?->fee_per_influencer ?? 0;
+                $feeAmount = (float) ($feeSetting?->fee_per_influencer ?? 0);
                 $feeStatus = $feeAmount > 0 ? 'pending' : 'waived';
 
                 // VAT of the campaign country (countries.vat_rate), snapshotted on the invitation.
                 $quoteService = app(MarketerCampaignQuoteService::class);
                 $feeVatRate = $feeAmount > 0 ? $quoteService->vatRate($campaign->country_id) : 0.0;
-                $feeVat = $quoteService->vatOn((int) $feeAmount, $feeVatRate);
+                $feeVat = $quoteService->vatOn($feeAmount, $feeVatRate);
 
                 $feePayer = setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' && $campaign->vendor_id
                     ? 'vendor'

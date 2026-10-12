@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,14 +27,14 @@ class MarketerSaleSettlement extends Model
     ];
 
     protected $casts = [
-        'gross_amount' => 'integer',
-        'coupon_cost_amount' => 'integer',
-        'platform_commission_amount' => 'integer',
-        'commission_vat_amount' => 'integer',
-        'gateway_fee_amount' => 'integer',
-        'peer_commission_amount' => 'integer',
-        'other_deduction_amount' => 'integer',
-        'net_amount' => 'integer',
+        'gross_amount' => DecimalMoney::class,
+        'coupon_cost_amount' => DecimalMoney::class,
+        'platform_commission_amount' => DecimalMoney::class,
+        'commission_vat_amount' => DecimalMoney::class,
+        'gateway_fee_amount' => DecimalMoney::class,
+        'peer_commission_amount' => DecimalMoney::class,
+        'other_deduction_amount' => DecimalMoney::class,
+        'net_amount' => DecimalMoney::class,
         'commission_vat_rate' => 'decimal:2',
         'credited_at' => 'datetime',
         'released_at' => 'datetime',

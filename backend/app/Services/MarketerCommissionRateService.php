@@ -40,8 +40,8 @@ class MarketerCommissionRateService
      * (open-market ads use quantity 1). "both" = percentage of base + flat.
      * Accepts a decimal string so fractional cents aren't truncated first.
      */
-    public function calculateCommissionAmount(Marketer|string $marketer, ?string $categoryId, int|string $baseAmount, int $quantity = 1, string $scope = 'products'): int
+    public function calculateCommissionAmount(Marketer|string $marketer, ?string $categoryId, int|float|string $baseAmount, int $quantity = 1, string $scope = 'products'): float
     {
-        return $this->resolveRule($marketer, $categoryId, $scope)?->resolveAmount($baseAmount, $quantity) ?? 0;
+        return $this->resolveRule($marketer, $categoryId, $scope)?->resolveAmount($baseAmount, $quantity) ?? 0.0;
     }
 }

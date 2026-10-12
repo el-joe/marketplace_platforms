@@ -18,6 +18,7 @@ use App\Models\ShippingRate;
 use App\Models\VendorListing;
 use App\Models\WarrantyPlan;
 use App\Services\Checkout\CheckoutPricingEngine;
+use App\Services\Shared\FixedCommissionService;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
 
@@ -126,7 +127,7 @@ class CheckoutCalculationService
     public function calculateCommission(
         VendorListing $listing,
         int $quantity,
-        int $unitPriceCents,
+        int|float $unitPriceCents,
         ?Country $country = null,
     ): array {
         $isFBN = $listing->global_system_type === GlobalSystemType::ExpressFbn;
@@ -150,7 +151,8 @@ class CheckoutCalculationService
         $lineSubtotal = $unitPriceCents * $quantity;
         $pctComponent = (int) floor($lineSubtotal * $pct / 100);
         $fixedComponent = $fixed * $quantity;
-        $commissionAmount = $pctComponent + $fixedComponent;
+        $fixedCommission = app(FixedCommissionService::class)->calculate($lineSubtotal, $country, $quantity);
+        $commissionAmount = $pctComponent + $fixedComponent + $fixedCommission;
 
         return [
             'commission_rate_pct' => $pct,

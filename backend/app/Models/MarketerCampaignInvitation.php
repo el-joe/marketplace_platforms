@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -37,6 +38,9 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_recorded_at' => 'datetime',
         'platform_fee_paid_at' => 'datetime',
         'platform_fee_vat_rate' => 'decimal:2',
+        'platform_fee_amount' => DecimalMoney::class,
+        'platform_fee_vat_amount' => DecimalMoney::class,
+        'total_commission_earned' => DecimalMoney::class,
     ];
 
     public function campaign(): BelongsTo
@@ -75,9 +79,9 @@ class MarketerCampaignInvitation extends Model
     }
 
     /** Fee + VAT: what the payer is actually charged. */
-    public function platformFeeTotal(): int
+    public function platformFeeTotal(): float
     {
-        return (int) $this->platform_fee_amount + (int) $this->platform_fee_vat_amount;
+        return round((float) $this->platform_fee_amount + (float) $this->platform_fee_vat_amount, 2);
     }
 
     public function whatsappFailed(): bool

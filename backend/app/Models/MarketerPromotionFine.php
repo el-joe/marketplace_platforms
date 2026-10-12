@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\PromotionCategory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -27,7 +28,7 @@ class MarketerPromotionFine extends Model
         'promotion_category' => PromotionCategory::class,
         'target' => 'integer',
         'done' => 'integer',
-        'amount' => 'integer',
+        'amount' => DecimalMoney::class,
         'deducted_at' => 'datetime',
     ];
 

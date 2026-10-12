@@ -13,13 +13,16 @@ use App\Models\MarketerProfile;
 use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\WalletWithdrawalRequest;
+use App\Services\Customer\CartService;
 use App\Services\MarketerCommissionStatementService;
+use App\Services\MarketerConversionReversalService;
 use App\Services\OrderStateMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
@@ -43,17 +46,18 @@ class MarketerNetCommissionStatementTest extends TestCase
         return [
             'spec example 100 @30%' => [100, 30, null, 0, ['cut' => 30, 'vat' => 0, 'net' => 70, 'discount' => 0]],
             'zero cut' => [100, 0, null, 15, ['cut' => 0, 'vat' => 0, 'net' => 100, 'discount' => 0]],
-            'vat 14% on cut 30' => [100, 30, null, 14, ['cut' => 30, 'vat' => 4, 'net' => 66, 'discount' => 0]], // 4.2 -> 4
-            'half up rounding cut 33.5 -> 34' => [335, 10, null, 0, ['cut' => 34, 'vat' => 0, 'net' => 301, 'discount' => 0]],
+            'vat 14% on cut 30 keeps decimals' => [100, 30, null, 14, ['cut' => 30, 'vat' => 4.2, 'net' => 65.8, 'discount' => 0]],
+            'decimal cut 33.5 is kept' => [335, 10, null, 0, ['cut' => 33.5, 'vat' => 0, 'net' => 301.5, 'discount' => 0]],
+            'half up at 2 decimals' => [1.25, 10, null, 0, ['cut' => 0.13, 'vat' => 0, 'net' => 1.12, 'discount' => 0]],
             'flat discount reduces cut' => [1000, 30, ['flat', 100, 0], 10, ['cut' => 200, 'vat' => 20, 'net' => 780, 'discount' => 100]],
             'flat discount capped at cut' => [100, 30, ['flat', 999, 0], 10, ['cut' => 0, 'vat' => 0, 'net' => 100, 'discount' => 30]],
-            'percentage discount of cut' => [1000, 30, ['percentage', 0, 50], 15, ['cut' => 150, 'vat' => 23, 'net' => 827, 'discount' => 150]], // vat 22.5 -> 23
+            'percentage discount of cut' => [1000, 30, ['percentage', 0, 50], 15, ['cut' => 150, 'vat' => 22.5, 'net' => 827.5, 'discount' => 150]],
             'no float drift 0.1+0.2 style' => [3, 33.33, null, 0, ['cut' => 1, 'vat' => 0, 'net' => 2, 'discount' => 0]],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('breakdowns')]
-    public function test_breakdown_math(int $gross, float $cut, ?array $disc, float $vat, array $expect): void
+    #[DataProvider('breakdowns')]
+    public function test_breakdown_math(int|float $gross, float $cut, ?array $disc, float $vat, array $expect): void
     {
         $profile = new MarketerProfile;
         if ($disc) {
@@ -63,9 +67,9 @@ class MarketerNetCommissionStatementTest extends TestCase
         }
         $b = app(MarketerCommissionStatementService::class)->breakdown($gross, $cut, $profile, $vat);
         foreach ($expect as $k => $v) {
-            $this->assertSame($v, $b[$k], $k);
+            $this->assertEquals($v, $b[$k], $k);
         }
-        $this->assertSame($gross, $b['net'] + $b['cut'] + $b['vat'], 'parts must sum to gross');
+        $this->assertEqualsWithDelta($gross, $b['net'] + $b['cut'] + $b['vat'], 0.0001, 'parts must sum to gross');
     }
 
     // ───────── full flow helpers ─────────
@@ -87,7 +91,7 @@ class MarketerNetCommissionStatementTest extends TestCase
         );
 
         $this->actingAs($s->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code);
         CartItem::create([
             'cart_id' => $cart->id, 'marketer_listing_id' => $s->marketerListing->id, 'quantity' => 1,
@@ -121,6 +125,7 @@ class MarketerNetCommissionStatementTest extends TestCase
     private function marketerAdmin(MarketplaceScenario $s): MarketerAdmin
     {
         $s->marketer->forceFill(['onboarding_completed_at' => now(), 'country_id' => $s->country->id])->save();
+
         return MarketerAdmin::create([
             'marketer_id' => $s->marketer->id, 'name' => 'A', 'email' => Str::random(8).'@example.test',
             'password' => Hash::make('password'), 'is_owner' => true, 'is_active' => true,
@@ -204,7 +209,7 @@ class MarketerNetCommissionStatementTest extends TestCase
     {
         $s = $this->scenario();
         $c = $this->approvedConversion($s, 30);
-        app(\App\Services\MarketerConversionReversalService::class)->reverseOne($c);
+        app(MarketerConversionReversalService::class)->reverseOne($c);
         $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $s->marketer->id)->firstOrFail();
         $this->assertSame(0, $wallet->pending_balance);
         $this->assertSame('reversed', $c->fresh()->status);

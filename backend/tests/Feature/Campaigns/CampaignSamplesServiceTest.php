@@ -252,9 +252,9 @@ class CampaignSamplesServiceTest extends TestCase
 
         // Normal-sale commission for price x qty on an FBN listing: category pct (12%) of 1200 x 2 + fixed (300) x 2.
         $expected = (int) floor(1200 * 2 * 12 / 100) + 300 * 2;
-        $this->assertSame(888, $expected);
+        $this->assertEquals(888, $expected);
         $this->assertSame($expected, $sample->commission_amount);
-        $this->assertSame($expected, $svc->commissionFor($listing->fresh(), $campaign, 2));
+        $this->assertEquals($expected, $svc->commissionFor($listing->fresh(), $campaign, 2));
     }
 
     public function test_a_cancelled_sample_can_not_be_dispatched(): void

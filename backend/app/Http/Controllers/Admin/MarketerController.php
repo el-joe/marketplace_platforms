@@ -217,12 +217,12 @@ class MarketerController extends Controller
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
 
         $validated = $request->validate([
-            'ad_price' => ['nullable', 'integer', 'min:0'],
+            'ad_price' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'ad_price_currency' => ['nullable', 'string', 'size:3', Rule::exists('currencies', 'code')],
             'can_self_edit_ad_price' => ['nullable', 'boolean'],
-            'story_price' => ['nullable', 'integer', 'min:0'],
-            'post_price' => ['nullable', 'integer', 'min:0'],
-            'video_price' => ['nullable', 'integer', 'min:0'],
+            'story_price' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'post_price' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'video_price' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'clothing_size' => ['nullable', 'string', 'max:20'],
             'shirt_size' => ['nullable', 'string', 'max:20'],
             'pants_size' => ['nullable', 'string', 'max:20'],
@@ -247,7 +247,7 @@ class MarketerController extends Controller
             'promotion_category' => ['nullable', Rule::enum(PromotionCategory::class)],
             'monthly_promotion_target' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'commission_discount_type' => ['nullable', Rule::enum(MarketerCommissionDiscountType::class)],
-            'commission_discount_flat' => ['nullable', 'integer', 'min:0'],
+            'commission_discount_flat' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
             'platform_cut_percentage' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
@@ -332,12 +332,12 @@ class MarketerController extends Controller
             'excluded_category_ids' => ['nullable', 'array'],
             'excluded_category_ids.*' => ['uuid'],
             'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'commission_flat_amount' => ['nullable', 'integer', 'min:0'],
-            'commission_min_amount' => ['nullable', 'integer', 'min:0'],
+            'commission_flat_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'commission_min_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
         ]);
 
         $rate = (float) ($validated['commission_rate'] ?? 0);
-        $flat = (int) ($validated['commission_flat_amount'] ?? 0);
+        $flat = round((float) ($validated['commission_flat_amount'] ?? 0), 2);
         if ($rate <= 0 && $flat <= 0) {
             throw ValidationException::withMessages([
                 'commission_rate' => __('admin.marketer_commission_required'),
@@ -348,7 +348,7 @@ class MarketerController extends Controller
             'commission_mode' => $mode,
             'commission_rate' => $rate,
             'commission_flat_amount' => $flat > 0 ? $flat : null,
-            'commission_min_amount' => ($validated['commission_min_amount'] ?? 0) > 0 ? (int) $validated['commission_min_amount'] : null,
+            'commission_min_amount' => ($validated['commission_min_amount'] ?? 0) > 0 ? round((float) $validated['commission_min_amount'], 2) : null,
         ];
 
         $categoryId = $validated['category_id'] ?? null;

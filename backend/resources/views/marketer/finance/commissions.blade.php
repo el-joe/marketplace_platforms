@@ -14,7 +14,7 @@
                 <span>{{ __('marketer.commission_scope_' . $r['scope']) }} — {{ $r['category']['name'] ?? __('marketer.commission_default') }}@if(empty($r['category']) && !empty($r['excluded_categories'])) <span class="text-xs text-red-500">({{ __('admin.marketer_commission_except') }}: {{ collect($r['excluded_categories'])->pluck('name')->implode('، ') }})</span>@endif</span>
                 <span class="font-semibold">{{ collect([
                     in_array($r['commission_mode'], ['percentage','both']) ? rtrim(rtrim($r['commission_rate'],'0'),'.').'%' : null,
-                    in_array($r['commission_mode'], ['fixed','both']) ? number_format($r['commission_flat_amount']).' '.$r['currency'] : null,
+                    in_array($r['commission_mode'], ['fixed','both']) ? \App\Support\Money::format($r['commission_flat_amount']).' '.$r['currency'] : null,
                 ])->filter()->implode(' + ') }}</span>
             </li>
             @endforeach
@@ -25,10 +25,10 @@
     <div class="bg-white rounded-xl border p-5" data-statement-totals>
         <div class="font-bold mb-3">{{ __('marketer.finance.statement_title') }}</div>
         <dl class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ number_format($totals['gross']) }}</dd></div>
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }} ({{ rtrim(rtrim(number_format($cutPct, 2), '0'), '.') }}%)</dt><dd class="font-bold text-red-600">−{{ number_format($totals['cut']) }}</dd></div>
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($totals['vat']) }}</dd></div>
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ number_format($totals['net']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ \App\Support\Money::format($totals['gross']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }} ({{ rtrim(rtrim(number_format($cutPct, 2), '0'), '.') }}%)</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['cut']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['vat']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ \App\Support\Money::format($totals['net']) }}</dd></div>
         </dl>
         <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.statement_hint') }}</p>
     </div>
@@ -60,12 +60,12 @@
                     <td class="px-4 py-3 text-gray-600">{{ $sale->credited_at?->format('Y-m-d') }}</td>
                     <td class="px-4 py-3 text-center font-mono text-xs">{{ $sale->order?->order_number ?? '—' }}</td>
                     <td class="px-4 py-3 text-center text-xs">{{ __('marketer.finance.sales_via_'.$sale->sold_via) }}</td>
-                    <td class="px-4 py-3 text-center" data-gross>{{ number_format($sale->gross_amount) }}</td>
-                    <td class="px-4 py-3 text-center text-red-600" data-commission>−{{ number_format($sale->platform_commission_amount) }}</td>
-                    <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ number_format($sale->commission_vat_amount) }}</td>
-                    <td class="px-4 py-3 text-center text-red-600" data-peer>−{{ number_format($sale->peer_commission_amount) }}</td>
-                    <td class="px-4 py-3 text-center text-red-600">−{{ number_format($sale->gross_amount - $sale->net_amount - $sale->platform_commission_amount - $sale->commission_vat_amount - $sale->peer_commission_amount) }}</td>
-                    <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ number_format($sale->net_amount) }} {{ $sale->currency }}</td>
+                    <td class="px-4 py-3 text-center" data-gross>{{ \App\Support\Money::format($sale->gross_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600" data-commission>−{{ \App\Support\Money::format($sale->platform_commission_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ \App\Support\Money::format($sale->commission_vat_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600" data-peer>−{{ \App\Support\Money::format($sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600">−{{ \App\Support\Money::format($sale->gross_amount - $sale->net_amount - $sale->platform_commission_amount - $sale->commission_vat_amount - $sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ \App\Support\Money::format($sale->net_amount) }} {{ $sale->currency }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -78,11 +78,11 @@
     <div class="grid grid-cols-2 lg:grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border p-5">
             <div class="text-xs text-gray-400 mb-1">{{ __('marketer.finance.total_earned_label') }}</div>
-            <div class="text-3xl font-black text-green-600">{{ number_format($totalEarned) }}</div>
+            <div class="text-3xl font-black text-green-600">{{ \App\Support\Money::format($totalEarned) }}</div>
         </div>
         <div class="bg-white rounded-xl border p-5">
             <div class="text-xs text-gray-400 mb-1">{{ __('marketer.finance.pending_earnings_label') }}</div>
-            <div class="text-3xl font-black text-yellow-500">{{ number_format($pendingEarnings) }}</div>
+            <div class="text-3xl font-black text-yellow-500">{{ \App\Support\Money::format($pendingEarnings) }}</div>
         </div>
     </div>
 
@@ -114,13 +114,13 @@
                         <td class="px-4 py-3">{{ $conv->campaign?->vendorListing?->productVariant?->product?->title_en ?? '—' }}</td>
                         <td class="px-4 py-3 text-center font-mono text-xs">{{ $conv->order?->order_number ?? '—' }}</td>
                         @php $st = $statements[$conv->id]; @endphp
-                        <td class="px-4 py-3 text-center" data-gross>{{ number_format($st['gross']) }}</td>
-                        <td class="px-4 py-3 text-center text-red-600" data-cut>−{{ number_format($st['cut']) }}</td>
-                        <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ number_format($st['vat']) }}</td>
-                        <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ number_format($st['net']) }} {{ $conv->currency }}</td>
+                        <td class="px-4 py-3 text-center" data-gross>{{ \App\Support\Money::format($st['gross']) }}</td>
+                        <td class="px-4 py-3 text-center text-red-600" data-cut>−{{ \App\Support\Money::format($st['cut']) }}</td>
+                        <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ \App\Support\Money::format($st['vat']) }}</td>
+                        <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ \App\Support\Money::format($st['net']) }} {{ $conv->currency }}</td>
                         <td class="px-4 py-3 text-center">
                             @if($conv->flash_sale_bonus_amount)
-                                <span class="text-purple-600 font-bold">+{{ number_format($conv->flash_sale_bonus_amount) }}</span>
+                                <span class="text-purple-600 font-bold">+{{ \App\Support\Money::format($conv->flash_sale_bonus_amount) }}</span>
                             @else
                                 —
                             @endif

@@ -9,6 +9,7 @@ use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -100,7 +101,7 @@ class MarketerSaleSettlementService
                 ['owner_type' => 'marketer', 'owner_id' => $locked->marketer_id],
                 ['balance' => 0, 'pending_balance' => 0, 'currency' => $settlement->currency]
             );
-            if ($settlement->net_amount !== 0) {
+            if (abs((float) $settlement->net_amount) > 0) {
                 Wallet::whereKey($wallet->id)->increment('pending_balance', $settlement->net_amount);
             }
 
@@ -124,7 +125,7 @@ class MarketerSaleSettlementService
                             return;
                         }
                         $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $locked->marketer_id)->lockForUpdate()->first();
-                        if ($wallet && $locked->net_amount !== 0) {
+                        if ($wallet && abs((float) $locked->net_amount) > 0) {
                             Wallet::whereKey($wallet->id)->decrement('pending_balance', $locked->net_amount);
                             Wallet::whereKey($wallet->id)->increment('balance', $locked->net_amount);
 
@@ -135,13 +136,13 @@ class MarketerSaleSettlementService
                                 'type' => $type,
                                 'direction' => $type,
                                 'amount' => abs($locked->net_amount),
-                                'balance_after' => (int) $wallet->fresh()->balance,
+                                'balance_after' => (float) $wallet->fresh()->balance,
                                 'currency_code' => $wallet->currency,
                                 'source_type' => 'marketer_sale',
                                 'source_id' => (string) $locked->id,
                                 'description' => mb_substr(__('marketer.finance.tx_sale', [
-                                    'order' => $order, 'gross' => number_format($locked->gross_amount),
-                                    'deductions' => number_format($locked->gross_amount - $locked->net_amount), 'net' => number_format($locked->net_amount),
+                                    'order' => $order, 'gross' => Money::format($locked->gross_amount),
+                                    'deductions' => Money::format($locked->gross_amount - $locked->net_amount), 'net' => Money::format($locked->net_amount),
                                 ]), 0, 255),
                                 'created_at' => now(),
                             ]);
@@ -155,10 +156,10 @@ class MarketerSaleSettlementService
         return $released;
     }
 
-    /** @return array<string, int|string> the snapshot columns */
+    /** @return array<string, float|string> the snapshot columns */
     public function breakdown(SubOrder $subOrder): array
     {
-        $int = fn ($v): int => (int) round((float) $v);
+        $int = fn ($v): float => round((float) $v, 2);
 
         $gross = $int($subOrder->subtotal);
         $coupon = $int($subOrder->vendor_coupon_cost);
@@ -203,7 +204,7 @@ class MarketerSaleSettlementService
     /**
      * Lifetime sales statement of one marketer (admin + marketer panels).
      *
-     * @return array{gross: int, commission: int, vat: int, peer: int, other: int, net: int, count: int}
+     * @return array{gross: float, commission: float, vat: float, peer: float, other: float, net: float, count: int}
      */
     public function totalsFor(string $marketerId): array
     {
@@ -213,8 +214,8 @@ class MarketerSaleSettlementService
             ->first();
 
         return [
-            'gross' => (int) $r->g, 'commission' => (int) $r->pc, 'vat' => (int) $r->v, 'peer' => (int) $r->p,
-            'other' => (int) $r->o, 'net' => (int) $r->n, 'count' => (int) $r->c,
+            'gross' => (float) $r->g, 'commission' => (float) $r->pc, 'vat' => (float) $r->v, 'peer' => (float) $r->p,
+            'other' => (float) $r->o, 'net' => (float) $r->n, 'count' => (int) $r->c,
         ];
     }
 }

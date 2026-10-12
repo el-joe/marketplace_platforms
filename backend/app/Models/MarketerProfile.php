@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\MarketerCommissionDiscountType;
 use App\Enums\PromotionCategory;
 use App\Services\Customer\MarketerProfileCache;
@@ -69,11 +70,11 @@ class MarketerProfile extends Model
     protected $casts = [
         'social_links' => 'array',
         'contact_details' => 'array',
-        'ad_price' => 'integer',
+        'ad_price' => DecimalMoney::class,
         'can_self_edit_ad_price' => 'boolean',
-        'story_price' => 'integer',
-        'post_price' => 'integer',
-        'video_price' => 'integer',
+        'story_price' => DecimalMoney::class,
+        'post_price' => DecimalMoney::class,
+        'video_price' => DecimalMoney::class,
         'chest_cm' => 'float',
         'waist_cm' => 'float',
         'hip_cm' => 'float',
@@ -86,7 +87,7 @@ class MarketerProfile extends Model
         'promotion_category' => PromotionCategory::class,
         'monthly_promotion_target' => 'integer',
         'commission_discount_type' => MarketerCommissionDiscountType::class,
-        'commission_discount_flat' => 'integer',
+        'commission_discount_flat' => DecimalMoney::class,
         'commission_discount_percentage' => 'float',
         'platform_cut_percentage' => 'decimal:2',
     ];
@@ -125,15 +126,15 @@ class MarketerProfile extends Model
      * commission amount (platform base currency units, BIGINT). Never
      * discounts below zero.
      */
-    public function applyCommissionDiscount(int $grossCommission): int
+    public function applyCommissionDiscount(int|float $grossCommission): float
     {
         $discount = match ($this->commission_discount_type) {
-            MarketerCommissionDiscountType::Flat => min($this->commission_discount_flat, $grossCommission),
-            MarketerCommissionDiscountType::Percentage => (int) floor($grossCommission * $this->commission_discount_percentage / 100),
+            MarketerCommissionDiscountType::Flat => min((float) $this->commission_discount_flat, $grossCommission),
+            MarketerCommissionDiscountType::Percentage => round($grossCommission * $this->commission_discount_percentage / 100, 2),
             default => 0,
         };
 
-        return max(0, $grossCommission - $discount);
+        return max(0.0, round($grossCommission - $discount, 2));
     }
 
     protected static function booted(): void

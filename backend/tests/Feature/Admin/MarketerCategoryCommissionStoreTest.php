@@ -3,14 +3,12 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
+use App\Models\Country;
 use App\Models\Marketer;
+use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionRule;
 use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelCategory;
-use App\Models\ClassifiedCategory;
-use App\Models\Category;
-use App\Models\Country;
-use App\Models\MarketerCategoryCommission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Permission;
@@ -42,7 +40,7 @@ class MarketerCategoryCommissionStoreTest extends TestCase
         $r->assertSessionHasNoErrors();
         $c = MarketerCategoryCommission::where('marketer_id', $m->id)->first();
         $this->assertSame('both', $c->commission_mode);
-        $this->assertSame(15, $c->resolveAmount(100));
+        $this->assertEquals(15, $c->resolveAmount(100));
     }
 
     public function test_fixed_and_percentage_modes(): void

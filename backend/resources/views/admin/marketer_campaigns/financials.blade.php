@@ -43,19 +43,19 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div class="bg-gray-50 rounded-xl p-4 text-center">
                 <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.influencers_accepted') }}</div>
-                <div class="text-lg font-bold text-gray-900">{{ number_format($summary->total_influencers_accepted) }}</div>
+                <div class="text-lg font-bold text-gray-900">{{ \App\Support\Money::format($summary->total_influencers_accepted) }}</div>
             </div>
             <div class="bg-gray-50 rounded-xl p-4 text-center">
                 <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.total_fees_collected') }}</div>
-                <div class="text-lg font-bold text-green-700">{{ number_format($summary->collected_fees) }}</div>
+                <div class="text-lg font-bold text-green-700">{{ \App\Support\Money::format($summary->collected_fees) }}</div>
             </div>
             <div class="bg-gray-50 rounded-xl p-4 text-center">
                 <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.fees_pending_collection') }}</div>
-                <div class="text-lg font-bold text-orange-600">{{ number_format($summary->pending_fees) }}</div>
+                <div class="text-lg font-bold text-orange-600">{{ \App\Support\Money::format($summary->pending_fees) }}</div>
             </div>
             <div class="bg-gray-50 rounded-xl p-4 text-center">
                 <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.total_fees_expected') }}</div>
-                <div class="text-lg font-bold text-gray-900">{{ number_format($summary->total_fees_expected) }}</div>
+                <div class="text-lg font-bold text-gray-900">{{ \App\Support\Money::format($summary->total_fees_expected) }}</div>
             </div>
         </div>
     </x-card>
@@ -97,10 +97,10 @@
                         <td class="py-2 px-3">{{ $campaign->country?->name_en ?? '—' }}</td>
                         <td class="py-2 px-3">{{ $influencerAccepted }}</td>
                         <td class="py-2 px-3">{{ $affiliateAccepted }}</td>
-                        <td class="py-2 px-3">{{ number_format($feeExpected) }} {{ $campaign->currency }}</td>
+                        <td class="py-2 px-3">{{ \App\Support\Money::format($feeExpected) }} {{ $campaign->currency }}</td>
                         <td class="py-2 px-3">
                             @if($feePending > 0)
-                                <span class="text-orange-500">{{ str_replace(':amount', number_format($feePending), __('admin.marketer_campaigns.fee_status_pending')) }}</span>
+                                <span class="text-orange-500">{{ str_replace(':amount', \App\Support\Money::format($feePending), __('admin.marketer_campaigns.fee_status_pending')) }}</span>
                             @elseif($feeExpected > 0 && $feePaid === $feeExpected)
                                 <span class="text-green-600">{{ __('admin.marketer_campaigns.fee_status_paid') }}</span>
                             @else
@@ -108,7 +108,7 @@
                             @endif
                         </td>
                         <td class="py-2 px-3">{{ $campaign->conversions_count }}</td>
-                        <td class="py-2 px-3 text-red-600">{{ number_format($campaign->total_commission_owed) }} {{ $campaign->currency }}</td>
+                        <td class="py-2 px-3 text-red-600">{{ \App\Support\Money::format($campaign->total_commission_owed) }} {{ $campaign->currency }}</td>
                         <td class="py-2 px-3">
                             <a href="{{ route('admin.marketer-campaigns.show', $campaign) }}" class="text-primary-600 hover:underline">{{ __('admin.marketer_campaigns.view') }}</a>
                         </td>

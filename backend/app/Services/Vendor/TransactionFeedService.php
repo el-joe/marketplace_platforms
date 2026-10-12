@@ -9,6 +9,7 @@ use App\Models\PayoutItem;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\Vendor;
+use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -118,7 +119,7 @@ class TransactionFeedService
         return $samples->map(function ($s) {
             $product = $s->campaign?->vendorListing?->productVariant?->product;
             $payout = $s->payoutItems->first()?->payout;
-            $commission = (int) $s->commission_amount;
+            $commission = Money::number($s->commission_amount);
 
             return [
                 'type' => 'promotion_sample',
@@ -162,9 +163,9 @@ class TransactionFeedService
                 'description' => 'رسوم مؤثر / Influencer fee — '.($inv->marketer?->name ?? '—'),
                 'gross' => 0,
                 'commission' => 0,
-                'fee' => (int) $inv->platform_fee_amount,
-                'vat' => (int) $inv->platform_fee_vat_amount,
-                'net' => -$total,
+                'fee' => Money::number($inv->platform_fee_amount),
+                'vat' => Money::number($inv->platform_fee_vat_amount),
+                'net' => Money::number(-$total),
                 'payout_status' => $status,
             ];
         });
@@ -189,7 +190,7 @@ class TransactionFeedService
             'date' => $r->updated_at?->toISOString(),
             'reference' => $r->subOrder?->sub_order_number,
             'description' => 'Refund — '.str_replace('_', ' ', $r->reason?->value ?? ''),
-            'amount' => -(int) $r->amount,
+            'amount' => Money::number(-(float) $r->amount),
         ]);
     }
 
@@ -205,7 +206,7 @@ class TransactionFeedService
             'date' => $p->processed_at?->toISOString(),
             'reference' => $p->payout_number,
             'description' => 'Payout — '.$p->period_start->toDateString().' to '.$p->period_end->toDateString(),
-            'amount' => $p->net_amount,
+            'amount' => Money::number($p->net_amount),
             'currency' => $p->currency,
             'receipt_url' => $p->receipt_url,
         ]);
@@ -214,9 +215,9 @@ class TransactionFeedService
     private function computeSummary(Collection $items): array
     {
         return [
-            'total_sales' => (int) $items->where('type', 'sale')->sum('net'),
-            'total_refunds' => (int) $items->where('type', 'refund')->sum('amount'),
-            'total_paid_out' => (int) $items->where('type', 'payout')->sum('amount'),
+            'total_sales' => Money::number(round((float) $items->where('type', 'sale')->sum('net'), 2)),
+            'total_refunds' => Money::number(round((float) $items->where('type', 'refund')->sum('amount'), 2)),
+            'total_paid_out' => Money::number(round((float) $items->where('type', 'payout')->sum('amount'), 2)),
         ];
     }
 }

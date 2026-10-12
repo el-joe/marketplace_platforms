@@ -25,7 +25,7 @@
                 </div>
                 <div>
                     <label for="vd-flat" class="{{ $label }}">{{ __('commissions.vendor_form.discount_flat') }}</label>
-                    <input id="vd-flat" type="number" name="commission_discount_flat" min="0" step="1" value="{{ $vendor->commission_discount_flat }}" class="{{ $input }}">
+                    <input id="vd-flat" type="number" name="commission_discount_flat" min="0" step="0.01" value="{{ $vendor->commission_discount_flat }}" class="{{ $input }}">
                     <p data-error-for="commission_discount_flat" class="hidden text-xs text-red-700"></p>
                 </div>
                 <div>

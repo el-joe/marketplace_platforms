@@ -9,6 +9,7 @@ use App\Models\Payout;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
+use App\Support\Money;
 use App\Traits\HasExport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -174,8 +175,8 @@ class FinanceController extends Controller
                         'reference' => $inv->campaign?->title ?: ('#'.substr((string) $inv->campaign_id, 0, 8)),
                         'description' => __('partner.finance.influencer_fee_line', [
                             'name' => $inv->marketer?->name ?? '—',
-                            'fee' => number_format($inv->platform_fee_amount),
-                            'vat' => number_format($inv->platform_fee_vat_amount),
+                            'fee' => Money::format($inv->platform_fee_amount),
+                            'vat' => Money::format($inv->platform_fee_vat_amount),
                             'rate' => (float) $inv->platform_fee_vat_rate,
                             'status' => $inv->platform_fee_status === 'paid'
                                 ? __('partner.finance.fee_settled_'.($inv->platform_fee_paid_via ?: 'wallet'))

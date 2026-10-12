@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -24,8 +25,8 @@ class LedgerEntry extends Model
     ];
 
     protected $casts = [
-        'debit' => 'integer',
-        'credit' => 'integer',
+        'debit' => DecimalMoney::class,
+        'credit' => DecimalMoney::class,
     ];
 
     /**

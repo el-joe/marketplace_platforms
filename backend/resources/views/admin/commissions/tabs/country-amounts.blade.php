@@ -29,11 +29,11 @@
             </div>
             <div>
                 <label for="ca-inf" class="{{ $label }}">{{ __('commissions.columns.influencer_amount') }}</label>
-                <input id="ca-inf" type="number" name="influencer_commission_amount" min="0" step="1" required value="{{ old('influencer_commission_amount') }}" class="{{ $input }}">
+                <input id="ca-inf" type="number" name="influencer_commission_amount" min="0" step="0.01" required value="{{ old('influencer_commission_amount') }}" class="{{ $input }}">
             </div>
             <div>
                 <label for="ca-aff" class="{{ $label }}">{{ __('commissions.columns.affiliate_amount') }}</label>
-                <input id="ca-aff" type="number" name="affiliate_commission_amount" min="0" step="1" required value="{{ old('affiliate_commission_amount') }}" class="{{ $input }}">
+                <input id="ca-aff" type="number" name="affiliate_commission_amount" min="0" step="0.01" required value="{{ old('affiliate_commission_amount') }}" class="{{ $input }}">
             </div>
             <div>
                 <label for="ca-cur" class="{{ $label }}">{{ __('commissions.columns.currency') }}</label>

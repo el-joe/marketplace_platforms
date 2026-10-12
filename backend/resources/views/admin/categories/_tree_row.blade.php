@@ -21,8 +21,6 @@
     {{-- Name with indent --}}
     <td class="px-4 py-2">
         <div class="flex items-center gap-2" style="padding-left: {{ $depth * 20 }}px">
-            <input type="checkbox" class="category-cb rounded border-gray-300 text-primary-600"
-                value="{{ $category->id }}" />
             <div>
                 <span class="font-medium text-gray-900">{{ $category->name_en }}</span>
                 @if($category->name_ar)

@@ -25,17 +25,6 @@ class CategoryService
         }
     }
 
-    public function bulkUpdateCommission(array $ids, float $rate, ?string $adminId = null): int
-    {
-        $categories = Category::whereIn('id', $ids)->get();
-
-        foreach ($categories as $category) {
-            $this->updateCommissionRate($category, $rate, $adminId);
-        }
-
-        return $categories->count();
-    }
-
     // ─── Featured Toggle ──────────────────────────────────────────────────────
 
     public function setFeatured(Category $category, bool $featured, ?string $adminId = null): void

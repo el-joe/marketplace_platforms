@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,21 +23,22 @@ class MarketerCategoryCommission extends Model
 
     protected $casts = [
         'commission_rate' => 'decimal:2',
-        'commission_flat_amount' => 'integer',
-        'commission_min_amount' => 'integer',
+        'commission_flat_amount' => DecimalMoney::class,
+        'commission_min_amount' => DecimalMoney::class,
     ];
 
     /**
      * Resolve the commission amount owed on a given base amount, according
      * to this rule's commission_mode (fixed | percentage | both).
      */
-    public function resolveAmount(int $baseAmount): int
+    public function resolveAmount(int|float|string $baseAmount): float
     {
+        $percent = round((float) $baseAmount * ((float) $this->commission_rate / 100), 2);
+
         return match ($this->commission_mode) {
-            'fixed' => (int) ($this->commission_flat_amount ?? 0),
-            'both' => (int) ($this->commission_flat_amount ?? 0)
-                + (int) round($baseAmount * ((float) $this->commission_rate / 100)),
-            default => (int) round($baseAmount * ((float) $this->commission_rate / 100)),
+            'fixed' => (float) ($this->commission_flat_amount ?? 0),
+            'both' => round((float) ($this->commission_flat_amount ?? 0) + $percent, 2),
+            default => $percent,
         };
     }
 

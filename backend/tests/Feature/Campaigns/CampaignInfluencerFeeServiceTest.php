@@ -7,6 +7,9 @@ use App\Jobs\CollectPendingInfluencerFeesJob;
 use App\Models\Admin;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerInfluencerFeeCountrySetting;
+use App\Models\Payout;
+use App\Models\PayoutItem;
+use App\Models\VendorBankAccount;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Services\WalletService;
@@ -41,7 +44,7 @@ class CampaignInfluencerFeeServiceTest extends TestCase
         $this->setFee(1000);
     }
 
-    private function setFee(int $fee): void
+    private function setFee(int|float $fee): void
     {
         MarketerInfluencerFeeCountrySetting::updateOrCreate(
             ['country_id' => $this->s->country->id],
@@ -71,13 +74,13 @@ class CampaignInfluencerFeeServiceTest extends TestCase
     public function test_vat_comes_from_the_country_vat_rate(): void
     {
         $quote = app(MarketerCampaignQuoteService::class);
-        $this->assertSame(5.0, $quote->vatRate($this->s->country->id));
-        $this->assertSame(50, $quote->vatOn(1000, 5.0));
-        $this->assertSame(0, $quote->vatOn(1000, 0.0));
+        $this->assertEquals(5.0, $quote->vatRate($this->s->country->id));
+        $this->assertEquals(50, $quote->vatOn(1000, 5.0));
+        $this->assertEquals(0, $quote->vatOn(1000, 0.0));
 
         $this->s->country->update(['vat_rate' => 14.00]);
-        $this->assertSame(14.0, $quote->vatRate($this->s->country->id));
-        $this->assertSame(0.0, $quote->vatRate(null));
+        $this->assertEquals(14.0, $quote->vatRate($this->s->country->id));
+        $this->assertEquals(0.0, $quote->vatRate(null));
     }
 
     public function test_wallet_covers_fee_and_vat_so_it_is_paid_immediately(): void
@@ -122,17 +125,17 @@ class CampaignInfluencerFeeServiceTest extends TestCase
     public function test_a_fee_already_on_a_statement_line_is_never_taken_from_the_wallet(): void
     {
         $inv = $this->accepted(); // empty wallet -> pending
-        $payout = \App\Models\Payout::create([
+        $payout = Payout::create([
             'payout_number' => 'PO-TEST-1', 'vendor_id' => $this->s->vendor->id, 'period_start' => now()->subWeek()->toDateString(),
             'period_end' => now()->toDateString(), 'gross_sales' => 0, 'commission' => 0, 'refunds_deducted' => 0,
             'chargebacks_deducted' => 0, 'net_amount' => 0, 'currency' => 'AED', 'status' => 'pending',
-            'bank_account_id' => \App\Models\VendorBankAccount::create([
+            'bank_account_id' => VendorBankAccount::create([
                 'vendor_id' => $this->s->vendor->id, 'account_holder_name' => 'T', 'bank_name' => 'B', 'iban' => 'AE070331234567890123456',
                 'account_number_encrypted' => 'enc', 'currency' => 'AED', 'is_primary' => true, 'verification_status' => 'verified',
             ])->id,
             'payout_method' => 'bank_transfer',
         ]);
-        \App\Models\PayoutItem::create([
+        PayoutItem::create([
             'payout_id' => $payout->id, 'item_type' => 'influencer_fee', 'invitation_id' => $inv->id,
             'gross' => 0, 'commission' => 0, 'vat_amount' => 50, 'net' => -1050,
         ]);
@@ -192,13 +195,51 @@ class CampaignInfluencerFeeServiceTest extends TestCase
 
         $quote = app(MarketerCampaignQuoteService::class)->quote($this->s->vendorListingFbn, [$a->id, $b->id, $aff->id]);
 
-        $this->assertSame(2000, $quote['total_fee']);
-        $this->assertSame(5.0, $quote['vat_rate']);
-        $this->assertSame(50, $quote['fee_vat_per_influencer']);
-        $this->assertSame(100, $quote['total_fee_vat']);
-        $this->assertSame(2100, $quote['total_fee_with_vat']);
+        $this->assertEquals(2000, $quote['total_fee']);
+        $this->assertEquals(5.0, $quote['vat_rate']);
+        $this->assertEquals(50, $quote['fee_vat_per_influencer']);
+        $this->assertEquals(100, $quote['total_fee_vat']);
+        $this->assertEquals(2100, $quote['total_fee_with_vat']);
         $rows = collect($quote['rows'])->keyBy('id');
-        $this->assertSame(1050, $rows[$a->id]['fee_total']);
-        $this->assertSame(0, $rows[$aff->id]['fee_total'], 'affiliate = free, no VAT');
+        $this->assertEquals(1050, $rows[$a->id]['fee_total']);
+        $this->assertEquals(0, $rows[$aff->id]['fee_total'], 'affiliate = free, no VAT');
+    }
+
+    public function test_a_small_fee_keeps_its_fractional_vat_instead_of_rounding_to_zero(): void
+    {
+        $this->setFee(2); // 5% of 2 = 0.10 (was 0 when VAT was whole units)
+        $a = F::influencer($this->s);
+        $b = F::influencer($this->s);
+
+        $quote = app(MarketerCampaignQuoteService::class)->quote($this->s->vendorListingFbn, [$a->id, $b->id]);
+
+        $this->assertEqualsWithDelta(0.10, $quote['fee_vat_per_influencer'], 0.00001);
+        $this->assertEqualsWithDelta(4.0, $quote['total_fee'], 0.00001);
+        $this->assertEqualsWithDelta(0.20, $quote['total_fee_vat'], 0.00001);
+        $this->assertEqualsWithDelta(4.20, $quote['total_fee_with_vat'], 0.00001);
+        $this->assertEqualsWithDelta(2.10, collect($quote['rows'])->firstWhere('id', $a->id)['fee_total'], 0.00001);
+    }
+
+    public function test_a_decimal_fee_is_stored_and_debited_exactly_with_its_vat(): void
+    {
+        $this->setFee(2.5); // VAT 5% = 0.125 -> 0.13 (half up), total 2.63
+        $inv = $this->accepted(topUp: 10);
+
+        $this->assertSame('paid', $inv->platform_fee_status);
+        $this->assertEqualsWithDelta(2.5, (float) $inv->platform_fee_amount, 0.00001);
+        $this->assertEqualsWithDelta(0.13, (float) $inv->platform_fee_vat_amount, 0.00001);
+        $this->assertEqualsWithDelta(10 - 2.63, (float) $this->wallet()->fresh()->balance, 0.00001, 'fee + VAT debited with its decimals');
+    }
+
+    public function test_decimal_wallet_credit_and_debit_keep_their_cents(): void
+    {
+        $wallets = app(WalletService::class);
+        $wallet = $this->wallet();
+        $wallets->credit($wallet, 10.55, 'test', null, 'topup');
+        $wallets->debit($wallet->fresh(), 0.30, 'test', null, 'fee');
+
+        $this->assertEqualsWithDelta(10.25, (float) $wallet->fresh()->balance, 0.00001);
+        $this->expectException(InsufficientBalanceException::class);
+        $wallets->debit($wallet->fresh(), 10.26, 'test', null, 'too much');
     }
 }

@@ -11,43 +11,44 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerProfile;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\Money;
 
 /**
- * Gross commission -> admin cut -> discount -> VAT -> net, in BIGINT base units.
+ * Gross commission -> admin cut -> discount -> VAT -> net, in DECIMAL base units (rounded half up to 2 decimals).
  *
  * Order (fixed):
  *   1. cut_base = round_half_up(gross * cut% / 100)           (cut% = marketer_profiles.platform_cut_percentage)
  *   2. discount = the profile's admin-granted commission discount, which discounts THE CUT
- *                 (flat: min(flat, cut_base); percentage: floor(cut_base * pct / 100));
+ *                 (flat: min(flat, cut_base); percentage: round(cut_base * pct / 100, 2));
  *                 cut = cut_base - discount
  *   3. vat      = round_half_up(cut * countries.vat_rate / 100)   (VAT on the platform's service cut, as for P9 fees)
  *   4. net      = gross - cut - vat                              (credited to the wallet; withdrawals pay this)
  *
- * Percentages are converted to basis points (x100) so no float multiplication touches money.
+ * Percentages are converted to basis points (x100) first, then applied once and rounded to 2 decimals.
  * Example: gross 100, 30% => cut 30, VAT 0 => net 70.
  */
 class MarketerCommissionStatementService
 {
     /**
-     * @return array{gross: int, cut_percentage: float, cut_base: int, discount: int, cut: int, vat_rate: float, vat: int, net: int}
+     * @return array{gross: float, cut_percentage: float, cut_base: float, discount: float, cut: float, vat_rate: float, vat: float, net: float}
      */
-    public function breakdown(int $gross, float|string $cutPct, ?MarketerProfile $profile = null, float|string $vatRate = 0): array
+    public function breakdown(int|float|string $gross, float|string $cutPct, ?MarketerProfile $profile = null, float|string $vatRate = 0): array
     {
-        $gross = max(0, $gross);
+        $gross = max(0.0, round((float) $gross, 2));
         $cutBp = $this->bp($cutPct, 0, 10000);
         $cutBase = $this->mulBp($gross, $cutBp);
 
-        $discount = 0;
+        $discount = 0.0;
         if ($profile && $cutBase > 0) {
             $type = $profile->commission_discount_type;
             if ($type === MarketerCommissionDiscountType::Flat) {
-                $discount = min(max(0, (int) $profile->commission_discount_flat), $cutBase);
+                $discount = min(max(0.0, (float) $profile->commission_discount_flat), $cutBase);
             } elseif ($type === MarketerCommissionDiscountType::Percentage) {
-                $discount = intdiv($cutBase * $this->bp($profile->commission_discount_percentage, 0, 10000), 10000);
+                $discount = $this->mulBp($cutBase, $this->bp($profile->commission_discount_percentage, 0, 10000));
             }
         }
 
-        $cut = $cutBase - $discount;
+        $cut = round($cutBase - $discount, 2);
         $vatBp = $this->bp($vatRate, 0, 100000);
         $vat = $this->mulBp($cut, $vatBp);
 
@@ -59,7 +60,7 @@ class MarketerCommissionStatementService
             'cut' => $cut,
             'vat_rate' => $vatBp / 100,
             'vat' => $vat,
-            'net' => $gross - $cut - $vat,
+            'net' => round($gross - $cut - $vat, 2),
         ];
     }
 
@@ -87,14 +88,14 @@ class MarketerCommissionStatementService
     {
         if ($c->net_commission_amount !== null) {
             return [
-                'gross' => (int) $c->gross_commission_amount,
+                'gross' => (float) $c->gross_commission_amount,
                 'cut_percentage' => (float) $c->platform_cut_percentage,
-                'cut_base' => (int) $c->platform_cut_base_amount,
-                'discount' => (int) $c->platform_cut_discount_amount,
-                'cut' => (int) $c->platform_cut_amount,
+                'cut_base' => (float) $c->platform_cut_base_amount,
+                'discount' => (float) $c->platform_cut_discount_amount,
+                'cut' => (float) $c->platform_cut_amount,
                 'vat_rate' => (float) $c->platform_cut_vat_rate,
-                'vat' => (int) $c->platform_cut_vat_amount,
-                'net' => (int) $c->net_commission_amount,
+                'vat' => (float) $c->platform_cut_vat_amount,
+                'net' => (float) $c->net_commission_amount,
             ];
         }
 
@@ -119,9 +120,9 @@ class MarketerCommissionStatementService
     }
 
     /** Amount the wallet holds for this conversion (net; legacy approved rows without snapshot = gross). */
-    public static function walletAmount(MarketerCampaignConversion $c): int
+    public static function walletAmount(MarketerCampaignConversion $c): float
     {
-        return $c->net_commission_amount !== null ? (int) $c->net_commission_amount : $c->total_commission;
+        return $c->net_commission_amount !== null ? (float) $c->net_commission_amount : $c->total_commission;
     }
 
     public const LEDGER_REFERENCE = 'marketer_conversion_statement';
@@ -137,7 +138,7 @@ class MarketerCommissionStatementService
     public function postApprovalLedger(MarketerCampaignConversion $c, ?LedgerService $ledger = null): void
     {
         $ledger ??= app(LedgerService::class);
-        $gross = (int) $c->gross_commission_amount;
+        $gross = (float) $c->gross_commission_amount;
         if ($c->net_commission_amount === null || $gross <= 0) {
             return;
         }
@@ -147,26 +148,26 @@ class MarketerCommissionStatementService
         }
 
         $marketerId = $c->invitation?->marketer_id;
-        $row = fn (string $type, ?string $holderType, ?string $holderId, int $debit, int $credit, string $label) => [
+        $row = fn (string $type, ?string $holderType, ?string $holderId, float $debit, float $credit, string $label) => [
             'account_type' => $type,
             'account_holder_type' => $holderType,
             'account_holder_id' => $holderId,
-            'debit' => $debit,
-            'credit' => $credit,
+            'debit' => round($debit, 4),
+            'credit' => round($credit, 4),
             'currency' => $c->currency,
             'reference_type' => self::LEDGER_REFERENCE,
             'reference_id' => (string) $c->id,
             'description' => "{$label} for conversion {$c->id}",
         ];
 
-        $entries = [$row('marketer_commission_payable', null, null, $gross, 0, 'Gross commission')];
+        $entries = [$row('marketer_commission_payable', null, null, $gross, 0.0, 'Gross commission')];
         foreach ([
-            ['marketer_payable', 'marketer', $marketerId, (int) $c->net_commission_amount, 'Net commission payable to marketer'],
-            ['platform_commission', null, null, (int) $c->platform_cut_amount, 'Platform cut'],
-            ['tax_payable', null, null, (int) $c->platform_cut_vat_amount, 'VAT on platform cut'],
+            ['marketer_payable', 'marketer', $marketerId, (float) $c->net_commission_amount, 'Net commission payable to marketer'],
+            ['platform_commission', null, null, (float) $c->platform_cut_amount, 'Platform cut'],
+            ['tax_payable', null, null, (float) $c->platform_cut_vat_amount, 'VAT on platform cut'],
         ] as [$type, $holderType, $holderId, $credit, $label]) {
-            if ($credit !== 0) {
-                $entries[] = $row($type, $holderType, $holderId, 0, $credit, $label);
+            if (abs($credit) > 0) {
+                $entries[] = $row($type, $holderType, $holderId, 0.0, $credit, $label);
             }
         }
 
@@ -187,8 +188,8 @@ class MarketerCommissionStatementService
             'account_type' => $e->account_type,
             'account_holder_type' => $e->account_holder_type,
             'account_holder_id' => $e->account_holder_id,
-            'debit' => (int) $e->credit,
-            'credit' => (int) $e->debit,
+            'debit' => (float) $e->credit,
+            'credit' => (float) $e->debit,
             'currency' => $e->currency,
             'reference_type' => self::LEDGER_REFERENCE.'_reversal',
             'reference_id' => (string) $c->id,
@@ -203,8 +204,8 @@ class MarketerCommissionStatementService
         $order = $c->order?->order_number ?? '#'.substr((string) $c->order_id, 0, 8);
 
         return mb_substr(__('marketer.finance.tx_commission', [
-            'order' => $order, 'gross' => number_format($b['gross']), 'cut' => number_format($b['cut']),
-            'vat' => number_format($b['vat']), 'net' => number_format($b['net']),
+            'order' => $order, 'gross' => Money::format($b['gross']), 'cut' => Money::format($b['cut']),
+            'vat' => Money::format($b['vat']), 'net' => Money::format($b['net']),
         ]), 0, 255);
     }
 
@@ -212,9 +213,9 @@ class MarketerCommissionStatementService
      * One wallet transaction per wallet movement of a conversion. `$direction` = credit when its net is released
      * to the spendable balance, debit when a released conversion is reversed. $balanceAfter is the wallet balance after the move.
      */
-    public function recordWalletTransaction(Wallet $wallet, string $direction, int $amount, int $balanceAfter, MarketerCampaignConversion $c, ?string $description = null): ?WalletTransaction
+    public function recordWalletTransaction(Wallet $wallet, string $direction, int|float|string $amount, int|float|string $balanceAfter, MarketerCampaignConversion $c, ?string $description = null): ?WalletTransaction
     {
-        if ($amount === 0) {
+        if (abs((float) $amount) <= 0) {
             return null;
         }
 
@@ -236,12 +237,12 @@ class MarketerCommissionStatementService
      * Lifetime commission statement of one marketer over approved (default) conversions: gross / cut / VAT / net,
      * plus how many conversions. Used by the admin withdrawal + wallet screens.
      *
-     * @return array{gross: int, cut: int, vat: int, net: int, count: int}
+     * @return array{gross: float, cut: float, vat: float, net: float, count: int}
      */
     public function totalsForMarketer(Marketer|string $marketer, array $statuses = ['approved']): array
     {
         $marketerId = $marketer instanceof Marketer ? $marketer->id : $marketer;
-        $totals = ['gross' => 0, 'cut' => 0, 'vat' => 0, 'net' => 0, 'count' => 0];
+        $totals = ['gross' => 0.0, 'cut' => 0.0, 'vat' => 0.0, 'net' => 0.0, 'count' => 0];
 
         MarketerCampaignConversion::query()
             ->whereIn('status', $statuses)
@@ -250,7 +251,7 @@ class MarketerCommissionStatementService
             ->each(function (MarketerCampaignConversion $c) use (&$totals) {
                 $b = $this->forConversion($c);
                 foreach (['gross', 'cut', 'vat', 'net'] as $k) {
-                    $totals[$k] += $b[$k];
+                    $totals[$k] = round($totals[$k] + $b[$k], 2);
                 }
                 $totals['count']++;
             });
@@ -263,8 +264,8 @@ class MarketerCommissionStatementService
         return max($min, min($max, (int) round(((float) $pct) * 100)));
     }
 
-    private function mulBp(int $amount, int $bp): int
+    private function mulBp(float $amount, int $bp): float
     {
-        return intdiv($amount * $bp + 5000, 10000);
+        return round($amount * $bp / 10000, 2);
     }
 }

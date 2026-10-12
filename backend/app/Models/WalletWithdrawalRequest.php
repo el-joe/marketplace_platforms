@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\WalletWithdrawalRequestStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -25,8 +26,8 @@ class WalletWithdrawalRequest extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
-        'status'       => WalletWithdrawalRequestStatus::class,
-        'amount' => 'integer',
+        'status' => WalletWithdrawalRequestStatus::class,
+        'amount' => DecimalMoney::class,
         'processed_at' => 'datetime',
     ];
 

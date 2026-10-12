@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +40,10 @@ class MarketerCampaign extends Model
         'requested_marketer_vendor_ids' => 'array',
         'campaign_category' => 'string',
         'selected_ad_types' => 'array',
+        'max_commission_budget' => DecimalMoney::class,
+        'commission_budget_spent' => DecimalMoney::class,
+        'marketer_commission_amount' => DecimalMoney::class,
+        'platform_commission_amount' => DecimalMoney::class,
     ];
 
     public function vendor(): BelongsTo

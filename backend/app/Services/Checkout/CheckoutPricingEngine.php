@@ -20,6 +20,7 @@ use App\Models\Order;
 use App\Models\Vendor;
 use App\Models\WarrantyPlan;
 use App\Services\Shared\CommissionCalculator;
+use App\Services\Shared\FixedCommissionService;
 use App\Services\WarrantyPlanService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -665,6 +666,22 @@ class CheckoutPricingEngine
      * @param  Collection<string, Category>|null  $categoryCache  pre-loaded categories keyed by id (with commissionTiers eager-loaded)
      */
     private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
+    {
+        [$dynamic, $resolvedCategoryId] = $this->resolveDynamicCommission($vendor, $categoryId, $fulfillmentModel, $country, $baseAmountCents, $quantity, $categoryCache);
+
+        $fixed = app(FixedCommissionService::class)->calculate($baseAmountCents, $country, $quantity);
+
+        return [$this->wholeIfPossible($dynamic + $fixed), $resolvedCategoryId];
+    }
+
+    /**
+     * The category-driven ("dynamic") part of the commission: Commission rules, vendor override or the
+     * category chain with country overrides and price tiers. The global fixed commission is added on top.
+     *
+     * @param  Collection<string, Category>|null  $categoryCache
+     * @return array{0: int|float, 1: ?string}
+     */
+    private function resolveDynamicCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
     {
         $today = Carbon::today()->toDateString();
 

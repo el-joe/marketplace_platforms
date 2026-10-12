@@ -38,7 +38,7 @@
             </div>
             <div>
                 <label for="fb-flat" class="{{ $label }}">{{ __('commissions.marketer_form.flat') }}</label>
-                <input id="fb-flat" type="number" name="extra_commission_flat_amount" min="0" step="1" class="{{ $input }}">
+                <input id="fb-flat" type="number" name="extra_commission_flat_amount" min="0" step="0.01" class="{{ $input }}">
                 <p data-error-for="extra_commission_flat_amount" class="hidden text-xs text-red-700"></p>
             </div>
         </div>

@@ -60,12 +60,12 @@
         <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.platform_fees') }}</div>
         <div class="text-lg font-bold
             {{ $totalFeePending > 0 ? 'text-orange-600' : ($totalFeeExpected > 0 ? 'text-green-700' : 'text-gray-400') }}">
-            {{ number_format($totalFeeExpected) }}
+            {{ \App\Support\Money::format($totalFeeExpected) }}
             {{ $marketerCampaign->currency }}
         </div>
         <div class="text-xs mt-1">
             @if($totalFeePending > 0)
-                <span class="text-orange-500">{{ __('admin.marketer_campaigns.pending_prefix') }}: {{ number_format($totalFeePending) }}</span>
+                <span class="text-orange-500">{{ __('admin.marketer_campaigns.pending_prefix') }}: {{ \App\Support\Money::format($totalFeePending) }}</span>
             @elseif($totalFeeExpected > 0)
                 <span class="text-green-600">{{ __('admin.marketer_campaigns.fully_paid') }}</span>
             @else
@@ -102,7 +102,7 @@
     <div class="bg-white rounded-xl border p-4 text-center">
         <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.marketers_commission_owed') }}</div>
         <div class="text-lg font-bold text-red-600">
-            {{ number_format($marketerCampaign->total_commission_owed) }}
+            {{ \App\Support\Money::format($marketerCampaign->total_commission_owed) }}
             {{ $marketerCampaign->currency }}
         </div>
         <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.not_paid_yet') }}</div>
@@ -111,7 +111,7 @@
     <div class="bg-white rounded-xl border p-4 text-center">
         <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.platform_profit') }}</div>
         <div class="text-lg font-bold text-green-700">
-            {{ number_format($marketerCampaign->net_platform_profit) }}
+            {{ \App\Support\Money::format($marketerCampaign->net_platform_profit) }}
             {{ $marketerCampaign->currency }}
         </div>
         <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.from_fees') }}</div>
@@ -125,7 +125,7 @@
         {{ __('admin.marketer_campaigns.pending_fees_notice') }}
     </span>
     <span class="text-sm text-orange-600 ml-2">
-        {{ __('admin.marketer_campaigns.pending_fees_detail', ['amount' => number_format($totalFeePending), 'currency' => $marketerCampaign->currency]) }}
+        {{ __('admin.marketer_campaigns.pending_fees_detail', ['amount' => \App\Support\Money::format($totalFeePending), 'currency' => $marketerCampaign->currency]) }}
     </span>
 </div>
 @endif
@@ -163,9 +163,9 @@
                     __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',
                     __('admin.marketer_campaigns.commission_type')            => $marketerCampaign->commission_type ? __('admin.marketer_campaigns.commission_type_' . $marketerCampaign->commission_type) : '—',
-                    __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->max_commission_budget !== null ? number_format($marketerCampaign->max_commission_budget) : '—',
-                    __('admin.marketer_campaigns.platform_commission_amount') => $marketerCampaign->platform_commission_amount !== null ? number_format($marketerCampaign->platform_commission_amount) : '—',
-                    __('admin.marketer_campaigns.marketer_commission_amount') => $marketerCampaign->marketer_commission_amount !== null ? number_format($marketerCampaign->marketer_commission_amount) : '—',
+                    __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—',
+                    __('admin.marketer_campaigns.platform_commission_amount') => $marketerCampaign->platform_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->platform_commission_amount) : '—',
+                    __('admin.marketer_campaigns.marketer_commission_amount') => $marketerCampaign->marketer_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->marketer_commission_amount) : '—',
                     __('admin.marketer_campaigns.platform_sample_qty')        => $marketerCampaign->platform_sample_qty_snapshot ?? 0,
                     __('admin.marketer_campaigns.per_marketer_sample_qty')    => $marketerCampaign->per_marketer_sample_qty_snapshot ?? 0,
                     __('admin.marketer_campaigns.auto_approve_at')            => $marketerCampaign->auto_approve_at?->format('d M Y H:i') ?? '—',
@@ -229,21 +229,21 @@
                 <div class="bg-gray-50 rounded-lg p-3 text-center">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.max_commission_budget') }}</div>
                     <div class="font-semibold text-gray-800">
-                        {{ $marketerCampaign->max_commission_budget !== null ? number_format($marketerCampaign->max_commission_budget) : '—' }}
+                        {{ $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—' }}
                         {{ $marketerCampaign->currency }}
                     </div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3 text-center">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.influencer_commission_label') }}</div>
                     <div class="font-semibold text-green-700">
-                        {{ number_format($commissionSetting?->influencer_commission_amount ?? 0) }}
+                        {{ \App\Support\Money::format($commissionSetting?->influencer_commission_amount ?? 0) }}
                         {{ $marketerCampaign->currency }}
                     </div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3 text-center">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.affiliate_commission_label') }}</div>
                     <div class="font-semibold text-green-700">
-                        {{ number_format($commissionSetting?->affiliate_commission_amount ?? 0) }}
+                        {{ \App\Support\Money::format($commissionSetting?->affiliate_commission_amount ?? 0) }}
                         {{ $marketerCampaign->currency }}
                     </div>
                 </div>
@@ -324,7 +324,7 @@
                         @foreach($marketerCampaign->tieredRules as $rule)
                             <tr class="border-b border-gray-50">
                                 <td class="py-2 pr-4">{{ $rule->from_sale_number }}</td>
-                                <td class="py-2 pr-4">{{ number_format($rule->commission_amount) }}</td>
+                                <td class="py-2 pr-4">{{ \App\Support\Money::format($rule->commission_amount) }}</td>
                                 <td class="py-2 pr-4">{{ $rule->currency }}</td>
                             </tr>
                         @endforeach
@@ -427,8 +427,8 @@
                                             <span class="text-xs text-green-600">{{ __('admin.marketer_campaigns.fee_free_affiliate') }}</span>
                                         @else
                                             <span class="font-semibold text-gray-800">
-                                                {{ number_format($invitation->platform_fee_amount) }} {{ $invitation->platform_fee_currency }}
-                                                @if($invitation->platform_fee_vat_amount > 0)<span class="block text-[11px] text-gray-500">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ number_format($invitation->platform_fee_vat_amount) }}</span>@endif
+                                                {{ \App\Support\Money::format($invitation->platform_fee_amount) }} {{ $invitation->platform_fee_currency }}
+                                                @if($invitation->platform_fee_vat_amount > 0)<span class="block text-[11px] text-gray-500">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ \App\Support\Money::format($invitation->platform_fee_vat_amount) }}</span>@endif
                                             </span>
                                         @endif
                                     </td>
@@ -626,7 +626,7 @@
                         @foreach($marketerCampaign->conversions as $conversion)
                             <tr class="border-b border-gray-50">
                                 <td class="py-2 pr-4">{{ $conversion->order?->order_number ?? $conversion->order_id }}</td>
-                                <td class="py-2 pr-4">{{ number_format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
+                                <td class="py-2 pr-4">{{ \App\Support\Money::format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
                                 <td class="py-2 pr-4">{{ $conversion->referral_clicked_at?->format('d M Y H:i') ?? '—' }}</td>
                                 <td class="py-2 pr-4">
                                     @if($conversion->paid_at)
@@ -689,7 +689,7 @@
                                     </x-badge>
                                 </td>
                                 <td class="py-2 pr-4 text-xs">{{ $sample->stock_deducted_at?->format('d M Y H:i') ?? '—' }}</td>
-                                <td class="py-2 pr-4 text-xs" dir="ltr">{{ $sample->stock_deducted_at ? number_format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
+                                <td class="py-2 pr-4 text-xs" dir="ltr">{{ $sample->stock_deducted_at ? \App\Support\Money::format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
                                 <td class="py-2 pr-4 text-xs text-gray-600 max-w-xs">
                                     @if($sample->sample_owner === 'marketer' && $sample->delivery_address_snapshot)
                                         <div class="space-y-0.5">

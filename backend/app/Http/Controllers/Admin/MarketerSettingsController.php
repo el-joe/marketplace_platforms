@@ -47,7 +47,7 @@ class MarketerSettingsController extends Controller
 
         $validated = $request->validate([
             'country_id' => 'required|uuid|exists:countries,id',
-            'fee_per_influencer' => 'required|integer|min:0',
+            'fee_per_influencer' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
             'currency' => 'required|string|size:3',
         ]);
 
@@ -106,7 +106,7 @@ class MarketerSettingsController extends Controller
             'promotion_category' => ['required', Rule::enum(PromotionCategory::class)],
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
             'monthly_minimum' => ['required', 'integer', 'min:0', 'max:1000'],
-            'penalty_amount' => ['nullable', 'integer', 'min:0'],
+            'penalty_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
         ]);
 
         PromotionCategoryTarget::updateOrCreate(

@@ -653,7 +653,7 @@ class FlashSaleController extends Controller
             'marketer_ids' => 'required|array',
             'marketer_ids.*' => 'string',
             'extra_commission_rate' => 'nullable|numeric|min:0|max:100',
-            'extra_commission_flat_amount' => 'nullable|integer|min:0',
+            'extra_commission_flat_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
         ]);
 
         $rate = (float) $request->input('extra_commission_rate', 0);

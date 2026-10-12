@@ -159,7 +159,7 @@ class LastClickAttributionService
             }
 
             $saleNumber = $invitation->total_conversions + 1;
-            $commissionAmount = 0;
+            $commissionAmount = 0.0;
             $applicableTierId = null;
 
             switch ($campaign->commission_type) {
@@ -168,14 +168,14 @@ class LastClickAttributionService
                     $applicableTier = $tiers->where('from_sale_number', '<=', $saleNumber)
                         ->sortByDesc('from_sale_number')
                         ->first();
-                    $commissionAmount = (int) ($applicableTier?->commission_amount ?? 0);
+                    $commissionAmount = (float) ($applicableTier?->commission_amount ?? 0);
                     $applicableTierId = $applicableTier?->id;
                     break;
 
                 case 'fixed':
                 case 'last_click':
                 default:
-                    $commissionAmount = (int) ($campaign->marketer_commission_amount * $item->quantity);
+                    $commissionAmount = round((float) $campaign->marketer_commission_amount * $item->quantity, 2);
 
                     $categoryId = $item->commission_category_id;
                     $setting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
@@ -186,14 +186,14 @@ class LastClickAttributionService
                     // Approval stores the AFFILIATE default on the campaign (it is shared by every invitee). An
                     // amount equal to that default is not a typed override, so the marketer's own type rate applies.
                     $isStoredDefault = $setting
-                        && (int) $campaign->marketer_commission_amount === (int) $setting->affiliate_commission_amount;
+                        && abs((float) $campaign->marketer_commission_amount - (float) $setting->affiliate_commission_amount) < 0.00005;
 
                     if ($commissionAmount <= 0 || $isStoredDefault) {
                         if ($setting) {
                             $perUnit = $marketer->isInfluencer()
                                 ? $setting->influencer_commission_amount
                                 : $setting->affiliate_commission_amount;
-                            $commissionAmount = (int) $perUnit * $item->quantity;
+                            $commissionAmount = round((float) $perUnit * $item->quantity, 2);
                         }
                     }
 
@@ -224,12 +224,12 @@ class LastClickAttributionService
             if ($liveFlashSaleInvitation && $liveFlashSaleInvitation->hasExtraCommission()) {
                 $flashSaleId = $liveFlashSaleInvitation->flash_sale_id;
                 $flashSaleBonusAmount = $liveFlashSaleInvitation->calculateBonus(
-                    (int) $item->line_total,
+                    (float) $item->line_total,
                     (int) $item->quantity
                 );
             }
 
-            $totalCommission = $commissionAmount + (int) ($flashSaleBonusAmount ?? 0);
+            $totalCommission = round($commissionAmount + (float) ($flashSaleBonusAmount ?? 0), 2);
 
             $conversion = MarketerCampaignConversion::create([
                 'campaign_id' => $campaign->id,
@@ -238,7 +238,7 @@ class LastClickAttributionService
                 'order_item_id' => $item->id,
                 'referral_clicked_at' => $click['clicked_at'] ?? null,
                 'commission_amount' => $commissionAmount,
-                'platform_commission_amount' => (int) $campaign->platform_commission_amount * $item->quantity,
+                'platform_commission_amount' => round((float) $campaign->platform_commission_amount * $item->quantity, 2),
                 'currency' => $campaign->currency,
                 'status' => 'pending',
                 'commissioned' => false,

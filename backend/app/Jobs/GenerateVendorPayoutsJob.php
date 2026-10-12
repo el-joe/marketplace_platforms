@@ -6,9 +6,9 @@ use App\Enums\FbnStorageFeeStatus;
 use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\Admin;
-use App\Models\MarketerCampaignInvitation;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
+use App\Models\MarketerCampaignInvitation;
 use App\Models\PackagingSupplyRequest;
 use App\Models\PaidAdCharge;
 use App\Models\Payout;
@@ -113,13 +113,13 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 if ($locked
                                     && $locked->platform_fee_status === 'pending'
                                     && ! $locked->payoutItems()->exists()) {
-                                    $feeLines[] = ['invitation' => $locked, 'fee' => (int) $locked->platform_fee_amount, 'vat' => (int) $locked->platform_fee_vat_amount];
+                                    $feeLines[] = ['invitation' => $locked, 'fee' => (float) $locked->platform_fee_amount, 'vat' => (float) $locked->platform_fee_vat_amount];
                                 }
                             }
-                            $skipped = (int) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'], $feeLines));
-                            if ($skipped !== 0) {
-                                $calc['net_amount'] += $skipped;
-                                $calc['other_adjustments'] += $skipped;
+                            $skipped = round((float) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'], $feeLines)), 2);
+                            if (abs($skipped) > 0) {
+                                $calc['net_amount'] = round($calc['net_amount'] + $skipped, 2);
+                                $calc['other_adjustments'] = round($calc['other_adjustments'] + $skipped, 2);
                             }
 
                             $payout = Payout::create([
@@ -152,9 +152,9 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                     'payout_id' => $payout->id,
                                     'item_type' => 'sub_order',
                                     'sub_order_id' => $subOrder->id,
-                                    'gross' => (int) $subOrder->subtotal,
-                                    'commission' => (int) $subOrder->platform_commission,
-                                    'net' => (int) $subOrder->vendor_payout,
+                                    'gross' => round((float) $subOrder->subtotal, 2),
+                                    'commission' => round((float) $subOrder->platform_commission, 2),
+                                    'net' => round((float) $subOrder->vendor_payout, 2),
                                 ]);
                             }
 

@@ -30,7 +30,7 @@ class WalletService
 
     public function credit(
         Wallet $wallet,
-        int $amountCents,
+        int|float|string $amountCents,
         string $sourceType,
         ?string $sourceId,
         string $description,
@@ -42,26 +42,26 @@ class WalletService
 
         return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId) {
             $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
-            $newBalance = $wallet->balance + $amountCents;
+            $newBalance = round((float) $wallet->balance + (float) $amountCents, 4);
             $wallet->update(['balance' => $newBalance]);
 
             return WalletTransaction::create([
-                'wallet_id'              => $wallet->id,
-                'type'                   => WalletTransactionType::Credit,
-                'amount'           => $amountCents,
-                'balance_after'    => $newBalance,
-                'source_type'            => $sourceType,
-                'source_id'              => $sourceId,
-                'description'            => $description,
-                'performed_by_admin_id'  => $performedByAdminId,
-                'created_at'             => now(),
+                'wallet_id' => $wallet->id,
+                'type' => WalletTransactionType::Credit,
+                'amount' => $amountCents,
+                'balance_after' => $newBalance,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'description' => $description,
+                'performed_by_admin_id' => $performedByAdminId,
+                'created_at' => now(),
             ]);
         });
     }
 
     public function debit(
         Wallet $wallet,
-        int $amountCents,
+        int|float|string $amountCents,
         string $sourceType,
         ?string $sourceId,
         string $description,
@@ -74,28 +74,28 @@ class WalletService
         return DB::transaction(function () use ($wallet, $amountCents, $sourceType, $sourceId, $description, $performedByAdminId) {
             $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
 
-            if ($wallet->balance < $amountCents) {
+            if ((float) $wallet->balance < (float) $amountCents) {
                 throw new InsufficientBalanceException($amountCents, $wallet->balance, $wallet->currency);
             }
 
-            $newBalance = $wallet->balance - $amountCents;
+            $newBalance = round((float) $wallet->balance - (float) $amountCents, 4);
             $wallet->update(['balance' => $newBalance]);
 
             return WalletTransaction::create([
-                'wallet_id'              => $wallet->id,
-                'type'                   => WalletTransactionType::Debit,
-                'amount'           => $amountCents,
-                'balance_after'    => $newBalance,
-                'source_type'            => $sourceType,
-                'source_id'              => $sourceId,
-                'description'            => $description,
-                'performed_by_admin_id'  => $performedByAdminId,
-                'created_at'             => now(),
+                'wallet_id' => $wallet->id,
+                'type' => WalletTransactionType::Debit,
+                'amount' => $amountCents,
+                'balance_after' => $newBalance,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
+                'description' => $description,
+                'performed_by_admin_id' => $performedByAdminId,
+                'created_at' => now(),
             ]);
         });
     }
 
-    public function requestWithdrawal(Wallet $wallet, int $amountCents, array $bankDetails): WalletWithdrawalRequest
+    public function requestWithdrawal(Wallet $wallet, int|float|string $amountCents, array $bankDetails): WalletWithdrawalRequest
     {
         return DB::transaction(function () use ($wallet, $amountCents, $bankDetails) {
             // enhancement.md P-16: lockForUpdate() on a model instance
@@ -104,23 +104,23 @@ class WalletService
             // as credit()/debit() above).
             $wallet = Wallet::whereKey($wallet->id)->lockForUpdate()->firstOrFail();
 
-            if ($wallet->balance < $amountCents) {
+            if ((float) $wallet->balance < (float) $amountCents) {
                 throw new InsufficientBalanceException($amountCents, $wallet->balance, $wallet->currency);
             }
 
             // Reserve the amount: move from balance to pending
             $wallet->update([
-                'balance'         => $wallet->balance - $amountCents,
-                'pending_balance' => $wallet->pending_balance + $amountCents,
+                'balance' => round((float) $wallet->balance - (float) $amountCents, 4),
+                'pending_balance' => round((float) $wallet->pending_balance + (float) $amountCents, 4),
             ]);
 
             return WalletWithdrawalRequest::create([
-                'wallet_id'    => $wallet->id,
+                'wallet_id' => $wallet->id,
                 'amount' => $amountCents,
-                'currency'     => $wallet->currency,
-                'bank_name'    => $bankDetails['bank_name'] ?? null,
-                'bank_iban'    => $bankDetails['bank_iban'] ?? null,
-                'status'       => WalletWithdrawalRequestStatus::Pending,
+                'currency' => $wallet->currency,
+                'bank_name' => $bankDetails['bank_name'] ?? null,
+                'bank_iban' => $bankDetails['bank_iban'] ?? null,
+                'status' => WalletWithdrawalRequestStatus::Pending,
             ]);
         });
     }
@@ -132,24 +132,24 @@ class WalletService
 
             // Release from pending and finalize debit
             $wallet->update([
-                'pending_balance' => max(0, $wallet->pending_balance - $request->amount),
+                'pending_balance' => max(0, round((float) $wallet->pending_balance - (float) $request->amount, 4)),
             ]);
 
             WalletTransaction::create([
-                'wallet_id'             => $wallet->id,
-                'type'                  => WalletTransactionType::Debit,
-                'amount'          => $request->amount,
-                'balance_after'   => $wallet->balance,
-                'source_type'           => 'withdrawal',
-                'source_id'             => $request->id,
-                'description'           => 'Withdrawal approved',
+                'wallet_id' => $wallet->id,
+                'type' => WalletTransactionType::Debit,
+                'amount' => $request->amount,
+                'balance_after' => $wallet->balance,
+                'source_type' => 'withdrawal',
+                'source_id' => $request->id,
+                'description' => 'Withdrawal approved',
                 'performed_by_admin_id' => $admin->id,
-                'created_at'            => now(),
+                'created_at' => now(),
             ]);
 
             $request->update([
-                'status'                => WalletWithdrawalRequestStatus::Approved,
-                'approved_by_admin_id'  => $admin->id,
+                'status' => WalletWithdrawalRequestStatus::Approved,
+                'approved_by_admin_id' => $admin->id,
             ]);
 
             return $request;
@@ -158,17 +158,17 @@ class WalletService
 
     public function rejectWithdrawal(WalletWithdrawalRequest $request, Admin $admin, string $reason): WalletWithdrawalRequest
     {
-        return DB::transaction(function () use ($request, $admin, $reason) {
+        return DB::transaction(function () use ($request, $reason) {
             $wallet = $request->wallet()->lockForUpdate()->first();
 
             // Return reserved amount back to balance
             $wallet->update([
-                'balance'         => $wallet->balance + $request->amount,
-                'pending_balance' => max(0, $wallet->pending_balance - $request->amount),
+                'balance' => round((float) $wallet->balance + (float) $request->amount, 4),
+                'pending_balance' => max(0, round((float) $wallet->pending_balance - (float) $request->amount, 4)),
             ]);
 
             $request->update([
-                'status'           => WalletWithdrawalRequestStatus::Rejected,
+                'status' => WalletWithdrawalRequestStatus::Rejected,
                 'rejection_reason' => $reason,
             ]);
 
@@ -184,26 +184,26 @@ class WalletService
             ->where('delivery_assignments.agent_id', $agent->id)
             ->where('delivery_assignments.status', DeliveryAssignmentStatus::Delivered->value)
             ->where('orders.payment_method', 'cod')
-            ->whereBetween('delivery_assignments.delivered_at', [$periodStart . ' 00:00:00', $periodEnd . ' 23:59:59'])
+            ->whereBetween('delivery_assignments.delivered_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
             ->sum('orders.total');
 
         // Sum approved earnings owed to this agent in the period
         $earningsOwed = DeliveryAgentEarning::where('agent_id', $agent->id)
             ->where('status', DeliveryAgentEarningStatus::Approved)
-            ->whereBetween('created_at', [$periodStart . ' 00:00:00', $periodEnd . ' 23:59:59'])
+            ->whereBetween('created_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
             ->sum('amount');
 
         $net = (int) $codCollected - (int) $earningsOwed;
 
         return DB::transaction(function () use ($agent, $periodStart, $periodEnd, $codCollected, $earningsOwed, $net) {
             $settlement = DeliveryAgentCodSettlement::create([
-                'agent_id'                   => $agent->id,
-                'period_start'               => $periodStart,
-                'period_end'                 => $periodEnd,
-                'total_cod_collected'  => (int) $codCollected,
-                'total_earnings_owed'  => (int) $earningsOwed,
-                'net_to_remit'         => $net,
-                'status'                     => DeliveryAgentCodSettlementStatus::Pending,
+                'agent_id' => $agent->id,
+                'period_start' => $periodStart,
+                'period_end' => $periodEnd,
+                'total_cod_collected' => (int) $codCollected,
+                'total_earnings_owed' => (int) $earningsOwed,
+                'net_to_remit' => $net,
+                'status' => DeliveryAgentCodSettlementStatus::Pending,
             ]);
 
             $agent->loadMissing('country');

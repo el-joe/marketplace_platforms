@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
  * country, country/category commission settings, marketer_commission_rules
  * and the marketer's profile discount). The vendor never supplies a number:
  * the create form shows this quote and the server re-computes it on store.
- * Amounts are BIGINT base-currency units (no /100).
+ * Amounts are DECIMAL(19,4) base-currency units (floats here, rounded to 2 dp for display and charging).
  */
 class MarketerCampaignQuoteService
 {
@@ -38,13 +38,13 @@ class MarketerCampaignQuoteService
         return $listing->productVariant?->product?->category;
     }
 
-    public function feePerInfluencer(?string $countryId): int
+    public function feePerInfluencer(?string $countryId): float
     {
         if (! $countryId) {
-            return 0;
+            return 0.0;
         }
 
-        return (int) (MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->value('fee_per_influencer') ?? 0);
+        return (float) (MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->value('fee_per_influencer') ?? 0);
     }
 
     /**
@@ -60,10 +60,12 @@ class MarketerCampaignQuoteService
         return (float) (Country::whereKey($countryId)->value('vat_rate') ?? 0);
     }
 
-    /** VAT on a fee (BIGINT base units, rounded half up like CheckoutPricingEngine). */
-    public function vatOn(int $amount, float $ratePct): int
+    /** VAT on a fee, rounded half up to 2 decimals (2.00 at 5% = 0.10, not 0). */
+    public function vatOn(float|int|string $amount, float $ratePct): float
     {
-        return $amount > 0 && $ratePct > 0 ? (int) round($amount * ($ratePct / 100)) : 0;
+        $amount = (float) $amount;
+
+        return $amount > 0 && $ratePct > 0 ? round($amount * ($ratePct / 100), 2) : 0.0;
     }
 
     /**
@@ -72,23 +74,23 @@ class MarketerCampaignQuoteService
      * setting by marketer type, else the commission rule, then the marketer's
      * profile discount.
      *
-     * @return array{amount: int, mode: ?string, rate: ?float, flat: ?int, source: string}
+     * @return array{amount: float, mode: ?string, rate: ?float, flat: ?float, source: string}
      */
     public function commissionFor(Marketer $marketer, VendorListing $listing, ?Category $category, bool $isInfluencer): array
     {
-        $price = (int) $listing->price;
+        $price = (float) $listing->price;
         $source = 'none';
         $mode = null;
         $rate = null;
         $flat = null;
-        $amount = 0;
+        $amount = 0.0;
 
         if ($category) {
             $setting = MarketerCommissionCountrySetting::where('country_id', $listing->country_id)
                 ->where('category_id', $category->id)
                 ->first();
             $perUnit = $setting
-                ? (int) ($isInfluencer ? $setting->influencer_commission_amount : $setting->affiliate_commission_amount)
+                ? (float) ($isInfluencer ? $setting->influencer_commission_amount : $setting->affiliate_commission_amount)
                 : 0;
             if ($perUnit > 0) {
                 $amount = $perUnit;
@@ -101,11 +103,11 @@ class MarketerCampaignQuoteService
         if ($amount <= 0) {
             $rule = app(CommissionRuleResolver::class)->resolve($marketer->id, 'products', $category, true);
             if ($rule) {
-                $amount = $rule->resolveAmount($price, 1);
+                $amount = (float) $rule->resolveAmount($price, 1);
                 $source = 'rule';
                 $mode = $rule->commission_mode;
                 $rate = (float) $rule->commission_rate;
-                $flat = $rule->commission_flat_amount;
+                $flat = $rule->commission_flat_amount !== null ? (float) $rule->commission_flat_amount : null;
             }
         }
 
@@ -115,8 +117,8 @@ class MarketerCampaignQuoteService
     /**
      * @param  array<int, string>  $marketerIds
      * @return array{
-     *   currency: string, fee_per_influencer: int, influencer_count: int, affiliate_count: int,
-     *   total_fee: int, vat_rate: float, fee_vat_per_influencer: int, total_fee_vat: int, total_fee_with_vat: int, fee_payer: string, rows: array<int, array<string, mixed>>,
+     *   currency: string, fee_per_influencer: float, influencer_count: int, affiliate_count: int,
+     *   total_fee: float, vat_rate: float, fee_vat_per_influencer: float, total_fee_vat: float, total_fee_with_vat: float, fee_payer: string, rows: array<int, array<string, mixed>>,
      *   influencer_sample_qty: int, affiliate_sample_qty: int, platform_sample_qty: int,
      *   sample_total: int, sample_count: int, stock_available: int, stock_reserved_by_other_campaigns: int, stock_min: int
      * }
@@ -149,9 +151,9 @@ class MarketerCampaignQuoteService
                 'id' => $m->id,
                 'name' => $m->name,
                 'type' => $isInfluencer ? 'influencer' : 'affiliate',
-                'fee' => $isInfluencer ? $feePer : 0,
-                'fee_vat' => $isInfluencer ? $feeVat : 0,
-                'fee_total' => $isInfluencer ? $feePer + $feeVat : 0,
+                'fee' => $isInfluencer ? $feePer : 0.0,
+                'fee_vat' => $isInfluencer ? $feeVat : 0.0,
+                'fee_total' => $isInfluencer ? round($feePer + $feeVat, 2) : 0.0,
                 'commission' => $commission,
             ];
         }
@@ -165,11 +167,11 @@ class MarketerCampaignQuoteService
             'fee_per_influencer' => $feePer,
             'influencer_count' => $influencers,
             'affiliate_count' => $affiliates,
-            'total_fee' => $influencers * $feePer,
+            'total_fee' => round($influencers * $feePer, 2),
             'vat_rate' => $vatRate,
             'fee_vat_per_influencer' => $feeVat,
-            'total_fee_vat' => $influencers * $feeVat,
-            'total_fee_with_vat' => $influencers * ($feePer + $feeVat),
+            'total_fee_vat' => round($influencers * $feeVat, 2),
+            'total_fee_with_vat' => round($influencers * ($feePer + $feeVat), 2),
             'fee_payer' => setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' ? 'vendor' : 'marketer',
             'rows' => $rows,
             // Effective quantities (admin minimums applied), see CampaignSampleService.

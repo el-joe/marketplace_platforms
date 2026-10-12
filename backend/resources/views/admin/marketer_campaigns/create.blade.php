@@ -74,7 +74,7 @@
 
                 <div class="space-y-1">
                     <label for="max_commission_budget" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.max_commission_budget') }} <span class="text-danger-500">*</span></label>
-                    <input type="number" name="max_commission_budget" id="max_commission_budget" min="0" step="1" required
+                    <input type="number" name="max_commission_budget" id="max_commission_budget" min="0" step="0.01" required
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                 </div>
             </div>

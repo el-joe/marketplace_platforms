@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,7 +26,7 @@ class MarketerCampaignSample extends Model
     public const TYPE_AFFILIATE = 'affiliate';
 
     protected $casts = [
-        'commission_amount' => 'integer',
+        'commission_amount' => DecimalMoney::class,
         'cancelled_at' => 'datetime',
         'dispatched_at' => 'datetime',
         'stock_deducted_at' => 'datetime',

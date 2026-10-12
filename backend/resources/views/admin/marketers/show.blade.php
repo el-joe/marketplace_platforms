@@ -130,7 +130,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.price') }}</label>
-                    <input type="number" min="0" name="ad_price" value="{{ old('ad_price', $marketer->marketerProfile?->ad_price) }}"
+                    <input type="number" step="0.01" min="0" name="ad_price" value="{{ old('ad_price', $marketer->marketerProfile?->ad_price) }}"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                 </div>
                 <div>
@@ -154,7 +154,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.ad_type_story') }}</label>
                         <div class="relative">
-                            <input type="number" min="0" name="story_price" value="{{ old('story_price', $marketer->marketerProfile?->story_price) }}"
+                            <input type="number" step="0.01" min="0" name="story_price" value="{{ old('story_price', $marketer->marketerProfile?->story_price) }}"
                                    placeholder="{{ __('admin.marketers.ad_type_not_offered') }}"
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm pr-16 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                             <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-xs text-gray-400">{{ $selAdCur }}</span>
@@ -163,7 +163,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.ad_type_post') }}</label>
                         <div class="relative">
-                            <input type="number" min="0" name="post_price" value="{{ old('post_price', $marketer->marketerProfile?->post_price) }}"
+                            <input type="number" step="0.01" min="0" name="post_price" value="{{ old('post_price', $marketer->marketerProfile?->post_price) }}"
                                    placeholder="{{ __('admin.marketers.ad_type_not_offered') }}"
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm pr-16 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                             <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-xs text-gray-400">{{ $selAdCur }}</span>
@@ -172,7 +172,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.ad_type_video') }}</label>
                         <div class="relative">
-                            <input type="number" min="0" name="video_price" value="{{ old('video_price', $marketer->marketerProfile?->video_price) }}"
+                            <input type="number" step="0.01" min="0" name="video_price" value="{{ old('video_price', $marketer->marketerProfile?->video_price) }}"
                                    placeholder="{{ __('admin.marketers.ad_type_not_offered') }}"
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm pr-16 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
                             <span class="absolute inset-y-0 end-0 flex items-center pe-3 text-xs text-gray-400">{{ $selAdCur }}</span>
@@ -432,7 +432,7 @@
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden" id="commission-statement">
         <div class="px-6 py-4 border-b border-gray-100">
             <h3 class="font-bold text-gray-800">{{ __('admin.marketers.statement_title') }}</h3>
-            <p class="text-xs text-gray-500 mt-1">{{ __('admin.marketers.statement_totals', ['gross' => number_format($statementTotals['gross']), 'cut' => number_format($statementTotals['cut']), 'vat' => number_format($statementTotals['vat']), 'net' => number_format($statementTotals['net'])]) }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ __('admin.marketers.statement_totals', ['gross' => \App\Support\Money::format($statementTotals['gross']), 'cut' => \App\Support\Money::format($statementTotals['cut']), 'vat' => \App\Support\Money::format($statementTotals['vat']), 'net' => \App\Support\Money::format($statementTotals['net'])]) }}</p>
         </div>
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -449,11 +449,11 @@
             @forelse($conversions as $conv)
                 <tr data-conversion-row>
                     <td class="px-4 py-2 font-mono text-xs">{{ $conv->order?->order_number ?? '—' }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['gross']) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['cut']) }} <span class="text-xs text-gray-400">({{ rtrim(rtrim(number_format($conv->statement['cut_percentage'], 2), '0'), '.') }}%)</span></td>
-                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['discount']) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($conv->statement['vat']) }}</td>
-                    <td class="px-4 py-2 text-center font-bold text-green-600">{{ number_format($conv->statement['net']) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($conv->statement['gross']) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($conv->statement['cut']) }} <span class="text-xs text-gray-400">({{ rtrim(rtrim(number_format($conv->statement['cut_percentage'], 2), '0'), '.') }}%)</span></td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($conv->statement['discount']) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($conv->statement['vat']) }}</td>
+                    <td class="px-4 py-2 text-center font-bold text-green-600">{{ \App\Support\Money::format($conv->statement['net']) }}</td>
                     <td class="px-4 py-2 text-center text-xs">{{ $conv->status }}</td>
                 </tr>
             @empty
@@ -468,7 +468,7 @@
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden" id="sales-statement">
         <div class="px-6 py-4 border-b border-gray-100">
             <h3 class="font-bold text-gray-800">{{ __('admin.marketers.sales_title') }}</h3>
-            <p class="text-xs text-gray-500 mt-1" data-sales-totals>{{ __('admin.marketers.sales_totals', ['gross' => number_format($salesTotals['gross']), 'commission' => number_format($salesTotals['commission']), 'vat' => number_format($salesTotals['vat']), 'peer' => number_format($salesTotals['peer']), 'other' => number_format($salesTotals['other']), 'net' => number_format($salesTotals['net'])]) }}</p>
+            <p class="text-xs text-gray-500 mt-1" data-sales-totals>{{ __('admin.marketers.sales_totals', ['gross' => \App\Support\Money::format($salesTotals['gross']), 'commission' => \App\Support\Money::format($salesTotals['commission']), 'vat' => \App\Support\Money::format($salesTotals['vat']), 'peer' => \App\Support\Money::format($salesTotals['peer']), 'other' => \App\Support\Money::format($salesTotals['other']), 'net' => \App\Support\Money::format($salesTotals['net'])]) }}</p>
         </div>
         <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -487,12 +487,12 @@
                 <tr data-sale-row>
                     <td class="px-4 py-2 font-mono text-xs">{{ $sale->order?->order_number ?? '—' }}</td>
                     <td class="px-4 py-2 text-center text-xs">{{ __('admin.marketers.sales_via_'.$sale->sold_via) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($sale->gross_amount) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($sale->platform_commission_amount) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($sale->commission_vat_amount) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($sale->peer_commission_amount) }}</td>
-                    <td class="px-4 py-2 text-center">{{ number_format($sale->gross_amount - $sale->net_amount - $sale->platform_commission_amount - $sale->commission_vat_amount - $sale->peer_commission_amount) }}</td>
-                    <td class="px-4 py-2 text-center font-bold text-green-600">{{ number_format($sale->net_amount) }} {{ $sale->currency }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($sale->gross_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($sale->platform_commission_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($sale->commission_vat_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($sale->gross_amount - $sale->net_amount - $sale->platform_commission_amount - $sale->commission_vat_amount - $sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-2 text-center font-bold text-green-600">{{ \App\Support\Money::format($sale->net_amount) }} {{ $sale->currency }}</td>
                 </tr>
             @empty
                 <tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">{{ __('admin.marketers.sales_empty') }}</td></tr>
@@ -530,7 +530,7 @@
                     <td class="px-6 py-3 text-center">
                         <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">{{ collect([
                             (float) $cc->commission_rate > 0 ? number_format($cc->commission_rate, 2).'%' : null,
-                            (int) $cc->commission_flat_amount > 0 ? number_format($cc->commission_flat_amount).' '.$commissionCurrency : null,
+                            (int) $cc->commission_flat_amount > 0 ? \App\Support\Money::format($cc->commission_flat_amount).' '.$commissionCurrency : null,
                         ])->filter()->implode(' + ') ?: '0%' }}</span>
                     </td>
                     <td class="px-6 py-3 text-center">
@@ -588,13 +588,13 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_flat') }} ({{ $commissionCurrency }})</label>
-                <input type="number" step="1" min="0" name="commission_flat_amount" value="{{ old('commission_flat_amount') }}"
+                <input type="number" step="0.01" min="0" name="commission_flat_amount" value="{{ old('commission_flat_amount') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
                 @error('commission_rate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_min') }} ({{ $commissionCurrency }})</label>
-                <input type="number" step="1" min="0" name="commission_min_amount" value="{{ old('commission_min_amount') }}"
+                <input type="number" step="0.01" min="0" name="commission_min_amount" value="{{ old('commission_min_amount') }}"
                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
             </div>
             <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.marketers.add_or_update') }}</button>
@@ -791,7 +791,7 @@
                 <tr class="hover:bg-gray-50/60 transition-colors">
                     <td class="px-6 py-3 font-medium">{{ $listing->getDisplayTitle() }}</td>
                     <td class="px-6 py-3 text-center text-gray-500">{{ $listing->country?->name_ar ?? '-' }}</td>
-                    <td class="px-6 py-3 text-center font-semibold text-gray-800">{{ number_format($listing->price) }} {{ $listing->currency }}</td>
+                    <td class="px-6 py-3 text-center font-semibold text-gray-800">{{ \App\Support\Money::format($listing->price) }} {{ $listing->currency }}</td>
                     <td class="px-6 py-3 text-center">
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $listingStatusStyles[$listing->status?->value] ?? 'bg-gray-100 text-gray-600' }}">
                             {{ $listing->status?->value }}

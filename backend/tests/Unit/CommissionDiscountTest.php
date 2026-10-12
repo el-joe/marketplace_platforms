@@ -12,19 +12,21 @@ class CommissionDiscountTest extends TestCase
 {
     private function v(V $t, int $flat = 0, float $pct = 0): Vendor
     {
-        $x = new Vendor();
+        $x = new Vendor;
         $x->commission_discount_type = $t;
         $x->commission_discount_flat = $flat;
         $x->commission_discount_percentage = $pct;
+
         return $x;
     }
 
     private function m(M $t, int $flat = 0, float $pct = 0): MarketerProfile
     {
-        $x = new MarketerProfile();
+        $x = new MarketerProfile;
         $x->commission_discount_type = $t;
         $x->commission_discount_flat = $flat;
         $x->commission_discount_percentage = $pct;
+
         return $x;
     }
 
@@ -40,9 +42,9 @@ class CommissionDiscountTest extends TestCase
 
     public function test_marketer_discounts(): void
     {
-        $this->assertSame(1000, $this->m(M::None)->applyCommissionDiscount(1000));
-        $this->assertSame(500, $this->m(M::Flat, 500)->applyCommissionDiscount(1000));
-        $this->assertSame(0, $this->m(M::Flat, 5000)->applyCommissionDiscount(1000));
-        $this->assertSame(900, $this->m(M::Percentage, 0, 10)->applyCommissionDiscount(1000));
+        $this->assertEquals(1000, $this->m(M::None)->applyCommissionDiscount(1000));
+        $this->assertEquals(500, $this->m(M::Flat, 500)->applyCommissionDiscount(1000));
+        $this->assertEquals(0, $this->m(M::Flat, 5000)->applyCommissionDiscount(1000));
+        $this->assertEquals(900, $this->m(M::Percentage, 0, 10)->applyCommissionDiscount(1000));
     }
 }

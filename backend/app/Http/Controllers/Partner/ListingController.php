@@ -401,7 +401,7 @@ class ListingController extends Controller
         } else {
             $rule = $category ? $resolver->resolve(null, 'products', $category) : null;
         }
-        $price = (int) round((float) ($request->input('price') ?? 0));
+        $price = round((float) ($request->input('price') ?? 0), 2);
         $quantity = max(1, (int) ($request->input('quantity') ?? 1));
 
         return response()->json([
@@ -446,7 +446,7 @@ class ListingController extends Controller
         $currency = Country::find($countryId)?->currency_code ?? '';
 
         $quoteService = app(MarketerCampaignQuoteService::class);
-        $fee = (int) ($feeSetting?->fee_per_influencer ?? 0);
+        $fee = (float) ($feeSetting?->fee_per_influencer ?? 0);
         $vatRate = $quoteService->vatRate($countryId);
 
         return response()->json([

@@ -20,8 +20,8 @@ class LedgerService
      *   account_type: string,
      *   account_holder_type: string|null,
      *   account_holder_id: string|null,
-     *   debit: int,
-     *   credit: int,
+     *   debit: int|float,
+     *   credit: int|float,
      *   currency: string,
      *   reference_type: string,
      *   reference_id: string,
@@ -32,10 +32,10 @@ class LedgerService
      */
     public function record(string $groupId, array $entries): void
     {
-        $totalDebit = array_sum(array_column($entries, 'debit'));
-        $totalCredit = array_sum(array_column($entries, 'credit'));
+        $totalDebit = round((float) array_sum(array_column($entries, 'debit')), 4);
+        $totalCredit = round((float) array_sum(array_column($entries, 'credit')), 4);
 
-        if ($totalDebit !== $totalCredit) {
+        if (abs($totalDebit - $totalCredit) >= 0.00005) {
             throw new \InvalidArgumentException(
                 "Ledger entries must balance. Debit total ({$totalDebit}) ≠ credit total ({$totalCredit})."
             );
@@ -233,8 +233,8 @@ class LedgerService
             'account_type' => $e->account_type,
             'account_holder_type' => $e->account_holder_type,
             'account_holder_id' => $e->account_holder_id,
-            'debit' => (int) $e->credit,
-            'credit' => (int) $e->debit,
+            'debit' => (float) $e->credit,
+            'credit' => (float) $e->debit,
             'currency' => $e->currency,
             'reference_type' => 'order_capture_reversal',
             'reference_id' => (string) $order->id,

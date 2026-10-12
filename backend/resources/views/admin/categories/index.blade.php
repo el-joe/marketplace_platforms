@@ -12,10 +12,12 @@
         {{-- Toolbar --}}
         <div class="flex items-center justify-between gap-3 flex-wrap">
             <div class="flex items-center gap-2">
-                <button type="button" id="bulk-commission-btn" class="btn btn-ghost btn-sm hidden">
-                    <x-heroicon name="percent-badge" class="w-4 h-4 mr-1" />
-                    {{ __('admin.categories.bulk_commission_short') }}
-                </button>
+                @can('categories.edit')
+                    <button type="button" id="fixed-commission-btn" class="btn btn-ghost btn-sm">
+                        <x-heroicon name="percent-badge" class="w-4 h-4 mr-1" />
+                        {{ __('admin.categories.fixed_commission') }}
+                    </button>
+                @endcan
             </div>
             <div class="flex items-center gap-2 ms-auto">
                 <div class="relative w-64">
@@ -69,20 +71,35 @@
             </div>
         </div>
 
-        {{-- Bulk Commission Modal --}}
-        <div id="bulk-commission-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="absolute inset-0 bg-black/50" id="bulk-commission-backdrop"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full space-y-4">
-                <h3 class="font-semibold text-gray-900">{{ __('admin.categories.bulk_commission_rate') }}</h3>
-                <p class="text-sm text-gray-500">{{ __('admin.categories.apply_rate_to_selected') }} <span id="bulk-count">0</span> {{ __('admin.categories.title') }}.</p>
+        {{-- Fixed Commission Modal --}}
+        <div id="fixed-commission-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/50" id="fixed-commission-backdrop"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto">
+                <h3 class="font-semibold text-gray-900">{{ __('admin.categories.fixed_commission') }}</h3>
+                <p class="text-sm text-gray-500">{{ __('admin.categories.fixed_commission_hint') }}</p>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.commission_rate_pct') }}</label>
-                    <input type="number" id="bulk-rate-input" min="0" max="100" step="0.01" class="input w-full"
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.fixed_commission_pct') }}</label>
+                    <input type="number" id="fixed-commission-pct" min="0" max="100" step="0.01" class="input w-full"
+                        value="{{ rtrim(rtrim(number_format((float) $fixedCommissionPct, 2, '.', ''), '0'), '.') ?: '0' }}"
                         placeholder="{{ __('admin.categories.commission_rate_placeholder') }}" />
                 </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.fixed_commission_amount_per_country') }}</label>
+                    <div class="space-y-2">
+                        @foreach($fixedCommissionCountries as $country)
+                            <div class="flex items-center gap-2">
+                                <span class="flex-1 text-sm text-gray-700">{{ $country->name_en }}</span>
+                                <input type="number" min="0" step="0.0001" class="input w-32 fixed-commission-amount"
+                                    data-country-id="{{ $country->id }}"
+                                    value="{{ rtrim(rtrim(number_format((float) $country->fixed_commission_amount, 4, '.', ''), '0'), '.') ?: '0' }}" />
+                                <span class="w-10 text-xs text-gray-400">{{ $country->currency_code }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
                 <div class="flex gap-2">
-                    <button type="button" id="bulk-commission-cancel" class="btn btn-ghost flex-1">{{ __('common.cancel') }}</button>
-                    <button type="button" id="bulk-commission-apply" class="btn btn-primary flex-1">{{ __('common.apply') }}</button>
+                    <button type="button" id="fixed-commission-cancel" class="btn btn-ghost flex-1">{{ __('common.cancel') }}</button>
+                    <button type="button" id="fixed-commission-apply" class="btn btn-primary flex-1">{{ __('common.save') }}</button>
                 </div>
             </div>
         </div>
@@ -92,7 +109,7 @@
     <script>
         window.TRANSLATIONS = window.TRANSLATIONS || {};
         Object.assign(window.TRANSLATIONS, {
-            commissionUpdated: @json(__('admin.categories.commission_updated')),
+            commissionUpdated: @json(__('admin.categories.fixed_commission_saved')),
             commissionUpdateFailed: @json(__('admin.categories.commission_update_failed')),
             featuredBadge: @json(__('admin.categories.featured_badge')),
             addBadge: @json(__('admin.categories.add_badge')),
@@ -106,7 +123,7 @@
         });
 
         window.ROUTES_CAT = {
-            bulkCommission: '{{ route('admin.categories.bulk-commission') }}',
+            fixedCommission: '{{ route('admin.categories.fixed-commission.update') }}',
             toggleFeatured: '{{ url('categories') }}/:id/toggle-featured',
             toggleVisible:  '{{ url('categories') }}/:id/toggle-visible',
             destroy: '{{ url('categories') }}/:id',

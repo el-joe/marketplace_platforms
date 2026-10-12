@@ -29,6 +29,7 @@ class Country extends Model
         'default_locale',
         'timezone',
         'vat_rate',
+        'fixed_commission_amount',
         'is_active',
         'is_launched',
         'cod_available',
@@ -46,6 +47,7 @@ class Country extends Model
         'cod_supermall_max_amount' => 'integer',
         'cod_supermall_category_id' => 'string',
         'vat_rate' => 'decimal:2',
+        'fixed_commission_amount' => 'decimal:4',
         'launched_at' => 'datetime',
     ];
 

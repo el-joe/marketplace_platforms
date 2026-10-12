@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,8 +34,8 @@ class WalletTransaction extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
-        'balance_after' => 'integer',
+        'amount' => DecimalMoney::class,
+        'balance_after' => DecimalMoney::class,
     ];
 
     protected static function boot(): void

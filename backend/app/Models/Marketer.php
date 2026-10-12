@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\VendorGlobalStatus;
 use App\Services\Customer\MarketerProfileCache;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -43,7 +44,7 @@ class Marketer extends Model
             'approved_at' => 'datetime',
             'onboarding_completed_at' => 'datetime',
             'last_login_at' => 'datetime',
-            'total_earnings' => 'integer',
+            'total_earnings' => DecimalMoney::class,
             'global_status' => VendorGlobalStatus::class,
         ];
     }

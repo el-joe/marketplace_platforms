@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use App\Enums\WalletOwnerType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -23,20 +24,20 @@ class Wallet extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
-        'owner_type'            => WalletOwnerType::class,
-        'balance'         => 'integer',
-        'pending_balance' => 'integer',
-        'is_frozen'             => 'boolean',
+        'owner_type' => WalletOwnerType::class,
+        'balance' => DecimalMoney::class,
+        'pending_balance' => DecimalMoney::class,
+        'is_frozen' => 'boolean',
     ];
 
-    public function getOwnerAttribute(): Model|null
+    public function getOwnerAttribute(): ?Model
     {
         return match ($this->owner_type) {
-            WalletOwnerType::Customer      => Customer::find($this->owner_id),
-            WalletOwnerType::Vendor        => Vendor::find($this->owner_id),
+            WalletOwnerType::Customer => Customer::find($this->owner_id),
+            WalletOwnerType::Vendor => Vendor::find($this->owner_id),
             WalletOwnerType::DeliveryAgent => DeliveryAgent::find($this->owner_id),
-            WalletOwnerType::Marketer      => Marketer::find($this->owner_id),
-            default                        => null,
+            WalletOwnerType::Marketer => Marketer::find($this->owner_id),
+            default => null,
         };
     }
 

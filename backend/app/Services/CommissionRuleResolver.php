@@ -44,9 +44,9 @@ class CommissionRuleResolver
         return null;
     }
 
-    public function calculate(?string $marketerId, string $scope, Model|string|null $category, int|string $base, int $quantity = 1, bool $includePlatform = false, bool $round = false): int
+    public function calculate(?string $marketerId, string $scope, Model|string|null $category, int|float|string $base, int $quantity = 1, bool $includePlatform = false, bool $round = false): float
     {
-        return $this->resolve($marketerId, $scope, $category, $includePlatform)?->resolveAmount($base, $quantity, $round) ?? 0;
+        return $this->resolve($marketerId, $scope, $category, $includePlatform)?->resolveAmount($base, $quantity, $round) ?? 0.0;
     }
 
     /** @return string[] category id then ancestors */

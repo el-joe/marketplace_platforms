@@ -131,9 +131,9 @@
                     __('partner.marketer_campaigns_my.field.country') => $marketerCampaign->country?->name_ar ?? $marketerCampaign->country?->name_en ?? '—',
                     __('partner.marketer_campaigns_my.field.currency') => $marketerCampaign->currency ?? '—',
                     __('partner.marketer_campaigns_my.field.commission_type') => __('partner.marketer_campaigns_my.commission_type.' . $marketerCampaign->commission_type),
-                    __('partner.marketer_campaigns_my.field.max_commission_budget') => $marketerCampaign->max_commission_budget !== null ? number_format($marketerCampaign->max_commission_budget) : '—',
-                    __('partner.marketer_campaigns_my.field.platform_commission_amount') => $marketerCampaign->platform_commission_amount !== null ? number_format($marketerCampaign->platform_commission_amount) : '—',
-                    __('partner.marketer_campaigns_my.field.marketer_commission_amount') => $marketerCampaign->marketer_commission_amount !== null ? number_format($marketerCampaign->marketer_commission_amount) : '—',
+                    __('partner.marketer_campaigns_my.field.max_commission_budget') => $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—',
+                    __('partner.marketer_campaigns_my.field.platform_commission_amount') => $marketerCampaign->platform_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->platform_commission_amount) : '—',
+                    __('partner.marketer_campaigns_my.field.marketer_commission_amount') => $marketerCampaign->marketer_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->marketer_commission_amount) : '—',
                     __('partner.marketer_campaigns_my.field.platform_sample_qty') => $marketerCampaign->platform_sample_qty_snapshot ?? 0,
                     __('partner.marketer_campaigns_my.field.per_marketer_sample_qty') => $marketerCampaign->per_marketer_sample_qty_snapshot ?? 0,
                     __('partner.marketer_campaigns_my.field.created_at') => $marketerCampaign->created_at->format('Y-m-d H:i'),
@@ -196,7 +196,7 @@
                         @foreach ($marketerCampaign->tieredRules as $rule)
                             <tr>
                                 <td class="px-4 py-2">{{ $rule->from_sale_number }}</td>
-                                <td class="px-4 py-2">{{ number_format($rule->commission_amount) }}</td>
+                                <td class="px-4 py-2">{{ \App\Support\Money::format($rule->commission_amount) }}</td>
                                 <td class="px-4 py-2">{{ $rule->currency }}</td>
                             </tr>
                         @endforeach
@@ -258,7 +258,7 @@
             <div class="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-gray-700" data-testid="campaign-fee-summary">
                 <div class="font-semibold text-gray-800 mb-1">{{ __('partner.marketer_campaigns.fee_summary_title') }}</div>
                 {{ __('partner.marketer_campaigns.fee_summary', [
-                    'fee' => number_format($feeNet), 'vat' => number_format($feeVatSum), 'total' => number_format($feeNet + $feeVatSum),
+                    'fee' => \App\Support\Money::format($feeNet), 'vat' => \App\Support\Money::format($feeVatSum), 'total' => \App\Support\Money::format($feeNet + $feeVatSum),
                     'currency' => $marketerCampaign->currency,
                 ]) }}
             </div>
@@ -309,8 +309,8 @@
                                     @endphp
                                     <td class="px-4 py-3 text-gray-700">
                                         @if ($rowFee > 0)
-                                            {{ number_format($rowFee).' '.$marketerCampaign->currency }}
-                                            <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-vat">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ number_format($rowVat).' '.$marketerCampaign->currency }}</span>
+                                            {{ \App\Support\Money::format($rowFee).' '.$marketerCampaign->currency }}
+                                            <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-vat">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ \App\Support\Money::format($rowVat).' '.$marketerCampaign->currency }}</span>
                                             @if ($invitation->platform_fee_status === 'pending')
                                                 <span class="block text-[11px] text-orange-600">{{ __('partner.marketer_campaigns.fee_status_pending') }}</span>
                                             @elseif ($invitation->platform_fee_status === 'paid')
@@ -320,7 +320,7 @@
                                             {{ __('partner.marketer_campaigns.free_label') }}
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700">{{ $rowCommission > 0 ? number_format($rowCommission).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.commission_not_set') }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ $rowCommission > 0 ? \App\Support\Money::format($rowCommission).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.commission_not_set') }}</td>
                                     <td class="px-4 py-3">
                                         @if ($invitation->referral_link)
                                             <div class="flex items-center gap-2">
@@ -428,7 +428,7 @@
                                 <tr>
                                     <td class="px-4 py-3 font-medium text-gray-900">{{ $conversion->order?->order_number ?? $conversion->order_id }}</td>
                                     <td class="px-4 py-3 text-gray-500">{{ $conversion->created_at?->format('Y-m-d') ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-gray-700">{{ number_format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
+                                    <td class="px-4 py-3 text-gray-700">{{ \App\Support\Money::format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
                                     <td class="px-4 py-3 text-gray-500">{{ $conversion->referral_clicked_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 </tr>
                             @endforeach
@@ -472,7 +472,7 @@
                                     {{ $sampleStatusLabel($sample->status) }}
                                     @if ($sample->stock_deducted_at)
                                         &middot; {{ __('partner.marketer_campaigns_my.field.stock_deducted') }}
-                                        &middot; {{ __('partner.marketer_campaigns_my.field.commission_charged') }}: {{ number_format($sample->commission_amount) }} {{ $sample->commission_currency }}
+                                        &middot; {{ __('partner.marketer_campaigns_my.field.commission_charged') }}: {{ \App\Support\Money::format($sample->commission_amount) }} {{ $sample->commission_currency }}
                                     @endif
                                 </span>
                             </div>
@@ -509,7 +509,7 @@
                                 <td class="px-4 py-2">{{ $sample->quantity }}</td>
                                 <td class="px-4 py-2">{{ $sampleStatusLabel($sample->status) }}</td>
                                 <td class="px-4 py-2">{{ $sample->stock_deducted_at ? __('common.yes') : '—' }}</td>
-                                <td class="px-4 py-2">{{ $sample->stock_deducted_at ? number_format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
+                                <td class="px-4 py-2">{{ $sample->stock_deducted_at ? \App\Support\Money::format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->delivered_at?->format('Y-m-d H:i') ?? '—' }}</td>
                             </tr>

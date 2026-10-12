@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,13 @@ class PayoutItem extends Model
         'commission',
         'net',
         'description',
+    ];
+
+    protected $casts = [
+        'vat_amount' => DecimalMoney::class,
+        'gross' => DecimalMoney::class,
+        'commission' => DecimalMoney::class,
+        'net' => DecimalMoney::class,
     ];
 
     public function payout(): BelongsTo

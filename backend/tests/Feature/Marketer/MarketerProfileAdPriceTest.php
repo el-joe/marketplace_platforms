@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Marketer;
 
+use App\Models\Currency;
 use App\Models\Marketer;
 use App\Models\MarketerAdmin;
 use App\Models\MarketerProfile;
@@ -22,22 +23,22 @@ class MarketerProfileAdPriceTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
-        \App\Models\Currency::query()->firstOrCreate(['code' => 'AED'], ['name' => 'Dirham', 'symbol' => 'AED', 'is_active' => true]);
+        Currency::query()->firstOrCreate(['code' => 'AED'], ['name' => 'Dirham', 'symbol' => 'AED', 'is_active' => true]);
         $this->s = MarketplaceScenario::make()->build();
-        $this->s->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
+        $this->s->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
     }
 
     private function mk(string $type, array $profile = [], array $m = []): MarketerAdmin
     {
         $marketer = Marketer::create(array_merge([
-            'name' => 'M ' . Str::random(4), 'email' => Str::random(8) . '@example.test',
-            'phone' => '+9715' . fake()->numerify('########'), 'marketer_type' => $type,
+            'name' => 'M '.Str::random(4), 'email' => Str::random(8).'@example.test',
+            'phone' => '+9715'.fake()->numerify('########'), 'marketer_type' => $type,
             'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(), 'onboarding_completed_at' => now(),
         ], $m));
         MarketerProfile::create(array_merge(['marketer_id' => $marketer->id, 'profile_slug' => Str::lower(Str::random(8))], $profile));
 
         return MarketerAdmin::create([
-            'marketer_id' => $marketer->id, 'name' => 'A', 'email' => Str::random(8) . '@example.test',
+            'marketer_id' => $marketer->id, 'name' => 'A', 'email' => Str::random(8).'@example.test',
             'password' => Hash::make('password'), 'is_owner' => true, 'is_active' => true,
         ]);
     }
@@ -60,12 +61,14 @@ class MarketerProfileAdPriceTest extends TestCase
         $r = route('marketer.profile.ad-price.update');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => -1])->assertSessionHasErrors('ad_price');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 'abc'])->assertSessionHasErrors('ad_price');
-        $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 12.5])->assertSessionHasErrors('ad_price');
+        $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 12.555])->assertSessionHasErrors('ad_price');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 5, 'ad_price_currency' => 'AEDX'])->assertSessionHasErrors('ad_price_currency');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 5, 'ad_price_currency' => 'ZZZ'])->assertSessionHasErrors('ad_price_currency');
         $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 500, 'ad_price_currency' => 'AED'])->assertSessionHasNoErrors();
         $p = $a->marketer->marketerProfile->fresh();
-        $this->assertSame(500, (int) $p->ad_price);
+        $this->assertEquals(500, $p->ad_price);
+        $this->actingAs($a, 'marketer')->put($r, ['ad_price' => 12.5, 'ad_price_currency' => 'AED'])->assertSessionHasNoErrors();
+        $this->assertEquals(12.5, $a->marketer->marketerProfile->fresh()->ad_price);
         $this->assertSame('AED', $p->ad_price_currency);
     }
 
@@ -93,7 +96,8 @@ class MarketerProfileAdPriceTest extends TestCase
         $this->getJson($this->url('marketers/gone-one'))->assertNotFound();
 
         $this->mk('influencer', ['profile_slug' => 'ok-one', 'shirt_size' => 'XL']);
-        $json = $this->getJson($this->url('marketers/ok-one')); $json->assertOk();
+        $json = $this->getJson($this->url('marketers/ok-one'));
+        $json->assertOk();
         $body = $json->getContent();
         $this->assertStringNotContainsString('"email"', $body);
         $this->assertStringNotContainsString('commission', strtolower($body));
