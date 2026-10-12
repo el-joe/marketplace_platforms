@@ -20,6 +20,7 @@
     $subOrderItems = $payout->items->where('item_type', 'sub_order');
     $promotionFeeItems = $payout->items->where('item_type', 'promotion_fee');
     $influencerFeeItems = $payout->items->where('item_type', 'influencer_fee');
+    $promotionSampleItems = $payout->items->where('item_type', 'promotion_sample');
 @endphp
 
 @section('title', __('partner.payouts.payout_details_title', ['number' => $payout->payout_number]))
@@ -240,6 +241,42 @@
                                     <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net) - $i->vat_amount), 2) }}</td>
                                     <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum('vat_amount'), 2) }}</td>
                                     <td class="py-3 px-4 text-center text-red-500">− {{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net)), 2) }} {{ $payout->currency }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </details>
+            @endif
+
+            {{-- Promotion samples: zero-price lines, admin sale commission deducted --}}
+            @if($promotionSampleItems->isNotEmpty())
+                <details open class="bg-white rounded-2xl border border-gray-200 overflow-hidden group" id="promotion-sample-lines">
+                    <summary class="px-5 py-4 border-b border-gray-100 flex items-center justify-between cursor-pointer select-none list-none">
+                        <h3 class="font-semibold text-gray-800">{{ __('partner.payouts.promotion_samples_title') }}</h3>
+                        <span class="text-xs text-gray-400">{{ __('partner.payouts.promotion_sample_count', ['count' => $promotionSampleItems->count()]) }}</span>
+                    </summary>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 border-b border-gray-100">
+                                <tr class="text-xs text-gray-500 uppercase">
+                                    <th class="text-right py-3 px-5 font-medium">{{ __('partner.payouts.description') }}</th>
+                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.gross') }}</th>
+                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.amount') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                @foreach($promotionSampleItems as $item)
+                                    <tr>
+                                        <td class="py-3 px-5 text-gray-700">{{ $item->description }}</td>
+                                        <td class="py-3 px-4 text-center">{{ number_format($item->gross, 2) }}</td>
+                                        <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format($item->commission, 2) }} {{ $payout->currency }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="border-t border-gray-200 bg-gray-50">
+                                <tr class="text-sm font-semibold text-gray-800">
+                                    <td class="py-3 px-5" colspan="2">{{ __('partner.payouts.total') }}</td>
+                                    <td class="py-3 px-4 text-center text-red-500">− {{ number_format($promotionSampleItems->sum('commission'), 2) }} {{ $payout->currency }}</td>
                                 </tr>
                             </tfoot>
                         </table>

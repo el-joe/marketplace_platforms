@@ -177,13 +177,18 @@ class LastClickAttributionService
                 default:
                     $commissionAmount = (int) ($campaign->marketer_commission_amount * $item->quantity);
 
-                    if ($commissionAmount <= 0) {
-                        $categoryId = $item->commission_category_id;
-                        $setting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
-                            ->where('category_id', $categoryId)
-                            ->first();
+                    $categoryId = $item->commission_category_id;
+                    $setting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
+                        ->where('category_id', $categoryId)
+                        ->first();
+                    $marketer = $invitation->marketer;
 
-                        $marketer = $invitation->marketer;
+                    // Approval stores the AFFILIATE default on the campaign (it is shared by every invitee). An
+                    // amount equal to that default is not a typed override, so the marketer's own type rate applies.
+                    $isStoredDefault = $setting
+                        && (int) $campaign->marketer_commission_amount === (int) $setting->affiliate_commission_amount;
+
+                    if ($commissionAmount <= 0 || $isStoredDefault) {
                         if ($setting) {
                             $perUnit = $marketer->isInfluencer()
                                 ? $setting->influencer_commission_amount
