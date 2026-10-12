@@ -426,6 +426,48 @@
             @endif
         </x-card>
 
+        @php
+            $transferred = $marketerCampaign->invitations->filter(fn ($i) => $i->replaced_invitation_id)->sortBy('created_at');
+            $unreplaced = $marketerCampaign->invitations
+                ->whereIn('status', ['rejected', 'timed_out'])
+                ->filter(fn ($i) => ! $marketerCampaign->invitations->contains('replaced_invitation_id', $i->id));
+        @endphp
+        @if($transferred->isNotEmpty() || $unreplaced->isNotEmpty())
+            <x-card title="{{ __('admin.marketer_campaigns.transfers_title') }}">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-start text-gray-500 border-b">
+                                <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_from') }}</th>
+                                <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_to') }}</th>
+                                <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason') }}</th>
+                                <th class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_at') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($transferred as $new)
+                                @php $old = $marketerCampaign->invitations->firstWhere('id', $new->replaced_invitation_id); @endphp
+                                <tr class="border-b">
+                                    <td class="py-2 pe-4">{{ $old?->marketer?->name ?? '—' }}</td>
+                                    <td class="py-2 pe-4">{{ $new->marketer?->name ?? '—' }}</td>
+                                    <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason_'.($old?->status ?? 'rejected')) }}</td>
+                                    <td class="py-2 pe-4">{{ $new->created_at?->format('d M Y H:i') }}</td>
+                                </tr>
+                            @endforeach
+                            @foreach($unreplaced as $old)
+                                <tr class="border-b">
+                                    <td class="py-2 pe-4">{{ $old->marketer?->name ?? '—' }}</td>
+                                    <td class="py-2 pe-4 text-red-600">{{ __('admin.marketer_campaigns.transfer_none') }}</td>
+                                    <td class="py-2 pe-4">{{ __('admin.marketer_campaigns.transfer_reason_'.$old->status) }}</td>
+                                    <td class="py-2 pe-4">{{ $old->responded_at?->format('d M Y H:i') ?? '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </x-card>
+        @endif
+
         @can('marketer_campaigns.create')
             @if(in_array($marketerCampaign->status, ['pending_admin', 'active']))
                 @php

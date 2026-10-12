@@ -27,12 +27,12 @@ use App\Models\VendorListing;
 use App\Notifications\Admin\CampaignMarketerReassignedNotification;
 use App\Notifications\Admin\NewCampaignPendingNotification;
 use App\Notifications\Marketer\CampaignExpired;
-use App\Notifications\Marketer\CampaignInvitationAcceptedNotification;
 use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
 use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
 use App\Notifications\Vendor\CampaignApprovedNotification;
 use App\Notifications\Vendor\CampaignAutoApprovedNotification;
 use App\Notifications\Vendor\CampaignDoneNotification;
+use App\Notifications\Vendor\CampaignInvitationResponseNotification as VendorCampaignInvitationResponseNotification;
 use App\Notifications\Vendor\CampaignPendingAdminNotification;
 use App\Notifications\Vendor\CampaignRejectedNotification;
 use App\Notifications\Vendor\MarketerReplacedNotification as VendorMarketerReplacedNotification;
@@ -951,7 +951,7 @@ class MarketerCampaignService
             }
 
             $campaign->vendor?->vendorAdmins?->each(
-                fn ($va) => $va->notify(new CampaignInvitationAcceptedNotification($invitation))
+                fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($invitation, 'accepted'))
             );
 
             $this->createMarketerListingFromInvitation($invitation);
@@ -1145,11 +1145,12 @@ class MarketerCampaignService
             fn ($ma) => $ma->notify(new CampaignInvitationRejectedNotification($oldInvitation))
         );
 
+        $reason = $oldInvitation->status === 'timed_out' ? 'timed_out' : 'rejected';
+        // Vendor: tell them the marketer rejected / timed out and a replacement is being searched.
         $campaign->vendor?->vendorAdmins?->each(
-            fn ($va) => $va->notify(new CampaignInvitationRejectedNotification($oldInvitation))
+            fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($oldInvitation, $reason))
         );
 
-        $reason = $oldInvitation->status === 'timed_out' ? 'timed_out' : 'rejected';
         $notifyAdmins = fn (?Marketer $new) => Admin::query()->get()->each(
             fn ($admin) => $admin->notify(new CampaignMarketerReassignedNotification($campaign, $oldMarketer, $new, $reason))
         );
