@@ -12,6 +12,7 @@
         'done'          => ['label' => __('partner.marketer_campaigns_my.status.done'),           'cls' => 'bg-gray-100 text-gray-500'],
         'cancelled'     => ['label' => __('partner.marketer_campaigns_my.status.cancelled'),      'cls' => 'bg-gray-100 text-gray-400'],
         'paused'        => ['label' => __('partner.marketer_campaigns_my.status.paused'),         'cls' => 'bg-gray-100 text-gray-600'],
+        'marketer_requested' => ['label' => __('partner.marketer_campaigns_my.status.marketer_requested'), 'cls' => 'bg-yellow-100 text-yellow-700'],
     ];
     $st = $statusMap[$marketerCampaign->status] ?? ['label' => $marketerCampaign->status, 'cls' => 'bg-gray-100 text-gray-600'];
 
@@ -23,6 +24,10 @@
     ];
 
     $isPendingCancellable = $marketerCampaign->status === 'pending_admin';
+    $mcVendorUser = auth('vendor')->user();
+    $canEditCampaign = in_array($marketerCampaign->status, ['pending_admin', 'marketer_requested'], true) && $mcVendorUser?->hasPermissionTo('marketer_campaigns.edit');
+    $canDeleteCampaign = in_array($marketerCampaign->status, ['cancelled', 'rejected', 'done', 'completed', 'pending_admin'], true) && $mcVendorUser?->hasPermissionTo('marketer_campaigns.delete');
+    $canInviteMore = in_array($marketerCampaign->status, ['active'], true) && $mcVendorUser?->hasPermissionTo('marketer_campaigns.create');
 @endphp
 
 @section('title', $marketerCampaign->title ?: __('partner.marketer_campaigns_my.title'))
@@ -48,6 +53,30 @@
                 {{ $st['label'] }}
             </span>
         </div>
+        <div class="flex flex-wrap items-center gap-2">
+        @if ($canEditCampaign)
+            <a href="{{ route('partner.marketer-campaigns.edit', $marketerCampaign) }}"
+               class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                {{ __('partner.marketer_campaigns_my.edit') }}
+            </a>
+        @endif
+        @if ($canInviteMore)
+            <button type="button" @click="tab = 'marketers'; $nextTick(() => document.getElementById('invite-marketers-modal')?.classList.remove('hidden'))"
+                    class="inline-flex items-center gap-2 rounded-lg border border-purple-300 bg-white px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-50 transition-colors">
+                {{ __('partner.marketer_campaigns_my.invite_marketers') }}
+            </button>
+        @endif
+        @if ($canDeleteCampaign)
+            <form method="POST" action="{{ route('partner.marketer-campaigns.destroy', $marketerCampaign) }}"
+                  onsubmit="return confirm(@js(__('partner.marketer_campaigns_my.confirm_delete')))">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                        class="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
+                    {{ __('partner.marketer_campaigns_my.delete') }}
+                </button>
+            </form>
+        @endif
         @if ($isPendingCancellable)
             <form method="POST" action="{{ route('partner.marketer-campaigns.cancel', $marketerCampaign) }}"
                   onsubmit="return confirm('{{ __('partner.marketer_campaigns_my.confirm_cancel') }}')">
@@ -58,6 +87,7 @@
                 </button>
             </form>
         @endif
+        </div>
     </div>
 
     @if (session('success'))
@@ -190,6 +220,13 @@
                     <li class="flex items-center gap-3">
                         <span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span>
                         <span class="text-gray-700">{{ __('partner.marketer_campaigns_my.timeline.auto_approved') }}</span>
+                    </li>
+                @endif
+                @if (in_array($marketerCampaign->status, ['cancelled', 'done', 'completed'], true))
+                    <li class="flex items-center gap-3">
+                        <span class="h-2.5 w-2.5 rounded-full {{ $marketerCampaign->status === 'cancelled' ? 'bg-red-500' : 'bg-gray-500' }}"></span>
+                        <span class="text-gray-700">{{ $marketerCampaign->status === 'cancelled' ? __('partner.marketer_campaigns_my.timeline.cancelled') : __('partner.marketer_campaigns_my.timeline.done') }}</span>
+                        <span class="text-gray-400">{{ $marketerCampaign->updated_at->format('Y-m-d H:i') }}</span>
                     </li>
                 @endif
             </ol>

@@ -34,6 +34,7 @@ use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use App\Notifications\Admin\ListingResubmittedNotification;
 use App\Services\CommissionRuleResolver;
+use App\Services\Inventory\InventoryService;
 use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignService;
@@ -594,6 +595,7 @@ class ListingController extends Controller
                 'invitations as pending_invitations_count' => fn ($q) => $q->where('status', 'pending'),
                 'conversions',
             ])
+            ->withSum('invitations as invitations_fee_total', 'platform_fee_amount')
             ->latest()
             ->paginate(10, ['*'], 'campaigns_page')
             ->fragment('marketer_campaign');
@@ -608,7 +610,22 @@ class ListingController extends Controller
             'commission_budget_spent' => (int) (clone $marketerCampaignsBase)->sum('commission_budget_spent'),
         ];
 
-        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats'));
+        // Why (if at all) the "New campaign" button must be disabled.
+        $marketerCampaignBlock = null;
+        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+        if ($listing->status !== VendorListingStatus::Active) {
+            $marketerCampaignBlock = __('partner.listings.show.marketer_campaign.blocked_not_active');
+        } elseif (! in_array($listing->fulfillment_model?->value, $allowedModels, true)) {
+            $marketerCampaignBlock = __('partner.listings.show.marketer_campaign.blocked_fulfilment');
+        } else {
+            $minStock = (int) ($listing->productVariant?->product?->category?->min_stock_for_campaign ?? 10);
+            $availableStock = app(InventoryService::class)->availableStock($listing);
+            if ($availableStock < $minStock) {
+                $marketerCampaignBlock = __('partner.listings.show.marketer_campaign.blocked_stock', ['stock' => $availableStock, 'min' => $minStock]);
+            }
+        }
+
+        return view('partner.listings.show', compact('listing', 'movements', 'availableShippingMethods', 'defaultShippingMethod', 'marketerCampaigns', 'marketerCampaignStats', 'marketerCampaignBlock'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

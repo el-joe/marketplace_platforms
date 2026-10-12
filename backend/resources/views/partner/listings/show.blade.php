@@ -100,7 +100,7 @@
         </form>
     </details>
 
-    <div x-data="{ tab: '{{ request('tab', 'details') }}' }">
+    <div x-data="{ tab: '{{ request('tab', 'details') }}' }" x-init="if (location.hash === '#marketer_campaign') tab = 'marketer_campaign'">
 
     {{-- Tab nav --}}
     <div class="border-b border-gray-200 mb-6">
@@ -549,96 +549,7 @@
 
     {{-- Marketer Campaign tab --}}
     <div x-show="tab === 'marketer_campaign'" x-cloak>
-        @php
-            // Transitional: P2 rebuilds this tab as a list of $marketerCampaigns.
-            $marketerCampaign = $marketerCampaigns->first();
-            $marketerCampaign?->loadMissing(['invitations.marketer', 'conversions']);
-        @endphp
-        @if($marketerCampaign)
-            @php
-                $mcStatusMap = [
-                    'pending_admin' => ['bg-yellow-100 text-yellow-700', __('partner.listings.show.marketer_campaign.statuses.pending_admin')],
-                    'active' => ['bg-green-100 text-green-700', __('partner.listings.show.marketer_campaign.statuses.active')],
-                    'rejected' => ['bg-red-100 text-red-700', __('partner.listings.show.marketer_campaign.statuses.rejected')],
-                    'cancelled' => ['bg-gray-100 text-gray-500', __('partner.listings.show.marketer_campaign.statuses.cancelled')],
-                    'completed' => ['bg-blue-100 text-blue-700', __('partner.listings.show.marketer_campaign.statuses.completed')],
-                ];
-                [$mcStatusClass, $mcStatusLabel] = $mcStatusMap[$marketerCampaign->status] ?? ['bg-gray-100 text-gray-600', $marketerCampaign->status];
-            @endphp
-
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-800">{{ $marketerCampaign->title ?: __('partner.listings.show.marketer_campaign.title') }}</h3>
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ $mcStatusClass }}">{{ $mcStatusLabel }}</span>
-                </div>
-
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm mb-4">
-                    <div>
-                        <p class="text-gray-400 text-xs mb-1">{{ __('partner.listings.show.marketer_campaign.invited_marketers') }}</p>
-                        <p class="font-semibold text-gray-900">{{ $marketerCampaign->invitations->count() }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-xs mb-1">{{ __('partner.listings.show.marketer_campaign.total_conversions') }}</p>
-                        <p class="font-semibold text-gray-900">{{ $marketerCampaign->conversions->count() }}</p>
-                    </div>
-                </div>
-
-                <a href="{{ route('partner.marketer-campaigns.show', $marketerCampaign) }}"
-                    class="text-sm text-blue-600 hover:underline">
-                    {{ __('partner.listings.show.marketer_campaign.view_details') }}
-                </a>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 class="font-semibold text-gray-800 mb-4">{{ __('partner.listings.show.marketer_campaign.invited_marketers') }}</h3>
-
-                @if($marketerCampaign->invitations->isEmpty())
-                    <p class="text-sm text-gray-400 text-center py-6">{{ __('partner.listings.show.marketer_campaign.no_invitations') }}</p>
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead>
-                                <tr class="text-xs text-gray-500 border-b border-gray-100">
-                                    <th class="text-right py-2 font-medium">{{ __('partner.listings.show.marketer_campaign.marketer') }}</th>
-                                    <th class="text-right py-2 font-medium">{{ __('partner.listings.show.marketer_campaign.status') }}</th>
-                                    <th class="text-right py-2 font-medium">{{ __('partner.listings.show.marketer_campaign.referral_link') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                @foreach($marketerCampaign->invitations as $invitation)
-                                    <tr>
-                                        <td class="py-2">{{ $invitation->marketer?->display_name ?: $invitation->marketer?->name ?? '—' }}</td>
-                                        <td class="py-2">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                                {{ $invitation->status }}
-                                            </span>
-                                        </td>
-                                        <td class="py-2 text-gray-400">{{ $invitation->referral_link ?: '—' }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @endif
-            </div>
-        @else
-            <div class="bg-white rounded-2xl border border-gray-200 p-6 text-center">
-                <p class="text-sm text-gray-400 mb-4">
-                    {{ __('partner.listings.show.marketer_campaign.no_campaign') }}
-                </p>
-                @if($fulfillmentKey === 'fbn')
-                    <a href="{{ route('partner.marketer-campaigns.create', $listing) }}"
-                        class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
-                        <i class="fas fa-bullhorn"></i>
-                        {{ __('partner.listings.show.marketer_campaign.create_campaign_cta') }}
-                    </a>
-                @else
-                    <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3 inline-block">
-                        {{ __('partner.listings.show.marketer_campaign.no_campaign_fbn_hint') }}
-                    </p>
-                @endif
-            </div>
-        @endif
+        @include('partner.listings.partials.marketer-campaign-tab')
     </div>
 
     </div>

@@ -12,7 +12,7 @@
             <h1 class="text-2xl font-bold text-gray-900">{{ __('partner.marketer_campaigns_my.title') }}</h1>
             <p class="mt-1 text-sm text-gray-500">{{ __('partner.marketer_campaigns_my.subtitle') }}</p>
         </div>
-        <a href="{{ route('partner.listings.index') }}"
+        <a href="{{ request('listing') ? route('partner.marketer-campaigns.create', request('listing')) : route('partner.listings.index') }}"
            class="shrink-0 bg-yellow-400 hover:bg-yellow-300 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -20,6 +20,16 @@
             {{ __('partner.marketer_campaigns_my.new_campaign_btn') }}
         </a>
     </div>
+
+    @if (request('listing'))
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <span>{{ __('partner.marketer_campaigns_my.listing_filter') }}</span>
+            <span class="flex items-center gap-4">
+                <a href="{{ route('partner.listings.show', request('listing')) }}#marketer_campaign" class="font-medium hover:underline">{{ __('partner.marketer_campaigns_my.back_to_listing') }}</a>
+                <a href="{{ route('partner.marketer-campaigns.index') }}" class="font-medium hover:underline">{{ __('partner.marketer_campaigns_my.clear_filter') }}</a>
+            </span>
+        </div>
+    @endif
 
     @if (session('success'))
         <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
@@ -36,6 +46,7 @@
             'done'          => ['label' => __('partner.marketer_campaigns_my.status.done'),           'cls' => 'bg-gray-100 text-gray-500'],
             'cancelled'     => ['label' => __('partner.marketer_campaigns_my.status.cancelled'),      'cls' => 'bg-gray-100 text-gray-400'],
             'paused'        => ['label' => __('partner.marketer_campaigns_my.status.paused'),         'cls' => 'bg-gray-100 text-gray-600'],
+            'marketer_requested' => ['label' => __('partner.marketer_campaigns_my.status.marketer_requested'), 'cls' => 'bg-yellow-100 text-yellow-700'],
         ];
     @endphp
 
@@ -87,9 +98,24 @@
                             <td class="px-4 py-3 text-gray-600">{{ $campaign->invitations_count }}</td>
                             <td class="px-4 py-3 text-gray-500">{{ $campaign->created_at->format('Y-m-d') }}</td>
                             <td class="px-4 py-3 text-end">
-                                <a href="{{ route('partner.marketer-campaigns.show', $campaign) }}" class="text-primary-600 hover:underline font-medium">
-                                    {{ __('partner.marketer_campaigns_my.view') }}
-                                </a>
+                                <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                                    <a href="{{ route('partner.marketer-campaigns.show', $campaign) }}" class="text-primary-600 hover:underline font-medium">
+                                        {{ __('partner.marketer_campaigns_my.view') }}
+                                    </a>
+                                    @if (in_array($campaign->status, ['pending_admin', 'marketer_requested'], true) && auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.edit'))
+                                        <a href="{{ route('partner.marketer-campaigns.edit', $campaign) }}" class="text-gray-700 hover:underline font-medium">
+                                            {{ __('partner.listings.show.marketer_campaign.edit') }}
+                                        </a>
+                                    @endif
+                                    @if (in_array($campaign->status, ['cancelled', 'rejected', 'done', 'completed', 'pending_admin'], true) && auth('vendor')->user()?->hasPermissionTo('marketer_campaigns.delete'))
+                                        <form method="POST" action="{{ route('partner.marketer-campaigns.destroy', $campaign) }}"
+                                              onsubmit="return confirm(@js(__('partner.marketer_campaigns_my.confirm_delete')))">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:underline font-medium">{{ __('partner.marketer_campaigns_my.delete') }}</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @endforeach
