@@ -14,6 +14,7 @@ use App\Services\MarketerCampaignService;
 use App\Services\WhatsApp\LogWhatsAppGateway;
 use App\Services\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -120,7 +121,7 @@ class CampaignWhatsAppTest extends TestCase
         $this->assertStringContainsString((string) $inv->acceptance_window_hours, $text);
         $this->assertMatchesRegularExpression('#/invitations/'.$inv->id.'/whatsapp/accept\?[^\s]*signature=#', $text);
         $this->assertMatchesRegularExpression('#/invitations/'.$inv->id.'/whatsapp/reject\?[^\s]*signature=#', $text);
-        $this->assertTrue(URL::hasValidSignature(\Illuminate\Http\Request::create($links['accept'])));
+        $this->assertTrue(URL::hasValidSignature(Request::create($links['accept'])));
 
         $fresh = $inv->fresh();
         $this->assertTrue($fresh->whatsapp_sent);
@@ -311,5 +312,105 @@ class CampaignWhatsAppTest extends TestCase
         $this->assertCount(1, $this->gateway->sent);
         $this->assertSame('+971500000009', $this->gateway->sent[0]['to']);
         $this->assertStringContainsString($inv->marketer->name, $this->gateway->sent[0]['message']);
+    }
+    // ───────── admin "Resend" (P10 follow-up) ─────────
+
+    private function resendAdmin(bool $canApprove = true): Admin
+    {
+        $perms = ['vendors.assigned_only', 'marketer_campaigns.view', 'marketer_campaigns.approve'];
+        foreach ($perms as $p) {
+            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'admin']);
+        }
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo($canApprove ? ['marketer_campaigns.view', 'marketer_campaigns.approve'] : ['marketer_campaigns.view']);
+
+        return $admin;
+    }
+
+    private function resendUrl(MarketerCampaignInvitation $inv): string
+    {
+        return route('admin.marketer-campaigns.invitations.resend-whatsapp', [$inv->campaign_id, $inv->id]);
+    }
+
+    public function test_admin_can_resend_a_pending_invitation_and_the_delivery_is_forced(): void
+    {
+        $inv = $this->invited();
+        $this->runJob($inv->id);
+        $this->assertCount(1, $this->gateway->sent);
+        $admin = $this->resendAdmin();
+
+        foreach (['en', 'ar'] as $locale) {
+            $this->withSession(['locale' => $locale])->actingAs($admin, 'admin')
+                ->get(route('admin.marketer-campaigns.show', $inv->campaign_id))
+                ->assertOk()->assertSee('data-resend-whatsapp', false)->assertSee(__('admin.marketer_campaigns.whatsapp_resend'));
+        }
+
+        Queue::fake(); // forget the dispatch-time push
+        $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertRedirect()
+            ->assertSessionHas('success', __('admin.marketer_campaigns.whatsapp_resend_queued'));
+        Queue::assertPushed(SendCampaignWhatsAppNotificationJob::class, fn ($j) => $j->invitationId === $inv->id && $j->force === true);
+
+        // The forced job delivers again although the first send succeeded; the normal job still does not.
+        app()->call([new SendCampaignWhatsAppNotificationJob($inv->id, true), 'handle']);
+        $this->assertCount(2, $this->gateway->sent);
+        $this->runJob($inv->id);
+        $this->assertCount(2, $this->gateway->sent);
+        $this->assertSame(1, $inv->fresh()->whatsapp_resend_count);
+    }
+
+    public function test_resend_is_rate_limited_by_a_cooldown(): void
+    {
+        $inv = $this->invited();
+        $admin = $this->resendAdmin();
+        F::setting('marketer_whatsapp_resend_cooldown_minutes', 10);
+        Queue::fake();
+
+        $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertSessionHas('success');
+        $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertSessionHas('error');
+        $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertSessionHas('error');
+        Queue::assertPushed(SendCampaignWhatsAppNotificationJob::class, 1);
+        $this->assertSame(1, $inv->fresh()->whatsapp_resend_count);
+
+        $this->travel(11)->minutes();
+        $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertSessionHas('success');
+        Queue::assertPushed(SendCampaignWhatsAppNotificationJob::class, 2);
+        $this->assertSame(2, $inv->fresh()->whatsapp_resend_count);
+    }
+
+    public function test_only_pending_unexpired_invitations_can_be_resent(): void
+    {
+        $inv = $this->invited();
+        $admin = $this->resendAdmin();
+        Queue::fake();
+
+        foreach (['accepted', 'rejected', 'timed_out', 'cancelled'] as $status) {
+            $inv->update(['status' => $status]);
+            $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertSessionHas('error', __('admin.marketer_campaigns.whatsapp_resend_not_pending'));
+            $this->actingAs($admin, 'admin')->get(route('admin.marketer-campaigns.show', $inv->campaign_id))->assertDontSee('data-resend-whatsapp', false);
+        }
+
+        $inv->update(['status' => 'pending', 'expires_at' => now()->subMinute()]);
+        $this->actingAs($admin, 'admin')->post($this->resendUrl($inv))->assertSessionHas('error');
+
+        Queue::assertNothingPushed();
+        $this->assertNull($inv->fresh()->whatsapp_resent_at);
+    }
+
+    public function test_resend_requires_the_approve_permission_and_the_right_campaign(): void
+    {
+        $inv = $this->invited();
+        $other = $this->invited();
+        Queue::fake();
+
+        $viewer = $this->resendAdmin(canApprove: false);
+        $this->actingAs($viewer, 'admin')->post($this->resendUrl($inv))->assertForbidden();
+        $this->actingAs($viewer, 'admin')->get(route('admin.marketer-campaigns.show', $inv->campaign_id))
+            ->assertOk()->assertDontSee('data-resend-whatsapp', false);
+
+        $this->actingAs($this->resendAdmin(), 'admin')
+            ->post(route('admin.marketer-campaigns.invitations.resend-whatsapp', [$other->campaign_id, $inv->id]))
+            ->assertNotFound();
+
+        Queue::assertNothingPushed();
     }
 }

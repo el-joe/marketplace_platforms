@@ -5,22 +5,28 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\MarketerCommissionDiscountType;
 use App\Enums\PromotionCategory;
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\Marketer;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionRule;
 use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
 use App\Models\MarketerMarketerJobCategory;
+use App\Models\MarketerSaleSettlement;
 use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelCategory;
+use App\Services\Marketer\MarketerSaleSettlementService;
+use App\Services\MarketerCommissionStatementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -151,8 +157,8 @@ class MarketerController extends Controller
         ]);
         $commissionCurrency = $marketer->country?->currency_code ?: config('app.currency', 'SAR');
 
-        $statement = app(\App\Services\MarketerCommissionStatementService::class);
-        $conversions = \App\Models\MarketerCampaignConversion::with(['campaign', 'order', 'invitation.marketer.marketerProfile'])
+        $statement = app(MarketerCommissionStatementService::class);
+        $conversions = MarketerCampaignConversion::with(['campaign', 'order', 'invitation.marketer.marketerProfile'])
             ->whereIn('invitation_id', $marketer->invitations->pluck('id'))
             ->latest()->limit(25)->get()
             ->each(fn ($c) => $c->setAttribute('statement', $statement->forConversion($c)));
@@ -160,7 +166,12 @@ class MarketerController extends Controller
             fn ($k) => [$k => (int) $conversions->where('status', 'approved')->sum(fn ($c) => $c->statement[$k])]
         );
 
-        return view('admin.marketers.show', compact('conversions', 'statementTotals', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
+        // Sales of this marketer's own listings (seller_type = marketer): gross -> platform commission -> VAT -> ... -> net.
+        $salesService = app(MarketerSaleSettlementService::class);
+        $salesTotals = $salesService->totalsFor($marketer->id);
+        $sales = MarketerSaleSettlement::with('order:id,order_number')->where('marketer_id', $marketer->id)->latest()->limit(25)->get();
+
+        return view('admin.marketers.show', compact('conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
     }
 
     /**
@@ -291,12 +302,12 @@ class MarketerController extends Controller
         $newCut = (float) $profile->platform_cut_percentage;
         if ($oldCut !== $newCut) {
             DB::table('activity_log')->insert([
-                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'log_name' => 'marketers',
                 'description' => 'platform_cut_percentage_changed',
                 'subject_type' => Marketer::class,
                 'subject_id' => $marketer->id,
-                'causer_type' => \App\Models\Admin::class,
+                'causer_type' => Admin::class,
                 'causer_id' => auth('admin')->id(),
                 'properties' => json_encode(['old' => $oldCut, 'new' => $newCut]),
                 'event' => 'updated',

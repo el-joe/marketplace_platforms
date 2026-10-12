@@ -47,6 +47,9 @@
                         <td class="px-4 py-3">
                             <p class="font-medium text-gray-900">{{ $owner?->name ?? '—' }}</p>
                             <p class="text-xs text-gray-500">{{ $wr->wallet?->owner_type ? __('admin.wallets.' . $wr->wallet->owner_type->value) : '' }}</p>
+                            @if(isset($breakdowns[$wr->id]))
+                                <div class="mt-1">@include('admin.wallets._marketer-breakdown', ['b' => $breakdowns[$wr->id]])</div>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-gray-700">{{ $wr->bank_name ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ $wr->bank_iban ?? '—' }}</td>

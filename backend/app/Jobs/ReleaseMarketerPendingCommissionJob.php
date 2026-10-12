@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\Models\MarketerCampaignConversion;
 use App\Models\Wallet;
+use App\Services\Marketer\MarketerSaleSettlementService;
+use App\Services\MarketerCommissionStatementService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -38,6 +40,9 @@ class ReleaseMarketerPendingCommissionJob implements ShouldQueue
                     $this->releaseOne($conversion);
                 }
             });
+
+        // Sales of marketer-owned listings (seller_type = marketer) clear on the same schedule.
+        app(MarketerSaleSettlementService::class)->releaseDue($clearingDays);
     }
 
     private function releaseOne(MarketerCampaignConversion $conversion): void
@@ -53,12 +58,16 @@ class ReleaseMarketerPendingCommissionJob implements ShouldQueue
                 return;
             }
 
-            $totalCommission = \App\Services\MarketerCommissionStatementService::walletAmount($locked);
+            $totalCommission = MarketerCommissionStatementService::walletAmount($locked);
 
             $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketerId)->lockForUpdate()->first();
             if ($wallet) {
                 Wallet::where('id', $wallet->id)->decrement('pending_balance', $totalCommission);
                 Wallet::where('id', $wallet->id)->increment('balance', $totalCommission);
+
+                // The wallet history line carries the gross - cut - VAT = net statement of this conversion.
+                $service = app(MarketerCommissionStatementService::class);
+                $service->recordWalletTransaction($wallet, 'credit', $totalCommission, (int) $wallet->fresh()->balance, $locked->load('order'));
             }
 
             $locked->update(['wallet_released_at' => now()]);

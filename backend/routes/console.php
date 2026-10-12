@@ -23,6 +23,7 @@ use App\Jobs\RecalculateBestSellerRankingsJob;
 use App\Jobs\ReleaseExpiredLocksJob;
 use App\Jobs\ReleaseMarketerPendingCommissionJob;
 use App\Jobs\ResetAdCampaignDailyBudgetJob;
+use App\Jobs\SettleMarketerSalesJob;
 use App\Jobs\TransitionFlashSaleStatusJob;
 use Carbon\Carbon;
 use Illuminate\Foundation\Inspiring;
@@ -58,6 +59,7 @@ Schedule::job(new ExpireWarrantyPurchasesJob)->dailyAt('03:00')->name('expire-wa
 // pending_balance) once delivered + return window passed, then pending_balance
 // -> balance once the payout-clearing window has also passed.
 Schedule::job(new ApproveMarketerConversionsJob)->dailyAt('03:15')->name('approve-marketer-conversions');
+Schedule::job(new SettleMarketerSalesJob)->dailyAt('03:20')->name('settle-marketer-sales');
 Schedule::job(new ReleaseMarketerPendingCommissionJob)->dailyAt('03:30')->name('release-marketer-pending-commission');
 
 // Process vendor acquisition agent commissions for the previous month

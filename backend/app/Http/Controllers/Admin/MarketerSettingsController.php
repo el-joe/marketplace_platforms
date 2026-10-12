@@ -8,6 +8,7 @@ use App\Models\Country;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\PromotionCategoryTarget;
 use App\Models\Setting;
+use App\Services\ReferralCodeResolver;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,10 +33,11 @@ class MarketerSettingsController extends Controller
             ->orderBy('promotion_category')
             ->get();
 
-        $referralGraceDays = \App\Services\ReferralCodeResolver::graceDays();
+        $referralGraceDays = ReferralCodeResolver::graceDays();
+        $peerMinStock = max(1, (int) setting('marketer_peer_campaign_min_stock', 1));
 
         return view('admin.marketer_settings.index', compact(
-            'countries', 'influencerFees', 'promotionTargets', 'referralGraceDays'
+            'countries', 'influencerFees', 'promotionTargets', 'referralGraceDays', 'peerMinStock'
         ));
     }
 
@@ -76,6 +78,24 @@ class MarketerSettingsController extends Controller
         Setting::flush();
 
         return back()->with('success', __('admin.marketer_settings.referral_grace_saved'));
+    }
+
+    /** P13: minimum available stock an influencer's own-FBN listing needs before other influencers may promote it. */
+    public function updatePeerMinStock(Request $request): RedirectResponse
+    {
+        abort_unless(auth('admin')->user()->can('marketer_fee_settings.edit'), 403);
+
+        $validated = $request->validate([
+            'marketer_peer_campaign_min_stock' => ['required', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        Setting::updateOrCreate(
+            ['key' => 'marketer_peer_campaign_min_stock'],
+            ['value' => (int) $validated['marketer_peer_campaign_min_stock'], 'category' => 'marketer', 'is_encrypted' => 0, 'is_public' => 0]
+        );
+        Setting::flush();
+
+        return back()->with('success', __('admin.marketer_settings.peer_min_stock_saved'));
     }
 
     public function updatePromotionTarget(Request $request): RedirectResponse

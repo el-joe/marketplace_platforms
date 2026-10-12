@@ -81,6 +81,9 @@ class ApproveMarketerConversionsJob implements ShouldQueue
                 'wallet_credited_at' => now(),
             ]);
 
+            // P11 follow-up: gross / platform cut / VAT / net ledger postings (marketer_payable now carries the net).
+            app(MarketerCommissionStatementService::class)->postApprovalLedger($locked->refresh()->load('invitation'), $ledgerService);
+
             $platformCommission = (int) $locked->platform_commission_amount;
             if ($platformCommission > 0) {
                 $vendorId = $locked->orderItem?->subOrder?->vendor_id;

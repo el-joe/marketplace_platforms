@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Campaigns;
 
+use App\Exceptions\PeerPromotionException;
 use App\Models\Admin;
+use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -78,5 +80,66 @@ class PeerPromotionAdminTest extends TestCase
         foreach (['source_column', 'all_sources', 'source_vendor', 'source_admin', 'source_peer', 'peer_owner', 'peer_promoter'] as $key) {
             $this->assertNotSame('admin.marketer_campaigns.'.$key, __('admin.marketer_campaigns.'.$key));
         }
+    }
+
+    // ───────── marketer_peer_campaign_min_stock in the admin marketer settings ─────────
+
+    private function settingsAdmin(bool $canEdit = true): Admin
+    {
+        foreach (['marketer_commission_settings.view', 'marketer_fee_settings.edit'] as $p) {
+            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'admin']);
+        }
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo($canEdit ? ['marketer_commission_settings.view', 'marketer_fee_settings.edit'] : ['marketer_commission_settings.view']);
+
+        return $admin;
+    }
+
+    public function test_settings_page_shows_and_saves_the_peer_min_stock_in_both_languages(): void
+    {
+        $admin = $this->settingsAdmin();
+
+        foreach (['en', 'ar'] as $locale) {
+            $this->withSession(['locale' => $locale])->actingAs($admin, 'admin')
+                ->get(route('admin.marketer-settings.index'))
+                ->assertOk()
+                ->assertSee('data-peer-min-stock', false)
+                ->assertSee('name="marketer_peer_campaign_min_stock"', false)
+                ->assertSee(__('admin.marketer_settings.peer_min_stock_title'));
+        }
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => 12])
+            ->assertRedirect()->assertSessionHas('success');
+        Setting::flush();
+        $this->assertSame(12, (int) setting('marketer_peer_campaign_min_stock'));
+
+        $this->actingAs($admin, 'admin')->get(route('admin.marketer-settings.index'))->assertSee('value="12"', false);
+    }
+
+    public function test_saved_peer_min_stock_is_enforced_by_the_promotion_request(): void
+    {
+        $admin = $this->settingsAdmin();
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => 15]);
+
+        $owner = F::influencer($this->s);
+        $promoter = F::influencer($this->s);
+        $this->expectException(PeerPromotionException::class);
+        P::request($promoter, P::ownListing($this->s, $owner, 14));
+    }
+
+    public function test_peer_min_stock_is_validated_and_permission_protected(): void
+    {
+        $this->actingAs($this->settingsAdmin(), 'admin');
+        foreach ([0, -3, 'abc', '', 1.5] as $bad) {
+            $this->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => $bad])
+                ->assertSessionHasErrors('marketer_peer_campaign_min_stock');
+        }
+
+        $this->actingAs($this->settingsAdmin(canEdit: false), 'admin')
+            ->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => 5])
+            ->assertForbidden();
+        $this->assertSame(1, (int) setting('marketer_peer_campaign_min_stock', 1));
     }
 }

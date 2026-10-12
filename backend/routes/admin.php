@@ -70,6 +70,7 @@ use App\Http\Controllers\Admin\MarketerContractController;
 use App\Http\Controllers\Admin\MarketerController;
 use App\Http\Controllers\Admin\MarketerJobController;
 use App\Http\Controllers\Admin\MarketerListingController;
+use App\Http\Controllers\Admin\MarketerPromotionFineController;
 use App\Http\Controllers\Admin\MarketerSettingsController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
@@ -84,6 +85,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductCostController;
 use App\Http\Controllers\Admin\ProductHighlightController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\PromotionCategoryProductController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\RoleController;
@@ -1139,6 +1141,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::post('/{marketerCampaign}/invite-marketers', [MarketerCampaignController::class, 'inviteMarketers'])->name('invite-marketers')
             ->middleware('admin.permission:marketer_campaigns.create');
         Route::patch('/{marketerCampaign}/samples/{sample}', [MarketerCampaignController::class, 'updateSampleStatus'])->name('samples.update');
+        Route::post('/{marketerCampaign}/invitations/{invitation}/resend-whatsapp', [MarketerCampaignController::class, 'resendInvitationWhatsApp'])->name('invitations.resend-whatsapp')
+            ->middleware('admin.permission:marketer_campaigns.approve');
         Route::patch('/{marketerCampaign}/invitations/{invitation}/mark-fee-paid', [MarketerCampaignController::class, 'markInvitationFeePaid'])->name('invitations.mark-fee-paid');
         Route::post('/{marketerCampaign}/category-rules/sync', [MarketerCampaignController::class, 'syncCategoryRules'])->name('category-rules.sync')
             ->middleware('admin.permission:marketer_campaigns.create');
@@ -1153,21 +1157,22 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::get('/', [MarketerSettingsController::class, 'index'])->name('index');
         Route::post('/fee', [MarketerSettingsController::class, 'updateInfluencerFee'])->name('update-fee');
         Route::post('/referral-grace', [MarketerSettingsController::class, 'updateReferralGrace'])->name('update-referral-grace');
+        Route::post('/peer-min-stock', [MarketerSettingsController::class, 'updatePeerMinStock'])->name('update-peer-min-stock');
         Route::post('/promotion-targets', [MarketerSettingsController::class, 'updatePromotionTarget'])->name('promotion-targets.update');
         Route::delete('/promotion-targets/{target}', [MarketerSettingsController::class, 'destroyPromotionTarget'])->name('promotion-targets.destroy');
     });
 
     // ─── P12: promotion category products (3/4) and month-close fines ─────────────────
     Route::prefix('promotion-products')->name('promotion-products.')->middleware('admin.permission:admin_listings.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\PromotionCategoryProductController::class, 'index'])->name('index');
-        Route::post('/assign', [\App\Http\Controllers\Admin\PromotionCategoryProductController::class, 'assign'])
+        Route::get('/', [PromotionCategoryProductController::class, 'index'])->name('index');
+        Route::post('/assign', [PromotionCategoryProductController::class, 'assign'])
             ->middleware('admin.permission:admin_listings.edit')->name('assign');
-        Route::delete('/{adminListing}', [\App\Http\Controllers\Admin\PromotionCategoryProductController::class, 'remove'])
+        Route::delete('/{adminListing}', [PromotionCategoryProductController::class, 'remove'])
             ->middleware('admin.permission:admin_listings.edit')->name('remove');
     });
     Route::prefix('marketer-fines')->name('marketer-fines.')->middleware('admin.permission:marketers.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\MarketerPromotionFineController::class, 'index'])->name('index');
-        Route::post('/{fine}/waive', [\App\Http\Controllers\Admin\MarketerPromotionFineController::class, 'waive'])
+        Route::get('/', [MarketerPromotionFineController::class, 'index'])->name('index');
+        Route::post('/{fine}/waive', [MarketerPromotionFineController::class, 'waive'])
             ->middleware('admin.permission:marketers.manage')->name('waive');
     });
 

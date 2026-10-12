@@ -33,6 +33,48 @@
         <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.statement_hint') }}</p>
     </div>
 
+    @if(($salesTotals['count'] ?? 0) > 0)
+    <div class="bg-white rounded-xl border overflow-hidden" data-sales-lines>
+        <div class="px-5 py-4 border-b">
+            <div class="font-bold">{{ __('marketer.finance.sales_title') }}</div>
+            <p class="text-xs text-gray-400 mt-1">{{ __('marketer.finance.sales_hint') }}</p>
+        </div>
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-xs text-gray-500">
+                <tr>
+                    <th class="px-4 py-3 text-start">{{ __('marketer.finance.date_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.order_number_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.sales_via_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.gross_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.sales_commission_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.vat_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.sales_peer_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.sales_other_header') }}</th>
+                    <th class="px-4 py-3 text-center">{{ __('marketer.finance.net_header') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach($sales as $sale)
+                <tr data-sale-row>
+                    <td class="px-4 py-3 text-gray-600">{{ $sale->credited_at?->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center font-mono text-xs">{{ $sale->order?->order_number ?? '—' }}</td>
+                    <td class="px-4 py-3 text-center text-xs">{{ __('marketer.finance.sales_via_'.$sale->sold_via) }}</td>
+                    <td class="px-4 py-3 text-center" data-gross>{{ number_format($sale->gross_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600" data-commission>−{{ number_format($sale->platform_commission_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ number_format($sale->commission_vat_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600" data-peer>−{{ number_format($sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-3 text-center text-red-600">−{{ number_format($sale->gross_amount - $sale->net_amount - $sale->platform_commission_amount - $sale->commission_vat_amount - $sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ number_format($sale->net_amount) }} {{ $sale->currency }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+        </div>
+        <div class="p-4">{{ $sales->links() }}</div>
+    </div>
+    @endif
+
     <div class="grid grid-cols-2 lg:grid-cols-2 gap-4">
         <div class="bg-white rounded-xl border p-5">
             <div class="text-xs text-gray-400 mb-1">{{ __('marketer.finance.total_earned_label') }}</div>

@@ -124,4 +124,21 @@ class ReferralCodeAdminTest extends TestCase
         $this->assertNotNull(Setting::where('key', 'marketer_referral_grace_days')->first());
         $this->assertSame(7, (int) setting('marketer_referral_grace_days'));
     }
+
+    public function test_admin_invitations_table_shows_when_an_invitation_was_replaced(): void
+    {
+        $a = F::influencer($this->s);
+        F::influencer($this->s);
+        $campaign = R::pendingCampaign($this->s, $a);
+        R::reject(R::invitationOf($campaign, $a)->fresh());
+        $replaced = R::invitationOf($campaign, $a)->fresh();
+
+        foreach (['en', 'ar'] as $locale) {
+            $this->withSession(['locale' => $locale])->actingAs($this->admin, 'admin')
+                ->get(route('admin.marketer-campaigns.show', $campaign))
+                ->assertOk()
+                ->assertSee('data-replaced-at', false)
+                ->assertSee(__('admin.marketer_campaigns.replaced_at', ['date' => $replaced->replaced_at->format('d M Y H:i')]));
+        }
+    }
 }

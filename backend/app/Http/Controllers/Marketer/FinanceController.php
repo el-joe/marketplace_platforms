@@ -8,7 +8,10 @@ use App\Models\Marketer;
 use App\Models\MarketerAdmin;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Models\MarketerSaleSettlement;
 use App\Notifications\Marketer\PayoutScheduled;
+use App\Services\Marketer\MarketerSaleSettlementService;
+use App\Services\Marketer\PromotionPenaltyService;
 use App\Services\MarketerCommissionStatementService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
@@ -54,7 +57,12 @@ class FinanceController extends Controller
         [$statements, $totals] = $this->statementFor($conversions->getCollection());
         $cutPct = (float) ($marketer->marketerProfile?->platform_cut_percentage ?? 0);
 
-        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'cutPct'));
+        $salesService = app(MarketerSaleSettlementService::class);
+        $salesTotals = $salesService->totalsFor($marketer->id);
+        $sales = MarketerSaleSettlement::with('order:id,order_number')
+            ->where('marketer_id', $marketer->id)->latest()->paginate(15, ['*'], 'sales_page')->withQueryString();
+
+        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'cutPct', 'salesTotals', 'sales'));
     }
 
     /** @return array{0: array<string, array>, 1: array{gross: int, cut: int, vat: int, net: int}} */
@@ -100,7 +108,9 @@ class FinanceController extends Controller
             ->where('status', 'approved')->get();
         [, $statementTotals] = $this->statementFor($approved);
 
-        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals'));
+        $salesTotals = app(MarketerSaleSettlementService::class)->totalsFor($marketer->id);
+
+        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals'));
     }
 
     public function requestWithdrawal(Request $request)
@@ -114,7 +124,7 @@ class FinanceController extends Controller
         }
 
         // Promotion fines still pending are taken first, so the withdrawal is paid out net of them.
-        app(\App\Services\Marketer\PromotionPenaltyService::class)->collect($marketer);
+        app(PromotionPenaltyService::class)->collect($marketer);
 
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 

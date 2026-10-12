@@ -9,15 +9,25 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\DeliveryAgent;
 use App\Models\DeliveryAgentCodSettlement;
+use App\Models\Marketer;
+use App\Models\MarketerCampaignConversion;
+use App\Models\MarketerCampaignInvitation;
 use App\Models\Wallet;
 use App\Models\WalletWithdrawalRequest;
+use App\Notifications\Marketer\PayoutProcessedNotification;
+use App\Services\LedgerService;
+use App\Services\Marketer\MarketerSaleSettlementService;
+use App\Services\MarketerCampaignService;
+use App\Services\MarketerCommissionStatementService;
 use App\Services\WalletService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WalletController extends Controller
@@ -27,7 +37,7 @@ class WalletController extends Controller
 
     public function __construct(private WalletService $walletService) {}
 
-    public function index(Request $request): \Illuminate\View\View|StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         if ($request->filled('export')) {
             return $this->exportWallets($request);
@@ -44,7 +54,7 @@ class WalletController extends Controller
      * for search/display when owner_type = customer. Other owner types show
      * their raw owner_id since wallets aren't limited to customers.
      */
-    private function buildWalletsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildWalletsQuery(Request $request): Builder
     {
         $query = Wallet::query()
             ->leftJoin('customers', function ($join) {
@@ -66,17 +76,17 @@ class WalletController extends Controller
             ]);
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($sub) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($sub) use ($v) {
                 $sub->where('customers.name', 'like', "%{$v}%")
                     ->orWhere('customers.email', 'like', "%{$v}%");
             }),
-            'owner_type' => fn($q, $v) => $q->where('wallets.owner_type', $v),
-            'currency' => fn($q, $v) => $q->where('wallets.currency', $v),
-            'status' => fn($q, $v) => $v === 'frozen'
+            'owner_type' => fn ($q, $v) => $q->where('wallets.owner_type', $v),
+            'currency' => fn ($q, $v) => $q->where('wallets.currency', $v),
+            'status' => fn ($q, $v) => $v === 'frozen'
                 ? $q->where('wallets.is_frozen', true)
                 : $q->where('wallets.is_frozen', false),
-            'date_from' => fn($q, $v) => $q->whereDate('wallets.created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('wallets.created_at', '<=', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('wallets.created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('wallets.created_at', '<=', $v),
         ]);
     }
 
@@ -124,7 +134,7 @@ class WalletController extends Controller
 
         $headers = ['Customer', 'Email', 'Balance', 'Currency', 'Status'];
 
-        $rows = $wallets->map(fn($row) => [
+        $rows = $wallets->map(fn ($row) => [
             $row->customer_name ?? $row->owner_id,
             $row->customer_email ?? '',
             number_format($row->balance, 2),
@@ -143,14 +153,16 @@ class WalletController extends Controller
     public function show(Wallet $wallet)
     {
         $transactions = $wallet->transactions()->paginate(30);
-        return view('admin.wallets.show', compact('wallet', 'transactions'));
+        $breakdown = $this->marketerBreakdown($wallet);
+
+        return view('admin.wallets.show', compact('wallet', 'transactions', 'breakdown'));
     }
 
     public function adjustBalance(Request $request, Wallet $wallet)
     {
         $data = $request->validate([
-            'type'        => ['required', Rule::enum(WalletTransactionType::class)],
-            'amount'      => ['required', 'numeric', 'min:0.01'],
+            'type' => ['required', Rule::enum(WalletTransactionType::class)],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'description' => ['required', 'string', 'max:255'],
         ]);
 
@@ -171,23 +183,47 @@ class WalletController extends Controller
     {
         $request->validate(['reason' => ['required', 'string', 'max:500']]);
         $wallet->update(['is_frozen' => true, 'frozen_reason' => $request->reason]);
+
         return back()->with('success', 'Wallet frozen.');
     }
 
     public function unfreezeWallet(Wallet $wallet)
     {
         $wallet->update(['is_frozen' => false, 'frozen_reason' => null]);
+
         return back()->with('success', 'Wallet unfrozen.');
     }
 
     public function withdrawalRequests(Request $request)
     {
         $requests = WalletWithdrawalRequest::with('wallet')
-            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->latest()
             ->paginate(25);
 
-        return view('admin.wallets.withdrawal-requests', compact('requests'));
+        // Marketer wallets: gross -> platform cut -> VAT -> net of the commissions (P11) + net of own-listing sales.
+        $breakdowns = [];
+        foreach ($requests as $wr) {
+            $b = $this->marketerBreakdown($wr->wallet);
+            if ($b) {
+                $breakdowns[$wr->id] = $b;
+            }
+        }
+
+        return view('admin.wallets.withdrawal-requests', compact('requests', 'breakdowns'));
+    }
+
+    /** @return array{commissions: array, sales: array}|null null for non-marketer wallets */
+    private function marketerBreakdown(?Wallet $wallet): ?array
+    {
+        if (! $wallet || ($wallet->owner_type->value ?? $wallet->owner_type) !== 'marketer') {
+            return null;
+        }
+
+        return [
+            'commissions' => app(MarketerCommissionStatementService::class)->totalsForMarketer($wallet->owner_id),
+            'sales' => app(MarketerSaleSettlementService::class)->totalsFor($wallet->owner_id),
+        ];
     }
 
     public function approveWithdrawal(WalletWithdrawalRequest $withdrawal)
@@ -203,46 +239,46 @@ class WalletController extends Controller
         // every conversion this payout covers as paid/commissioned so
         // they are never paid out twice.
         $owner = $withdrawal->wallet->owner;
-        if ($owner instanceof \App\Models\Marketer) {
+        if ($owner instanceof Marketer) {
             $this->settleMarketerWithdrawalLedgerAndConversions($withdrawal, $owner);
         }
 
         return back()->with('success', 'Withdrawal approved.');
     }
 
-    private function settleMarketerWithdrawalLedgerAndConversions(WalletWithdrawalRequest $withdrawal, \App\Models\Marketer $marketer): void
+    private function settleMarketerWithdrawalLedgerAndConversions(WalletWithdrawalRequest $withdrawal, Marketer $marketer): void
     {
-        $ledger = app(\App\Services\LedgerService::class);
+        $ledger = app(LedgerService::class);
         $groupId = $ledger->newGroupId();
 
         $ledger->record($groupId, [
             [
-                'account_type'        => 'marketer_payable',
+                'account_type' => 'marketer_payable',
                 'account_holder_type' => 'marketer',
-                'account_holder_id'   => $marketer->id,
-                'debit'               => $withdrawal->amount,
-                'credit'              => 0,
-                'currency'            => $withdrawal->currency,
-                'reference_type'      => 'withdrawal',
-                'reference_id'        => (string) $withdrawal->id,
-                'description'         => "Marketer withdrawal approved: {$withdrawal->id}",
+                'account_holder_id' => $marketer->id,
+                'debit' => $withdrawal->amount,
+                'credit' => 0,
+                'currency' => $withdrawal->currency,
+                'reference_type' => 'withdrawal',
+                'reference_id' => (string) $withdrawal->id,
+                'description' => "Marketer withdrawal approved: {$withdrawal->id}",
             ],
             [
-                'account_type'        => 'platform_revenue',
+                'account_type' => 'platform_revenue',
                 'account_holder_type' => null,
-                'account_holder_id'   => null,
-                'debit'               => 0,
-                'credit'              => $withdrawal->amount,
-                'currency'            => $withdrawal->currency,
-                'reference_type'      => 'withdrawal',
-                'reference_id'        => (string) $withdrawal->id,
-                'description'         => "Marketer withdrawal approved: {$withdrawal->id}",
+                'account_holder_id' => null,
+                'debit' => 0,
+                'credit' => $withdrawal->amount,
+                'currency' => $withdrawal->currency,
+                'reference_type' => 'withdrawal',
+                'reference_id' => (string) $withdrawal->id,
+                'description' => "Marketer withdrawal approved: {$withdrawal->id}",
             ],
         ]);
 
-        $invitationIds = \App\Models\MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
+        $invitationIds = MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
 
-        $conversionIds = \App\Models\MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
+        $conversionIds = MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
             ->where('status', 'approved')
             ->whereNotNull('wallet_released_at')
             ->where('commissioned', false)
@@ -250,7 +286,7 @@ class WalletController extends Controller
             ->all();
 
         if ($conversionIds) {
-            app(\App\Services\MarketerCampaignService::class)->markConversionsPaid($conversionIds, (string) $withdrawal->id);
+            app(MarketerCampaignService::class)->markConversionsPaid($conversionIds, (string) $withdrawal->id);
         }
     }
 
@@ -260,6 +296,7 @@ class WalletController extends Controller
         /** @var Admin $admin */
         $admin = Auth::guard('admin')->user();
         $this->walletService->rejectWithdrawal($withdrawal, $admin, $request->reason);
+
         return back()->with('success', 'Withdrawal rejected.');
     }
 
@@ -268,9 +305,9 @@ class WalletController extends Controller
         $withdrawal->update(['status' => WalletWithdrawalRequestStatus::Processed, 'processed_at' => now()]);
 
         $owner = $withdrawal->wallet->owner;
-        if ($owner instanceof \App\Models\Marketer) {
+        if ($owner instanceof Marketer) {
             $owner->marketerAdmins->each(
-                fn ($ma) => $ma->notify(new \App\Notifications\Marketer\PayoutProcessedNotification($withdrawal, $ma->id))
+                fn ($ma) => $ma->notify(new PayoutProcessedNotification($withdrawal, $ma->id))
             );
         }
 
@@ -280,7 +317,7 @@ class WalletController extends Controller
     public function codSettlements(Request $request)
     {
         $settlements = DeliveryAgentCodSettlement::with('agent')
-            ->when($request->status, fn($q, $s) => $q->where('status', $s))
+            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->latest()
             ->paginate(25);
 
@@ -292,9 +329,9 @@ class WalletController extends Controller
     public function runCodSettlement(Request $request)
     {
         $data = $request->validate([
-            'agent_id'     => ['required', 'exists:delivery_agents,id'],
+            'agent_id' => ['required', 'exists:delivery_agents,id'],
             'period_start' => ['required', 'date'],
-            'period_end'   => ['required', 'date', 'after_or_equal:period_start'],
+            'period_end' => ['required', 'date', 'after_or_equal:period_start'],
         ]);
 
         $agent = DeliveryAgent::findOrFail($data['agent_id']);
@@ -306,6 +343,7 @@ class WalletController extends Controller
     public function markSettlementSettled(DeliveryAgentCodSettlement $settlement)
     {
         $settlement->update(['status' => DeliveryAgentCodSettlementStatus::Settled, 'settled_at' => now()]);
+
         return back()->with('success', 'Settlement marked as settled.');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendCampaignWhatsAppNotificationJob;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
@@ -17,6 +18,7 @@ use App\Models\VendorListing;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InsufficientStockException;
 use App\Services\MarketerCampaignService;
+use App\Services\ReferralCodeResolver;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -89,7 +91,7 @@ class MarketerCampaignController extends Controller
         $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
         $classifiedCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
-        $referralChains = app(\App\Services\ReferralCodeResolver::class)->chainsFor($marketerCampaign);
+        $referralChains = app(ReferralCodeResolver::class)->chainsFor($marketerCampaign);
 
         return view('admin.marketer_campaigns.show', compact('marketerCampaign', 'commissionSetting', 'categories', 'classifiedCategories', 'referralChains'));
     }
@@ -191,6 +193,38 @@ class MarketerCampaignController extends Controller
         abort_unless($marked, 422, 'الرسوم مدفوعة بالفعل أو غير مطبقة.');
 
         return back()->with('success', 'تم تسجيل دفع رسوم الإنفلوينسر.');
+    }
+
+    /**
+     * P10 follow-up: re-send the WhatsApp invitation (same signed accept/reject links) of a PENDING invitation.
+     * Cooldown: `marketer_whatsapp_resend_cooldown_minutes` (default 10) since the last resend, enforced with one
+     * atomic conditional UPDATE so two concurrent clicks cannot both pass.
+     */
+    public function resendInvitationWhatsApp(MarketerCampaign $marketerCampaign, MarketerCampaignInvitation $invitation)
+    {
+        abort_unless(auth('admin')->user()->can('marketer_campaigns.approve'), 403);
+        abort_unless($invitation->campaign_id === $marketerCampaign->id, 404);
+
+        if (! $invitation->isPending() || $invitation->isTimedOut()) {
+            return back()->with('error', __('admin.marketer_campaigns.whatsapp_resend_not_pending'));
+        }
+
+        $cooldown = max(0, (int) setting('marketer_whatsapp_resend_cooldown_minutes', 10));
+        $claimed = MarketerCampaignInvitation::whereKey($invitation->id)
+            ->where('status', 'pending')
+            ->where(fn ($q) => $q->whereNull('whatsapp_resent_at')->orWhere('whatsapp_resent_at', '<=', now()->subMinutes($cooldown)))
+            ->update(['whatsapp_resent_at' => now(), 'whatsapp_resend_count' => DB::raw('whatsapp_resend_count + 1')]);
+
+        if (! $claimed) {
+            $readyAt = $invitation->fresh()->whatsapp_resent_at?->copy()->addMinutes($cooldown);
+            $wait = $readyAt ? max(1, (int) ceil(now()->diffInSeconds($readyAt, false) / 60)) : 1;
+
+            return back()->with('error', __('admin.marketer_campaigns.whatsapp_resend_cooldown', ['minutes' => $wait]));
+        }
+
+        SendCampaignWhatsAppNotificationJob::dispatch($invitation->id, true);
+
+        return back()->with('success', __('admin.marketer_campaigns.whatsapp_resend_queued'));
     }
 
     public function inviteMarketers(Request $request, MarketerCampaign $marketerCampaign)

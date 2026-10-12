@@ -464,6 +464,44 @@
         </div>
     </div>
 
+    {{-- Sales of the marketer's own listings (seller = marketer): gross -> commission -> VAT -> peer commission -> net --}}
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden" id="sales-statement">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.sales_title') }}</h3>
+            <p class="text-xs text-gray-500 mt-1" data-sales-totals>{{ __('admin.marketers.sales_totals', ['gross' => number_format($salesTotals['gross']), 'commission' => number_format($salesTotals['commission']), 'vat' => number_format($salesTotals['vat']), 'peer' => number_format($salesTotals['peer']), 'other' => number_format($salesTotals['other']), 'net' => number_format($salesTotals['net'])]) }}</p>
+        </div>
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-xs text-gray-500"><tr>
+                <th class="px-4 py-2 text-start">{{ __('admin.marketers.statement_order') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.sales_via') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_gross') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.sales_commission') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_vat') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.sales_peer') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.sales_other') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('admin.marketers.statement_net') }}</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-100">
+            @forelse($sales as $sale)
+                <tr data-sale-row>
+                    <td class="px-4 py-2 font-mono text-xs">{{ $sale->order?->order_number ?? '—' }}</td>
+                    <td class="px-4 py-2 text-center text-xs">{{ __('admin.marketers.sales_via_'.$sale->sold_via) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($sale->gross_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($sale->platform_commission_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($sale->commission_vat_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-2 text-center">{{ number_format($sale->gross_amount - $sale->net_amount - $sale->platform_commission_amount - $sale->commission_vat_amount - $sale->peer_commission_amount) }}</td>
+                    <td class="px-4 py-2 text-center font-bold text-green-600">{{ number_format($sale->net_amount) }} {{ $sale->currency }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">{{ __('admin.marketers.sales_empty') }}</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+        </div>
+    </div>
+
     {{-- Category commission overrides --}}
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">

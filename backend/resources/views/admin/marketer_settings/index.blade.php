@@ -88,6 +88,22 @@
         </form>
     </div>
 
+    {{-- ─── Peer promotion minimum stock (P13) ─────────────────────────────────── --}}
+    <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm mt-6" data-peer-min-stock>
+        <h2 class="text-lg font-semibold text-gray-900 mb-1">{{ __('admin.marketer_settings.peer_min_stock_title') }}</h2>
+        <p class="text-xs text-gray-500 mb-4">{{ __('admin.marketer_settings.peer_min_stock_hint') }}</p>
+        <form method="POST" action="{{ route('admin.marketer-settings.update-peer-min-stock') }}" class="flex flex-wrap items-end gap-3">
+            @csrf
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('admin.marketer_settings.peer_min_stock_label') }}</label>
+                <input type="number" name="marketer_peer_campaign_min_stock" min="1" max="100000" value="{{ old('marketer_peer_campaign_min_stock', $peerMinStock) }}"
+                       class="w-28 rounded border border-gray-300 px-2 py-1 text-sm">
+                @error('marketer_peer_campaign_min_stock')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+            </div>
+            <button type="submit" class="rounded bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">{{ __('common.save') }}</button>
+        </form>
+    </div>
+
     {{-- ─── Monthly promotion minimums per influencer category ────────────────── --}}
     <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm mt-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-1">{{ __('admin.marketer_settings.promotion_targets_title') }}</h2>

@@ -50,6 +50,13 @@
         </div>
     </div>
 
+    @if(!empty($breakdown))
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 class="font-semibold text-gray-800 mb-2">{{ __('admin.wallets.breakdown_title') }}</h2>
+            @include('admin.wallets._marketer-breakdown', ['b' => $breakdown])
+        </div>
+    @endif
+
     {{-- Adjust Balance --}}
     <div class="bg-white rounded-xl border border-gray-200 p-5">
         <h2 class="font-semibold text-gray-800 mb-4">{{ __('admin.wallets.manual_adjustment') }}</h2>
@@ -96,7 +103,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 text-gray-500 text-xs">{{ $tx->created_at->format('d M Y H:i') }}</td>
                         <td class="px-4 py-3">
-                            @if($tx->type->value === 'credit')
+                            @if((($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit'))
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">+ {{ __('admin.wallets.credit') }}</span>
                             @else
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">− {{ __('admin.wallets.debit') }}</span>
@@ -104,8 +111,8 @@
                         </td>
                         <td class="px-4 py-3 text-gray-600 text-xs">{{ str_replace('_',' ', $tx->source_type) }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ $tx->description }}</td>
-                        <td class="px-4 py-3 text-end font-semibold {{ $tx->type->value === 'credit' ? 'text-green-700' : 'text-red-600' }}">
-                            {{ $tx->type->value === 'credit' ? '+' : '−' }}{{ number_format($tx->amount, 2) }}
+                        <td class="px-4 py-3 text-end font-semibold {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? 'text-green-700' : 'text-red-600' }}">
+                            {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? '+' : '−' }}{{ number_format($tx->amount, 2) }}
                         </td>
                         <td class="px-4 py-3 text-end text-gray-700">{{ number_format($tx->balance_after, 2) }}</td>
                     </tr>

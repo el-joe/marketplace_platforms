@@ -1387,6 +1387,10 @@ class MarketerCampaignService
 
         $newInvitation = $this->dispatchInvitation($campaign, $replacement->id, $freedSample);
         $newInvitation->update(['replaced_invitation_id' => $oldInvitation->id]);
+        // P14 follow-up: the old invitation keeps its real outcome (rejected / timed_out: the marketer views,
+        // vendor notices and decline stats key on it) and is only stamped here. Grace attribution stays anchored
+        // on responded_at (the moment it stopped being the live holder), so this stamp never changes who is credited.
+        $oldInvitation->update(['replaced_at' => now()]);
 
         $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new VendorMarketerReplacedNotification($campaign, $oldMarketer, $replacement))

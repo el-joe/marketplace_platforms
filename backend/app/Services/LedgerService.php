@@ -103,6 +103,7 @@ class LedgerService
         $order->loadMissing('subOrders');
 
         $sellerPayableByVendor = [];
+        $sellerPayableByMarketer = [];
         $platformCommission = 0;
         $marketerCommissionPayable = 0;
         $gatewayFee = 0;
@@ -110,6 +111,10 @@ class LedgerService
         foreach ($order->subOrders as $subOrder) {
             if ($subOrder->vendor_id !== null) {
                 $sellerPayableByVendor[$subOrder->vendor_id] = ($sellerPayableByVendor[$subOrder->vendor_id] ?? 0) + (int) $subOrder->vendor_payout;
+            } elseif ($subOrder->seller_type === 'marketer' && $subOrder->marketer_id !== null) {
+                // A marketer-owned listing: the owner is the seller and is settled like a vendor
+                // (MarketerSaleSettlementService), so their net is a seller payable, not shipping revenue.
+                $sellerPayableByMarketer[$subOrder->marketer_id] = ($sellerPayableByMarketer[$subOrder->marketer_id] ?? 0) + (int) $subOrder->vendor_payout;
             }
             $platformCommission += (int) $subOrder->platform_commission;
             $marketerCommissionPayable += (int) $subOrder->marketer_commission;
@@ -119,7 +124,7 @@ class LedgerService
 
         // Customer VAT plus VAT billed to sellers on the platform commission: both are owed to the tax authority.
         $taxPayable = (int) $order->tax + $commissionVat;
-        $sellerPayableTotal = array_sum($sellerPayableByVendor);
+        $sellerPayableTotal = array_sum($sellerPayableByVendor) + array_sum($sellerPayableByMarketer);
 
         // enhancement.md P-11: warranty premium revenue is broken out of the
         // shipping_revenue residual into its own account_type. orders.warranty_total
@@ -157,6 +162,23 @@ class LedgerService
                 'reference_type' => 'order_capture',
                 'reference_id' => (string) $order->id,
                 'description' => "Seller payable for order {$order->order_number}",
+            ];
+        }
+
+        foreach ($sellerPayableByMarketer as $marketerId => $amount) {
+            if ($amount === 0) {
+                continue;
+            }
+            $entries[] = [
+                'account_type' => 'seller_payable',
+                'account_holder_type' => 'marketer',
+                'account_holder_id' => $marketerId,
+                'debit' => 0,
+                'credit' => $amount,
+                'currency' => $order->currency,
+                'reference_type' => 'order_capture',
+                'reference_id' => (string) $order->id,
+                'description' => "Seller payable (marketer) for order {$order->order_number}",
             ];
         }
 

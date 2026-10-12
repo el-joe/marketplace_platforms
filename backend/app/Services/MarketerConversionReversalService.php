@@ -71,6 +71,10 @@ class MarketerConversionReversalService
                         // the marketer already withdrew; that's a receivable,
                         // out of scope for this service — logged for finance).
                         $wallet->decrement('balance', $walletCredit);
+                        app(MarketerCommissionStatementService::class)->recordWalletTransaction(
+                            $wallet, 'debit', $walletCredit, (int) $wallet->fresh()->balance, $conversion->load('order'),
+                            __('marketer.finance.tx_commission_reversed', ['order' => $conversion->order?->order_number ?? '#'.substr((string) $conversion->order_id, 0, 8)])
+                        );
                         if ($wallet->balance < 0) {
                             Log::warning('Marketer wallet balance went negative reversing a paid-out conversion.', [
                                 'wallet_id' => $wallet->id,
@@ -81,6 +85,11 @@ class MarketerConversionReversalService
                         $wallet->decrement('pending_balance', $walletCredit);
                     }
                 }
+            }
+
+            // P11 follow-up: mirror the gross / cut / VAT / net statement postings.
+            if ($conversion->wallet_credited_at) {
+                app(MarketerCommissionStatementService::class)->reverseApprovalLedger($conversion, $this->ledgerService);
             }
 
             // Reverse the platform commission ledger entry posted when the conversion

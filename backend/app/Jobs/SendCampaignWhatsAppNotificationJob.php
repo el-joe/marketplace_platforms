@@ -23,7 +23,8 @@ class SendCampaignWhatsAppNotificationJob implements ShouldQueue
 
     public int $tries = 5;
 
-    public function __construct(public readonly string $invitationId) {}
+    /** @param bool $force admin "Resend": deliver again even if an earlier send already succeeded */
+    public function __construct(public readonly string $invitationId, public readonly bool $force = false) {}
 
     /** @return array<int, int> */
     public function backoff(): array
@@ -34,7 +35,7 @@ class SendCampaignWhatsAppNotificationJob implements ShouldQueue
     public function handle(WhatsAppGateway $whatsapp, InvitationWhatsAppMessage $messages): void
     {
         $invitation = MarketerCampaignInvitation::with(['marketer', 'campaign.vendor'])->find($this->invitationId);
-        if (! $invitation || $invitation->whatsapp_sent || ! $invitation->isPending() || $invitation->isTimedOut()) {
+        if (! $invitation || ($invitation->whatsapp_sent && ! $this->force) || ! $invitation->isPending() || $invitation->isTimedOut()) {
             return;
         }
 

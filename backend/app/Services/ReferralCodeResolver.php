@@ -19,6 +19,10 @@ use Illuminate\Support\Collection;
  *   any invitation of a cancelled/done/paused/... campaign => CAMPAIGN_CLOSED never attributable
  *   unknown code                                    => UNKNOWN
  *
+ * Status vs. replacement: a replaced invitation deliberately KEEPS status rejected / timed_out and carries `replaced_at`
+ * (setting status='replaced' would erase the reason that the marketer pages, vendor notices and admin transfer log read);
+ * the grace window is anchored on responded_at, so it is identical with or without `replaced_at`.
+ *
  * A reassigned ad gets a brand new invitation with a fresh code/QR (MarketerCampaignService::dispatchInvitation),
  * so scanning an old code after the replacement never credits the new marketer, and a click on the old code
  * before the replacement never credits the new one either: each click resolves to exactly one invitation.
@@ -127,7 +131,7 @@ class ReferralCodeResolver
      * Code history of a campaign for the admin page: each chain starts at an invitation that replaced nobody and
      * follows `replaced_invitation_id` forward. Orphaned links (deleted predecessor) start their own chain.
      *
-     * @return Collection<int, Collection<int, array{invitation: MarketerCampaignInvitation, state: string, grace_until: ?Carbon, closed_at: ?Carbon}>>
+     * @return Collection<int, Collection<int, array{invitation: MarketerCampaignInvitation, state: string, grace_until: ?Carbon, closed_at: ?Carbon, replaced_at: ?Carbon}>>
      */
     public function chainsFor(MarketerCampaign $campaign): Collection
     {
@@ -149,6 +153,7 @@ class ReferralCodeResolver
                     'state' => $this->stateFor($node),
                     'grace_until' => $this->graceUntil($node),
                     'closed_at' => $this->closedAt($node),
+                    'replaced_at' => $node->replaced_at,
                 ]);
                 $node = $byPredecessor->get($node->id)?->first();
             }

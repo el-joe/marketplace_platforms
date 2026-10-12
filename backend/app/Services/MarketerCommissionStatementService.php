@@ -4,8 +4,13 @@ namespace App\Services;
 
 use App\Enums\MarketerCommissionDiscountType;
 use App\Models\Country;
+use App\Models\LedgerEntry;
+use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
+use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerProfile;
+use App\Models\Wallet;
+use App\Models\WalletTransaction;
 
 /**
  * Gross commission -> admin cut -> discount -> VAT -> net, in BIGINT base units.
@@ -117,6 +122,140 @@ class MarketerCommissionStatementService
     public static function walletAmount(MarketerCampaignConversion $c): int
     {
         return $c->net_commission_amount !== null ? (int) $c->net_commission_amount : $c->total_commission;
+    }
+
+    public const LEDGER_REFERENCE = 'marketer_conversion_statement';
+
+    /**
+     * Ledger postings for one approved conversion (idempotent per conversion):
+     *   Dr marketer_commission_payable  gross                     (the commission the platform owed through the order)
+     *   Cr marketer_payable             net   (holder: marketer)   (what the marketer wallet now holds; withdrawals debit it)
+     *   Cr platform_commission          cut                        (platform income)
+     *   Cr tax_payable                  VAT on the cut             (owed to the tax authority)
+     * gross = net + cut + vat by construction (see breakdown()), so the group always balances.
+     */
+    public function postApprovalLedger(MarketerCampaignConversion $c, ?LedgerService $ledger = null): void
+    {
+        $ledger ??= app(LedgerService::class);
+        $gross = (int) $c->gross_commission_amount;
+        if ($c->net_commission_amount === null || $gross <= 0) {
+            return;
+        }
+
+        if (LedgerEntry::where('reference_type', self::LEDGER_REFERENCE)->where('reference_id', (string) $c->id)->exists()) {
+            return;
+        }
+
+        $marketerId = $c->invitation?->marketer_id;
+        $row = fn (string $type, ?string $holderType, ?string $holderId, int $debit, int $credit, string $label) => [
+            'account_type' => $type,
+            'account_holder_type' => $holderType,
+            'account_holder_id' => $holderId,
+            'debit' => $debit,
+            'credit' => $credit,
+            'currency' => $c->currency,
+            'reference_type' => self::LEDGER_REFERENCE,
+            'reference_id' => (string) $c->id,
+            'description' => "{$label} for conversion {$c->id}",
+        ];
+
+        $entries = [$row('marketer_commission_payable', null, null, $gross, 0, 'Gross commission')];
+        foreach ([
+            ['marketer_payable', 'marketer', $marketerId, (int) $c->net_commission_amount, 'Net commission payable to marketer'],
+            ['platform_commission', null, null, (int) $c->platform_cut_amount, 'Platform cut'],
+            ['tax_payable', null, null, (int) $c->platform_cut_vat_amount, 'VAT on platform cut'],
+        ] as [$type, $holderType, $holderId, $credit, $label]) {
+            if ($credit !== 0) {
+                $entries[] = $row($type, $holderType, $holderId, 0, $credit, $label);
+            }
+        }
+
+        $ledger->record($ledger->newGroupId(), $entries);
+    }
+
+    /** Mirror image of postApprovalLedger() when the conversion is reversed (idempotent). */
+    public function reverseApprovalLedger(MarketerCampaignConversion $c, ?LedgerService $ledger = null): void
+    {
+        $ledger ??= app(LedgerService::class);
+        $original = LedgerEntry::where('reference_type', self::LEDGER_REFERENCE)->where('reference_id', (string) $c->id)->get();
+        if ($original->isEmpty()
+            || LedgerEntry::where('reference_type', self::LEDGER_REFERENCE.'_reversal')->where('reference_id', (string) $c->id)->exists()) {
+            return;
+        }
+
+        $ledger->record($ledger->newGroupId(), $original->map(fn (LedgerEntry $e) => [
+            'account_type' => $e->account_type,
+            'account_holder_type' => $e->account_holder_type,
+            'account_holder_id' => $e->account_holder_id,
+            'debit' => (int) $e->credit,
+            'credit' => (int) $e->debit,
+            'currency' => $e->currency,
+            'reference_type' => self::LEDGER_REFERENCE.'_reversal',
+            'reference_id' => (string) $c->id,
+            'description' => "Reversal of commission statement for conversion {$c->id}",
+        ])->all());
+    }
+
+    /** Human line for the wallet transaction written when the conversion's net becomes spendable. */
+    public function walletDescription(MarketerCampaignConversion $c): string
+    {
+        $b = $this->forConversion($c);
+        $order = $c->order?->order_number ?? '#'.substr((string) $c->order_id, 0, 8);
+
+        return mb_substr(__('marketer.finance.tx_commission', [
+            'order' => $order, 'gross' => number_format($b['gross']), 'cut' => number_format($b['cut']),
+            'vat' => number_format($b['vat']), 'net' => number_format($b['net']),
+        ]), 0, 255);
+    }
+
+    /**
+     * One wallet transaction per wallet movement of a conversion. `$direction` = credit when its net is released
+     * to the spendable balance, debit when a released conversion is reversed. $balanceAfter is the wallet balance after the move.
+     */
+    public function recordWalletTransaction(Wallet $wallet, string $direction, int $amount, int $balanceAfter, MarketerCampaignConversion $c, ?string $description = null): ?WalletTransaction
+    {
+        if ($amount === 0) {
+            return null;
+        }
+
+        return WalletTransaction::create([
+            'wallet_id' => $wallet->id,
+            'type' => $direction,
+            'direction' => $direction,
+            'amount' => $amount,
+            'balance_after' => $balanceAfter,
+            'currency_code' => $wallet->currency,
+            'source_type' => 'marketer_conversion',
+            'source_id' => (string) $c->id,
+            'description' => $description ?? $this->walletDescription($c),
+            'created_at' => now(),
+        ]);
+    }
+
+    /**
+     * Lifetime commission statement of one marketer over approved (default) conversions: gross / cut / VAT / net,
+     * plus how many conversions. Used by the admin withdrawal + wallet screens.
+     *
+     * @return array{gross: int, cut: int, vat: int, net: int, count: int}
+     */
+    public function totalsForMarketer(Marketer|string $marketer, array $statuses = ['approved']): array
+    {
+        $marketerId = $marketer instanceof Marketer ? $marketer->id : $marketer;
+        $totals = ['gross' => 0, 'cut' => 0, 'vat' => 0, 'net' => 0, 'count' => 0];
+
+        MarketerCampaignConversion::query()
+            ->whereIn('status', $statuses)
+            ->whereIn('invitation_id', MarketerCampaignInvitation::where('marketer_id', $marketerId)->select('id'))
+            ->with(['campaign', 'invitation.marketer.marketerProfile'])
+            ->each(function (MarketerCampaignConversion $c) use (&$totals) {
+                $b = $this->forConversion($c);
+                foreach (['gross', 'cut', 'vat', 'net'] as $k) {
+                    $totals[$k] += $b[$k];
+                }
+                $totals['count']++;
+            });
+
+        return $totals;
     }
 
     private function bp(float|string|int|null $pct, int $min, int $max): int

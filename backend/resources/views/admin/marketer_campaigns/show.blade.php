@@ -383,7 +383,8 @@
                             @foreach($marketerCampaign->invitations as $invitation)
                                 <tr class="border-b border-gray-50">
                                     <td class="py-2 pr-4 font-medium text-gray-900">{{ $invitation->marketer?->name ?? '—' }}</td>
-                                    <td class="py-2 pr-4"><x-badge color="gray">{{ $invitation->status }}</x-badge></td>
+                                    <td class="py-2 pr-4"><x-badge color="gray">{{ $invitation->status }}</x-badge>
+                                        @if($invitation->replaced_at)<span class="block text-[11px] text-gray-500" data-replaced-at>{{ __('admin.marketer_campaigns.replaced_at', ['date' => $invitation->replaced_at->format('d M Y H:i')]) }}</span>@endif</td>
                                     <td class="py-2 pr-4 font-mono text-xs">{{ $invitation->referral_code ?? '—' }}</td>
                                     <td class="py-2 pr-4">
                                         @if($invitation->referral_link)
@@ -408,6 +409,17 @@
                                         @else
                                             <span class="text-gray-400">{{ __('admin.marketer_campaigns.whatsapp_pending') }}</span>
                                         @endif
+                                        @can('marketer_campaigns.approve')
+                                            @if($invitation->status === 'pending' && ! $invitation->isTimedOut())
+                                                <form method="POST" action="{{ route('admin.marketer-campaigns.invitations.resend-whatsapp', [$marketerCampaign, $invitation]) }}" class="mt-1">
+                                                    @csrf
+                                                    <button type="submit" class="text-xs text-primary-600 hover:underline" data-resend-whatsapp>
+                                                        <i class="fab fa-whatsapp"></i> {{ __('admin.marketer_campaigns.whatsapp_resend') }}
+                                                        @if($invitation->whatsapp_resend_count > 0)({{ $invitation->whatsapp_resend_count }})@endif
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endcan
                                     </td>
                                     <td class="py-2 pr-4">{{ $invitation->responded_at?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="px-4 py-3 text-center">

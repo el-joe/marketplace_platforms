@@ -3,9 +3,12 @@
 namespace Tests\Feature\Campaigns;
 
 use App\Models\MarketerCampaignConversion;
+use App\Models\MarketerCampaignInvitation;
 use App\Services\LastClickAttributionService;
+use App\Services\MarketerCampaignService;
 use App\Services\ReferralCodeResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -71,7 +74,7 @@ class ReferralCodeAttributionTest extends TestCase
         $order = R::placeOrder($this, $this->s, 'sess-pending');
         $this->assertCount(0, MarketerCampaignConversion::where('order_id', $order->id)->get(), 'not accepted yet => no commission');
 
-        app(\App\Services\MarketerCampaignService::class)->acceptInvitation($invA->fresh());
+        app(MarketerCampaignService::class)->acceptInvitation($invA->fresh());
         $order2 = R::placeOrder($this, $this->s, 'sess-pending');
 
         $this->assertSame($invA->id, MarketerCampaignConversion::where('order_id', $order2->id)->firstOrFail()->invitation_id);
@@ -85,7 +88,7 @@ class ReferralCodeAttributionTest extends TestCase
         $this->travel(2)->hours();
         R::reject($invA->fresh());
         $invB = $campaign->invitations()->where('replaced_invitation_id', $invA->id)->firstOrFail();
-        app(\App\Services\MarketerCampaignService::class)->acceptInvitation($invB);
+        app(MarketerCampaignService::class)->acceptInvitation($invB);
 
         $this->travel(3)->days(); // inside the 7 day grace window
         $order = R::placeOrder($this, $this->s, 'sess-early');
@@ -101,7 +104,7 @@ class ReferralCodeAttributionTest extends TestCase
         [$campaign, $invA] = $this->replacedPair();
         R::reject($invA->fresh());
         $invB = $campaign->invitations()->where('replaced_invitation_id', $invA->id)->firstOrFail();
-        app(\App\Services\MarketerCampaignService::class)->acceptInvitation($invB);
+        app(MarketerCampaignService::class)->acceptInvitation($invB);
 
         R::scan($this, $invA->referral_code, 'sess-late')->assertOk()->assertJsonPath('attributed', false);
         $order = R::placeOrder($this, $this->s, 'sess-late');
@@ -115,7 +118,7 @@ class ReferralCodeAttributionTest extends TestCase
         R::scan($this, $invA->referral_code, 'sess-expired');
         R::reject($invA->fresh());
         $invB = $campaign->invitations()->where('replaced_invitation_id', $invA->id)->firstOrFail();
-        app(\App\Services\MarketerCampaignService::class)->acceptInvitation($invB);
+        app(MarketerCampaignService::class)->acceptInvitation($invB);
 
         $this->travel(8)->days();
         $order = R::placeOrder($this, $this->s, 'sess-expired');
@@ -170,7 +173,7 @@ class ReferralCodeAttributionTest extends TestCase
     public function test_one_order_never_credits_two_marketers_for_the_same_campaign(): void
     {
         $inv = $this->s->marketerCampaignInvitation;           // accepted, with a marketer listing
-        $prev = \App\Models\MarketerCampaignInvitation::create([
+        $prev = MarketerCampaignInvitation::create([
             'campaign_id' => $inv->campaign_id,
             'marketer_id' => F::influencer($this->s)->id,
             'status' => 'rejected',
@@ -181,7 +184,7 @@ class ReferralCodeAttributionTest extends TestCase
 
         // The customer clicked the OLD marketer's code two days ago (before the replacement) ...
         $this->travelTo(now()->subDays(2));
-        \Illuminate\Support\Facades\Cache::put('referral_click:sess-two', ['referral_code' => $prev->referral_code, 'clicked_at' => now()->toISOString()], now()->addDays(60));
+        Cache::put('referral_click:sess-two', ['referral_code' => $prev->referral_code, 'clicked_at' => now()->toISOString()], now()->addDays(60));
         $this->travelBack();
 
         // ... then bought the replacement's listing AND another plain product in the same order.
@@ -220,5 +223,56 @@ class ReferralCodeAttributionTest extends TestCase
         }
         // The old record keeps its own code for the grace window and the admin history.
         $this->assertSame($invA->referral_code, $invA->fresh()->referral_code);
+    }
+
+    // ───────── replaced_at (instead of a "replaced" status) ─────────
+
+    public function test_replacement_stamps_replaced_at_but_keeps_the_real_outcome_status(): void
+    {
+        foreach (['reject', 'timeout'] as $how) {
+            [$campaign, $invA] = $this->replacedPair();
+            $how === 'reject' ? R::reject($invA->fresh()) : R::timeout($invA->fresh());
+
+            $old = $invA->fresh();
+            $this->assertSame($how === 'reject' ? 'rejected' : 'timed_out', $old->status, 'reason is not erased by the replacement');
+            $this->assertNotNull($old->replaced_at);
+            $this->assertNotNull($old->responded_at);
+            $this->assertTrue($old->replaced_at->greaterThanOrEqualTo($old->responded_at));
+            $invB = $campaign->invitations()->where('replaced_invitation_id', $old->id)->firstOrFail();
+            $this->assertNull($invB->replaced_at, 'the live replacement itself is not replaced');
+        }
+    }
+
+    public function test_no_replacement_available_leaves_replaced_at_empty(): void
+    {
+        $a = F::influencer($this->s); // nobody else to take over
+        $campaign = R::pendingCampaign($this->s, $a);
+        $invA = R::invitationOf($campaign, $a);
+        R::reject($invA->fresh());
+
+        $this->assertSame('rejected', $invA->fresh()->status);
+        $this->assertNull($invA->fresh()->replaced_at);
+    }
+
+    public function test_grace_attribution_is_anchored_on_the_response_not_on_replaced_at(): void
+    {
+        [$campaign, $invA] = $this->replacedPair();
+        R::scan($this, $invA->referral_code, 'sess-early');
+        $this->travel(2)->hours();
+        R::reject($invA->fresh());
+        // The replacement happened later than the rejection: replaced_at must not move the grace anchor.
+        $invA->fresh()->update(['replaced_at' => now()->addDays(30)]);
+
+        $resolver = app(ReferralCodeResolver::class);
+        $this->assertTrue($resolver->closedAt($invA->fresh())->equalTo($invA->fresh()->responded_at));
+        $this->assertSame(ReferralCodeResolver::STATE_GRACE, $resolver->stateFor($invA->fresh()));
+
+        $this->travel(3)->days();
+        $order = R::placeOrder($this, $this->s, 'sess-early');
+        $this->assertCount(1, $this->conversionsFor($invA));
+        $this->assertSame($invA->id, MarketerCampaignConversion::where('order_id', $order->id)->sole()->invitation_id);
+
+        $this->travel(5)->days(); // 8 days after the rejection: expired, whatever replaced_at says
+        $this->assertSame(ReferralCodeResolver::STATE_EXPIRED, $resolver->stateFor($invA->fresh()));
     }
 }

@@ -34,6 +34,21 @@
             <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.withdraw_net_hint') }}</p>
         </div>
 
+        {{-- Sales of own listings (seller = marketer) --}}
+        @if(($salesTotals['count'] ?? 0) > 0)
+        <div class="bg-white rounded-xl border p-5" data-wallet-sales>
+            <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.sales_title') }}</h2>
+            <dl class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ number_format($salesTotals['gross']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.sales_commission_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($salesTotals['commission']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($salesTotals['vat']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.sales_peer_header') }}</dt><dd class="font-bold text-red-600">−{{ number_format($salesTotals['peer']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ number_format($salesTotals['net']) }}</dd></div>
+            </dl>
+            <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.sales_hint') }}</p>
+        </div>
+        @endif
+
         {{-- Withdraw --}}
         @unless($wallet->is_frozen)
         <div class="bg-white rounded-xl border p-5">
@@ -102,8 +117,8 @@
                         <p class="text-sm font-medium text-gray-900">{{ $tx->description }}</p>
                         <p class="text-xs text-gray-400">{{ $tx->created_at->format('d M Y H:i') }}</p>
                     </div>
-                    <p class="text-sm font-bold {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? 'text-green-600' : 'text-red-500' }}">
-                        {{ $tx->type === \App\Enums\WalletTransactionType::Credit ? '+' : '−' }}{{ number_format($tx->amount) }}
+                    <p class="text-sm font-bold {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? 'text-green-600' : 'text-red-500' }}">
+                        {{ (($tx->type instanceof \BackedEnum ? $tx->type->value : $tx->type) === 'credit') ? '+' : '−' }}{{ number_format($tx->amount) }}
                     </p>
                 </div>
             @empty
