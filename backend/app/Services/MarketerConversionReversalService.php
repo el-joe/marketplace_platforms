@@ -53,7 +53,7 @@ class MarketerConversionReversalService
                 return; // already reversed/paid, or gone — idempotent no-op.
             }
 
-            $totalCommission = (int) $conversion->commission_amount + (int) ($conversion->flash_sale_bonus_amount ?? 0);
+            $totalCommission = \App\Support\Money::number($conversion->commission_amount) + \App\Support\Money::number($conversion->flash_sale_bonus_amount ?? 0);
 
             // Claw back whatever wallet credit was already given (P11: the NET snapshot, not the gross).
             $walletCredit = MarketerCommissionStatementService::walletAmount($conversion);
@@ -95,7 +95,7 @@ class MarketerConversionReversalService
             // Reverse the platform commission ledger entry posted when the conversion
             // was approved. Only approved conversions have a ledger entry; pending
             // conversions were never approved so no ledger entry exists to reverse.
-            if ($conversion->wallet_credited_at && (int) $conversion->platform_commission_amount > 0) {
+            if ($conversion->wallet_credited_at && \App\Support\Money::number($conversion->platform_commission_amount) > 0) {
                 $original = LedgerEntry::where('reference_type', 'marketer_conversion')
                     ->where('reference_id', $conversion->id)
                     ->get();
@@ -105,8 +105,8 @@ class MarketerConversionReversalService
                         'account_type' => $e->account_type,
                         'account_holder_type' => $e->account_holder_type,
                         'account_holder_id' => $e->account_holder_id,
-                        'debit' => (int) $e->credit,
-                        'credit' => (int) $e->debit,
+                        'debit' => \App\Support\Money::number($e->credit),
+                        'credit' => \App\Support\Money::number($e->debit),
                         'currency' => $e->currency,
                         'reference_type' => 'marketer_conversion_reversal',
                         'reference_id' => (string) $conversion->id,

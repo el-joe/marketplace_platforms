@@ -85,7 +85,7 @@ class FinanceController extends Controller
 
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 
-        $withdrawal = $this->walletService->requestWithdrawal($wallet, (int) $data['amount'], [
+        $withdrawal = $this->walletService->requestWithdrawal($wallet, round((float) $data['amount'], 2), [
             'bank_name' => $data['bank_name'],
             'bank_iban' => $data['bank_iban'],
         ]);

@@ -67,7 +67,7 @@ class CaptureCodOnDelivery
             ->update(['status' => PaymentTransactionStatus::Succeeded, 'processed_at' => now()]);
 
         // enhancement.md P-03 task 5: ledger at capture.
-        $this->ledgerService->postOrderCapture($order, (int) $order->total);
+        $this->ledgerService->postOrderCapture($order, \App\Support\Money::number($order->total));
         // enhancement.md P-04 task 2: COD coupon usage is consumed on
         // delivery collection, not at placement.
         $this->couponUsageService->consumeForOrder($order);

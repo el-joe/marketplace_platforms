@@ -46,7 +46,7 @@ class WalletController extends Controller
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $amount = (int) $data['amount'];
+        $amount = round((float) $data['amount'], 2);
 
         $this->walletService->requestWithdrawal($wallet, $amount, [
             'bank_name' => $data['bank_name'],

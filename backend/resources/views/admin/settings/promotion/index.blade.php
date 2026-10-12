@@ -47,7 +47,7 @@
                     <label for="promotion_fee_per_celebrity" class="block text-sm font-medium text-gray-700 mb-1">
                         {{ __('admin.static_text.admin_settings_promotion_index.promotion_fee_per_celebrity') }}
                     </label>
-                    <input type="number" min="0" step="1" name="promotion_fee_per_celebrity"
+                    <input type="number" min="0" step="0.01" name="promotion_fee_per_celebrity"
                         id="promotion_fee_per_celebrity"
                         value="{{ old('promotion_fee_per_celebrity', $settings['promotion_fee_per_celebrity']->value ?? '') }}"
                         class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>

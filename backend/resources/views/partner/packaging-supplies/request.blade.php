@@ -156,7 +156,7 @@
                 .map(q => ({
                     name: q.dataset.name,
                     qty: parseInt(q.value),
-                    unitCost: parseInt(q.dataset.unitCost),
+                    unitCost: parseFloat(q.dataset.unitCost),
                 }));
         }
 

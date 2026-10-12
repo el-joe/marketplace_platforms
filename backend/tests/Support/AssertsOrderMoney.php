@@ -103,12 +103,13 @@ trait AssertsOrderMoney
 
         Assert::assertNotEmpty($entries, "No ledger_entries found for transaction_group_id={$transactionGroupId}");
 
-        $debit = (int) $entries->sum('debit');
-        $credit = (int) $entries->sum('credit');
+        $debit = round((float) $entries->sum('debit'), 4);
+        $credit = round((float) $entries->sum('credit'), 4);
 
-        Assert::assertSame(
+        Assert::assertEqualsWithDelta(
             $debit,
             $credit,
+            0.0001,
             "Ledger unbalanced for group {$transactionGroupId}: debit={$debit}, credit={$credit}"
         );
     }

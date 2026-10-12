@@ -110,14 +110,14 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="label-sm">{{ __('admin.products.factory_cost_label') }}</label>
-                            <input type="number" x-model.number="form.manufacturer_cost" min="0"
+                            <input type="number" step="0.01" x-model.number="form.manufacturer_cost" min="0"
                                 class="form-input w-full text-sm font-mono" :placeholder="'{{ __('admin.products.factory_cost_placeholder', ['currency' => '']) }}' + currencyCode"
                                 @input="syncLandedCost()">
                             <p class="text-xs text-gray-400 mt-0.5" x-text="formatAmount(form.manufacturer_cost, currencyCode)"></p>
                         </div>
                         <div>
                             <label class="label-sm">{{ __('admin.products.shipping_cost_label') }}</label>
-                            <input type="number" x-model.number="form.shipping_cost" min="0"
+                            <input type="number" step="0.01" x-model.number="form.shipping_cost" min="0"
                                 class="form-input w-full text-sm font-mono" :placeholder="'{{ __('admin.products.shipping_cost_placeholder', ['currency' => '']) }}' + currencyCode"
                                 @input="syncLandedCost()">
                             <p class="text-xs text-gray-400 mt-0.5" x-text="formatAmount(form.shipping_cost, currencyCode)"></p>
@@ -127,7 +127,7 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
                                 {{ __('admin.products.landed_cost_label') }}
                                 <span class="text-gray-400 font-normal">{{ __('admin.products.landed_cost_auto_override') }}</span>
                             </label>
-                            <input type="number" x-model.number="form.landed_cost" min="0"
+                            <input type="number" step="0.01" x-model.number="form.landed_cost" min="0"
                                 class="form-input w-full text-sm font-mono" placeholder="{{ __('admin.products.landed_cost_placeholder') }}">
                             <p class="text-xs text-gray-400 mt-0.5" x-text="formatAmount(form.landed_cost, currencyCode)"></p>
                         </div>
@@ -176,7 +176,7 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
                 <div class="flex flex-wrap items-end gap-3">
                     <div>
                         <label class="label-sm">{{ __('admin.products.selling_price_label') }}</label>
-                        <input type="number" x-model.number="calcPrice" min="1" class="form-input text-sm font-mono w-44"
+                        <input type="number" step="0.01" x-model.number="calcPrice" min="1" class="form-input text-sm font-mono w-44"
                             :placeholder="'{{ __('admin.products.selling_price_placeholder', ['currency' => '']) }}' + currencyCode">
                         <p class="text-xs text-gray-400 mt-0.5" x-text="centsToCurrency(calcPrice, currencyCode)"></p>
                     </div>
@@ -255,7 +255,7 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
                                     placeholder="{{ __('admin.products.competitor_name_placeholder') }}">
                                 <input type="url" x-model="comp.url" class="form-input text-xs w-full sm:flex-1 font-mono sm:min-w-0" dir="ltr"
                                     placeholder="{{ __('admin.products.competitor_url_placeholder') }}">
-                                <input type="number" x-model.number="comp.price"
+                                <input type="number" step="0.01" x-model.number="comp.price"
                                     class="form-input text-xs w-full sm:w-28 font-mono sm:flex-shrink-0" placeholder="{{ __('admin.products.competitor_price_placeholder') }}">
                             @else
                                 <span class="text-xs font-medium text-gray-700 w-28 flex-shrink-0 truncate"
@@ -479,12 +479,12 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
 
                 centsToCurrency(amount, currencyCode) {
                     if (amount === null || amount === undefined || amount === '' || isNaN(amount)) return '';
-                    return parseInt(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (currencyCode || '');
+                    return parseFloat(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (currencyCode || '');
                 },
 
                 formatAmount(amount, currencyCode) {
                     if (amount === null || amount === undefined || amount === '' || isNaN(amount)) return '';
-                    return parseInt(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (currencyCode || '');
+                    return parseFloat(amount).toLocaleString('en-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (currencyCode || '');
                 },
 
                 formatDate(iso) {

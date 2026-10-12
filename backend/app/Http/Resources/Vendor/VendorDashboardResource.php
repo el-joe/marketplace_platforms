@@ -30,7 +30,7 @@ class VendorDashboardResource extends JsonResource
                 'item_count'        => $so->items->count(),
                 'total'             => Money::number($so->subtotal),
                 'status'            => $so->status->value,
-                'vendor_payout'     => (int) $so->vendor_payout,
+                'vendor_payout'     => \App\Support\Money::number($so->vendor_payout),
                 'placed_at'         => $so->order?->placed_at?->toIso8601String(),
                 'sla_ship_deadline' => $so->sla_ship_deadline?->toIso8601String(),
                 'created_at'        => $so->created_at->toIso8601String(),

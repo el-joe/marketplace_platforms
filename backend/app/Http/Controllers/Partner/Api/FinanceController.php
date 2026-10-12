@@ -107,17 +107,17 @@ class FinanceController extends Controller
             'date_from' => $dateFrom->toDateString(),
             'date_to' => $dateTo->toDateString(),
             'totals' => [
-                'total_shipping_charged_to_customers' => (int) $totals->total_shipping_charged_to_customers,
-                'total_shipping_contribution' => (int) $totals->total_shipping_contribution,
-                'total_vendor_shipping_contribution' => (int) $totals->total_vendor_shipping_contribution,
+                'total_shipping_charged_to_customers' => \App\Support\Money::number($totals->total_shipping_charged_to_customers),
+                'total_shipping_contribution' => \App\Support\Money::number($totals->total_shipping_contribution),
+                'total_vendor_shipping_contribution' => \App\Support\Money::number($totals->total_vendor_shipping_contribution),
             ],
             'shipments' => $shipments->through(fn (SubOrder $s) => [
                 'sub_order_number' => $s->sub_order_number,
                 'order_number' => $s->order?->order_number,
                 'date' => $s->created_at->toDateString(),
-                'shipping_charged' => (int) $s->shipping,
-                'shipping_contribution' => (int) $s->vendor_contribution_amount,
-                'your_delivery_contribution' => (int) $s->vendor_contribution_amount,
+                'shipping_charged' => \App\Support\Money::number($s->shipping),
+                'shipping_contribution' => \App\Support\Money::number($s->vendor_contribution_amount),
+                'your_delivery_contribution' => \App\Support\Money::number($s->vendor_contribution_amount),
             ]),
         ]);
     }

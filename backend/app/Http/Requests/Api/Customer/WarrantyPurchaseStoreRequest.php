@@ -91,7 +91,7 @@ class WarrantyPurchaseStoreRequest extends FormRequest
                 $product,
                 $customer->country_id,
                 $orderItem->order->currency,
-                (int) $orderItem->unit_price,
+                \App\Support\Money::number($orderItem->unit_price),
             ))->pluck('id')->all();
 
             if (! in_array($plan->id, $availablePlanIds, true)) {

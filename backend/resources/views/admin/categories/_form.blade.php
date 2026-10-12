@@ -490,12 +490,12 @@
                                                 <td class="px-3 py-2 text-gray-900">{{ $country->name_ar }}</td>
                                                 <td class="px-3 py-2 text-gray-700">{{ $setting->currency ?? $country->currency_code }}</td>
                                                 <td class="px-3 py-2">
-                                                    <input type="number" min="0" step="1" name="influencer_commission_amount"
+                                                    <input type="number" min="0" step="0.01" name="influencer_commission_amount"
                                                         value="{{ $setting->influencer_commission_amount ?? 0 }}"
                                                         class="w-24 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
                                                 </td>
                                                 <td class="px-3 py-2">
-                                                    <input type="number" min="0" step="1" name="affiliate_commission_amount"
+                                                    <input type="number" min="0" step="0.01" name="affiliate_commission_amount"
                                                         value="{{ $setting->affiliate_commission_amount ?? 0 }}"
                                                         class="w-24 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
                                                 </td>

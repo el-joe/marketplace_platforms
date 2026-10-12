@@ -160,7 +160,7 @@
                             <label class="block text-xs font-medium text-gray-600 mb-1">
                                 {{ __('admin.disputes_section.compensation', ['currency' => $currency]) }}
                             </label>
-                            <input type="number" name="compensation" step="1" min="0" class="form-input w-full text-sm"
+                            <input type="number" name="compensation" step="0.01" min="0" class="form-input w-full text-sm"
                                 placeholder="0">
                         </div>
 

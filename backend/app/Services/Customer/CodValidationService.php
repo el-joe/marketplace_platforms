@@ -57,12 +57,12 @@ class CodValidationService
             }
         }
 
-        $globalLimit = (int) ($country?->cod_max_amount ?? 0);
+        $globalLimit = (float) ($country?->cod_max_amount ?? 0);
         if ($globalLimit > 0 && $regularTotal > $globalLimit) {
             $errors[] = __('common.exceptions.checkout.cod_limit_exceeded', ['limit' => $globalLimit]);
         }
 
-        $supermallLimit = (int) ($country?->cod_supermall_max_amount ?? 0);
+        $supermallLimit = (float) ($country?->cod_supermall_max_amount ?? 0);
         if ($supermallLimit > 0 && $supermallTotal > $supermallLimit) {
             $errors[] = __('common.exceptions.checkout.cod_supermall_limit_exceeded', ['limit' => $supermallLimit]);
         }

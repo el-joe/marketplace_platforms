@@ -406,7 +406,7 @@
                                                x-model="rule.from_sale_number"
                                                placeholder="{{ __('partner.listings.edit.sale_number_placeholder') }}"
                                                class="w-1/2 border border-gray-200 rounded-xl px-3 py-2 text-sm">
-                                        <input type="number" :name="`tiered_rules[${i}][commission_amount]`"
+                                        <input type="number" step="0.01" :name="`tiered_rules[${i}][commission_amount]`"
                                                x-model="rule.commission_amount"
                                                placeholder="{{ __('partner.listings.edit.commission_amount_placeholder') }}"
                                                class="w-1/2 border border-gray-200 rounded-xl px-3 py-2 text-sm">

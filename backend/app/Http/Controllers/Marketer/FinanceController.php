@@ -129,12 +129,12 @@ class FinanceController extends Controller
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 
         $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $withdrawal = $this->walletService->requestWithdrawal($wallet, (int) $data['amount'], [
+        $withdrawal = $this->walletService->requestWithdrawal($wallet, round((float) $data['amount'], 2), [
             'bank_name' => $data['bank_name'],
             'bank_iban' => $data['bank_iban'],
         ]);

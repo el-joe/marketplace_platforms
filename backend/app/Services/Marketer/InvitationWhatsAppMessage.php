@@ -38,8 +38,8 @@ class InvitationWhatsAppMessage
             'last_click' => __('marketer.invitations.commission_type_last_click', [], $locale),
             default => (string) $campaign->commission_type,
         };
-        if ($campaign->commission_type === 'fixed' && (int) $campaign->marketer_commission_amount > 0) {
-            $commission .= ' ('.number_format((int) $campaign->marketer_commission_amount).' '.$campaign->currency.')';
+        if ($campaign->commission_type === 'fixed' && \App\Support\Money::number($campaign->marketer_commission_amount) > 0) {
+            $commission .= ' ('.\App\Support\Money::format($campaign->marketer_commission_amount).' '.$campaign->currency.')';
         }
 
         return __('marketer.invitations.whatsapp_message', [

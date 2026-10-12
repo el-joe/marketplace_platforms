@@ -141,7 +141,7 @@ class FinanceController extends Controller
                 ->with('campaign:id,title,vendor_listing_id', 'payoutItems.payout:id,payout_number')
                 ->get()
                 ->each(function ($sample) use (&$rows) {
-                    $commission = (int) $sample->commission_amount;
+                    $commission = \App\Support\Money::number($sample->commission_amount);
                     $rows->push([
                         'type' => 'promotion_sample',
                         'date' => $sample->stock_deducted_at,

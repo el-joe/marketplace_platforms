@@ -15,21 +15,21 @@ class SubOrderListResource extends JsonResource
             'sub_order_number' => $this->sub_order_number,
             'order_id' => $this->order_id,
             'item_count' => $this->items_count ?? $this->items->count(),
-            'subtotal' => (int) $this->subtotal,
-            'shipping' => (int) $this->shipping,
-            'tax' => (int) $this->tax,
-            'vendor_coupon_cost' => (int) $this->vendor_coupon_cost,
-            'vendor_contribution_amount' => (int) $this->vendor_contribution_amount,
-            'gateway_fee' => (int) $this->gateway_fee,
-            'vendor_payout' => (int) $this->vendor_payout,
-            'order_total' => (int) $this->subtotal
-                - (int) $this->vendor_coupon_cost
-                + (int) $this->shipping
-                - (int) $this->vendor_contribution_amount
-                + (int) $this->tax,
+            'subtotal' => \App\Support\Money::number($this->subtotal),
+            'shipping' => \App\Support\Money::number($this->shipping),
+            'tax' => \App\Support\Money::number($this->tax),
+            'vendor_coupon_cost' => \App\Support\Money::number($this->vendor_coupon_cost),
+            'vendor_contribution_amount' => \App\Support\Money::number($this->vendor_contribution_amount),
+            'gateway_fee' => \App\Support\Money::number($this->gateway_fee),
+            'vendor_payout' => \App\Support\Money::number($this->vendor_payout),
+            'order_total' => \App\Support\Money::number($this->subtotal)
+                - \App\Support\Money::number($this->vendor_coupon_cost)
+                + \App\Support\Money::number($this->shipping)
+                - \App\Support\Money::number($this->vendor_contribution_amount)
+                + \App\Support\Money::number($this->tax),
             'marketer_commission_owner' => $this->marketer_commission_owner,
             'marketer_commission' => $this->marketer_commission_owner === 'vendor'
-                ? (int) $this->marketer_commission
+                ? \App\Support\Money::number($this->marketer_commission)
                 : null,
             'currency' => $this->order?->currency,
             'status' => $this->status?->value,

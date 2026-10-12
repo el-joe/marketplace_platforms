@@ -89,7 +89,7 @@ class WebhookController extends Controller
                             'status'         => 'confirmed',
                         ]);
                         // enhancement.md P-03 task 5: ledger at capture.
-                        $this->ledgerService->postOrderCapture($order, (int) $transaction->amount);
+                        $this->ledgerService->postOrderCapture($order, \App\Support\Money::number($transaction->amount));
                         $this->couponUsageService->consumeForOrder($order);
 
                         // Gift-card purchase orders paid via a redirect

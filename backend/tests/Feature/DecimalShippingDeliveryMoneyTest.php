@@ -227,7 +227,6 @@ class DecimalShippingDeliveryMoneyTest extends TestCase
             'quantity_delta' => 3,
             'quantity_after' => 3,
             'created_at' => now()->subDays(40),
-            'updated_at' => now()->subDays(40),
         ]);
         app(FbnDailyOverageFeeService::class)->computeOverageForDate(Carbon::today());
         $overage = FbnDailyOverageFee::where('vendor_id', $vendor->id)->firstOrFail();

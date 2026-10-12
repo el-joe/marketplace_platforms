@@ -79,7 +79,7 @@ class PayoutController extends Controller
             'currency'   => fn ($q, $v) => $q->where('payouts.currency', $v),
             'date_from'  => fn ($q, $v) => $q->whereDate('payouts.created_at', '>=', $v),
             'date_to'    => fn ($q, $v) => $q->whereDate('payouts.created_at', '<=', $v),
-            'min_amount' => fn ($q, $v) => $q->where('payouts.net_amount', '>=', (int) round((float) $v)),
+            'min_amount' => fn ($q, $v) => $q->where('payouts.net_amount', '>=', round((float) $v, 2)),
         ]);
     }
 

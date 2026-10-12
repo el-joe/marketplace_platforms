@@ -358,7 +358,7 @@
                             </div>
                             <div>
                                 <label class="label-sm block mb-1">{{ __('admin.admin_listings.extra_delivery_fee_cents') }}</label>
-                                <input type="number" min="0" x-model.number="shippingForm.extra_delivery_fee" class="form-input w-full text-sm">
+                                <input type="number" step="0.01" min="0" x-model.number="shippingForm.extra_delivery_fee" class="form-input w-full text-sm">
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="label-sm block mb-1">{{ __('admin.admin_listings.special_handling_notes') }}</label>

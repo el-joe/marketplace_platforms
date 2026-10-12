@@ -185,7 +185,7 @@
 
                                     <div class="mt-3">
                                         <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.admin_cap_per_delivery') }}</label>
-                                        <input type="number" name="zone_configs[{{ $i }}][subsidy_cap]" min="0" value="0" required
+                                        <input type="number" step="0.01" name="zone_configs[{{ $i }}][subsidy_cap]" min="0" value="0" required
                                                class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                     </div>
 
@@ -216,11 +216,11 @@
                                     <div id="split-fixed-{{ $alert->id }}-{{ $i }}" class="hidden grid grid-cols-2 gap-4">
                                         <div>
                                             <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.vendor_fixed_per_delivery') }}</label>
-                                            <input type="number" name="zone_configs[{{ $i }}][vendor_fixed_amount]" min="0" value="0" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
+                                            <input type="number" step="0.01" name="zone_configs[{{ $i }}][vendor_fixed_amount]" min="0" value="0" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                         </div>
                                         <div>
                                             <label class="text-xs text-gray-500">{{ __('admin.static_text.admin_shipping_subsidies_vendor_alerts.admin_fixed_per_delivery') }}</label>
-                                            <input type="number" name="zone_configs[{{ $i }}][admin_fixed_amount]" min="0" value="0" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
+                                            <input type="number" step="0.01" name="zone_configs[{{ $i }}][admin_fixed_amount]" min="0" value="0" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
                                         </div>
                                     </div>
                                 </fieldset>

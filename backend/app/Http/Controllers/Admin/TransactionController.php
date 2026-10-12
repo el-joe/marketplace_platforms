@@ -81,8 +81,8 @@ class TransactionController extends Controller
             'gateway' => fn($q, $v) => $q->where('payment_transactions.gateway', $v),
             'date_from' => fn($q, $v) => $q->whereDate('payment_transactions.created_at', '>=', $v),
             'date_to' => fn($q, $v) => $q->whereDate('payment_transactions.created_at', '<=', $v),
-            'amount_min' => fn($q, $v) => $q->where('payment_transactions.amount', '>=', (int) round($v)),
-            'amount_max' => fn($q, $v) => $q->where('payment_transactions.amount', '<=', (int) round($v)),
+            'amount_min' => fn($q, $v) => $q->where('payment_transactions.amount', '>=', round((float) $v, 2)),
+            'amount_max' => fn($q, $v) => $q->where('payment_transactions.amount', '<=', round((float) $v, 2)),
         ]);
     }
 
@@ -239,7 +239,7 @@ class TransactionController extends Controller
                 'status' => 'confirmed',
             ]);
 
-            (new \App\Services\LedgerService())->postOrderCapture($order, (int) $transaction->amount);
+            (new \App\Services\LedgerService())->postOrderCapture($order, \App\Support\Money::number($transaction->amount));
             (new \App\Services\Checkout\CouponUsageService())->consumeForOrder($order);
         });
 

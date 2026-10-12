@@ -395,7 +395,7 @@ class WarrantyClaimController extends Controller
 
         $walletService->credit(
             $wallet,
-            (int) $refund->amount,
+            \App\Support\Money::number($refund->amount),
             'warranty_claim',
             $claim->id,
             "Warranty claim refund #{$claim->claim_number}",

@@ -150,7 +150,7 @@
             @method('PUT')
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.profile.ad_price_label') }}</label>
-                <input type="number" min="0" name="ad_price" value="{{ old('ad_price', $profile->ad_price) }}"
+                <input type="number" step="0.01" min="0" name="ad_price" value="{{ old('ad_price', $profile->ad_price) }}"
                        class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 w-40">
             </div>
             <div>

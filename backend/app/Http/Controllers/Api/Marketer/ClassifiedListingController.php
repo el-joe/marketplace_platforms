@@ -204,7 +204,7 @@ class ClassifiedListingController extends Controller
         }
         $data = $request->validate($rules);
 
-        return [$data, $forced ?? (int) $data['price']];
+        return [$data, $forced ?? \App\Support\Money::number($data['price'])];
     }
 
     private function storeImages(Request $request, ClassifiedListing $listing): void

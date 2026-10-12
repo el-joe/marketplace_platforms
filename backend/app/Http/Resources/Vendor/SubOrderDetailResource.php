@@ -41,21 +41,21 @@ class SubOrderDetailResource extends JsonResource
             'cancellation_reason' => $this->cancellation_reason,
 
             'financials' => [
-                'subtotal' => (int) $this->subtotal,
-                'shipping' => (int) $this->shipping,
-                'tax' => (int) $this->tax,
-                'vendor_coupon_cost' => (int) $this->vendor_coupon_cost,
-                'vendor_contribution_amount' => (int) $this->vendor_contribution_amount,
-                'gateway_fee' => (int) $this->gateway_fee,
-                'vendor_payout' => (int) $this->vendor_payout,
-                'order_total' => (int) $this->subtotal
-                    - (int) $this->vendor_coupon_cost
-                    + (int) $this->shipping
-                    - (int) $this->vendor_contribution_amount
-                    + (int) $this->tax,
+                'subtotal' => \App\Support\Money::number($this->subtotal),
+                'shipping' => \App\Support\Money::number($this->shipping),
+                'tax' => \App\Support\Money::number($this->tax),
+                'vendor_coupon_cost' => \App\Support\Money::number($this->vendor_coupon_cost),
+                'vendor_contribution_amount' => \App\Support\Money::number($this->vendor_contribution_amount),
+                'gateway_fee' => \App\Support\Money::number($this->gateway_fee),
+                'vendor_payout' => \App\Support\Money::number($this->vendor_payout),
+                'order_total' => \App\Support\Money::number($this->subtotal)
+                    - \App\Support\Money::number($this->vendor_coupon_cost)
+                    + \App\Support\Money::number($this->shipping)
+                    - \App\Support\Money::number($this->vendor_contribution_amount)
+                    + \App\Support\Money::number($this->tax),
                 'marketer_commission_owner' => $this->marketer_commission_owner,
                 'marketer_commission' => $this->marketer_commission_owner === 'vendor'
-                    ? (int) $this->marketer_commission
+                    ? \App\Support\Money::number($this->marketer_commission)
                     : null,
             ],
 
@@ -122,8 +122,8 @@ class SubOrderDetailResource extends JsonResource
             'name_ar' => $snapshot['name_ar'] ?? null,
             'thumbnail' => $snapshot['thumbnail_url'] ?? null,
             'quantity' => $item->quantity,
-            'unit_price' => (int) $item->unit_price,
-            'line_total' => (int) $item->line_total,
+            'unit_price' => \App\Support\Money::number($item->unit_price),
+            'line_total' => \App\Support\Money::number($item->line_total),
             'fulfillment_status' => $item->fulfillment_status->value,
             'return_eligible_until' => $item->return_eligible_until?->toIso8601String(),
         ];
