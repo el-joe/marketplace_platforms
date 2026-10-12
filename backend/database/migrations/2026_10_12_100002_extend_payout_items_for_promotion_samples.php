@@ -18,10 +18,14 @@ return new class extends Migration
         DB::statement("ALTER TABLE payout_items MODIFY COLUMN item_type ENUM('sub_order','marketer_commission','promotion_sample') NOT NULL DEFAULT 'sub_order'");
 
         Schema::table('payout_items', function (Blueprint $table) {
-            $table->string('description', 255)->nullable()->after('net');
-            $table->foreignUuid('campaign_sample_id')->nullable()->after('marketer_conversion_id')
-                ->constrained('marketer_campaign_samples')->nullOnDelete();
-            $table->unique('campaign_sample_id');
+            if (! Schema::hasColumn('payout_items', 'description')) {
+                $table->string('description', 255)->nullable()->after('net');
+            }
+            if (! Schema::hasColumn('payout_items', 'campaign_sample_id')) {
+                $table->foreignUuid('campaign_sample_id')->nullable()->after('marketer_conversion_id')
+                    ->constrained('marketer_campaign_samples')->nullOnDelete();
+                $table->unique('campaign_sample_id');
+            }
         });
     }
 
