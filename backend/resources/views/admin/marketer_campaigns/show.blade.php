@@ -339,7 +339,7 @@
     {{-- ── Invitations ──────────────────────────────────────────────────── --}}
     <div x-show="tab === 'invitations'">
         <x-card title="{{ __('admin.marketer_campaigns.tab_invitations') }}">
-            @can('marketer_campaigns.create')
+            @if(auth('admin')->user()?->can('marketer_campaigns.create'))
                 @if(in_array($marketerCampaign->status, ['pending_admin', 'active']))
                     <x-slot name="actions">
                         <button type="button" @click="document.getElementById('invite-marketers-modal').classList.remove('hidden')"
@@ -348,7 +348,7 @@
                         </button>
                     </x-slot>
                 @endif
-            @endcan
+            @endif
             @php $waFailed = $marketerCampaign->invitations->filter(fn ($i) => $i->whatsappFailed()); @endphp
             @if($waFailed->isNotEmpty())
                 <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm" data-testid="whatsapp-failures">
@@ -409,7 +409,7 @@
                                         @else
                                             <span class="text-gray-400">{{ __('admin.marketer_campaigns.whatsapp_pending') }}</span>
                                         @endif
-                                        @can('marketer_campaigns.approve')
+                                        @if(auth('admin')->user()?->can('marketer_campaigns.approve'))
                                             @if($invitation->status === 'pending' && ! $invitation->isTimedOut())
                                                 <form method="POST" action="{{ route('admin.marketer-campaigns.invitations.resend-whatsapp', [$marketerCampaign, $invitation]) }}" class="mt-1">
                                                     @csrf
@@ -419,7 +419,7 @@
                                                     </button>
                                                 </form>
                                             @endif
-                                        @endcan
+                                        @endif
                                     </td>
                                     <td class="py-2 pr-4">{{ $invitation->responded_at?->format('d M Y H:i') ?? '—' }}</td>
                                     <td class="px-4 py-3 text-center">
@@ -444,7 +444,7 @@
                                                 <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
                                                     {{ __('admin.marketer_campaigns.pending_prefix') }}
                                                 </span>
-                                                @can('marketer_campaigns.approve')
+                                                @if(auth('admin')->user()?->can('marketer_campaigns.approve'))
                                                 <form action="{{ route('admin.marketer-campaigns.invitations.mark-fee-paid', [$marketerCampaign, $invitation]) }}"
                                                       method="POST">
                                                     @csrf @method('PATCH')
@@ -453,7 +453,7 @@
                                                         {{ __('admin.marketer_campaigns.mark_as_paid') }}
                                                     </button>
                                                 </form>
-                                                @endcan
+                                                @endif
                                             </div>
                                         @elseif($invitation->platform_fee_status === 'waived')
                                             <span class="text-xs text-gray-400">{{ __('admin.marketer_campaigns.fee_waived') }}</span>
@@ -555,7 +555,7 @@
             </x-card>
         @endif
 
-        @can('marketer_campaigns.create')
+        @if(auth('admin')->user()?->can('marketer_campaigns.create'))
             @if(in_array($marketerCampaign->status, ['pending_admin', 'active']))
                 @php
                     $alreadyInvitedIds = $marketerCampaign->invitations
@@ -604,7 +604,7 @@
                     </div>
                 </div>
             @endif
-        @endcan
+        @endif
     </div>
 
     {{-- ── Conversions ──────────────────────────────────────────────────── --}}

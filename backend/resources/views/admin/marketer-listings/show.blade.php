@@ -52,14 +52,14 @@
             {{-- Action buttons --}}
             <div class="flex shrink-0 flex-wrap gap-2 lg:justify-end">
                 @if($listing->status === MarketerListingStatus::PendingReview)
-                    @can('marketers.manage')
+                    @if(auth('admin')->user()?->can('marketers.manage'))
                     <form method="POST" action="{{ route('admin.marketer-listings.approve', $listing) }}">
                         @csrf
                         <button class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg text-sm shadow-sm hover:bg-emerald-600 transition-colors">
                             ✓ {{ __('admin.marketer_listings.approve') }}
                         </button>
                     </form>
-                    @endcan
+                    @endif
                 @endif
             </div>
         </div>
@@ -114,7 +114,7 @@
 
     {{-- Approve / Reject forms (only when pending_review) --}}
     @if($listing->status === MarketerListingStatus::PendingReview)
-    @can('marketers.manage')
+    @if(auth('admin')->user()?->can('marketers.manage'))
     <div class="bg-white rounded-xl border shadow-sm p-6 space-y-6">
         <h3 class="font-bold text-gray-800">{{ __('admin.marketer_listings.review_decision') }}</h3>
 
@@ -152,7 +152,7 @@
             </div>
         </div>
     </div>
-    @endcan
+    @endif
     @endif
 
 </div>
