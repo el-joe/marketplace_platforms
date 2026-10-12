@@ -562,6 +562,10 @@
             @if($marketerCampaign->samples->isEmpty())
                 <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_samples') }}</p>
             @else
+                @php $liveSamples = $marketerCampaign->samples->where('status', '!=', 'cancelled'); @endphp
+                <div class="mb-3 rounded-lg bg-purple-50 px-4 py-2 text-xs text-purple-800" data-testid="admin-samples-summary">
+                    {{ __('admin.marketer_campaigns.samples_summary', ['count' => $liveSamples->count(), 'units' => $liveSamples->sum('quantity'), 'dispatched' => $liveSamples->whereNotNull('stock_deducted_at')->count()]) }}
+                </div>
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="text-left text-gray-500 border-b border-gray-100">
@@ -569,6 +573,8 @@
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_marketer') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_quantity') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_status') }}</th>
+                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_stock_deducted') }}</th>
+                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_commission') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.delivery_address') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_dispatched_at') }}</th>
                             <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.sample_delivered_at') }}</th>
@@ -579,21 +585,24 @@
                         @foreach($marketerCampaign->samples as $sample)
                             <tr class="border-b border-gray-50">
                                 <td class="py-2 pr-4">
-                                    {{ $sample->sample_owner === 'platform' ? __('admin.marketer_campaigns.sample_owner_platform') : __('admin.marketer_campaigns.sample_owner_marketer') }}
+                                    {{ __('admin.marketer_campaigns.sample_type_'.($sample->sample_type ?? ($sample->sample_owner === 'platform' ? 'admin' : 'influencer'))) }}
                                 </td>
                                 <td class="py-2 pr-4">{{ $sample->invitation?->marketer?->name ?? '—' }}</td>
                                 <td class="py-2 pr-4">{{ $sample->quantity }}</td>
                                 <td class="py-2 pr-4">
-                                    <x-badge color="{{ $sample->status === 'pending' ? 'warning' : ($sample->status === 'dispatched' ? 'primary' : ($sample->status === 'delivered' ? 'success' : 'danger')) }}">
+                                    <x-badge color="{{ $sample->status === 'pending' ? 'warning' : ($sample->status === 'dispatched' ? 'primary' : ($sample->status === 'delivered' ? 'success' : ($sample->status === 'cancelled' ? 'gray' : 'danger'))) }}">
                                         {{ match($sample->status) {
                                             'pending'    => __('admin.marketer_campaigns.sample_status_pending'),
                                             'dispatched' => __('admin.marketer_campaigns.sample_status_dispatched'),
                                             'delivered'  => __('admin.marketer_campaigns.sample_status_delivered'),
                                             'returned'   => __('admin.marketer_campaigns.sample_status_returned'),
+                                            'cancelled'  => __('admin.marketer_campaigns.sample_status_cancelled'),
                                             default      => $sample->status,
                                         } }}
                                     </x-badge>
                                 </td>
+                                <td class="py-2 pr-4 text-xs">{{ $sample->stock_deducted_at?->format('d M Y H:i') ?? '—' }}</td>
+                                <td class="py-2 pr-4 text-xs" dir="ltr">{{ $sample->stock_deducted_at ? number_format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
                                 <td class="py-2 pr-4 text-xs text-gray-600 max-w-xs">
                                     @if($sample->sample_owner === 'marketer' && $sample->delivery_address_snapshot)
                                         <div class="space-y-0.5">
@@ -616,7 +625,9 @@
                                 <td class="py-2 pr-4">{{ $sample->dispatched_at?->format('d M Y H:i') ?? '—' }}</td>
                                 <td class="py-2 pr-4">{{ $sample->delivered_at?->format('d M Y H:i') ?? '—' }}</td>
                                 <td class="py-2 pr-4">
-                                    @if($sample->status !== 'delivered' && $sample->status !== 'returned')
+                                    @if($sample->status === 'pending' && $sample->invitation && $sample->invitation->status !== 'accepted')
+                                        <span class="text-xs text-amber-600">{{ __('admin.marketer_campaigns.sample_awaiting_acceptance') }}</span>
+                                    @elseif(! in_array($sample->status, ['delivered', 'returned', 'cancelled'], true))
                                         <form action="{{ route('admin.marketer-campaigns.samples.update', [$marketerCampaign, $sample]) }}"
                                               method="POST" class="inline-flex gap-1">
                                             @csrf
@@ -650,7 +661,7 @@
                             @php $sampleProduct = $sample->product(); @endphp
                             @if($sample->customAttributeValues->isNotEmpty())
                                 <tr>
-                                    <td colspan="8" class="px-4 py-2 bg-purple-50 text-xs">
+                                    <td colspan="10" class="px-4 py-2 bg-purple-50 text-xs">
                                         <strong class="text-purple-700">{{ __('admin.marketer_campaigns.sample_custom_details') }}:</strong>
                                         @foreach($sample->customAttributeValues as $val)
                                             <span class="me-3">{{ $val->label }}: <strong>{{ $val->value }}</strong> {{ $val->unit }}</span>
@@ -659,7 +670,7 @@
                                 </tr>
                             @elseif($sampleProduct?->has_custom_attributes)
                                 <tr>
-                                    <td colspan="8" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                    <td colspan="10" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
                                         {{ __('admin.marketer_campaigns.sample_awaiting_vendor_details') }}
                                     </td>
                                 </tr>
@@ -671,7 +682,7 @@
                             @endphp
                             @if ($isInfluencer && $sampleProfile)
                                 <tr>
-                                    <td colspan="8" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
+                                    <td colspan="10" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
                                         <div class="text-xs font-semibold text-blue-800 mb-2">
                                             {{ __('admin.marketer_campaigns.influencer_measurements') }}
                                         </div>
@@ -712,7 +723,7 @@
                                 </tr>
                             @elseif ($isInfluencer && !$sampleProfile)
                                 <tr>
-                                    <td colspan="8" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                    <td colspan="10" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
                                         {{ __('admin.marketer_campaigns.no_measurements_on_file') }}
                                     </td>
                                 </tr>

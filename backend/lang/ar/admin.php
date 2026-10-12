@@ -1497,6 +1497,15 @@ return [
 
     // ─── Marketer Campaigns ──────────────────────────────────────────────────
     'marketer_campaigns' => [
+        'sample_invitation_not_accepted' => 'هذه العينة تخص مؤثراً لم يقبل الدعوة بعد.',
+        'sample_awaiting_acceptance' => 'بانتظار القبول',
+        'sample_type_admin' => 'المنصة (ثابتة)',
+        'sample_type_influencer' => 'مؤثر',
+        'sample_type_affiliate' => 'مسوقو العمولة (المنصة)',
+        'sample_status_cancelled' => 'ملغاة',
+        'sample_stock_deducted' => 'خصم المخزون',
+        'sample_commission' => 'العمولة المخصومة',
+        'samples_summary' => ':count عينة، :units وحدة إجمالاً، :dispatched تم إرسالها (يُخصم المخزون مرة واحدة وتُحتسب العمولة مرة واحدة).',
         'affiliate_column' => 'مسوق (عمولة)',
         'commission_owed_column' => 'العمولة المستحقة',
         'conversions_column' => 'التحويلات',
@@ -8803,6 +8812,7 @@ return [
 
     // ─── payouts ───────────────────────────────────────────
     'payouts' => [
+        'promotion_sample' => 'عينة ترويج',
         'gateway_fee' => 'رسوم البوابة',
         'title' => 'المدفوعات',
         'payout_number' => 'رقم الدفعة',

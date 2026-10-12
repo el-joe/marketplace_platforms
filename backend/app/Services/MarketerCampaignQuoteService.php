@@ -8,6 +8,8 @@ use App\Models\Marketer;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\VendorListing;
+use App\Services\Campaign\CampaignSampleService;
+use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Collection;
 
 /**
@@ -100,7 +102,8 @@ class MarketerCampaignQuoteService
      * @return array{
      *   currency: string, fee_per_influencer: int, influencer_count: int, affiliate_count: int,
      *   total_fee: int, fee_payer: string, rows: array<int, array<string, mixed>>,
-     *   influencer_sample_qty: int, affiliate_sample_qty: int, platform_sample_qty: int
+     *   influencer_sample_qty: int, affiliate_sample_qty: int, platform_sample_qty: int,
+     *   sample_total: int, sample_count: int, stock_available: int, stock_reserved_by_other_campaigns: int, stock_min: int
      * }
      */
     public function quote(VendorListing $listing, array $marketerIds): array
@@ -133,6 +136,10 @@ class MarketerCampaignQuoteService
             ];
         }
 
+        $sampleService = app(CampaignSampleService::class);
+        $plan = $sampleService->plan($category, $influencers, $affiliates > 0);
+        $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
+
         return [
             'currency' => $currency,
             'fee_per_influencer' => $feePer,
@@ -141,9 +148,15 @@ class MarketerCampaignQuoteService
             'total_fee' => $influencers * $feePer,
             'fee_payer' => setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' ? 'vendor' : 'marketer',
             'rows' => $rows,
-            'influencer_sample_qty' => (int) ($category?->influencer_sample_qty ?? 0),
-            'affiliate_sample_qty' => (int) ($category?->affiliate_sample_qty ?? 0),
-            'platform_sample_qty' => (int) ($category?->platform_sample_qty ?? 0),
+            // Effective quantities (admin minimums applied), see CampaignSampleService.
+            'influencer_sample_qty' => $plan['influencer_each'],
+            'affiliate_sample_qty' => $sampleService->affiliateQty($category),
+            'platform_sample_qty' => $plan['admin'],
+            'sample_total' => $plan['total'],
+            'sample_count' => $plan['count'],
+            'stock_available' => app(InventoryService::class)->availableStock($listing),
+            'stock_reserved_by_other_campaigns' => $sampleService->pendingReservedQty($listing),
+            'stock_min' => $minStock,
         ];
     }
 }

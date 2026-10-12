@@ -14,8 +14,8 @@ use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InsufficientStockException;
-use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
@@ -121,30 +121,30 @@ class MarketerCampaignController extends Controller
             'status' => 'required|in:pending,dispatched,delivered,returned',
         ]);
 
-        $allowed = ['pending' => ['dispatched'], 'dispatched' => ['delivered'], 'delivered' => ['returned'], 'returned' => []];
+        $allowed = ['pending' => ['dispatched'], 'dispatched' => ['delivered'], 'delivered' => ['returned'], 'returned' => [], 'cancelled' => []];
         abort_unless(in_array($request->status, $allowed[$sample->status] ?? [], true), 422, 'انتقال حالة العينة غير مسموح.');
 
-        $data = ['status' => $request->status];
-
-        if ($request->status === 'dispatched' && ! $sample->dispatched_at) {
-            $data['dispatched_at'] = now();
+        // An influencer's sample can only go out once he accepted the invitation
+        // (a pending / rejected / timed-out invitation never receives stock).
+        if ($request->status === 'dispatched' && $sample->invitation_id) {
+            abort_unless($sample->invitation?->status === 'accepted', 422, __('admin.marketer_campaigns.sample_invitation_not_accepted'));
         }
+
+        // Dispatch = stock-out like a normal sale + admin commission snapshot,
+        // both exactly once (a repeated request is a no-op).
+        if ($request->status === 'dispatched') {
+            try {
+                app(CampaignSampleService::class)->dispatch($sample);
+            } catch (InsufficientStockException $e) {
+                return back()->with('error', $e->getMessage());
+            }
+
+            return back()->with('success', 'تم تحديث حالة العينة.');
+        }
+
+        $data = ['status' => $request->status];
         if ($request->status === 'delivered' && ! $sample->delivered_at) {
             $data['delivered_at'] = now();
-        }
-
-        // Promotion samples are stock-out events like a normal sale (once).
-        if ($request->status === 'dispatched' && ! $sample->stock_deducted_at) {
-            $listing = $marketerCampaign->vendorListing ?? $marketerCampaign->adminListing;
-            if ($listing) {
-                try {
-                    app(InventoryService::class)
-                        ->deductCampaignSample($listing, (int) $sample->quantity, $sample->id);
-                    $data['stock_deducted_at'] = now();
-                } catch (InsufficientStockException $e) {
-                    return back()->with('error', $e->getMessage());
-                }
-            }
         }
 
         $sample->update($data);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
 use App\Models\Refund;
 use App\Models\SubOrder;
@@ -125,6 +126,31 @@ class FinanceController extends Controller
                         'net' => null,
                         'payout_number' => $po->payout_number,
                         'receipt_url' => $po->receipt_url,
+                    ]);
+                });
+        }
+
+        // Promotion samples: 0-priced statement lines; only the admin commission is charged.
+        if (in_array($type, ['all', 'samples'])) {
+            MarketerCampaignSample::whereNotNull('stock_deducted_at')
+                ->where('status', '!=', 'cancelled')
+                ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendorId))
+                ->whereBetween('stock_deducted_at', [$dateFrom, $dateTo])
+                ->with('campaign:id,title,vendor_listing_id', 'payoutItems.payout:id,payout_number')
+                ->get()
+                ->each(function ($sample) use (&$rows) {
+                    $commission = (int) $sample->commission_amount;
+                    $rows->push([
+                        'type' => 'promotion_sample',
+                        'date' => $sample->stock_deducted_at,
+                        'reference' => $sample->campaign?->title ?: ('#'.substr((string) $sample->campaign_id, 0, 8)),
+                        'description' => __('partner.finance.promotion_sample_line', ['qty' => $sample->quantity]),
+                        'amount' => -$commission,
+                        'gross' => 0,
+                        'commission' => $commission,
+                        'net' => -$commission,
+                        'payout_number' => null,
+                        'receipt_url' => null,
                     ]);
                 });
         }

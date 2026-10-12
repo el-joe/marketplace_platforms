@@ -9,6 +9,7 @@ use App\Enums\RefundStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
+use App\Models\MarketerCampaignSample;
 use App\Models\PackagingSupplyRequest;
 use App\Models\PaymentTransaction;
 use App\Models\Refund;
@@ -16,6 +17,7 @@ use App\Models\SubOrder;
 use App\Models\Vendor;
 use App\Models\VendorSubscriptionInvoice;
 use App\Services\Ads\AdBillingService;
+use App\Services\Campaign\CampaignSampleService;
 use Carbon\Carbon;
 
 class PayoutCalculationService
@@ -25,9 +27,7 @@ class PayoutCalculationService
      */
     private const PAYABLE_STATUSES = ['delivered', 'completed'];
 
-    public function __construct(private readonly AdBillingService $adBillingService)
-    {
-    }
+    public function __construct(private readonly AdBillingService $adBillingService) {}
 
     /**
      * Calculate payout summaries for a vendor over a given period, grouped by currency.
@@ -89,22 +89,22 @@ class PayoutCalculationService
             ->whereIn('sub_orders.status', self::PAYABLE_STATUSES)
             ->where(function ($q) {
                 $q->where('sub_orders.status', 'completed')
-                  ->orWhere(function ($q2) {
-                      // 'delivered': eligible once every item's return window
-                      // has passed (or the sub-order has no returnable items).
-                      $q2->where('sub_orders.status', 'delivered')
-                         ->whereDoesntHave('items', function ($itemQuery) {
-                             $itemQuery->whereNotNull('return_eligible_until')
-                                 ->where('return_eligible_until', '>=', now()->toDateString());
-                         });
-                  });
+                    ->orWhere(function ($q2) {
+                        // 'delivered': eligible once every item's return window
+                        // has passed (or the sub-order has no returnable items).
+                        $q2->where('sub_orders.status', 'delivered')
+                            ->whereDoesntHave('items', function ($itemQuery) {
+                                $itemQuery->whereNotNull('return_eligible_until')
+                                    ->where('return_eligible_until', '>=', now()->toDateString());
+                            });
+                    });
             })
             ->where(function ($q) {
                 // COD sub_orders are blocked until cash has been remitted by the delivery agent.
                 // Non-COD sub_orders are always eligible regardless of the flag, since nothing
                 // sets cod_remittance_confirmed=true for non-COD orders after creation.
-                $q->whereHas('order', fn($q) => $q->where('payment_method', '!=', 'cod'))
-                  ->orWhere('sub_orders.cod_remittance_confirmed', true);
+                $q->whereHas('order', fn ($q) => $q->where('payment_method', '!=', 'cod'))
+                    ->orWhere('sub_orders.cod_remittance_confirmed', true);
             })
             // Core double-pay fix: never re-select a sub-order that already
             // has a payout_items row from a prior payout run.
@@ -141,7 +141,7 @@ class PayoutCalculationService
 
             // Chargebacks — payment_transactions.currency exists; filter by it.
             $chargebacksDeducted = (int) PaymentTransaction::where('type', 'chargeback')
-                ->whereHas('order', fn($q) => $q->whereHas('subOrders', fn($s) => $s->whereIn('id', $subOrderIds)))
+                ->whereHas('order', fn ($q) => $q->whereHas('subOrders', fn ($s) => $s->whereIn('id', $subOrderIds)))
                 ->where('status', PaymentTransactionStatus::Succeeded->value)
                 ->where('currency', $currency)
                 ->whereBetween('processed_at', [$from->startOfDay(), $to->endOfDay()])
@@ -173,36 +173,69 @@ class PayoutCalculationService
                 ->get();
             $subscriptionTotal = (int) $subscriptionInvoices->sum('amount');
 
-            $netBeforeAds = $vendorPayoutTotal - $refundsDeducted - $chargebacksDeducted - $storageFeesTotal - $packagingTotal - $subscriptionTotal;
+            $netBeforeSamples = $vendorPayoutTotal - $refundsDeducted - $chargebacksDeducted - $storageFeesTotal - $packagingTotal - $subscriptionTotal;
+
+            // Promotion samples dispatched from stock: 0-priced lines that only
+            // carry the admin sale commission (see CampaignSampleService).
+            [$sampleCommission, $sampleItems] = $this->selectSampleCommissions($vendor, $currency, $netBeforeSamples);
+
+            $netBeforeAds = $netBeforeSamples - $sampleCommission;
 
             [$adFees, $adChargeIds] = $this->selectAdCharges($vendor, $currency, $netBeforeAds);
 
             $netAmount = $netBeforeAds - $adFees;
 
             $results[$currency] = [
-                'vendor_id'                  => $vendor->id,
-                'period_start'               => $from->toDateString(),
-                'period_end'                 => $to->toDateString(),
-                'gross_sales'                => $grossSales,
-                'commission'                 => $commission,
-                'gateway_fee_deducted'       => $gatewayFee,
-                'refunds_deducted'           => $refundsDeducted,
-                'chargebacks_deducted'       => $chargebacksDeducted,
-                'storage_fees'               => $storageFeesTotal,
-                'ad_fees'                    => $adFees,
-                'other_adjustments'          => -($packagingTotal + $subscriptionTotal),
-                'net_amount'                 => max(0, $netAmount),
-                'currency'                   => $currency,
-                'sub_order_ids'              => $subOrderIds,
-                'ad_charge_ids'              => $adChargeIds,
-                'storage_fee_ids'            => $storageFees->pluck('id')->all(),
-                'overage_fee_ids'            => $overageFees->pluck('id')->all(),
-                'packaging_request_ids'      => $packagingRequests->pluck('id')->all(),
-                'subscription_invoice_ids'   => $subscriptionInvoices->pluck('id')->all(),
+                'vendor_id' => $vendor->id,
+                'period_start' => $from->toDateString(),
+                'period_end' => $to->toDateString(),
+                'gross_sales' => $grossSales,
+                'commission' => $commission + $sampleCommission,
+                'gateway_fee_deducted' => $gatewayFee,
+                'refunds_deducted' => $refundsDeducted,
+                'chargebacks_deducted' => $chargebacksDeducted,
+                'storage_fees' => $storageFeesTotal,
+                'ad_fees' => $adFees,
+                'other_adjustments' => -($packagingTotal + $subscriptionTotal),
+                'net_amount' => max(0, $netAmount),
+                'currency' => $currency,
+                'sub_order_ids' => $subOrderIds,
+                'ad_charge_ids' => $adChargeIds,
+                'sample_items' => $sampleItems,
+                'storage_fee_ids' => $storageFees->pluck('id')->all(),
+                'overage_fee_ids' => $overageFees->pluck('id')->all(),
+                'packaging_request_ids' => $packagingRequests->pluck('id')->all(),
+                'subscription_invoice_ids' => $subscriptionInvoices->pluck('id')->all(),
             ];
         }
 
         return $results;
+    }
+
+    /**
+     * Promotion-sample commissions to deduct on this statement: every dispatched
+     * sample of the vendor not yet on a statement (payout_items.campaign_sample_id
+     * is unique, so a sample can never be charged twice), oldest first, as far as
+     * the statement can absorb. What does not fit rolls forward to the next run.
+     *
+     * @return array{0: int, 1: array<int, array{item: MarketerCampaignSample, commission_amount: int}>}
+     */
+    private function selectSampleCommissions(Vendor $vendor, string $currency, int $netBefore): array
+    {
+        $cap = max(0, $netBefore);
+        $sum = 0;
+        $items = [];
+
+        foreach (app(CampaignSampleService::class)->unsettledFor($vendor, $currency) as $sample) {
+            $amount = (int) $sample->commission_amount;
+            if ($sum + $amount > $cap) {
+                break;
+            }
+            $sum += $amount;
+            $items[] = ['item' => $sample, 'commission_amount' => $amount];
+        }
+
+        return [$sum, $items];
     }
 
     /**

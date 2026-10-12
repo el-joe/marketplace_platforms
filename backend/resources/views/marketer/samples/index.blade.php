@@ -37,6 +37,7 @@
                 'dispatched' => ['label' => __('marketer.samples.status_dispatched'), 'cls' => 'bg-blue-100 text-blue-700'],
                 'delivered'  => ['label' => __('marketer.samples.status_delivered'),  'cls' => 'bg-green-100 text-green-700'],
                 'returned'   => ['label' => __('marketer.samples.status_returned'),   'cls' => 'bg-red-100 text-red-700'],
+                'cancelled'  => ['label' => __('marketer.samples.status_cancelled'),  'cls' => 'bg-gray-100 text-gray-500'],
             ];
             $st = $statusMap[$sample->status] ?? ['label' => $sample->status, 'cls' => 'bg-gray-100 text-gray-500'];
         @endphp

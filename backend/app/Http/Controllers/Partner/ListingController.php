@@ -33,6 +33,7 @@ use App\Models\VendorProductCertification;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use App\Notifications\Admin\ListingResubmittedNotification;
+use App\Services\Campaign\CampaignSampleService;
 use App\Services\CommissionRuleResolver;
 use App\Services\Inventory\InventoryService;
 use App\Services\ListingCertificationGate;
@@ -634,7 +635,10 @@ class ListingController extends Controller
             $marketerCampaignBlock = __('partner.listings.show.marketer_campaign.blocked_fulfilment');
         } else {
             $minStock = (int) ($listing->productVariant?->product?->category?->min_stock_for_campaign ?? 10);
-            $availableStock = app(InventoryService::class)->availableStock($listing);
+            $sampleService = app(CampaignSampleService::class);
+            $availableStock = app(InventoryService::class)->availableStock($listing)
+                - $sampleService->pendingReservedQty($listing)
+                - $sampleService->adminQty($listing->productVariant?->product?->category);
             if ($availableStock < $minStock) {
                 $marketerCampaignBlock = __('partner.listings.show.marketer_campaign.blocked_stock', ['stock' => $availableStock, 'min' => $minStock]);
             }

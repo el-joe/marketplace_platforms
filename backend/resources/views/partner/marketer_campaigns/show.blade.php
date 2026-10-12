@@ -414,7 +414,15 @@
             $platformSamples = $marketerCampaign->samples->where('sample_owner', 'platform');
             $marketerSamples = $marketerCampaign->samples->where('sample_owner', '!=', 'platform');
             $needsCustomAttributes = $product?->has_custom_attributes ?? false;
+            $liveSamples = $marketerCampaign->samples->where('status', '!=', 'cancelled');
+            $sampleStatusLabel = fn ($st) => __('partner.marketer_campaigns_my.sample_status.'.$st);
         @endphp
+
+        {{-- Totals: 1 fixed admin sample + 1 per influencer (+ affiliate row) --}}
+        <div class="rounded-xl border border-purple-200 bg-purple-50 px-5 py-3 text-sm text-purple-900" data-testid="samples-summary">
+            {{ __('partner.marketer_campaigns_my.samples_summary', ['count' => $liveSamples->count(), 'units' => $liveSamples->sum('quantity'), 'dispatched' => $liveSamples->whereNotNull('stock_deducted_at')->count()]) }}
+            <span class="block text-xs text-purple-700 mt-1">{{ __('partner.marketer_campaigns_my.samples_accounting_note') }}</span>
+        </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 class="mb-3 text-sm font-semibold text-gray-800">{{ __('partner.marketer_campaigns_my.platform_samples') }}</h3>
@@ -425,8 +433,17 @@
                     @foreach ($platformSamples as $sample)
                         <li class="rounded-lg border border-gray-100 px-3 py-2">
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-700">{{ __('partner.marketer_campaigns_my.field.quantity') }}: {{ $sample->quantity }}</span>
-                                <span class="text-gray-500">{{ $sample->status }}</span>
+                                <span class="text-gray-700">
+                                    {{ __('partner.marketer_campaigns_my.sample_type.'.($sample->sample_type ?? 'admin')) }}
+                                    &middot; {{ __('partner.marketer_campaigns_my.field.quantity') }}: {{ $sample->quantity }}
+                                </span>
+                                <span class="text-gray-500">
+                                    {{ $sampleStatusLabel($sample->status) }}
+                                    @if ($sample->stock_deducted_at)
+                                        &middot; {{ __('partner.marketer_campaigns_my.field.stock_deducted') }}
+                                        &middot; {{ __('partner.marketer_campaigns_my.field.commission_charged') }}: {{ number_format($sample->commission_amount) }} {{ $sample->commission_currency }}
+                                    @endif
+                                </span>
                             </div>
                             @if ($needsCustomAttributes)
                                 @include('partner.marketer_campaigns._sample_custom_attributes', ['sample' => $sample])
@@ -448,22 +465,26 @@
                             <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.marketer') }}</th>
                             <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.quantity') }}</th>
                             <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.status') }}</th>
+                            <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.stock_deducted') }}</th>
+                            <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.commission_charged') }}</th>
                             <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.dispatched_at') }}</th>
                             <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.delivered_at') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach ($marketerSamples as $sample)
-                            <tr>
+                            <tr class="{{ $sample->status === 'cancelled' ? 'text-gray-400 line-through' : '' }}">
                                 <td class="px-4 py-2 font-medium text-gray-900">{{ $sample->invitation?->marketer?->name ?? '—' }}</td>
                                 <td class="px-4 py-2">{{ $sample->quantity }}</td>
-                                <td class="px-4 py-2">{{ $sample->status }}</td>
+                                <td class="px-4 py-2">{{ $sampleStatusLabel($sample->status) }}</td>
+                                <td class="px-4 py-2">{{ $sample->stock_deducted_at ? __('common.yes') : '—' }}</td>
+                                <td class="px-4 py-2">{{ $sample->stock_deducted_at ? number_format($sample->commission_amount).' '.$sample->commission_currency : '—' }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 <td class="px-4 py-2 text-gray-500">{{ $sample->delivered_at?->format('Y-m-d H:i') ?? '—' }}</td>
                             </tr>
                             @if ($needsCustomAttributes)
                                 <tr>
-                                    <td colspan="5" class="px-4 pb-2">
+                                    <td colspan="7" class="px-4 pb-2">
                                         @include('partner.marketer_campaigns._sample_custom_attributes', ['sample' => $sample])
                                     </td>
                                 </tr>
@@ -475,7 +496,7 @@
                             @endphp
                             @if ($isInfluencer && $sampleProfile)
                                 <tr>
-                                    <td colspan="5" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
+                                    <td colspan="7" class="px-4 py-3 bg-blue-50 border-t border-blue-100">
                                         <div class="text-xs font-semibold text-blue-800 mb-2">
                                             {{ __('partner.marketer_campaigns_my.influencer_measurements') }}
                                         </div>
@@ -516,7 +537,7 @@
                                 </tr>
                             @elseif ($isInfluencer && !$sampleProfile)
                                 <tr>
-                                    <td colspan="5" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
+                                    <td colspan="7" class="px-4 py-2 bg-amber-50 text-xs text-amber-700">
                                         {{ __('partner.marketer_campaigns_my.no_measurements_on_file') }}
                                     </td>
                                 </tr>

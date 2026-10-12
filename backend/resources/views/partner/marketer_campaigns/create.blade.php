@@ -21,9 +21,10 @@
         </div>
     @endif
 
-    <div class="rounded-lg border px-4 py-3 text-sm {{ $availableStock < $minStock ? 'border-red-300 bg-red-50 text-red-800' : 'border-gray-200 bg-gray-50 text-gray-700' }}">
+    <div class="rounded-lg border px-4 py-3 text-sm {{ $stockAfterFixedSample < $minStock ? 'border-red-300 bg-red-50 text-red-800' : 'border-gray-200 bg-gray-50 text-gray-700' }}" data-testid="stock-requirement">
         {{ __('partner.marketer_campaigns.stock_requirement', ['min' => $minStock, 'available' => $availableStock]) }}
-        @if($availableStock < $minStock)
+        {{ __('partner.marketer_campaigns.stock_after_fixed_sample', ['fixed' => $quote['platform_sample_qty'], 'after' => $stockAfterFixedSample]) }}
+        @if($stockAfterFixedSample < $minStock)
             <strong>{{ __('partner.marketer_campaigns.stock_blocked') }}</strong>
         @endif
     </div>
@@ -157,7 +158,7 @@
             <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" name="open_to_affiliates" value="1" class="mt-1 rounded border-gray-300 text-blue-600"
-                           @checked(old('open_to_affiliates')) @disabled($affiliateCount === 0)>
+                           x-model="openAffiliates" @checked(old('open_to_affiliates')) @disabled($affiliateCount === 0)>
                     <span class="text-sm text-blue-900">
                         <span class="font-semibold">{{ __('partner.marketer_campaigns.open_to_affiliates_title') }}</span>
                         <span class="block text-xs mt-1">{{ __('partner.marketer_campaigns.open_to_affiliates_desc', ['count' => $affiliateCount]) }}</span>
@@ -181,10 +182,24 @@
                 <i class="fas fa-lock me-1"></i>{{ __('partner.marketer_campaigns.commission_set_by_platform_notice') }}
             </div>
 
-            <div class="p-3 bg-purple-50 rounded-lg text-sm text-purple-800">
+            {{-- Samples: 1 fixed admin sample + 1 per selected influencer (+ affiliate qty) --}}
+            <div class="p-3 rounded-lg text-sm" :class="stockBlocked ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-purple-50 text-purple-800'" data-testid="sample-plan">
                 <i class="fas fa-box-open mr-1"></i>
-                {{ __('partner.marketer_campaigns.expected_samples_label') }} <strong x-text="quote.influencer_count"></strong> {{ __('partner.marketer_campaigns.marketers_selected_suffix') }}
-                <span class="block text-xs text-gray-500 mt-1">
+                <strong>{{ __('partner.marketer_campaigns.expected_samples_label') }}</strong>
+                <span x-text="sampleTotal"></span>
+                <span class="block text-xs mt-1 text-gray-600">
+                    {{ __('partner.marketer_campaigns.sample_breakdown_admin') }}: <span x-text="quote.platform_sample_qty"></span>
+                    &middot; {{ __('partner.marketer_campaigns.sample_breakdown_influencers') }}:
+                    <span x-text="quote.influencer_count"></span> &times; <span x-text="quote.influencer_sample_qty"></span>
+                    <template x-if="openAffiliates && quote.affiliate_sample_qty > 0">
+                        <span>&middot; {{ __('partner.marketer_campaigns.sample_breakdown_affiliates') }}: <span x-text="quote.affiliate_sample_qty"></span></span>
+                    </template>
+                </span>
+                <span class="block text-xs mt-1">
+                    {{ __('partner.marketer_campaigns.stock_left_after_samples') }}: <strong x-text="stockLeft"></strong>
+                    / {{ __('partner.marketer_campaigns.stock_min_short') }} <strong x-text="quote.stock_min"></strong>
+                </span>
+                <span class="block text-xs mt-1 text-gray-500">
                     {{ __('partner.marketer_campaigns.samples_auto_note') }}
                 </span>
             </div>
@@ -239,7 +254,7 @@
         </div>
 
         <div class="mt-6 flex gap-3">
-            <button type="submit" @disabled($availableStock < $minStock) class="disabled:opacity-50 disabled:cursor-not-allowed bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+            <button type="submit" x-bind:disabled="stockBlocked" class="disabled:opacity-50 disabled:cursor-not-allowed bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
                 {{ __('partner.marketer_campaigns.create_btn') }}
             </button>
             <a href="{{ route('partner.marketer-campaigns.index') }}"
@@ -256,7 +271,22 @@
         function campaignCreateForm() {
             return {
                 selectedMarketers: [],
+                openAffiliates: @js((bool) old('open_to_affiliates')),
                 quote: @js($quote + ['rows' => []]),
+                get sampleTotal() {
+                    const q = this.quote;
+                    return Number(q.platform_sample_qty || 0)
+                        + Number(q.influencer_count || 0) * Number(q.influencer_sample_qty || 0)
+                        + (this.openAffiliates ? Number(q.affiliate_sample_qty || 0) : 0);
+                },
+                get stockLeft() {
+                    return Number(this.quote.stock_available || 0)
+                        - Number(this.quote.stock_reserved_by_other_campaigns || 0)
+                        - this.sampleTotal;
+                },
+                get stockBlocked() {
+                    return this.stockLeft < Number(this.quote.stock_min || 0);
+                },
                 get currency() { return this.quote.currency || ''; },
                 selectedAdTypes: [],
                 get hasInfluencers() {

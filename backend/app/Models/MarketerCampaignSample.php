@@ -13,11 +13,20 @@ class MarketerCampaignSample extends Model
     use HasUuids;
 
     protected $fillable = [
-        'campaign_id', 'invitation_id', 'sample_owner', 'quantity',
-        'status', 'stock_deducted_at', 'dispatched_at', 'delivered_at', 'delivery_address_snapshot',
+        'campaign_id', 'invitation_id', 'sample_owner', 'sample_type', 'quantity',
+        'status', 'stock_deducted_at', 'commission_amount', 'commission_currency',
+        'dispatched_at', 'delivered_at', 'cancelled_at', 'delivery_address_snapshot',
     ];
 
+    public const TYPE_ADMIN = 'admin';
+
+    public const TYPE_INFLUENCER = 'influencer';
+
+    public const TYPE_AFFILIATE = 'affiliate';
+
     protected $casts = [
+        'commission_amount' => 'integer',
+        'cancelled_at' => 'datetime',
         'dispatched_at' => 'datetime',
         'stock_deducted_at' => 'datetime',
         'delivered_at' => 'datetime',
@@ -44,6 +53,24 @@ class MarketerCampaignSample extends Model
             'invitation_id', // FK on samples
             'marketer_id'   // FK on invitations
         );
+    }
+
+    /** Statement lines this sample has been charged on (at most one). */
+    public function payoutItems(): HasMany
+    {
+        return $this->hasMany(PayoutItem::class, 'campaign_sample_id');
+    }
+
+    /** Not cancelled: counts toward the campaign's sample totals. */
+    public function scopeLive($query)
+    {
+        return $query->where('status', '!=', 'cancelled');
+    }
+
+    /** Still sitting in stock: neither dispatched nor cancelled. */
+    public function scopeUndispatched($query)
+    {
+        return $query->where('status', 'pending')->whereNull('stock_deducted_at');
     }
 
     public function customAttributeValues(): HasMany

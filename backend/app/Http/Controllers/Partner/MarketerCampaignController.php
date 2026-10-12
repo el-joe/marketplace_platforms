@@ -9,6 +9,7 @@ use App\Models\MarketerCampaignSample;
 use App\Models\ProductCustomAttribute;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
@@ -103,8 +104,14 @@ class MarketerCampaignController extends Controller
         // Same rule MarketerCampaignService enforces on submit, surfaced here.
         $minStock = (int) ($vendorListing->productVariant?->product?->category?->min_stock_for_campaign ?? 10);
         $availableStock = app(InventoryService::class)->availableStock($vendorListing);
+        // Stock that stays sellable once the fixed admin sample (and samples already
+        // promised to this listing's other campaigns) are set aside.
+        $sampleService = app(CampaignSampleService::class);
+        $stockAfterFixedSample = $availableStock
+            - $sampleService->pendingReservedQty($vendorListing)
+            - $sampleService->adminQty($vendorListing->productVariant?->product?->category);
 
-        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'quote', 'minStock', 'availableStock'));
+        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'quote', 'minStock', 'availableStock', 'stockAfterFixedSample'));
     }
 
     public function store(Request $request)
@@ -171,7 +178,7 @@ class MarketerCampaignController extends Controller
                 CampaignOwner::vendor($vendor),
                 CampaignSource::vendorListing($listing->id),
                 array_merge(
-                    ['max_commission_budget' => $request->filled('max_commission_budget') ? (int) $request->input('max_commission_budget') : null],
+                    ['max_commission_budget' => $request->filled('max_commission_budget') ? (int) $request->input('max_commission_budget') : 0],
                     [
                         'commission_type' => 'fixed',
                         'country_id' => $listing->country_id,

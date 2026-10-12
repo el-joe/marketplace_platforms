@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Marketer;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class SampleController extends Controller
 {
-    private function marketer(): \App\Models\Marketer
+    private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
     }
@@ -30,6 +31,7 @@ class SampleController extends Controller
 
         $samples = MarketerCampaignSample::whereIn('invitation_id', $invitationIds)
             ->where('sample_owner', 'marketer')
+            ->live()
             ->with([
                 'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
                 'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
@@ -42,9 +44,9 @@ class SampleController extends Controller
             ->paginate(20);
 
         $statusCounts = [
-            'pending'    => $samples->where('status', 'pending')->count(),
+            'pending' => $samples->where('status', 'pending')->count(),
             'dispatched' => $samples->where('status', 'dispatched')->count(),
-            'delivered'  => $samples->where('status', 'delivered')->count(),
+            'delivered' => $samples->where('status', 'delivered')->count(),
         ];
 
         return view('marketer.samples.index', compact('marketer', 'samples', 'statusCounts'));
@@ -70,10 +72,10 @@ class SampleController extends Controller
         $request->validate([
             'address_line_1' => ['required', 'string', 'max:255'],
             'address_line_2' => ['nullable', 'string', 'max:255'],
-            'city'           => ['required', 'string', 'max:100'],
-            'country'        => ['required', 'string', 'max:100'],
-            'phone'          => ['required', 'string', 'max:30'],
-            'notes'          => ['nullable', 'string', 'max:500'],
+            'city' => ['required', 'string', 'max:100'],
+            'country' => ['required', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'max:30'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $sample->update([

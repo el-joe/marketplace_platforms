@@ -36,6 +36,7 @@ use App\Notifications\Vendor\CampaignInvitationResponseNotification as VendorCam
 use App\Notifications\Vendor\CampaignPendingAdminNotification;
 use App\Notifications\Vendor\CampaignRejectedNotification;
 use App\Notifications\Vendor\MarketerReplacedNotification as VendorMarketerReplacedNotification;
+use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
@@ -139,12 +140,6 @@ class MarketerCampaignService
                 }
 
                 $category = $listing->productVariant?->product?->category;
-
-                $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
-                $availableStock = app(InventoryService::class)->availableStock($listing);
-                if ($availableStock < $minStock) {
-                    throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units required to start a campaign.");
-                }
             } elseif ($source->isAdminListing()) {
                 if (! $owner->isPlatform() && ! $owner->isMarketer()) {
                     throw new \RuntimeException('An admin-listing campaign source must be platform-owned (or requested by a marketer).');
@@ -153,12 +148,6 @@ class MarketerCampaignService
                 $listing = AdminListing::where('id', $source->adminListingId)->firstOrFail();
 
                 $category = $listing->productVariant?->product?->category;
-
-                $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
-                $availableStock = app(InventoryService::class)->availableStock($listing);
-                if ($availableStock < $minStock) {
-                    throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units required to start a campaign.");
-                }
             }
             // Travel/classified sources: no stock/fulfilment check yet — see
             // CampaignSource docblock. They are schema-ready but unreachable
@@ -168,19 +157,30 @@ class MarketerCampaignService
                 ->where('global_status', 'active')
                 ->get();
 
-            // Determine sample snapshot from category (higher of the two if mixed marketer types)
-            $perMarketerSampleQty = 0;
-            $platformSampleQty = 0;
-            if ($category) {
-                $hasInfluencer = $marketerVendors->contains(fn ($m) => $m->isInfluencer());
-                $hasAffiliate = $marketerVendors->contains(fn ($m) => $m->isAffiliate());
-                if ($hasInfluencer) {
-                    $perMarketerSampleQty = max($perMarketerSampleQty, $category->influencer_sample_qty);
+            // Samples: one fixed admin sample + one per influencer (+ one affiliate
+            // row when affiliates are targeted). The stock gate counts them all.
+            $samples = app(CampaignSampleService::class);
+            $hasInfluencer = false;
+            $influencerCount = 0;
+            $hasAffiliate = false;
+            foreach ($marketerVendors as $m) {
+                if ($m->isInfluencer()) {
+                    $influencerCount++;
+                    $hasInfluencer = true;
+                } else {
+                    $hasAffiliate = true;
                 }
-                if ($hasAffiliate) {
-                    $perMarketerSampleQty = max($perMarketerSampleQty, $category->affiliate_sample_qty);
+            }
+            $plan = $samples->plan($category, $influencerCount, $hasAffiliate);
+            $platformSampleQty = $listing ? $plan['admin'] : 0;
+            $perMarketerSampleQty = $listing && $hasInfluencer ? $plan['influencer_each'] : 0;
+
+            if ($listing) {
+                $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
+                $remaining = $samples->stockAfterSamples($listing, $plan['total']);
+                if ($remaining < $minStock) {
+                    throw new \RuntimeException("Insufficient stock. Minimum {$minStock} units must remain after {$plan['total']} sample unit(s) are set aside (available after samples: {$remaining}).");
                 }
-                $platformSampleQty = $category->platform_sample_qty;
             }
 
             $autoApproveHours = (int) setting('marketer_campaign_auto_approve_hours', 36);
@@ -233,16 +233,11 @@ class MarketerCampaignService
                 $listing->update(['campaign_enabled' => true]);
             }
 
-            // Create platform samples immediately — samples are for the
-            // campaign's promotional lifecycle, independent of admin review.
-            if ($platformSampleQty > 0) {
-                MarketerCampaignSample::create([
-                    'campaign_id' => $campaign->id,
-                    'invitation_id' => null,
-                    'sample_owner' => 'platform',
-                    'quantity' => $platformSampleQty,
-                    'status' => 'pending',
-                ]);
+            // Fixed admin sample exists from creation, independent of admin review.
+            // Influencer samples follow their invitations (dispatchInvitation()).
+            $samples->ensureAdminSample($campaign, $category);
+            if ($hasAffiliate) {
+                $samples->ensureAffiliateSample($campaign, $category);
             }
 
             if ($owner->isMarketer()) {
@@ -500,6 +495,10 @@ class MarketerCampaignService
             $invitation->update(['status' => 'cancelled', 'responded_at' => now()]);
         });
 
+        // Nothing more will be sent: undispatched samples (admin, affiliate and
+        // per-influencer) are cancelled so they stop reserving stock.
+        app(CampaignSampleService::class)->cancelUndispatchedForCampaign($campaign);
+
         MarketerListing::whereIn(
             'invitation_id',
             $campaign->invitations()->pluck('id')
@@ -722,7 +721,7 @@ class MarketerCampaignService
     /**
      * Dispatch a campaign invitation to a marketer vendor.
      */
-    public function dispatchInvitation(MarketerCampaign $campaign, string $marketerId): MarketerCampaignInvitation
+    public function dispatchInvitation(MarketerCampaign $campaign, string $marketerId, ?MarketerCampaignSample $inheritSample = null): MarketerCampaignInvitation
     {
         $timeoutHours = max(1, (int) setting('marketer_invitation_timeout_hours', 12));
         $referralCode = strtoupper(Str::random(10));
@@ -736,6 +735,11 @@ class MarketerCampaignService
             'referral_code' => $referralCode,
             'referral_link' => rtrim(config('app.frontend_url'), '/')."/r/{$referralCode}",
         ]);
+
+        // Samples follow the invitation: an influencer gets his own sample row the
+        // moment he is invited (a predecessor's undispatched sample is re-pointed,
+        // never duplicated); affiliates only add the campaign-wide affiliate row.
+        $this->syncInvitationSamples($campaign, $invitation, $inheritSample);
 
         // Generate QR code for this invitation's referral link
         $qrPath = $this->generateQrCode($invitation->referral_link, $invitation->id);
@@ -753,6 +757,29 @@ class MarketerCampaignService
         );
 
         return $invitation;
+    }
+
+    /**
+     * Create the sample(s) a freshly dispatched invitation entitles to.
+     * Idempotent. A sample handed over for re-pointing that is not reused
+     * (affiliate replacement, no category) is cancelled.
+     */
+    private function syncInvitationSamples(MarketerCampaign $campaign, MarketerCampaignInvitation $invitation, ?MarketerCampaignSample $inherit = null): void
+    {
+        $samples = app(CampaignSampleService::class);
+        $category = $samples->categoryFor($campaign);
+        $marketer = $invitation->marketer;
+
+        if ($marketer && $marketer->isInfluencer()) {
+            $samples->ensureInfluencerSample($invitation, $category, $inherit);
+
+            return;
+        }
+
+        if ($inherit) {
+            $samples->cancel($inherit);
+        }
+        $samples->ensureAffiliateSample($campaign, $category);
     }
 
     /**
@@ -869,8 +896,8 @@ class MarketerCampaignService
     }
 
     /**
-     * Marketer accepts an invitation. Samples for the marketer are created now,
-     * not at invitation time.
+     * Marketer accepts an invitation. The marketer's sample already exists since
+     * dispatch (legacy invitations without one get it here).
      */
     public function acceptInvitation(MarketerCampaignInvitation $invitation, ?string $marketerNote = null): void
     {
@@ -930,25 +957,9 @@ class MarketerCampaignService
                 $this->collectInfluencerFee($invitation->fresh(), throwWhenShort: $feePayer === 'marketer');
             }
 
-            $category = $campaign->vendorListing?->productVariant?->product?->category
-                ?? $campaign->adminListing?->productVariant?->product?->category;
-
-            $sampleQty = 0;
-            if ($category && $marketer) {
-                $sampleQty = $marketer->isInfluencer()
-                    ? ($category->influencer_sample_qty ?? 0)
-                    : ($category->affiliate_sample_qty ?? 0);
-            }
-
-            if ($sampleQty > 0) {
-                MarketerCampaignSample::create([
-                    'campaign_id' => $campaign->id,
-                    'invitation_id' => $invitation->id,
-                    'sample_owner' => 'marketer',
-                    'quantity' => $sampleQty,
-                    'status' => 'pending',
-                ]);
-            }
+            // The sample was created when the invitation was dispatched; legacy
+            // invitations (created before that) get theirs now. Idempotent.
+            $this->syncInvitationSamples($campaign, $invitation);
 
             $campaign->vendor?->vendorAdmins?->each(
                 fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($invitation, 'accepted'))
@@ -1151,17 +1162,25 @@ class MarketerCampaignService
             fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($oldInvitation, $reason))
         );
 
+        // The predecessor's sample has not been sent (admin dispatch requires an
+        // accepted invitation): hand it to the replacement or cancel it.
+        $sampleService = app(CampaignSampleService::class);
+        $freedSample = $sampleService->undispatchedFor($oldInvitation);
+
         $notifyAdmins = fn (?Marketer $new) => Admin::query()->get()->each(
             fn ($admin) => $admin->notify(new CampaignMarketerReassignedNotification($campaign, $oldMarketer, $new, $reason))
         );
 
         if (! $replacement) {
+            if ($freedSample) {
+                $sampleService->cancel($freedSample);
+            }
             $notifyAdmins(null);
 
             return; // No replacement available
         }
 
-        $newInvitation = $this->dispatchInvitation($campaign, $replacement->id);
+        $newInvitation = $this->dispatchInvitation($campaign, $replacement->id, $freedSample);
         $newInvitation->update(['replaced_invitation_id' => $oldInvitation->id]);
 
         $campaign->vendor?->vendorAdmins?->each(

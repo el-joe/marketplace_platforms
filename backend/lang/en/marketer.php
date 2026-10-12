@@ -539,6 +539,7 @@ return [
 
     // Samples
     'samples' => [
+        'status_cancelled' => 'Cancelled',
         'title' => 'Samples',
         'page_title' => 'Samples Allocated to You',
         'pending_label' => 'Pending (need address)',

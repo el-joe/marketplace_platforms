@@ -120,6 +120,7 @@
                         <option value="sales"   @selected($type === 'sales')>{{ __('partner.finance.sales') }}</option>
                         <option value="refunds" @selected($type === 'refunds')>{{ __('partner.finance.refunds') }}</option>
                         <option value="payouts" @selected($type === 'payouts')>{{ __('partner.finance.payouts') }}</option>
+                        <option value="samples" @selected($type === 'samples')>{{ __('partner.finance.promotion_sample') }}</option>
                     </select>
                 </div>
             </form>
@@ -155,6 +156,7 @@
                                     'sale'   => ['bg-green-100 text-green-700', __('partner.finance.sales')],
                                     'refund' => ['bg-red-100 text-red-700',   __('partner.finance.refund')],
                                     'payout' => ['bg-blue-100 text-blue-700', __('partner.finance.payout')],
+                                    'promotion_sample' => ['bg-purple-100 text-purple-700', __('partner.finance.promotion_sample')],
                                     default  => ['bg-gray-100 text-gray-600', $txn['type']],
                                 };
 

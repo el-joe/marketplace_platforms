@@ -96,28 +96,34 @@ class TransactionFeedService
         });
     }
 
-    /** Zero-value statement lines for promotion samples taken from stock. */
+    /**
+     * Statement lines for promotion samples taken from stock: price 0, only the
+     * admin sale commission (snapshotted at dispatch) is charged, once.
+     */
     private function fetchPromotionSamples(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
     {
         $samples = MarketerCampaignSample::whereNotNull('stock_deducted_at')
+            ->where('status', '!=', 'cancelled')
             ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
             ->when($dateFrom, fn ($q) => $q->where('stock_deducted_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
             ->when($dateTo, fn ($q) => $q->where('stock_deducted_at', '<=', Carbon::parse($dateTo)->endOfDay()))
-            ->with('campaign.vendorListing.productVariant.product')
+            ->with(['campaign.vendorListing.productVariant.product', 'payoutItems.payout:id,payout_number,status'])
             ->get();
 
         return $samples->map(function ($s) {
             $product = $s->campaign?->vendorListing?->productVariant?->product;
+            $payout = $s->payoutItems->first()?->payout;
+            $commission = (int) $s->commission_amount;
 
             return [
                 'type' => 'promotion_sample',
                 'date' => $s->stock_deducted_at?->toISOString(),
                 'reference' => $s->campaign?->title,
-                'description' => 'عينة ترويج / Promotion sample — '.($product?->name_en ?? $product?->name_ar ?? '—').' × '.$s->quantity,
+                'description' => 'عينة ترويج مع المسوقين / Promotion sample — '.($product?->name_en ?? $product?->name_ar ?? '—').' × '.$s->quantity,
                 'gross' => 0,
-                'commission' => 0,
-                'net' => 0,
-                'payout_status' => 'n/a',
+                'commission' => $commission,
+                'net' => -$commission,
+                'payout_status' => $payout ? $payout->payout_number.' ('.$payout->status?->value.')' : 'unsettled',
             ];
         });
     }

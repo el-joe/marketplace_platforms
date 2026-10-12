@@ -152,7 +152,12 @@
                                 @foreach($payout->items as $item)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-3 font-mono text-xs text-gray-600">
-                                            {{ $item->subOrder->sub_order_number ?? $item->sub_order_id }}
+                                            @if($item->item_type === 'promotion_sample')
+                                                <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-purple-200">{{ __('admin.payouts.promotion_sample') }}</span>
+                                                <span class="block mt-1 font-sans text-gray-500">{{ $item->description }}</span>
+                                            @else
+                                                {{ $item->subOrder->sub_order_number ?? $item->sub_order_id }}
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-end" dir="ltr">{{ $fmt($item->gross) }}</td>
                                         <td class="px-4 py-3 text-end text-danger-600" dir="ltr">−{{ $fmt($item->commission) }}</td>

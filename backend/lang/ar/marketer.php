@@ -539,6 +539,7 @@ return [
 
     // Samples
     'samples' => [
+        'status_cancelled' => 'ملغاة',
         'title' => 'العينات',
         'page_title' => 'العينات المخصصة لك',
         'pending_label' => 'معلّقة (تحتاج عنوان)',

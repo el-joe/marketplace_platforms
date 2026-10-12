@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\FbnStorageFeeStatus;
+use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\Admin;
 use App\Models\FbnDailyOverageFee;
@@ -34,29 +35,28 @@ class GenerateVendorPayoutsJob implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param  \Carbon\Carbon  $periodStart  Start of the payout period (inclusive)
-     * @param  \Carbon\Carbon  $periodEnd    End of the payout period (inclusive)
+     * @param  Carbon  $periodStart  Start of the payout period (inclusive)
+     * @param  Carbon  $periodEnd  End of the payout period (inclusive)
      * @param  string|null  $scheduleFilter  When set (enhancement.md P-11 task 3), only
-     *   run for vendors whose `payout_schedule` matches this value ('weekly',
-     *   'biweekly', 'monthly'), so routes/console.php can dispatch one run per
-     *   cadence with the right period for that cadence. Null (default) processes
-     *   every active vendor regardless of schedule, preserving prior behaviour
-     *   for manual/on-demand runs.
+     *                                       run for vendors whose `payout_schedule` matches this value ('weekly',
+     *                                       'biweekly', 'monthly'), so routes/console.php can dispatch one run per
+     *                                       cadence with the right period for that cadence. Null (default) processes
+     *                                       every active vendor regardless of schedule, preserving prior behaviour
+     *                                       for manual/on-demand runs.
      */
     public function __construct(
         private readonly Carbon $periodStart,
         private readonly Carbon $periodEnd,
         private readonly ?string $scheduleFilter = null
-    ) {
-    }
+    ) {}
 
     public function handle(PayoutCalculationService $calculationService): void
     {
         $generated = 0;
 
-        Vendor::where('global_status', \App\Enums\VendorGlobalStatus::Active)
+        Vendor::where('global_status', VendorGlobalStatus::Active)
             ->when($this->scheduleFilter !== null, fn ($q) => $q->where('payout_schedule', $this->scheduleFilter))
-            ->whereHas('bankAccounts', fn($q) => $q->where('is_primary', true)
+            ->whereHas('bankAccounts', fn ($q) => $q->where('is_primary', true)
                 ->where('verification_status', 'verified'))
             ->chunkById(50, function ($vendors) use ($calculationService, &$generated) {
                 foreach ($vendors as $vendor) {
@@ -75,7 +75,7 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                         ->where('verification_status', 'verified')
                         ->first();
 
-                    if (!$primaryAccount) {
+                    if (! $primaryAccount) {
                         continue;
                     }
 
@@ -104,23 +104,23 @@ class GenerateVendorPayoutsJob implements ShouldQueue
 
                         DB::transaction(function () use ($calc, $currency, $vendor, $primaryAccount) {
                             $payout = Payout::create([
-                                'payout_number'        => $this->generatePayoutNumber(),
-                                'vendor_id'            => $vendor->id,
-                                'period_start'         => $calc['period_start'],
-                                'period_end'           => $calc['period_end'],
-                                'gross_sales'          => $calc['gross_sales'],
-                                'commission'           => $calc['commission'],
+                                'payout_number' => $this->generatePayoutNumber(),
+                                'vendor_id' => $vendor->id,
+                                'period_start' => $calc['period_start'],
+                                'period_end' => $calc['period_end'],
+                                'gross_sales' => $calc['gross_sales'],
+                                'commission' => $calc['commission'],
                                 'gateway_fee_deducted' => $calc['gateway_fee_deducted'],
-                                'refunds_deducted'     => $calc['refunds_deducted'],
+                                'refunds_deducted' => $calc['refunds_deducted'],
                                 'chargebacks_deducted' => $calc['chargebacks_deducted'],
-                                'storage_fees'         => $calc['storage_fees'],
-                                'ad_fees'              => $calc['ad_fees'],
-                                'other_adjustments'    => $calc['other_adjustments'],
-                                'net_amount'           => $calc['net_amount'],
-                                'currency'             => $currency, // sales currency — see PayoutCalculationService note on FX
-                                'status'               => 'pending',
-                                'bank_account_id'      => $primaryAccount->id,
-                                'payout_method'        => 'bank_transfer',
+                                'storage_fees' => $calc['storage_fees'],
+                                'ad_fees' => $calc['ad_fees'],
+                                'other_adjustments' => $calc['other_adjustments'],
+                                'net_amount' => $calc['net_amount'],
+                                'currency' => $currency, // sales currency — see PayoutCalculationService note on FX
+                                'status' => 'pending',
+                                'bank_account_id' => $primaryAccount->id,
+                                'payout_method' => 'bank_transfer',
                             ]);
 
                             // enhancement.md P-11: one payout_items row per sub-order
@@ -130,12 +130,12 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                             $subOrders = SubOrder::whereIn('id', $calc['sub_order_ids'] ?? [])->get();
                             foreach ($subOrders as $subOrder) {
                                 PayoutItem::create([
-                                    'payout_id'    => $payout->id,
-                                    'item_type'    => 'sub_order',
+                                    'payout_id' => $payout->id,
+                                    'item_type' => 'sub_order',
                                     'sub_order_id' => $subOrder->id,
-                                    'gross'        => (int) $subOrder->subtotal,
-                                    'commission'   => (int) $subOrder->platform_commission,
-                                    'net'          => (int) $subOrder->vendor_payout,
+                                    'gross' => (int) $subOrder->subtotal,
+                                    'commission' => (int) $subOrder->platform_commission,
+                                    'net' => (int) $subOrder->vendor_payout,
                                 ]);
                             }
 
@@ -164,49 +164,44 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 $feePerSlot = $request->items->first()?->slot_promotion_fee ?? 0;
 
                                 PayoutItem::create([
-                                    'payout_id'             => $payout->id,
-                                    'item_type'             => 'promotion_fee',
-                                    'promotion_request_id'  => $request->id,
-                                    'gross'                 => 0,
-                                    'commission'            => 0,
-                                    'net'                   => -$request->total_promotion_fee,
-                                    'description'           => "Influencer Promotion Fee — {$productName} — {$slots} slots × {$feePerSlot}",
+                                    'payout_id' => $payout->id,
+                                    'item_type' => 'promotion_fee',
+                                    'promotion_request_id' => $request->id,
+                                    'gross' => 0,
+                                    'commission' => 0,
+                                    'net' => -$request->total_promotion_fee,
+                                    'description' => "Influencer Promotion Fee — {$productName} — {$slots} slots × {$feePerSlot}",
                                 ]);
 
                                 $request->update([
-                                    'fee_deducted'    => true,
+                                    'fee_deducted' => true,
                                     'fee_deducted_at' => now(),
                                 ]);
                             }
 
+                            // Promotion samples: price 0 for the seller, only the admin
+                            // sale commission is deducted. campaign_sample_id is unique, so
+                            // a sample can never appear on two statements.
                             foreach ($calc['sample_items'] ?? [] as $entry) {
-                                $sampleItem = $entry['item'];
-                                $listing = $sampleItem->vendorListing;
-                                $product = $listing?->productVariant?->product;
+                                $sample = $entry['item'];
+                                $product = $sample->campaign?->vendorListing?->productVariant?->product;
                                 $productName = $product?->name_en ?? $product?->name_ar ?? '—';
 
-                                // Price shown to vendor is ZERO (Promotion Sample) — only
-                                // the admin fixed + variable commission is actually deducted.
                                 PayoutItem::create([
-                                    'payout_id'      => $payout->id,
-                                    'item_type'      => 'promotion_sample',
-                                    'sample_item_id' => $sampleItem->id,
-                                    'gross'          => 0,
-                                    'commission'     => $entry['commission_amount'],
-                                    'net'            => -$entry['commission_amount'],
-                                    'description'    => "ترويج عينة — Promotion Sample — {$productName}",
-                                ]);
-
-                                $sampleItem->update([
-                                    'fee_deducted'    => true,
-                                    'fee_deducted_at' => now(),
+                                    'payout_id' => $payout->id,
+                                    'item_type' => 'promotion_sample',
+                                    'campaign_sample_id' => $sample->id,
+                                    'gross' => 0,
+                                    'commission' => $entry['commission_amount'],
+                                    'net' => -$entry['commission_amount'],
+                                    'description' => "عينة ترويج مع المسوقين — Promotion sample — {$productName} × {$sample->quantity}",
                                 ]);
                             }
 
                             if (! empty($calc['ad_charge_ids'])) {
                                 PaidAdCharge::whereIn('id', $calc['ad_charge_ids'])->update([
-                                    'payout_id'   => $payout->id,
-                                    'settled_at'  => now(),
+                                    'payout_id' => $payout->id,
+                                    'settled_at' => now(),
                                 ]);
                             }
                         });
@@ -234,6 +229,7 @@ class GenerateVendorPayoutsJob implements ShouldQueue
     private function generatePayoutNumber(): string
     {
         $sequence = str_pad((string) (Payout::count() + 1), 5, '0', STR_PAD_LEFT);
-        return 'PO-' . now()->format('Y') . '-' . $sequence;
+
+        return 'PO-'.now()->format('Y').'-'.$sequence;
     }
 }

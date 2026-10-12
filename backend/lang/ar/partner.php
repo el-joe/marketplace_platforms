@@ -888,6 +888,8 @@ return [
     ],
 
     'finance' => [
+        'promotion_sample' => 'عينة ترويج',
+        'promotion_sample_line' => 'عينة ترويج (سعر 0) × :qty - يُخصم فقط عمولة المنصة',
         'title' => 'المالية',
         'total_sales' => 'إجمالي المبيعات',
         'total_sales_desc' => 'جميع الطلبات المكتملة',
@@ -2521,6 +2523,20 @@ return [
     ],
 
     'marketer_campaigns_my' => [
+        'sample_status' => [
+            'pending' => 'قيد الانتظار',
+            'dispatched' => 'تم الإرسال',
+            'delivered' => 'تم التسليم',
+            'returned' => 'مرتجعة',
+            'cancelled' => 'ملغاة',
+        ],
+        'sample_type' => [
+            'admin' => 'عينة المنصة',
+            'influencer' => 'عينة المؤثر',
+            'affiliate' => 'عينة المسوقين بالعمولة',
+        ],
+        'samples_summary' => ':count عينة - :units وحدة إجمالاً - :dispatched تم سحبها من المخزون.',
+        'samples_accounting_note' => 'العينة المرسلة تخرج من مخزونك كأنها عملية بيع، وتظهر في كشف حسابك بسعر 0 مع ملاحظة "عينة ترويج مع المسوقين"، ويُخصم فقط عمولة المنصة عنها مرة واحدة.',
         'title' => 'حملاتي',
         'subtitle' => 'الحملات التي أنشأتها لدعوة المسوّقين والمسوّقين بالعمولة للترويج لمنتجاتك.',
         'no_campaigns' => 'لم تقم بإنشاء أي حملة تسويق بعد.',
@@ -2598,6 +2614,8 @@ return [
         ],
 
         'field' => [
+            'stock_deducted' => 'خُصمت من المخزون',
+            'commission_charged' => 'العمولة المخصومة',
             'product' => 'المنتج',
             'country' => 'الدولة',
             'currency' => 'العملة',
@@ -2681,6 +2699,12 @@ return [
     ],
 
     'marketer_campaigns' => [
+        'stock_after_fixed_sample' => 'بعد عينة المنصة الثابتة (:fixed وحدة) يصبح مخزونك القابل للبيع :after وحدة.',
+        'sample_breakdown_admin' => 'عينة المنصة',
+        'sample_breakdown_influencers' => 'المؤثرون (وحدات لكل مؤثر)',
+        'sample_breakdown_affiliates' => 'المسوقون بالعمولة (كمية المنصة)',
+        'stock_left_after_samples' => 'المخزون القابل للبيع بعد العينات',
+        'stock_min_short' => 'الحد الأدنى',
         'marketer_not_eligible' => 'أحد المسوّقين المختارين غير متاح لهذه القائمة.',
         'select_at_least_one' => 'اختر مؤثراً واحداً على الأقل أو افتح الحملة لجميع المسوّقين بالعمولة.',
         'created_with_fee' => 'تم إنشاء حملة الماركتر. ستُخصم رسوم المنصة :fee :currency عند قبول المؤثرين.',

@@ -888,6 +888,8 @@ return [
     ],
 
     'finance' => [
+        'promotion_sample' => 'Promotion sample',
+        'promotion_sample_line' => 'Promotion sample (0 price) x :qty - only the platform commission is deducted',
         'title' => 'Finance',
         'total_sales' => 'Total sales',
         'total_sales_desc' => 'all completed orders',
@@ -2521,6 +2523,20 @@ return [
     ],
 
     'marketer_campaigns_my' => [
+        'sample_status' => [
+            'pending' => 'Pending',
+            'dispatched' => 'Dispatched',
+            'delivered' => 'Delivered',
+            'returned' => 'Returned',
+            'cancelled' => 'Cancelled',
+        ],
+        'sample_type' => [
+            'admin' => 'Platform sample',
+            'influencer' => 'Influencer sample',
+            'affiliate' => 'Affiliates sample',
+        ],
+        'samples_summary' => ':count sample(s) - :units unit(s) in total - :dispatched already taken from stock.',
+        'samples_accounting_note' => 'A dispatched sample leaves your stock like a sale, shows on your statement at price 0 with the note "promotion sample", and only the platform commission for it is deducted once.',
         'title' => 'My Campaigns',
         'subtitle' => 'Campaigns you created to invite marketers and affiliates to promote your products.',
         'no_campaigns' => 'You have not created any marketer campaigns yet.',
@@ -2598,6 +2614,8 @@ return [
         ],
 
         'field' => [
+            'stock_deducted' => 'Taken from stock',
+            'commission_charged' => 'Commission charged',
             'product' => 'Product',
             'country' => 'Country',
             'currency' => 'Currency',
@@ -2681,6 +2699,12 @@ return [
     ],
 
     'marketer_campaigns' => [
+        'stock_after_fixed_sample' => 'After the fixed platform sample (:fixed unit(s)) your sellable stock is :after units.',
+        'sample_breakdown_admin' => 'Platform sample',
+        'sample_breakdown_influencers' => 'Influencers (units each)',
+        'sample_breakdown_affiliates' => 'Affiliates (platform quantity)',
+        'stock_left_after_samples' => 'Sellable stock after samples',
+        'stock_min_short' => 'minimum',
         'marketer_not_eligible' => 'One of the selected marketers is not available for this listing.',
         'select_at_least_one' => 'Select at least one influencer or open the campaign to all affiliates.',
         'created_with_fee' => 'Marketer campaign created. Platform fee of :fee :currency will be charged when influencers accept.',

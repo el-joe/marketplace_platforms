@@ -1492,6 +1492,15 @@ return [
 
     // ─── Marketer Campaigns ──────────────────────────────────────────────────
     'marketer_campaigns' => [
+        'sample_invitation_not_accepted' => 'This sample belongs to an influencer who has not accepted the invitation yet.',
+        'sample_awaiting_acceptance' => 'Awaiting acceptance',
+        'sample_type_admin' => 'Platform (fixed)',
+        'sample_type_influencer' => 'Influencer',
+        'sample_type_affiliate' => 'Affiliates (platform)',
+        'sample_status_cancelled' => 'Cancelled',
+        'sample_stock_deducted' => 'Stock deducted',
+        'sample_commission' => 'Commission charged',
+        'samples_summary' => ':count sample(s), :units unit(s) in total, :dispatched dispatched (stock deducted once, commission charged once).',
         'affiliate_column' => 'Affiliate',
         'commission_owed_column' => 'Commission Owed',
         'conversions_column' => 'Conversions',
@@ -8795,6 +8804,7 @@ return [
 
     // ─── payouts ───────────────────────────────────────────
     'payouts' => [
+        'promotion_sample' => 'Promotion sample',
         'gateway_fee' => 'Gateway Fee',
         'title' => 'Payouts',
         'payout_number' => 'Payout #',
