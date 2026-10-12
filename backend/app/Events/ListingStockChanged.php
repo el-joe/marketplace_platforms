@@ -17,5 +17,6 @@ class ListingStockChanged
     public function __construct(
         public readonly ?string $vendorListingId,
         public readonly ?string $adminListingId,
+        public readonly ?string $marketerListingId = null,
     ) {}
 }

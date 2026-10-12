@@ -1499,6 +1499,13 @@ return [
 
     // ─── Marketer Campaigns ──────────────────────────────────────────────────
     'marketer_campaigns' => [
+        'source_column' => 'المصدر',
+        'all_sources' => 'كل المصادر',
+        'source_vendor' => 'منتج بائع',
+        'source_admin' => 'منتج المنصة',
+        'source_peer' => 'ترويج مؤثر لمؤثر',
+        'peer_owner' => 'المؤثر المالك',
+        'peer_promoter' => 'المؤثر المروّج',
         'sample_invitation_not_accepted' => 'هذه العينة تخص مؤثراً لم يقبل الدعوة بعد.',
         'sample_awaiting_acceptance' => 'بانتظار القبول',
         'sample_type_admin' => 'المنصة (ثابتة)',

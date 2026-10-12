@@ -6,7 +6,7 @@ use InvalidArgumentException;
 
 /**
  * enhancement.md P-14 task 1/2: the single listing a campaign promotes.
- * Exactly one of the four ids must be set — enforced at the DB level by
+ * Exactly one of the five ids must be set — enforced at the DB level by
  * `chk_campaign_listing_xor_v2` on `marketer_campaigns` (see the migration
  * 2026_09_17_040000 docblock) AND re-validated here so a bad CampaignSource
  * fails fast with a clear message instead of a raw SQL constraint error.
@@ -30,8 +30,8 @@ final class CampaignSource
         public readonly ?string $adminListingId,
         public readonly ?string $travelPackageId,
         public readonly ?string $classifiedListingId,
-    ) {
-    }
+        public readonly ?string $marketerListingId = null,
+    ) {}
 
     public static function vendorListing(string $vendorListingId): self
     {
@@ -53,6 +53,14 @@ final class CampaignSource
         return new self('classified', null, null, null, $classifiedListingId);
     }
 
+    /**
+     * P13 (R11): another influencer's own FBN listing (marketer_listings.source_listing_id IS NULL).
+     */
+    public static function marketerListing(string $marketerListingId): self
+    {
+        return new self('product', null, null, null, null, $marketerListingId);
+    }
+
     public function validate(): void
     {
         $set = array_filter([
@@ -60,11 +68,12 @@ final class CampaignSource
             $this->adminListingId,
             $this->travelPackageId,
             $this->classifiedListingId,
+            $this->marketerListingId,
         ]);
 
         if (count($set) !== 1) {
             throw new InvalidArgumentException(
-                'A campaign source must set exactly one of vendor_listing_id, admin_listing_id, travel_package_id, classified_listing_id.'
+                'A campaign source must set exactly one of vendor_listing_id, admin_listing_id, travel_package_id, classified_listing_id, marketer_listing_id.'
             );
         }
     }
@@ -77,5 +86,10 @@ final class CampaignSource
     public function isAdminListing(): bool
     {
         return $this->adminListingId !== null;
+    }
+
+    public function isMarketerListing(): bool
+    {
+        return $this->marketerListingId !== null;
     }
 }

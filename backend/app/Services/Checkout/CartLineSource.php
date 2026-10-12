@@ -157,6 +157,29 @@ class CartLineSource
                 );
             }
 
+            // P13: an influencer promoting ANOTHER influencer's own FBN listing. The
+            // customer buys from the promoter's proxy listing (attribution + referral
+            // code), the stock and the seller identity are the owner influencer's.
+            $sourceOwnerListing = $marketerListing->source_type === 'marketer_listing'
+                ? MarketerListing::find($marketerListing->source_listing_id)
+                : null;
+
+            if ($sourceOwnerListing) {
+                return new self(
+                    cartItem: $item,
+                    sellable: $marketerListing,
+                    fulfilmentListing: $sourceOwnerListing,
+                    sellerParty: 'marketer:'.$sourceOwnerListing->marketer_id,
+                    price: (int) $item->unit_price,
+                    quantity: (int) $item->quantity,
+                    fulfillmentModel: 'fbn',
+                    warehouseInventories: $sourceOwnerListing->warehouseInventories()->get(),
+                    vendorListingIdForOrderItem: null,
+                    adminListingIdForOrderItem: null,
+                    marketerListingIdForOrderItem: $marketerListing->id,
+                );
+            }
+
             // Own FBN marketer listing (source_listing_id IS NULL): the marketer
             // physically ships from a platform warehouse using their own stock in
             // warehouse_inventories keyed by marketer_listing_id.

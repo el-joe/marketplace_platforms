@@ -17,7 +17,9 @@
         'done'           => 'gray',
     ];
     $product = $marketerCampaign->vendorListing?->productVariant?->product
-        ?? $marketerCampaign->adminListing?->productVariant?->product;
+        ?? $marketerCampaign->adminListing?->productVariant?->product
+        ?? $marketerCampaign->marketerListing?->productVariant?->product;
+    $isPeer = $marketerCampaign->marketer_listing_id !== null;
     $promotedLabel = match ($marketerCampaign->campaign_category ?? 'product') {
         'travel'     => $marketerCampaign->travelPackage?->title_ar,
         'classified' => $marketerCampaign->classifiedListing?->title_ar,
@@ -40,7 +42,10 @@
             <x-badge :color="$statusColors[$marketerCampaign->status] ?? 'gray'">
                 {{ __('admin.marketer_campaigns.status_' . $marketerCampaign->status) }}
             </x-badge>
-            <span class="text-sm text-gray-500">{{ $marketerCampaign->vendor?->store_name }}</span>
+            <span class="text-sm text-gray-500">{{ $isPeer ? $marketerCampaign->ownerMarketer?->name : $marketerCampaign->vendor?->store_name }}</span>
+            @if($isPeer)
+                <x-badge color="primary">{{ __('admin.marketer_campaigns.source_peer') }}</x-badge>
+            @endif
         </div>
     </div>
     <a href="{{ route('admin.marketer-campaigns.index') }}" class="text-sm text-gray-500 hover:text-gray-700 flex-shrink-0 mt-1">
@@ -151,7 +156,9 @@
         <x-card title="{{ __('admin.marketer_campaigns.tab_details') }}">
             <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 @foreach([
-                    __('admin.marketer_campaigns.vendor')                     => $marketerCampaign->vendor?->store_name ?? '—',
+                    __('admin.marketer_campaigns.source_column')              => $isPeer ? __('admin.marketer_campaigns.source_peer') : ($marketerCampaign->admin_listing_id ? __('admin.marketer_campaigns.source_admin') : __('admin.marketer_campaigns.source_vendor')),
+                    __('admin.marketer_campaigns.vendor')                     => $isPeer ? ($marketerCampaign->ownerMarketer?->name ?? '—').' ('.__('admin.marketer_campaigns.peer_owner').')' : ($marketerCampaign->vendor?->store_name ?? '—'),
+                    __('admin.marketer_campaigns.peer_promoter')              => $isPeer ? ($marketerCampaign->promoter?->name ?? '—') : '—',
                     __('admin.marketer_campaigns.product')                    => $promotedLabel ?? '—',
                     __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',

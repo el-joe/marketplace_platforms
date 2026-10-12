@@ -60,6 +60,7 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
     Route::get('/campaigns/active', [CampaignController::class, 'active']);
     Route::get('/campaigns/finished', [CampaignController::class, 'finished']);
     Route::post('/campaigns/request', [CampaignController::class, 'request']);
+    Route::get('/campaigns/promoted-by-others', [CampaignController::class, 'promotedByOthers']);
 
     Route::get('/reports', [ReportController::class, 'index']);
 

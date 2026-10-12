@@ -1494,6 +1494,13 @@ return [
 
     // ─── Marketer Campaigns ──────────────────────────────────────────────────
     'marketer_campaigns' => [
+        'source_column' => 'Source',
+        'all_sources' => 'All sources',
+        'source_vendor' => 'Seller listing',
+        'source_admin' => 'Platform listing',
+        'source_peer' => 'Influencer-to-influencer',
+        'peer_owner' => 'owner influencer',
+        'peer_promoter' => 'Promoted by (influencer)',
         'sample_invitation_not_accepted' => 'This sample belongs to an influencer who has not accepted the invitation yet.',
         'sample_awaiting_acceptance' => 'Awaiting acceptance',
         'sample_type_admin' => 'Platform (fixed)',

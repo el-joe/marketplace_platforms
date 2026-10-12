@@ -21,8 +21,7 @@ class SyncMarketerListingAvailabilityOnStock
 {
     public function __construct(
         private readonly MarketerListingAvailabilityService $marketerAvailability,
-    ) {
-    }
+    ) {}
 
     public function handle(ListingStockChanged $event): void
     {
@@ -32,6 +31,11 @@ class SyncMarketerListingAvailabilityOnStock
 
         if ($event->adminListingId) {
             $this->marketerAvailability->syncAllForSource('admin_listing', $event->adminListingId);
+        }
+
+        // P13: proxy listings promoting an influencer's own FBN listing follow its availability.
+        if ($event->marketerListingId) {
+            $this->marketerAvailability->syncAllForSource('marketer_listing', $event->marketerListingId);
         }
     }
 }

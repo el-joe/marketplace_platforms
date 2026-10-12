@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\PeerPromotionException;
 use App\Jobs\ProcessCampaignAutoApproveJob;
 use App\Jobs\ProcessInvitationTimeoutJob;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
+use App\Jobs\SendVendorInvitationResponseWhatsAppJob;
 use App\Models\Admin;
 use App\Models\AdminListing;
 use App\Models\ClassifiedListing;
@@ -29,6 +31,7 @@ use App\Notifications\Admin\NewCampaignPendingNotification;
 use App\Notifications\Marketer\CampaignExpired;
 use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
 use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
+use App\Notifications\Marketer\PeerPromotionStartedNotification;
 use App\Notifications\Vendor\CampaignApprovedNotification;
 use App\Notifications\Vendor\CampaignAutoApprovedNotification;
 use App\Notifications\Vendor\CampaignDoneNotification;
@@ -40,6 +43,7 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
+use Carbon\CarbonInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Database\Eloquent\Collection;
@@ -148,6 +152,14 @@ class MarketerCampaignService
                 $listing = AdminListing::where('id', $source->adminListingId)->firstOrFail();
 
                 $category = $listing->productVariant?->product?->category;
+            } elseif ($source->isMarketerListing()) {
+                // P13 (R11): influencer promotes ANOTHER influencer's own FBN listing.
+                if (! $owner->isMarketer()) {
+                    throw new \RuntimeException('A marketer-listing campaign can only be requested by a marketer (the promoter).');
+                }
+
+                $peerListing = $this->assertPeerPromotionAllowed($owner->id, $source->marketerListingId);
+                $category = $peerListing->productVariant?->product?->category;
             }
             // Travel/classified sources: no stock/fulfilment check yet — see
             // CampaignSource docblock. They are schema-ready but unreachable
@@ -185,17 +197,28 @@ class MarketerCampaignService
 
             $autoApproveHours = (int) setting('marketer_campaign_auto_approve_hours', 36);
 
-            $status = $owner->isMarketer() ? 'marketer_requested' : 'pending_admin';
+            $isPeer = $source->isMarketerListing();
+            $status = $owner->isMarketer() ? ($isPeer ? 'active' : 'marketer_requested') : 'pending_admin';
+
+            if ($isPeer) {
+                // Country/currency are the promoted listing's, never client supplied.
+                $data['country_id'] = $peerListing->country_id;
+                $data['currency'] = $peerListing->currency;
+                $data['commission_type'] = 'fixed';
+                $data['max_commission_budget'] = $data['max_commission_budget'] ?? 0;
+            }
 
             $campaign = MarketerCampaign::create([
                 'vendor_id' => $owner->isVendor() ? $owner->id : null,
                 'owner_type' => $owner->isMarketer() ? 'marketer' : $owner->type,
-                'owner_id' => $owner->id,
+                // Peer campaigns: the real owner is the listing's influencer, the promoter is requested_by.
+                'owner_id' => $isPeer ? $peerListing->marketer_id : $owner->id,
                 'requested_by_marketer_id' => $owner->isMarketer() ? $owner->id : null,
                 'vendor_listing_id' => $source->vendorListingId,
                 'admin_listing_id' => $source->adminListingId,
                 'travel_package_id' => $source->travelPackageId,
                 'classified_listing_id' => $source->classifiedListingId,
+                'marketer_listing_id' => $source->marketerListingId,
                 'campaign_category' => $source->category,
                 'country_id' => $data['country_id'],
                 'currency' => $data['currency'],
@@ -240,6 +263,12 @@ class MarketerCampaignService
                 $samples->ensureAffiliateSample($campaign, $category);
             }
 
+            if ($isPeer) {
+                // No seller/admin review: the owner is an influencer and the rules were enforced
+                // above, so the promotion goes live immediately for the promoter.
+                return $this->activatePeerCampaign($campaign, $peerListing);
+            }
+
             if ($owner->isMarketer()) {
                 // Marketer-originated request: notify the real owner
                 // (vendor or admin) to review — no invitations exist yet,
@@ -269,6 +298,124 @@ class MarketerCampaignService
     }
 
     /**
+     * P13 (R11): the rules of an influencer-to-influencer promotion. Returns the (locked-free)
+     * owner listing when the promoter may promote it right now, otherwise throws
+     * PeerPromotionException with a stable reason key.
+     *
+     *  - the listing must be another influencer's OWN FBN listing (source_listing_id IS NULL);
+     *  - promoter and owner must both be influencers; promoter != owner (self-promotion block);
+     *  - the listing must be `active`;
+     *  - it must have stock in its own warehouse_inventories;
+     *  - ONE promotion per (promoter, owner) per calendar month (rejected/cancelled ones free the slot).
+     *    The promoter row is locked so two simultaneous requests cannot both pass.
+     */
+    public function assertPeerPromotionAllowed(string $promoterId, string $marketerListingId, ?CarbonInterface $at = null): MarketerListing
+    {
+        $listing = MarketerListing::query()->with('productVariant.product.category')->find($marketerListingId);
+
+        if (! $listing || $listing->source_listing_id !== null || ($listing->listing_category ?? 'product') !== 'product') {
+            throw new PeerPromotionException(PeerPromotionException::NOT_PEER_LISTING, 'Only an influencer\'s own FBN product listing can be promoted by another influencer.');
+        }
+
+        if ($listing->marketer_id === $promoterId) {
+            throw new PeerPromotionException(PeerPromotionException::SELF_PROMOTION, 'An influencer cannot promote his own listing.');
+        }
+
+        if (! $listing->isActive()) {
+            throw new PeerPromotionException(PeerPromotionException::LISTING_NOT_ACTIVE, 'The listing must be active to be promoted.');
+        }
+
+        $promoter = Marketer::query()->whereKey($promoterId)->lockForUpdate()->firstOrFail();
+        if (! $promoter->isInfluencer() || ! $listing->marketer?->isInfluencer()) {
+            throw new PeerPromotionException(PeerPromotionException::NOT_INFLUENCER, 'Only influencers can promote other influencers\' products.');
+        }
+
+        $minStock = max(1, (int) setting('marketer_peer_campaign_min_stock', 1));
+        $stock = app(InventoryService::class)->availableStock($listing);
+        if ($stock < $minStock) {
+            throw new PeerPromotionException(PeerPromotionException::INSUFFICIENT_STOCK, "Insufficient stock to promote: {$stock} available, {$minStock} required.", ['available' => $stock, 'required' => $minStock]);
+        }
+
+        $existing = $this->peerPromotionInMonth($promoterId, $listing->marketer_id, $at ?? now());
+        if ($existing) {
+            throw new PeerPromotionException(PeerPromotionException::MONTHLY_LIMIT, 'This influencer was already promoted by you this month.', ['campaign_id' => $existing->id]);
+        }
+
+        return $listing;
+    }
+
+    /** The promoter's peer campaign for this owner influencer in the calendar month of $at, if any. */
+    public function peerPromotionInMonth(string $promoterId, string $ownerMarketerId, CarbonInterface $at): ?MarketerCampaign
+    {
+        return MarketerCampaign::query()
+            ->whereNotNull('marketer_listing_id')
+            ->where('requested_by_marketer_id', $promoterId)
+            ->where('owner_type', 'marketer')
+            ->where('owner_id', $ownerMarketerId)
+            ->whereNotIn('status', ['rejected', 'cancelled'])
+            ->whereBetween('created_at', [$at->copy()->startOfMonth(), $at->copy()->endOfMonth()])
+            ->first();
+    }
+
+    /**
+     * Admin-defined commission of the promoter's marketer type for the listing's category
+     * (same source the vendor flow shows: marketer_commission_country_settings), with the
+     * platform rule applied on top. Zero is allowed: conversion time then falls back to the
+     * promoter's own category rule (MarketerCommissionRateService).
+     *
+     * @return array{marketer_commission_amount: int, platform_commission_amount: int}
+     */
+    private function resolvePeerCommission(MarketerCampaign $campaign, MarketerListing $listing, Marketer $promoter): array
+    {
+        $category = $listing->productVariant?->product?->category;
+        if (! $category) {
+            return ['marketer_commission_amount' => 0, 'platform_commission_amount' => 0];
+        }
+
+        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
+            ->where('category_id', $category->id)
+            ->first();
+
+        $perUnit = (int) ($promoter->isInfluencer()
+            ? $countrySetting?->influencer_commission_amount
+            : $countrySetting?->affiliate_commission_amount);
+
+        $platform = 0;
+        if ($perUnit > 0) {
+            $rule = app(CommissionRuleResolver::class)->resolve(null, 'products', $category);
+            $platform = $rule
+                ? $this->computeCommissionAmount($rule->commission_mode, $rule->commission_flat_amount, (float) $rule->commission_rate, $perUnit)
+                : 0;
+        }
+
+        return ['marketer_commission_amount' => $perUnit, 'platform_commission_amount' => $platform];
+    }
+
+    /**
+     * Peer campaign goes live at once: commission from the category rules, the promoter's
+     * invitation is created and accepted (no seller fee: there is no seller to charge and the
+     * promotion is part of the promoter's monthly obligation), his referral listing is built.
+     */
+    private function activatePeerCampaign(MarketerCampaign $campaign, MarketerListing $listing): MarketerCampaign
+    {
+        $promoter = Marketer::findOrFail($campaign->requested_by_marketer_id);
+
+        $campaign->update($this->resolvePeerCommission($campaign, $listing, $promoter) + [
+            'status' => 'active',
+            'reviewed_at' => now(),
+        ]);
+
+        $invitation = $this->dispatchInvitation($campaign, $promoter->id);
+        $this->acceptInvitation($invitation->fresh());
+
+        $listing->marketer?->marketerAdmins?->each(
+            fn ($ma) => $ma->notify(new PeerPromotionStartedNotification($campaign->fresh(), $ma->id))
+        );
+
+        return $campaign->fresh();
+    }
+
+    /**
      * enhancement.md P-14 task 3: a marketer proposes to promote a listing
      * (vendor or admin). Thin wrapper over createCampaign() with the
      * marketer as owner — the real owner (vendor or admin) reviews it via
@@ -277,6 +424,18 @@ class MarketerCampaignService
     public function requestCampaign(Marketer $marketer, CampaignSource $source, array $data): MarketerCampaign
     {
         $data['marketer_ids'] = [$marketer->id];
+
+        // A request form only names the listing: country/currency come from the listing itself.
+        $requested = match (true) {
+            $source->isVendorListing() => VendorListing::find($source->vendorListingId),
+            $source->isAdminListing() => AdminListing::find($source->adminListingId),
+            $source->isMarketerListing() => MarketerListing::find($source->marketerListingId),
+            default => null,
+        };
+        $data['country_id'] ??= $requested?->country_id;
+        $data['currency'] ??= $requested?->currency;
+        $data['commission_type'] ??= 'fixed';
+        $data['max_commission_budget'] ??= 0;
 
         return $this->createCampaign(CampaignOwner::marketer($marketer), $source, $data);
     }
@@ -747,6 +906,12 @@ class MarketerCampaignService
             $invitation->update(['qr_code_path' => $qrPath]);
         }
 
+        // A peer promotion (P13) is requested by the promoter himself and accepted in the same
+        // transaction: no acceptance window, WhatsApp invitation or "you were invited" notice.
+        if ($campaign->marketer_listing_id) {
+            return $invitation;
+        }
+
         ProcessInvitationTimeoutJob::dispatch($invitation->id)
             ->delay(now()->addHours($timeoutHours));
 
@@ -944,7 +1109,8 @@ class MarketerCampaignService
             $feeStatus = 'not_applicable';
             $feePayer = null;
 
-            if ($marketer->isInfluencer()) {
+            // Peer promotions (P13) carry no promotion fee: there is no seller to bill.
+            if ($marketer->isInfluencer() && ! $campaign->marketer_listing_id) {
                 $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
                     ->first();
 
@@ -989,7 +1155,7 @@ class MarketerCampaignService
             $campaign->vendor?->vendorAdmins?->each(
                 fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($invitation, 'accepted'))
             );
-            \App\Jobs\SendVendorInvitationResponseWhatsAppJob::dispatch($invitation->id, 'accepted')->afterCommit();
+            SendVendorInvitationResponseWhatsAppJob::dispatch($invitation->id, 'accepted')->afterCommit();
 
             $this->createMarketerListingFromInvitation($invitation);
         });
@@ -1031,6 +1197,14 @@ class MarketerCampaignService
             $sourcePrice = $source?->price;
             $variantId = $source?->product_variant_id;
             $sourceType = 'admin_listing';
+            $sourceListingId = $source?->id;
+        } elseif ($campaign->marketer_listing_id) {
+            // P13: the proxy sells the owner influencer's stock at the owner's price.
+            $source = MarketerListing::find($campaign->marketer_listing_id);
+            $sourcePrice = $source?->price;
+            $sourceCondition = $source?->condition ?? 'new';
+            $variantId = $source?->product_variant_id;
+            $sourceType = 'marketer_listing';
             $sourceListingId = $source?->id;
         }
 
@@ -1187,7 +1361,7 @@ class MarketerCampaignService
         $campaign->vendor?->vendorAdmins?->each(
             fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($oldInvitation, $reason))
         );
-        \App\Jobs\SendVendorInvitationResponseWhatsAppJob::dispatch($oldInvitation->id, $reason);
+        SendVendorInvitationResponseWhatsAppJob::dispatch($oldInvitation->id, $reason);
 
         // The predecessor's sample has not been sent (admin dispatch requires an
         // accepted invitation): hand it to the replacement or cancel it.

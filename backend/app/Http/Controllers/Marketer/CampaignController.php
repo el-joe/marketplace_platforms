@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers\Marketer;
 
+use App\Exceptions\PeerPromotionException;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
+use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignInvitation;
+use App\Models\MarketerListing;
 use App\Services\MarketerCampaignService;
+use App\Support\Marketer\CampaignSource;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -74,21 +80,87 @@ class CampaignController extends Controller
         return view('marketer.campaigns.finished', compact('marketer', 'invitations'));
     }
 
+    /**
+     * P13 (R11): other influencers' own FBN products an influencer may promote. Excludes his own
+     * listings, flags owners he already promoted this calendar month.
+     */
+    public function peerProducts(Request $request): View
+    {
+        $marketer = $this->marketer();
+        $q = trim((string) $request->query('q', ''));
+
+        $listings = MarketerListing::query()
+            ->active()
+            ->whereNull('source_listing_id')
+            ->where('listing_category', 'product')
+            ->where('marketer_id', '!=', $marketer->id)
+            ->whereHas('marketer.marketerJobs', fn ($j) => $j->where('key', 'influencer'))
+            ->whereHas('warehouseInventories', fn ($w) => $w->where('quantity_available', '>', 0))
+            ->when($marketer->country_id, fn ($x) => $x->where('country_id', $marketer->country_id))
+            ->when($q !== '', fn ($x) => $x->whereHas('productVariant.product', fn ($p) => $p
+                ->where('name_ar', 'like', "%{$q}%")->orWhere('name_en', 'like', "%{$q}%")))
+            ->with(['marketer', 'productVariant.product'])
+            ->withSum('warehouseInventories as stock_available', 'quantity_available')
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        $promotedOwnerIds = MarketerCampaign::query()
+            ->whereNotNull('marketer_listing_id')
+            ->where('requested_by_marketer_id', $marketer->id)
+            ->whereNotIn('status', ['rejected', 'cancelled'])
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->pluck('owner_id')
+            ->all();
+
+        return view('marketer.campaigns.peer-products', compact('marketer', 'listings', 'promotedOwnerIds', 'q'));
+    }
+
+    /**
+     * P13 (R11): the owner influencer sees which influencers promote HIS products.
+     */
+    public function promotedByOthers(): View
+    {
+        $marketer = $this->marketer();
+
+        $campaigns = MarketerCampaign::query()
+            ->whereNotNull('marketer_listing_id')
+            ->where('owner_type', 'marketer')
+            ->where('owner_id', $marketer->id)
+            ->with(['promoter', 'marketerListing.productVariant.product', 'invitations'])
+            ->withCount('conversions')
+            ->withSum('conversions', 'commission_amount')
+            ->latest()
+            ->paginate(20);
+
+        return view('marketer.campaigns.promoted-by-others', compact('marketer', 'campaigns'));
+    }
+
     public function request(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'listing_id' => ['required', 'uuid'],
-            'listing_type' => ['required', 'in:vendor_listing,admin_listing'],
+            'listing_type' => ['required', 'in:vendor_listing,admin_listing,marketer_listing'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $source = $validated['listing_type'] === 'vendor_listing'
-            ? CampaignSource::vendorListing($validated['listing_id'])
-            : CampaignSource::adminListing($validated['listing_id']);
+        $source = match ($validated['listing_type']) {
+            'vendor_listing' => CampaignSource::vendorListing($validated['listing_id']),
+            'marketer_listing' => CampaignSource::marketerListing($validated['listing_id']),
+            default => CampaignSource::adminListing($validated['listing_id']),
+        };
 
-        $this->campaignService->requestCampaign($this->marketer(), $source, $validated);
+        try {
+            $this->campaignService->requestCampaign($this->marketer(), $source, $validated);
+        } catch (PeerPromotionException $e) {
+            return back()->withInput()->with('error', __('marketer.campaigns.peer.errors.'.$e->reason, $e->context));
+        } catch (\RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('marketer.campaigns.active')
-            ->with('success', __('Campaign request submitted successfully.'));
+            ->with('success', $validated['listing_type'] === 'marketer_listing'
+                ? __('marketer.campaigns.peer.started')
+                : __('Campaign request submitted successfully.'));
     }
 }

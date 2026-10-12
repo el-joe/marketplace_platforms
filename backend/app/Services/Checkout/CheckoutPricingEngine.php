@@ -585,7 +585,7 @@ class CheckoutPricingEngine
                     - $commissionVat
                     - $gatewayFee
                     - $vendorContribution
-                    - ($marketerOwner === 'vendor' ? $marketerCommission : 0));
+                    - (in_array($marketerOwner, ['vendor', 'marketer'], true) ? $marketerCommission : 0));
             }
 
             // cod_fee and warranty_revenue are order-level (added once,
@@ -1104,7 +1104,8 @@ class CheckoutPricingEngine
         if ($isMarketer && $item instanceof CartItem) {
             $campaign = $item->marketerListing?->invitation?->campaign;
             if ($campaign) {
-                $marketerOwner = $campaign->vendor_listing_id ? 'vendor' : 'platform';
+                // D5: the owner pays. P13 peer promotion: the owner influencer (the seller) pays the promoter.
+                $marketerOwner = $campaign->vendor_listing_id ? 'vendor' : ($campaign->marketer_listing_id ? 'marketer' : 'platform');
                 $marketerCommissionType = (string) $campaign->commission_type;
                 $marketerCommissionRaw = (int) ($campaign->marketer_commission_amount ?? 0);
             }

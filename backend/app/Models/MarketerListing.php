@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\FulfillmentModel;
 use App\Enums\MarketerListingStatus;
 use App\Services\Customer\MarketerProfileCache;
+use App\Services\Marketer\MarketerListingAvailabilityService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -184,7 +185,16 @@ class MarketerListing extends Model
             MarketerProfileCache::bump($slug);
         };
 
+        // P13: proxy listings that promote this influencer's own FBN listing follow its status.
+        $syncPeerProxies = function (self $listing) {
+            if ($listing->source_listing_id === null && ($listing->wasRecentlyCreated === false) && $listing->wasChanged('status')) {
+                app(MarketerListingAvailabilityService::class)
+                    ->syncAllForSource('marketer_listing', $listing->id);
+            }
+        };
+
         static::saved($bump);
+        static::saved($syncPeerProxies);
         static::deleted($bump);
     }
 

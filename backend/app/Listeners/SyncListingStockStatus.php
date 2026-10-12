@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\ListingStockChanged;
 use App\Models\AdminListing;
+use App\Models\MarketerListing;
 use App\Models\VendorListing;
 use Illuminate\Support\Facades\DB;
 
@@ -23,6 +24,10 @@ class SyncListingStockStatus
         if ($event->adminListingId) {
             $this->sync(AdminListing::class, $event->adminListingId);
         }
+
+        if ($event->marketerListingId) {
+            $this->sync(MarketerListing::class, $event->marketerListingId);
+        }
     }
 
     private function sync(string $modelClass, string $listingId): void
@@ -34,7 +39,11 @@ class SyncListingStockStatus
             return;
         }
 
-        $column = $modelClass === VendorListing::class ? 'vendor_listing_id' : 'admin_listing_id';
+        $column = match ($modelClass) {
+            VendorListing::class => 'vendor_listing_id',
+            MarketerListing::class => 'marketer_listing_id',
+            default => 'admin_listing_id',
+        };
         $available = (int) DB::table('warehouse_inventories')
             ->where($column, $listingId)
             ->sum(DB::raw('quantity_on_hand - quantity_reserved'));

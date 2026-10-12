@@ -62,6 +62,15 @@
                 @endforeach
             </select>
         </div>
+        <div class="w-48">
+            <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.marketer_campaigns.source_column') }}</label>
+            <select name="source" class="form-input w-full text-sm">
+                <option value="">{{ __('admin.marketer_campaigns.all_sources') }}</option>
+                @foreach(['vendor', 'admin', 'peer'] as $sourceOption)
+                    <option value="{{ $sourceOption }}" {{ request('source') === $sourceOption ? 'selected' : '' }}>{{ __('admin.marketer_campaigns.source_'.$sourceOption) }}</option>
+                @endforeach
+            </select>
+        </div>
         <button type="submit" class="btn btn-primary btn-sm">{{ __('admin.marketer_campaigns.filter') }}</button>
         <a href="{{ route('admin.marketer-campaigns.index') }}" class="btn btn-ghost btn-sm">{{ __('admin.marketer_campaigns.reset') }}</a>
     </form>
@@ -87,7 +96,8 @@
                 @forelse($campaigns as $campaign)
                     @php
                         $product = $campaign->vendorListing?->productVariant?->product
-                            ?? $campaign->adminListing?->productVariant?->product;
+                            ?? $campaign->adminListing?->productVariant?->product
+                            ?? $campaign->marketerListing?->productVariant?->product;
                         $productName = $product?->name_en
                             ?? $campaign->travelPackage?->title_en
                             ?? $campaign->classifiedListing?->title_en
@@ -95,7 +105,14 @@
                         $marketerName = $campaign->invitations->first()?->marketer?->name ?? '—';
                     @endphp
                     <tr class="border-b border-gray-50">
-                        <td class="py-2 pr-4 font-medium text-gray-900">{{ $campaign->vendor?->store_name ?? '—' }}</td>
+                        <td class="py-2 pr-4 font-medium text-gray-900">
+                            @if($campaign->marketer_listing_id)
+                                {{ $campaign->ownerMarketer?->name ?? '—' }}
+                                <span class="text-xs text-gray-400">({{ __('admin.marketer_campaigns.source_peer') }})</span>
+                            @else
+                                {{ $campaign->vendor?->store_name ?? '—' }}
+                            @endif
+                        </td>
                         <td class="py-2 pr-4">{{ $marketerName }}</td>
                         <td class="py-2 pr-4">{{ $productName }}</td>
                         <td class="py-2 pr-4">{{ $campaign->country?->name_en ?? '—' }}</td>

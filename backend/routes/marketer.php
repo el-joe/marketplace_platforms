@@ -186,6 +186,10 @@ Route::middleware('web')->group(function () {
         // Finished campaigns
         Route::get('/campaigns/finished', [CampaignController::class, 'finished'])->name('campaigns.finished');
 
+        // P13: influencer-to-influencer promotion
+        Route::get('/campaigns/peer-products', [CampaignController::class, 'peerProducts'])->name('campaigns.peer-products');
+        Route::get('/campaigns/promoted-by-others', [CampaignController::class, 'promotedByOthers'])->name('campaigns.promoted-by-others');
+
         // Request a campaign (marketer proposes to promote a listing)
         Route::post('/campaigns/request', [CampaignController::class, 'request'])->name('campaigns.request');
 

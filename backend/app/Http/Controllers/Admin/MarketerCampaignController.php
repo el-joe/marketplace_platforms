@@ -10,7 +10,6 @@ use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignCategoryRule;
 use App\Models\MarketerCampaignInvitation;
-use Illuminate\Support\Facades\DB;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
@@ -23,6 +22,7 @@ use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MarketerCampaignController extends Controller
 {
@@ -39,9 +39,16 @@ class MarketerCampaignController extends Controller
             'vendorListing.productVariant.product',
             'adminListing.productVariant.product',
             'travelPackage', 'classifiedListing',
+            'marketerListing.productVariant.product', 'ownerMarketer', 'promoter',
             'invitations.marketer',
         ])
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->source, fn ($q) => match ($request->source) {
+                'peer' => $q->whereNotNull('marketer_listing_id'),
+                'admin' => $q->whereNotNull('admin_listing_id'),
+                'vendor' => $q->whereNotNull('vendor_listing_id'),
+                default => $q,
+            })
             ->when($request->country_id, fn ($q) => $q->where('country_id', $request->country_id))
             ->latest()
             ->paginate(20);
@@ -59,6 +66,7 @@ class MarketerCampaignController extends Controller
             'vendor', 'country',
             'vendorListing.productVariant.product',
             'adminListing.productVariant.product',
+            'marketerListing.productVariant.product', 'ownerMarketer', 'promoter',
             'invitations.marketer.marketerProfile',
             'tieredRules',
             'conversions.order',
@@ -69,7 +77,8 @@ class MarketerCampaignController extends Controller
         ]);
 
         $categoryId = $marketerCampaign->vendorListing?->productVariant?->product?->category_id
-            ?? $marketerCampaign->adminListing?->productVariant?->product?->category_id;
+            ?? $marketerCampaign->adminListing?->productVariant?->product?->category_id
+            ?? $marketerCampaign->marketerListing?->productVariant?->product?->category_id;
 
         $commissionSetting = $categoryId
             ? MarketerCommissionCountrySetting::where('category_id', $categoryId)

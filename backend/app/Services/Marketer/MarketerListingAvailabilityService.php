@@ -86,15 +86,17 @@ class MarketerListingAvailabilityService
         return null;
     }
 
-    public function loadSource(MarketerListing $listing): VendorListing|AdminListing|null
+    public function loadSource(MarketerListing $listing): VendorListing|AdminListing|MarketerListing|null
     {
         if (! $listing->source_type || ! $listing->source_listing_id) {
             return null;
         }
 
-        return $listing->source_type === 'vendor_listing'
-            ? VendorListing::find($listing->source_listing_id)
-            : AdminListing::find($listing->source_listing_id);
+        return match ($listing->source_type) {
+            'vendor_listing' => VendorListing::find($listing->source_listing_id),
+            'marketer_listing' => MarketerListing::find($listing->source_listing_id),
+            default => AdminListing::find($listing->source_listing_id),
+        };
     }
 
     /**

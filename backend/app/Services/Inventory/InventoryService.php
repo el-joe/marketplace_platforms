@@ -368,21 +368,22 @@ class InventoryService
      * min_stock_for_campaign without duplicating the warehouse_inventories
      * sum in every caller.
      */
-    public function availableStock(VendorListing|AdminListing $listing): int
+    public function availableStock(VendorListing|AdminListing|MarketerListing $listing): int
     {
         return (int) $listing->warehouseInventories()->sum('quantity_available');
     }
 
-    private function fireStockChanged(VendorListing|AdminListing $listing): void
+    private function fireStockChanged(VendorListing|AdminListing|MarketerListing $listing): void
     {
         event(new ListingStockChanged(
             $listing instanceof VendorListing ? $listing->id : null,
             $listing instanceof AdminListing ? $listing->id : null,
+            $listing instanceof MarketerListing ? $listing->id : null,
         ));
     }
 
     private function fireStockChangedForRow(WarehouseInventory $row): void
     {
-        event(new ListingStockChanged($row->vendor_listing_id, $row->admin_listing_id));
+        event(new ListingStockChanged($row->vendor_listing_id, $row->admin_listing_id, $row->marketer_listing_id));
     }
 }

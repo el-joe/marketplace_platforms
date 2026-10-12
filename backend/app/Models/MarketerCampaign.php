@@ -16,7 +16,7 @@ class MarketerCampaign extends Model
     protected $fillable = [
         'vendor_id', 'owner_type', 'owner_id', 'requested_by_marketer_id',
         'vendor_listing_id', 'admin_listing_id',
-        'travel_package_id', 'classified_listing_id', 'campaign_category',
+        'travel_package_id', 'classified_listing_id', 'marketer_listing_id', 'campaign_category',
         'product_category_selection_mode', 'classified_category_selection_mode',
         'country_id', 'currency', 'commission_type',
         'max_commission_budget', 'commission_budget_spent', 'platform_commission_amount', 'marketer_commission_amount',
@@ -69,6 +69,29 @@ class MarketerCampaign extends Model
     public function classifiedListing(): BelongsTo
     {
         return $this->belongsTo(ClassifiedListing::class, 'classified_listing_id');
+    }
+
+    /** P13: the influencer-owned listing this (peer) campaign promotes. */
+    public function marketerListing(): BelongsTo
+    {
+        return $this->belongsTo(MarketerListing::class, 'marketer_listing_id')->withTrashed();
+    }
+
+    /** P13: the influencer who promotes (peer campaigns store him as requested_by). */
+    public function promoter(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class, 'requested_by_marketer_id');
+    }
+
+    /** P13: the influencer who owns the promoted listing. */
+    public function ownerMarketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class, 'owner_id');
+    }
+
+    public function isPeerPromotion(): bool
+    {
+        return $this->marketer_listing_id !== null;
     }
 
     public function country(): BelongsTo
@@ -163,12 +186,14 @@ class MarketerCampaign extends Model
             ->sum('commission_amount');
     }
 
-    public function getPromotedItem(): VendorListing|AdminListing|TravelPackage|ClassifiedListing|null
+    public function getPromotedItem(): VendorListing|AdminListing|MarketerListing|TravelPackage|ClassifiedListing|null
     {
         return match ($this->campaign_category) {
             'travel' => $this->travelPackage,
             'classified' => $this->classifiedListing,
-            default => $this->vendor_listing_id ? $this->vendorListing : $this->adminListing,
+            default => $this->marketer_listing_id
+                ? $this->marketerListing
+                : ($this->vendor_listing_id ? $this->vendorListing : $this->adminListing),
         };
     }
 
@@ -179,6 +204,7 @@ class MarketerCampaign extends Model
             'classified' => $this->classifiedListing?->title_ar ?? $this->title ?? '—',
             default => $this->vendorListing?->productVariant?->product?->name_ar
                          ?? $this->adminListing?->productVariant?->product?->name_ar
+                         ?? $this->marketerListing?->productVariant?->product?->name_ar
                          ?? $this->title ?? '—',
         };
     }

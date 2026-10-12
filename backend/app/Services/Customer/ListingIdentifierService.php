@@ -8,9 +8,11 @@ use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorListingStatus;
 use App\Models\AdminListing;
 use App\Models\Country;
+use App\Models\MarketerListing;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\VendorListing;
+use Illuminate\Support\Collection;
 
 class ListingIdentifierService
 {
@@ -91,7 +93,7 @@ class ListingIdentifierService
     {
         $product = Product::where('slug', $identifier)->where('status', ProductStatus::Active->value)->first();
 
-        if (!$product) {
+        if (! $product) {
             return null;
         }
 
@@ -124,7 +126,7 @@ class ListingIdentifierService
 
         $product = Product::where('slug', $identifier)->where('status', ProductStatus::Active->value)->first();
 
-        if (!$product) {
+        if (! $product) {
             return null;
         }
 
@@ -164,8 +166,8 @@ class ListingIdentifierService
      * Used on listing detail pages to show "other sellers" and "other variants".
      *
      * @return array{
-     *   same_variant: \Illuminate\Support\Collection,
-     *   other_variants: \Illuminate\Support\Collection,
+     *   same_variant: Collection,
+     *   other_variants: Collection,
      * }
      */
     public function getSiblings(VendorListing $listing, Country $country): array
@@ -214,7 +216,7 @@ class ListingIdentifierService
      * Build the canonical listing URL identifier string.
      * Format: "{product_variant_sku}--{listing_id_short}"
      */
-    public function buildListingRef(VendorListing|AdminListing $listing): string
+    public function buildListingRef(VendorListing|AdminListing|MarketerListing $listing): string
     {
         $sku = $listing->productVariant->sku;
         $shortId = substr(str_replace('-', '', $listing->id), 0, 8);
@@ -228,7 +230,7 @@ class ListingIdentifierService
      */
     public function parseListingRef(string $listingRef): ?array
     {
-        if (!str_contains($listingRef, '--')) {
+        if (! str_contains($listingRef, '--')) {
             return null;
         }
 

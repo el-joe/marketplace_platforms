@@ -6,6 +6,7 @@ use App\Enums\AdminListingStatus;
 use App\Enums\CouponType;
 use App\Enums\DeliveryInstruction;
 use App\Enums\GlobalSystemType;
+use App\Enums\MarketerListingStatus;
 use App\Enums\OrderStatus;
 use App\Enums\VendorListingStatus;
 use App\Enums\WalletOwnerType;
@@ -36,6 +37,7 @@ use App\Models\Customer;
 use App\Models\CustomerReceiver;
 use App\Models\IdempotencyKey;
 use App\Models\MarketerContractAcceptance;
+use App\Models\MarketerListing;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemAllocation;
@@ -722,7 +724,15 @@ class CheckoutController extends Controller
             $fulfilmentListing = $source->fulfilmentListing;
             $isAdmin = $fulfilmentListing instanceof AdminListing;
 
-            if ($isAdmin) {
+            if ($fulfilmentListing instanceof MarketerListing) {
+                // Own-FBN influencer listing (also the stock owner of a P13 peer promotion).
+                if ($fulfilmentListing->status !== MarketerListingStatus::Active) {
+                    return ApiResponse::error(
+                        __('common.exceptions.checkout.listing_not_available', ['id' => $fulfilmentListing->id]),
+                        [], 422
+                    );
+                }
+            } elseif ($isAdmin) {
                 if ($fulfilmentListing->status !== AdminListingStatus::Active) {
                     return ApiResponse::error(
                         __('common.exceptions.checkout.listing_not_available', ['id' => $fulfilmentListing->id]),
@@ -1928,7 +1938,11 @@ class CheckoutController extends Controller
     {
         $listing = $source->fulfilmentListing;
 
-        $column = $listing instanceof AdminListing ? 'admin_listing_id' : 'vendor_listing_id';
+        $column = match (true) {
+            $listing instanceof AdminListing => 'admin_listing_id',
+            $listing instanceof MarketerListing => 'marketer_listing_id',
+            default => 'vendor_listing_id',
+        };
 
         // Mirrors InventoryService::reserve()'s most-available-first
         // selection (enhancement.md P-13), not "first row by id".
@@ -1989,7 +2003,7 @@ class CheckoutController extends Controller
      * has no `vendor_sku` or `global_system_type` column, so those fields
      * degrade to null rather than erroring.
      */
-    private function buildProductSnapshot(VendorListing|AdminListing $listing): array
+    private function buildProductSnapshot(VendorListing|AdminListing|MarketerListing $listing): array
     {
         $variant = $listing->productVariant;
         $product = $variant->product;
