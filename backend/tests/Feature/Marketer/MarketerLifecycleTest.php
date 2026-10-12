@@ -189,6 +189,8 @@ class MarketerLifecycleTest extends TestCase
             'is_active'            => true,
         ]);
 
+        // Onboarding (job type/profile/documents) is a separate flow; the MarketerAuth middleware gates every other route on it.
+        $marketer->forceFill(['onboarding_completed_at' => now()])->save();
         $marketerAdmin = $marketer->marketerAdmins()->where('is_owner', true)->firstOrFail();
         $acceptContractResponse = $this->actingAs($marketerAdmin, 'marketer')
             ->post('http://marketer.localhost/contract/accept', [], ['HTTP_HOST' => 'marketer.localhost']);
@@ -229,7 +231,7 @@ class MarketerLifecycleTest extends TestCase
         $this->assertSame('accepted', $invitation->status);
 
         $marketerListing = MarketerListing::where('invitation_id', $invitation->id)->firstOrFail();
-        $this->assertSame('active', $marketerListing->status);
+        $this->assertSame('active', $marketerListing->status->value);
         $this->assertSame($marketer->id, $marketerListing->marketer_id);
 
         // ── 6. Customer clicks the referral link ─────────────────────────
@@ -295,13 +297,13 @@ class MarketerLifecycleTest extends TestCase
         }
 
         // Return window has not passed yet: still pending.
-        (new ApproveMarketerConversionsJob())->handle();
+        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
         $conversion->refresh();
         $this->assertSame('pending', $conversion->status);
 
         // ── 9. ApproveMarketerConversionsJob after the return window ─────
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
-        (new ApproveMarketerConversionsJob())->handle();
+        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
 
         $conversion->refresh();
         $this->assertSame('approved', $conversion->status);

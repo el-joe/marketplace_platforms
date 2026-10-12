@@ -95,6 +95,7 @@ class MarketerPromotionFlowTest extends TestCase
 
     public function test_whatsapp_link_requires_signature_and_lets_marketer_reject_without_login(): void
     {
+        $this->withoutVite();
         $inv = MarketerCampaignInvitation::create([
             'campaign_id' => $this->s->marketerCampaign->id, 'marketer_id' => $this->s->marketer->id,
             'status' => 'pending', 'acceptance_window_hours' => 12, 'expires_at' => now()->addHours(12), 'referral_code' => 'W'.Str::random(8),

@@ -82,13 +82,16 @@ class MarketerSamplesLifecycleTest extends TestCase
 
     public function test_marketer_address_and_receipt_ownership(): void
     {
+        $this->withoutVite();
         $sample = $this->sample();
+        $this->s->marketer->forceFill(['onboarding_completed_at' => now()])->save();
         $owner = $this->mAdmin($this->s->marketer);
         $other = Marketer::create([
             'name' => 'O', 'email' => 'o-' . Str::random(6) . '@example.test', 'phone' => '+9715' . fake()->numerify('########'),
             'marketer_type' => 'influencer', 'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(),
         ]);
         MarketerProfile::create(['marketer_id' => $other->id]);
+        $other->forceFill(['onboarding_completed_at' => now()])->save();
         $intruder = $this->mAdmin($other);
         $addr = ['address_line_1' => 'x', 'city' => 'c', 'country' => 'AE', 'phone' => '1'];
 

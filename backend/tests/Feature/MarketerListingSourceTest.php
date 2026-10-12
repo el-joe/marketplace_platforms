@@ -23,17 +23,22 @@ class MarketerListingSourceTest extends TestCase
     use RefreshDatabase;
     use AssertsOrderMoney;
 
-    public function test_independent_listing_creation_requires_and_binds_an_active_source(): void
+    /*
+     * Independent (own) listings were redesigned in 8824e1ba (FBN-only store flow):
+     * no source listing is required or bound, the listing starts as draft, price is
+     * free (no +-20% source bound) and the warehouse must be a platform FBN one.
+     */
+    public function test_independent_listing_creation_is_fbn_only_draft_without_source(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-
         $this->actingAs($this->fakeMarketerGuardUser($scenario), 'marketer');
+        $this->withoutVite();
 
-        // No active listing exists for variants[1] except vendorListingFbn.
         $response = $this->post(route('marketer.listings.store'), [
             'product_variant_id' => $scenario->variants[1]->id,
             'country_id'         => $scenario->country->id,
-            'price'              => (int) $scenario->vendorListingFbn->getRawOriginal('price'),
+            'warehouse_id'       => $scenario->platformWarehouse->id,
+            'price'              => 5000, // far outside any former source bound: now allowed
             'condition'          => 'new',
         ]);
 
@@ -41,57 +46,34 @@ class MarketerListingSourceTest extends TestCase
 
         $listing = MarketerListing::where('product_variant_id', $scenario->variants[1]->id)
             ->where('marketer_id', $scenario->marketer->id)
+            ->whereNull('invitation_id')
             ->first();
 
         $this->assertNotNull($listing);
-        $this->assertSame('vendor_listing', $listing->source_type);
-        $this->assertSame($scenario->vendorListingFbn->id, $listing->source_listing_id);
+        $this->assertSame('fbn', $listing->fulfillment_model->value);
+        $this->assertSame(MarketerListingStatus::Draft, $listing->status);
+        $this->assertNull($listing->source_listing_id);
+        $this->assertSame(5000, (int) $listing->getRawOriginal('price'));
     }
 
-    public function test_independent_listing_creation_rejected_without_an_active_source(): void
+    public function test_independent_listing_creation_rejected_for_non_fbn_warehouse(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-        $scenario->vendorListingFbp->update(['status' => 'paused']);
-
         $this->actingAs($this->fakeMarketerGuardUser($scenario), 'marketer');
 
-        // variants[0] only has vendorListingFbp, which is now paused, and no
-        // admin listing at all for variants[0] (adminListing is variants[0]
-        // too — pause it as well so there is truly no source left).
-        $scenario->adminListing->update(['status' => 'paused']);
-
         $response = $this->post(route('marketer.listings.store'), [
-            'product_variant_id' => $scenario->variants[0]->id,
+            'product_variant_id' => $scenario->variants[1]->id,
             'country_id'         => $scenario->country->id,
+            'warehouse_id'       => $scenario->vendorWarehouse->id,
             'price'              => 1000,
             'condition'          => 'new',
         ]);
 
-        $response->assertSessionHasErrors('product_variant_id');
-        // The scenario's own campaign-linked listing for variants[0]
-        // already exists (invitation_id set); only assert no NEW
-        // independent listing (invitation_id null) was created.
-        $this->assertSame(0, MarketerListing::where('product_variant_id', $scenario->variants[0]->id)
+        $response->assertSessionHasErrors('warehouse_id');
+        $this->assertSame(0, MarketerListing::where('product_variant_id', $scenario->variants[1]->id)
             ->where('marketer_id', $scenario->marketer->id)
             ->whereNull('invitation_id')
             ->count());
-    }
-
-    public function test_price_out_of_bounds_is_rejected_at_creation(): void
-    {
-        $scenario = MarketplaceScenario::make()->build();
-
-        $this->actingAs($this->fakeMarketerGuardUser($scenario), 'marketer');
-
-        // vendorListingFbn price is 1200; ±20% bound is 960..1440.
-        $response = $this->post(route('marketer.listings.store'), [
-            'product_variant_id' => $scenario->variants[1]->id,
-            'country_id'         => $scenario->country->id,
-            'price'              => 5000, // way above the bound
-            'condition'          => 'new',
-        ]);
-
-        $response->assertSessionHasErrors('price');
     }
 
     public function test_pausing_source_listing_hides_marketer_listing_within_the_same_request(): void
@@ -227,6 +209,8 @@ class MarketerListingSourceTest extends TestCase
      */
     private function fakeMarketerGuardUser(MarketplaceScenario $scenario)
     {
+        $scenario->marketer->forceFill(['onboarding_completed_at' => now()])->save();
+
         return \App\Models\MarketerAdmin::create([
             'marketer_id' => $scenario->marketer->id,
             'name'        => 'Test Marketer Admin',

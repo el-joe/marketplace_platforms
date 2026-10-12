@@ -116,13 +116,13 @@ class MarketerAttributionConversionTest extends TestCase
         $this->assertNotNull($conversion);
 
         // Return window not passed yet — still pending.
-        (new ApproveMarketerConversionsJob())->handle();
+        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
         $conversion->refresh();
         $this->assertSame('pending', $conversion->status);
 
         // Move the return window into the past and re-run the job.
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
-        (new ApproveMarketerConversionsJob())->handle();
+        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
 
         $conversion->refresh();
         $this->assertSame('approved', $conversion->status);
@@ -162,7 +162,7 @@ class MarketerAttributionConversionTest extends TestCase
         $item = $order->items->firstWhere('marketer_listing_id', $scenario->marketerListing->id);
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
 
-        (new ApproveMarketerConversionsJob())->handle();
+        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
 
         $conversion = MarketerCampaignConversion::where('order_item_id', $item->id)->first();
         $this->assertSame('approved', $conversion->status);
