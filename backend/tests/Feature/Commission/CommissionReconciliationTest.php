@@ -83,9 +83,10 @@ class CommissionReconciliationTest extends TestCase
             }
             $this->assertSame(
                 (int) $sub->subtotal - (int) $sub->vendor_coupon_cost - (int) $sub->platform_commission
+                    - (int) $sub->commission_vat
                     - (int) $sub->gateway_fee - ($sub->marketer_commission_owner === 'vendor' ? (int) $sub->marketer_commission : 0),
                 (int) $sub->vendor_payout + $this->vendorContribution($sub),
-                'vendor_payout = subtotal - vendor coupon - commission - fees (- vendor shipping contribution)'
+                'vendor_payout = subtotal - vendor coupon - commission - commission VAT - fees (- vendor shipping contribution)'
             );
         }
     }
@@ -103,6 +104,10 @@ class CommissionReconciliationTest extends TestCase
         // component, so remove them to exercise the category pct+fixed path.
         \App\Models\Commission::query()->delete();
         $s->vendor->forceFill(['commission_rate' => 0])->save();
+        // Keep the display breakdown (rate/fixed) coherent with the charged pair: the fixture listing is
+        // fulfilled FBM (priced with the FBP pair) but defaults to global_system_type express_fbn, which
+        // makes the stored rate/fixed come from the FBN pair (see CommissionSnapshotInvariantTest).
+        $s->vendorListingFbp->forceFill(['global_system_type' => \App\Enums\GlobalSystemType::MerchantFbp])->save();
         $order = $this->place($s, [[$s->vendorListingFbp, 3]]);
         $item = $order->subOrders()->first()->items()->first();
         $this->assertSame(3, (int) $item->quantity);
