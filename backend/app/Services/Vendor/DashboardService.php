@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Support\Money;
 use App\Models\Dispute;
 use App\Models\Payout;
 use App\Models\ReturnRequest;
@@ -63,9 +64,9 @@ class DashboardService
                 ->whereNotIn('status', ['completed', 'cancelled', 'rejected'])
                 ->count();
 
-            $pendingPayoutCents = (int) Payout::where('vendor_id', $vendorId)
+            $pendingPayoutCents = Money::number(Payout::where('vendor_id', $vendorId)
                 ->where('status', 'pending')
-                ->sum('net_amount');
+                ->sum('net_amount'));
 
             $currency = Payout::where('vendor_id', $vendorId)->value('currency')
                 ?? VendorListing::where('vendor_id', $vendorId)->value('currency')
@@ -85,7 +86,7 @@ class DashboardService
 
                 return [
                     'date'         => $date,
-                    'amount' => (int) ($row->amount ?? 0),
+                    'amount' => Money::number($row->amount ?? 0),
                     'order_count'  => (int) ($row->order_count ?? 0),
                 ];
             })->values()->all();
@@ -121,7 +122,7 @@ class DashboardService
             $vendor = $admin->vendor;
 
             return [
-                'today_revenue'             => (int) $todayRevenue,
+                'today_revenue'             => Money::number($todayRevenue),
                 'pending_orders_count'      => $pendingCount,
                 'today_orders_count'        => $todayOrdersCount,
                 'active_listings_count'     => $activeListingsCount,

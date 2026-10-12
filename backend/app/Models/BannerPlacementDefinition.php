@@ -31,6 +31,7 @@ class BannerPlacementDefinition extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
+        'base_rate_weekly' => \App\Casts\DecimalMoney::class,
         'allowed_formats' => 'array',
         'allowed_destination_types' => 'array',
         'supports_vendor_ads' => 'boolean',

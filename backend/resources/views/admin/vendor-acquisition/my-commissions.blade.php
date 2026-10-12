@@ -28,8 +28,8 @@
                         <td class="py-2 pr-4 font-medium text-gray-900">{{ $row['vendor_name'] }}</td>
                         <td class="py-2 pr-4">{{ number_format($row['commission_rate'] / 100, 2) }}%</td>
                         <td class="py-2 pr-4">{{ $row['sales_this_month'] }}</td>
-                        <td class="py-2 pr-4">{{ number_format($row['earned_this_month']) }} {{ $row['currency'] }}</td>
-                        <td class="py-2 pr-4">{{ number_format($row['total_earned']) }} {{ $row['currency'] }}</td>
+                        <td class="py-2 pr-4">{{ \App\Support\Money::format($row['earned_this_month']) }} {{ $row['currency'] }}</td>
+                        <td class="py-2 pr-4">{{ \App\Support\Money::format($row['total_earned']) }} {{ $row['currency'] }}</td>
                         <td class="py-2 pr-4">{{ \Illuminate\Support\Carbon::parse($row['expires_on'])->format('d M Y') }}</td>
                     </tr>
                 @empty

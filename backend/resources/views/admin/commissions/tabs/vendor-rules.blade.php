@@ -48,7 +48,7 @@
             </div>
             <div>
                 <label for="rule-min" class="block text-xs font-medium text-gray-600">{{ __('commissions.rule_form.min') }}</label>
-                <input id="rule-min" type="number" name="min_commission" min="0" step="1" value="{{ $field('min_commission', 0) }}" class="{{ $input }}">
+                <input id="rule-min" type="number" name="min_commission" min="0" step="0.01" value="{{ $field('min_commission', 0) }}" class="{{ $input }}">
             </div>
             <div>
                 <label for="rule-max" class="block text-xs font-medium text-gray-600">{{ __('commissions.rule_form.max') }}</label>

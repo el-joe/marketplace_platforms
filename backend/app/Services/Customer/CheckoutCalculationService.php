@@ -20,6 +20,7 @@ use App\Models\WarrantyPlan;
 use App\Services\Checkout\CheckoutPricingEngine;
 use App\Services\Shared\FixedCommissionService;
 use App\Services\WarrantyPlanService;
+use App\Support\Money;
 use Illuminate\Support\Carbon;
 
 /**
@@ -83,15 +84,16 @@ class CheckoutCalculationService
         }
 
         $weightFee = $totalWeightGrams > $rate->min_weight_grams
-            ? (int) ceil(($totalWeightGrams / 1000) * $rate->rate_per_kg)
+            ? Money::number(round(($totalWeightGrams / 1000) * (float) $rate->rate_per_kg, 2))
             : 0;
 
         $cartSubtotal = 0;
         foreach ($cartItems as $item) {
             $cartSubtotal += $item->unit_price * $item->quantity;
         }
+        $cartSubtotal = Money::number(round($cartSubtotal, 2));
 
-        $shippingFee = $rate->base_fee + $weightFee;
+        $shippingFee = Money::number($rate->base_fee + $weightFee);
 
         $isFree = $rate->free_shipping_threshold !== null
             && $cartSubtotal >= $rate->free_shipping_threshold;
@@ -119,7 +121,7 @@ class CheckoutCalculationService
         private readonly CheckoutPricingEngine $pricingEngine,
     ) {}
 
-    public function calculateTax(int $taxableAmountCents, Country $country): int
+    public function calculateTax(int|float $taxableAmountCents, Country $country): int|float
     {
         return $this->pricingEngine->calculateTax($taxableAmountCents, $country);
     }
@@ -149,17 +151,17 @@ class CheckoutCalculationService
             : ($countryCategory?->commission_fbp_fixed ?? $resolvedCategory?->commission_fbp_fixed)) ?: 0.0;
 
         $lineSubtotal = $unitPriceCents * $quantity;
-        $pctComponent = (int) floor($lineSubtotal * $pct / 100);
+        $pctComponent = round($lineSubtotal * $pct / 100, 2);
         $fixedComponent = $fixed * $quantity;
         $fixedCommission = app(FixedCommissionService::class)->calculate($lineSubtotal, $country, $quantity);
-        $commissionAmount = $pctComponent + $fixedComponent + $fixedCommission;
+        $commissionAmount = Money::number($pctComponent + $fixedComponent + $fixedCommission);
 
         return [
             'commission_rate_pct' => $pct,
             'commission_fixed' => $fixed,
             'commission_amount' => $commissionAmount,
             'commission_category_id' => $resolvedCategory?->id,
-            'vendor_payout_share' => $lineSubtotal - $commissionAmount,
+            'vendor_payout_share' => Money::number($lineSubtotal - $commissionAmount),
         ];
     }
 
@@ -197,7 +199,7 @@ class CheckoutCalculationService
     public function applyCoupon(
         Coupon $coupon,
         ?Customer $customer,
-        int $subtotalCents,
+        int|float $subtotalCents,
         string $currency,
         array $cartItems,
         ?string $countryId = null,
@@ -213,7 +215,7 @@ class CheckoutCalculationService
      */
     public function applyAffiliatePromoCode(
         AffiliatePromoCode $promoCode,
-        int $subtotalCents,
+        int|float $subtotalCents,
         string $currency,
     ): array {
         if (! $promoCode->is_active) {
@@ -239,8 +241,8 @@ class CheckoutCalculationService
         }
 
         $discount = $promoCode->type === 'percentage'
-            ? (int) round($subtotalCents * ((float) $promoCode->value / 100))
-            : (int) round((float) $promoCode->value);
+            ? Money::number(round($subtotalCents * ((float) $promoCode->value / 100), 2))
+            : Money::number(round((float) $promoCode->value, 2));
 
         if ($promoCode->max_discount !== null && $discount > $promoCode->max_discount) {
             $discount = $promoCode->max_discount;
@@ -258,21 +260,22 @@ class CheckoutCalculationService
      */
     public function buildOrderSummary(
         array $cartItems,
-        int $shippingFeeCents,
-        int $codFeeCents,
-        int $discountCents,
+        int|float $shippingFeeCents,
+        int|float $codFeeCents,
+        int|float $discountCents,
         Country $country,
-        int $giftCardAppliedCents = 0,
-        int $warrantyTotalCents = 0,
+        int|float $giftCardAppliedCents = 0,
+        int|float $warrantyTotalCents = 0,
     ): array {
         $subtotal = 0;
         foreach ($cartItems as $item) {
             $subtotal += $item->unit_price * $item->quantity;
         }
+        $subtotal = Money::number(round($subtotal, 2));
 
         $taxable = max(0, $subtotal - $discountCents);
         $tax = $this->calculateTax($taxable, $country);
-        $total = max(0, $subtotal - $discountCents + $shippingFeeCents + $codFeeCents + $tax + $warrantyTotalCents - $giftCardAppliedCents);
+        $total = Money::number(max(0, $subtotal - $discountCents + $shippingFeeCents + $codFeeCents + $tax + $warrantyTotalCents - $giftCardAppliedCents));
 
         return [
             'subtotal' => $subtotal,
@@ -294,7 +297,7 @@ class CheckoutCalculationService
      *
      * @param  array<CartItem>  $cartItems
      * @param  array<int, array{listing_id: string, warranty_plan_id: string}>  $warrantySelections
-     * @return array{selections: array<string, array{plan: WarrantyPlan, price: int}>, total: int}
+     * @return array{selections: array<string, array{plan: WarrantyPlan, price: int|float}>, total: int|float}
      */
     public function resolveWarrantySelections(
         array $cartItems,

@@ -55,7 +55,7 @@ class ClaimController extends Controller
             'shipment_id'          => ['required', 'uuid', 'exists:shipments,id'],
             'claim_type'           => ['required', 'in:lost,damaged,delayed,wrong_item,other'],
             'description'          => ['required', 'string', 'min:20', 'max:3000'],
-            'claimed_amount'       => ['required', 'numeric', 'min:0.01'],
+            'claimed_amount'       => ['required', 'numeric', 'decimal:0,2', 'min:0.01'],
             'evidence_files'       => ['nullable', 'array', 'max:10'],
             'evidence_files.*'     => ['string'],
         ]);
@@ -69,7 +69,7 @@ class ClaimController extends Controller
             'shipping_company_id'  => $shipment->subOrder->shippingCompanyId ?? null,
             'claim_type'           => $data['claim_type'],
             'description'          => $data['description'],
-            'claimed_amount' => (int) $data['claimed_amount'],
+            'claimed_amount' => round((float) $data['claimed_amount'], 2),
             'evidence_files'       => $data['evidence_files'] ?? null,
         ], $vendor);
 

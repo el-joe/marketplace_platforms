@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Marketer;
 
+use App\Support\Money;
 use App\Enums\MarketerListingStatus;
 use App\Enums\WarehouseType;
 use App\Http\Controllers\Controller;
@@ -148,8 +149,8 @@ class ListingController extends Controller
             'product_variant_id' => ['required', 'uuid', 'exists:product_variants,id'],
             'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'warehouse_id' => ['required', 'uuid', 'exists:warehouses,id'],
-            'price' => ['required', 'integer', 'min:1'],
-            'compare_at_price' => ['nullable', 'integer', 'min:1'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'condition_notes' => ['nullable', 'string', 'max:500'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
@@ -176,8 +177,8 @@ class ListingController extends Controller
             'country_id' => $request->country_id,
             'warehouse_id' => $request->warehouse_id,
             'fulfillment_model' => 'fbn',
-            'price' => (int) $request->price,
-            'compare_at_price' => $request->compare_at_price ? (int) $request->compare_at_price : null,
+            'price' => Money::number($request->price),
+            'compare_at_price' => $request->compare_at_price ? Money::number($request->compare_at_price) : null,
             'currency' => $country->currency_code,
             'condition' => $request->condition,
             'condition_notes' => $request->condition_notes,
@@ -274,8 +275,8 @@ class ListingController extends Controller
         }
 
         $validated = $request->validate([
-            'price' => ['required', 'integer', 'min:1'],
-            'compare_at_price' => ['nullable', 'integer', 'min:1'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'condition_notes' => ['nullable', 'string', 'max:500'],
             'vendor_sku' => ['nullable', 'string', 'max:100'],
@@ -283,8 +284,8 @@ class ListingController extends Controller
         ]);
 
         $listing->update([
-            'price' => (int) $validated['price'],
-            'compare_at_price' => isset($validated['compare_at_price']) ? (int) $validated['compare_at_price'] : null,
+            'price' => Money::number($validated['price']),
+            'compare_at_price' => isset($validated['compare_at_price']) ? Money::number($validated['compare_at_price']) : null,
             'condition' => $validated['condition'],
             'condition_notes' => $validated['condition_notes'] ?? null,
             'vendor_sku' => $validated['vendor_sku'] ?? null,
@@ -416,8 +417,8 @@ class ListingController extends Controller
         abort_unless($listing->marketer_id === $marketer->id, 403);
 
         $request->validate([
-            'price' => ['required', 'integer', 'min:1'],
-            'compare_at_price' => ['nullable', 'integer', 'min:1'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
         ]);
 
         // Open-market (classified) listings are still price-bounded by the
@@ -433,7 +434,7 @@ class ListingController extends Controller
                 return back()->withErrors(['price' => 'لا يمكن تعديل سعر هذا الإعلان — السعر مثبّت من الإدارة.']);
             }
 
-            if (! $listingPrice->isPriceInBounds((int) $request->price)) {
+            if (! $listingPrice->isPriceInBounds(Money::number($request->price))) {
                 $bounds = collect([$listingPrice->min_price, $listingPrice->max_price])->filter()->implode(' - ');
 
                 return back()->withErrors(['price' => 'السعر يجب أن يكون ضمن الحدود المسموح بها'.($bounds ? " ({$bounds})" : '').'.']);
@@ -442,8 +443,8 @@ class ListingController extends Controller
 
         // FBN own listings: no source listing → free pricing.
         $listing->update([
-            'price' => (int) $request->price,
-            'compare_at_price' => $request->compare_at_price ? (int) $request->compare_at_price : null,
+            'price' => Money::number($request->price),
+            'compare_at_price' => $request->compare_at_price ? Money::number($request->compare_at_price) : null,
         ]);
 
         return back()->with('success', 'تم تحديث السعر.');

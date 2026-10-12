@@ -34,7 +34,7 @@ function toast(message, type = 'success') {
 function toCents(value) {
     const parsed = parseFloat(value);
     if (isNaN(parsed) || parsed < 0) return 0;
-    return Math.round(parsed);
+    return Math.round(parsed * 100) / 100;
 }
 
 function toGrams(kg) {

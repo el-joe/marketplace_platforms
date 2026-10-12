@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
@@ -233,7 +234,7 @@ class ClassifiedListingController extends Controller
         $data['currency'] = $country?->currency_code ?? $data['currency'];
 
         // Convert price → price for the service
-        $data['price'] = (int) $data['price'];
+        $data['price'] = Money::number($data['price']);
         // Include uploaded files in the data array for the shared service
         $data['images'] = $request->file('images', []);
         $data['sketch_file'] = $request->file('sketch_file');

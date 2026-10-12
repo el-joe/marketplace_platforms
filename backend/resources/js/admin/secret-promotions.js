@@ -237,7 +237,7 @@ function initListingTypeToggle() {
 
     $(document).on('select2:select', '#admin-listing-select', function (e) {
         const item = e.params.data;
-        listingPriceCents = parseInt(item.price) || 0;
+        listingPriceCents = parseFloat(item.price) || 0;
 
         $('#listing-preview').css('display', 'flex');
         $('#listing-preview-name').text(item.text || 'Unknown');
@@ -291,7 +291,7 @@ function updateListingPreview(option) {
     const name  = $(option).data('name');
     const price = $(option).data('price');
     const img   = $(option).data('img');
-    listingPriceCents = parseInt(price) || 0;
+    listingPriceCents = parseFloat(price) || 0;
 
     if (name) {
         $('#listing-preview').css('display', 'flex');
@@ -447,7 +447,7 @@ function initRowActions() {
         document.getElementById('total-pct-input').value      = data.totalPct ?? data.total_pct ?? '';
         document.getElementById('marketer-pct-input').value   = data.marketerPct ?? data.marketer_pct ?? '';
 
-        listingPriceCents = parseInt(data.listingPrice ?? data.listing_price) || 0;
+        listingPriceCents = parseFloat(data.listingPrice ?? data.listing_price) || 0;
         recalculateSplit();
 
         $('#promo-modal').modal('open');

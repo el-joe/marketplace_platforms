@@ -34,7 +34,7 @@ class BlockAnalytic extends Model
         'unique_visitors' => 'integer',
         'add_to_cart_count' => 'integer',
         'orders_attributed' => 'integer',
-        'revenue_attributed' => 'integer',
+        'revenue_attributed' => \App\Casts\DecimalMoney::class,
         'ctr' => 'decimal:4',
     ];
 

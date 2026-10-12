@@ -38,9 +38,9 @@
                             <td class="font-medium text-gray-900">{{ $rate->originCountry->name_en ?? '—' }}</td>
                             <td class="font-medium text-gray-900">{{ $rate->destinationCountry->name_en ?? '—' }}</td>
                             <td>{{ $rate->carrier->name ?? __('admin.international_shipping.generic_fallback') }}</td>
-                            <td class="text-end">{{ number_format($rate->base_fee) }}</td>
-                            <td class="text-end">{{ number_format($rate->rate_per_kg) }}</td>
-                            <td class="text-end">{{ $rate->customs_fee_flat !== null ? number_format($rate->customs_fee_flat) : '—' }}</td>
+                            <td class="text-end">{{ \App\Support\Money::format($rate->base_fee) }}</td>
+                            <td class="text-end">{{ \App\Support\Money::format($rate->rate_per_kg) }}</td>
+                            <td class="text-end">{{ $rate->customs_fee_flat !== null ? \App\Support\Money::format($rate->customs_fee_flat) : '—' }}</td>
                             <td class="text-center text-gray-500">{{ $rate->min_eta_days }}–{{ $rate->max_eta_days }} {{ __('admin.international_shipping.days') }}</td>
                             <td class="text-center">
                                 <span class="rounded-full px-2 py-0.5 text-xs font-semibold

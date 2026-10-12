@@ -111,10 +111,10 @@
                 @foreach($agentSummary as $row)
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $row->agent_name }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">{{ number_format($row->base_fee) }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">{{ number_format($row->cod_handling) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($row->base_fee) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($row->cod_handling) }}</td>
                     <td class="px-4 py-3 text-right text-emerald-600">{{ number_format($row->bonus) }}</td>
-                    <td class="px-4 py-3 text-right text-red-500">{{ $row->deductions > 0 ? '−' . number_format($row->deductions) : '—' }}</td>
+                    <td class="px-4 py-3 text-right text-red-500">{{ $row->deductions > 0 ? '−' . \App\Support\Money::format($row->deductions) : '—' }}</td>
                     <td class="px-4 py-3 text-right font-bold text-gray-900">{{ number_format($row->total) }}</td>
                 </tr>
                 @endforeach

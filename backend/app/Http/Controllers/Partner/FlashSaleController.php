@@ -151,7 +151,7 @@ class FlashSaleController extends Controller
                     'currency' => $listing->currency,
                     'current_price' => $listing->price,
                     'current_price_display' => round($listing->price, 2),
-                    'avg_price_30d' => $avg30d ? (int) round($avg30d) : null,
+                    'avg_price_30d' => $avg30d ? round((float) $avg30d, 2) : null,
                     'avg_price_30d_display' => $avg30d ? round($avg30d, 2) : null,
                 ];
             })
@@ -176,8 +176,8 @@ class FlashSaleController extends Controller
 
         $validated = $request->validate([
             'vendor_listing_id' => ['required', 'uuid'],
-            'flash_price' => ['required', 'integer', 'min:1'],
-            'original_price' => ['required', 'integer', 'min:1'],
+            'flash_price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'original_price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'max_quantity_total' => ['required', 'integer', 'min:1'],
             'max_quantity_per_customer' => ['nullable', 'integer', 'min:1'],
             'vendor_notes' => ['nullable', 'string', 'max:500'],
@@ -198,8 +198,8 @@ class FlashSaleController extends Controller
             return response()->json(['message' => 'هذا المنتج مُقدَّم بالفعل لهذا العرض.'], 422);
         }
 
-        $flashPrice = (int) $validated['flash_price'];
-        $originalPrice = (int) $validated['original_price'];
+        $flashPrice = round((float) $validated['flash_price'], 2);
+        $originalPrice = round((float) $validated['original_price'], 2);
 
         if ($flashPrice >= $originalPrice) {
             return response()->json(['message' => 'سعر الفلاش يجب أن يكون أقل من السعر الأصلي.'], 422);
@@ -217,7 +217,7 @@ class FlashSaleController extends Controller
         $avg30d = FlashSalePriceHistory::where('vendor_listing_id', $listing->id)
             ->where('recorded_at', '>=', now()->subDays(30))
             ->avg('price');
-        $referencePrice30d = $avg30d ? (int) round($avg30d) : $originalPrice;
+        $referencePrice30d = $avg30d ? round((float) $avg30d, 2) : $originalPrice;
 
         if ($flashSale->price_drop_required && $flashPrice >= $referencePrice30d) {
             return response()->json([
@@ -296,8 +296,8 @@ class FlashSaleController extends Controller
                 'quantity_sold' => (int) $sub->quantity_sold,
                 'quantity_remaining' => (int) $sub->quantity_remaining,
                 'max_quantity_total' => (int) $sub->max_quantity_total,
-                'revenue' => (int) $sub->flash_price * (int) $sub->quantity_sold,
-                'revenue_display' => round(((int) $sub->flash_price * (int) $sub->quantity_sold), 2),
+                'revenue' => \App\Support\Money::number((float) $sub->flash_price * (int) $sub->quantity_sold),
+                'revenue_display' => round((float) $sub->flash_price * (int) $sub->quantity_sold, 2),
                 'currency' => $sub->flash_price_currency,
             ];
         });

@@ -23,6 +23,10 @@ class CartItem extends Model
         'warranty_plan_id',
     ];
 
+    protected $casts = [
+        'unit_price' => \App\Casts\DecimalMoney::class,
+    ];
+
     public function cart(): BelongsTo
     {
         return $this->belongsTo(Cart::class);

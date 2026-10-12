@@ -13,7 +13,7 @@
                 <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100">{{ __('marketer.status_'.$w->status) }}</span>
             </div>
             <div class="text-gray-500">{{ $w->classifiedCategory?->name }}</div>
-            <div>{{ __('marketer.budget_range') }}: {{ $w->budget_min !== null ? number_format($w->budget_min) : '—' }} - {{ $w->budget_max !== null ? number_format($w->budget_max) : '—' }} {{ $w->currency }}</div>
+            <div>{{ __('marketer.budget_range') }}: {{ $w->budget_min !== null ? \App\Support\Money::format($w->budget_min) : '—' }} - {{ $w->budget_max !== null ? \App\Support\Money::format($w->budget_max) : '—' }} {{ $w->currency }}</div>
             @if($w->status === 'active')
             <form method="POST" action="{{ route('marketer.wanted-listings.destroy', $w->id) }}" class="mt-2" onsubmit="return confirm(@js(__('marketer.confirm_delete')))">@csrf @method('DELETE')
                 <button class="text-xs text-red-600">{{ __('marketer.cancel') }}</button></form>

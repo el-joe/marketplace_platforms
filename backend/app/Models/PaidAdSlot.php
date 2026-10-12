@@ -18,6 +18,7 @@ class PaidAdSlot extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
+        'base_rate' => \App\Casts\DecimalMoney::class,
         'pricing_model' => PaidAdSlotPricingModel::class,
         'target_type' => PaidAdSlotTargetType::class,
         'is_available' => 'boolean',
@@ -32,7 +33,7 @@ class PaidAdSlot extends Model
         'mobile_height_px' => 'integer',
         'max_concurrent' => 'integer',
         'lead_time_days' => 'integer',
-        'min_budget' => 'integer',
+        'min_budget' => \App\Casts\DecimalMoney::class,
         'sort_order' => 'integer',
     ];
 

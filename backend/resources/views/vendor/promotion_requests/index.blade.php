@@ -41,7 +41,7 @@
                         <tr>
                             <td class="px-4 py-3">{{ $req->vendorListing?->vendor_sku ?? $req->vendor_listing_id }}</td>
                             <td class="px-4 py-3">{{ $req->num_celebrities_requested }}</td>
-                            <td class="px-4 py-3">{{ $req->currency }} {{ number_format($req->total_promotion_fee) }}</td>
+                            <td class="px-4 py-3">{{ $req->currency }} {{ \App\Support\Money::format($req->total_promotion_fee) }}</td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium {{ $statusBadge($req->status) }}">
                                     {{ $req->status }}

@@ -23,7 +23,7 @@ class FlashSalePriceHistory extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
             'recorded_at' => 'datetime',
             'recorded_by' => FlashSalePriceHistoryRecordedBy::class,
         ];

@@ -5,8 +5,11 @@ namespace Tests\Feature\Coupon;
 use App\Models\Admin;
 use App\Models\CartItem;
 use App\Models\Coupon;
+use App\Models\Product;
+use App\Models\Vendor;
 use App\Services\Admin\CouponService;
 use App\Services\Checkout\CheckoutPricingEngine;
+use App\Services\Customer\CartService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\MarketplaceScenario;
@@ -27,7 +30,7 @@ class CouponTargetingTest extends TestCase
 
     private function cartLine(MarketplaceScenario $s, bool $marketer = false): CartItem
     {
-        $cart = app(\App\Services\Customer\CartService::class)->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code);
+        $cart = app(CartService::class)->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code);
         $attrs = ['cart_id' => $cart->id, 'quantity' => 1, 'added_at' => now()];
         if ($marketer) {
             $attrs += ['marketer_listing_id' => $s->marketerListing->id, 'unit_price' => (int) $s->marketerListing->getRawOriginal('price')];
@@ -78,7 +81,7 @@ class CouponTargetingTest extends TestCase
         $hit = $svc->create($this->baseData(['vendor_ids' => [$s->vendor->id]]), $admin);
         $this->assertGreaterThan(0, $this->apply($hit, $s, $this->cartLine($s))['discount']);
 
-        $other = \App\Models\Vendor::factory()->create();
+        $other = Vendor::factory()->create();
         $miss = $svc->create($this->baseData(['vendor_ids' => [$other->id]]), $admin);
         $this->assertSame(0, $this->apply($miss, $s, $this->cartLine($s))['discount']);
     }
@@ -104,7 +107,7 @@ class CouponTargetingTest extends TestCase
         $hit = $svc->create($this->baseData(['product_ids' => [$s->product->id]]), $admin);
         $this->assertGreaterThan(0, $this->apply($hit, $s, $this->cartLine($s))['discount']);
 
-        $otherProduct = \App\Models\Product::factory()->create();
+        $otherProduct = Product::factory()->create();
         $miss = $svc->create($this->baseData(['product_ids' => [$otherProduct->id]]), $admin);
         $this->assertSame(0, $this->apply($miss, $s, $this->cartLine($s))['discount']);
     }
@@ -112,8 +115,9 @@ class CouponTargetingTest extends TestCase
     public function test_product_picker_filters_by_vendor_and_marketer(): void
     {
         $s = MarketplaceScenario::make()->build();
-        $stranger = \App\Models\Product::factory()->create(['name_en' => $s->product->name_en.' stranger']);
+        $stranger = Product::factory()->create(['name_en' => $s->product->name_en.' stranger']);
         Permission::firstOrCreate(['name' => 'coupons.view', 'guard_name' => 'admin']);
+        Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']); // checked by ScopeAdminToAssignedVendor
         $admin = Admin::factory()->create();
         $admin->givePermissionTo('coupons.view');
         $q = substr((string) $s->product->name_en, 0, 4);

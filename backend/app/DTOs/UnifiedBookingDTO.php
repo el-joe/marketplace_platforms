@@ -11,7 +11,7 @@ readonly class UnifiedBookingDTO
         public string $title,
         public string $dateFrom,
         public string $dateTo,
-        public int $totalPrice,
+        public int|float $totalPrice,
         public string $currency,
         public string $status,
         public ?string $agencyName,

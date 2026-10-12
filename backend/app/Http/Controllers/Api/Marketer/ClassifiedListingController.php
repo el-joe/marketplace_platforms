@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Marketer;
 
+use App\Support\Money;
 use App\Enums\ClassifiedInquiryStatus;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
@@ -47,7 +48,7 @@ class ClassifiedListingController extends Controller
             'id'             => $l->id,
             'listing_number' => $l->listing_number,
             'title_ar'       => $l->title_ar,
-            'price'          => (int) $l->price,
+            'price'          => Money::number($l->price),
             'currency'       => $l->currency,
             'status'         => $l->status instanceof \BackedEnum ? $l->status->value : $l->status,
             'views_count'    => (int) ($l->views_count ?? 0),
@@ -188,17 +189,17 @@ class ClassifiedListingController extends Controller
             'attributes.*' => ['nullable'],
             'images' => ['nullable', 'array', 'max:10'],
             'images.*' => ['image', 'max:5120'],
-            'price' => ['nullable', 'integer'],
+            'price' => ['nullable', 'numeric', 'decimal:0,2'],
         ];
 
         $rule = OpenMarketListingPrice::where('classified_category_id', $request->input('classified_category_id'))->first();
         $forced = null;
         if ($rule && ! $rule->allow_marketer_override) {
-            $forced = (int) $rule->base_price;
+            $forced = Money::number($rule->base_price);
         } else {
-            $rules['price'] = ['required', 'integer', 'min:' . max(0, (int) ($rule?->min_price ?? 0))];
+            $rules['price'] = ['required', 'numeric', 'decimal:0,2', 'min:' . max(0, (float) ($rule?->min_price ?? 0))];
             if ($rule?->max_price) {
-                $rules['price'][] = 'max:' . (int) $rule->max_price;
+                $rules['price'][] = 'max:' . Money::number($rule->max_price);
             }
         }
         $data = $request->validate($rules);

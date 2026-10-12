@@ -96,7 +96,7 @@ class WalletController extends Controller
     public function requestWithdrawal(Request $request, string $country): JsonResponse
     {
         $data = $request->validate([
-            'amount' => ['required', 'integer', 'min:100'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:100'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
@@ -194,7 +194,7 @@ class WalletController extends Controller
     {
         $data = $request->validate([
             'currency' => ['required', 'string'],
-            'amount' => ['required', 'integer', 'min:1'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);

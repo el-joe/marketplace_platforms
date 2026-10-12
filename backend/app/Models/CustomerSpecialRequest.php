@@ -26,7 +26,7 @@ class CustomerSpecialRequest extends Model
     ];
 
     protected $casts = [
-        'budget' => 'integer',
+        'budget' => \App\Casts\DecimalMoney::class,
     ];
 
     public function customer(): BelongsTo

@@ -32,7 +32,7 @@ final class RefundScope
         public readonly ?string $subOrderId,
         /** @var array<string, int> order_item_id => quantity being refunded */
         public readonly array $itemQuantities,
-        public readonly ?int $rawAmountCents,
+        public readonly int|float|null $rawAmountCents,
     ) {}
 
     /**
@@ -48,7 +48,7 @@ final class RefundScope
         return new self(self::KIND_SHIPPING, $subOrderId, [], null);
     }
 
-    public static function amount(int $amountCents, ?string $subOrderId = null): self
+    public static function amount(int|float $amountCents, ?string $subOrderId = null): self
     {
         return new self(self::KIND_AMOUNT, $subOrderId, [], $amountCents);
     }

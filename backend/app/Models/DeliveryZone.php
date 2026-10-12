@@ -33,8 +33,8 @@ class DeliveryZone extends Model
             'city_ids' => 'array',
             'polygon_coordinates' => 'array',
             'is_active' => 'boolean',
-            'base_delivery_fee' => 'integer',
-            'cod_fee' => 'integer',
+            'base_delivery_fee' => \App\Casts\DecimalMoney::class,
+            'cod_fee' => \App\Casts\DecimalMoney::class,
         ];
     }
 

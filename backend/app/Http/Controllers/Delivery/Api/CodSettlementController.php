@@ -65,13 +65,13 @@ class CodSettlementController extends Controller
             ->whereIn('delivery_assignment_id', $assignments->pluck('id'))
             ->where('status', '!=', DeliveryAgentEarningStatus::Cancelled)
             ->sum('amount');
-        $netOwed = max(0, $codTotal - $earningsTotal);
+        $netOwed = max(0, round((float) $codTotal - (float) $earningsTotal, 2));
 
         return ApiResponse::success([
             'currency' => $agent->country?->currency_code ?? $agent->zone?->country?->currency_code ?? 'AED',
-            'cod_total' => (int) $codTotal,
-            'earnings_total' => (int) $earningsTotal,
-            'net_to_remit' => (int) $netOwed,
+            'cod_total' => \App\Support\Money::number($codTotal),
+            'earnings_total' => \App\Support\Money::number($earningsTotal),
+            'net_to_remit' => \App\Support\Money::number($netOwed),
             'deliveries' => $assignments->map(fn ($a) => [
                 'id' => $a->id,
                 'sub_order_number' => $a->subOrder?->sub_order_number,

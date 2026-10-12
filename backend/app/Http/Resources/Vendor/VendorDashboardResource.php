@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Vendor;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,7 +28,7 @@ class VendorDashboardResource extends JsonResource
             'recent_orders' => collect($data['recent_orders'])->map(fn ($so) => [
                 'sub_order_number'  => $so->sub_order_number,
                 'item_count'        => $so->items->count(),
-                'total'             => (int) $so->subtotal,
+                'total'             => Money::number($so->subtotal),
                 'status'            => $so->status->value,
                 'vendor_payout'     => (int) $so->vendor_payout,
                 'placed_at'         => $so->order?->placed_at?->toIso8601String(),

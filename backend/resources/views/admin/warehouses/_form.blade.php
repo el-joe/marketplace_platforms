@@ -17,7 +17,7 @@ $warehouse — Warehouse model (edit mode only)
 
     $storageRateDisplay = old('storage_rate_per_m3_price') !== null
         ? old('storage_rate_per_m3_price')
-        : ($isEdit && $warehouse->storage_rate_per_m3_price ? (int) $warehouse->storage_rate_per_m3_price : '');
+        : ($isEdit && $warehouse->storage_rate_per_m3_price ? \App\Support\Money::number($warehouse->storage_rate_per_m3_price) : '');
 
     $typeOptions = [
         'platform_fbn' => __('admin.warehouses_section.platform_fbn_full'),
@@ -132,7 +132,7 @@ $warehouse — Warehouse model (edit mode only)
 
                     <div class="grid grid-cols-2 gap-4">
                         <x-form-input name="storage_rate_per_m3_price" label="{{ __('admin.warehouses_section.storage_rate_per_m3') }}" type="number"
-                            :value="$storageRateDisplay" placeholder="0" step="1" min="0"
+                            :value="$storageRateDisplay" placeholder="0" step="0.01" min="0"
                             hint="{{ __('admin.warehouses_section.storage_rate_hint') }}" />
                         <x-form-input name="storage_currency" label="{{ __('admin.warehouses_section.currency_iso') }}" type="text"
                             :value="$val('storage_currency', 'EGP')" placeholder="EGP" maxlength="3"
@@ -155,8 +155,8 @@ $warehouse — Warehouse model (edit mode only)
 
                     <div class="grid grid-cols-2 gap-4">
                         <x-form-input name="daily_fee_per_unit" label="رسوم يومية لكل وحدة / Daily Fee Per Unit" type="number"
-                            :value="$val('daily_fee_per_unit', 0)" min="0" placeholder="0"
-                            hint="Whole base currency units — no decimals." />
+                            :value="$val('daily_fee_per_unit', 0)" min="0" step="0.01" placeholder="0"
+                            hint="Base currency units (up to 2 decimals)." />
                         <x-form-select name="daily_fee_currency" label="عملة الرسوم اليومية / Daily Fee Currency"
                             :options="$currencyOptions" :value="$val('daily_fee_currency')" select2 />
                     </div>

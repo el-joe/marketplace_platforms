@@ -2,6 +2,7 @@
 
 namespace App\Services\Ads;
 
+use App\Support\Money;
 use App\Models\PaidAdBooking;
 use Carbon\Carbon;
 
@@ -28,11 +29,11 @@ class AdStatsService
 
         $impressions = (int) $stats->sum('impressions');
         $clicks = (int) $stats->sum('clicks');
-        $spend = (int) $stats->sum('spend');
+        $spend = Money::number($stats->sum('spend'));
 
         $ctr = $impressions > 0 ? round(($clicks / $impressions) * 100, 2) : 0.0;
-        $ecpm = $impressions > 0 ? intdiv($spend * 1000, $impressions) : 0;
-        $ecpc = $clicks > 0 ? intdiv($spend, $clicks) : 0;
+        $ecpm = $impressions > 0 ? Money::number(round($spend * 1000 / $impressions, 2)) : 0;
+        $ecpc = $clicks > 0 ? Money::number(round($spend / $clicks, 2)) : 0;
 
         return [
             'totals' => [

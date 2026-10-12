@@ -120,21 +120,21 @@
                         <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                             <div>
                                 <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.price') }}</dt>
-                                <dd class="mt-1 font-semibold text-gray-900">{{ number_format($listing->price) }} {{ $listing->currency }}</dd>
+                                <dd class="mt-1 font-semibold text-gray-900">{{ \App\Support\Money::format($listing->price) }} {{ $listing->currency }}</dd>
                             </div>
                             <div>
                                 <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.admin_listings.compare_at_price') }}</dt>
-                                <dd class="mt-1 text-gray-800">{{ $listing->compare_at_price !== null ? number_format($listing->compare_at_price) . ' ' . $listing->currency : '—' }}</dd>
+                                <dd class="mt-1 text-gray-800">{{ $listing->compare_at_price !== null ? \App\Support\Money::format($listing->compare_at_price) . ' ' . $listing->currency : '—' }}</dd>
                             </div>
                             @if($canViewCost)
                                 <div>
                                     <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.admin_listings.cost_price') }}</dt>
-                                    <dd class="mt-1 text-gray-800">{{ $listing->cost_price !== null ? number_format($listing->cost_price) . ' ' . $listing->currency : '—' }}</dd>
+                                    <dd class="mt-1 text-gray-800">{{ $listing->cost_price !== null ? \App\Support\Money::format($listing->cost_price) . ' ' . $listing->currency : '—' }}</dd>
                                 </div>
                             @endif
                             <div>
                                 <dt class="text-gray-400 text-xs uppercase tracking-wide">{{ __('admin.admin_listings.shipping_cost') }}</dt>
-                                <dd class="mt-1 text-gray-800">{{ number_format($listing->shipping_cost) }} {{ $listing->currency }}</dd>
+                                <dd class="mt-1 text-gray-800">{{ \App\Support\Money::format($listing->shipping_cost) }} {{ $listing->currency }}</dd>
                             </div>
                         </dl>
                     </div>

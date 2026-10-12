@@ -35,6 +35,7 @@ class Warehouse extends Model
     ];
 
     protected $casts = [
+        'storage_rate_per_m3_price' => \App\Casts\DecimalMoney::class,
         'is_active' => 'boolean',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
@@ -44,7 +45,7 @@ class Warehouse extends Model
         'default_max_capacity_m3' => 'decimal:2',
         'type' => WarehouseType::class,
         'free_storage_days' => 'integer',
-        'daily_fee_per_unit' => 'integer',
+        'daily_fee_per_unit' => \App\Casts\DecimalMoney::class,
     ];
 
     protected static function booted(): void

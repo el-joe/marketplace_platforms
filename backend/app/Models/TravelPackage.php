@@ -150,7 +150,7 @@ class TravelPackage extends Model
      * pricing tier when tiers are enabled and one exists for that count,
      * otherwise falls back to the flat price multiplied by the count.
      */
-    public function priceForTravelersCount(int $travelersCount): int
+    public function priceForTravelersCount(int $travelersCount): int|float
     {
         if ($this->pricing_tiers_enabled) {
             $tier = $this->pricingTiers->firstWhere('travelers_count', $travelersCount);
@@ -160,7 +160,7 @@ class TravelPackage extends Model
             }
         }
 
-        return $this->price * $travelersCount;
+        return \App\Support\Money::number(round((float) $this->price * $travelersCount, 2));
     }
 
     /**

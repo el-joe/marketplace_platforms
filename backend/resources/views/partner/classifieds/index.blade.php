@@ -198,7 +198,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.classifieds_extra.wizard.price') }} <span class="text-red-500">*</span></label>
-                            <input type="number" id="cl-price" min="0" step="1"
+                            <input type="number" id="cl-price" min="0" step="0.01"
                                 class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                                 placeholder="0">
                         </div>

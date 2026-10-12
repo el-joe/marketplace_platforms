@@ -44,11 +44,11 @@
         </div>
         <div class="bg-white rounded-2xl border border-yellow-50 bg-yellow-50 p-3 text-center">
             <p class="text-xs text-yellow-600 uppercase tracking-wide mb-1">{{ __('admin.fbn_section.pending_revenue') }}</p>
-            <p class="text-xl font-extrabold text-yellow-700">{{ number_format($stats['pending_revenue']) }} {{ $stats['currency'] ?? '' }}</p>
+            <p class="text-xl font-extrabold text-yellow-700">{{ \App\Support\Money::format($stats['pending_revenue']) }} {{ $stats['currency'] ?? '' }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-green-50 bg-green-50 p-3 text-center">
             <p class="text-xs text-green-600 uppercase tracking-wide mb-1">{{ __('admin.fbn_section.paid_revenue') }}</p>
-            <p class="text-xl font-extrabold text-green-700">{{ number_format($stats['paid_revenue']) }} {{ $stats['currency'] ?? '' }}</p>
+            <p class="text-xl font-extrabold text-green-700">{{ \App\Support\Money::format($stats['paid_revenue']) }} {{ $stats['currency'] ?? '' }}</p>
         </div>
     </div>
 

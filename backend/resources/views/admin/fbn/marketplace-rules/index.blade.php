@@ -103,7 +103,7 @@
 
                 <div>
                     <label class="label-sm">{{ __('admin.fbn_section.extra_delivery_fee') }}</label>
-                    <input type="number" id="rm-extra-fee" class="form-input w-full text-sm" min="0" value="0"
+                    <input type="number" id="rm-extra-fee" class="form-input w-full text-sm" min="0" step="0.01" value="0"
                         placeholder="{{ __('admin.fbn_section.extra_fee_placeholder') }}">
                 </div>
                 <div>
@@ -232,7 +232,7 @@
                     vendor_listing_id: $('#rm-listing-id').val(),
                     commission_type: $('#rm-commission-type').val(),
                     commission_value: parseFloat($('#rm-commission-value').val()) || 0,
-                    extra_delivery_fee: parseInt($('#rm-extra-fee').val()) || 0,
+                    extra_delivery_fee: parseFloat($('#rm-extra-fee').val()) || 0,
                     max_weight_kg: parseFloat($('#rm-weight').val()) || null,
                     max_dimensions_cm: $('#rm-dimensions').val() || null,
                     requires_special_vehicle: $('#rm-special-vehicle').is(':checked') ? 1 : 0,

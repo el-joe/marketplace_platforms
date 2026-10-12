@@ -40,8 +40,8 @@
                     <td class="px-4 py-3 text-gray-700">{{ $pkg['inquiries'] }}</td>
                     <td class="px-4 py-3 text-gray-700">{{ $pkg['bookings'] }}</td>
                     <td class="px-4 py-3 text-gray-700">{{ $pkg['conversion_rate'] }}%</td>
-                    <td class="px-4 py-3 font-medium text-gray-900">{{ number_format($pkg['revenue']) }} {{ $pkg['currency'] }}</td>
-                    <td class="px-4 py-3 text-gray-700">{{ number_format($pkg['avg_booking_value']) }} {{ $pkg['currency'] }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ \App\Support\Money::format($pkg['revenue']) }} {{ $pkg['currency'] }}</td>
+                    <td class="px-4 py-3 text-gray-700">{{ \App\Support\Money::format($pkg['avg_booking_value']) }} {{ $pkg['currency'] }}</td>
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ $pkg['status'] }}</td>
                 </tr>
                 @empty

@@ -155,13 +155,13 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.delivery_section.delivery_fee_required') }} <span
                                 class="text-red-500">*</span></label>
                         <input type="number" name="base_delivery_fee" id="zone-delivery-fee" class="form-input w-full"
-                            required min="0">
+                            required min="0" step="0.01">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.delivery_section.cod_fee_required') }} <span
                                 class="text-red-500">*</span></label>
                         <input type="number" name="cod_fee" id="zone-cod-fee" class="form-input w-full" required
-                            min="0">
+                            min="0" step="0.01">
                     </div>
                     <div class="col-span-2 flex items-center gap-2">
                         <input type="checkbox" name="is_active" id="zone-active" value="1" class="rounded" checked>

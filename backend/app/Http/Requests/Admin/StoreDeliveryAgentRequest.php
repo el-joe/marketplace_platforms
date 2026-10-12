@@ -30,8 +30,8 @@ class StoreDeliveryAgentRequest extends FormRequest
             'vehicle_plate' => ['nullable', 'string', 'max:20'],
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:30'],
-            'base_salary' => ['nullable', 'integer', 'min:0'],
-            'per_delivery_fee' => ['nullable', 'integer', 'min:0'],
+            'base_salary' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'per_delivery_fee' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ];
     }
 }

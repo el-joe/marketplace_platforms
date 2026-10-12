@@ -83,12 +83,12 @@
                     @if(! \App\Enums\PaidAdSlotPricingModel::from($booking->pricing_model)->isFixed())
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.usage_spend') }}</dt>
-                        <dd class="font-semibold text-gray-900">{{ number_format($booking->total_charged) }} {{ $booking->currency }}</dd>
+                        <dd class="font-semibold text-gray-900">{{ \App\Support\Money::format($booking->total_charged) }} {{ $booking->currency }}</dd>
                     </div>
                     @endif
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.total_spend') }}</dt>
-                        <dd class="font-semibold text-gray-900">{{ number_format($booking->total_spend) }} {{ $booking->currency }}</dd>
+                        <dd class="font-semibold text-gray-900">{{ \App\Support\Money::format($booking->total_spend) }} {{ $booking->currency }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs text-gray-400 mb-0.5">{{ __('partner.ad_bookings.payment') }}</dt>
@@ -201,7 +201,7 @@
                             @forelse ($booking->charges as $charge)
                                 <tr class="border-b border-gray-50 last:border-0">
                                     <td class="py-3 text-gray-700 capitalize">{{ $charge->type->value }}</td>
-                                    <td class="py-3 font-medium text-gray-900">{{ number_format($charge->amount) }} {{ $charge->currency }}</td>
+                                    <td class="py-3 font-medium text-gray-900">{{ \App\Support\Money::format($charge->amount) }} {{ $charge->currency }}</td>
                                     <td class="py-3 text-gray-600 capitalize">{{ str_replace('_', ' ', $charge->settlement) }}</td>
                                     <td class="py-3">
                                         @if ($charge->payout_id)
@@ -239,7 +239,7 @@
                     </div>
                     <div class="rounded-xl bg-gray-50 p-3">
                         <div class="text-xs text-gray-400 mb-1">{{ __('partner.ad_bookings.spend') }}</div>
-                        <div class="text-lg font-bold text-gray-900">{{ number_format($stats['totals']['spend']) }} {{ $stats['totals']['currency'] }}</div>
+                        <div class="text-lg font-bold text-gray-900">{{ \App\Support\Money::format($stats['totals']['spend']) }} {{ $stats['totals']['currency'] }}</div>
                     </div>
                 </div>
                 <canvas id="stats-chart" height="150"></canvas>

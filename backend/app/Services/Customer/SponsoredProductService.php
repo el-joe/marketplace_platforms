@@ -316,20 +316,20 @@ class SponsoredProductService
     }
 
     /**
-     * CPM billing: cost_per_impression = FLOOR(bid / 1000), charged at impression
+     * CPM billing: cost_per_impression = bid / 1000 (4 dp), charged at impression
      * time (unlike CPC, which charges at click time). Returns 0 for non-CPM
      * campaigns, a zero bid, or when charging would exceed the campaign's
      * remaining total/daily budget — in which case the impression is still
      * recorded (for reporting) but left unbilled, mirroring how the CPC click
      * path always records the click and only charges when cost > 0.
      */
-    private function cpmCostForImpression(AdCampaign $campaign): int
+    private function cpmCostForImpression(AdCampaign $campaign): int|float
     {
         if ($campaign->type !== AdCampaignType::Cpm) {
             return 0;
         }
 
-        $cost = (int) floor($campaign->bid / 1000);
+        $cost = round((float) $campaign->bid / 1000, 4);
 
         if ($cost <= 0) {
             return 0;
@@ -352,7 +352,7 @@ class SponsoredProductService
      * spend/impression count into today's ad_daily_stats row for this
      * campaign/listing/country.
      */
-    private function chargeCpmImpression(AdCampaign $campaign, string $vendorListingId, string $countryId, int $cost): void
+    private function chargeCpmImpression(AdCampaign $campaign, string $vendorListingId, string $countryId, int|float $cost): void
     {
         $campaign->increment('budget_spent_total', $cost);
         $campaign->increment('budget_spent_today', $cost);

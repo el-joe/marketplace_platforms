@@ -19,6 +19,7 @@ class ReturnRequest extends Model
     protected function casts(): array
     {
         return [
+            'refund_amount' => \App\Casts\DecimalMoney::class,
             'reason' => ReturnRequestReason::class,
             'return_type' => ReturnRequestType::class,
             'status' => ReturnRequestStatus::class,

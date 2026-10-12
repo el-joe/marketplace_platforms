@@ -17,11 +17,12 @@ use App\Models\VendorListing;
 use App\Models\Wallet;
 use App\Models\WarrantyPlan;
 use App\Services\Checkout\CheckoutPricingEngine;
+use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /**
- * All monetary values are BIGINT base-currency units. Never / 100 or * 100.
+ * All monetary values are DECIMAL(19,4) base-currency amounts (int when whole, float when fractional).
  *
  * @deprecated Coupon-discount math and warranty-selection resolution now
  * live in App\Services\Checkout\CheckoutPricingEngine (enhancement.md
@@ -65,10 +66,11 @@ class CheckoutCalculationService
         foreach ($items as $item) {
             $subtotal += $item['unit_price'] * $item['quantity'];
         }
+        $subtotal = Money::number(round($subtotal, 2));
 
         // Shipping methods are embedded per resolved cart item; group and calculate per method
         $shippingBreakdown = $this->calculateShippingByVendor($items, $address, $country);
-        $shippingTotal = (int) collect($shippingBreakdown)->sum('customer_pays');
+        $shippingTotal = Money::number(collect($shippingBreakdown)->sum('customer_pays'));
 
         $isCod = ($options['payment_method'] ?? null) === 'cod';
         $codFee = 0;
@@ -77,8 +79,8 @@ class CheckoutCalculationService
                 throw ValidationException::withMessages(['payment_method' => 'Cash on delivery is not available for this address.']);
             }
             $methodIds = collect($items)->pluck('selected_shipping_method_id')->filter()->unique();
-            $codFee = (int) ShippingMethod::whereIn('id', $methodIds)->get()
-                ->sum(fn (ShippingMethod $method) => $this->resolveCodFee($address, $method));
+            $codFee = Money::number(ShippingMethod::whereIn('id', $methodIds)->get()
+                ->sum(fn (ShippingMethod $method) => $this->resolveCodFee($address, $method)));
         }
 
         $couponResponse = null;
@@ -107,9 +109,9 @@ class CheckoutCalculationService
         $warrantyTotal = $warrantyResult['total'];
 
         $taxable = max(0, $subtotal - $discount);
-        $tax = $this->pricingEngine->calculateTax($taxable, $country) + $this->pricingEngine->calculateTax($warrantyTotal, $country);
+        $tax = Money::number($this->pricingEngine->calculateTax($taxable, $country) + $this->pricingEngine->calculateTax($warrantyTotal, $country));
 
-        $preDeductionTotal = max(0, $subtotal - $discount + $shippingTotal + $codFee + $tax + $warrantyTotal);
+        $preDeductionTotal = Money::number(max(0, $subtotal - $discount + $shippingTotal + $codFee + $tax + $warrantyTotal));
 
         $giftCardBalanceAvailable = 0;
         $giftCardDeduction = 0;
@@ -126,11 +128,11 @@ class CheckoutCalculationService
                 throw ValidationException::withMessages(['gift_card_code' => 'Gift card currency does not match order currency.']);
             }
 
-            $giftCardBalanceAvailable = (int) $giftCard->getRawOriginal('balance');
+            $giftCardBalanceAvailable = Money::number($giftCard->getRawOriginal('balance'));
             $giftCardDeduction = min($giftCardBalanceAvailable, $preDeductionTotal);
         }
 
-        $remainingAfterGiftCard = $preDeductionTotal - $giftCardDeduction;
+        $remainingAfterGiftCard = Money::number($preDeductionTotal - $giftCardDeduction);
 
         $walletBalanceAvailable = 0;
         $walletDeduction = 0;
@@ -145,12 +147,12 @@ class CheckoutCalculationService
                     throw ValidationException::withMessages(['wallet_use' => 'Wallet currency does not match order currency.']);
                 }
 
-                $walletBalanceAvailable = (int) $wallet->getRawOriginal('balance');
+                $walletBalanceAvailable = Money::number($wallet->getRawOriginal('balance'));
                 $walletDeduction = min($walletBalanceAvailable, $remainingAfterGiftCard);
             }
         }
 
-        $total = max(0, $remainingAfterGiftCard - $walletDeduction);
+        $total = Money::number(max(0, $remainingAfterGiftCard - $walletDeduction));
 
         return [
             'subtotal' => $subtotal,
@@ -178,7 +180,7 @@ class CheckoutCalculationService
     }
 
     /**
-     * @return array<int, array{vendor_listing_id: ?string, admin_listing_id: ?string, vendor_id: ?string, product_variant_id: string, quantity: int, unit_price: int, weight_grams: int, listing: mixed, is_admin: bool}>
+     * @return array<int, array{vendor_listing_id: ?string, admin_listing_id: ?string, vendor_id: ?string, product_variant_id: string, quantity: int, unit_price: int|float, weight_grams: int, listing: mixed, is_admin: bool}>
      */
     public function resolveCartItems(array $cartItems): array
     {
@@ -204,7 +206,7 @@ class CheckoutCalculationService
                     'vendor_id' => null,
                     'product_variant_id' => $listing->product_variant_id,
                     'quantity' => $quantity,
-                    'unit_price' => (int) $listing->getRawOriginal('price'),
+                    'unit_price' => Money::number($listing->getRawOriginal('price')),
                     'weight_grams' => (int) ($listing->productVariant?->weight_grams ?? 0),
                     'listing' => $listing,
                     'is_admin' => true,
@@ -225,7 +227,7 @@ class CheckoutCalculationService
                 'vendor_id' => $listing->vendor_id,
                 'product_variant_id' => $listing->product_variant_id,
                 'quantity' => $quantity,
-                'unit_price' => (int) $listing->price,
+                'unit_price' => Money::number($listing->price),
                 'weight_grams' => (int) ($listing->productVariant?->weight_grams ?? 0),
                 'listing' => $listing,
                 'is_admin' => false,
@@ -240,7 +242,7 @@ class CheckoutCalculationService
 
     /**
      * @param  array  $items  resolved cart items (see resolveCartItems)
-     * @return array<string, array{customer_pays: int, carrier_cost: int, gap: int, vendor_contribution: int, admin_subsidy: int, billable_weight_grams: int, vendor_id: ?string, is_admin: bool}>
+     * @return array<string, array{customer_pays: int|float, carrier_cost: int|float, gap: int|float, vendor_contribution: int|float, admin_subsidy: int|float, billable_weight_grams: int, vendor_id: ?string, is_admin: bool}>
      */
     public function calculateShippingByVendor(array $items, Address $address, Country $country): array
     {
@@ -257,7 +259,7 @@ class CheckoutCalculationService
 
         foreach ($groups as $key => $groupItems) {
             if ($key === 'admin') {
-                $fee = (int) collect($groupItems)->sum(fn ($i) => (int) ($i['listing']->getRawOriginal('shipping_cost') ?? 0) * $i['quantity']);
+                $fee = Money::number(collect($groupItems)->sum(fn ($i) => (float) ($i['listing']->getRawOriginal('shipping_cost') ?? 0) * $i['quantity']));
 
                 $breakdown['admin'] = [
                     'customer_pays' => $fee,
@@ -352,7 +354,7 @@ class CheckoutCalculationService
         return $breakdown;
     }
 
-    private function resolveCodFee(Address $address, ShippingMethod $shippingMethod): int
+    private function resolveCodFee(Address $address, ShippingMethod $shippingMethod): int|float
     {
         $city = City::find($address->city_id);
         if (! $city || ! $city->shipping_zone_id) {
@@ -365,14 +367,14 @@ class CheckoutCalculationService
             ->orderBy('base_fee')
             ->first();
 
-        return (int) ($rate->cod_extra_fee ?? 0);
+        return Money::number($rate->cod_extra_fee ?? 0);
     }
 
     /**
      * @deprecated Delegates to CheckoutPricingEngine::applyCoupon() — the
      * single source of truth for coupon discount math (enhancement.md P-01).
      */
-    public function applyCoupon(Coupon $coupon, Customer $customer, int $subtotalCents, string $currency, array $items): array
+    public function applyCoupon(Coupon $coupon, Customer $customer, int|float $subtotalCents, string $currency, array $items): array
     {
         return $this->pricingEngine->applyCoupon($coupon, $customer, $subtotalCents, $currency, $items);
     }
@@ -381,7 +383,7 @@ class CheckoutCalculationService
      * @deprecated Delegates to CheckoutPricingEngine::resolveWarrantySelections().
      *
      * @param  array<int, array>  $warrantySelections  [cart_item_index => warranty_plan_id]
-     * @return array{selections: array<int, array{plan: WarrantyPlan, price: int}>, total: int}
+     * @return array{selections: array<int, array{plan: WarrantyPlan, price: int|float}>, total: int|float}
      */
     public function resolveWarrantySelections(array $items, array $warrantySelections, Country $country, string $currency): array
     {

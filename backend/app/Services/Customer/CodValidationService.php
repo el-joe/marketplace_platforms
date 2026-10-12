@@ -48,7 +48,7 @@ class CodValidationService
                 continue;
             }
 
-            $lineTotal = (int) $item->unit_price * (int) $item->quantity;
+            $lineTotal = round((float) $item->unit_price * (int) $item->quantity, 2);
 
             if ($supermallRange !== null && $this->itemInSupermall($item, $supermallRange)) {
                 $supermallTotal += $lineTotal;

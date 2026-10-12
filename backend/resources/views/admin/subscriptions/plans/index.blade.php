@@ -46,7 +46,7 @@
                 </div>
 
                 <p class="text-2xl font-extrabold text-gray-900 mb-1">
-                    {{ number_format($plan->price) }}
+                    {{ \App\Support\Money::format($plan->price) }}
                     <span class="text-sm font-medium text-gray-400">{{ $plan->currency }}/mo</span>
                 </p>
 
@@ -117,7 +117,7 @@
                 <div>
                     <label class="label-sm">{{ __('admin.subscriptions.price_smallest_unit') }} <span
                             class="text-red-500">*</span></label>
-                    <input type="number" id="pm-price" class="form-input w-full text-sm"
+                    <input type="number" step="0.01" id="pm-price" class="form-input w-full text-sm"
                         placeholder="{{ __('admin.subscriptions.price_placeholder') }}">
                 </div>
                 <div>
@@ -225,7 +225,7 @@
                     name_ar: $('#pm-name-ar').val(),
                     description_en: $('#pm-desc-en').val(),
                     description_ar: $('#pm-desc-ar').val(),
-                    price: parseInt($('#pm-price').val()) || 0,
+                    price: parseFloat($('#pm-price').val()) || 0,
                     currency: $('#pm-currency').val(),
                     max_listings: $('#pm-max-listings').val() || null,
                     commission_discount_pct: parseFloat($('#pm-commission-discount').val()) || 0,

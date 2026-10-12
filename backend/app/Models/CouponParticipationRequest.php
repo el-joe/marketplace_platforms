@@ -29,7 +29,7 @@ class CouponParticipationRequest extends Model
     ];
 
     protected $casts = [
-        'offered_fee_amount' => 'integer',
+        'offered_fee_amount' => \App\Casts\DecimalMoney::class,
         'paid_at' => 'datetime',
     ];
 

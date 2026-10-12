@@ -292,7 +292,7 @@
             totalDisplay.textContent = '—';
             return;
         }
-        const priceCents = parseInt(opt.dataset.priceCents, 10) || 0;
+        const priceCents = parseFloat(opt.dataset.priceCents) || 0;
         const currency    = opt.dataset.currency;
         const count       = parseInt(travelersInput.value) || 1;
         const total       = (priceCents * count).toFixed(2);

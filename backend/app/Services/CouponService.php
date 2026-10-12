@@ -48,7 +48,7 @@ class CouponService
         $result = $this->couponEligibilityService->evaluate(
             $coupon,
             $customer,
-            (int) $cart->subtotal,
+            $cart->subtotal,
             $cart->currency,
             $items,
             $cart->country_id,
@@ -71,7 +71,7 @@ class CouponService
      * historically floored the percentage discount; that behaviour is no
      * longer preserved now that the math lives in one place.
      */
-    public function calculateDiscount(Coupon $coupon, Cart $cart): int
+    public function calculateDiscount(Coupon $coupon, Cart $cart): int|float
     {
         $items = $cart->items()->with([
             'vendorListing.productVariant.product',
@@ -84,12 +84,12 @@ class CouponService
         }
 
         if ($coupon->type === CouponType::FreeShipping) {
-            $shipping = (int) $cart->estimated_shipping;
+            $shipping = $cart->estimated_shipping;
 
-            return $coupon->max_discount !== null ? min($shipping, (int) $coupon->max_discount) : $shipping;
+            return $coupon->max_discount !== null ? min($shipping, $coupon->max_discount) : $shipping;
         }
 
-        $result = $this->pricingEngine->applyCoupon($coupon, $customer, (int) $cart->subtotal, $cart->currency, $items);
+        $result = $this->pricingEngine->applyCoupon($coupon, $customer, $cart->subtotal, $cart->currency, $items);
 
         return $result['error'] ? 0 : $result['discount'];
     }
@@ -102,7 +102,7 @@ class CouponService
      * caller outside the checkout flow that still needs a one-shot
      * "usage happened, no reversal" record.
      */
-    public function recordUsage(Coupon $coupon, Order $order, Customer $customer, int $discountAmount): void
+    public function recordUsage(Coupon $coupon, Order $order, Customer $customer, int|float $discountAmount): void
     {
         CouponUsage::create([
             'coupon_id' => $coupon->id,

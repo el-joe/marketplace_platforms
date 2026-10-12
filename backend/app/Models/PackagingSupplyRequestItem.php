@@ -25,8 +25,8 @@ class PackagingSupplyRequestItem extends Model
     {
         return [
             'quantity'        => 'integer',
-            'unit_cost' => 'integer',
-            'line_total'=> 'integer',
+            'unit_cost' => \App\Casts\DecimalMoney::class,
+            'line_total'=> \App\Casts\DecimalMoney::class,
             'created_at'      => 'datetime',
         ];
     }
@@ -45,6 +45,6 @@ class PackagingSupplyRequestItem extends Model
     {
         return $this->line_total === 0
             ? 'Free'
-            : number_format($this->line_total);
+            : \App\Support\Money::format($this->line_total);
     }
 }

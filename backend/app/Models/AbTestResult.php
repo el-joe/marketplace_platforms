@@ -34,9 +34,9 @@ class AbTestResult extends Model
         'clicks' => 'integer',
         'add_to_cart_count' => 'integer',
         'orders' => 'integer',
-        'revenue' => 'integer',
+        'revenue' => \App\Casts\DecimalMoney::class,
         'conversion_rate' => 'decimal:4',
-        'revenue_per_visitor' => 'integer',
+        'revenue_per_visitor' => \App\Casts\DecimalMoney::class,
     ];
 
     public function abTest(): BelongsTo

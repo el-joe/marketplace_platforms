@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Support\Money;
 use App\Enums\WalletOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Customer\CouponValidationResource;
@@ -59,7 +60,7 @@ class CheckoutController extends Controller
     {
         $country = $request->attributes->get('country');
         $customer = auth('customer')->user();
-        $orderTotal = (int) $request->query('order_total', 0);
+        $orderTotal = Money::number((float) $request->query('order_total', 0));
 
         // COD limits / international restriction (F11): mirror the server-side
         // check done at place-order so the UI can hide COD up front.
@@ -82,7 +83,7 @@ class CheckoutController extends Controller
             ->map(function ($cpg) use ($orderTotal, $codErrors) {
                 $code = $cpg->gateway?->code;
                 $feePct = (float) $cpg->fee_pct;
-                $feeFixed = (int) $cpg->fee_fixed;
+                $feeFixed = Money::number($cpg->fee_fixed);
                 $available = true;
                 $reason = null;
 
@@ -109,7 +110,7 @@ class CheckoutController extends Controller
                     'is_redirect' => in_array($code, ['thawani', 'paytabs']),
                     'fee_pct' => $feePct,
                     'fee_fixed' => $feeFixed,
-                    'gateway_fee' => $orderTotal > 0 ? (int) round($orderTotal * ($feePct / 100)) + $feeFixed : 0,
+                    'gateway_fee' => $orderTotal > 0 ? Money::number(round($orderTotal * ($feePct / 100) + $feeFixed, 2)) : 0,
                     'is_available' => $available,
                     'unavailable_reason' => $reason,
                     'environment' => $cpg->environment,
@@ -158,7 +159,7 @@ class CheckoutController extends Controller
                 'is_redirect' => in_array($cpg->gateway?->code, ['thawani', 'paytabs']),
                 'supports_cod' => $cpg->gateway?->code === 'cod',
                 'fee_pct' => (float) $cpg->fee_pct,
-                'fee_fixed' => (int) $cpg->fee_fixed,
+                'fee_fixed' => Money::number($cpg->fee_fixed),
             ])
             ->values();
 

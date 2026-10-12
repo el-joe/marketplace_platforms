@@ -31,8 +31,8 @@ class PackagingSupplyRequest extends Model
     protected function casts(): array
     {
         return [
-            'total_cost'   => 'integer',
-            'delivery_fee' => 'integer',
+            'total_cost'   => \App\Casts\DecimalMoney::class,
+            'delivery_fee' => \App\Casts\DecimalMoney::class,
             'approved_at'        => 'datetime',
             'shipped_at'         => 'datetime',
             'delivered_at'       => 'datetime',
@@ -69,24 +69,24 @@ class PackagingSupplyRequest extends Model
     {
         return $this->total_cost === 0
             ? 'Free'
-            : number_format($this->total_cost) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
+            : \App\Support\Money::format($this->total_cost) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
     }
 
     public function getDeliveryFeeFormattedAttribute(): string
     {
         return $this->delivery_fee === 0
             ? 'Free'
-            : number_format($this->delivery_fee) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
+            : \App\Support\Money::format($this->delivery_fee) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
     }
 
-    public function getGrandTotalAttribute(): int
+    public function getGrandTotalAttribute(): int|float
     {
-        return $this->total_cost + $this->delivery_fee;
+        return \App\Support\Money::number(round($this->total_cost + $this->delivery_fee, 2));
     }
 
     public function getGrandTotalFormattedAttribute(): string
     {
-        return number_format($this->grand_total) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
+        return \App\Support\Money::format($this->grand_total) . ' ' . ($this->currency ?? config('app.currency', 'SAR'));
     }
 
     public function isPending(): bool

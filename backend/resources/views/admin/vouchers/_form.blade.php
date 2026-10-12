@@ -145,7 +145,7 @@
                     value="{{ $val('amount') }}"
                     class="input w-full @error('amount') border-red-400 @enderror"
                     min="1"
-                    step="1"
+                    step="0.01"
                     required
                 />
                 @error('amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

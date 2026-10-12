@@ -93,9 +93,9 @@ class ListingController extends Controller
         $listing = VendorListing::findOrFail($id);
         Gate::authorize('update', $listing);
 
-        $request->validate(['price' => ['required', 'integer', 'min:1', 'max:999999999']]);
+        $request->validate(['price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999']]);
 
-        $listing->update(['price' => (int) round((float) $request->price)]);
+        $listing->update(['price' => round((float) $request->price, 2)]);
 
         return response()->json([
             'success' => true,

@@ -88,7 +88,7 @@
                     : ($day->has_row ? 'border-red-200 bg-red-50 text-red-400' : 'border-gray-100 bg-gray-50 text-gray-300') }}">
                 <div class="font-medium">{{ $day->date->format('j') }}</div>
                 @if($day->price_day_only !== null)
-                    <div class="text-[10px] opacity-70">{{ number_format($day->price_day_only) }}</div>
+                    <div class="text-[10px] opacity-70">{{ \App\Support\Money::format($day->price_day_only) }}</div>
                 @endif
             </div>
             @endforeach

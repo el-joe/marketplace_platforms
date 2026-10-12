@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,7 @@ class MarketerAdPackage extends Model
 
     protected function casts(): array
     {
-        return ['price' => 'integer', 'vat_pct' => 'integer', 'duration_days' => 'integer',
+        return ['price' => \App\Casts\DecimalMoney::class, 'vat_pct' => 'integer', 'duration_days' => 'integer',
             'features' => 'array', 'is_active' => 'boolean', 'sort_order' => 'integer'];
     }
 
@@ -34,19 +35,19 @@ class MarketerAdPackage extends Model
         return app()->getLocale() === 'ar' ? $this->name_ar : ($this->name_en ?: $this->name_ar);
     }
 
-    /** VAT is percentage math on integer amounts, rounded to nearest whole unit. */
-    public static function vatFor(int $price, int $vatPct): int
+    /** VAT is percentage math, rounded half up to 2 decimals. */
+    public static function vatFor(int|float $price, int|float $vatPct): int|float
     {
-        return intdiv($price * $vatPct + 50, 100);
+        return Money::number(round((float) $price * (float) $vatPct / 100, 2));
     }
 
-    public function getVatAmountAttribute(): int
+    public function getVatAmountAttribute(): int|float
     {
-        return self::vatFor((int) $this->price, (int) $this->vat_pct);
+        return self::vatFor((float) $this->price, (float) $this->vat_pct);
     }
 
-    public function getTotalAttribute(): int
+    public function getTotalAttribute(): int|float
     {
-        return (int) $this->price + $this->vat_amount;
+        return Money::number((float) $this->price + (float) $this->vat_amount);
     }
 }

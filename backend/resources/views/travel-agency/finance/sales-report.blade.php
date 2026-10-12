@@ -79,9 +79,9 @@
                             <td class="px-4 py-2 text-gray-900">{{ $row->package_name }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $row->customer_name }}</td>
                             <td class="px-4 py-2 text-right text-gray-900">{{ $row->travelers }}</td>
-                            <td class="px-4 py-2 text-right text-gray-900">{{ number_format($row->price) }} {{ $row->currency }}</td>
-                            <td class="px-4 py-2 text-right text-amber-600">{{ number_format($row->commission) }}</td>
-                            <td class="px-4 py-2 text-right text-emerald-600">{{ number_format($row->net_revenue) }}</td>
+                            <td class="px-4 py-2 text-right text-gray-900">{{ \App\Support\Money::format($row->price) }} {{ $row->currency }}</td>
+                            <td class="px-4 py-2 text-right text-amber-600">{{ \App\Support\Money::format($row->commission) }}</td>
+                            <td class="px-4 py-2 text-right text-emerald-600">{{ \App\Support\Money::format($row->net_revenue) }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $row->date->format('d M Y') }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ ucfirst(str_replace('_', ' ', $row->status->value)) }}</td>
                         </tr>

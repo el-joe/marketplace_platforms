@@ -13,6 +13,7 @@ use App\Models\Notification;
 use App\Models\WalletTransaction;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -588,12 +589,12 @@ class CustomerController extends Controller
 
         $validated = $request->validate([
             'direction' => 'required|in:credit,debit',
-            'amount' => 'required|integer|min:1',
+            'amount' => 'required|numeric|decimal:0,2|min:1',
             'note' => 'required|string|max:1000',
         ]);
 
         $direction = $validated['direction'];
-        $amount = (int) $validated['amount'];
+        $amount = Money::number($validated['amount']);
         $note = $validated['note'];
 
         try {

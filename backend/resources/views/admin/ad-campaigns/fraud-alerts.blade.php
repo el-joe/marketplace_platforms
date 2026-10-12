@@ -84,7 +84,7 @@
         <x-stat-card title="{{ __('admin.ad_campaigns.suspicious_ips') }}" :value="number_format($stats['unblocked'])"
             iconBg="bg-warning-100 text-warning-600" />
         <x-stat-card title="{{ __('admin.ad_campaigns.blocked_ips') }}" :value="number_format($stats['blocked'])" iconBg="bg-red-100 text-red-600" />
-        <x-stat-card title="{{ __('admin.ad_campaigns.total_patterns') }}" :value="number_format($stats['total'])" iconBg="bg-gray-100 text-gray-600" />
+        <x-stat-card title="{{ __('admin.ad_campaigns.total_patterns') }}" :value="\App\Support\Money::format($stats['total'])" iconBg="bg-gray-100 text-gray-600" />
     </div>
 
     {{-- ─── Filter bar ──────────────────────────────────────────────────────────── --}}

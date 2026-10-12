@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Support\Money;
 use App\Enums\AdminListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\ProductListRequest;
@@ -118,10 +119,10 @@ class ProductController extends Controller
             $adminBuilder->whereIn('p.category_id', $categoryIds);
         }
         if (! empty($filters['price_min'])) {
-            $adminBuilder->where('admin_listings.price', '>=', (int) $filters['price_min']);
+            $adminBuilder->where('admin_listings.price', '>=', Money::number($filters['price_min']));
         }
         if (! empty($filters['price_max'])) {
-            $adminBuilder->where('admin_listings.price', '<=', (int) $filters['price_max']);
+            $adminBuilder->where('admin_listings.price', '<=', Money::number($filters['price_max']));
         }
 
         $adminListings = $adminBuilder->orderBy('admin_listings.search_boost', 'desc')->orderBy('admin_listings.price')->get();

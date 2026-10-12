@@ -118,9 +118,9 @@
                     <td class="px-4 py-3 text-gray-800">{{ $claim->deliveryAgent?->name ?? '—' }}</td>
                     <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ $claim->shipment?->tracking_number ?? '—' }}</td>
                     <td class="px-4 py-3 text-gray-600 capitalize">{{ str_replace('_', ' ', $claim->claim_type->value) }}</td>
-                    <td class="px-4 py-3 text-right text-gray-700">{{ number_format($claim->claimed_amount) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-700">{{ \App\Support\Money::format($claim->claimed_amount) }}</td>
                     <td class="px-4 py-3 text-right {{ $claim->compensated_amount ? 'text-red-600 font-semibold' : 'text-gray-300' }}">
-                        {{ $claim->compensated_amount ? number_format($claim->compensated_amount) : '—' }}
+                        {{ $claim->compensated_amount ? \App\Support\Money::format($claim->compensated_amount) : '—' }}
                     </td>
                     <td class="px-4 py-3 text-center">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-{{ $sc }}-100 text-{{ $sc }}-700 capitalize">

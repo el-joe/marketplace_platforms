@@ -38,7 +38,7 @@ class CarrierClaimService
     public function resolve(
         CarrierClaim $claim,
         string $decision,
-        ?int $compensatedAmount,
+        int|float|null $compensatedAmount,
         Admin $admin,
         ?string $notes = null
     ): CarrierClaim {

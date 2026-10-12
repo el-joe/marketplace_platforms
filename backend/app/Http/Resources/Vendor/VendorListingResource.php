@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Vendor;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,9 +25,9 @@ class VendorListingResource extends JsonResource
             'global_system_type' => $this->global_system_type?->value,
             'vendor_covers_delivery' => (bool) $this->vendor_covers_delivery,
             'vendor_covers_delivery_editable' => $this->global_system_type?->value === 'merchant_fbp',
-            'price' => (int) $this->price,
-            'compare_at_price' => $this->compare_at_price ? (int) $this->compare_at_price : null,
-            'cost_price' => $this->cost_price !== null ? (int) $this->cost_price : null,
+            'price' => Money::number($this->price),
+            'compare_at_price' => $this->compare_at_price ? Money::number($this->compare_at_price) : null,
+            'cost_price' => $this->cost_price !== null ? Money::number($this->cost_price) : null,
             'currency' => $this->currency,
             'total_sold' => (int) $this->total_sold,
             'rating_avg' => (float) $this->rating_avg,

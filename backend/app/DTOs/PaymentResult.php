@@ -8,9 +8,9 @@ readonly class PaymentResult
         public bool $success,
         public string $status,       // pending/succeeded/failed/cancelled
         public string $gatewayTransactionId,
-        public int $amountCents,
+        public int|float $amountCents,
         public string $currency,
-        public int $gatewayFeeCents,
+        public int|float $gatewayFeeCents,
         public ?string $failureCode,
         public ?string $failureMessage,
         public array $rawResponse,
@@ -19,9 +19,9 @@ readonly class PaymentResult
 
     public static function success(
         string $txId,
-        int $amount,
+        int|float $amount,
         string $currency,
-        int $fee = 0,
+        int|float $fee = 0,
         array $raw = []
     ): self {
         return new self(

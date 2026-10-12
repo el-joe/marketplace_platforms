@@ -66,7 +66,7 @@ class ShippingWeightSlabController extends Controller
             'country_id' => ['required', 'exists:countries,id'],
             'min_weight_grams' => ['required', 'integer', 'min:0'],
             'max_weight_grams' => ['nullable', 'integer', 'gt:min_weight_grams'],
-            'extra_fee' => ['required', 'integer', 'min:0'],
+            'extra_fee' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'is_active' => ['boolean'],
         ]);
 
@@ -84,7 +84,7 @@ class ShippingWeightSlabController extends Controller
             'country_id' => ['sometimes', 'required', 'exists:countries,id'],
             'min_weight_grams' => ['sometimes', 'required', 'integer', 'min:0'],
             'max_weight_grams' => ['nullable', 'integer', 'gt:min_weight_grams'],
-            'extra_fee' => ['sometimes', 'required', 'integer', 'min:0'],
+            'extra_fee' => ['sometimes', 'required', 'numeric', 'decimal:0,2', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 

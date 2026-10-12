@@ -18,7 +18,7 @@ class DeliverRequest extends FormRequest
             'proof_image'                => ['required', 'image', 'max:10240'],
             'latitude'                   => ['required', 'numeric', 'between:-90,90'],
             'longitude'                  => ['required', 'numeric', 'between:-180,180'],
-            'cod_amount_collected' => ['nullable', 'integer', 'min:1'],
+            'cod_amount_collected' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
             'discrepancy_note'           => ['nullable', 'string', 'max:1000'],
         ];
     }

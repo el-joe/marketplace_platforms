@@ -115,7 +115,7 @@ class TravelBookingService
             if ($unitId && count($unitDays) > 0) {
                 $unit = BookableUnit::where('status', 'active')->findOrFail($unitId);
                 [$unitTotal, $resolvedDays] = $this->processUnitDays($unit, $unitDays);
-                $totalCents += $unitTotal;
+                $totalCents = \App\Support\Money::number(round((float) $totalCents + (float) $unitTotal, 2));
             }
 
             $booking = TravelBooking::create([
@@ -159,7 +159,7 @@ class TravelBookingService
      * the caller's DB transaction.
      *
      * @param  array<int, array{date: string, includes_overnight?: bool, time_slot_id?: string}>  $unitDays
-     * @return array{0: int, 1: list<array{date: string, includes_overnight: bool, time_slot_id: string|null, price: int}>}
+     * @return array{0: int|float, 1: list<array{date: string, includes_overnight: bool, time_slot_id: string|null, price: int|float}>}
      */
     private function processUnitDays(BookableUnit $unit, array $unitDays): array
     {
@@ -201,7 +201,7 @@ class TravelBookingService
                         'unit_days' => "No price configured for {$date}.",
                     ]);
                 }
-                $totalPrice += $price;
+                $totalPrice = round((float) $totalPrice + (float) $price, 2);
                 $resolved[] = ['date' => $date, 'includes_overnight' => $overnight, 'time_slot_id' => null, 'price' => $price];
             }
 
@@ -234,11 +234,11 @@ class TravelBookingService
                 ]);
             }
 
-            $totalPrice += $slot->price;
+            $totalPrice = round((float) $totalPrice + (float) $slot->price, 2);
             $resolved[] = ['date' => $entry['date'], 'includes_overnight' => false, 'time_slot_id' => $slot->id, 'price' => $slot->price];
         }
 
-        return [$totalPrice, $resolved];
+        return [\App\Support\Money::number($totalPrice), $resolved];
     }
 
     // ── Contract signing ──────────────────────────────────────────────────────

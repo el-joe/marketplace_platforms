@@ -2,6 +2,7 @@
 
 namespace App\Services\Ads;
 
+use App\Support\Money;
 use App\Enums\PaidAdSlotPricingModel;
 use App\Models\PaidAdSlot;
 use Carbon\Carbon;
@@ -11,11 +12,11 @@ class AdSlotQuoteService
 {
     /**
      * @return array{
-     *     pricing_model: string, units: int, unit_rate: int, subtotal: int, tax_amount: int, total: int,
-     *     budget_amount: ?int, currency: string, days: int, booked_from: string, booked_until: string
+     *     pricing_model: string, units: int, unit_rate: int|float, subtotal: int|float, tax_amount: int|float, total: int|float,
+     *     budget_amount: int|float|null, currency: string, days: int, booked_from: string, booked_until: string
      * }
      */
-    public function quote(PaidAdSlot $slot, Carbon $from, Carbon $to, ?int $budget = null): array
+    public function quote(PaidAdSlot $slot, Carbon $from, Carbon $to, int|float|null $budget = null): array
     {
         $country = $slot->country;
         $today = Carbon::now($country->timezone ?? 'UTC')->startOfDay();
@@ -86,16 +87,17 @@ class AdSlotQuoteService
         // VAT: mirrors the platform-wide checkout rounding formula (CheckoutCalculationService).
         // Vendor subscription invoices currently charge no VAT at all; ad slot bookings are
         // treated like other billable platform services, so VAT is applied here.
-        $taxAmount = (int) round($subtotal * ((float) $country->vat_rate / 100));
+        $subtotal = round((float) $subtotal, 2);
+        $taxAmount = round($subtotal * ((float) $country->vat_rate / 100), 2);
 
         return [
             'pricing_model' => $pricingModel->value,
             'units' => $units,
-            'unit_rate' => $slot->base_rate,
-            'subtotal' => $subtotal,
-            'tax_amount' => $taxAmount,
-            'total' => $subtotal + $taxAmount,
-            'budget_amount' => $budgetAmount,
+            'unit_rate' => Money::number($slot->base_rate),
+            'subtotal' => Money::number($subtotal),
+            'tax_amount' => Money::number($taxAmount),
+            'total' => Money::number(round($subtotal + $taxAmount, 2)),
+            'budget_amount' => $budgetAmount === null ? null : Money::number($budgetAmount),
             'currency' => $country->currency_code,
             'days' => $days,
             'booked_from' => $from->toDateString(),

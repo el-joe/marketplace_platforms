@@ -31,7 +31,7 @@ class FinanceService
 
             return [
                 'total_gmv'                  => (float) $vendor->total_sales,
-                'total_commission_paid' => (int) $totalCommissionPaid,
+                'total_commission_paid' => \App\Support\Money::number($totalCommissionPaid),
                 'pending_payout'        => (int) $pendingPayout,
                 'last_payout_date'            => $lastPayout?->processed_at?->toDateString(),
                 'next_payout_date'            => $this->resolveNextPayoutDate($vendor->payout_schedule),

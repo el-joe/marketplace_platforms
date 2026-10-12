@@ -38,8 +38,8 @@ class FbnStorageFee extends Model
         'units_stored' => 'integer',
         'stored_since' => 'date',
         'within_free_period' => 'boolean',
-        'rate_per_unit' => 'integer',
-        'total_fee' => 'integer',
+        'rate_per_unit' => \App\Casts\DecimalMoney::class,
+        'total_fee' => \App\Casts\DecimalMoney::class,
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────

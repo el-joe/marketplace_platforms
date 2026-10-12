@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
+use App\Support\Money;
 use App\Enums\TravelBookingStatus;
 use App\Enums\WalletTransactionType;
 use App\Http\Controllers\Controller;
@@ -66,13 +67,13 @@ class FinanceController extends Controller
             ->groupBy('travel_packages.currency')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->gross * $rate);
+                $commission = round($row->gross * $rate, 2);
 
                 return [
                     'currency'       => $row->currency,
-                    'gross'          => (int) $row->gross,
+                    'gross'          => \App\Support\Money::number($row->gross),
                     'commission'     => $commission,
-                    'net_revenue'    => (int) $row->gross - $commission,
+                    'net_revenue'    => Money::number($row->gross - $commission),
                     'bookings_count' => (int) $row->bookings_count,
                 ];
             });
@@ -103,15 +104,15 @@ class FinanceController extends Controller
             ->orderByDesc('period')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->gross * $rate);
+                $commission = round($row->gross * $rate, 2);
 
                 return [
                     'period'         => $row->period,
                     'currency'       => $row->currency,
                     'bookings_count' => (int) $row->bookings_count,
-                    'gross'          => (int) $row->gross,
+                    'gross'          => \App\Support\Money::number($row->gross),
                     'commission'     => $commission,
-                    'net_payout'     => (int) $row->gross - $commission,
+                    'net_payout'     => \App\Support\Money::number($row->gross - $commission),
                 ];
             });
 
@@ -157,7 +158,7 @@ class FinanceController extends Controller
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $amount = (int) $data['amount'];
+        $amount = \App\Support\Money::number($data["amount"]);
 
         $this->walletService->requestWithdrawal($wallet, $amount, [
             'bank_name' => $data['bank_name'],
@@ -219,16 +220,16 @@ class FinanceController extends Controller
         $bookings = $query->latest()->paginate(30)->withQueryString();
 
         $bookings->getCollection()->transform(function (TravelBooking $booking) use ($rate) {
-            $commission = (int) round($booking->total_price * $rate);
+            $commission = round($booking->total_price * $rate, 2);
 
             return (object) [
                 'booking_ref'   => $booking->booking_number,
                 'package_name'  => $booking->package->title_en ?? '',
                 'customer_name' => $this->maskName($booking->customer->name ?? ''),
                 'travelers'     => $booking->travelers_count,
-                'price'         => (int) $booking->total_price,
+                'price'         => Money::number($booking->total_price),
                 'commission'    => $commission,
-                'net_revenue'   => (int) $booking->total_price - $commission,
+                'net_revenue'   => Money::number($booking->total_price - $commission),
                 'currency'      => $booking->package->currency ?? '',
                 'date'          => $booking->created_at,
                 'status'        => $booking->status,
@@ -261,16 +262,16 @@ class FinanceController extends Controller
         ];
 
         $rows = $bookings->map(function (TravelBooking $booking) use ($rate) {
-            $commission = (int) round($booking->total_price * $rate);
+            $commission = round($booking->total_price * $rate, 2);
 
             return [
                 $booking->booking_number,
                 $booking->package->title_en ?? '',
                 $this->maskName($booking->customer->name ?? ''),
                 $booking->travelers_count,
-                (int) $booking->total_price,
+                Money::number($booking->total_price),
                 $commission,
-                (int) $booking->total_price - $commission,
+                Money::number($booking->total_price - $commission),
                 $booking->package->currency ?? '',
                 $booking->created_at->toDateString(),
                 $booking->status->value,

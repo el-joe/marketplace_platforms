@@ -76,7 +76,7 @@ class CityShippingSurchargeController extends Controller
 
         $validated = $request->validate([
             'warehouse_id' => ['required', 'uuid', Rule::exists('warehouses', 'id')->where('owner_vendor_id', $vendorId)],
-            'extra_amount_cents' => ['required', 'integer', 'min:0'],
+            'extra_amount_cents' => ['required', 'numeric', 'min:0', 'decimal:0,2'],
         ]);
 
         $surcharge = VendorCityShippingSurcharge::updateOrCreate(
@@ -94,7 +94,7 @@ class CityShippingSurchargeController extends Controller
 
         $validated = $request->validate([
             'warehouse_id' => ['required', 'uuid', Rule::exists('warehouses', 'id')->where('owner_vendor_id', $vendorId)],
-            'extra_amount_cents' => ['required', 'integer', 'min:0'],
+            'extra_amount_cents' => ['required', 'numeric', 'min:0', 'decimal:0,2'],
         ]);
 
         $surcharge->update($validated);

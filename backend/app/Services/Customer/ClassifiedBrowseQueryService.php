@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Models\ClassifiedCategory;
 use App\Models\ClassifiedListing;
@@ -34,10 +35,10 @@ class ClassifiedBrowseQueryService
             ->where('status', ClassifiedListingStatus::Active->value);
 
         if (!empty($filters['price_min'])) {
-            $query->where('price', '>=', (int) $filters['price_min']);
+            $query->where('price', '>=', Money::number($filters['price_min']));
         }
         if (!empty($filters['price_max'])) {
-            $query->where('price', '<=', (int) $filters['price_max']);
+            $query->where('price', '<=', Money::number($filters['price_max']));
         }
         if (!empty($filters['listing_purpose'])) {
             $query->where('listing_purpose', $filters['listing_purpose']);
@@ -74,8 +75,8 @@ class ClassifiedBrowseQueryService
 
         return [
             'price_range' => [
-                'min' => $range ? (int) $range->low : 0,
-                'max' => $range ? (int) $range->high : 0,
+                'min' => $range ? Money::number($range->low) : 0,
+                'max' => $range ? Money::number($range->high) : 0,
             ],
         ];
     }

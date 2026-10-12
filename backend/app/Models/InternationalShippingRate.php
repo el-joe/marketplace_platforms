@@ -26,9 +26,9 @@ class InternationalShippingRate extends Model
     ];
 
     protected $casts = [
-        'base_fee' => 'integer',
-        'rate_per_kg' => 'integer',
-        'customs_fee_flat' => 'integer',
+        'base_fee' => \App\Casts\DecimalMoney::class,
+        'rate_per_kg' => \App\Casts\DecimalMoney::class,
+        'customs_fee_flat' => \App\Casts\DecimalMoney::class,
         'min_eta_days' => 'integer',
         'max_eta_days' => 'integer',
         'is_active' => 'boolean',

@@ -10,7 +10,7 @@
         <div class="grid grid-cols-4 gap-4 mt-4 text-sm">
             <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_status') }}</span><div class="font-medium">{{ $invitation->status }}</div></div>
             <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_max') }}</span><div class="font-medium">{{ $invitation->max_participants }}</div></div>
-            <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_min_fee') }}</span><div class="font-medium">{{ number_format($invitation->min_fee_amount) }} {{ $invitation->currency }}</div></div>
+            <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_min_fee') }}</span><div class="font-medium">{{ \App\Support\Money::format($invitation->min_fee_amount) }} {{ $invitation->currency }}</div></div>
             <div><span class="text-gray-400">{{ __('admin.coupon_participation_section.cps_deadline') }}</span><div class="font-medium">{{ $invitation->registration_deadline->format('Y-m-d H:i') }}</div></div>
         </div>
         @if($invitation->status === \App\Models\CouponParticipationInvitation::STATUS_OPEN)
@@ -39,7 +39,7 @@
                 <tr>
                     <td class="px-4 py-2">{{ $r->participant_type === 'vendor' ? __('admin.coupon_participation_section.cps_vendor') : __('admin.coupon_participation_section.cps_marketer') }}</td>
                     <td class="px-4 py-2">{{ $row['participant_name'] }}</td>
-                    <td class="px-4 py-2">{{ number_format($r->offered_fee_amount) }} {{ $invitation->currency }}</td>
+                    <td class="px-4 py-2">{{ \App\Support\Money::format($r->offered_fee_amount) }} {{ $invitation->currency }}</td>
                     <td class="px-4 py-2">{{ $r->status }} ({{ $r->payment_method === 'bank_transfer' ? __('partner.payment_method_bank_transfer') : __('partner.payment_method_wallet') }})
                         @if($r->bank_transfer_proof_path)<div class="text-xs text-gray-500">{{ $r->bank_transfer_proof_path }}</div>@endif</td>
                     <td class="px-4 py-2 text-end space-s-2">

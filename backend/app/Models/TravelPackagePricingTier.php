@@ -21,7 +21,7 @@ class TravelPackagePricingTier extends Model
     {
         return [
             'travelers_count' => 'integer',
-            'price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
             'position' => 'integer',
         ];
     }

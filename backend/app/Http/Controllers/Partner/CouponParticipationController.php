@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Models\CouponParticipationInvitation;
@@ -45,7 +46,7 @@ class CouponParticipationController extends Controller
             ->paginate(20, ['*'], 'requests_page');
 
         $svc = app(CouponParticipationInvitationService::class);
-        $balances = $invitations->getCollection()->mapWithKeys(fn ($i) => [$i->id => (int) $svc->walletFor('vendor', $vendorId, $i->currency)->balance]);
+        $balances = $invitations->getCollection()->mapWithKeys(fn ($i) => [$i->id => Money::number($svc->walletFor('vendor', $vendorId, $i->currency)->balance)]);
 
         // Coupons the admin directly targeted this vendor on (coupon_vendors
         // eligibility pivot) — a separate, read-only feature from the paid

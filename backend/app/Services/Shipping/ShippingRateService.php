@@ -95,7 +95,7 @@ class ShippingRateService
         string $zoneId,
         string $methodId,
         int $weightGrams,
-        int $orderValueCents,
+        int|float $orderValueCents,
         bool $isCod
     ): array {
         $rate = ShippingRate::where('destination_zone_id', $zoneId)
@@ -129,28 +129,28 @@ class ShippingRateService
     private function normalizeRateData(array $data): array
     {
         if (isset($data['base_fee'])) {
-            $data['base_fee'] = (int) $data['base_fee'];
+            $data['base_fee'] = round((float) $data['base_fee'], 2);
         }
         if (isset($data['rate_per_kg'])) {
-            $data['rate_per_kg'] = (int) $data['rate_per_kg'];
+            $data['rate_per_kg'] = round((float) $data['rate_per_kg'], 2);
         }
         if (isset($data['carrier_rate']) && $data['carrier_rate'] !== null && $data['carrier_rate'] !== '') {
-            $data['carrier_rate'] = (int) $data['carrier_rate'];
+            $data['carrier_rate'] = round((float) $data['carrier_rate'], 2);
         } else {
             // carrier_rate is NOT NULL default 0 at the DB level; this column
             // drives the shipping gap calculation, so it must never be null.
             $data['carrier_rate'] = 0;
         }
         if (isset($data['carrier_rate_per_kg']) && $data['carrier_rate_per_kg'] !== null && $data['carrier_rate_per_kg'] !== '') {
-            $data['carrier_rate_per_kg'] = (int) $data['carrier_rate_per_kg'];
+            $data['carrier_rate_per_kg'] = round((float) $data['carrier_rate_per_kg'], 2);
         } else {
             $data['carrier_rate_per_kg'] = 0;
         }
         if (isset($data['cod_extra_fee'])) {
-            $data['cod_extra_fee'] = (int) $data['cod_extra_fee'];
+            $data['cod_extra_fee'] = round((float) $data['cod_extra_fee'], 2);
         }
         if (isset($data['free_shipping_threshold']) && $data['free_shipping_threshold'] !== null && $data['free_shipping_threshold'] !== '') {
-            $data['free_shipping_threshold'] = (int) $data['free_shipping_threshold'];
+            $data['free_shipping_threshold'] = round((float) $data['free_shipping_threshold'], 2);
         } else {
             $data['free_shipping_threshold'] = null;
         }

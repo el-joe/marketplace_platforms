@@ -74,7 +74,7 @@ class FbnDailyOverageFeeService
                 continue;
             }
 
-            $totalFee = $inventory->quantity_on_hand * $warehouse->daily_fee_per_unit;
+            $totalFee = round($inventory->quantity_on_hand * $warehouse->daily_fee_per_unit, 2);
 
             try {
                 FbnDailyOverageFee::firstOrCreate(

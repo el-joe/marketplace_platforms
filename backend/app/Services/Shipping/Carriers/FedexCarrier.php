@@ -192,7 +192,7 @@ class FedexCarrier implements ShippingCarrierInterface
             $rated = $body['output']['rateReplyDetails'][0]['ratedShipmentDetails'][0]['totalNetCharge'] ?? null;
 
             return [
-                'rate' => $rated ? (int) ($rated * 100) : 0,
+                'rate' => $rated ? round((float) $rated, 2) : 0,
                 'currency' => 'USD',
                 'estimated_days' => 3,
                 'service_name' => 'FedEx International Priority',

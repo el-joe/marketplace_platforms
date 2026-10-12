@@ -74,9 +74,9 @@ class FlashSaleSubmission extends Model
     protected function casts(): array
     {
         return [
-            'flash_price' => 'integer',
-            'original_price' => 'integer',
-            'reference_price_30d' => 'integer',
+            'flash_price' => \App\Casts\DecimalMoney::class,
+            'original_price' => \App\Casts\DecimalMoney::class,
+            'reference_price_30d' => \App\Casts\DecimalMoney::class,
             'calculated_discount_pct' => 'decimal:2',
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
@@ -140,14 +140,14 @@ class FlashSaleSubmission extends Model
         return number_format($this->original_price, 2) . ' ' . ($this->flash_price_currency ?? '');
     }
 
-    public function getDiscountSavingsAttribute(): int
+    public function getDiscountSavingsAttribute(): int|float
     {
-        return max(0, (int) $this->original_price - (int) $this->flash_price);
+        return \App\Support\Money::number(max(0, round((float) $this->original_price - (float) $this->flash_price, 2)));
     }
 
-    public function getRevenueAttribute(): int
+    public function getRevenueAttribute(): int|float
     {
-        return (int) $this->flash_price * (int) $this->quantity_sold;
+        return \App\Support\Money::number(round((float) $this->flash_price * (int) $this->quantity_sold, 2));
     }
 
     public function getRevenueFormattedAttribute(): string

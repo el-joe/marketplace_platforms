@@ -213,12 +213,12 @@
             tr.innerHTML = `
                 <td class="px-3 py-2 text-sm text-gray-800">${meta.name}</td>
                 <td class="px-3 py-2 text-sm text-gray-500">${meta.currency ?? ''}</td>
-                <td class="px-3 py-2"><input type="number" min="0" class="form-input w-24 text-sm cp-unit-cost" value="${row.unit_cost ?? 0}"></td>
+                <td class="px-3 py-2"><input type="number" min="0" step="0.01" class="form-input w-24 text-sm cp-unit-cost" value="${row.unit_cost ?? 0}"></td>
                 <td class="px-3 py-2"><input type="number" min="0" class="form-input w-24 text-sm cp-stock" placeholder="${i18n.unlimited}" value="${row.stock_available ?? ''}"></td>
                 <td class="px-3 py-2 text-center"><input type="checkbox" class="rounded text-primary-600 cp-active" ${row.is_active ? 'checked' : ''}></td>
                 <td class="px-3 py-2 text-end"><button type="button" class="text-red-500 hover:underline text-xs cp-remove">&times;</button></td>
             `;
-            tr.querySelector('.cp-unit-cost').addEventListener('change', (e) => { row.unit_cost = parseInt(e.target.value) || 0; });
+            tr.querySelector('.cp-unit-cost').addEventListener('change', (e) => { row.unit_cost = parseFloat(e.target.value) || 0; });
             tr.querySelector('.cp-stock').addEventListener('change', (e) => { row.stock_available = e.target.value === '' ? null : (parseInt(e.target.value) || 0); });
             tr.querySelector('.cp-active').addEventListener('change', (e) => { row.is_active = e.target.checked; });
             tr.querySelector('.cp-remove').addEventListener('click', () => {

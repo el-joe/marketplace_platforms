@@ -25,15 +25,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl border border-gray-200 p-4">
                 <p class="text-xs text-gray-500 mb-1">{{ __('travel.finance.column_gross') }} ({{ $row['currency'] }})</p>
-                <p class="text-xl font-bold text-gray-900">{{ number_format($row['gross']) }} {{ $row['currency'] }}</p>
+                <p class="text-xl font-bold text-gray-900">{{ \App\Support\Money::format($row['gross']) }} {{ $row['currency'] }}</p>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-4">
                 <p class="text-xs text-gray-500 mb-1">{{ __('travel.finance.column_commission') }} ({{ $row['currency'] }})</p>
-                <p class="text-xl font-bold text-amber-600">{{ number_format($row['commission']) }} {{ $row['currency'] }}</p>
+                <p class="text-xl font-bold text-amber-600">{{ \App\Support\Money::format($row['commission']) }} {{ $row['currency'] }}</p>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-4">
                 <p class="text-xs text-gray-500 mb-1">{{ __('travel.finance.column_net') }} ({{ $row['currency'] }})</p>
-                <p class="text-xl font-bold text-emerald-600">{{ number_format($row['net_revenue']) }} {{ $row['currency'] }}</p>
+                <p class="text-xl font-bold text-emerald-600">{{ \App\Support\Money::format($row['net_revenue']) }} {{ $row['currency'] }}</p>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 p-4">
                 <p class="text-xs text-gray-500 mb-1">{{ __('travel.finance.column_bookings') }}</p>

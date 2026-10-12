@@ -32,7 +32,7 @@ function toast(message, type = 'success') {
 function toAmount(value) {
     const parsed = parseFloat(value);
     if (isNaN(parsed) || parsed < 0) return 0;
-    return Math.round(parsed);
+    return Math.round(parsed * 100) / 100;
 }
 
 // ─── Method Detail Form ─────────────────────────────────────────────────────
@@ -163,12 +163,12 @@ function initRateModal() {
             destination_zone_id: $form.find('[name="destination_zone_id"]').val(),
             carrier_id: $form.find('[name="carrier_id"]').val() || null,
             origin_zone_id: $form.find('[name="origin_zone_id"]').val() || null,
-            base_fee: parseInt($('#rate-base-fee').val()) || 0,
-            rate_per_kg: parseInt($('#rate-per-kg').val()) || 0,
+            base_fee: parseFloat($('#rate-base-fee').val()) || 0,
+            rate_per_kg: parseFloat($('#rate-per-kg').val()) || 0,
             min_weight_grams: $form.find('[name="min_weight_grams"]').val() || null,
             volumetric_divisor: $form.find('[name="volumetric_divisor"]').val() || null,
-            free_shipping_threshold: parseInt($('#rate-free-threshold').val()) || null,
-            cod_extra_fee: parseInt($('#rate-cod-fee').val()) || 0,
+            free_shipping_threshold: parseFloat($('#rate-free-threshold').val()) || null,
+            cod_extra_fee: parseFloat($('#rate-cod-fee').val()) || 0,
             is_active: $form.find('[name="is_active"]').is(':checked') ? 1 : 0,
         };
 

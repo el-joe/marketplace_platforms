@@ -20,7 +20,7 @@
                         <a href="{{ route('marketer.classified-listings.show', $l) }}" class="font-bold text-gray-900">{{ $l->title }}</a>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{{ __('marketer.status_'.$l->status->value) }}</span>
                     </div>
-                    <div class="text-sm text-gray-600">{{ number_format($l->price) }} {{ $l->currency }}</div>
+                    <div class="text-sm text-gray-600">{{ \App\Support\Money::format($l->price) }} {{ $l->currency }}</div>
                     <div class="text-xs text-gray-500">
                         {{ __('marketer.views') }}: {{ $l->views_count }} · {{ __('marketer.inquiries') }}: {{ $l->inquiries_count }}
                         @if($l->pending_inquiries_count) ({{ __('marketer.pending_inquiries') }}: {{ $l->pending_inquiries_count }}) @endif

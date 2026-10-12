@@ -194,12 +194,12 @@ class ShippingSettingController extends Controller
             'shipping_method_id' => ['required', 'exists:shipping_methods,id'],
             'carrier_id' => ['nullable', 'exists:shipping_carriers,id'],
             'origin_zone_id' => ['nullable', 'exists:shipping_zones,id'],
-            'base_fee' => ['required', 'integer', 'min:0'],
-            'rate_per_kg' => ['required', 'integer', 'min:0'],
+            'base_fee' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'rate_per_kg' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'min_weight_grams' => ['nullable', 'integer', 'min:0'],
             'volumetric_divisor' => ['nullable', 'integer', 'min:1'],
-            'free_shipping_threshold' => ['nullable', 'integer', 'min:0'],
-            'cod_extra_fee' => ['nullable', 'integer', 'min:0'],
+            'free_shipping_threshold' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'cod_extra_fee' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'is_active' => ['boolean'],
         ]);
 
@@ -215,12 +215,12 @@ class ShippingSettingController extends Controller
             'shipping_method_id' => ['sometimes', 'exists:shipping_methods,id'],
             'carrier_id' => ['nullable', 'exists:shipping_carriers,id'],
             'origin_zone_id' => ['nullable', 'exists:shipping_zones,id'],
-            'base_fee' => ['sometimes', 'integer', 'min:0'],
-            'rate_per_kg' => ['sometimes', 'integer', 'min:0'],
+            'base_fee' => ['sometimes', 'numeric', 'decimal:0,2', 'min:0'],
+            'rate_per_kg' => ['sometimes', 'numeric', 'decimal:0,2', 'min:0'],
             'min_weight_grams' => ['nullable', 'integer', 'min:0'],
             'volumetric_divisor' => ['nullable', 'integer', 'min:1'],
-            'free_shipping_threshold' => ['nullable', 'integer', 'min:0'],
-            'cod_extra_fee' => ['nullable', 'integer', 'min:0'],
+            'free_shipping_threshold' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'cod_extra_fee' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -262,7 +262,7 @@ class ShippingSettingController extends Controller
             'country_id' => ['required', 'exists:countries,id'],
             'shipping_method_id' => ['required', 'exists:shipping_methods,id'],
             'is_active' => ['sometimes', 'boolean'],
-            'free_shipping_threshold' => ['nullable', 'integer', 'min:0'],
+            'free_shipping_threshold' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         $setting = CountryShippingSetting::updateOrCreate(

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
@@ -86,10 +87,12 @@ class LedgerService
      * Idempotent: does nothing if this order's capture group already has
      * entries (guards against being called twice, e.g. wallet-then-webhook).
      *
-     * @param  int  $amountCapturedCents  the amount actually settled by this capture event (order.total for a single-tender order)
+     * @param  int|float  $amountCapturedCents  the amount actually settled by this capture event (order.total for a single-tender order)
      */
-    public function postOrderCapture(Order $order, int $amountCapturedCents): void
+    public function postOrderCapture(Order $order, int|float $amountCapturedCents): void
     {
+        $amountCapturedCents = Money::number($amountCapturedCents);
+
         if ($amountCapturedCents <= 0) {
             return;
         }
@@ -110,31 +113,34 @@ class LedgerService
         $commissionVat = 0;
         foreach ($order->subOrders as $subOrder) {
             if ($subOrder->vendor_id !== null) {
-                $sellerPayableByVendor[$subOrder->vendor_id] = ($sellerPayableByVendor[$subOrder->vendor_id] ?? 0) + (int) $subOrder->vendor_payout;
+                $sellerPayableByVendor[$subOrder->vendor_id] = ($sellerPayableByVendor[$subOrder->vendor_id] ?? 0) + (float) $subOrder->vendor_payout;
             } elseif ($subOrder->seller_type === 'marketer' && $subOrder->marketer_id !== null) {
                 // A marketer-owned listing: the owner is the seller and is settled like a vendor
                 // (MarketerSaleSettlementService), so their net is a seller payable, not shipping revenue.
-                $sellerPayableByMarketer[$subOrder->marketer_id] = ($sellerPayableByMarketer[$subOrder->marketer_id] ?? 0) + (int) $subOrder->vendor_payout;
+                $sellerPayableByMarketer[$subOrder->marketer_id] = ($sellerPayableByMarketer[$subOrder->marketer_id] ?? 0) + (float) $subOrder->vendor_payout;
             }
-            $platformCommission += (int) $subOrder->platform_commission;
-            $marketerCommissionPayable += (int) $subOrder->marketer_commission;
-            $gatewayFee += (int) $subOrder->gateway_fee;
-            $commissionVat += (int) round((float) $subOrder->commission_vat);
+            $platformCommission += (float) $subOrder->platform_commission;
+            $marketerCommissionPayable += (float) $subOrder->marketer_commission;
+            $gatewayFee += (float) $subOrder->gateway_fee;
+            $commissionVat += (float) $subOrder->commission_vat;
         }
 
         // Customer VAT plus VAT billed to sellers on the platform commission: both are owed to the tax authority.
-        $taxPayable = (int) $order->tax + $commissionVat;
+        $taxPayable = Money::number((float) $order->tax + $commissionVat);
         $sellerPayableTotal = array_sum($sellerPayableByVendor) + array_sum($sellerPayableByMarketer);
+        $platformCommission = Money::number($platformCommission);
+        $marketerCommissionPayable = Money::number($marketerCommissionPayable);
+        $gatewayFee = Money::number($gatewayFee);
 
         // enhancement.md P-11: warranty premium revenue is broken out of the
         // shipping_revenue residual into its own account_type. orders.warranty_total
         // is the exact amount CheckoutPricingEngine charged the customer for
         // platform warranty plans on this order (P-09 decision D3).
-        $warrantyRevenue = (int) $order->warranty_total;
+        $warrantyRevenue = Money::number($order->warranty_total);
 
         // Residual: whatever's left of the captured amount once every other
         // account has taken its share. See the docblock above.
-        $shippingRevenue = $amountCapturedCents - $sellerPayableTotal - $platformCommission - $taxPayable - $gatewayFee - $marketerCommissionPayable - $warrantyRevenue;
+        $shippingRevenue = Money::number($amountCapturedCents - $sellerPayableTotal - $platformCommission - $taxPayable - $gatewayFee - $marketerCommissionPayable - $warrantyRevenue);
 
         $entries = [[
             'account_type' => 'customer_payment',
@@ -149,7 +155,8 @@ class LedgerService
         ]];
 
         foreach ($sellerPayableByVendor as $vendorId => $amount) {
-            if ($amount === 0) {
+            $amount = Money::number($amount);
+            if ($amount == 0) {
                 continue;
             }
             $entries[] = [
@@ -166,7 +173,8 @@ class LedgerService
         }
 
         foreach ($sellerPayableByMarketer as $marketerId => $amount) {
-            if ($amount === 0) {
+            $amount = Money::number($amount);
+            if ($amount == 0) {
                 continue;
             }
             $entries[] = [
@@ -190,7 +198,7 @@ class LedgerService
             ['warranty_revenue', $warrantyRevenue],
             ['shipping_revenue', $shippingRevenue],
         ] as [$accountType, $amount]) {
-            if ($amount === 0) {
+            if ($amount == 0) {
                 continue;
             }
             $entries[] = [
@@ -263,7 +271,7 @@ class LedgerService
      *
      * @return string the new transaction group id
      */
-    public function reversePartialCapture(Order $order, int $refundAmountCents, string $referenceId, string $reason = 'Partial refund'): string
+    public function reversePartialCapture(Order $order, int|float $refundAmountCents, string $referenceId, string $reason = 'Partial refund'): string
     {
         $original = LedgerEntry::where('transaction_group_id', $order->id)
             ->where('reference_type', 'order_capture')
@@ -273,7 +281,7 @@ class LedgerService
             throw new \RuntimeException("No order_capture ledger entries found for order {$order->id} to reverse.");
         }
 
-        $capturedTotal = (int) $original->firstWhere('account_type', 'customer_payment')?->debit;
+        $capturedTotal = (float) $original->firstWhere('account_type', 'customer_payment')?->debit;
 
         if ($capturedTotal <= 0) {
             throw new \RuntimeException("Order {$order->id}'s capture group has no positive customer_payment debit to scale from.");
@@ -286,8 +294,8 @@ class LedgerService
                 'account_type' => $e->account_type,
                 'account_holder_type' => $e->account_holder_type,
                 'account_holder_id' => $e->account_holder_id,
-                'debit' => (int) round(((int) $e->credit) * $fraction),
-                'credit' => (int) round(((int) $e->debit) * $fraction),
+                'debit' => round(((float) $e->credit) * $fraction, 2),
+                'credit' => round(((float) $e->debit) * $fraction, 2),
                 'currency' => $e->currency,
             ];
         })->all();
@@ -296,9 +304,9 @@ class LedgerService
         // adjusting the entry with the largest magnitude.
         $totalDebit = array_sum(array_column($scaled, 'debit'));
         $totalCredit = array_sum(array_column($scaled, 'credit'));
-        $diff = $totalDebit - $totalCredit;
+        $diff = round($totalDebit - $totalCredit, 4);
 
-        if ($diff !== 0) {
+        if (abs($diff) > 0.00005) {
             $largestIdx = 0;
             $largestAbs = -1;
             foreach ($scaled as $i => $row) {
@@ -310,9 +318,9 @@ class LedgerService
             }
 
             if ($scaled[$largestIdx]['credit'] > 0) {
-                $scaled[$largestIdx]['credit'] += $diff;
+                $scaled[$largestIdx]['credit'] = round($scaled[$largestIdx]['credit'] + $diff, 4);
             } else {
-                $scaled[$largestIdx]['debit'] -= $diff;
+                $scaled[$largestIdx]['debit'] = round($scaled[$largestIdx]['debit'] - $diff, 4);
             }
         }
 
@@ -327,7 +335,7 @@ class LedgerService
 
         // Drop zero-amount rows (a scaled-down account that rounds to 0
         // shouldn't post a no-op ledger entry).
-        $entries = array_values(array_filter($entries, fn (array $row) => $row['debit'] !== 0 || $row['credit'] !== 0));
+        $entries = array_values(array_filter($entries, fn (array $row) => abs($row['debit']) > 0.00005 || abs($row['credit']) > 0.00005));
 
         $this->record($groupId, $entries);
 

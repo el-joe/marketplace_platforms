@@ -417,7 +417,7 @@
                     <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('admin.warehouses_section.daily_overage_fees') }}</h3>
                     <p class="text-xs text-gray-500 mb-4">
                         Free storage: {{ $warehouse->free_storage_days }} days.
-                        Daily fee: {{ number_format($warehouse->daily_fee_per_unit) }} {{ $warehouse->daily_fee_currency ?? '—' }} per unit/day.
+                        Daily fee: {{ \App\Support\Money::format($warehouse->daily_fee_per_unit) }} {{ $warehouse->daily_fee_currency ?? '—' }} per unit/day.
                     </p>
                     <div class="overflow-x-auto">
                         <table id="overage-fees-table"

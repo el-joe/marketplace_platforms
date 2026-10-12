@@ -36,10 +36,10 @@ class PlatformShippingSubsidy extends Model
     ];
 
     protected $casts = [
-        'subsidy_cap' => 'integer',
+        'subsidy_cap' => \App\Casts\DecimalMoney::class,
         'vendor_share_pct' => 'integer',
-        'vendor_fixed_amount' => 'integer',
-        'admin_fixed_amount' => 'integer',
+        'vendor_fixed_amount' => \App\Casts\DecimalMoney::class,
+        'admin_fixed_amount' => \App\Casts\DecimalMoney::class,
         'max_subsidy_weight_grams' => 'integer',
         'is_active' => 'boolean',
     ];

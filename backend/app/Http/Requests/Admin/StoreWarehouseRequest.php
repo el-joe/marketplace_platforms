@@ -27,11 +27,11 @@ class StoreWarehouseRequest extends FormRequest
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'total_capacity_m3' => ['nullable', 'numeric', 'min:0'],
             'used_capacity_m3' => ['nullable', 'numeric', 'min:0'],
-            'storage_rate_per_m3_price' => ['nullable', 'numeric', 'min:0'],
+            'storage_rate_per_m3_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'storage_currency' => ['nullable', 'string', 'size:3'],
             'is_active' => ['boolean'],
             'free_storage_days' => ['nullable', 'integer', 'min:0'],
-            'daily_fee_per_unit' => ['nullable', 'integer', 'min:0'],
+            'daily_fee_per_unit' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'daily_fee_currency' => ['nullable', 'string', 'size:3'],
         ];
     }
@@ -50,13 +50,13 @@ class StoreWarehouseRequest extends FormRequest
     }
 
     /**
-     * Convert storage_rate_per_m3_price from decimal to integer cents before validation.
+     * Convert storage_rate_per_m3_price to a 2-dp decimal before validation.
      */
     protected function prepareForValidation(): void
     {
         if ($this->filled('storage_rate_per_m3_price')) {
             $this->merge([
-                'storage_rate_per_m3_price' => (int) round((float) $this->storage_rate_per_m3_price),
+                'storage_rate_per_m3_price' => round((float) $this->storage_rate_per_m3_price, 2),
             ]);
         }
 

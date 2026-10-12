@@ -136,10 +136,10 @@ class BuyBoxRebuildService
                 'listing_type' => $winner->listing_type,
                 'listing_id' => $winner->listing_id,
                 'variant_id' => $winner->variant_id,
-                'price' => (int) $winner->price,
-                'compare_at_price' => $winner->compare_at_price !== null ? (int) $winner->compare_at_price : null,
-                'min_price' => (int) $all->min('price'),
-                'max_price' => (int) $all->max('price'),
+                'price' => \App\Support\Money::number($winner->price),
+                'compare_at_price' => $winner->compare_at_price !== null ? \App\Support\Money::number($winner->compare_at_price) : null,
+                'min_price' => \App\Support\Money::number($all->min('price')),
+                'max_price' => \App\Support\Money::number($all->max('price')),
                 'seller_count' => $v->count(),
                 'admin_listing_count' => $a->count(),
                 'total_stock' => $totalStock,
@@ -206,7 +206,7 @@ class BuyBoxRebuildService
             })->first();
         }
 
-        return $marketer->sort(fn ($a, $b) => ((int) $a->price <=> (int) $b->price) ?: strcmp($a->listing_id, $b->listing_id))->first();
+        return $marketer->sort(fn ($a, $b) => ((float) $a->price <=> (float) $b->price) ?: strcmp($a->listing_id, $b->listing_id))->first();
     }
 
     /**
@@ -214,7 +214,7 @@ class BuyBoxRebuildService
      */
     private function compareAdminOrMarketer($a, $b): int
     {
-        $priceCmp = (int) $a->price <=> (int) $b->price;
+        $priceCmp = (float) $a->price <=> (float) $b->price;
         if ($priceCmp !== 0) {
             return $priceCmp;
         }

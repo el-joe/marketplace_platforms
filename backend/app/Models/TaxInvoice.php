@@ -24,6 +24,12 @@ class TaxInvoice extends Model
         'issued_at',
     ];
 
+    protected $casts = [
+        'subtotal' => \App\Casts\DecimalMoney::class,
+        'tax' => \App\Casts\DecimalMoney::class,
+        'total' => \App\Casts\DecimalMoney::class,
+    ];
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

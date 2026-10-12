@@ -18,7 +18,7 @@ class ShiftStatusResource extends JsonResource
             'actual_end'           => $this->actual_end?->toIso8601String(),
             'duration_minutes'     => $this->duration_minutes,
             'total_deliveries'     => $this->total_deliveries,
-            'total_earnings'       => (int) $this->getRawOriginal('total_earnings'),
+            'total_earnings'       => \App\Support\Money::number($this->getRawOriginal('total_earnings')),
         ];
     }
 }

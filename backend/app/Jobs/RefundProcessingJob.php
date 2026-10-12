@@ -78,11 +78,11 @@ class RefundProcessingJob implements ShouldQueue
         // for that one remaining caller so its behavior doesn't silently
         // change; RefundService::refund() itself already sets these at
         // creation time and this branch is then a no-op.
-        if ($isElectronic && (int) $refund->gateway_fee_deducted === 0 && (int) $refund->tax_deducted === 0 && $refund->originalTransaction) {
-            $gatewayFeeDeductedCents = (int) round(
-                ((int) $refund->originalTransaction->gateway_fee) * ($refund->amount / max(1, (int) $refund->originalTransaction->amount))
+        if ($isElectronic && (float) $refund->gateway_fee_deducted == 0 && (float) $refund->tax_deducted == 0 && $refund->originalTransaction) {
+            $gatewayFeeDeductedCents = \App\Support\Money::round(
+                ((float) $refund->originalTransaction->gateway_fee) * ($refund->amount / max(0.01, (float) $refund->originalTransaction->amount))
             );
-            $taxDeductedCents = (int) round($gatewayFeeDeductedCents * RefundService::GATEWAY_FEE_TAX_RATE);
+            $taxDeductedCents = \App\Support\Money::round($gatewayFeeDeductedCents * RefundService::GATEWAY_FEE_TAX_RATE);
 
             $refund->update([
                 'gateway_fee_deducted' => $gatewayFeeDeductedCents,

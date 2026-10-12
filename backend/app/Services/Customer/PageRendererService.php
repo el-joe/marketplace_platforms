@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Enums\VendorListingStatus;
 use App\Http\Resources\Customer\FlashSaleItemResource;
 use App\Http\Resources\Customer\ProductListResource;
@@ -631,8 +632,8 @@ class PageRendererService
             ->get()
             ->keyBy('product_variant_id')
             ->map(fn($row) => [
-                'min_price' => (int) $row->min_price,
-                'max_price' => (int) $row->max_price,
+                'min_price' => Money::number($row->min_price),
+                'max_price' => Money::number($row->max_price),
                 'seller_count' => (int) $row->seller_count,
             ])
             ->all();
@@ -758,7 +759,7 @@ class PageRendererService
         $imageUrl = $variantId
             ? app(\App\Services\Media\ListingImageResolver::class)->primary($variantId)
             : null;
-        $comparePrice = (int) ($listing->compare_at_price ?? 0);
+        $comparePrice = Money::number($listing->compare_at_price ?? 0);
         $discountPct = $comparePrice > 0
             ? round((($comparePrice - $listing->price) / $comparePrice) * 100, 2)
             : null;
@@ -768,8 +769,8 @@ class PageRendererService
             'product' => [
                 'name' => Bilingual::pair($product, 'name'),
                 'image' => $imageUrl,
-                'price' => (int) $listing->price,
-                'compare_at_price' => $listing->compare_at_price !== null ? (int) $listing->compare_at_price : null,
+                'price' => Money::number($listing->price),
+                'compare_at_price' => $listing->compare_at_price !== null ? Money::number($listing->compare_at_price) : null,
                 'discount_pct' => $discountPct,
                 'slug' => $product->slug,
             ],

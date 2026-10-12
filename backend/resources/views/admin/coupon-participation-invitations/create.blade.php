@@ -45,7 +45,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.coupon_participation_section.cps_min_fee_full') }}</label>
-                <input type="number" name="min_fee_amount" min="0" value="{{ old('min_fee_amount') }}" class="input w-full" required />
+                <input type="number" step="0.01" name="min_fee_amount" min="0" value="{{ old('min_fee_amount') }}" class="input w-full" required />
                 @error('min_fee_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
         </div>

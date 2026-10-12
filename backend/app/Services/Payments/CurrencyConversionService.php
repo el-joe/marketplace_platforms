@@ -18,9 +18,9 @@ use Illuminate\Support\Facades\DB;
 class CurrencyConversionService
 {
     /**
-     * @return array{amount: int, rate: float}
+     * @return array{amount: int|float, rate: float}
      */
-    public function convert(int $amountCents, string $fromCurrency, string $toCurrency): array
+    public function convert(int|float $amountCents, string $fromCurrency, string $toCurrency): array
     {
         if ($fromCurrency === $toCurrency) {
             return ['amount' => $amountCents, 'rate' => 1.0];
@@ -40,7 +40,7 @@ class CurrencyConversionService
         }
 
         $rate = $toRate / $fromRate;
-        $converted = (int) round($amountCents * $rate);
+        $converted = \App\Support\Money::number(round($amountCents * $rate, 2));
 
         return ['amount' => $converted, 'rate' => $rate];
     }

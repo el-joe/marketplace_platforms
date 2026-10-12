@@ -320,6 +320,7 @@
                             value="{{ $val('max_discount') }}"
                             class="input w-full @error('max_discount') border-red-400 @enderror"
                             min="0"
+                            step="0.01"
                             placeholder="{{ __('admin.coupons_section.max_discount_placeholder') }}"
                         />
                         @error('max_discount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -427,6 +428,7 @@
                             value="{{ $val('min_order_amount') }}"
                             class="input w-full @error('min_order_amount') border-red-400 @enderror"
                             min="0"
+                            step="0.01"
                             placeholder="{{ __('admin.coupons_section.min_order_placeholder') }}"
                         />
                         @error('min_order_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

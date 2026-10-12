@@ -73,12 +73,12 @@ class CarrierClaimController extends Controller
 
         $data = $request->validate([
             'decision'          => ['required', 'in:approved,rejected'],
-            'compensated_amount' => ['nullable', 'numeric', 'min:0'],
+            'compensated_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'resolution_notes'  => ['nullable', 'string', 'max:2000'],
         ]);
 
         $compensatedCents = isset($data['compensated_amount'])
-            ? (int) round($data['compensated_amount'])
+            ? round((float) $data['compensated_amount'], 2)
             : null;
 
         $this->service->resolve(

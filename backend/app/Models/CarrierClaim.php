@@ -32,8 +32,8 @@ class CarrierClaim extends Model
     {
         return [
             'evidence_files'           => 'array',
-            'claimed_amount'     => 'integer',
-            'compensated_amount' => 'integer',
+            'claimed_amount'     => \App\Casts\DecimalMoney::class,
+            'compensated_amount' => \App\Casts\DecimalMoney::class,
             'resolved_at'              => 'datetime',
             'status'                   => CarrierClaimStatus::class,
             'claim_type'               => CarrierClaimType::class,

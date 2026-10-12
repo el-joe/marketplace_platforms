@@ -73,21 +73,21 @@
                     </div>
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.agreed_rate') }}</dt>
-                        <dd class="font-semibold">{{ number_format($paidAdBooking->agreed_rate) }} <span class="text-xs text-gray-400">{{ strtoupper($paidAdBooking->currency ?? 'USD') }}</span></dd>
+                        <dd class="font-semibold">{{ \App\Support\Money::format($paidAdBooking->agreed_rate) }} <span class="text-xs text-gray-400">{{ strtoupper($paidAdBooking->currency ?? 'USD') }}</span></dd>
                     </div>
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.subscription_fee') }}</dt>
-                        <dd class="font-semibold">{{ number_format($paidAdBooking->subscription_charged) . ' ' . strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
+                        <dd class="font-semibold">{{ \App\Support\Money::format($paidAdBooking->subscription_charged) . ' ' . strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
                     </div>
                     @if(! \App\Enums\PaidAdSlotPricingModel::from($paidAdBooking->pricing_model)->isFixed())
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.usage_spend') }}</dt>
-                        <dd class="font-semibold">{{ number_format($paidAdBooking->total_charged) . ' ' . strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
+                        <dd class="font-semibold">{{ \App\Support\Money::format($paidAdBooking->total_charged) . ' ' . strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
                     </div>
                     @endif
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.total_spend') }}</dt>
-                        <dd class="font-semibold">{{ number_format($paidAdBooking->total_spend) . ' ' . strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
+                        <dd class="font-semibold">{{ \App\Support\Money::format($paidAdBooking->total_spend) . ' ' . strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
                     </div>
                     <div>
                         <dt class="text-gray-500 text-xs uppercase font-medium mb-0.5">{{ __('admin.paid_ad_bookings.booked_from_label') }}</dt>
@@ -288,7 +288,7 @@
                         </div>
                         <div>
                             <dt class="text-xs text-gray-400">{{ __('admin.paid_ad_bookings.base_rate') }}</dt>
-                            <dd>{{ number_format($paidAdBooking->slot->base_rate ?? 0) }} {{ strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
+                            <dd>{{ \App\Support\Money::format($paidAdBooking->slot->base_rate ?? 0) }} {{ strtoupper($paidAdBooking->currency ?? 'USD') }}</dd>
                         </div>
                         <div class="pt-2">
                             <a href="{{ route('admin.ad-slots.index') }}" class="text-xs text-primary-600 hover:underline">{{ __('admin.paid_ad_bookings.view_all_slots') }}</a>

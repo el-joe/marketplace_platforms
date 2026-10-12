@@ -12,26 +12,26 @@ namespace App\Services\Shared;
 class CommissionCalculator
 {
     /**
-     * @param  int  $baseAmount  Line total (unit price × quantity) the percentage applies to
+     * @param  int|float  $baseAmount  Line total (unit price × quantity) the percentage applies to
      * @param  float  $standardRate  Commission % when unit price > threshold (or tiering disabled)
      * @param  int  $thresholdPrice  Unit-price threshold; 0 = no tiering
      * @param  float  $highRate  Commission % when unit price <= threshold (0 = fall back to standardRate)
-     * @param  int  $minCommission  Per-unit floor on the final commission; 0 = none
+     * @param  int|float  $minCommission  Per-unit floor on the final commission; 0 = none
      * @param  int  $quantity  Units on the line
      * @param  int  $flatAmount  Flat amount per unit, added when $includeFlat is true
      */
     public static function calculate(
-        int $baseAmount,
+        int|float $baseAmount,
         float $standardRate,
         int $thresholdPrice = 0,
         float $highRate = 0.0,
-        int $minCommission = 0,
+        int|float $minCommission = 0,
         int $quantity = 1,
         int|float $flatAmount = 0,
         bool $includeFlat = false,
     ): int|float {
         $quantity = max(1, $quantity);
-        $unitPrice = intdiv($baseAmount + $quantity - 1, $quantity);
+        $unitPrice = $baseAmount / $quantity;
 
         $activeRate = $standardRate;
         if ($thresholdPrice > 0 && $highRate > 0.0 && $unitPrice <= $thresholdPrice) {
@@ -41,7 +41,7 @@ class CommissionCalculator
         $percentPortion = 0;
         if ($activeRate > 0.0) {
             $raw = bcdiv(bcmul((string) $baseAmount, (string) $activeRate, 4), '100', 4);
-            $percentPortion = (int) floor((float) $raw);
+            $percentPortion = round((float) $raw, 2);
         }
 
         $calculated = $percentPortion + ($includeFlat ? $flatAmount * $quantity : 0);

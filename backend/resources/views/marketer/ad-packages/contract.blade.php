@@ -7,9 +7,9 @@
       class="bg-white rounded-xl border border-gray-200 p-6 space-y-5 max-w-2xl">
     @csrf
     <div class="text-sm space-y-1">
-        <div class="flex justify-between"><span>{{ __('ad_packages.package_price') }}</span><span>{{ number_format($package->price) }} {{ $package->currency }}</span></div>
-        <div class="flex justify-between"><span>{{ __('ad_packages.vat_included', ['pct' => $package->vat_pct]) }}</span><span>{{ number_format($package->vat_amount) }} {{ $package->currency }}</span></div>
-        <div class="flex justify-between font-bold border-t pt-1"><span>{{ __('ad_packages.total_with_vat') }}</span><span>{{ number_format($package->total) }} {{ $package->currency }}</span></div>
+        <div class="flex justify-between"><span>{{ __('ad_packages.package_price') }}</span><span>{{ \App\Support\Money::format($package->price) }} {{ $package->currency }}</span></div>
+        <div class="flex justify-between"><span>{{ __('ad_packages.vat_included', ['pct' => $package->vat_pct]) }}</span><span>{{ \App\Support\Money::format($package->vat_amount) }} {{ $package->currency }}</span></div>
+        <div class="flex justify-between font-bold border-t pt-1"><span>{{ __('ad_packages.total_with_vat') }}</span><span>{{ \App\Support\Money::format($package->total) }} {{ $package->currency }}</span></div>
     </div>
     <div class="h-56 overflow-y-auto border rounded-lg p-4 text-sm text-gray-700 leading-7">
         <h4 class="font-bold mb-2">{{ __('ad_packages.contract_terms') }}</h4>
@@ -17,7 +17,7 @@
     </div>
     <div>
         <label class="block text-sm font-medium mb-1">{{ __('ad_packages.payment_method') }}</label>
-        <label class="flex items-center gap-2"><input type="radio" name="payment_method" value="wallet" checked> {{ __('ad_packages.pay_wallet') }} ({{ number_format($walletBalance) }} {{ $package->currency }})</label>
+        <label class="flex items-center gap-2"><input type="radio" name="payment_method" value="wallet" checked> {{ __('ad_packages.pay_wallet') }} ({{ \App\Support\Money::format($walletBalance) }} {{ $package->currency }})</label>
         <label class="flex items-center gap-2"><input type="radio" name="payment_method" value="bank_transfer"> {{ __('ad_packages.pay_bank') }}</label>
         @error('payment_method')<p class="text-red-600 text-sm">{{ $message }}</p>@enderror
     </div>

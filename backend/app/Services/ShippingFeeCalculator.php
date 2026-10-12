@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\Models\AdminListing;
 use App\Models\CountryShippingSetting;
 use App\Models\MarketplaceShippingRule;
@@ -53,22 +54,41 @@ class ShippingFeeCalculator
      *     payment_method: string,
      *     destination_city_id: string|null,
      *     country_id: string,
-     *     order_subtotal: int,
+     *     order_subtotal: int|float,
      *     preferred_carrier_id?: string|null,
      * } $params
      * @return array{
-     *     fee: int,
-     *     cod_fee: int,
+     *     fee: int|float,
+     *     cod_fee: int|float,
      *     billable_weight_grams: int|null,
-     *     carrier_shipping_cost: int,
-     *     shipping_gap: int,
-     *     admin_subsidy_amount: int,
-     *     vendor_contribution: int,
+     *     carrier_shipping_cost: int|float,
+     *     shipping_gap: int|float,
+     *     admin_subsidy_amount: int|float,
+     *     vendor_contribution: int|float,
      *     exceptional_subsidy_id: string|null,
      *     is_exceptional: bool,
      * }|null Null means this shipping method is not available on this lane.
      */
     public function calculate(array $params): ?array
+    {
+        $result = $this->calculateRaw($params);
+
+        if ($result === null) {
+            return null;
+        }
+
+        foreach (['fee', 'cod_fee', 'carrier_shipping_cost', 'shipping_gap', 'admin_subsidy_amount', 'vendor_contribution'] as $key) {
+            $result[$key] = Money::number(round((float) $result[$key], 2));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>|null
+     */
+    private function calculateRaw(array $params): ?array
     {
         $listing = $params['listing'];
 
@@ -145,7 +165,7 @@ class ShippingFeeCalculator
 
         if ($billableWeightGrams > $rate->min_weight_grams) {
             $overGrams = $billableWeightGrams - $rate->min_weight_grams;
-            $fee += intdiv($overGrams * $rate->rate_per_kg, 1000);
+            $fee += round($overGrams * $rate->rate_per_kg / 1000, 2);
         }
 
         // ── STEP 5: weight slab surcharge (country + method specific band). ─
@@ -153,7 +173,7 @@ class ShippingFeeCalculator
 
         // ── STEP 6: flat per-warehouse surcharge. ───────────────────────────
         if ($listing->warehouse_id) {
-            $fee += (int) WarehouseShippingSurcharge::where('warehouse_id', $listing->warehouse_id)
+            $fee += (float) WarehouseShippingSurcharge::where('warehouse_id', $listing->warehouse_id)
                 ->where('is_active', true)
                 ->value('extra_amount_cents');
         }
@@ -161,7 +181,7 @@ class ShippingFeeCalculator
         // ── STEP 7: vendor+warehouse surcharge (e.g. a vendor whose pickup
         //            location adds cost for this specific warehouse lane). ──
         if ($listing->warehouse_id) {
-            $fee += (int) VendorCityShippingSurcharge::where('vendor_id', $listing->vendor_id)
+            $fee += (float) VendorCityShippingSurcharge::where('vendor_id', $listing->vendor_id)
                 ->where('warehouse_id', $listing->warehouse_id)
                 ->where('is_active', true)
                 ->value('extra_amount_cents');
@@ -195,7 +215,7 @@ class ShippingFeeCalculator
         $carrierCost = $rate->carrier_rate;
         if ($billableWeightGrams > $rate->min_weight_grams && $rate->carrier_rate_per_kg > 0) {
             $overGrams = $billableWeightGrams - $rate->min_weight_grams;
-            $carrierCost += intdiv($overGrams * $rate->carrier_rate_per_kg, 1000);
+            $carrierCost += round($overGrams * $rate->carrier_rate_per_kg / 1000, 2);
         }
 
         $isExceptional = $rate->carrier_rate > $rate->base_fee;
@@ -216,7 +236,7 @@ class ShippingFeeCalculator
 
         // ── STEP 12: exceptional lane — split the gap between vendor and
         //            platform subsidy. ────────────────────────────────────
-        $gap = max(0, $carrierCost - $fee);
+        $gap = max(0, round($carrierCost - $fee, 2));
 
         $subsidyQuery = PlatformShippingSubsidy::where('shipping_zone_id', $destinationZoneId)
             ->where('shipping_method_id', $shippingMethodId)
@@ -250,19 +270,19 @@ class ShippingFeeCalculator
             $subsidyRuleId = null;
         } else {
             if ($subsidyRule->split_type === 'percentage') {
-                $vendorContribution = intdiv($gap * $subsidyRule->vendor_share_pct, 100);
-                $adminSubsidy = $gap - $vendorContribution;
+                $vendorContribution = round($gap * $subsidyRule->vendor_share_pct / 100, 2);
+                $adminSubsidy = round($gap - $vendorContribution, 2);
             } else {
                 $vendorContribution = min($subsidyRule->vendor_fixed_amount, $gap);
-                $adminSubsidy = min($subsidyRule->admin_fixed_amount, $gap - $vendorContribution);
-                $residual = $gap - $vendorContribution - $adminSubsidy;
+                $adminSubsidy = min($subsidyRule->admin_fixed_amount, round($gap - $vendorContribution, 2));
+                $residual = round($gap - $vendorContribution - $adminSubsidy, 2);
                 $adminSubsidy += $residual;
             }
 
             // Admin exposure ceiling: whatever the cap won't cover falls
             // back onto the vendor.
             if ($subsidyRule->subsidy_cap > 0 && $adminSubsidy > $subsidyRule->subsidy_cap) {
-                $excess = $adminSubsidy - $subsidyRule->subsidy_cap;
+                $excess = round($adminSubsidy - $subsidyRule->subsidy_cap, 2);
                 $adminSubsidy = $subsidyRule->subsidy_cap;
                 $vendorContribution += $excess;
             }
@@ -271,8 +291,8 @@ class ShippingFeeCalculator
             // equal the gap exactly (zero-sum, no rounding leakage). Any
             // drift lands on the admin side rather than under/over-charging
             // the vendor.
-            $drift = $gap - ($vendorContribution + $adminSubsidy);
-            if ($drift !== 0) {
+            $drift = round($gap - ($vendorContribution + $adminSubsidy), 2);
+            if (abs($drift) > 0.00005) {
                 $adminSubsidy += $drift;
             }
 
@@ -283,7 +303,7 @@ class ShippingFeeCalculator
         //            Delivery"; the vendor absorbs the shipping fee itself
         //            on top of whatever gap share was already assigned. ────
         if ($listing->vendor_covers_delivery) {
-            $vendorContribution += $fee;
+            $vendorContribution = round($vendorContribution + $fee, 2);
             $fee = 0;
         }
 
@@ -300,7 +320,7 @@ class ShippingFeeCalculator
         ];
     }
 
-    private function weightSlabFee(string $shippingMethodId, string $countryId, int $billableWeightGrams): int
+    private function weightSlabFee(string $shippingMethodId, string $countryId, int $billableWeightGrams): int|float
     {
         $extraFee = ShippingWeightSlab::where('shipping_method_id', $shippingMethodId)
             ->where('country_id', $countryId)
@@ -312,6 +332,6 @@ class ShippingFeeCalculator
             })
             ->value('extra_fee');
 
-        return (int) ($extraFee ?? 0);
+        return $extraFee ?? 0;
     }
 }

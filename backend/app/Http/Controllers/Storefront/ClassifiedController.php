@@ -144,7 +144,7 @@ class ClassifiedController extends Controller
             'title_ar'               => 'required|string|max:255',
             'description_en'         => 'nullable|string',
             'description_ar'         => 'nullable|string',
-            'price'            => 'required|integer|min:0',
+            'price'            => 'required|numeric|decimal:0,2|min:0',
             'currency'               => 'required|string|size:3',
             'price_negotiable'       => 'boolean',
             'attributes'             => 'nullable|array',

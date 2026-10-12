@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Enums\GlobalSystemType;
 use App\Enums\ProductStatus;
@@ -130,10 +131,10 @@ class ListingQueryService
             $builder->where('p.brand_id', $filters['brand']);
         }
         if (! empty($filters['price_min'])) {
-            $builder->where('vendor_listings.price', '>=', (int) $filters['price_min']);
+            $builder->where('vendor_listings.price', '>=', Money::number($filters['price_min']));
         }
         if (! empty($filters['price_max'])) {
-            $builder->where('vendor_listings.price', '<=', (int) $filters['price_max']);
+            $builder->where('vendor_listings.price', '<=', Money::number($filters['price_max']));
         }
         if (! empty($filters['rating_min'])) {
             $builder->where('vendor_listings.rating_avg', '>=', $filters['rating_min']);
@@ -816,11 +817,11 @@ class ListingQueryService
         }
 
         if (! empty($filters['min_price'])) {
-            $query->where('price', '>=', (int) $filters['min_price']);
+            $query->where('price', '>=', Money::number($filters['min_price']));
         }
 
         if (! empty($filters['max_price'])) {
-            $query->where('price', '<=', (int) $filters['max_price']);
+            $query->where('price', '<=', Money::number($filters['max_price']));
         }
 
         return $query->paginate($perPage);
@@ -1089,10 +1090,10 @@ class ListingQueryService
             $q->where('p.brand_id', $filters['brand']);
         }
         if (! empty($filters['price_min'])) {
-            $q->where('l.price', '>=', (int) $filters['price_min']);
+            $q->where('l.price', '>=', Money::number($filters['price_min']));
         }
         if (! empty($filters['price_max'])) {
-            $q->where('l.price', '<=', (int) $filters['price_max']);
+            $q->where('l.price', '<=', Money::number($filters['price_max']));
         }
         if (! empty($filters['rating_min'])) {
             $q->where('l.rating_avg', '>=', $filters['rating_min']);
@@ -1256,6 +1257,6 @@ class ListingQueryService
             }
         }
 
-        return ['price_range' => ['min' => (int) ($range->low ?? 0), 'max' => (int) ($range->high ?? 0)], 'attributes' => $attributes];
+        return ['price_range' => ['min' => Money::number($range->low ?? 0), 'max' => Money::number($range->high ?? 0)], 'attributes' => $attributes];
     }
 }

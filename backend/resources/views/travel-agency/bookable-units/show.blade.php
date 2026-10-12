@@ -98,10 +98,10 @@
                                     <input type="number" name="capacity_override" min="1" value="{{ $row->capacity_override ?? '' }}" class="w-20 rounded border-gray-300 text-xs">
                                 </td>
                                 <td class="px-3 py-2">
-                                    <input type="number" name="price_day_only" min="0" value="{{ $row->price_day_only ?? '' }}" class="w-24 rounded border-gray-300 text-xs">
+                                    <input type="number" step="0.01" name="price_day_only" min="0" value="{{ $row->price_day_only ?? '' }}" class="w-24 rounded border-gray-300 text-xs">
                                 </td>
                                 <td class="px-3 py-2">
-                                    <input type="number" name="price_with_overnight" min="0" value="{{ $row->price_with_overnight ?? '' }}" class="w-24 rounded border-gray-300 text-xs">
+                                    <input type="number" step="0.01" name="price_with_overnight" min="0" value="{{ $row->price_with_overnight ?? '' }}" class="w-24 rounded border-gray-300 text-xs">
                                 </td>
                                 <td class="px-3 py-2">
                                     <button type="submit" class="text-xs font-medium text-blue-600">{{ __('common.save') }}</button>
@@ -128,11 +128,11 @@
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">{{ __('travel.bookable_units.price_day_only') }}</label>
-                    <input type="number" name="price_day_only" min="0" class="w-28 rounded-lg border-gray-300 text-sm">
+                    <input type="number" step="0.01" name="price_day_only" min="0" class="w-28 rounded-lg border-gray-300 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">{{ __('travel.bookable_units.price_with_overnight') }}</label>
-                    <input type="number" name="price_with_overnight" min="0" class="w-28 rounded-lg border-gray-300 text-sm">
+                    <input type="number" step="0.01" name="price_with_overnight" min="0" class="w-28 rounded-lg border-gray-300 text-sm">
                 </div>
                 <label class="flex items-center gap-1 text-sm text-gray-600">
                     <input type="hidden" name="is_available" value="0">
@@ -197,7 +197,7 @@
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">{{ __('travel.bookable_units.price') }}</label>
-                    <input type="number" name="price" min="0" required class="w-28 rounded-lg border-gray-300 text-sm">
+                    <input type="number" step="0.01" name="price" min="0" required class="w-28 rounded-lg border-gray-300 text-sm">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700">
                     {{ __('common.save') }}

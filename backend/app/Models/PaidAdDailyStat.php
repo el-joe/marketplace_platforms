@@ -15,7 +15,7 @@ class PaidAdDailyStat extends Model
         'date' => 'date',
         'impressions' => 'integer',
         'clicks' => 'integer',
-        'spend' => 'integer',
+        'spend' => \App\Casts\DecimalMoney::class,
     ];
 
     protected $fillable = [

@@ -25,8 +25,8 @@ class GiftCardTransaction extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
-        'balance_after' => 'integer',
+        'amount' => \App\Casts\DecimalMoney::class,
+        'balance_after' => \App\Casts\DecimalMoney::class,
         'created_at' => 'datetime',
     ];
 

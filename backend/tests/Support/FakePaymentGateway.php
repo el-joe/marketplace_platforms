@@ -124,7 +124,7 @@ class FakePaymentGateway implements PaymentGatewayInterface
         );
     }
 
-    public function refund(string $transactionReference, int $amountCents, string $reason): RefundResult
+    public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult
     {
         $this->refundCalls[] = compact('transactionReference', 'amountCents', 'reason');
 

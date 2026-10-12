@@ -75,7 +75,7 @@ class FinanceController extends Controller
         }
 
         $data = $request->validate([
-            'amount'    => ['required', 'integer', 'min:1'],
+            'amount'    => ['required', 'numeric', 'min:0.01', 'decimal:0,2'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);

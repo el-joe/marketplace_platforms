@@ -31,6 +31,7 @@ class TravelBooking extends Model
     protected function casts(): array
     {
         return [
+            'total_price' => \App\Casts\DecimalMoney::class,
             'contract_signed_at' => 'datetime',
             'status' => TravelBookingStatus::class,
         ];

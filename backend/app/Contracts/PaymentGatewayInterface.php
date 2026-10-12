@@ -21,7 +21,7 @@ interface PaymentGatewayInterface
     /** Charge a payment — creates PaymentTransaction */
     public function charge(
         Order $order,
-        int $amountCents,
+        int|float $amountCents,
         string $currency,
         string $paymentToken,
         string $idempotencyKey
@@ -30,7 +30,7 @@ interface PaymentGatewayInterface
     /** Refund a previous transaction */
     public function refund(
         PaymentTransaction $transaction,
-        int $amountCents,
+        int|float $amountCents,
         string $reason
     ): RefundResult;
 

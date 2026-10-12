@@ -9,6 +9,7 @@ use App\DTOs\Payment\PaymentVerificationResult;
 use App\DTOs\Payment\RefundResult;
 use App\DTOs\Payment\WebhookResult;
 use App\Enums\PaymentTransactionStatus;
+use App\Support\Money;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -46,7 +47,7 @@ class PaytabsGateway extends AbstractPaymentGateway
                 'tran_type'          => 'sale',
                 'tran_class'         => 'ecom',
                 'cart_id'            => $data->orderNumber,
-                'cart_amount'        => $data->amountCents / 1000, // OMR: baisa to OMR
+                'cart_amount'        => round((float) $data->amountCents, $this->decimalPlaces($data->currency)),
                 'cart_currency'      => $data->currency,
                 'cart_description'   => 'Order ' . $data->orderNumber,
                 'customer_ref'       => $data->customerId,
@@ -114,7 +115,7 @@ class PaytabsGateway extends AbstractPaymentGateway
             return new PaymentVerificationResult(
                 success: $status === PaymentTransactionStatus::Succeeded,
                 status: $status->value,
-                amountCents: (int) (($body['cart_amount'] ?? 0) * 1000),
+                amountCents: Money::number($body['cart_amount'] ?? 0),
                 currency: $body['cart_currency'] ?? $this->settlementCurrency(),
                 gatewayTransactionId: $transactionReference,
                 rawResponse: $body,
@@ -131,7 +132,7 @@ class PaytabsGateway extends AbstractPaymentGateway
         }
     }
 
-    public function refund(string $transactionReference, int $amountCents, string $reason): RefundResult
+    public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult
     {
         try {
             $creds    = $this->credentials();
@@ -141,7 +142,7 @@ class PaytabsGateway extends AbstractPaymentGateway
                 'tran_type'        => 'refund',
                 'tran_class'       => 'ecom',
                 'cart_id'          => 'REFUND-' . $transactionReference,
-                'cart_amount'      => $amountCents / 1000,
+                'cart_amount'      => round((float) $amountCents, $this->decimalPlaces($this->settlementCurrency())),
                 'cart_currency'    => $this->settlementCurrency(),
                 'cart_description' => $reason,
             ]);

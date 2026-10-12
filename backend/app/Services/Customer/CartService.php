@@ -16,6 +16,7 @@ use App\Models\VendorListing;
 use App\Services\AppContextService;
 use App\Services\Media\ListingImageResolver;
 use App\Services\ShippingMethodResolverService;
+use App\Support\Money;
 
 class CartService
 {
@@ -355,7 +356,7 @@ class CartService
                 'vendor_listing_id' => null,
                 'admin_listing_id' => $adminListingId,
                 'quantity' => $quantity,
-                'unit_price' => $listing->getRawOriginal('price'),
+                'unit_price' => Money::number($listing->getRawOriginal('price')),
                 'added_at' => now(),
                 'selected_shipping_method_id' => $shippingMethodId,
             ]);
@@ -485,7 +486,7 @@ class CartService
             ->where('valid_until', '>=', now())
             ->firstOrFail();
 
-        $subtotal = (int) $cart->items()->get()->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
+        $subtotal = Money::number(round($cart->items()->get()->sum(fn(CartItem $item) => $item->unit_price * $item->quantity), 2));
 
         $result = $this->calculationService->applyCoupon(
             $coupon,
@@ -540,9 +541,9 @@ class CartService
                     continue;
                 }
 
-                $livePrice = (int) $listing->price;
+                $livePrice = Money::number($listing->price);
 
-                if ((int) $item->unit_price !== $livePrice) {
+                if (abs((float) $item->unit_price - (float) $livePrice) > 0.00005) {
                     $priceChanges[$item->id] = true;
                     $item->update(['unit_price' => $livePrice]);
                 }
@@ -558,7 +559,7 @@ class CartService
                     continue;
                 }
 
-                $livePrice = (int) $listing->getRawOriginal('price');
+                $livePrice = Money::number($listing->getRawOriginal('price'));
             } else {
                 $listing = $item->vendorListing;
 
@@ -567,10 +568,10 @@ class CartService
                     continue;
                 }
 
-                $livePrice = (int) $listing->price;
+                $livePrice = Money::number($listing->price);
             }
 
-            if ((int) $item->unit_price !== $livePrice) {
+            if (abs((float) $item->unit_price - (float) $livePrice) > 0.00005) {
                 $priceChanges[$item->id] = true;
                 $item->update(['unit_price' => $livePrice]);
             }
@@ -579,7 +580,7 @@ class CartService
         $cart->unsetRelation('items');
         $cart->load(self::itemEagerLoads());
 
-        $subtotal = (int) $cart->items->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
+        $subtotal = Money::number(round($cart->items->sum(fn(CartItem $item) => $item->unit_price * $item->quantity), 2));
 
         $discount = 0;
         $couponError = null;
@@ -621,7 +622,7 @@ class CartService
             'discount' => $discount,
             'estimated_shipping' => 0,
             'estimated_tax' => $estimatedTax,
-            'estimated_total' => max(0, $subtotal - $discount + $estimatedTax),
+            'estimated_total' => Money::number(max(0, $subtotal - $discount + $estimatedTax)),
             'affiliate_promo_code_id' => $cart->affiliate_promo_code_id,
             'expires_at' => now()->addDays(30),
         ]);
@@ -686,7 +687,7 @@ class CartService
         return $groups->map(function ($groupItems) use ($countryId, $imagesByVariant) {
             $method = $groupItems->first()->selectedShippingMethod;
 
-            $groupSubtotal = $groupItems->sum(fn(CartItem $item) => $item->unit_price * $item->quantity);
+            $groupSubtotal = Money::number(round($groupItems->sum(fn(CartItem $item) => $item->unit_price * $item->quantity), 2));
 
             $threshold = ($method && $countryId)
                 ? CountryShippingSetting::where('country_id', $countryId)
@@ -726,7 +727,7 @@ class CartService
                         'id' => $item->id,
                         'quantity' => $item->quantity,
                         'unit_price' => $item->unit_price,
-                        'line_total' => $item->unit_price * $item->quantity,
+                        'line_total' => Money::number(round($item->unit_price * $item->quantity, 2)),
                         'product_url' => "/products/{$variant?->id}/" . ($isMarketer ? $item->marketer_listing_id : ($isVendor ? $item->vendor_listing_id : $item->admin_listing_id)),
                         'product_name_en' => $product?->name_en,
                         'product_name_ar' => $product?->name_ar,
@@ -751,7 +752,7 @@ class CartService
                             'name' => $item->warrantyPlan->localized_name,
                             'duration_months' => $item->warrantyPlan->duration_months,
                             'duration_label' => $item->warrantyPlan->duration_label,
-                            'price' => $item->warrantyPlan->resolvePrice((int) $item->unit_price),
+                            'price' => $item->warrantyPlan->resolvePrice($item->unit_price),
                             'currency' => $item->warrantyPlan->currency,
                             'image_url' => $item->warrantyPlan->image_url,
                         ] : null,

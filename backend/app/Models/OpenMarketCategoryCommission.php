@@ -21,7 +21,7 @@ class OpenMarketCategoryCommission extends Model
 
     protected $casts = [
         'commission_rate' => 'decimal:2',
-        'commission_flat_amount' => 'integer',
+        'commission_flat_amount' => \App\Casts\DecimalMoney::class,
     ];
 
     public function marketer(): BelongsTo
@@ -43,13 +43,13 @@ class OpenMarketCategoryCommission extends Model
      * Resolve the commission amount owed on a given base amount, according
      * to this rule's commission_mode (fixed | percentage | both).
      */
-    public function resolveAmount(int $baseAmount): int
+    public function resolveAmount(int|float $baseAmount): int|float
     {
         return match ($this->commission_mode) {
-            'fixed' => (int) ($this->commission_flat_amount ?? 0),
-            'both' => (int) ($this->commission_flat_amount ?? 0)
-                + (int) round($baseAmount * ((float) $this->commission_rate / 100)),
-            default => (int) round($baseAmount * ((float) $this->commission_rate / 100)),
+            'fixed' => (float) ($this->commission_flat_amount ?? 0),
+            'both' => round((float) ($this->commission_flat_amount ?? 0)
+                + round($baseAmount * ((float) $this->commission_rate / 100), 2), 2),
+            default => round($baseAmount * ((float) $this->commission_rate / 100), 2),
         };
     }
 }

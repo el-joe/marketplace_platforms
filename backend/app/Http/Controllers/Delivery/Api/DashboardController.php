@@ -65,7 +65,7 @@ class DashboardController extends Controller
                 'failed' => (int) $stats->failed,
                 'active' => (int) $stats->active,
             ],
-            'earnings_today' => (int) $earningsToday,
+            'earnings_today' => \App\Support\Money::number($earningsToday),
             'currency' => $agent->country?->currency_code ?? $agent->zone?->country?->currency_code ?? 'AED',
             'is_available' => $agent->is_available,
             'status' => $agent->status,

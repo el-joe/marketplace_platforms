@@ -161,7 +161,7 @@ class CommissionsVendorRulesTest extends TestCase
             'tiered type checkout ignores' => [['rate_type' => 'tiered'], 'rate_type'],
             'unknown type' => [['rate_type' => 'percentage'], 'rate_type'],
             'negative minimum' => [['min_commission' => '-5'], 'min_commission'],
-            'fractional minimum' => [['min_commission' => '1.5'], 'min_commission'],
+            'more than two decimals minimum' => [['min_commission' => '1.555'], 'min_commission'],
             'maximum below minimum' => [['min_commission' => '100', 'max_commission' => '50'], 'max_commission'],
             'end before start' => [['effective_from' => '2026-05-01', 'effective_until' => '2026-04-01'], 'effective_until'],
             'missing start date' => [['effective_from' => ''], 'effective_from'],

@@ -94,7 +94,7 @@
                         </td>
                         <td class="px-4 py-3 text-center text-xs text-gray-500">{{ $listing->country->name_ar }}</td>
                         <td class="px-4 py-3 text-center">
-                            <div class="font-bold text-gray-900">{{ number_format($listing->price) }}</div>
+                            <div class="font-bold text-gray-900">{{ \App\Support\Money::format($listing->price) }}</div>
                             <div class="text-xs text-gray-400">{{ $listing->currency }}</div>
                         </td>
                         <td class="px-4 py-3 text-center text-gray-700">{{ number_format($listing->total_sold) }}</td>
@@ -164,7 +164,7 @@
                                     </button>
                                     <div x-show="open" x-cloak
                                          class="absolute left-0 top-8 z-20 bg-white border rounded-lg shadow p-3 w-44 space-y-2">
-                                        <input type="number" name="price" value="{{ $listing->price }}" min="1"
+                                        <input type="number" step="0.01" name="price" value="{{ $listing->price }}" min="1"
                                                @if($isClassified && $listingPrice?->min_price) min="{{ $listingPrice->min_price }}" @endif
                                                @if($isClassified && $listingPrice?->max_price) max="{{ $listingPrice->max_price }}" @endif
                                                placeholder="{{ __('marketer.listings.price_placeholder') }}" class="w-full border rounded px-2 py-1 text-xs">

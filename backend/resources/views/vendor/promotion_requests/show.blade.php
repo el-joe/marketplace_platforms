@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <div class="text-gray-500">{{ __('partner.static_text.vendor_promotion_requests_show.total_fees') }}</div>
-                    <div class="font-medium text-gray-900">{{ $promotionRequest->currency }} {{ number_format($promotionRequest->total_promotion_fee) }}</div>
+                    <div class="font-medium text-gray-900">{{ $promotionRequest->currency }} {{ \App\Support\Money::format($promotionRequest->total_promotion_fee) }}</div>
                 </div>
                 <div>
                     <div class="text-gray-500">{{ __('partner.static_text.vendor_promotion_requests_show.status') }}</div>

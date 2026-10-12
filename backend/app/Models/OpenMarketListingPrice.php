@@ -26,10 +26,10 @@ class OpenMarketListingPrice extends Model
     ];
 
     protected $casts = [
-        'base_price' => 'integer',
+        'base_price' => \App\Casts\DecimalMoney::class,
         'allow_marketer_override' => 'boolean',
-        'min_price' => 'integer',
-        'max_price' => 'integer',
+        'min_price' => \App\Casts\DecimalMoney::class,
+        'max_price' => \App\Casts\DecimalMoney::class,
     ];
 
     public function classifiedCategory(): BelongsTo
@@ -46,7 +46,7 @@ class OpenMarketListingPrice extends Model
      * Whether $price is within this rule's min_price/max_price bounds.
      * A null bound is treated as "no limit" on that side.
      */
-    public function isPriceInBounds(int $price): bool
+    public function isPriceInBounds(int|float $price): bool
     {
         if ($this->min_price !== null && $price < $this->min_price) {
             return false;

@@ -164,7 +164,7 @@ class AdSlotController extends Controller
             'bound_item_id' => $this->resolveBoundItemId($validated['page_block_id'] ?? null, $validated['item_position'] ?? null),
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
-            'base_rate' => (int) round($validated['base_rate_display']),
+            'base_rate' => round((float) $validated['base_rate_display'], 2),
             'currency' => Country::findOrFail($validated['country_id'])->currency_code, // always the country's currency
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,
@@ -234,7 +234,7 @@ class AdSlotController extends Controller
             'placement_definition_id' => $validated['banner_placement_definition_id'] ?? null,
             'country_id' => $validated['country_id'] ?? null,
             'pricing_model' => $validated['pricing_model'],
-            'base_rate' => (int) round($validated['base_rate_display']),
+            'base_rate' => round((float) $validated['base_rate_display'], 2),
             'currency' => Country::findOrFail($validated['country_id'])->currency_code, // always the country's currency
             'min_booking_days' => $validated['min_booking_days'],
             'max_booking_days' => $validated['max_booking_days'] ?? null,

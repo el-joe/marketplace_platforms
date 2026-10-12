@@ -29,7 +29,7 @@ class SubscriptionPlan extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
             'max_listings' => 'integer',
             'free_shipping_included' => 'boolean',
             'commission_discount_pct' => 'decimal:2',

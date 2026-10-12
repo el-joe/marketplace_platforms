@@ -27,8 +27,8 @@ class AffiliatePromoCode extends Model
 
     protected $casts = [
         'value' => 'decimal:2',
-        'min_order_amount' => 'integer',
-        'max_discount' => 'integer',
+        'min_order_amount' => \App\Casts\DecimalMoney::class,
+        'max_discount' => \App\Casts\DecimalMoney::class,
         'usage_limit_total' => 'integer',
         'times_used' => 'integer',
         'is_active' => 'boolean',

@@ -629,7 +629,7 @@ class ListingController extends Controller
                 'campaign_id',
                 (clone $marketerCampaignsBase)->select('id')
             )->count(),
-            'commission_budget_spent' => (int) (clone $marketerCampaignsBase)->sum('commission_budget_spent'),
+            'commission_budget_spent' => \App\Support\Money::number((clone $marketerCampaignsBase)->sum('commission_budget_spent')),
         ];
 
         // Why (if at all) the "New campaign" button must be disabled.
@@ -872,7 +872,7 @@ class ListingController extends Controller
             'product_variant_id' => ['nullable', 'required_without:product_id', 'uuid', 'exists:product_variants,id'],
             'product_id' => ['nullable', 'required_without:product_variant_id', 'uuid', 'exists:products,id'],
             'country_id' => ['required', 'exists:countries,id'],
-            'price' => ['required', 'integer', 'min:1', 'max:999999999'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
             'fbm_payment_gateway_id' => ['nullable', 'uuid', 'exists:payment_gateways,id'],
@@ -1000,7 +1000,7 @@ class ListingController extends Controller
                 'vendor_id' => $vendorId,
                 'product_variant_id' => $resolvedVariantId,
                 'country_id' => $request->country_id,
-                'price' => (int) round((float) $request->price),
+                'price' => round((float) $request->price, 2),
                 'currency' => $currency,
                 'condition' => $request->condition,
                 'fulfillment_model' => $request->fulfillment_model,
@@ -1162,7 +1162,7 @@ class ListingController extends Controller
         }
 
         $validated = $request->validate([
-            'price' => ['required', 'integer', 'min:1', 'max:999999999'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999'],
             'condition' => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model' => ['required', 'in:fbm,fbn,cross_dock'],
             'fbm_payment_gateway_id' => ['nullable', 'uuid', 'exists:payment_gateways,id'],
@@ -1208,7 +1208,7 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($listing, $validated, $request, $weightClass) {
             $listing->update([
-                'price' => (int) round((float) $validated['price']),
+                'price' => round((float) $validated["price"], 2),
                 'condition' => $validated['condition'],
                 'fulfillment_model' => $validated['fulfillment_model'],
                 'fbm_payment_gateway_id' => $validated['fulfillment_model'] === 'fbm' ? ($validated['fbm_payment_gateway_id'] ?? null) : null,
@@ -1292,11 +1292,11 @@ class ListingController extends Controller
         $this->authoriseListing($listing);
 
         $request->validate([
-            'price' => ['required', 'integer', 'min:1', 'max:999999999'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:999999999'],
         ]);
 
         $listing->update([
-            'price' => (int) round((float) $request->price),
+            'price' => round((float) $request->price, 2),
         ]);
 
         return response()->json([

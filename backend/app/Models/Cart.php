@@ -27,7 +27,11 @@ class Cart extends Model
     ];
 
     protected $casts = [
-        'wallet_amount_to_use' => 'integer',
+        'subtotal' => \App\Casts\DecimalMoney::class,
+        'estimated_shipping' => \App\Casts\DecimalMoney::class,
+        'estimated_tax' => \App\Casts\DecimalMoney::class,
+        'estimated_total' => \App\Casts\DecimalMoney::class,
+        'wallet_amount_to_use' => \App\Casts\DecimalMoney::class,
     ];
 
     public function country(): BelongsTo

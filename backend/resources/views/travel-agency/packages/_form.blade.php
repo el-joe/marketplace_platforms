@@ -119,7 +119,7 @@
     <div class="grid grid-cols-3 gap-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('travel.packages.price') }} *</label>
-            <input type="number" name="price" value="{{ old('price', $pkg?->price) }}" min="1" required
+            <input type="number" step="0.01" name="price" value="{{ old('price', $pkg?->price) }}" min="1" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
                    placeholder="{{ __('travel.packages.price_placeholder') }}">
         </div>
@@ -177,7 +177,7 @@
             <input type="number" name="price_tiers[{{ $tierIndex }}][travelers_count]" value="{{ $tier['travelers_count'] ?? '' }}" min="1"
                    placeholder="{{ __('travel.packages.travelers_count') }}"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
-            <input type="number" name="price_tiers[{{ $tierIndex }}][price]" value="{{ $tier['price'] ?? '' }}" min="1"
+            <input type="number" step="0.01" name="price_tiers[{{ $tierIndex }}][price]" value="{{ $tier['price'] ?? '' }}" min="1"
                    placeholder="{{ __('travel.packages.price') }}"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
             <button type="button" class="remove-tier-row text-red-500 text-sm px-2">&times;</button>
@@ -425,7 +425,7 @@
         row.className = 'pricing-tier-row grid grid-cols-[1fr_1fr_auto] gap-3 items-center';
         row.innerHTML =
             '<input type="number" name="price_tiers[][travelers_count]" min="1" placeholder="{{ __('travel.packages.travelers_count') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">' +
-            '<input type="number" name="price_tiers[][price]" min="1" placeholder="{{ __('travel.packages.price') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">' +
+            '<input type="number" step="0.01" name="price_tiers[][price]" min="1" placeholder="{{ __('travel.packages.price') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">' +
             '<button type="button" class="remove-tier-row text-red-500 text-sm px-2">&times;</button>';
         return row;
     }

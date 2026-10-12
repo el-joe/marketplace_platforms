@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
+use App\Support\Money;
 use App\Enums\TravelBookingStatus;
 use App\Enums\TravelPackageInquiryStatus;
 use App\Http\Controllers\Controller;
@@ -58,12 +59,12 @@ class ReportController extends Controller
             ->groupBy('travel_packages.currency')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->total * $rate);
+                $commission = round($row->total * $rate, 2);
                 return [
                     'currency'   => $row->currency,
-                    'revenue'    => (int) $row->total,
+                    'revenue'    => Money::number($row->total),
                     'commission' => $commission,
-                    'net'        => (int) $row->total - $commission,
+                    'net'        => Money::number($row->total - $commission),
                 ];
             })
             ->keyBy('currency');
@@ -82,7 +83,7 @@ class ReportController extends Controller
             ->orderBy('day')
             ->get()
             ->groupBy('currency')
-            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total])->values());
+            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)])->values());
 
         // Monthly breakdown table.
         $monthlyBreakdown = (clone $baseQuery)
@@ -96,13 +97,13 @@ class ReportController extends Controller
             ->orderByDesc('month')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->revenue * $rate);
+                $commission = round($row->revenue * $rate, 2);
                 return [
                     'month'          => $row->month,
                     'bookings_count' => (int) $row->bookings_count,
-                    'revenue'        => (int) $row->revenue,
+                    'revenue'        => Money::number($row->revenue),
                     'commission'     => $commission,
-                    'net'            => (int) $row->revenue - $commission,
+                    'net'            => Money::number($row->revenue - $commission),
                     'currency'       => $row->currency,
                 ];
             });
@@ -142,13 +143,13 @@ class ReportController extends Controller
         ];
 
         $rows = $monthlyBreakdown->map(function ($row) use ($rate) {
-            $commission = (int) round($row->revenue * $rate);
+            $commission = round($row->revenue * $rate, 2);
             return [
                 $row->month,
                 (int) $row->bookings_count,
-                (int) $row->revenue,
+                Money::number($row->revenue),
                 $commission,
-                (int) $row->revenue - $commission,
+                Money::number($row->revenue - $commission),
                 $row->currency,
             ];
         });
@@ -318,8 +319,8 @@ class ReportController extends Controller
                     'inquiries'         => $inquiriesCount,
                     'bookings'          => $bookingsCount,
                     'conversion_rate'   => $inquiriesCount > 0 ? round(($bookingsCount / $inquiriesCount) * 100, 1) : 0.0,
-                    'revenue'           => (int) $revenue,
-                    'avg_booking_value' => $bookingsCount > 0 ? (int) round($revenue / $bookingsCount) : 0,
+                    'revenue'           => Money::number($revenue),
+                    'avg_booking_value' => $bookingsCount > 0 ? Money::number(round($revenue / $bookingsCount, 2)) : 0,
                     'currency'          => $package->currency,
                     'status'            => $package->status->value ?? $package->status,
                 ];

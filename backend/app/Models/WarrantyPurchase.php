@@ -19,7 +19,7 @@ class WarrantyPurchase extends Model
             'plan_snapshot' => 'array',
             'coverage_starts_at' => 'date',
             'coverage_ends_at' => 'date',
-            'price_paid' => 'integer',
+            'price_paid' => \App\Casts\DecimalMoney::class,
         ];
     }
 

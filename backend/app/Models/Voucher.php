@@ -37,7 +37,7 @@ class Voucher extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
+        'amount' => \App\Casts\DecimalMoney::class,
         'valid_from' => 'datetime',
         'valid_until' => 'datetime',
         'is_active' => 'boolean',

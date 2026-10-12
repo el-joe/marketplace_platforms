@@ -139,9 +139,9 @@ class DeliveryPayoutController extends Controller
         $payouts = [];
 
         foreach ($rows as $row) {
-            $gross = (int) $row->gross;
-            $deductions = (int) $row->deductions;
-            $net = $gross - $deductions;
+            $gross = round((float) $row->gross, 2);
+            $deductions = round((float) $row->deductions, 2);
+            $net = round($gross - $deductions, 2);
 
             $payout = DeliveryAgentPayout::create([
                 'payout_number' => 'DAP-'.strtoupper(Str::random(8)),

@@ -29,14 +29,14 @@ class UpdateWarehouseRequest extends FormRequest
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'total_capacity_m3' => ['nullable', 'numeric', 'min:0'],
             'used_capacity_m3' => ['nullable', 'numeric', 'min:0'],
-            'storage_rate_per_m3_price' => ['nullable', 'numeric', 'min:0'],
+            'storage_rate_per_m3_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'storage_currency' => ['nullable', 'string', 'size:3'],
             'is_active' => ['boolean'],
             'default_limit_type' => ['nullable', Rule::in(['quantity', 'capacity'])],
             'default_max_quantity' => ['nullable', 'integer', 'min:1', 'required_if:default_limit_type,quantity'],
             'default_max_capacity_m3' => ['nullable', 'numeric', 'min:0.01', 'required_if:default_limit_type,capacity'],
             'free_storage_days' => ['nullable', 'integer', 'min:0'],
-            'daily_fee_per_unit' => ['nullable', 'integer', 'min:0'],
+            'daily_fee_per_unit' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'daily_fee_currency' => ['nullable', 'string', 'size:3'],
         ];
     }
@@ -58,7 +58,7 @@ class UpdateWarehouseRequest extends FormRequest
     {
         if ($this->filled('storage_rate_per_m3_price')) {
             $this->merge([
-                'storage_rate_per_m3_price' => (int) round((float) $this->storage_rate_per_m3_price),
+                'storage_rate_per_m3_price' => round((float) $this->storage_rate_per_m3_price, 2),
             ]);
         }
 

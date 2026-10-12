@@ -69,7 +69,7 @@
         @endif
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-5 text-center">
-        <div class="text-3xl font-black text-red-600">{{ number_format($scorecard['total_compensated']) }}</div>
+        <div class="text-3xl font-black text-red-600">{{ \App\Support\Money::format($scorecard['total_compensated']) }}</div>
         <div class="text-xs text-gray-500 mt-1">{{ __('carrier.reports.perf_compensated') }}</div>
     </div>
 </div>

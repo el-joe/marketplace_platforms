@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Partner;
 
+use App\Support\Money;
 use App\Enums\AdCampaignStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AdCampaign;
@@ -115,9 +116,9 @@ class AdsController extends Controller
                 'type'           => $data['type'],
                 'targeting_type' => $data['targeting_type'],
                 'status'         => AdCampaignStatus::PendingReview->value,
-                'budget_total'   => (int) $data['budget_total'],
-                'budget_daily'   => isset($data['budget_daily']) ? (int) $data['budget_daily'] : null,
-                'bid'            => (int) $data['bid'],
+                'budget_total'   => Money::number($data['budget_total']),
+                'budget_daily'   => isset($data['budget_daily']) ? Money::number($data['budget_daily']) : null,
+                'bid'            => Money::number($data['bid']),
                 'starts_at'      => $data['starts_at'],
                 'ends_at'        => $data['ends_at'] ?? null,
                 'quality_score'  => 5.00,
@@ -204,8 +205,8 @@ class AdsController extends Controller
                 'impressions' => $stats->sum('impressions'),
                 'clicks'      => $stats->sum('clicks'),
                 'conversions' => $stats->sum('conversions'),
-                'spend'       => (int) $stats->sum('spend'),
-                'revenue'     => (int) $stats->sum('revenue_attributed'),
+                'spend'       => Money::number($stats->sum('spend')),
+                'revenue'     => Money::number($stats->sum('revenue_attributed')),
             ],
         ]);
     }

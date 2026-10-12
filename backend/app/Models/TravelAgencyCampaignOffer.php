@@ -43,6 +43,9 @@ class TravelAgencyCampaignOffer extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
+        'budget_per_marketer_cents' => \App\Casts\DecimalMoney::class,
+        'total_budget_cents' => \App\Casts\DecimalMoney::class,
+        'total_spent_cents' => \App\Casts\DecimalMoney::class,
         'offered_commission_rate' => 'decimal:2',
         'budget_per_marketer' => 'integer',
         'total_budget' => 'integer',

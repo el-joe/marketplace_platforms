@@ -34,7 +34,7 @@ class CheckoutItemResource extends JsonResource
             'product_name' => ['ar' => $product->name_ar, 'en' => $product->name_en],
             'quantity' => $this->quantity,
             'unit_price' => $this->unit_price,
-            'line_total' => $this->unit_price * $this->quantity,
+            'line_total' => \App\Support\Money::number(round($this->unit_price * $this->quantity, 2)),
             'thumbnail' => $thumbnail,
             'image' => $thumbnail ? ['url' => $thumbnail, 'alt' => $images[0]->alt] : null,
             'images' => array_map(fn ($i) => $i->toArray(), $images),

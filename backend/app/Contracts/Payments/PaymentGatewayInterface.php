@@ -15,7 +15,7 @@ interface PaymentGatewayInterface
 
     public function verify(string $transactionReference): PaymentVerificationResult;
 
-    public function refund(string $transactionReference, int $amountCents, string $reason): RefundResult;
+    public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult;
 
     public function handleWebhook(array $payload, array $headers): WebhookResult;
 

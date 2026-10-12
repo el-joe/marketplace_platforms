@@ -27,7 +27,7 @@
                 <tr>
                     <td class="px-4 py-2">{{ $invitation->title ?? '—' }}</td>
                     <td class="px-4 py-2">{{ $invitation->status }}</td>
-                    <td class="px-4 py-2">{{ number_format($invitation->min_fee_amount) }} {{ $invitation->currency }}</td>
+                    <td class="px-4 py-2">{{ \App\Support\Money::format($invitation->min_fee_amount) }} {{ $invitation->currency }}</td>
                     <td class="px-4 py-2">{{ $invitation->approved_requests_count }} / {{ $invitation->max_participants }}</td>
                     <td class="px-4 py-2">{{ $invitation->requests_count }}</td>
                     <td class="px-4 py-2">{{ $invitation->registration_deadline->format('Y-m-d H:i') }}</td>

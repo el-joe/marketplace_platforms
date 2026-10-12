@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\TravelAgencyPortal;
 
+use App\Support\Money;
 use App\Enums\TravelBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TravelBooking;
@@ -56,12 +57,12 @@ class FinanceController extends Controller
             ->groupBy('travel_packages.currency')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->gross * $rate);
+                $commission = round($row->gross * $rate, 2);
                 return [
                     'currency'       => $row->currency,
-                    'gross'          => (int) $row->gross,
+                    'gross'          => \App\Support\Money::number($row->gross),
                     'commission'     => $commission,
-                    'net_revenue'    => (int) $row->gross - $commission,
+                    'net_revenue'    => Money::number($row->gross - $commission),
                     'bookings_count' => (int) $row->bookings_count,
                 ];
             });
@@ -72,14 +73,14 @@ class FinanceController extends Controller
             ->orderByDesc('month')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->revenue * $rate);
+                $commission = round($row->revenue * $rate, 2);
                 return [
                     'month'          => $row->month,
                     'currency'       => $row->currency,
                     'bookings_count' => (int) $row->bookings_count,
-                    'revenue'        => (int) $row->revenue,
+                    'revenue'        => Money::number($row->revenue),
                     'commission'     => $commission,
-                    'net'            => (int) $row->revenue - $commission,
+                    'net'            => Money::number($row->revenue - $commission),
                 ];
             });
 
@@ -107,14 +108,14 @@ class FinanceController extends Controller
             ->orderByDesc('period')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->gross * $rate);
+                $commission = round($row->gross * $rate, 2);
                 return [
                     'period'         => $row->period,
                     'currency'       => $row->currency,
                     'bookings_count' => (int) $row->bookings_count,
-                    'gross'          => (int) $row->gross,
+                    'gross'          => \App\Support\Money::number($row->gross),
                     'commission'     => $commission,
-                    'net_payout'     => (int) $row->gross - $commission,
+                    'net_payout'     => \App\Support\Money::number($row->gross - $commission),
                 ];
             });
 
@@ -197,15 +198,15 @@ class FinanceController extends Controller
             'date_to'         => $to->toDateString(),
             'commission_rate' => $rate,
             'bookings'        => $bookings->map(function ($b) use ($rate) {
-                $commission = (int) round($b->total_price * $rate);
+                $commission = round($b->total_price * $rate, 2);
                 return [
                     'booking_number'  => $b->booking_number,
                     'package_title'   => $b->package_title_ar ?: $b->package_title_en,
                     'status'          => $b->status,
                     'travelers_count' => $b->travelers_count,
-                    'total_price'     => (int) $b->total_price,
+                    'total_price'     => Money::number($b->total_price),
                     'commission'      => $commission,
-                    'net'             => (int) $b->total_price - $commission,
+                    'net'             => Money::number($b->total_price - $commission),
                     'currency'        => $b->currency,
                     'date'            => $b->created_at?->toDateString(),
                 ];

@@ -354,7 +354,7 @@ class ShippingZoneController extends Controller
             $request->zone_id,
             $request->method_id,
             (int) $request->weight_grams,
-            (int) round((float) $request->order_value),
+            round((float) $request->order_value, 2),
             $request->boolean('is_cod')
         );
 

@@ -17,6 +17,9 @@ class PaymentTransaction extends Model
     protected function casts(): array
     {
         return [
+            'amount' => \App\Casts\DecimalMoney::class,
+            'gateway_amount' => \App\Casts\DecimalMoney::class,
+            'gateway_fee' => \App\Casts\DecimalMoney::class,
             'raw_request' => 'array',
             'raw_response' => 'array',
             'processed_at' => 'datetime',

@@ -148,7 +148,7 @@ class AssignmentService
         ?UploadedFile      $proofImage,
         ?float             $latitude,
         ?float             $longitude,
-        ?int               $codAmountCollectedCents,
+        int|float|null    $codAmountCollectedCents,
         ?string            $discrepancyNote = null,
     ): void {
         if ($assignment->status !== DeliveryAssignment::STATUS_PICKED_UP) {
@@ -179,8 +179,8 @@ class AssignmentService
         $codDiscrepancyCents = 0;
         $hasDiscrepancy      = false;
         if ($isCod && $codAmountCollectedCents !== null) {
-            $expectedCents       = (int) $order->total;
-            $codDiscrepancyCents = $expectedCents - $codAmountCollectedCents;
+            $expectedCents       = $order->total;
+            $codDiscrepancyCents = round($expectedCents - $codAmountCollectedCents, 2);
             $hasDiscrepancy      = $codDiscrepancyCents > self::COD_DISCREPANCY_TOLERANCE_CENTS;
 
             if ($hasDiscrepancy && empty($discrepancyNote)) {

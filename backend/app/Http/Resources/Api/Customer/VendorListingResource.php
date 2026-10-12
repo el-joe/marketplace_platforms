@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\Customer;
 
+use App\Support\Money;
 use App\Models\Country;
 use App\Services\Shipping\ListingOriginShippingIndicator;
 use Illuminate\Http\Request;
@@ -52,8 +53,8 @@ class VendorListingResource extends JsonResource
             'primary_image' => $primaryImageUrl,
             'image' => $primaryImageUrl ? ['url' => $primaryImageUrl, 'alt' => $images[0]->alt] : null,
             'images' => $imagesSlider,
-            'price' => (int) $listing->price,
-            'compare_at_price' => $listing->compare_at_price !== null ? (int) $listing->compare_at_price : null,
+            'price' => Money::number($listing->price),
+            'compare_at_price' => $listing->compare_at_price !== null ? Money::number($listing->compare_at_price) : null,
             'currency' => $listing->currency ?? $this->country->currency_code,
             'condition' => $listing->condition,
             'global_system_type' => $listing->global_system_type?->value,

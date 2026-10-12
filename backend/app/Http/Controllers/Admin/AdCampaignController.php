@@ -46,7 +46,7 @@ class AdCampaignController extends Controller
             'pending' => AdCampaign::where('status', AdCampaignStatus::PendingReview->value)->count(),
             'active' => AdCampaign::where('status', AdCampaignStatus::Active->value)->count(),
             'paused' => AdCampaign::where('status', AdCampaignStatus::Paused->value)->count(),
-            'spend_today' => (int) AdDailyStat::whereDate('date', $today)->sum('spend'),
+            'spend_today' => \App\Support\Money::number(AdDailyStat::whereDate('date', $today)->sum('spend')),
         ];
 
         $countries = Country::orderBy('name_en')->get(['id', 'name_en', 'flag_emoji']);

@@ -40,7 +40,7 @@
                                         @endif
                                     </td>
                                     <td class="px-3 py-2 text-center">{{ $item->quantity }}</td>
-                                    <td class="px-3 py-2 text-end">{{ number_format($item->unit_cost) }}</td>
+                                    <td class="px-3 py-2 text-end">{{ \App\Support\Money::format($item->unit_cost) }}</td>
                                     <td class="px-3 py-2 text-end">{{ $item->line_total_formatted }}</td>
                                 </tr>
                             @endforeach
@@ -48,11 +48,11 @@
                         <tfoot>
                             <tr class="border-t border-gray-200">
                                 <td colspan="3" class="px-3 py-2 text-end text-gray-500">{{ __('admin.packaging_show_request_section.subtotal') }}</td>
-                                <td class="px-3 py-2 text-end font-medium">{{ number_format($req->total_cost) }} {{ $req->currency }}</td>
+                                <td class="px-3 py-2 text-end font-medium">{{ \App\Support\Money::format($req->total_cost) }} {{ $req->currency }}</td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="px-3 py-2 text-end text-gray-500">{{ __('admin.packaging_show_request_section.delivery_fee') }}</td>
-                                <td class="px-3 py-2 text-end font-medium">{{ number_format($req->delivery_fee) }} {{ $req->currency }}</td>
+                                <td class="px-3 py-2 text-end font-medium">{{ \App\Support\Money::format($req->delivery_fee) }} {{ $req->currency }}</td>
                             </tr>
                             <tr class="border-t border-gray-200">
                                 <td colspan="3" class="px-3 py-2 text-end font-semibold text-gray-900">{{ __('admin.packaging_show_request_section.grand_total') }}</td>

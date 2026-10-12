@@ -92,7 +92,7 @@ class AramexCarrier implements ShippingCarrierInterface
                 trackingNumber: $shipment['ID'] ?? '',
                 awbLabelUrl: $body['Labels'][0]['LabelURL'] ?? '',
                 awbLabelBase64: null,
-                shippingCost: (int) (($shipment['TotalAmount']['Value'] ?? 0) * 100),
+                shippingCost: round((float) ($shipment['TotalAmount']['Value'] ?? 0), 2),
                 currency: $shipment['TotalAmount']['CurrencyCode'] ?? 'USD',
                 carrierReferenceId: $shipment['ID'] ?? null,
                 errorMessage: null,
@@ -175,7 +175,7 @@ class AramexCarrier implements ShippingCarrierInterface
             $rate = $body['TotalAmount'] ?? null;
 
             return [
-                'rate' => $rate ? (int) ($rate['Value'] * 100) : 0,
+                'rate' => $rate ? round((float) $rate['Value'], 2) : 0,
                 'currency' => $rate['CurrencyCode'] ?? 'USD',
                 'estimated_days' => 3,
                 'service_name' => 'Aramex Express',

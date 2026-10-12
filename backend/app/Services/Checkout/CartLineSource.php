@@ -38,7 +38,7 @@ class CartLineSource
         public readonly VendorListing|AdminListing|MarketerListing $sellable,
         public readonly VendorListing|AdminListing|MarketerListing $fulfilmentListing,
         public readonly string $sellerParty,
-        public readonly int $price,
+        public readonly int|float $price,
         public readonly int $quantity,
         public readonly string $fulfillmentModel,
         public readonly Collection $warehouseInventories,
@@ -60,7 +60,7 @@ class CartLineSource
                 sellable: $listing,
                 fulfilmentListing: $listing,
                 sellerParty: $listing->vendor_id,
-                price: (int) $item->unit_price,
+                price: \App\Support\Money::number($item->unit_price),
                 quantity: (int) $item->quantity,
                 fulfillmentModel: $listing->fulfillment_model?->value ?? 'fbm',
                 warehouseInventories: $listing->relationLoaded('warehouseInventories')
@@ -83,7 +83,7 @@ class CartLineSource
                 sellable: $listing,
                 fulfilmentListing: $listing,
                 sellerParty: 'platform',
-                price: (int) $item->unit_price,
+                price: \App\Support\Money::number($item->unit_price),
                 quantity: (int) $item->quantity,
                 // Admin (platform) listings have no fulfillment_model column —
                 // platform stock is always fulfilled the same way FBN is.
@@ -127,7 +127,7 @@ class CartLineSource
                     sellable: $marketerListing,
                     fulfilmentListing: $sourceVendorListing,
                     sellerParty: $sourceVendorListing->vendor_id,
-                    price: (int) $item->unit_price,
+                    price: \App\Support\Money::number($item->unit_price),
                     quantity: (int) $item->quantity,
                     fulfillmentModel: $sourceVendorListing->fulfillment_model?->value ?? 'fbm',
                     warehouseInventories: $sourceVendorListing->relationLoaded('warehouseInventories')
@@ -145,7 +145,7 @@ class CartLineSource
                     sellable: $marketerListing,
                     fulfilmentListing: $sourceAdminListing,
                     sellerParty: 'platform',
-                    price: (int) $item->unit_price,
+                    price: \App\Support\Money::number($item->unit_price),
                     quantity: (int) $item->quantity,
                     fulfillmentModel: 'fbn',
                     warehouseInventories: $sourceAdminListing->relationLoaded('warehouseInventories')
@@ -170,7 +170,7 @@ class CartLineSource
                     sellable: $marketerListing,
                     fulfilmentListing: $sourceOwnerListing,
                     sellerParty: 'marketer:'.$sourceOwnerListing->marketer_id,
-                    price: (int) $item->unit_price,
+                    price: \App\Support\Money::number($item->unit_price),
                     quantity: (int) $item->quantity,
                     fulfillmentModel: 'fbn',
                     warehouseInventories: $sourceOwnerListing->warehouseInventories()->get(),
@@ -189,7 +189,7 @@ class CartLineSource
                     sellable: $marketerListing,
                     fulfilmentListing: $marketerListing,
                     sellerParty: 'marketer:'.$marketerListing->marketer_id,
-                    price: (int) $item->unit_price,
+                    price: \App\Support\Money::number($item->unit_price),
                     quantity: (int) $item->quantity,
                     fulfillmentModel: 'fbn',
                     warehouseInventories: $marketerListing->relationLoaded('warehouseInventories')

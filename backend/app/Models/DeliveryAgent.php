@@ -63,6 +63,8 @@ class DeliveryAgent extends Authenticatable implements JWTSubject
     {
         return [
             'password' => 'hashed',
+            'base_salary' => \App\Casts\DecimalMoney::class,
+            'per_delivery_fee' => \App\Casts\DecimalMoney::class,
             'is_available' => 'boolean',
             'last_location_at' => 'datetime',
             'last_login_at' => 'datetime',

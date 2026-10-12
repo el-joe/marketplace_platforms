@@ -23,7 +23,7 @@ class FlightBooking extends Model
             'departure_at' => 'datetime',
             'arrival_at' => 'datetime',
             'passengers_count' => 'integer',
-            'total_price' => 'integer',
+            'total_price' => \App\Casts\DecimalMoney::class,
         ];
     }
 

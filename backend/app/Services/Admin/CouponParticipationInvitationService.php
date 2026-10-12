@@ -80,16 +80,16 @@ class CouponParticipationInvitationService
         if ($invitation->isFull()) {
             throw ValidationException::withMessages(['invitation' => 'اكتمل عدد المشاركين في هذه الدعوة.']);
         }
-        if (! is_numeric($fee) || (int) $fee != $fee || (int) $fee < $invitation->min_fee_amount) {
-            throw ValidationException::withMessages(['offered_fee_amount' => 'الرسوم المعروضة يجب أن تكون رقمًا صحيحًا لا يقل عن '.$invitation->min_fee_amount.'.']);
+        if (! is_numeric($fee) || abs(round((float) $fee, 2) - (float) $fee) > 0.000001 || (float) $fee < (float) $invitation->min_fee_amount) {
+            throw ValidationException::withMessages(['offered_fee_amount' => 'الرسوم المعروضة يجب أن تكون رقمًا (حتى منزلتين عشريتين) لا يقل عن '.\App\Support\Money::format($invitation->min_fee_amount).'.']);
         }
 
         if (! in_array($paymentMethod, ['wallet', 'bank_transfer'], true)) {
             throw ValidationException::withMessages(['payment_method' => 'طريقة الدفع غير صالحة.']);
         }
         if ($paymentMethod === 'wallet') {
-            $balance = (int) $this->walletFor($type, $participantId, $invitation->currency)->balance;
-            if ($balance < (int) $fee) {
+            $balance = (float) $this->walletFor($type, $participantId, $invitation->currency)->balance;
+            if ($balance < (float) $fee) {
                 throw ValidationException::withMessages(['error' => 'insufficient_balance']);
             }
         } elseif ($proofPath === null) {
@@ -106,7 +106,7 @@ class CouponParticipationInvitationService
             'invitation_id' => $invitation->id,
             'participant_type' => $type,
             'participant_id' => $participantId,
-            'offered_fee_amount' => (int) $fee,
+            'offered_fee_amount' => \App\Support\Money::round($fee),
             'payment_method' => $paymentMethod,
             'bank_transfer_proof_path' => $proofPath,
             'status' => CouponParticipationRequest::STATUS_PENDING,

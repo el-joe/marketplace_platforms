@@ -13,7 +13,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.total') }}</p>
-            <p class="text-2xl font-extrabold text-gray-800">{{ number_format($stats['total']) }}</p>
+            <p class="text-2xl font-extrabold text-gray-800">{{ \App\Support\Money::format($stats['total']) }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <p class="text-xs text-yellow-500 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.open') }}</p>
@@ -21,15 +21,15 @@
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <p class="text-xs text-green-500 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.paid') }}</p>
-            <p class="text-2xl font-extrabold text-green-600">{{ number_format($stats['paid']) }}</p>
+            <p class="text-2xl font-extrabold text-green-600">{{ \App\Support\Money::format($stats['paid']) }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-yellow-50 bg-yellow-50 p-4 text-center">
             <p class="text-xs text-yellow-600 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.open_revenue') }}</p>
-            <p class="text-2xl font-extrabold text-yellow-700">{{ number_format($stats['open_sum']) }} EGP</p>
+            <p class="text-2xl font-extrabold text-yellow-700">{{ \App\Support\Money::format($stats['open_sum']) }} EGP</p>
         </div>
         <div class="bg-white rounded-2xl border border-green-50 bg-green-50 p-4 text-center">
             <p class="text-xs text-green-600 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.paid_revenue') }}</p>
-            <p class="text-2xl font-extrabold text-green-700">{{ number_format($stats['paid_sum']) }} EGP</p>
+            <p class="text-2xl font-extrabold text-green-700">{{ \App\Support\Money::format($stats['paid_sum']) }} EGP</p>
         </div>
     </div>
 

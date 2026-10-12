@@ -27,7 +27,7 @@
             </div>
             <div class="grid grid-cols-2 gap-4 text-sm">
                 <div><span class="text-gray-400">{{ __('marketer.promote.booking_dates_label') }}</span> {{ $booking->booked_from?->format('d M Y') }} - {{ $booking->booked_until?->format('d M Y') }}</div>
-                <div><span class="text-gray-400">{{ __('marketer.promote.booking_amount_label') }}</span> {{ number_format($booking->total_spend) }} {{ $booking->currency }}</div>
+                <div><span class="text-gray-400">{{ __('marketer.promote.booking_amount_label') }}</span> {{ \App\Support\Money::format($booking->total_spend) }} {{ $booking->currency }}</div>
                 <div><span class="text-gray-400">{{ __('marketer.promote.booking_payment_label') }}</span> {{ __('ads.payment_status.'.$booking->payment_status->value) }} ({{ __('marketer.promote.booking_payment_wallet') }})</div>
                 @if ($booking->payment_due_at)
                     <div><span class="text-gray-400">{{ __('marketer.promote.booking_due_at_label') }}</span> {{ $booking->payment_due_at->format('d M Y H:i') }}</div>
@@ -84,7 +84,7 @@
                     @forelse ($booking->charges as $charge)
                         <tr class="border-t border-gray-50">
                             <td class="py-1">{{ $charge->type->value }}</td>
-                            <td class="py-1">{{ number_format($charge->amount) }} {{ $charge->currency }}</td>
+                            <td class="py-1">{{ \App\Support\Money::format($charge->amount) }} {{ $charge->currency }}</td>
                             <td class="py-1">{{ $charge->settlement }}</td>
                         </tr>
                     @empty
@@ -102,7 +102,7 @@
                 <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.impressions') }}</div><div class="font-semibold">{{ number_format($stats['totals']['impressions']) }}</div></div>
                 <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.clicks') }}</div><div class="font-semibold">{{ number_format($stats['totals']['clicks']) }}</div></div>
                 <div><div class="text-gray-400 text-xs">CTR</div><div class="font-semibold">{{ $stats['totals']['ctr'] }}%</div></div>
-                <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.spend') }}</div><div class="font-semibold">{{ number_format($stats['totals']['spend']) }} {{ $stats['totals']['currency'] }}</div></div>
+                <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.spend') }}</div><div class="font-semibold">{{ \App\Support\Money::format($stats['totals']['spend']) }} {{ $stats['totals']['currency'] }}</div></div>
             </div>
             <canvas id="stats-chart" height="150"></canvas>
         </div>
@@ -112,8 +112,8 @@
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('marketer.promote.attribution_heading') }}</h3>
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.referred_orders') }}</div><div class="font-semibold">{{ $attribution['conversions_count'] }}</div></div>
-                    <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.earned_commission') }}</div><div class="font-semibold">{{ number_format($attribution['commission_earned']) }} {{ $attribution['currency'] }}</div></div>
-                    <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.ad_cost') }}</div><div class="font-semibold">{{ number_format($attribution['ad_spend']) }} {{ $attribution['currency'] }}</div></div>
+                    <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.earned_commission') }}</div><div class="font-semibold">{{ \App\Support\Money::format($attribution['commission_earned']) }} {{ $attribution['currency'] }}</div></div>
+                    <div><div class="text-gray-400 text-xs">{{ __('marketer.promote.ad_cost') }}</div><div class="font-semibold">{{ \App\Support\Money::format($attribution['ad_spend']) }} {{ $attribution['currency'] }}</div></div>
                     <div>
                         <div class="text-gray-400 text-xs">{{ __('marketer.promote.roi') }}</div>
                         <div class="font-semibold {{ ($attribution['roi_percent'] ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600' }}">

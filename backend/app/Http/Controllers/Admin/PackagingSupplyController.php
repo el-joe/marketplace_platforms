@@ -135,7 +135,7 @@ class PackagingSupplyController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'country_pricing' => ['required', 'array', 'min:1'],
             'country_pricing.*.country_id' => ['required', 'uuid', 'exists:countries,id'],
-            'country_pricing.*.unit_cost' => ['required', 'integer', 'min:0'],
+            'country_pricing.*.unit_cost' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'country_pricing.*.stock_available' => ['nullable', 'integer', 'min:0'],
             'country_pricing.*.is_active' => ['boolean'],
         ]);
@@ -278,7 +278,7 @@ class PackagingSupplyController extends Controller
             ->selectRaw('currency, SUM(total_cost + delivery_fee) as total')
             ->groupBy('currency')
             ->get()
-            ->map(fn ($row) => ['currency' => $row->currency, 'total' => (int) $row->total])
+            ->map(fn ($row) => ['currency' => $row->currency, 'total' => \App\Support\Money::number($row->total)])
             ->values();
 
         $stats = [
@@ -332,9 +332,9 @@ class PackagingSupplyController extends Controller
                 'vendor' => e($row->vendor->store_name ?? '—'),
                 'status' => $statusBadge,
                 'items_count' => $row->items()->count(),
-                'total_cost' => number_format($row->total_cost),
-                'delivery_fee' => number_format($row->delivery_fee),
-                'grand_total' => number_format($row->grand_total),
+                'total_cost' => \App\Support\Money::format($row->total_cost),
+                'delivery_fee' => \App\Support\Money::format($row->delivery_fee),
+                'grand_total' => \App\Support\Money::format($row->grand_total),
                 'currency' => $row->currency,
                 'created_at' => $row->created_at->format('d M Y'),
                 'actions' => $actionsHtml,
@@ -370,7 +370,7 @@ class PackagingSupplyController extends Controller
             $req->request_number,
             $req->vendor?->store_name,
             $req->items->count(),
-            number_format($req->grand_total),
+            \App\Support\Money::format($req->grand_total),
             $req->currency,
             $req->status?->value,
             optional($req->created_at)->format('d M Y H:i'),

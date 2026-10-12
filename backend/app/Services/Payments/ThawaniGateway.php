@@ -47,20 +47,17 @@ class ThawaniGateway extends AbstractPaymentGateway
     }
 
     /**
-     * Platform stores all amounts as integer subunits matching the currency's
-     * decimal_places (e.g. OMR: 3 decimal places = stored in baisa already).
-     * Thawani also expects baisa, so for OMR this is a 1:1 passthrough.
+     * The platform carries decimal base-currency amounts (1.5 OMR); Thawani
+     * expects integer minor units (1500 baisa for OMR's 3 decimal places).
      */
-    private function toGatewayAmount(int $platformCents, string $currency): int
+    private function toGatewayAmount(int|float $platformAmount, string $currency): int
     {
-        // Both platform and Thawani use the currency's smallest subunit,
-        // so no conversion is needed for OMR (or any 3-decimal currency).
-        return $platformCents;
+        return $this->toMinorUnits($platformAmount, $currency);
     }
 
-    private function fromGatewayAmount(int $gatewayAmount, string $currency): int
+    private function fromGatewayAmount(int|float $gatewayAmount, string $currency): int|float
     {
-        return $gatewayAmount;
+        return $this->fromMinorUnits($gatewayAmount, $currency);
     }
 
     public function initiate(PaymentInitiationData $data): PaymentInitiationResult
@@ -175,7 +172,7 @@ class ThawaniGateway extends AbstractPaymentGateway
         }
     }
 
-    public function refund(string $transactionReference, int $amountCents, string $reason): RefundResult
+    public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult
     {
         try {
             $response = $this->httpClient()

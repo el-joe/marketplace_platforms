@@ -513,8 +513,8 @@ class FlashSaleController extends Controller
     public function storeSubmission(StoreFlashSaleSubmissionRequest $request, FlashSale $flashSale): JsonResponse
     {
         $data = $request->validated();
-        $flashPrice = (int) $data['flash_price'];
-        $originalPrice = (int) $data['original_price'];
+        $flashPrice = round((float) $data['flash_price'], 2);
+        $originalPrice = round((float) $data['original_price'], 2);
 
         if ($flashPrice >= $originalPrice) {
             return response()->json(['message' => __('admin.flash_sales.flash_price_below_original')], 422);
@@ -548,7 +548,7 @@ class FlashSaleController extends Controller
             $avg30d = FlashSalePriceHistory::where('admin_listing_id', $listing->id)
                 ->where('recorded_at', '>=', now()->subDays(30))
                 ->avg('price');
-            $payload['reference_price_30d'] = $avg30d ? (int) round($avg30d) : $originalPrice;
+            $payload['reference_price_30d'] = $avg30d ? round((float) $avg30d, 2) : $originalPrice;
         } else {
             $listing = VendorListing::where('id', $data['vendor_listing_id'])
                 ->where('vendor_id', $data['vendor_id'])
@@ -562,7 +562,7 @@ class FlashSaleController extends Controller
             $avg30d = FlashSalePriceHistory::where('vendor_listing_id', $listing->id)
                 ->where('recorded_at', '>=', now()->subDays(30))
                 ->avg('price');
-            $payload['reference_price_30d'] = $avg30d ? (int) round($avg30d) : $originalPrice;
+            $payload['reference_price_30d'] = $avg30d ? round((float) $avg30d, 2) : $originalPrice;
         }
 
         $submission = FlashSaleSubmission::create($payload);
@@ -657,7 +657,7 @@ class FlashSaleController extends Controller
         ]);
 
         $rate = (float) $request->input('extra_commission_rate', 0);
-        $flat = (int) $request->input('extra_commission_flat_amount', 0);
+        $flat = round((float) $request->input('extra_commission_flat_amount', 0), 2);
         $mode = ($rate > 0 && $flat > 0) ? 'both' : ($flat > 0 ? 'fixed' : 'percentage');
 
         $admin = Auth::guard('admin')->user();

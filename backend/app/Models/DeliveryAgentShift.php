@@ -31,7 +31,7 @@ class DeliveryAgentShift extends Model
             'shift_date' => 'date',
             'actual_start' => 'datetime',
             'actual_end' => 'datetime',
-            'total_earnings' => 'integer',
+            'total_earnings' => \App\Casts\DecimalMoney::class,
             'status' => DeliveryAgentShiftStatus::class,
         ];
     }

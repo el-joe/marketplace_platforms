@@ -37,13 +37,13 @@ class PaidAdBooking extends Model
         'rejected_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'approved_at' => 'datetime',
-        'agreed_rate' => 'integer',
-        'unit_rate' => 'integer',
-        'quoted_amount' => 'integer',
-        'tax_amount' => 'integer',
-        'budget_amount' => 'integer',
-        'total_charged' => 'integer',
-        'subscription_charged' => 'integer',
+        'agreed_rate' => \App\Casts\DecimalMoney::class,
+        'unit_rate' => \App\Casts\DecimalMoney::class,
+        'quoted_amount' => \App\Casts\DecimalMoney::class,
+        'tax_amount' => \App\Casts\DecimalMoney::class,
+        'budget_amount' => \App\Casts\DecimalMoney::class,
+        'total_charged' => \App\Casts\DecimalMoney::class,
+        'subscription_charged' => \App\Casts\DecimalMoney::class,
         'pricing_units' => 'integer',
         'impressions_delivered' => 'integer',
         'clicks_delivered' => 'integer',
@@ -187,22 +187,22 @@ class PaidAdBooking extends Model
     }
 
     /** Sum of ledger entries for this booking. Detail pages only — avoid N+1 in lists. */
-    public function getNetChargedAttribute(): int
+    public function getNetChargedAttribute(): int|float
     {
-        return (int) $this->charges()->sum('amount');
+        return \App\Support\Money::number($this->charges()->sum('amount'));
     }
 
     /** Subscription fee (ex-tax) plus usage spend, base currency. */
     protected function totalSpend(): Attribute
     {
-        return Attribute::get(fn () => (int) $this->subscription_charged + (int) $this->total_charged);
+        return Attribute::get(fn () => \App\Support\Money::number((float) $this->subscription_charged + (float) $this->total_charged));
     }
 
     /** Total spend per click; null when no clicks. */
     protected function effectiveCpc(): Attribute
     {
         return Attribute::get(fn () => $this->clicks_delivered > 0
-            ? (int) round($this->total_spend / $this->clicks_delivered)
+            ? \App\Support\Money::number(round($this->total_spend / $this->clicks_delivered, 2))
             : null);
     }
 
@@ -210,7 +210,7 @@ class PaidAdBooking extends Model
     protected function effectiveCpm(): Attribute
     {
         return Attribute::get(fn () => $this->impressions_delivered > 0
-            ? (int) round($this->total_spend / $this->impressions_delivered * 1000)
+            ? \App\Support\Money::number(round($this->total_spend / $this->impressions_delivered * 1000, 2))
             : null);
     }
 }

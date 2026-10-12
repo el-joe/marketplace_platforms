@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Support\Money;
 use App\DTOs\UnifiedBookingDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
@@ -30,7 +31,7 @@ class MyBookingsController extends Controller
                     title: (string) ($b->package?->title_ar ?? $b->package?->title_en ?? ''),
                     dateFrom: (string) $b->package?->departure_date?->toDateString(),
                     dateTo: (string) $b->package?->return_date?->toDateString(),
-                    totalPrice: (int) $b->total_price,
+                    totalPrice: Money::number($b->total_price),
                     currency: (string) ($b->package?->currency ?? ''),
                     status: (string) ($b->status->value ?? $b->status),
                     agencyName: $b->package?->agency?->name,
@@ -48,7 +49,7 @@ class MyBookingsController extends Controller
                     title: "{$f->origin_city} → {$f->destination_city}",
                     dateFrom: $f->departure_at->toIso8601String(),
                     dateTo: ($f->arrival_at ?? $f->departure_at)->toIso8601String(),
-                    totalPrice: (int) $f->total_price,
+                    totalPrice: Money::number($f->total_price),
                     currency: $f->currency,
                     status: $f->status,
                     agencyName: $f->airline_name,

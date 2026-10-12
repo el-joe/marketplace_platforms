@@ -61,7 +61,7 @@ class WalletController extends Controller
     public function requestWithdrawal(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'amount' => ['required', 'integer', 'min:1'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
@@ -73,7 +73,7 @@ class WalletController extends Controller
         $wallet = $this->walletService->getOrCreateWallet('delivery_agent', $agent->id, $currency);
 
         try {
-            $this->walletService->requestWithdrawal($wallet, (int) $data['amount'], [
+            $this->walletService->requestWithdrawal($wallet, round((float) $data['amount'], 2), [
                 'bank_name' => $data['bank_name'],
                 'bank_iban' => $data['bank_iban'],
             ]);

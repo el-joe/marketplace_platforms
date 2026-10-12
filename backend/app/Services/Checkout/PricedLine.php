@@ -12,16 +12,16 @@ final class PricedLine
     public function __construct(
         public readonly string $id,
         public readonly ?string $vendorId,
-        public readonly int $unitPrice,
+        public readonly int|float $unitPrice,
         public readonly int $quantity,
-        public readonly int $lineSubtotal,
-        public readonly int $lineDiscount,
-        public readonly int $lineLoyaltyDiscount,
-        public readonly int $taxable,
-        public readonly int $lineTax,
-        public readonly int $warrantyPrice,
-        public readonly int $warrantyTax,
-        public readonly int $lineTotal,
+        public readonly int|float $lineSubtotal,
+        public readonly int|float $lineDiscount,
+        public readonly int|float $lineLoyaltyDiscount,
+        public readonly int|float $taxable,
+        public readonly int|float $lineTax,
+        public readonly int|float $warrantyPrice,
+        public readonly int|float $warrantyTax,
+        public readonly int|float $lineTotal,
     ) {}
 
     public function toArray(): array

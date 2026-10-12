@@ -624,7 +624,7 @@
             <form id="price-update-form" class="p-5 space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.show.new_price') }}</label>
-                    <input type="number" id="new-price-input" name="price" step="1" min="1"
+                    <input type="number" id="new-price-input" name="price" step="0.01" min="1"
                         value="{{ $listing->price }}"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40">
                 </div>

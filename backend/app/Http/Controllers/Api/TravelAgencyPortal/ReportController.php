@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\TravelAgencyPortal;
 
+use App\Support\Money;
 use App\Enums\TravelBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TravelBooking;
@@ -53,12 +54,12 @@ class ReportController extends Controller
             ->groupBy('travel_packages.currency')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->total * $rate);
+                $commission = round($row->total * $rate, 2);
                 return [
                     'currency'   => $row->currency,
-                    'revenue'    => (int) $row->total,
+                    'revenue'    => Money::number($row->total),
                     'commission' => $commission,
-                    'net'        => (int) $row->total - $commission,
+                    'net'        => Money::number($row->total - $commission),
                 ];
             });
 
@@ -69,7 +70,7 @@ class ReportController extends Controller
             ->orderBy('day')
             ->get()
             ->groupBy('currency')
-            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total])->values());
+            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)])->values());
 
         $monthlyBreakdown = (clone $base)
             ->selectRaw("DATE_FORMAT(travel_bookings.created_at, '%Y-%m') as month, travel_packages.currency as currency, COUNT(*) as bookings_count, SUM(CASE WHEN travel_bookings.status = 'completed' THEN travel_bookings.total_price ELSE 0 END) as revenue")
@@ -77,13 +78,13 @@ class ReportController extends Controller
             ->orderByDesc('month')
             ->get()
             ->map(function ($row) use ($rate) {
-                $commission = (int) round($row->revenue * $rate);
+                $commission = round($row->revenue * $rate, 2);
                 return [
                     'month'          => $row->month,
                     'bookings_count' => (int) $row->bookings_count,
-                    'revenue'        => (int) $row->revenue,
+                    'revenue'        => Money::number($row->revenue),
                     'commission'     => $commission,
-                    'net'            => (int) $row->revenue - $commission,
+                    'net'            => Money::number($row->revenue - $commission),
                     'currency'       => $row->currency,
                 ];
             });
@@ -125,7 +126,7 @@ class ReportController extends Controller
             ->selectRaw('DATE(travel_bookings.created_at) as day, COUNT(*) as total')
             ->groupBy('day')->orderBy('day')
             ->get()
-            ->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total]);
+            ->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)]);
 
         $byPackage = (clone $base)
             ->selectRaw('travel_packages.id as package_id, travel_packages.title_ar, travel_packages.title_en, COUNT(*) as bookings_count')
@@ -168,7 +169,7 @@ class ReportController extends Controller
                 'id'                 => $p->id,
                 'title'              => $p->title_ar ?: $p->title_en,
                 'status'             => $p->status,
-                'price'              => (int) $p->price,
+                'price'              => Money::number($p->price),
                 'currency'           => $p->currency,
                 'destination'        => trim(($p->destinationCity?->name_en ?? '') . ' ' . ($p->destinationCountry?->name_en ?? '')),
                 'total_bookings'     => $p->total_bookings,

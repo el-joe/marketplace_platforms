@@ -33,9 +33,9 @@ class CountryPaymentGateway extends Model
     protected $casts = [
         'is_active'           => 'boolean',
         'fee_pct'             => 'decimal:2',
-        'fee_fixed'           => 'integer',
-        'min_order'           => 'integer',
-        'max_order'           => 'integer',
+        'fee_fixed'           => \App\Casts\DecimalMoney::class,
+        'min_order'           => \App\Casts\DecimalMoney::class,
+        'max_order'           => \App\Casts\DecimalMoney::class,
         'sort_order'          => 'integer',
         'last_verified_at'    => 'datetime',
     ];

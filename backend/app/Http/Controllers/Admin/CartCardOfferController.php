@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCartCardOfferRequest;
 use App\Http\Requests\Admin\UpdateCartCardOfferRequest;
@@ -76,7 +77,7 @@ class CartCardOfferController extends Controller
                 'country_name' => e($row->country_name),
                 'cashback_type' => $row->cashback_type,
                 'cashback_pct' => $row->cashback_pct,
-                'cashback_fixed_amount' => (int) $row->cashback_fixed_amount,
+                'cashback_fixed_amount' => Money::number($row->cashback_fixed_amount),
                 'is_active' => (bool) $row->is_active,
                 'valid_from' => $row->valid_from,
                 'valid_until' => $row->valid_until,

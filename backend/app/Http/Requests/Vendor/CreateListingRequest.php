@@ -16,8 +16,8 @@ class CreateListingRequest extends FormRequest
         return [
             'product_variant_id'  => ['required', 'uuid', 'exists:product_variants,id'],
             'country_id'          => ['required', 'uuid', 'exists:countries,id'],
-            'price'               => ['required', 'integer', 'min:1'],
-            'compare_at_price'    => ['nullable', 'integer', 'min:1', 'gt:price'],
+            'price'               => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'compare_at_price'    => ['nullable', 'numeric', 'decimal:0,2', 'min:1', 'gt:price'],
             'condition'           => ['required', 'string', 'in:new,like_new,good,acceptable,refurbished'],
             'fulfillment_model'   => ['required', 'string', 'in:fbm,fbn,cross_dock'],
             'influencer_commission_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],

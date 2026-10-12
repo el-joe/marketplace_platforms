@@ -13,7 +13,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.total') }}</p>
-            <p class="text-2xl font-extrabold text-gray-800">{{ number_format($stats['total']) }}</p>
+            <p class="text-2xl font-extrabold text-gray-800">{{ \App\Support\Money::format($stats['total']) }}</p>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <p class="text-xs text-green-500 uppercase tracking-wide mb-1">{{ __('admin.subscriptions.active') }}</p>
@@ -96,7 +96,7 @@
                     <select id="sv-plan-id" class="form-select w-full text-sm">
                         <option value="">{{ __('admin.subscriptions.select_plan') }}</option>
                         @foreach($plans as $plan)
-                            <option value="{{ $plan->id }}">{{ $plan->name_en }} — {{ number_format($plan->price) }}
+                            <option value="{{ $plan->id }}">{{ $plan->name_en }} — {{ \App\Support\Money::format($plan->price) }}
                                 {{ $plan->currency }}/mo</option>
                         @endforeach
                     </select>

@@ -56,7 +56,7 @@
                     </div>
                     <div>
                         <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.gift_cards_section.amount') }}</label>
-                        <input type="number" id="amount" name="amount" value="{{ old('amount') }}" min="1" class="form-input" required x-model.number="amount">
+                        <input type="number" id="amount" name="amount" value="{{ old('amount') }}" min="1" step="0.01" class="form-input" required x-model.number="amount">
                         <p class="text-xs text-gray-500 mt-1">{{ __('admin.gift_cards_section.face_value_hint') }}</p>
                     </div>
                 </div>

@@ -523,7 +523,7 @@ class FbnController extends Controller
             'special_handling_notes' => 'nullable|string',
             'commission_type' => ['required', Rule::enum(MarketplaceShippingRuleCommissionType::class)],
             'commission_value' => 'required|numeric|min:0',
-            'extra_delivery_fee' => 'integer|min:0',
+            'extra_delivery_fee' => 'numeric|decimal:0,2|min:0',
         ]);
 
         if (MarketplaceShippingRule::where('vendor_listing_id', $data['vendor_listing_id'])->exists()) {
@@ -545,7 +545,7 @@ class FbnController extends Controller
             'special_handling_notes' => 'nullable|string',
             'commission_type' => ['required', Rule::enum(MarketplaceShippingRuleCommissionType::class)],
             'commission_value' => 'required|numeric|min:0',
-            'extra_delivery_fee' => 'integer|min:0',
+            'extra_delivery_fee' => 'numeric|decimal:0,2|min:0',
         ]);
 
         $rule->update($data);

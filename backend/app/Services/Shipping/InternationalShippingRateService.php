@@ -4,6 +4,7 @@ namespace App\Services\Shipping;
 
 use App\Exceptions\InternationalShippingRateNotFoundException;
 use App\Models\InternationalShippingRate;
+use App\Support\Money;
 
 /**
  * docs/plans/international_product_shipping.md Phase 2.
@@ -19,9 +20,9 @@ class InternationalShippingRateService
      * @return array{
      *     rate_id: string,
      *     carrier_id: ?string,
-     *     shipping_fee: int,
-     *     customs_fee: int,
-     *     total_fee: int,
+     *     shipping_fee: int|float,
+     *     customs_fee: int|float,
+     *     total_fee: int|float,
      *     min_eta_days: int,
      *     max_eta_days: int,
      * }
@@ -48,9 +49,9 @@ class InternationalShippingRateService
         $weightGrams = max(0, $weightGrams);
         $billableKg = intdiv($weightGrams + 999, 1000);
 
-        $shippingFee = $rate->base_fee + ($rate->rate_per_kg * $billableKg);
+        $shippingFee = Money::number(round($rate->base_fee + ($rate->rate_per_kg * $billableKg), 2));
         $customsFee = $rate->customs_fee_flat ?? 0;
-        $totalFee = $shippingFee + $customsFee;
+        $totalFee = Money::number(round($shippingFee + $customsFee, 2));
 
         return [
             'rate_id' => $rate->id,

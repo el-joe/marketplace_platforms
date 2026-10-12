@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Support\Money;
 use App\Enums\ClassifiedListingStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Customer\ClassifiedBrowseCategoryResource;
@@ -131,7 +132,7 @@ class BrowseController extends Controller
                 'number' => $listing->listing_number,
                 'slug' => $listing->slug,
                 'title' => $title,
-                'price' => (int) $listing->price,
+                'price' => Money::number($listing->price),
                 'currency' => $listing->currency,
                 'purpose' => $listing->listing_purpose,
                 'lat' => (float) $listing->latitude,

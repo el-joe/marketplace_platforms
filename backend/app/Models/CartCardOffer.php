@@ -25,9 +25,9 @@ class CartCardOffer extends Model
     protected $casts = [
         'is_active'             => 'boolean',
         'cashback_pct'          => 'decimal:2',
-        'cashback_fixed_amount' => 'integer',
-        'min_order_amount'      => 'integer',
-        'max_cashback_amount'   => 'integer',
+        'cashback_fixed_amount' => \App\Casts\DecimalMoney::class,
+        'min_order_amount'      => \App\Casts\DecimalMoney::class,
+        'max_cashback_amount'   => \App\Casts\DecimalMoney::class,
         'sort_order'            => 'integer',
         'valid_from'            => 'datetime',
         'valid_until'           => 'datetime',

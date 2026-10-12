@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\TravelAgencyPortal;
 
+use App\Support\Money;
 use App\Enums\TravelBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TravelBooking;
@@ -46,8 +47,8 @@ class PerformanceController extends Controller
             ->get()
             ->map(fn ($r) => [
                 'currency'      => $r->currency,
-                'avg_value'     => (int) round((float) $r->avg_value),
-                'total_revenue' => (int) $r->total_revenue,
+                'avg_value'     => Money::number(round((float) $r->avg_value, 2)),
+                'total_revenue' => Money::number($r->total_revenue),
             ]);
 
         $totalInquiries = TravelPackageInquiry::query()
@@ -66,7 +67,7 @@ class PerformanceController extends Controller
             ->selectRaw('DATE(travel_bookings.created_at) as day, COUNT(*) as total')
             ->groupBy('day')->orderBy('day')
             ->get()
-            ->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total]);
+            ->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)]);
 
         $revenueOverTime = (clone $base)
             ->where('travel_bookings.status', TravelBookingStatus::Completed)
@@ -74,7 +75,7 @@ class PerformanceController extends Controller
             ->groupBy('day', 'currency')->orderBy('day')
             ->get()
             ->groupBy('currency')
-            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total])->values());
+            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)])->values());
 
         $packagePerformance = (clone $base)
             ->selectRaw('travel_packages.id as package_id, travel_packages.title_ar, travel_packages.title_en, travel_packages.currency, COUNT(*) as bookings_count, SUM(CASE WHEN travel_bookings.status = ? THEN travel_bookings.total_price ELSE 0 END) as revenue', [TravelBookingStatus::Completed->value])
@@ -84,7 +85,7 @@ class PerformanceController extends Controller
                 'package_id' => $r->package_id,
                 'title'      => $r->title_ar ?: $r->title_en,
                 'bookings'   => (int) $r->bookings_count,
-                'revenue'    => (int) $r->revenue,
+                'revenue'    => Money::number($r->revenue),
                 'currency'   => $r->currency,
             ]);
 

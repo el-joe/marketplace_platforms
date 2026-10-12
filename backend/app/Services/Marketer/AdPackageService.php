@@ -50,8 +50,8 @@ class AdPackageService
                 throw new DomainException('already_subscribed');
             }
 
-            $vat = MarketerAdPackage::vatFor((int) $package->price, (int) $package->vat_pct);
-            $total = (int) $package->price + $vat;
+            $vat = MarketerAdPackage::vatFor((float) $package->price, (float) $package->vat_pct);
+            $total = \App\Support\Money::number((float) $package->price + (float) $vat);
             $isWallet = $method === 'wallet';
 
             $sub = Sub::create([

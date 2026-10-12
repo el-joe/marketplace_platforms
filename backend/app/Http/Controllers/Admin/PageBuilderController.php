@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Money;
 use App\Enums\PageStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AdImageItem;
@@ -475,7 +476,7 @@ class PageBuilderController extends Controller
                 'unique_visitors' => (int) $rows->sum('unique_visitors'),
                 'add_to_cart_count' => (int) $rows->sum('add_to_cart_count'),
                 'orders_attributed' => (int) $rows->sum('orders_attributed'),
-                'revenue_attributed' => (int) $rows->sum('revenue_attributed'),
+                'revenue_attributed' => Money::number($rows->sum('revenue_attributed')),
             ];
             $totals['ctr'] = $totals['impressions'] > 0
                 ? round($totals['clicks'] / $totals['impressions'], 4)

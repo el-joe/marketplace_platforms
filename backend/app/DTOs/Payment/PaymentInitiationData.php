@@ -7,7 +7,7 @@ readonly class PaymentInitiationData
     public function __construct(
         public string  $orderId,
         public string  $orderNumber,
-        public int     $amountCents,
+        public int|float $amountCents,
         public string  $currency,
         public string  $customerId,
         public string  $customerEmail,

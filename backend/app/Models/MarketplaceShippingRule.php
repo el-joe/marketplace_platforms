@@ -33,7 +33,7 @@ class MarketplaceShippingRule extends Model
         'requires_refrigeration' => 'boolean',
         'max_weight_kg' => 'decimal:2',
         'commission_value' => 'decimal:2',
-        'extra_delivery_fee' => 'integer',
+        'extra_delivery_fee' => \App\Casts\DecimalMoney::class,
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────

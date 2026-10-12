@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Support\Money;
 use App\Enums\WalletOwnerType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\AddCartItemRequest;
@@ -146,7 +147,7 @@ class CartController extends Controller
             'shipping_groups' => $this->cartService->buildShippingGroups($cart, $country?->id),
             'cart_banner' => $this->resolveCartBanner($request),
             'savings_and_benefits' => $this->savingsBenefitsService->get(
-                (int) $cart->estimated_total,
+                $cart->estimated_total,
                 $cart->country_id,
                 $cart->currency,
             ),
@@ -212,7 +213,7 @@ class CartController extends Controller
                 $product,
                 $country->id,
                 $country->currency_code,
-                (int) $item->unit_price,
+                $item->unit_price,
             );
         }
 
@@ -242,7 +243,7 @@ class CartController extends Controller
                 ->where('currency', $cart->currency)
                 ->first();
 
-            $walletAmount = min($wallet?->balance ?? 0, (int) $cart->estimated_total);
+            $walletAmount = min($wallet?->balance ?? 0, $cart->estimated_total);
         } else {
             $walletAmount = 0;
         }
@@ -267,7 +268,7 @@ class CartController extends Controller
                 'currency_code' => $cart->currency,
                 'applicable' => false,
                 'max_usable' => 0,
-                'remaining_after_wallet' => (int) $cart->estimated_total,
+                'remaining_after_wallet' => $cart->estimated_total,
             ];
         }
 
@@ -282,8 +283,8 @@ class CartController extends Controller
 
         $walletApplicable = $walletBalance > 0 && $walletCurrency === $cart->currency;
 
-        $maxUsable = $walletApplicable ? min($walletBalance, (int) $cart->estimated_total) : 0;
-        $applied = $walletApplicable ? min((int) $cart->wallet_amount_to_use, $maxUsable) : 0;
+        $maxUsable = $walletApplicable ? min($walletBalance, $cart->estimated_total) : 0;
+        $applied = $walletApplicable ? min($cart->wallet_amount_to_use, $maxUsable) : 0;
 
         return [
             'balance' => $walletBalance,
@@ -291,7 +292,7 @@ class CartController extends Controller
             'applicable' => $walletApplicable,
             'max_usable' => $maxUsable,
             'amount_applied' => $applied,
-            'remaining_after_wallet' => (int) $cart->estimated_total - $applied,
+            'remaining_after_wallet' => Money::number(round($cart->estimated_total - $applied, 4)),
         ];
     }
 
@@ -451,7 +452,7 @@ class CartController extends Controller
         $product = $listing?->productVariant?->product;
 
         $applicablePlanIds = $product && $country
-            ? collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $item->unit_price))
+            ? collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, $item->unit_price))
                 ->pluck('id')
                 ->all()
             : [];

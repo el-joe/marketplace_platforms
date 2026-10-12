@@ -254,7 +254,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Fixed Fee (base units)</label>
-                    <input type="number" name="fee_fixed" id="gw-fee-fixed" min="0" value="0"
+                    <input type="number" name="fee_fixed" id="gw-fee-fixed" min="0" step="0.01" value="0"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
                 </div>
             </div>

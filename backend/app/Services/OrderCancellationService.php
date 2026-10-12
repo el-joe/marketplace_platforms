@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\DTOs\Refund\RefundScope;
 use App\Enums\CancelActor;
 use App\Models\Admin;
@@ -120,8 +121,8 @@ class OrderCancellationService
             $this->cancelWarrantyPurchases($items);
             $this->voidMarketerConversions($items);
 
-            $cancelledAmount = (int) $items->sum('line_total');
-            $orderTotal = max(1, (int) $order->total);
+            $cancelledAmount = Money::number(round((float) $items->sum('line_total'), 2));
+            $orderTotal = max(0.01, (float) $order->total);
             $isFullOrderCancel = $order->items()->where('fulfillment_status', '!=', 'cancelled')->count() === $items->count();
 
             $this->markItemsAndSubOrdersCancelled($order, $items, $reason, $actor);
@@ -330,7 +331,7 @@ class OrderCancellationService
      * Pro-rated for a partial scope by the cancelled-items' share of the
      * order total.
      */
-    private function refundTenders(Order $order, int $cancelledAmount, int $orderTotal, string $reason, CancelActor $actor): void
+    private function refundTenders(Order $order, int|float $cancelledAmount, int|float $orderTotal, string $reason, CancelActor $actor): void
     {
         $fraction = $cancelledAmount / $orderTotal;
 
@@ -341,14 +342,14 @@ class OrderCancellationService
         // is intentionally a no-op — inventing a gift-card refund path
         // would refund money that was never actually taken.
 
-        $walletUsed = (int) $order->wallet_amount_used;
-        $walletPortion = $walletUsed > 0 ? (int) round($walletUsed * $fraction) : 0;
+        $walletUsed = (float) $order->wallet_amount_used;
+        $walletPortion = $walletUsed > 0 ? Money::number(round($walletUsed * $fraction, 2)) : 0;
 
         if ($walletPortion > 0) {
             $this->checkoutWalletService->refundToWallet($order->customer, $order, $walletPortion);
         }
 
-        $cardPortion = $cancelledAmount - $walletPortion;
+        $cardPortion = Money::number(round($cancelledAmount - $walletPortion, 2));
 
         if ($cardPortion <= 0) {
             return;
@@ -401,7 +402,7 @@ class OrderCancellationService
                 reverseLedger: false,
             );
 
-            $newPayStatus = ($cardPortion + $walletPortion) >= $order->total ? 'refunded' : 'partially_refunded';
+            $newPayStatus = ($cardPortion + $walletPortion + 0.00005) >= (float) $order->total ? 'refunded' : 'partially_refunded';
             $order->update(['payment_status' => $newPayStatus]);
         } catch (\Throwable $e) {
             Log::error('OrderCancellationService: refund via RefundService failed.', [
@@ -411,7 +412,7 @@ class OrderCancellationService
         }
     }
 
-    private function restoreLoyalty(Order $order, int $cancelledAmount, int $orderTotal): void
+    private function restoreLoyalty(Order $order, int|float $cancelledAmount, int|float $orderTotal): void
     {
         $pointsUsed = (float) $order->loyalty_points_used;
         if ($pointsUsed <= 0) {

@@ -13,7 +13,7 @@
                 <span class="text-indigo-600 font-semibold">{{ $currencyCode }}</span>
             @endif
         </label>
-        <input type="number" min="0" step="1" x-model="form.price_from" class="input w-full text-sm">
+        <input type="number" min="0" step="0.01" x-model="form.price_from" class="input w-full text-sm">
     </div>
     <div>
         <label class="block text-xs font-medium text-gray-600 mb-1">
@@ -23,7 +23,7 @@
             @endif
             <span class="text-gray-400">({{ __('admin.categories.tier_no_limit') }})</span>
         </label>
-        <input type="number" min="1" step="1" x-model="form.price_to" class="input w-full text-sm">
+        <input type="number" min="1" step="0.01" x-model="form.price_to" class="input w-full text-sm">
     </div>
     <div>
         <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('admin.categories.tier_rate') }}</label>
@@ -36,7 +36,7 @@
                 <span class="text-indigo-600 font-semibold">{{ $currencyCode }}</span>
             @endif
         </label>
-        <input type="number" min="0" step="1" x-model="form.min_commission" class="input w-full text-sm">
+        <input type="number" min="0" step="0.01" x-model="form.min_commission" class="input w-full text-sm">
     </div>
     <div class="flex gap-2">
         <button type="button" class="btn btn-primary btn-sm flex-1 justify-center" :disabled="saving" @click="{{ $saveAction }}">{{ __('common.save') }}</button>

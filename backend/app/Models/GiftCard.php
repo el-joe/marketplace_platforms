@@ -46,8 +46,8 @@ class GiftCard extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
-        'remaining_balance' => 'integer',
+        'amount' => \App\Casts\DecimalMoney::class,
+        'remaining_balance' => \App\Casts\DecimalMoney::class,
         'redeemed_at' => 'datetime',
         'expires_at' => 'datetime',
         'delivery_sent_at' => 'datetime',

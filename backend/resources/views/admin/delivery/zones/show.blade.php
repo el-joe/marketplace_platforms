@@ -38,13 +38,13 @@
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.delivery_section.delivery_fee_label') }}</dt>
                     <dd class="font-semibold text-gray-800">
-                        {{ number_format($zone->base_delivery_fee) }} {{ $zone->country?->currency_code }}
+                        {{ \App\Support\Money::format($zone->base_delivery_fee) }} {{ $zone->country?->currency_code }}
                     </dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ __('admin.delivery_section.cod_fee_label') }}</dt>
                     <dd class="font-semibold text-gray-800">
-                        {{ number_format($zone->cod_fee) }} {{ $zone->country?->currency_code }}
+                        {{ \App\Support\Money::format($zone->cod_fee) }} {{ $zone->country?->currency_code }}
                     </dd>
                 </div>
                 @if($zone->max_active_agents)

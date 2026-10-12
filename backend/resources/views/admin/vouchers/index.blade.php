@@ -152,7 +152,7 @@
                                         {{ __('admin.vouchers_section.amount') }} <span class="text-red-500">*</span>
                                         <span class="text-gray-400 font-normal block">{{ __('admin.vouchers_section.amount_hint') }}</span>
                                     </label>
-                                    <input type="number" name="amount" class="input w-full" min="1" required />
+                                    <input type="number" name="amount" class="input w-full" min="1" step="0.01" required />
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.vouchers_section.currency') }} <span class="text-red-500">*</span></label>
@@ -240,7 +240,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.vouchers_section.total_value_credited') }}</dt>
-                        <dd class="font-medium text-gray-900">{{ number_format($stat->total_credited) }} {{ $stat->currency_code }}</dd>
+                        <dd class="font-medium text-gray-900">{{ \App\Support\Money::format($stat->total_credited) }} {{ $stat->currency_code }}</dd>
                     </div>
                 </dl>
             </div>

@@ -8,16 +8,16 @@
         {{ __('ad_packages.package_active') }}: {{ $active->expires_at->format('Y-m-d') }} — {{ $active->package->name }}
     </div>
 @endif
-<p class="mb-4 text-sm text-gray-600">{{ __('ad_packages.wallet_balance') }}: {{ number_format($walletBalance) }} {{ $currency }}</p>
+<p class="mb-4 text-sm text-gray-600">{{ __('ad_packages.wallet_balance') }}: {{ \App\Support\Money::format($walletBalance) }} {{ $currency }}</p>
 <div class="grid gap-4 md:grid-cols-3">
 @forelse($packages as $p)
     <div class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col">
         <h3 class="text-lg font-bold">{{ $p->name }}</h3>
         @if($p->description_ar)<p class="text-sm text-gray-500 mt-1">{{ $p->description_ar }}</p>@endif
         <dl class="mt-4 text-sm space-y-1">
-            <div class="flex justify-between"><dt>{{ __('ad_packages.package_price') }}</dt><dd>{{ number_format($p->price) }} {{ $p->currency }}</dd></div>
-            <div class="flex justify-between"><dt>{{ __('ad_packages.vat_included', ['pct' => $p->vat_pct]) }}</dt><dd>{{ number_format($p->vat_amount) }} {{ $p->currency }}</dd></div>
-            <div class="flex justify-between font-bold border-t pt-1"><dt>{{ __('ad_packages.total_with_vat') }}</dt><dd>{{ number_format($p->total) }} {{ $p->currency }}</dd></div>
+            <div class="flex justify-between"><dt>{{ __('ad_packages.package_price') }}</dt><dd>{{ \App\Support\Money::format($p->price) }} {{ $p->currency }}</dd></div>
+            <div class="flex justify-between"><dt>{{ __('ad_packages.vat_included', ['pct' => $p->vat_pct]) }}</dt><dd>{{ \App\Support\Money::format($p->vat_amount) }} {{ $p->currency }}</dd></div>
+            <div class="flex justify-between font-bold border-t pt-1"><dt>{{ __('ad_packages.total_with_vat') }}</dt><dd>{{ \App\Support\Money::format($p->total) }} {{ $p->currency }}</dd></div>
             <div class="flex justify-between text-gray-500"><dt>{{ __('ad_packages.duration') }}</dt><dd>{{ $p->duration_days }} {{ __('ad_packages.days') }}</dd></div>
         </dl>
         <ul class="mt-3 text-sm list-disc ps-5 flex-1">

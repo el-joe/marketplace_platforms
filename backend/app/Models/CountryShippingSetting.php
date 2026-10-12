@@ -25,7 +25,7 @@ class CountryShippingSetting extends Model
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
         'is_active' => 'boolean',
-        'free_shipping_threshold' => 'integer',
+        'free_shipping_threshold' => \App\Casts\DecimalMoney::class,
     ];
 
     public function country(): BelongsTo

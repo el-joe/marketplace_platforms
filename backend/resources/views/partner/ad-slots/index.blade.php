@@ -60,10 +60,10 @@
                             @endif
                             <div class="text-sm font-medium text-primary-700 mt-2">
                                 @if (in_array($slot->pricing_model->value, ['cpm', 'cpc']))
-                                    {{ strtoupper($slot->pricing_model->value) }} {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }}
-                                    · min budget {{ number_format($slot->min_budget) }} {{ $slot->country?->currency_code }}
+                                    {{ strtoupper($slot->pricing_model->value) }} {{ \App\Support\Money::format($slot->base_rate) }} {{ $slot->country?->currency_code }}
+                                    · min budget {{ \App\Support\Money::format($slot->min_budget) }} {{ $slot->country?->currency_code }}
                                 @else
-                                    {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }} / {{ str_replace('fixed_', '', $slot->pricing_model->value) }}
+                                    {{ \App\Support\Money::format($slot->base_rate) }} {{ $slot->country?->currency_code }} / {{ str_replace('fixed_', '', $slot->pricing_model->value) }}
                                 @endif
                             </div>
                             @if ($slot->target_type->value !== 'listing_promotion' && ($slot->creative_width_px > 0 || $slot->creative_height_px > 0))

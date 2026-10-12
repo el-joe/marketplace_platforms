@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Customer;
 
+use App\Support\Money;
 use App\Support\Bilingual;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -35,8 +36,8 @@ class FlashSaleItemResource extends JsonResource
                 'image' => $imageUrl,
             ],
             'promo_badges' => $listing ? \App\Services\Customer\PromoBadgeResolver::instance()->lookup('vendor', $listing->id, $product?->id) : [],
-            'flash_price' => (int) $this->flash_price,
-            'original_price' => (int) $this->original_price,
+            'flash_price' => Money::number($this->flash_price),
+            'original_price' => Money::number($this->original_price),
             'currency' => $this->flash_price_currency,
             'discount_pct' => (float) $this->calculated_discount_pct,
             'max_quantity_per_customer' => (int) $this->max_quantity_per_customer,

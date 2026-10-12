@@ -100,7 +100,7 @@ function collectCompetitorLinks() {
         const url = $(this).find('[data-field="url"]').val();
         const price = $(this).find('[data-field="price"]').val();
         if (name && url) {
-            links.push({ name, url, price: price === '' ? null : parseInt(price, 10) });
+            links.push({ name, url, price: price === '' ? null : parseFloat(price) });
         }
     });
     return links;

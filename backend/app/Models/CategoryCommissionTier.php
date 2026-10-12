@@ -22,10 +22,10 @@ class CategoryCommissionTier extends Model
     ];
 
     protected $casts = [
-        'price_from' => 'integer',
-        'price_to' => 'integer',
+        'price_from' => \App\Casts\DecimalMoney::class,
+        'price_to' => \App\Casts\DecimalMoney::class,
         'commission_rate' => 'decimal:2',
-        'min_commission' => 'integer',
+        'min_commission' => \App\Casts\DecimalMoney::class,
         'sort_order' => 'integer',
     ];
 
@@ -46,7 +46,7 @@ class CategoryCommissionTier extends Model
      *
      * @param  Collection<int, self>  $tiers
      */
-    public static function resolveForUnitPrice(Collection $tiers, int $unitPrice): ?self
+    public static function resolveForUnitPrice(Collection $tiers, int|float $unitPrice): ?self
     {
         foreach ($tiers as $tier) {
             if ($unitPrice < $tier->price_from) {

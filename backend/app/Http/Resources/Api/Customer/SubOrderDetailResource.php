@@ -25,7 +25,7 @@ class SubOrderDetailResource extends JsonResource
             'subtotal' => $subOrder->subtotal,
             'shipping' => $subOrder->shipping,
             'tax' => $subOrder->tax,
-            'is_exceptional_zone' => (int) ($subOrder->shipping_gap ?? 0) > 0,
+            'is_exceptional_zone' => (float) ($subOrder->shipping_gap ?? 0) > 0,
             'carrier' => $subOrder->carrier?->name,
             'tracking_number' => $subOrder->tracking_number,
             'shipping_method' => self::shippingMethodPayload($subOrder->shippingMethod),

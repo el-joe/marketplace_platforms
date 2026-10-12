@@ -138,10 +138,10 @@
                         {{ $row->delivered_at ? \Carbon\Carbon::parse($row->delivered_at)->format('d M Y H:i') : '—' }}
                     </td>
                     <td class="px-4 py-3 text-right font-medium text-gray-800">
-                        {{ number_format($row->carrier_shipping_cost) }}
+                        {{ \App\Support\Money::format($row->carrier_shipping_cost) }}
                     </td>
                     <td class="px-4 py-3 text-right text-gray-600">
-                        {{ $row->cod_amount_collected !== null ? number_format($row->cod_amount_collected) : '—' }}
+                        {{ $row->cod_amount_collected !== null ? \App\Support\Money::format($row->cod_amount_collected) : '—' }}
                     </td>
                     <td class="px-4 py-3 text-center">
                         @if($row->cod_amount_collected !== null)

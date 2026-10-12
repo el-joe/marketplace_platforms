@@ -15,7 +15,7 @@ class VendorAcquisitionCommissionEarning extends Model
         return [
             'month' => 'date',
             'order_count_in_month' => 'integer',
-            'amount' => 'integer',
+            'amount' => \App\Casts\DecimalMoney::class,
         ];
     }
 

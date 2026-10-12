@@ -39,7 +39,7 @@
                     <option value="">{{ __('partner.static_text.vendor_promotion_requests_create.select_an_active_listing_enabled_for') }}</option>
                     @foreach($listings as $listing)
                         <option value="{{ $listing->id }}">
-                            {{ $listing->vendor_sku ?? $listing->id }} — {{ $listing->currency }} {{ number_format($listing->price) }}
+                            {{ $listing->vendor_sku ?? $listing->id }} — {{ $listing->currency }} {{ \App\Support\Money::format($listing->price) }}
                         </option>
                     @endforeach
                 </select>

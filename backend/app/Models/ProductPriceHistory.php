@@ -29,7 +29,7 @@ class ProductPriceHistory extends Model
     ];
 
     protected $casts = [
-        'price' => 'integer',
+        'price' => \App\Casts\DecimalMoney::class,
         'recorded_at' => 'datetime',
     ];
 

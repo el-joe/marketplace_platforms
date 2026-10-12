@@ -9,7 +9,7 @@ readonly class ShippingLabel
         public string $trackingNumber,
         public string $awbLabelUrl,
         public ?string $awbLabelBase64,
-        public int $shippingCost,
+        public int|float $shippingCost,
         public string $currency,
         public ?string $carrierReferenceId,
         public ?string $errorMessage,

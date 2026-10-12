@@ -51,7 +51,7 @@
             <legend class="px-1 text-xs font-semibold text-green-900">{{ __('commissions.shipping_form.applied_legend') }}</legend>
             <div class="max-w-xs">
                 <label for="sr-fee" class="{{ $label }}">{{ __('commissions.columns.extra_delivery_fee') }}</label>
-                <input id="sr-fee" type="number" name="extra_delivery_fee" min="0" step="1" value="{{ $rule?->extra_delivery_fee ?? 0 }}" class="{{ $input }}">
+                <input id="sr-fee" type="number" name="extra_delivery_fee" min="0" step="0.01" value="{{ $rule?->extra_delivery_fee ?? 0 }}" class="{{ $input }}">
                 <p data-error-for="extra_delivery_fee" class="hidden text-xs text-red-700"></p>
             </div>
             <p class="mt-2 text-xs text-green-900">{{ __('commissions.notices.shipping_extra_fee_applied') }}</p>

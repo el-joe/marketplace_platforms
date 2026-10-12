@@ -239,8 +239,8 @@ class DeliveryAgentController extends Controller
             'vehicle_plate' => ['nullable', 'string', 'max:20'],
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:30'],
-            'base_salary' => ['nullable', 'integer', 'min:0'],
-            'per_delivery_fee' => ['nullable', 'integer', 'min:0'],
+            'base_salary' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'per_delivery_fee' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         if (!empty($validated['zone_id'])) {
@@ -407,15 +407,15 @@ class DeliveryAgentController extends Controller
             ->whereBetween('created_at', [$from, $to]);
 
         $summary = [
-            'this_month' => (int) (clone $base($thisMonth, $now->copy()->endOfMonth()))
-                ->sum('amount'),
-            'last_month' => (int) (clone $base($lastMonth, $lastMonth->copy()->endOfMonth()))
-                ->sum('amount'),
-            'ytd' => (int) DB::table('delivery_agent_earnings')
+            'this_month' => \App\Support\Money::number((clone $base($thisMonth, $now->copy()->endOfMonth()))
+                ->sum('amount')),
+            'last_month' => \App\Support\Money::number((clone $base($lastMonth, $lastMonth->copy()->endOfMonth()))
+                ->sum('amount')),
+            'ytd' => \App\Support\Money::number(DB::table('delivery_agent_earnings')
                 ->where('agent_id', $agent->id)
                 ->where('status', '!=', DeliveryAgentEarningStatus::Cancelled->value)
                 ->whereYear('created_at', $now->year)
-                ->sum('amount'),
+                ->sum('amount')),
         ];
 
         // Monthly breakdown for chart (last 6 months)

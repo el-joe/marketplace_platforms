@@ -196,7 +196,7 @@
                             {{ __('admin.cod.actual_amount_remitted') }} <span class="text-red-500">*</span>
                             <span class="text-gray-400 font-normal">{{ __('admin.cod.amount_hint') }}</span>
                         </label>
-                        <input type="number" name="actual_amount_remitted" required
+                        <input type="number" name="actual_amount_remitted" required step="0.01" min="0"
                             value="{{ $settlement->net_to_remit }}"
                             class="form-input w-full text-sm">
                         <p class="text-xs text-gray-400 mt-0.5">{{ __('admin.cod.expected_label') }} {{ number_format($settlement->net_to_remit, 2) }}</p>

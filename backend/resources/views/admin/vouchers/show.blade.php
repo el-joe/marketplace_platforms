@@ -58,7 +58,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.amount') }}</p>
-                    <p class="font-medium text-gray-900">{{ number_format($voucher->amount) }} {{ $voucher->currency_code }}</p>
+                    <p class="font-medium text-gray-900">{{ \App\Support\Money::format($voucher->amount) }} {{ $voucher->currency_code }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.country') }}</p>
@@ -124,7 +124,7 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
                 <p class="text-xs text-gray-500">{{ __('admin.vouchers_section.total_value_credited') }}</p>
                 <p class="text-xl font-semibold text-gray-900 mt-1">
-                    {{ number_format($redemptionStats['total_credited']) }} {{ $redemptionStats['currency_code'] }}
+                    {{ \App\Support\Money::format($redemptionStats['total_credited']) }} {{ $redemptionStats['currency_code'] }}
                 </p>
             </div>
         </div>

@@ -39,14 +39,14 @@ class ProductCostController extends Controller
 
         $belowCost = false;
         if ($ref && $lowestPriceCents) {
-            $belowCost = $ref->isBelowLandedCost((int) $lowestPriceCents);
+            $belowCost = $ref->isBelowLandedCost((float) $lowestPriceCents);
         }
 
         return response()->json([
             'product_id' => $productId,
             'product_name' => $product->name_en,
             'ref' => $ref ? $this->serializeRef($ref) : null,
-            'lowest_price' => $lowestPriceCents ? (int) $lowestPriceCents : null,
+            'lowest_price' => $lowestPriceCents ? \App\Support\Money::number($lowestPriceCents) : null,
             'below_cost_warning' => $belowCost,
         ]);
     }
@@ -66,14 +66,14 @@ class ProductCostController extends Controller
             'manufacturer_name' => ['nullable', 'string', 'max:255'],
             'manufacturer_url' => ['nullable', 'url', 'max:500'],
             'manufacturer_sku' => ['nullable', 'string', 'max:100'],
-            'manufacturer_cost' => ['nullable', 'integer', 'min:0'],
-            'shipping_cost' => ['nullable', 'integer', 'min:0'],
-            'landed_cost' => ['nullable', 'integer', 'min:0'],
+            'manufacturer_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'landed_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'platform_margin_pct' => ['nullable', 'numeric', 'min:-999', 'max:999'],
             'competitor_links' => ['nullable', 'array'],
             'competitor_links.*.name' => ['required_with:competitor_links', 'string', 'max:255'],
             'competitor_links.*.url' => ['required_with:competitor_links', 'url', 'max:500'],
-            'competitor_links.*.price' => ['nullable', 'integer', 'min:0'],
+            'competitor_links.*.price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
@@ -115,35 +115,35 @@ class ProductCostController extends Controller
         $this->requireViewPermission();
 
         $data = $request->validate([
-            'selling_price' => ['required', 'integer', 'min:1'],
-            'manufacturer_cost' => ['nullable', 'integer', 'min:0'],
-            'shipping_cost' => ['nullable', 'integer', 'min:0'],
-            'landed_cost' => ['nullable', 'integer', 'min:0'],
+            'selling_price' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'manufacturer_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'landed_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
         ]);
 
         $currency = strtoupper($data['currency'] ?? '');
 
-        $selling = (int) $data['selling_price'];
+        $selling = round((float) $data['selling_price'], 2);
 
         // landed_cost takes precedence; otherwise sum components
         $landed = isset($data['landed_cost'])
-            ? (int) $data['landed_cost']
-            : ((int) ($data['manufacturer_cost'] ?? 0)) + ((int) ($data['shipping_cost'] ?? 0));
+            ? round((float) $data['landed_cost'], 2)
+            : round((float) ($data['manufacturer_cost'] ?? 0) + (float) ($data['shipping_cost'] ?? 0), 2);
 
         if ($landed <= 0) {
             return response()->json(['error' => 'Landed cost must be > 0.'], 422);
         }
 
         $marginPct = round(($selling - $landed) / $selling * 100, 2);
-        $profit = $selling - $landed;
+        $profit = round($selling - $landed, 2);
         $belowCost = $selling <= $landed;
         $suffix = $currency ? ' ' . $currency : '';
 
         return response()->json([
-            'selling_price' => $selling,
-            'landed_cost' => $landed,
-            'profit' => $profit,
+            'selling_price' => \App\Support\Money::number($selling),
+            'landed_cost' => \App\Support\Money::number($landed),
+            'profit' => \App\Support\Money::number($profit),
             'margin_pct' => $marginPct,
             'below_cost' => $belowCost,
             'currency' => $currency,
@@ -195,7 +195,7 @@ class ProductCostController extends Controller
                 $price = $this->extractPriceFromHtml($html);
 
                 if ($price !== null) {
-                    $link['price'] = (int) round($price);
+                    $link['price'] = round((float) $price, 2);
                     $updated++;
                 }
                 $link['last_checked'] = $checkedAt;

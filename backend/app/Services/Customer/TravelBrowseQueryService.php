@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Enums\TravelPackageStatus;
 use App\Models\TravelCategory;
 use App\Models\TravelPackage;
@@ -38,10 +39,10 @@ class TravelBrowseQueryService
             });
 
         if (!empty($filters['price_min'])) {
-            $query->where('price', '>=', (int) $filters['price_min']);
+            $query->where('price', '>=', Money::number($filters['price_min']));
         }
         if (!empty($filters['price_max'])) {
-            $query->where('price', '<=', (int) $filters['price_max']);
+            $query->where('price', '<=', Money::number($filters['price_max']));
         }
         if (!empty($filters['duration_min'])) {
             $query->where('duration_days', '>=', (int) $filters['duration_min']);
@@ -113,8 +114,8 @@ class TravelBrowseQueryService
 
         return [
             'price_range' => [
-                'min' => $range ? (int) $range->low : 0,
-                'max' => $range ? (int) $range->high : 0,
+                'min' => $range ? Money::number($range->low) : 0,
+                'max' => $range ? Money::number($range->high) : 0,
             ],
             'duration_range' => [
                 'min' => $range ? (int) $range->dur_min : 0,

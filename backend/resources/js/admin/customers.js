@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!url) return;
 
         const direction = document.getElementById('wallet-adjust-direction')?.value;
-        const amount = parseInt(document.getElementById('wallet-adjust-amount')?.value, 10);
+        const amount = parseFloat(document.getElementById('wallet-adjust-amount')?.value);
         const note = document.getElementById('wallet-adjust-note')?.value?.trim();
 
         if (!amount || amount < 1) {

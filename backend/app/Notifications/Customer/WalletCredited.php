@@ -7,7 +7,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 class WalletCredited extends BaseCustomerNotification
 {
     public function __construct(
-        private readonly int $amountCents,
+        private readonly int|float $amountCents,
         private readonly string $reason = '',
         private readonly ?string $customerId = null,
     ) {}
@@ -24,14 +24,14 @@ class WalletCredited extends BaseCustomerNotification
 
     public function notificationData(object $notifiable): array
     {
-        $amountFormatted = number_format($this->amountCents / 100, 2);
+        $amountFormatted = \App\Support\Money::format($this->amountCents);
 
         return [
             'title' => 'Wallet Credited',
             'title_ar' => 'تم إضافة رصيد للمحفظة',
             'message' => "Your wallet has been credited with {$amountFormatted}. {$this->reason}",
             'url' => '#',
-            'amount_cents' => $this->amountCents,
+            'amount_cents' => \App\Support\Money::number($this->amountCents),
             'amount_formatted' => $amountFormatted,
             'reason' => $this->reason,
         ];

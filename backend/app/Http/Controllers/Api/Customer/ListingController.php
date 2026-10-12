@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Support\Money;
 use App\Enums\AdminListingStatus;
 use App\Enums\VendorListingStatus;
 use App\Http\Controllers\Controller;
@@ -178,7 +179,7 @@ class ListingController extends Controller
                 'listing' => $this->adminListingShape($listing, $country),
                 'delivery_info' => $this->adminDeliveryInfo($listing),
                 'savings_and_benefits' => $this->savingsBenefitsService->get(
-                    (int) $listing->price,
+                    Money::number($listing->price),
                     $country->id,
                     $listing->currency,
                 ),
@@ -204,7 +205,7 @@ class ListingController extends Controller
             ),
             'warranty_plans' => $this->warrantyPlansFor($listing, $country),
             'savings_and_benefits' => $this->savingsBenefitsService->get(
-                (int) $listing->price,
+                Money::number($listing->price),
                 $country->id,
                 $listing->currency,
             ),
@@ -452,7 +453,7 @@ class ListingController extends Controller
             return [];
         }
 
-        $plans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, (int) $listing->price);
+        $plans = $this->warrantyPlanService->getPlansForProduct($product, $country->id, $country->currency_code, \App\Support\Money::number($listing->price));
 
         return array_values(array_filter($plans, fn (array $plan) => $plan['currency'] === $country->currency_code));
     }

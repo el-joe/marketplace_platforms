@@ -19,7 +19,7 @@ class VendorAcquisitionCommission extends Model
             'commission_rate' => 'integer',
             'monthly_min_sales' => 'integer',
             'monthly_max_sales' => 'integer',
-            'total_earned' => 'integer',
+            'total_earned' => \App\Casts\DecimalMoney::class,
         ];
     }
 

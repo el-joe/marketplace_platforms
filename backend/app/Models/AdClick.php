@@ -26,6 +26,10 @@ class AdClick extends Model
         'clicked_at',
     ];
 
+    protected $casts = [
+        'cost' => \App\Casts\DecimalMoney::class,
+    ];
+
     public function impression(): BelongsTo
     {
         return $this->belongsTo(AdImpression::class, 'ad_impression_id');

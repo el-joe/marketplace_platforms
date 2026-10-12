@@ -22,7 +22,7 @@ class UpdateClassifiedListingRequest extends FormRequest
             'title_ar'               => 'sometimes|string|max:255',
             'description_en'         => 'nullable|string',
             'description_ar'         => 'nullable|string',
-            'price'            => 'sometimes|integer|min:0',
+            'price'            => 'sometimes|numeric|decimal:0,2|min:0',
             'currency'               => 'sometimes|string|size:3',
             'price_negotiable'       => 'boolean',
             'attributes'             => 'nullable|array',

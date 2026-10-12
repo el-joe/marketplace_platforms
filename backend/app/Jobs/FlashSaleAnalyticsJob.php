@@ -48,8 +48,8 @@ class FlashSaleAnalyticsJob implements ShouldQueue
             }
 
             $commissionRate = $this->sale->commission_override_pct ?? 10.0;
-            $commission = (int) round($orders->gross_revenue * $commissionRate / 100);
-            $vendorPayout = (int) $orders->gross_revenue - $commission;
+            $commission = round((float) $orders->gross_revenue * $commissionRate / 100, 2);
+            $vendorPayout = round((float) $orders->gross_revenue - $commission, 2);
 
             FlashSaleAnalytic::create([
                 'flash_sale_id' => $this->sale->id,
@@ -58,9 +58,9 @@ class FlashSaleAnalyticsJob implements ShouldQueue
                 'date' => $this->sale->sale_ends_at?->toDateString() ?? now()->toDateString(),
                 'units_sold' => (int) $orders->units_sold,
                 'currency' => $orders->currency,
-                'gross_revenue' => (int) $orders->gross_revenue,
-                'revenue_at_normal_price' => (int) $orders->revenue_at_normal_price,
-                'discount_given' => (int) $orders->discount_given,
+                'gross_revenue' => round((float) $orders->gross_revenue, 2),
+                'revenue_at_normal_price' => round((float) $orders->revenue_at_normal_price, 2),
+                'discount_given' => round((float) $orders->discount_given, 2),
                 'platform_commission' => $commission,
                 'vendor_payout' => $vendorPayout,
                 'views' => 0,

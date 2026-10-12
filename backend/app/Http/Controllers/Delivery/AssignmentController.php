@@ -182,8 +182,8 @@ class AssignmentController extends Controller
             'latitude'             => ['nullable', 'numeric', 'between:-90,90'],
             'longitude'            => ['nullable', 'numeric', 'between:-180,180'],
             'cod_amount_collected' => $isCod
-                ? ['required', 'integer', 'min:1']
-                : ['nullable', 'integer', 'min:1'],
+                ? ['required', 'numeric', 'decimal:0,2', 'min:1']
+                : ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
             'discrepancy_note'     => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -215,7 +215,7 @@ class AssignmentController extends Controller
                 $request->file('proof_image'),
                 isset($validated['latitude']) ? (float) $validated['latitude'] : null,
                 isset($validated['longitude']) ? (float) $validated['longitude'] : null,
-                isset($validated['cod_amount_collected']) ? (int) $validated['cod_amount_collected'] : null,
+                isset($validated['cod_amount_collected']) ? round((float) $validated['cod_amount_collected'], 2) : null,
                 $validated['discrepancy_note'] ?? null,
             );
         } catch (\DomainException $e) {

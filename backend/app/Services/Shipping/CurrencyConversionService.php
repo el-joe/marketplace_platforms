@@ -4,27 +4,28 @@ namespace App\Services\Shipping;
 
 use App\Exceptions\CurrencyExchangeRateNotFoundException;
 use App\Models\CurrencyExchangeRate;
+use App\Support\Money;
 use Illuminate\Support\Carbon;
 
 /**
  * docs/plans/international_product_shipping.md Phase 2.
  *
- * Converts an integer minor-unit amount from one currency to another using
+ * Converts a money amount (integer or decimal) from one currency to another using
  * the most recent applicable currency_exchange_rates row. Same-currency
- * conversions short-circuit with no DB query. All math is integer-only
- * (intdiv), never float.
+ * conversions short-circuit with no DB query. The fx rate is an integer
+ * numerator/denominator pair; the result is rounded half-up to 2 dp.
  */
 class CurrencyConversionService
 {
     /**
      * @return array{
-     *     amount: int,
+     *     amount: int|float,
      *     rate_numerator: int,
      *     rate_denominator: int,
      *     effective_at: ?Carbon,
      * }
      */
-    public function convert(int $amountMinor, string $fromCurrency, string $toCurrency): array
+    public function convert(int|float $amountMinor, string $fromCurrency, string $toCurrency): array
     {
         if ($fromCurrency === $toCurrency) {
             return [
@@ -46,7 +47,7 @@ class CurrencyConversionService
             throw new CurrencyExchangeRateNotFoundException($fromCurrency, $toCurrency);
         }
 
-        $convertedAmount = intdiv($amountMinor * $rate->rate_numerator, $rate->rate_denominator);
+        $convertedAmount = Money::number(round($amountMinor * $rate->rate_numerator / $rate->rate_denominator, 2));
 
         return [
             'amount' => $convertedAmount,

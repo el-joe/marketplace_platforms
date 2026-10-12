@@ -841,11 +841,11 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="form-label">{{ __('admin.flash_sales.original_price_label') }}</label>
-                    <input type="number" id="add-product-original-price" class="form-input w-full" min="0">
+                    <input type="number" step="0.01" id="add-product-original-price" class="form-input w-full" min="0">
                 </div>
                 <div>
                     <label class="form-label">{{ __('admin.flash_sales.flash_price_label') }}</label>
-                    <input type="number" id="add-product-flash-price" class="form-input w-full" min="0">
+                    <input type="number" step="0.01" id="add-product-flash-price" class="form-input w-full" min="0">
                 </div>
                 <div>
                     <label class="form-label">{{ __('admin.flash_sales.max_quantity_total_label') }}</label>

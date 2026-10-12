@@ -17,6 +17,7 @@ use App\Notifications\Customer\PaymentFailed;
 use App\Notifications\Vendor\PaymentCapturedForOrder;
 use App\Services\Checkout\CouponUsageService;
 use App\Services\Payments\CurrencyConversionService;
+use App\Support\Money;
 use App\Services\Payments\PaymentGatewayFactory;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -31,7 +32,7 @@ class PaymentService
     ) {}
 
     /**
-     * @param  int|null  $amountCents  The amount to actually charge at the
+     * @param  int|float|null  $amountCents  The amount to actually charge at the
      *                                 gateway, in the ORDER's currency. Defaults to $order->total, but
      *                                 enhancement.md P-05 task 2 requires callers to pass
      *                                 total - wallet_used - gift_card_used for split payments, so the
@@ -42,11 +43,11 @@ class PaymentService
         Order $order,
         CountryPaymentGateway $gatewayConfig,
         ?string $idempotencyKey = null,
-        ?int $amountCents = null,
+        int|float|null $amountCents = null,
     ): PaymentInitiationResult {
         $gateway = PaymentGatewayFactory::make($gatewayConfig);
         $idempotencyKey ??= (string) Str::uuid();
-        $orderAmountCents = $amountCents ?? $order->total;
+        $orderAmountCents = Money::number($amountCents ?? $order->total);
 
         // enhancement.md P-05 task 6: convert the order-currency amount
         // into the gateway's configured currency instead of sending the
@@ -132,7 +133,7 @@ class PaymentService
             // (postOrderCapture is idempotent per order via the
             // 'order_capture' reference_type guard), only the amount this
             // gateway transaction actually settled.
-            $this->ledgerService->postOrderCapture($transaction->order, (int) $transaction->amount);
+            $this->ledgerService->postOrderCapture($transaction->order, Money::number($transaction->amount));
             $this->couponUsageService->consumeForOrder($transaction->order);
             $transaction->load('order.subOrders.vendor.vendorAdmins');
             $transaction->order->subOrders->each(function ($subOrder): void {
@@ -150,7 +151,7 @@ class PaymentService
 
     public function refund(
         PaymentTransaction $originalTransaction,
-        int $amountCents,
+        int|float $amountCents,
         string $reason,
     ): RefundResult {
         $gatewayConfig = CountryPaymentGateway::byGatewayCode($originalTransaction->gateway)
@@ -169,7 +170,7 @@ class PaymentService
                 'gateway' => $gateway->getCode(),
                 'gateway_transaction_id' => $result->refundTransactionId ?? ('REFUND-'.Str::uuid()),
                 'idempotency_key' => (string) Str::uuid(),
-                'amount' => -$result->refundedAmountCents,
+                'amount' => -Money::number($result->refundedAmountCents),
                 'currency' => $originalTransaction->currency,
                 'status' => 'succeeded',
                 'raw_response' => $result->rawResponse,

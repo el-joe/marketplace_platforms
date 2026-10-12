@@ -31,12 +31,12 @@ class WalletController extends Controller
         $wallet = $this->walletService->getOrCreateWallet('delivery_agent', $agent->id, $currency);
 
         $data = $request->validate([
-            'amount'    => ['required', 'numeric', 'min:1'],
+            'amount'    => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
-        $amount = (int) $data['amount'];
+        $amount = round((float) $data['amount'], 2);
 
         $this->walletService->requestWithdrawal($wallet, $amount, [
             'bank_name' => $data['bank_name'],

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\Enums\CouponScope;
 use App\Enums\CouponType;
 use App\Enums\GlobalSystemType;
@@ -409,7 +410,7 @@ class CartItemEnrichmentService
         $warranty = $this->buildWarrantyBadge($warrantyPlans);
 
         $isFreeShipping = $isAdminListing
-            ? ((int) ($listing->shipping_cost ?? 0)) === 0
+            ? ((float) ($listing->shipping_cost ?? 0)) == 0
             : (bool) $listing->vendor_covers_delivery;
         // TODO: no zone/rate is resolved in the cart context, so free shipping
         // here reflects vendor_covers_delivery / a flat admin shipping_cost of
@@ -421,14 +422,14 @@ class CartItemEnrichmentService
         return [
             'id' => $item->id,
             'quantity' => (int) $item->quantity,
-            'unit_price' => (int) $item->unit_price,
-            'line_total' => (int) $item->unit_price * (int) $item->quantity,
+            'unit_price' => Money::number($item->unit_price),
+            'line_total' => Money::number(round((float) $item->unit_price * (int) $item->quantity, 2)),
             'currency' => $isAdminListing ? $listing->currency : $listing->currency,
             'added_at' => optional($item->added_at)->toIso8601String(),
             'listing' => [
                 'id' => $listing->id,
-                'price' => (int) $listing->getRawOriginal('price'),
-                'compare_at_price' => $isAdminListing ? null : ($listing->compare_at_price !== null ? (int) $listing->compare_at_price : null),
+                'price' => Money::number($listing->getRawOriginal('price')),
+                'compare_at_price' => $isAdminListing ? null : ($listing->compare_at_price !== null ? Money::number($listing->compare_at_price) : null),
                 'currency' => $listing->currency,
                 'condition' => $isAdminListing ? null : $listing->condition,
                 'global_system_type' => $isAdminListing ? null : $listing->global_system_type?->value,
@@ -504,8 +505,8 @@ class CartItemEnrichmentService
         return [
             'id' => $item->id,
             'quantity' => (int) $item->quantity,
-            'unit_price' => (int) $item->unit_price,
-            'line_total' => (int) $item->unit_price * (int) $item->quantity,
+            'unit_price' => Money::number($item->unit_price),
+            'line_total' => Money::number(round((float) $item->unit_price * (int) $item->quantity, 2)),
             'currency' => null,
             'added_at' => optional($item->added_at)->toIso8601String(),
             'listing' => null,
@@ -614,7 +615,7 @@ class CartItemEnrichmentService
                 } else {
                     $rate = $ratesByMethodId->get($method->id);
                     if ($rate) {
-                        $fee = (int) $rate->base_fee;
+                        $fee = Money::number($rate->base_fee);
                         if (!empty($listing->vendor_covers_delivery)) {
                             $fee = 0;
                             $isFree = true;
@@ -720,8 +721,8 @@ class CartItemEnrichmentService
 
         return [
             'active' => true,
-            'flash_price' => (int) $submission->flash_price,
-            'original_price' => (int) $submission->original_price,
+            'flash_price' => Money::number($submission->flash_price),
+            'original_price' => Money::number($submission->original_price),
             'discount_pct' => (float) $submission->calculated_discount_pct,
             'ends_at' => optional($submission->flashSale?->sale_ends_at)->toIso8601String(),
             'max_quantity_per_customer' => $submission->max_quantity_per_customer,
@@ -832,7 +833,7 @@ class CartItemEnrichmentService
                 'name_en' => $plan->name_en,
                 'name_ar' => $plan->name_ar,
                 'duration_months' => $plan->duration_months,
-                'price' => (int) $plan->price,
+                'price' => Money::number($plan->price),
                 'currency' => $plan->currency,
             ])->values()->all(),
         ];

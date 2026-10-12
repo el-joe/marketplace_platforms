@@ -136,7 +136,7 @@ class CheckoutPricingEngineSplitTest extends TestCase
         );
 
         $this->assertCount(3, $split['sub_orders']);
-        $this->assertSame((int) $gatewayCfg->fee_fixed, $split['gateway_fee_total'] - (int) floor($pricedCart->total * (float) $gatewayCfg->fee_pct / 100));
+        $this->assertEqualsWithDelta((float) $gatewayCfg->fee_fixed, $split['gateway_fee_total'] - round($pricedCart->total * (float) $gatewayCfg->fee_pct / 100, 2), 0.0001);
 
         $sumVendorPayout = array_sum(array_column($split['sub_orders'], 'vendor_payout'));
         $this->assertEqualsWithDelta(

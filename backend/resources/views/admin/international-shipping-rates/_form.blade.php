@@ -64,13 +64,13 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.international_shipping.base_fee') }} <span class="text-danger-500">*</span></label>
-            <input type="number" name="base_fee" value="{{ $val('base_fee', 0) }}" min="0" step="1" required
+            <input type="number" name="base_fee" value="{{ $val('base_fee', 0) }}" min="0" step="0.01" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
             @error('base_fee')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.international_shipping.rate_per_kg') }} <span class="text-danger-500">*</span></label>
-            <input type="number" name="rate_per_kg" value="{{ $val('rate_per_kg', 0) }}" min="0" step="1" required
+            <input type="number" name="rate_per_kg" value="{{ $val('rate_per_kg', 0) }}" min="0" step="0.01" required
                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
             @error('rate_per_kg')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
         </div>
@@ -78,7 +78,7 @@
 
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.international_shipping.customs_fee') }}</label>
-        <input type="number" name="customs_fee_flat" value="{{ $val('customs_fee_flat') }}" min="0" step="1"
+        <input type="number" name="customs_fee_flat" value="{{ $val('customs_fee_flat') }}" min="0" step="0.01"
                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
         <p class="text-xs text-gray-400 mt-1">{{ __('admin.international_shipping.customs_fee_help') }}</p>
         @error('customs_fee_flat')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror

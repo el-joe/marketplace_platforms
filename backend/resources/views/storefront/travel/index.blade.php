@@ -40,7 +40,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('portal.travel_page.filter_max_price') }}</label>
-                <input type="number" name="max_price" value="{{ request('max_price') }}" placeholder="{{ __('portal.travel_page.filter_max_price_placeholder') }}"
+                <input type="number" step="0.01" name="max_price" value="{{ request('max_price') }}" placeholder="{{ __('portal.travel_page.filter_max_price_placeholder') }}"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
             </div>
             <div class="flex items-end gap-2">

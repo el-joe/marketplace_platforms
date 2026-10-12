@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Customer;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -51,14 +52,14 @@ class ProductListResource extends JsonResource
             'image'               => $variantImage ? ['url' => $variantImage, 'alt' => $imagesSlider[0]['alt'] ?? ['ar' => null, 'en' => null]] : null,
             'images'              => $imagesSlider,
             'price_range'         => [
-                'min' => $this->min_price,
-                'max' => $this->max_price,
+                'min' => $this->min_price !== null ? Money::number($this->min_price) : null,
+                'max' => $this->max_price !== null ? Money::number($this->max_price) : null,
             ],
             'category_name'       => [
                 'en' => $this->category_name_en,
                 'ar' => $this->category_name_ar,
             ],
-            'compare_at_price'    => $this->buy_box_compare_at_price !== null ? (int) $this->buy_box_compare_at_price : null,
+            'compare_at_price'    => $this->buy_box_compare_at_price !== null ? Money::number($this->buy_box_compare_at_price) : null,
             'rating_avg'          => (float) $this->rating_avg,
             'rating_count'        => (int) $this->rating_count,
             'seller_count'        => (int) ($this->active_seller_count ?? $this->seller_count ?? 0),

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Marketer;
 
+use App\Support\Money;
 use App\Enums\MarketerListingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Marketer;
@@ -57,20 +58,20 @@ class ListingController extends Controller
         abort_unless($listing->marketer_id === $this->marketer()->id, 403);
 
         $request->validate([
-            'price'            => ['required', 'integer', 'min:1'],
-            'compare_at_price' => ['nullable', 'integer', 'min:1'],
+            'price'            => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
         ]);
 
         $source = $availability->loadSource($listing);
-        if ($source && ! $availability->isPriceInBounds((int) $request->price, (int) $source->getRawOriginal('price'))) {
-            [$min, $max] = $availability->priceBounds((int) $source->getRawOriginal('price'));
+        if ($source && ! $availability->isPriceInBounds(Money::number($request->price), Money::number($source->getRawOriginal('price')))) {
+            [$min, $max] = $availability->priceBounds(Money::number($source->getRawOriginal('price')));
 
             return response()->json(['success' => false, 'message' => "Price must be between {$min} and {$max}."], 422);
         }
 
         $listing->update([
-            'price'            => (int) $request->price,
-            'compare_at_price' => $request->compare_at_price ? (int) $request->compare_at_price : null,
+            'price'            => Money::number($request->price),
+            'compare_at_price' => $request->compare_at_price ? Money::number($request->compare_at_price) : null,
         ]);
 
         return response()->json(['success' => true, 'data' => $listing->fresh()]);

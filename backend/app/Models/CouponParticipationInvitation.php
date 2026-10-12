@@ -31,7 +31,7 @@ class CouponParticipationInvitation extends Model
 
     protected $casts = [
         'max_participants' => 'integer',
-        'min_fee_amount' => 'integer',
+        'min_fee_amount' => \App\Casts\DecimalMoney::class,
         'registration_deadline' => 'datetime',
     ];
 

@@ -38,7 +38,7 @@
 <div class="grid grid-cols-2 gap-4 mb-6">
     <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
         <div class="text-2xl font-black text-emerald-600">
-            {{ number_format($stats['total_net_paid']) }}
+            {{ \App\Support\Money::format($stats['total_net_paid']) }}
             <span class="text-sm font-medium text-gray-400">{{ $currency }}</span>
         </div>
         <div class="text-xs text-gray-500 mt-1">{{ __('carrier.reports.stat_total_paid') }}</div>
@@ -107,11 +107,11 @@
                         &rarr; {{ \Carbon\Carbon::parse($payout->period_end)->format('d M Y') }}
                     </td>
                     <td class="px-4 py-3 text-center text-gray-600">{{ $payout->total_deliveries }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">{{ number_format($payout->gross_earnings) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($payout->gross_earnings) }}</td>
                     <td class="px-4 py-3 text-right text-red-500">
-                        {{ $payout->deductions > 0 ? '−' . number_format($payout->deductions) : '—' }}
+                        {{ $payout->deductions > 0 ? '−' . \App\Support\Money::format($payout->deductions) : '—' }}
                     </td>
-                    <td class="px-4 py-3 text-right font-bold text-gray-900">{{ number_format($payout->net_amount) }}</td>
+                    <td class="px-4 py-3 text-right font-bold text-gray-900">{{ \App\Support\Money::format($payout->net_amount) }}</td>
                     <td class="px-4 py-3 text-center">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-{{ $sc }}-100 text-{{ $sc }}-700 capitalize">
                             {{ $payout->status }}

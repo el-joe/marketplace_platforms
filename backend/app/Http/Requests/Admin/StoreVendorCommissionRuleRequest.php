@@ -31,8 +31,8 @@ class StoreVendorCommissionRuleRequest extends FormRequest
             'category_id' => ['nullable', 'uuid', Rule::exists('categories', 'id')],
             'rate_pct' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
             'rate_type' => ['required', Rule::in([CommissionRateType::Flat->value])],
-            'min_commission' => ['nullable', 'integer', 'min:0'],
-            'max_commission' => ['nullable', 'integer', 'min:0', 'gte:min_commission'],
+            'min_commission' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'max_commission' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'gte:min_commission'],
             'effective_from' => ['required', 'date'],
             'effective_until' => ['nullable', 'date', 'after_or_equal:effective_from'],
             'priority' => ['nullable', 'integer', 'min:0', 'max:1000'],
@@ -49,7 +49,7 @@ class StoreVendorCommissionRuleRequest extends FormRequest
         $data = $this->validated();
         unset($data['confirm_platform_wide']);
 
-        $data['min_commission'] = (int) ($data['min_commission'] ?? 0);
+        $data['min_commission'] = \App\Support\Money::number($data['min_commission'] ?? 0);
         $data['priority'] = (int) ($data['priority'] ?? 0);
 
         return $data + ['vendor_id' => null, 'category_id' => null, 'max_commission' => null, 'effective_until' => null];

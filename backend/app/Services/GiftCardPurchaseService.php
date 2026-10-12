@@ -104,7 +104,7 @@ class GiftCardPurchaseService
                 ]);
             }
 
-            $totalAmount = $batch->amount * $qty;
+            $totalAmount = \App\Support\Money::number(round($batch->amount * $qty, 2));
 
             $order = Order::create([
                 'order_number' => $this->generateOrderNumber(),
@@ -184,7 +184,7 @@ class GiftCardPurchaseService
                 try {
                     (new \App\Services\WalletService())->debit(
                         $wallet,
-                        (int) $totalAmount,
+                        \App\Support\Money::number($totalAmount),
                         'gift_card_purchase',
                         $order->id,
                         "Gift card purchase {$order->order_number}",
@@ -212,7 +212,7 @@ class GiftCardPurchaseService
                 ]);
             } else {
                 try {
-                    $paymentResult = $this->paymentService->initiatePayment($order, $gatewayConfig, (string) Str::uuid(), (int) $totalAmount);
+                    $paymentResult = $this->paymentService->initiatePayment($order, $gatewayConfig, (string) Str::uuid(), \App\Support\Money::number($totalAmount));
 
                     if (! $paymentResult->success) {
                         Log::error('Gift card payment gateway declined purchase', [

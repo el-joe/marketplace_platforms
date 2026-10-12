@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\Models\Admin;
 use App\Models\Customer;
 use App\Models\GiftCard;
@@ -19,7 +20,7 @@ class GiftCardService
      * Admin generates a batch of gift cards. Returns the batch and the plain
      * (unhashed) PINs, which are only ever available at generation time.
      *
-     * @param  array{name: string, description?: string|null, amount: int, currency_code: string, quantity: int, expires_at?: string|null, activate_immediately?: bool}  $data
+     * @param  array{name: string, description?: string|null, amount: int|float, currency_code: string, quantity: int, expires_at?: string|null, activate_immediately?: bool}  $data
      * @return array{batch: GiftCardBatch, plain_pins: array<int, string>}
      */
     public function generateBatch(array $data, Admin $admin): array
@@ -96,7 +97,7 @@ class GiftCardService
      * Redeem a code+PIN gift card into the customer's wallet. Credits the full
      * remaining balance in one atomic operation.
      *
-     * @return array{amount_credited: int, currency_code: string, new_balance: int, card_code_masked: string}
+     * @return array{amount_credited: int|float, currency_code: string, new_balance: int|float, card_code_masked: string}
      */
     public function redeemToWallet(string $code, string $pin, Customer $customer): array
     {
@@ -128,7 +129,7 @@ class GiftCardService
                 ['balance' => 0, 'pending_balance' => 0]
             );
 
-            $newBalance = $wallet->balance + $amountToCredit;
+            $newBalance = Money::number(round($wallet->balance + $amountToCredit, 4));
             $wallet->balance = $newBalance;
             $wallet->save();
 
@@ -175,7 +176,7 @@ class GiftCardService
      * Admin refunds an amount back onto a gift card (e.g. when refunding an
      * order that was paid via a wallet balance traced back to this card).
      */
-    public function refundToCard(GiftCard $card, int $amount, Admin $admin, string $notes = ''): void
+    public function refundToCard(GiftCard $card, int|float $amount, Admin $admin, string $notes = ''): void
     {
         DB::transaction(function () use ($card, $amount, $admin, $notes) {
             $card->increment('remaining_balance', $amount);
@@ -202,10 +203,10 @@ class GiftCardService
      * Admin manually adjusts a gift card's balance. Positive delta adds
      * credit, negative deducts.
      */
-    public function adminAdjust(GiftCard $card, int $delta, string $notes, Admin $admin): void
+    public function adminAdjust(GiftCard $card, int|float $delta, string $notes, Admin $admin): void
     {
         DB::transaction(function () use ($card, $delta, $notes, $admin) {
-            $newBalance = $card->remaining_balance + $delta;
+            $newBalance = Money::number(round($card->remaining_balance + $delta, 4));
 
             if ($newBalance < 0) {
                 throw new \InvalidArgumentException('Adjustment would result in negative balance.');

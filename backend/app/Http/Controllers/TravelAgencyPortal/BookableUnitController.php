@@ -267,8 +267,8 @@ class BookableUnitController extends Controller
             'date' => ['required', 'date'],
             'is_available' => ['nullable', 'boolean'],
             'capacity_override' => ['nullable', 'integer', 'min:1'],
-            'price_day_only' => ['nullable', 'integer', 'min:0'],
-            'price_with_overnight' => ['nullable', 'integer', 'min:0'],
+            'price_day_only' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'price_with_overnight' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         $isAvailable = $request->boolean('is_available');
@@ -303,8 +303,8 @@ class BookableUnitController extends Controller
             'date_to' => ['required', 'date', 'after_or_equal:date_from'],
             'is_available' => ['nullable', 'boolean'],
             'capacity_override' => ['nullable', 'integer', 'min:1'],
-            'price_day_only' => ['nullable', 'integer', 'min:0'],
-            'price_with_overnight' => ['nullable', 'integer', 'min:0'],
+            'price_day_only' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'price_with_overnight' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         $isAvailable = $request->boolean('is_available');
@@ -344,7 +344,7 @@ class BookableUnitController extends Controller
             'slot_type' => ['required', 'in:morning,evening,custom'],
             'starts_at' => ['required', 'date_format:H:i'],
             'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
-            'price' => ['required', 'integer', 'min:0'],
+            'price' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         $bookableUnit->timeSlots()->create($data);

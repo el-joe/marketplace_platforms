@@ -94,7 +94,7 @@ class PromoteBookingController extends Controller
             'slot_id' => ['required', 'uuid'],
             'booked_from' => ['required', 'date'],
             'booked_until' => ['required', 'date', 'after_or_equal:booked_from'],
-            'budget' => ['nullable', 'integer', 'min:1'],
+            'budget' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
             'payment_method' => ['required', 'in:wallet'],
         ]);
 

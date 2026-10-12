@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Vendor;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,8 +19,8 @@ class AdPerformanceResource extends JsonResource
             'clicks'                    => (int) $this->clicks,
             'valid_clicks'              => (int) $this->valid_clicks,
             'conversions'               => (int) $this->conversions,
-            'spend'               => (int) $this->spend,
-            'revenue_attributed'  => (int) $this->revenue_attributed,
+            'spend'               => Money::number($this->spend),
+            'revenue_attributed'  => Money::number($this->revenue_attributed),
             'ctr'                       => (float) $this->ctr,
             'cvr'                       => (float) $this->cvr,
             'acos'                      => (float) $this->acos,

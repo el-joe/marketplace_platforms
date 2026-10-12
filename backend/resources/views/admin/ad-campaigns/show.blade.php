@@ -259,7 +259,7 @@
                                 <div class="text-xs text-gray-500 mt-1">{{ __('admin.ad_campaigns.clicks') }}</div>
                             </div>
                             <div class="text-center p-3 rounded-lg bg-gray-50">
-                                <div class="text-2xl font-bold text-gray-800">{{ number_format($perfSummary['conversions']) }}</div>
+                                <div class="text-2xl font-bold text-gray-800">{{ \App\Support\Money::format($perfSummary['conversions']) }}</div>
                                 <div class="text-xs text-gray-500 mt-1">{{ __('admin.ad_campaigns.conversions') }}</div>
                             </div>
                             <div class="text-center p-3 rounded-lg bg-gray-50">

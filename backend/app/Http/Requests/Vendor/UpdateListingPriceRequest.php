@@ -14,8 +14,8 @@ class UpdateListingPriceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'price'            => ['required', 'integer', 'min:1'],
-            'compare_at_price' => ['nullable', 'integer', 'min:1', 'gt:price'],
+            'price'            => ['required', 'numeric', 'decimal:0,2', 'min:1'],
+            'compare_at_price' => ['nullable', 'numeric', 'decimal:0,2', 'min:1', 'gt:price'],
         ];
     }
 }

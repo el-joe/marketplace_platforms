@@ -82,11 +82,11 @@
     <div class="grid grid-cols-2 gap-3 text-sm mb-4">
         <div>
             <p class="text-slate-500 text-xs">{{ __('delivery.zone.delivery_fee') }}</p>
-            <p class="font-semibold">{{ number_format($agent->zone->base_delivery_fee) }} {{ $agent->zone->country?->currency_code }}</p>
+            <p class="font-semibold">{{ \App\Support\Money::format($agent->zone->base_delivery_fee) }} {{ $agent->zone->country?->currency_code }}</p>
         </div>
         <div>
             <p class="text-slate-500 text-xs">{{ __('delivery.zone.cod_fee') }}</p>
-            <p class="font-semibold">{{ number_format($agent->zone->cod_fee) }} {{ $agent->zone->country?->currency_code }}</p>
+            <p class="font-semibold">{{ \App\Support\Money::format($agent->zone->cod_fee) }} {{ $agent->zone->country?->currency_code }}</p>
         </div>
     </div>
     @if($zoneCities->isNotEmpty())

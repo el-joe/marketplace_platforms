@@ -23,7 +23,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <x-stat-card
             title="{{ __('admin.travel.total_bookings') }}"
-            :value="number_format($stats['total'])"
+            :value="\App\Support\Money::format($stats['total'])"
             icon="ticket"
             iconBg="bg-primary-100 text-primary-600" />
         <x-stat-card

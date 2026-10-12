@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\TravelAgencyPortal;
 
+use App\Support\Money;
 use App\Enums\TravelBookingStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TravelBooking;
@@ -60,8 +61,8 @@ class PerformanceController extends Controller
             ->get()
             ->map(fn ($row) => [
                 'currency'      => $row->currency,
-                'avg_value'     => round((float) $row->avg_value),
-                'total_revenue' => (int) $row->total_revenue,
+                'avg_value'     => Money::number(round((float) $row->avg_value, 2)),
+                'total_revenue' => Money::number($row->total_revenue),
             ]);
 
         $totalInquiries = TravelPackageInquiry::query()
@@ -82,7 +83,7 @@ class PerformanceController extends Controller
             ->groupBy('day')
             ->orderBy('day')
             ->get()
-            ->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total]);
+            ->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)]);
 
         // Revenue over time
         $revenueOverTime = (clone $baseQuery)
@@ -92,7 +93,7 @@ class PerformanceController extends Controller
             ->orderBy('day')
             ->get()
             ->groupBy('currency')
-            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => (int) $r->total])->values());
+            ->map(fn ($rows) => $rows->map(fn ($r) => ['day' => $r->day, 'total' => Money::number($r->total)])->values());
 
         // Per-package performance
         $bookingsByPackage = (clone $baseQuery)
@@ -119,7 +120,7 @@ class PerformanceController extends Controller
                 'inquiries'      => $inquiries,
                 'bookings'       => $bookings,
                 'conversion_rate'=> $inquiries > 0 ? round($bookings / $inquiries * 100, 1) : 0,
-                'revenue'        => (int) $row->revenue,
+                'revenue'        => Money::number($row->revenue),
                 'currency'       => $row->currency,
             ];
         })->values();

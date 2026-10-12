@@ -116,8 +116,8 @@ class PackagingSupplyController extends Controller
                 abort_if($pricing->stock_available < $item['quantity'], 422, __('partner.packaging_supplies.messages.insufficient_stock', ['name' => $supply->name_en]));
             }
 
-            $lineTotal = $pricing->unit_cost * $item['quantity'];
-            $totalCost += $lineTotal;
+            $lineTotal = round($pricing->unit_cost * $item['quantity'], 2);
+            $totalCost = round($totalCost + $lineTotal, 2);
 
             $lineItems[] = [
                 'packaging_supply_id' => $supply->id,
@@ -207,7 +207,7 @@ class PackagingSupplyController extends Controller
         $rows = $requests->map(fn($row) => [
             $row->request_number,
             $row->items_count,
-            number_format($row->total_cost),
+            \App\Support\Money::format($row->total_cost),
             $row->currency,
             $row->status instanceof PackagingSupplyRequestStatus ? $row->status->value : $row->status,
             $row->created_at->format('Y-m-d H:i'),
@@ -244,7 +244,7 @@ class PackagingSupplyController extends Controller
         ]);
     }
 
-    private function resolveDeliveryFeeCents(?\App\Models\Vendor $vendor): int
+    private function resolveDeliveryFeeCents(?\App\Models\Vendor $vendor): int|float
     {
         $feesByCountry = Setting::get('packaging_delivery_fee', []);
 
@@ -252,6 +252,6 @@ class PackagingSupplyController extends Controller
             return 0;
         }
 
-        return (int) ($feesByCountry[$vendor->country_id] ?? 0);
+        return \App\Support\Money::number($feesByCountry[$vendor->country_id] ?? 0);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\CategoryCommissionTier;
@@ -59,14 +60,14 @@ class CategoryCommissionTierController extends Controller
     {
         $data = $request->validate([
             'country_id' => ['nullable', 'uuid', 'exists:countries,id'],
-            'price_from' => ['required', 'integer', 'min:0'],
-            'price_to' => ['nullable', 'integer', 'min:1', 'gt:price_from'],
+            'price_from' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'price_to' => ['nullable', 'numeric', 'decimal:0,2', 'min:1', 'gt:price_from'],
             'commission_rate' => ['required', 'numeric', 'min:0', 'max:100'],
-            'min_commission' => ['nullable', 'integer', 'min:0'],
+            'min_commission' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
-        $from = (int) $data['price_from'];
-        $to = isset($data['price_to']) ? (int) $data['price_to'] : null;
+        $from = Money::number($data['price_from']);
+        $to = isset($data['price_to']) ? Money::number($data['price_to']) : null;
         $countryId = $data['country_id'] ?? null;
 
         // Overlap check is scoped to the same country_id value
@@ -93,8 +94,8 @@ class CategoryCommissionTierController extends Controller
             'price_from' => $from,
             'price_to' => $to,
             'commission_rate' => $data['commission_rate'],
-            'min_commission' => (int) ($data['min_commission'] ?? 0),
-            'sort_order' => $from,
+            'min_commission' => Money::number($data['min_commission'] ?? 0),
+            'sort_order' => (int) floor((float) $from),
         ];
     }
 

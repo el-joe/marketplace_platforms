@@ -33,8 +33,8 @@ class FbnDailyOverageFee extends Model
         'free_period_ends_at' => 'date',
         'fee_date' => 'date',
         'units' => 'integer',
-        'fee_per_unit' => 'integer',
-        'total_fee' => 'integer',
+        'fee_per_unit' => \App\Casts\DecimalMoney::class,
+        'total_fee' => \App\Casts\DecimalMoney::class,
     ];
 
     public function vendor(): BelongsTo

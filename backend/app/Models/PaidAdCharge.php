@@ -19,8 +19,8 @@ class PaidAdCharge extends Model
     protected $casts = [
         'advertiser_type' => PaidAdAdvertiserType::class,
         'type' => PaidAdChargeType::class,
-        'amount' => 'integer',
-        'tax_amount' => 'integer',
+        'amount' => \App\Casts\DecimalMoney::class,
+        'tax_amount' => \App\Casts\DecimalMoney::class,
         'settled_at' => 'datetime',
         'created_at' => 'datetime',
     ];

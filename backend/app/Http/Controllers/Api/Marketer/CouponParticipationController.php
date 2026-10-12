@@ -35,12 +35,12 @@ class CouponParticipationController extends Controller
             return [
                 'id' => $i->id, 'title' => $i->title, 'description' => $i->description,
                 'max_participants' => $i->max_participants, 'approved_count' => $i->approved_requests_count,
-                'min_fee_amount' => (int) $i->min_fee_amount, 'currency' => $i->currency,
+                'min_fee_amount' => \App\Support\Money::number($i->min_fee_amount), 'currency' => $i->currency,
                 'registration_deadline' => $i->registration_deadline,
                 'coupon' => $i->coupon ? ['code' => $i->coupon->code, 'name' => $i->coupon->name,
                     'discount' => ['type' => $i->coupon->type?->value ?? $i->coupon->type, 'value' => $i->coupon->value]] : null,
-                'my_request' => $my ? ['status' => $my->status, 'offered_fee' => (int) $my->offered_fee_amount] : null,
-                'wallet_balance' => (int) $svc->walletFor('marketer', $m->id, $i->currency)->balance,
+                'my_request' => $my ? ['status' => $my->status, 'offered_fee' => \App\Support\Money::number($my->offered_fee_amount)] : null,
+                'wallet_balance' => \App\Support\Money::number($svc->walletFor('marketer', $m->id, $i->currency)->balance),
             ];
         });
 
@@ -65,7 +65,7 @@ class CouponParticipationController extends Controller
     {
         $inv = CouponParticipationInvitation::findOrFail($invitation);
         $request->validate([
-            'offered_fee_amount' => ['required', 'integer', 'min:'.(int) $inv->min_fee_amount],
+            'offered_fee_amount' => ['required', 'numeric', 'decimal:0,2', 'min:'.\App\Support\Money::number($inv->min_fee_amount)],
             'payment_method' => ['required', 'in:wallet,bank_transfer'],
             'bank_transfer_proof' => ['nullable', 'file', 'max:5120'],
         ]);

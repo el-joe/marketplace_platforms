@@ -16,6 +16,11 @@ class AdCampaign extends Model
     use HasUuids;
 
     protected $casts = [
+        'bid' => \App\Casts\DecimalMoney::class,
+        'budget_total' => \App\Casts\DecimalMoney::class,
+        'budget_daily' => \App\Casts\DecimalMoney::class,
+        'budget_spent_total' => \App\Casts\DecimalMoney::class,
+        'budget_spent_today' => \App\Casts\DecimalMoney::class,
         'starts_at'   => 'datetime',
         'ends_at'     => 'datetime',
         'approved_at' => 'datetime',

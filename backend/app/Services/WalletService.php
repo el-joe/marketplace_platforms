@@ -178,14 +178,16 @@ class WalletService
 
     public function settleAgentCod(DeliveryAgent $agent, string $periodStart, string $periodEnd): DeliveryAgentCodSettlement
     {
-        // Sum COD order totals delivered by this agent in the period
-        $codCollected = DB::table('orders')
-            ->join('delivery_assignments', 'delivery_assignments.order_id', '=', 'orders.id')
+        // Sum the COD cash actually collected by this agent in the period
+        // (delivery_assignments has no order_id; it reaches orders via sub_orders).
+        $codCollected = DB::table('delivery_assignments')
+            ->join('sub_orders', 'sub_orders.id', '=', 'delivery_assignments.sub_order_id')
+            ->join('orders', 'orders.id', '=', 'sub_orders.order_id')
             ->where('delivery_assignments.agent_id', $agent->id)
             ->where('delivery_assignments.status', DeliveryAssignmentStatus::Delivered->value)
             ->where('orders.payment_method', 'cod')
             ->whereBetween('delivery_assignments.delivered_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
-            ->sum('orders.total');
+            ->sum('delivery_assignments.cod_amount_collected');
 
         // Sum approved earnings owed to this agent in the period
         $earningsOwed = DeliveryAgentEarning::where('agent_id', $agent->id)
@@ -193,15 +195,17 @@ class WalletService
             ->whereBetween('created_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
             ->sum('amount');
 
-        $net = (int) $codCollected - (int) $earningsOwed;
+        $codCollected = round((float) $codCollected, 2);
+        $earningsOwed = round((float) $earningsOwed, 2);
+        $net = round($codCollected - $earningsOwed, 2);
 
         return DB::transaction(function () use ($agent, $periodStart, $periodEnd, $codCollected, $earningsOwed, $net) {
             $settlement = DeliveryAgentCodSettlement::create([
                 'agent_id' => $agent->id,
                 'period_start' => $periodStart,
                 'period_end' => $periodEnd,
-                'total_cod_collected' => (int) $codCollected,
-                'total_earnings_owed' => (int) $earningsOwed,
+                'total_cod_collected' => $codCollected,
+                'total_earnings_owed' => $earningsOwed,
                 'net_to_remit' => $net,
                 'status' => DeliveryAgentCodSettlementStatus::Pending,
             ]);
@@ -210,10 +214,10 @@ class WalletService
             $agentCurrency = $agent->country?->currency_code ?? 'AED';
             $wallet = $this->getOrCreateWallet('delivery_agent', $agent->id, $agentCurrency);
 
-            if ($net > 0) {
+            if ($net > 0.00005) {
                 // Agent collected more COD cash than owed — owes platform; debit wallet
                 $this->debit($wallet, $net, 'cod_settlement', $settlement->id, "COD settlement {$periodStart} – {$periodEnd}");
-            } elseif ($net < 0) {
+            } elseif ($net < -0.00005) {
                 // Platform owes agent — credit wallet
                 $this->credit($wallet, abs($net), 'cod_settlement', $settlement->id, "COD settlement {$periodStart} – {$periodEnd}");
             }

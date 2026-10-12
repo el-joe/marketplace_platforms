@@ -106,7 +106,7 @@ class ExceptionalZoneAlertController extends Controller
             'city_ids' => 'required|array|min:1',
             'city_ids.*' => 'required|exists:cities,id',
             'carrier_id' => 'nullable|exists:shipping_carriers,id',
-            'reported_carrier_fee' => 'required|integer|min:1',
+            'reported_carrier_fee' => 'required|numeric|decimal:0,2|min:1',
             'currency' => 'required|in:SAR,AED,OMR,KWD,QAR,BHD,EGP,JOD',
             'vendor_note' => 'nullable|string|max:1000',
         ]);

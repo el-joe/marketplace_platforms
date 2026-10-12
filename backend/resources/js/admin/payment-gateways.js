@@ -164,7 +164,7 @@ $('#gateway-form').on('submit', async function (e) {
         environment:     $('#gw-environment').val(),
         sort_order:      parseInt($('#gw-sort-order').val()) || 0,
         fee_pct:         parseFloat($('#gw-fee-pct').val()) || 0,
-        fee_fixed:       parseInt($('#gw-fee-fixed').val()) || 0,
+        fee_fixed:       parseFloat($('#gw-fee-fixed').val()) || 0,
         credentials:     Object.keys(credentials).length ? credentials : undefined,
         webhook_secret:  $('#gw-webhook-secret').val().trim() || null,
     };

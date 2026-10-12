@@ -133,8 +133,8 @@ class DashboardController extends Controller
             for ($i = $days - 1; $i >= 0; $i--) {
                 $date = now()->subDays($i)->format('Y-m-d');
                 $labels[]   = now()->subDays($i)->format($labelFmt);
-                $gmvData[]  = (int) ($orderRows->get($date)?->first()?->gmv ?? 0);
-                $commData[] = (int) ($commRows->get($date)?->first()?->commission ?? 0);
+                $gmvData[]  = \App\Support\Money::number($orderRows->get($date)?->first()?->gmv ?? 0);
+                $commData[] = \App\Support\Money::number($commRows->get($date)?->first()?->commission ?? 0);
             }
             return response()->json([
                 'data' => [
@@ -158,8 +158,8 @@ class DashboardController extends Controller
             foreach ($allDates as $date) {
                 $gmvRow  = collect($orderRows[$date] ?? [])->firstWhere('currency', $currency);
                 $commRow = collect($commRows[$date] ?? [])->firstWhere('currency', $currency);
-                $gmvData[]  = (int) ($gmvRow->gmv ?? 0);
-                $commData[] = (int) ($commRow->commission ?? 0);
+                $gmvData[]  = \App\Support\Money::number($gmvRow->gmv ?? 0);
+                $commData[] = \App\Support\Money::number($commRow->commission ?? 0);
             }
             $datasets[$currency] = ['gmv' => $gmvData, 'commission' => $commData];
         }
@@ -370,13 +370,13 @@ class DashboardController extends Controller
     /** Fetch raw numeric stats for a time window. */
     private function fetchStats(Carbon $start, Carbon $end, ?string $countryId): array
     {
-        $gmv = (int) Order::query()
+        $gmv = \App\Support\Money::number(Order::query()
             ->whereBetween('placed_at', [$start, $end])
             ->whereNotIn('status', [OrderStatus::Cancelled->value])
             ->when($countryId, fn($q) => $q->whereHas(
                 'customer', fn($cq) => $cq->where('country_id', $countryId)
             ))
-            ->sum('total');
+            ->sum('total'));
 
         $orders = (int) Order::query()
             ->whereBetween('placed_at', [$start, $end])
@@ -388,7 +388,7 @@ class DashboardController extends Controller
 
         $revenue = 0;
         if (Schema::hasTable('order_items') && Schema::hasColumn('order_items', 'commission_amount')) {
-            $revenue = (int) OrderItem::query()->from('order_items as oi')
+            $revenue = \App\Support\Money::number(OrderItem::query()->from('order_items as oi')
                 ->join('orders as o', 'o.id', '=', 'oi.order_id')
                 ->whereBetween('o.placed_at', [$start, $end])
                 ->whereNotIn('o.status', [OrderStatus::Cancelled->value])
@@ -399,7 +399,7 @@ class DashboardController extends Controller
                             ->where('customers.country_id', $countryId);
                     });
                 })
-                ->sum('oi.commission_amount');
+                ->sum('oi.commission_amount'));
         }
 
         $sellers = (int) Vendor::query()
@@ -413,7 +413,7 @@ class DashboardController extends Controller
     /** Format a cents integer. Prepends currency code when known. */
     private function formatMoney(int|float|null $cents, ?string $currency = null): string
     {
-        $amount = number_format((int) $cents, 2);
+        $amount = number_format((float) $cents, 2);
         return $currency ? "{$amount} {$currency}" : $amount;
     }
 }

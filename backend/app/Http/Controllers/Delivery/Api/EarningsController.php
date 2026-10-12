@@ -45,14 +45,14 @@ class EarningsController extends Controller
             ->groupBy(fn ($e) => $e->created_at->toDateString())
             ->map(fn ($group, $date) => [
                 'date'        => $date,
-                'total'       => $group->sum('amount'),
+                'total'       => \App\Support\Money::number(round($group->sum('amount'), 2)),
                 'earnings'    => EarningsResource::collection($group)->resolve(),
             ])
             ->values();
 
         return ApiResponse::success([
             'currency'          => $currency,
-            'today_total'       => (int) $todayTotal,
+            'today_total'       => \App\Support\Money::number($todayTotal),
             'days'              => $byDay,
             'meta'              => [
                 'current_page' => $earnings->currentPage(),

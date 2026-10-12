@@ -45,7 +45,7 @@ class AdBookingService
         Vendor|Marketer $advertiser,
         Carbon $from,
         Carbon $to,
-        ?int $budget,
+        int|float|null $budget,
         string $paymentMethod,
         ?Admin $onBehalf = null,
     ): PaidAdBooking {
@@ -434,7 +434,7 @@ class AdBookingService
         });
     }
 
-    private function computeCancelRefund(PaidAdBooking $b): int
+    private function computeCancelRefund(PaidAdBooking $b): int|float
     {
         $charged = PaidAdCharge::where('paid_ad_booking_id', $b->id)->sum('amount');
         if ($charged <= 0) {
@@ -453,10 +453,10 @@ class AdBookingService
             $remainingDays = max(0, min($totalDays, $totalDays - $elapsedDays));
 
             // Customer paid quoted_amount + tax_amount (ledger `amount` includes tax), so refund prorated tax too.
-            return intdiv(($b->quoted_amount + $b->tax_amount) * $remainingDays, $totalDays);
+            return round(((float) $b->quoted_amount + (float) $b->tax_amount) * $remainingDays / $totalDays, 2);
         }
 
-        return max(0, $b->budget_amount - $b->total_charged);
+        return max(0, round((float) $b->budget_amount - (float) $b->total_charged, 4));
     }
 
     private function assertTransition(PaidAdBooking $b, PaidAdBookingStatus $to): void

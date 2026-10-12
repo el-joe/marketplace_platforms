@@ -12,6 +12,7 @@ class AdCampaignKeyword extends Model
     use HasUuids;
 
     protected $casts = [
+        'bid_override' => \App\Casts\DecimalMoney::class,
         'match_type' => AdCampaignKeywordMatchType::class,
     ];
 

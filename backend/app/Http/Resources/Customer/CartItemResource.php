@@ -48,7 +48,7 @@ class CartItemResource extends JsonResource
             'thumbnail'          => $this->resolveThumbnail($product, $variant),
             'unit_price'   => $this->unit_price,
             'quantity'           => $this->quantity,
-            'line_total'   => $this->unit_price * $this->quantity,
+            'line_total'   => \App\Support\Money::number(round($this->unit_price * $this->quantity, 2)),
             'max_order_quantity' => $listing?->max_order_quantity,
             'vendor'             => !$isAdmin && !$isMarketer && $listing?->vendor ? [
                 'id'         => $listing->vendor->id,
@@ -84,7 +84,7 @@ class CartItemResource extends JsonResource
                 'id' => $this->warrantyPlan->id,
                 'name' => $this->warrantyPlan->localized_name,
                 'duration_months' => $this->warrantyPlan->duration_months,
-                'price' => $this->warrantyPlan->resolvePrice((int) $this->unit_price),
+                'price' => $this->warrantyPlan->resolvePrice(\App\Support\Money::number($this->unit_price)),
                 'price_type' => $this->warrantyPlan->price_type,
                 'price_pct' => $this->warrantyPlan->price_pct,
                 'currency' => $this->warrantyPlan->currency,

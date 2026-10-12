@@ -23,8 +23,8 @@ class FlashSaleOrder extends Model
     protected function casts(): array
     {
         return [
-            'flash_price'     => 'integer',
-            'original_price'  => 'integer',
+            'flash_price'     => \App\Casts\DecimalMoney::class,
+            'original_price'  => \App\Casts\DecimalMoney::class,
             'discount_amount' => 'integer',
         ];
     }

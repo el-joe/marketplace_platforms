@@ -37,12 +37,13 @@ class Refund extends Model
     protected function casts(): array
     {
         return [
+            'amount' => \App\Casts\DecimalMoney::class,
             'status' => RefundStatus::class,
             'reason' => RefundReason::class,
             'refund_type' => RefundType::class,
-            'gateway_fee_deducted' => 'integer',
-            'tax_deducted' => 'integer',
-            'net_refund' => 'integer',
+            'gateway_fee_deducted' => \App\Casts\DecimalMoney::class,
+            'tax_deducted' => \App\Casts\DecimalMoney::class,
+            'net_refund' => \App\Casts\DecimalMoney::class,
         ];
     }
 

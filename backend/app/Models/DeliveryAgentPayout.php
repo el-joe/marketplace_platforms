@@ -33,9 +33,9 @@ class DeliveryAgentPayout extends Model
         return [
             'period_start' => 'date',
             'period_end' => 'date',
-            'gross_earnings' => 'integer',
-            'deductions' => 'integer',
-            'net_amount' => 'integer',
+            'gross_earnings' => \App\Casts\DecimalMoney::class,
+            'deductions' => \App\Casts\DecimalMoney::class,
+            'net_amount' => \App\Casts\DecimalMoney::class,
             'processed_at' => 'datetime',
             'status' => DeliveryAgentPayoutStatus::class,
         ];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Support\Money;
 use App\Enums\WalletOwnerType;
 use App\Exceptions\InsufficientBalanceException;
 use App\Http\Controllers\Controller;
@@ -61,7 +62,7 @@ class WarrantyController extends Controller
             $product,
             $customer->country_id,
             $orderItem->order->currency,
-            (int) $orderItem->unit_price,
+            $orderItem->unit_price,
         );
 
         return ApiResponse::success($plans, __('customer_api.warranty.plans_retrieved'));
@@ -115,7 +116,7 @@ class WarrantyController extends Controller
 
         $plan = WarrantyPlan::findOrFail($request->validated('warranty_plan_id'));
 
-        $price = $plan->resolvePrice((int) $orderItem->unit_price);
+        $price = $plan->resolvePrice(Money::number($orderItem->unit_price));
         $currency = $orderItem->order->currency;
 
         $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
@@ -137,7 +138,7 @@ class WarrantyController extends Controller
                     throw new InsufficientBalanceException($price, $lockedWallet->balance, $lockedWallet->currency);
                 }
 
-                $lockedWallet->update(['balance' => $lockedWallet->balance - $price]);
+                $lockedWallet->update(['balance' => Money::round($lockedWallet->balance - $price)]);
                 $wallet->setAttribute('balance', $lockedWallet->balance);
 
                 $deliveredAt = $orderItem->subOrder->delivered_at;

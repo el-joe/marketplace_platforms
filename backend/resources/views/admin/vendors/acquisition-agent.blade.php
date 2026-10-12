@@ -37,7 +37,7 @@
             </div>
             <div>
                 <dt class="text-gray-500">{{ __('admin.vendors.total_earned') }}</dt>
-                <dd class="font-medium text-gray-900">{{ number_format($commission->total_earned) }} {{ $commission->currency }}</dd>
+                <dd class="font-medium text-gray-900">{{ \App\Support\Money::format($commission->total_earned) }} {{ $commission->currency }}</dd>
             </div>
             <div>
                 <dt class="text-gray-500">{{ __('admin.vendors.expires_on') }}</dt>
@@ -61,7 +61,7 @@
                         <tr class="border-b border-gray-50">
                             <td class="py-2 pr-4">{{ \Illuminate\Support\Carbon::parse($row->month)->format('M Y') }}</td>
                             <td class="py-2 pr-4">{{ $row->sales_count }}</td>
-                            <td class="py-2 pr-4">{{ number_format($row->commission_earned) }} {{ $commission->currency }}</td>
+                            <td class="py-2 pr-4">{{ \App\Support\Money::format($row->commission_earned) }} {{ $commission->currency }}</td>
                             <td class="py-2 pr-4"><x-badge color="gray">{{ ucfirst($row->status) }}</x-badge></td>
                         </tr>
                     @empty

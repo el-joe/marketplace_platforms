@@ -34,12 +34,12 @@ class VendorListing extends Model
             // BIGINT base-currency units — silently truncated when cast to int
             // elsewhere. Migrated to BIGINT; money here is a whole base-currency
             // amount like every other price column, never *100/100.
-            'price' => 'integer',
-            'compare_at_price' => 'integer',
-            'cost_price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
+            'compare_at_price' => \App\Casts\DecimalMoney::class,
+            'cost_price' => \App\Casts\DecimalMoney::class,
             // Section 6 ("first price" snapshot): read-only after creation,
             // never mass-assignable — intentionally left out of $fillable.
-            'first_price' => 'integer',
+            'first_price' => \App\Casts\DecimalMoney::class,
             'first_price_locked_at' => 'datetime',
             'disposable_by_admin' => 'boolean',
             'declared_weight_grams' => 'integer',

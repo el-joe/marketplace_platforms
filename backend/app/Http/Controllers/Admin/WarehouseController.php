@@ -292,8 +292,8 @@ class WarehouseController extends Controller
                 'vendor' => e($fee->vendor_name ?? '—'),
                 'sku' => '<span class="font-mono text-xs">' . e($fee->vendor_sku ?? $fee->sku ?? '—') . '</span>',
                 'units' => number_format($fee->units),
-                'fee_per_unit' => number_format($fee->fee_per_unit) . ' ' . $fee->currency,
-                'total_fee' => number_format($fee->total_fee) . ' ' . $fee->currency,
+                'fee_per_unit' => \App\Support\Money::format($fee->fee_per_unit) . ' ' . $fee->currency,
+                'total_fee' => \App\Support\Money::format($fee->total_fee) . ' ' . $fee->currency,
                 'currency' => $fee->currency,
                 'status' => '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' . $statusBadge . '">' . e($fee->status->value) . '</span>',
             ];

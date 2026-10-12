@@ -14,6 +14,8 @@ class Commission extends Model
     protected function casts(): array
     {
         return [
+            'min_commission' => \App\Casts\DecimalMoney::class,
+            'max_commission' => \App\Casts\DecimalMoney::class,
             'rate_type'       => CommissionRateType::class,
             'rate_pct'        => 'decimal:2',
             'effective_from'  => 'date',

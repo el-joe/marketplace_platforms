@@ -25,7 +25,7 @@ class ShippingWeightSlab extends Model
     protected $casts = [
         'min_weight_grams' => 'integer',
         'max_weight_grams' => 'integer',
-        'extra_fee' => 'integer',
+        'extra_fee' => \App\Casts\DecimalMoney::class,
         'is_active' => 'boolean',
     ];
 

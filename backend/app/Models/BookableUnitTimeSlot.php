@@ -22,7 +22,7 @@ class BookableUnitTimeSlot extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
         ];
     }
 

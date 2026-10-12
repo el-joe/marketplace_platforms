@@ -18,6 +18,7 @@ class Dispute extends Model
     protected function casts(): array
     {
         return [
+            'compensation' => \App\Casts\DecimalMoney::class,
             'resolved_at' => 'datetime',
             'status' => DisputeStatus::class,
             'reason' => DisputeReason::class,

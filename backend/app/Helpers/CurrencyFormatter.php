@@ -4,10 +4,10 @@ namespace App\Helpers;
 
 class CurrencyFormatter
 {
-    public static function formatPrice(int $amount, string $currency, ?string $locale = null): string
+    public static function formatPrice(int|float|string|null $amount, string $currency, ?string $locale = null): string
     {
         $locale = $locale ?? app()->getLocale();
-        $formatted = number_format($amount, 0);
+        $formatted = \App\Support\Money::format($amount);
 
         return $locale === 'ar'
             ? $formatted . ' ' . $currency

@@ -30,7 +30,7 @@ class ClassifiedListing extends Model
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
         'attributes'           => 'array',
-        'price'          => 'integer',
+        'price'          => \App\Casts\DecimalMoney::class,
         'latitude'             => 'decimal:7',
         'longitude'            => 'decimal:7',
         'contract_accepted_at' => 'datetime',

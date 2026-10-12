@@ -348,7 +348,7 @@ class DisputeController extends Controller
                 'resolution' => $data['resolution'],
                 'resolution_notes' => $data['resolution_notes'] ?? null,
                 'compensation' => isset($data['compensation'])
-                    ? (int) round((float) $data['compensation'])
+                    ? round((float) $data['compensation'], 2)
                     : null,
                 'status' => !empty($data['close']) ? 'closed' : 'resolved',
                 'resolved_at' => $dispute->resolved_at ?? now(),

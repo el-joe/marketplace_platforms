@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Vendor;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,7 +31,7 @@ class InventoryResource extends JsonResource
             'listing'            => $this->whenLoaded('vendorListing', fn () => [
                 'id'           => $this->vendorListing->id,
                 'condition'    => $this->vendorListing->condition,
-                'price'        => (int) $this->vendorListing->price,
+                'price'        => Money::number($this->vendorListing->price),
                 'product_variant' => $this->vendorListing->relationLoaded('productVariant') ? [
                     'sku'          => $this->vendorListing->productVariant->sku,
                     'variant_name' => $this->vendorListing->productVariant->variant_name,

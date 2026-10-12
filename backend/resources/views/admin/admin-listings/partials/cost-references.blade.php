@@ -57,15 +57,15 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.manufacturer_cost_cents') }}</label>
-                    <input type="number" name="manufacturer_cost" min="0" step="1" class="form-input w-full text-sm">
+                    <input type="number" name="manufacturer_cost" min="0" step="0.01" class="form-input w-full text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.shipping_cost_cents') }}</label>
-                    <input type="number" name="shipping_cost" min="0" step="1" class="form-input w-full text-sm">
+                    <input type="number" name="shipping_cost" min="0" step="0.01" class="form-input w-full text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.landed_cost_cents') }}</label>
-                    <input type="number" name="landed_cost" min="0" step="1" class="form-input w-full text-sm" placeholder="{{ __('admin.admin_listings.landed_cost_auto_placeholder') }}">
+                    <input type="number" name="landed_cost" min="0" step="0.01" class="form-input w-full text-sm" placeholder="{{ __('admin.admin_listings.landed_cost_auto_placeholder') }}">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.platform_margin_pct') }}</label>

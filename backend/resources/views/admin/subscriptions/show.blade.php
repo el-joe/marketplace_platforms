@@ -105,7 +105,7 @@
                     <dl class="space-y-1.5 text-sm">
                         <div class="flex justify-between">
                             <dt class="text-gray-500">{{ __('admin.subscriptions.price') }}</dt>
-                            <dd class="font-medium">{{ number_format($subscription->plan->price) }}
+                            <dd class="font-medium">{{ \App\Support\Money::format($subscription->plan->price) }}
                                 {{ $subscription->plan->currency }}/mo</dd>
                         </div>
                         <div class="flex justify-between">

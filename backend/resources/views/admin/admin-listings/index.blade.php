@@ -138,7 +138,7 @@
                                     {{ $listing->country->flag_emoji }} {{ $listing->country->name_en }}
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    {{ number_format($listing->price) }} {{ $listing->currency }}
+                                    {{ \App\Support\Money::format($listing->price) }} {{ $listing->currency }}
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <span class="{{ $lowStock ? 'text-red-600' : 'text-green-600' }} font-semibold">

@@ -135,8 +135,8 @@ class CountryController extends Controller
             'timezone' => ['nullable', 'timezone'],
             'vat_rate' => ['required', 'numeric', 'between:0,50'],
             'cod_available' => ['boolean'],
-            'cod_max_amount' => ['nullable', 'integer', 'min:0'],
-            'cod_supermall_max_amount' => ['nullable', 'integer', 'min:0'],
+            'cod_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'cod_supermall_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'cod_supermall_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
         ]);
 
@@ -202,8 +202,8 @@ class CountryController extends Controller
             'timezone' => ['nullable', 'timezone'],
             'vat_rate' => ['required', 'numeric', 'between:0,50'],
             'cod_available' => ['boolean'],
-            'cod_max_amount' => ['nullable', 'integer', 'min:0'],
-            'cod_supermall_max_amount' => ['nullable', 'integer', 'min:0'],
+            'cod_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'cod_supermall_max_amount' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'cod_supermall_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
         ]);
 
@@ -283,7 +283,7 @@ class CountryController extends Controller
             'settings' => ['required', 'array'],
             'settings.*.shipping_method_id' => ['required', 'exists:shipping_methods,id'],
             'settings.*.is_active' => ['boolean'],
-            'settings.*.free_shipping_threshold' => ['nullable', 'integer', 'min:0'],
+            'settings.*.free_shipping_threshold' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         DB::transaction(function () use ($country, $data) {

@@ -27,8 +27,8 @@ class BookableUnitAvailability extends Model
             'date' => 'date',
             'is_available' => 'boolean',
             'capacity_override' => 'integer',
-            'price_day_only' => 'integer',
-            'price_with_overnight' => 'integer',
+            'price_day_only' => \App\Casts\DecimalMoney::class,
+            'price_with_overnight' => \App\Casts\DecimalMoney::class,
         ];
     }
 

@@ -31,7 +31,7 @@ class StoreSpecialRequestRequest extends FormRequest
             'title_ar'        => ['nullable', 'string', 'max:255'],
             'description_en'  => ['required', 'string', 'max:5000'],
             'description_ar'  => ['nullable', 'string', 'max:5000'],
-            'budget'          => ['nullable', 'integer', 'min:0'],
+            'budget'          => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'budget_currency' => ['nullable', 'string', 'size:3'],
         ];
     }

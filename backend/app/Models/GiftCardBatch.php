@@ -32,7 +32,7 @@ class GiftCardBatch extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
+        'amount' => \App\Casts\DecimalMoney::class,
         'quantity' => 'integer',
         'expires_at' => 'datetime',
         'is_purchasable' => 'boolean',

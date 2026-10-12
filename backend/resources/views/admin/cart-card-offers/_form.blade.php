@@ -162,7 +162,7 @@
                             <span class="text-gray-400 font-normal">{{ __('admin.cart_card_offers_section.base_currency_hint') }}</span>
                         </label>
                         <input type="number" id="cashback_fixed_amount" name="cashback_fixed_amount" value="{{ $val('cashback_fixed_amount', 0) }}"
-                            class="input w-full @error('cashback_fixed_amount') border-red-400 @enderror" min="0" />
+                            class="input w-full @error('cashback_fixed_amount') border-red-400 @enderror" min="0" step="0.01" />
                         @error('cashback_fixed_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
@@ -173,7 +173,7 @@
                                 <span class="text-gray-400 font-normal">{{ __('admin.cart_card_offers_section.min_order_hint') }}</span>
                             </label>
                             <input type="number" id="min_order_amount" name="min_order_amount" value="{{ $val('min_order_amount', 0) }}"
-                                class="input w-full @error('min_order_amount') border-red-400 @enderror" min="0" />
+                                class="input w-full @error('min_order_amount') border-red-400 @enderror" min="0" step="0.01" />
                             @error('min_order_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
@@ -182,7 +182,7 @@
                                 <span class="text-gray-400 font-normal">{{ __('admin.cart_card_offers_section.max_cashback_hint') }}</span>
                             </label>
                             <input type="number" id="max_cashback_amount" name="max_cashback_amount" value="{{ $val('max_cashback_amount') }}"
-                                class="input w-full @error('max_cashback_amount') border-red-400 @enderror" min="0" />
+                                class="input w-full @error('max_cashback_amount') border-red-400 @enderror" min="0" step="0.01" />
                             @error('max_cashback_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>

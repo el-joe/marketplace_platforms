@@ -162,9 +162,9 @@ class CodSettlementController extends Controller
             ->whereNull('cod_settlement_id')
             ->get();
 
-        $collected = $assignments->sum('cod_amount_collected');
+        $collected = round((float) $assignments->sum('cod_amount_collected'), 2);
 
-        if ($collected === 0) {
+        if (abs($collected) < 0.00005) {
             return response()->json([
                 'success' => false,
                 'message' => __('admin.cod_settlements_section.no_unsettled_deliveries'),
@@ -176,8 +176,9 @@ class CodSettlementController extends Controller
             ->whereBetween('created_at', [$periodStart.' 00:00:00', $periodEnd.' 23:59:59'])
             ->where('status', '!=', DeliveryAgentEarningStatus::Cancelled)
             ->sum('amount');
+        $earningsOwed = round((float) $earningsOwed, 2);
 
-        $netToRemit = $collected - $earningsOwed;
+        $netToRemit = round($collected - $earningsOwed, 2);
 
         if ($netToRemit < 0) {
             return response()->json([
@@ -192,11 +193,11 @@ class CodSettlementController extends Controller
         $discrepancyNotes = $discrepancyAssignments
             ->map(fn ($a) => "Assignment {$a->id}: {$a->discrepancy_note}")
             ->implode("\n");
-        $discrepancyAmountCents = $discrepancyAssignments->sum(function ($a) {
-            $expected = (int) ($a->subOrder?->order?->total ?? 0);
+        $discrepancyAmountCents = round((float) $discrepancyAssignments->sum(function ($a) {
+            $expected = $a->subOrder?->order?->total ?? 0;
 
-            return max(0, $expected - (int) $a->cod_amount_collected);
-        });
+            return max(0, round($expected - $a->cod_amount_collected, 2));
+        }), 2);
 
         $settlement = DB::transaction(function () use (
             $agent, $periodStart, $periodEnd, $collected, $earningsOwed, $netToRemit, $assignments,
@@ -235,7 +236,7 @@ class CodSettlementController extends Controller
             'message' => $message,
             'settlement' => [
                 'id' => $settlement->id,
-                'net_to_remit' => $netToRemit,
+                'net_to_remit' => \App\Support\Money::number($netToRemit),
                 'has_collection_discrepancy' => $hasDiscrepancy,
                 'show_url' => route('admin.delivery.cod-settlements.show', $settlement),
             ],
@@ -254,11 +255,11 @@ class CodSettlementController extends Controller
 
         $rules = [
             'payment_reference' => ['required', 'string', 'max:255'],
-            'actual_amount_remitted' => ['required', 'integer', 'min:0'],
+            'actual_amount_remitted' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
 
-        $discrepancy = abs($request->input('actual_amount_remitted', 0) - $settlement->net_to_remit);
+        $discrepancy = abs(round((float) $request->input('actual_amount_remitted', 0) - $settlement->net_to_remit, 2));
         if ($discrepancy > $toleranceCents) {
             $rules['notes'] = ['required', 'string', 'max:1000'];
         }

@@ -135,7 +135,7 @@
                         {{ __('partner.exceptional_zone_alerts.carrier_fee_label') }} <span class="text-red-500">*</span>
                     </label>
                     <div class="flex gap-2 mt-1">
-                        <input type="number" name="reported_carrier_fee" required min="1"
+                        <input type="number" name="reported_carrier_fee" required min="1" step="0.01"
                                class="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="{{ __('partner.exceptional_zone_alerts.carrier_fee_placeholder') }}">
                         <input type="hidden" name="currency" id="alertCurrency" value="">
                         <div id="alertCurrencyDisplay"

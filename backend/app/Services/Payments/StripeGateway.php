@@ -40,7 +40,7 @@ class StripeGateway extends AbstractPaymentGateway
                     'success_url'            => $data->successUrl . '?session_id={CHECKOUT_SESSION_ID}',
                     'cancel_url'             => $data->cancelUrl,
                     'line_items[0][price_data][currency]'                  => strtolower($data->currency),
-                    'line_items[0][price_data][unit_amount]'               => $data->amountCents,
+                    'line_items[0][price_data][unit_amount]'               => $this->toMinorUnits($data->amountCents, $data->currency),
                     'line_items[0][price_data][product_data][name]'        => 'Order ' . $data->orderNumber,
                     'line_items[0][quantity]'                              => 1,
                     'metadata[order_id]'     => $data->orderId,
@@ -116,7 +116,7 @@ class StripeGateway extends AbstractPaymentGateway
             return new PaymentVerificationResult(
                 success: $status === PaymentTransactionStatus::Succeeded,
                 status: $status->value,
-                amountCents: (int) ($body['amount_total'] ?? 0),
+                amountCents: $this->fromMinorUnits((int) ($body['amount_total'] ?? 0), strtoupper($body['currency'] ?? $this->settlementCurrency())),
                 currency: strtoupper($body['currency'] ?? $this->settlementCurrency()),
                 gatewayTransactionId: $transactionReference,
                 rawResponse: $body,
@@ -133,7 +133,7 @@ class StripeGateway extends AbstractPaymentGateway
         }
     }
 
-    public function refund(string $transactionReference, int $amountCents, string $reason): RefundResult
+    public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult
     {
         $creds     = $this->credentials();
         $secretKey = $creds['secret_key'] ?? '';
@@ -154,7 +154,7 @@ class StripeGateway extends AbstractPaymentGateway
                 ->timeout(20)
                 ->post('https://api.stripe.com/v1/refunds', [
                     'payment_intent' => $paymentIntentId,
-                    'amount'         => $amountCents,
+                    'amount'         => $this->toMinorUnits($amountCents, $this->settlementCurrency()),
                     'reason'         => 'requested_by_customer',
                     'metadata[reason]' => $reason,
                 ]);

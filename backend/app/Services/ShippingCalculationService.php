@@ -8,10 +8,11 @@ use App\Models\ShippingWeightSlab;
 use App\Models\ShippingZone;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Support\Money;
 use App\ValueObjects\ShippingBreakdown;
 
 /**
- * All weight values are GRAMS. All money values are BIGINT base currency
+ * All weight values are GRAMS. All money values are DECIMAL(19,4) base currency
  * units — never divide or multiply by 100 here.
  */
 class ShippingCalculationService
@@ -32,7 +33,7 @@ class ShippingCalculationService
         return max($actualWeightGrams, $volumetricWeightGrams);
     }
 
-    public function getWeightSlabFee(string $shippingMethodId, string $countryId, int $effectiveWeightGrams): int
+    public function getWeightSlabFee(string $shippingMethodId, string $countryId, int $effectiveWeightGrams): int|float
     {
         $extraFee = ShippingWeightSlab::where('shipping_method_id', $shippingMethodId)
             ->where('country_id', $countryId)
@@ -44,7 +45,7 @@ class ShippingCalculationService
             })
             ->value('extra_fee');
 
-        return (int) ($extraFee ?? 0);
+        return $extraFee ?? 0;
     }
 
     /**
@@ -88,11 +89,11 @@ class ShippingCalculationService
         $customerShipping = $rate->base_fee;
         if ($billableWeightGrams > $rate->min_weight_grams) {
             $overKg = ($billableWeightGrams - $rate->min_weight_grams) / 1000;
-            $customerShipping += (int) round($overKg * $rate->rate_per_kg);
+            $customerShipping += round($overKg * $rate->rate_per_kg, 2);
         }
 
         $slabFee = $this->getWeightSlabFee($method->id, $destinationZone->country_id, $billableWeightGrams);
-        $customerShipping += $slabFee;
+        $customerShipping = Money::number(round($customerShipping + $slabFee, 2));
 
         return new ShippingBreakdown(
             customerPays: $customerShipping,

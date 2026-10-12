@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\Enums\CancelActor;
 use App\Enums\PaymentTransactionType;
 use App\Models\Admin;
@@ -376,13 +377,13 @@ class OrderInterventionService
      * Record an admin-initiated refund against an order.
      *
      * @param  string  $refundType  full|partial|shipping_only
-     * @param  int|null  $amount  Required when $refundType === 'partial'
+     * @param  int|float|null  $amount  Required when $refundType === 'partial'
      * @throws ValidationException
      */
     public function processRefund(
         Order $order,
         string $refundType,
-        ?int $amount,
+        int|float|null $amount,
         string $reason,
         ?string $reasonNotes,
         ?string $subOrderId,
@@ -404,9 +405,9 @@ class OrderInterventionService
         }
 
         $amountCents = match ($refundType) {
-            'full'          => $order->total,
-            'shipping_only' => $order->shipping,
-            default         => (int) ($amount ?? 0),
+            'full'          => Money::number($order->total),
+            'shipping_only' => Money::number($order->shipping),
+            default         => Money::round($amount ?? 0),
         };
 
         if ($amountCents <= 0) {
@@ -436,7 +437,7 @@ class OrderInterventionService
             ]);
 
             // Update payment_status on the order to reflect the refund.
-            $newPayStatus = ($amountCents >= $order->total) ? 'refunded' : 'partially_refunded';
+            $newPayStatus = ($amountCents + 0.00005 >= (float) $order->total) ? 'refunded' : 'partially_refunded';
             $order->update(['payment_status' => $newPayStatus]);
 
             OrderStatusHistory::create([

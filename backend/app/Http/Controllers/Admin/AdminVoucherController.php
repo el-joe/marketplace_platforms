@@ -278,7 +278,7 @@ class AdminVoucherController extends Controller
             'description' => 'nullable|string',
             'title_ar' => 'nullable|string|max:255',
             'title_en' => 'nullable|string|max:255',
-            'amount' => 'required|integer|min:1',
+            'amount' => 'required|numeric|decimal:0,2|min:1',
             'currency_code' => 'required|in:SAR,AED,EGP,KWD,OMR,QAR,BHD,JOD',
             'country_id' => 'nullable|uuid',
             'customer_eligibility' => 'required|in:all,new_customers,specific_users',

@@ -44,10 +44,10 @@
                             @endif
                             <div class="text-sm font-medium text-primary-700 mt-2">
                                 @if (in_array($slot->pricing_model->value, ['cpm', 'cpc']))
-                                    {{ strtoupper($slot->pricing_model->value) }} {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }}
-                                    · {{ __('marketer.promote.min_budget_label') }} {{ number_format($slot->min_budget) }} {{ $slot->country?->currency_code }}
+                                    {{ strtoupper($slot->pricing_model->value) }} {{ \App\Support\Money::format($slot->base_rate) }} {{ $slot->country?->currency_code }}
+                                    · {{ __('marketer.promote.min_budget_label') }} {{ \App\Support\Money::format($slot->min_budget) }} {{ $slot->country?->currency_code }}
                                 @else
-                                    {{ number_format($slot->base_rate) }} {{ $slot->country?->currency_code }} / {{ str_replace('fixed_', '', $slot->pricing_model->value) }}
+                                    {{ \App\Support\Money::format($slot->base_rate) }} {{ $slot->country?->currency_code }} / {{ str_replace('fixed_', '', $slot->pricing_model->value) }}
                                 @endif
                             </div>
                             <div class="text-xs text-gray-400 mt-1">{{ $slot->creative_width_px }}×{{ $slot->creative_height_px }}px</div>

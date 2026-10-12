@@ -17,8 +17,8 @@ class ClassifiedWantedListing extends Model
     ];
 
     protected $casts = [
-        'budget_min' => 'integer',
-        'budget_max' => 'integer',
+        'budget_min' => \App\Casts\DecimalMoney::class,
+        'budget_max' => \App\Casts\DecimalMoney::class,
         'expires_at' => 'datetime',
     ];
 

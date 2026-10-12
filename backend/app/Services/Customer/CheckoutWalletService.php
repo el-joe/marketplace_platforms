@@ -7,12 +7,15 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutWalletService
 {
-    public function applyWalletToOrder(Customer $customer, Order $order, int $walletAmountToUse): void
+    public function applyWalletToOrder(Customer $customer, Order $order, int|float $walletAmountToUse): void
     {
+        $walletAmountToUse = Money::round($walletAmountToUse);
+
         if ($walletAmountToUse <= 0) {
             throw new \InvalidArgumentException('Wallet amount to use must be greater than zero.');
         }
@@ -32,7 +35,7 @@ class CheckoutWalletService
                 throw new \DomainException('Wallet currency does not match order currency.');
             }
 
-            $wallet->update(['balance' => $wallet->balance - $walletAmountToUse]);
+            $wallet->update(['balance' => Money::round($wallet->balance - $walletAmountToUse)]);
 
             WalletTransaction::create([
                 'wallet_id' => $wallet->id,
@@ -55,13 +58,15 @@ class CheckoutWalletService
 
             $order->update([
                 'wallet_amount_used' => $walletAmountToUse,
-                'payment_method' => $walletAmountToUse === $order->total ? 'wallet' : $order->payment_method,
+                'payment_method' => abs($walletAmountToUse - (float) $order->total) < 0.005 ? 'wallet' : $order->payment_method,
             ]);
         });
     }
 
-    public function refundToWallet(Customer $customer, Order $order, int $refundAmount): void
+    public function refundToWallet(Customer $customer, Order $order, int|float $refundAmount): void
     {
+        $refundAmount = Money::round($refundAmount);
+
         if ($refundAmount <= 0) {
             throw new \InvalidArgumentException('Refund amount must be greater than zero.');
         }
@@ -79,7 +84,7 @@ class CheckoutWalletService
                 ]);
             }
 
-            $wallet->update(['balance' => $wallet->balance + $refundAmount]);
+            $wallet->update(['balance' => Money::round($wallet->balance + $refundAmount)]);
 
             WalletTransaction::create([
                 'wallet_id' => $wallet->id,

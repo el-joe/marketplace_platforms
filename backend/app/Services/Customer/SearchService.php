@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Enums\AdminListingStatus;
 use App\Models\AdminListing;
 use App\Models\ClassifiedListing;
@@ -167,8 +168,8 @@ class SearchService
             })
             ->with(['images', 'classifiedCategory', 'city'])
             ->when(!empty($filters['category']), fn($q) => $q->where('classified_category_id', $filters['category']))
-            ->when(!empty($filters['price_min']), fn($q) => $q->where('price', '>=', (int) $filters['price_min']))
-            ->when(!empty($filters['price_max']), fn($q) => $q->where('price', '<=', (int) $filters['price_max']))
+            ->when(!empty($filters['price_min']), fn($q) => $q->where('price', '>=', Money::number($filters['price_min'])))
+            ->when(!empty($filters['price_max']), fn($q) => $q->where('price', '<=', Money::number($filters['price_max'])))
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }

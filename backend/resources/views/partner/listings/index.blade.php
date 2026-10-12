@@ -146,7 +146,7 @@
                 <input type="hidden" id="price-listing-id">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ __('partner.listings.new_price') }}</label>
-                    <input type="number" id="price-input" name="price" step="1" min="1"
+                    <input type="number" id="price-input" name="price" step="0.01" min="1"
                         class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/40"
                         placeholder="0">
                 </div>

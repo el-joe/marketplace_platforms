@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Money;
 use App\Models\Currency;
 use App\Models\DeliveryAgentPayout;
 use App\Models\LedgerEntry;
@@ -342,14 +343,14 @@ class FinancialReportService
      * original order_capture postings and any reversal/refund postings in
      * the window, so a refunded or cancelled order correctly nets out.
      */
-    public function platformNetForPeriod(Carbon $from, Carbon $to, ?string $currency = null): int
+    public function platformNetForPeriod(Carbon $from, Carbon $to, ?string $currency = null): int|float
     {
-        return (int) LedgerEntry::query()
+        return Money::number(LedgerEntry::query()
             ->whereIn('account_type', self::PLATFORM_NET_ACCOUNT_TYPES)
             ->whereBetween('created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
             ->when($currency, fn ($q) => $q->where('currency', $currency))
             ->selectRaw('COALESCE(SUM(credit), 0) - COALESCE(SUM(debit), 0) as net')
-            ->value('net');
+            ->value('net'));
     }
 
     /**
@@ -399,37 +400,37 @@ class FinancialReportService
             ')
             ->first();
 
-        $refundsPlatformLiable = (int) Refund::query()
+        $refundsPlatformLiable = Money::number(Refund::query()
             ->where('vendor_charged_back', false)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
             ->when($currency, fn ($q) => $q->where('currency', $currency))
-            ->sum('amount');
+            ->sum('amount'));
 
         // shipping_revenue is not persisted anywhere — it is always the
         // capture-time residual (amount_captured - seller_payable - tax -
         // everything else). Since we want the exact figure the ledger
         // posted (not a recomputation from possibly-since-reversed
         // sub_orders), read it straight from the ledger for this window.
-        $shippingRevenue = (int) LedgerEntry::query()
+        $shippingRevenue = Money::number(LedgerEntry::query()
             ->where('account_type', 'shipping_revenue')
             ->whereBetween('created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
             ->when($currency, fn ($q) => $q->where('currency', $currency))
             ->selectRaw('COALESCE(SUM(credit), 0) - COALESCE(SUM(debit), 0) as net')
-            ->value('net');
+            ->value('net'));
 
         return [
             'period_start'                  => $from->toDateString(),
             'period_end'                    => $to->toDateString(),
             'currency'                      => $currency,
-            'platform_commission'          => (int) $subOrderTotals->platform_commission,
+            'platform_commission'          => Money::number($subOrderTotals->platform_commission),
             'shipping_revenue'              => $shippingRevenue,
-            'cod_fees'                       => (int) $orderTotals->cod_fees,
-            'warranty_revenue'               => (int) $orderTotals->warranty_revenue,
-            'coupon_cost_platform'          => (int) $subOrderTotals->coupon_cost_platform,
-            'shipping_subsidy'               => (int) $subOrderTotals->shipping_subsidy,
-            'gateway_fees'                   => (int) $subOrderTotals->gateway_fees,
-            'marketer_commission_platform'  => (int) $subOrderTotals->marketer_commission_platform,
+            'cod_fees'                       => Money::number($orderTotals->cod_fees),
+            'warranty_revenue'               => Money::number($orderTotals->warranty_revenue),
+            'coupon_cost_platform'          => Money::number($subOrderTotals->coupon_cost_platform),
+            'shipping_subsidy'               => Money::number($subOrderTotals->shipping_subsidy),
+            'gateway_fees'                   => Money::number($subOrderTotals->gateway_fees),
+            'marketer_commission_platform'  => Money::number($subOrderTotals->marketer_commission_platform),
             'refunds_platform_liable'        => $refundsPlatformLiable,
             // The reconciliation anchor — always ledger-sourced (see docblock).
             'net'                            => $this->platformNetForPeriod($from, $to, $currency),

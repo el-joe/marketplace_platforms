@@ -31,7 +31,7 @@ class AdBillingService
                 $wallet = $this->walletService->getOrCreateWallet($this->ownerType($b), $this->ownerId($b), $b->currency);
 
                 if ($isFixed) {
-                    $amount = $b->quoted_amount + $b->tax_amount;
+                    $amount = round((float) $b->quoted_amount + (float) $b->tax_amount, 2);
                     $tx = $this->walletService->debit(
                         $wallet, $amount, 'paid_ad_booking', $b->id,
                         "Ad booking {$b->booking_reference} payment", null
@@ -127,7 +127,7 @@ class AdBillingService
             $totalAmount = 0;
             $settlement = $b->payment_method->value === 'wallet' ? 'wallet' : 'payout_deduction';
 
-            $makeCharge = function (PaidAdChargeType $type, int $amount) use ($b, $settlement) {
+            $makeCharge = function (PaidAdChargeType $type, int|float $amount) use ($b, $settlement) {
                 PaidAdCharge::create([
                     'paid_ad_booking_id' => $b->id,
                     'advertiser_type' => $b->advertiser_type->value,
@@ -148,18 +148,18 @@ class AdBillingService
                 // One charge per 1,000-impression block, so each block is independently auditable.
                 $billableBlocks = intdiv($impressionsDelivered - $b->cpm_impressions_billed, 1000);
                 for ($i = 0; $i < $billableBlocks; $i++) {
-                    $remainingBudget = max(0, $b->budget_amount - $b->total_charged - $totalAmount);
+                    $remainingBudget = max(0, round((float) $b->budget_amount - (float) $b->total_charged - $totalAmount, 4));
                     if ($remainingBudget <= 0) {
                         break;
                     }
-                    $amount = min($b->unit_rate, $remainingBudget);
+                    $amount = round(min((float) $b->unit_rate, $remainingBudget), 2);
                     $makeCharge(PaidAdChargeType::Cpm, $amount);
                     $totalAmount += $amount;
                     $newBilledImpressions += 1000;
                 }
             } elseif ($pricingModel === PaidAdSlotPricingModel::Cpc && $newClicks > 0) {
-                $remainingBudget = max(0, $b->budget_amount - $b->total_charged);
-                $amount = min($newClicks * $b->unit_rate, $remainingBudget);
+                $remainingBudget = max(0, round((float) $b->budget_amount - (float) $b->total_charged, 4));
+                $amount = round(min($newClicks * (float) $b->unit_rate, $remainingBudget), 2);
                 if ($amount > 0) {
                     $makeCharge(PaidAdChargeType::Cpc, $amount);
                     $totalAmount += $amount;
@@ -171,7 +171,7 @@ class AdBillingService
                 'impressions_delivered' => $impressionsDelivered,
                 'clicks_delivered' => $clicksDelivered,
                 'cpm_impressions_billed' => $newBilledImpressions,
-                'total_charged' => $b->total_charged + $totalAmount,
+                'total_charged' => round((float) $b->total_charged + $totalAmount, 4),
             ]);
 
             PaidAdDailyStat::updateOrCreate(
@@ -183,7 +183,7 @@ class AdBillingService
                 ->where('date', now()->toDateString())
                 ->update([
                     'clicks' => DB::raw('clicks + '.(int) $newClicks),
-                    'spend' => DB::raw('spend + '.(int) $totalAmount),
+                    'spend' => DB::raw('spend + '.number_format($totalAmount, 4, '.', '')),
                 ]);
 
             if (! $pricingModel->isFixed() && $b->total_charged >= $b->budget_amount) {
@@ -192,7 +192,7 @@ class AdBillingService
         });
     }
 
-    public function refund(PaidAdBooking $b, int $amount, string $note, ?Admin $admin = null): void
+    public function refund(PaidAdBooking $b, int|float $amount, string $note, ?Admin $admin = null): void
     {
         if ($amount <= 0) {
             return;

@@ -104,7 +104,7 @@ class TravelController extends Controller
                 'travel_package_id'       => $pkg->id,
                 'customer_id'             => Auth::guard('web')->id(),
                 'travelers_count'         => $count,
-                'total_price'       => $pkg->price * $count,
+                'total_price'       => \App\Support\Money::number(round((float) $pkg->price * $count, 2)),
                 'passport_file_path'      => $passportPath,
                 'contract_signed_at'      => now(),
                 'contract_signature_data' => $request->input('contract_signature_data'),

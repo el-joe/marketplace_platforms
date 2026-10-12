@@ -11,23 +11,23 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div class="bg-white rounded-xl border border-gray-200 p-4">
             <p class="text-xs text-gray-500 mb-1">{{ __('travel.reports.total_bookings') }}</p>
-            <p class="text-xl font-bold text-gray-900">{{ number_format($summary['total']) }}</p>
+            <p class="text-xl font-bold text-gray-900">{{ \App\Support\Money::format($summary['total']) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4">
             <p class="text-xs text-gray-500 mb-1">{{ __('travel.reports.confirmed') }}</p>
-            <p class="text-xl font-bold text-emerald-600">{{ number_format($summary['confirmed']) }}</p>
+            <p class="text-xl font-bold text-emerald-600">{{ \App\Support\Money::format($summary['confirmed']) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4">
             <p class="text-xs text-gray-500 mb-1">{{ __('travel.reports.completed') }}</p>
-            <p class="text-xl font-bold text-blue-600">{{ number_format($summary['completed']) }}</p>
+            <p class="text-xl font-bold text-blue-600">{{ \App\Support\Money::format($summary['completed']) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4">
             <p class="text-xs text-gray-500 mb-1">{{ __('travel.reports.cancelled') }}</p>
-            <p class="text-xl font-bold text-red-600">{{ number_format($summary['cancelled']) }}</p>
+            <p class="text-xl font-bold text-red-600">{{ \App\Support\Money::format($summary['cancelled']) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4">
             <p class="text-xs text-gray-500 mb-1">{{ __('travel.reports.pending_documents') }}</p>
-            <p class="text-xl font-bold text-amber-600">{{ number_format($summary['pending']) }}</p>
+            <p class="text-xl font-bold text-amber-600">{{ \App\Support\Money::format($summary['pending']) }}</p>
         </div>
     </div>
 
@@ -122,7 +122,7 @@
                     <td class="px-4 py-3 text-gray-800">{{ $bk->customer->name ?? '—' }}</td>
                     <td class="px-4 py-3 text-gray-600">{{ $bk->package->title_ar ?: $bk->package->title_en }}</td>
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ $bk->package->departure_date?->format('d M Y') }}</td>
-                    <td class="px-4 py-3 font-medium text-gray-900">{{ number_format($bk->total_price) }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ \App\Support\Money::format($bk->total_price) }}</td>
                     <td class="px-4 py-3 text-gray-500">{{ $bk->package->currency }}</td>
                     <td class="px-4 py-3">
                         <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $colors[$bk->status->value] ?? '' }}">

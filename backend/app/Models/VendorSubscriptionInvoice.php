@@ -28,7 +28,7 @@ class VendorSubscriptionInvoice extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'integer',
+            'amount' => \App\Casts\DecimalMoney::class,
             'period_start' => 'date',
             'period_end' => 'date',
             'paid_at' => 'datetime',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Country;
@@ -98,8 +99,8 @@ class OrderController extends Controller
             'country_id' => fn($q, $v) => $q->where('c.country_id', $v),
             'date_from' => fn($q, $v) => $q->whereDate('orders.placed_at', '>=', $v),
             'date_to' => fn($q, $v) => $q->whereDate('orders.placed_at', '<=', $v),
-            'min_total' => fn($q, $v) => $q->where('orders.total', '>=', (int) round((float) $v)),
-            'max_total' => fn($q, $v) => $q->where('orders.total', '<=', (int) round((float) $v)),
+            'min_total' => fn($q, $v) => $q->where('orders.total', '>=', round((float) $v, 2)),
+            'max_total' => fn($q, $v) => $q->where('orders.total', '<=', round((float) $v, 2)),
             'risk_score_min' => fn($q, $v) => $q->where('orders.risk_score', '>=', (float) $v),
             'listing_type' => fn($q, $v) => match ($v) {
                 'admin' => $q->whereExists(fn($sub) => $sub->selectRaw(1)
@@ -387,7 +388,7 @@ class OrderController extends Controller
             $this->interventionService->processRefund(
                 $order,
                 $request->refund_type,
-                $request->filled('amount') ? (int) $request->amount : null,
+                $request->filled('amount') ? Money::number((float) $request->amount) : null,
                 $request->reason,
                 $request->reason_notes,
                 $request->sub_order_id,

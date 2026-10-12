@@ -537,7 +537,7 @@ class AdminListingController extends Controller
             'special_handling_notes' => ['nullable', 'string', 'max:1000'],
             'commission_type' => ['required', Rule::enum(MarketplaceShippingRuleCommissionType::class)],
             'commission_value' => ['required', 'numeric', 'min:0'],
-            'extra_delivery_fee' => ['nullable', 'integer', 'min:0'],
+            'extra_delivery_fee' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
 
         $rule = MarketplaceShippingRule::updateOrCreate(
@@ -564,13 +564,13 @@ class AdminListingController extends Controller
             'manufacturer_name' => ['nullable', 'string', 'max:255'],
             'manufacturer_url' => ['nullable', 'url', 'max:500'],
             'manufacturer_sku' => ['nullable', 'string', 'max:100'],
-            'manufacturer_cost' => ['nullable', 'integer', 'min:0'],
-            'shipping_cost' => ['nullable', 'integer', 'min:0'],
-            'landed_cost' => ['nullable', 'integer', 'min:0'],
+            'manufacturer_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'landed_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'competitor_links' => ['nullable', 'array'],
             'competitor_links.*.name' => ['required_with:competitor_links', 'string', 'max:255'],
             'competitor_links.*.url' => ['required_with:competitor_links', 'url', 'max:500'],
-            'competitor_links.*.price' => ['nullable', 'integer', 'min:0'],
+            'competitor_links.*.price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
@@ -711,15 +711,15 @@ class AdminListingController extends Controller
             'manufacturer_name' => ['nullable', 'string', 'max:255'],
             'manufacturer_url' => ['nullable', 'url', 'max:500'],
             'manufacturer_sku' => ['nullable', 'string', 'max:100'],
-            'manufacturer_cost' => ['nullable', 'integer', 'min:0'],
-            'shipping_cost' => ['nullable', 'integer', 'min:0'],
-            'landed_cost' => ['nullable', 'integer', 'min:0'],
+            'manufacturer_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'landed_cost' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'platform_margin_pct' => ['nullable', 'numeric', 'min:-999', 'max:999'],
             'notes' => ['nullable', 'string', 'max:5000'],
             'competitor_links' => ['nullable', 'array'],
             'competitor_links.*.name' => ['required_with:competitor_links', 'string', 'max:255'],
             'competitor_links.*.url' => ['required_with:competitor_links', 'url', 'max:500'],
-            'competitor_links.*.price' => ['nullable', 'integer', 'min:0'],
+            'competitor_links.*.price' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
         ]);
     }
 
@@ -789,9 +789,9 @@ class AdminListingController extends Controller
             'product_variant_id'         => ['required', 'uuid', 'exists:product_variants,id'],
             'country_id'                 => ['required', 'exists:countries,id'],
             'warehouse_id'               => ['nullable', 'exists:warehouses,id'],
-            'price'                      => ['required', 'integer', 'min:0'],
-            'compare_at_price'           => ['nullable', 'integer', 'min:0'],
-            'cost_price'                 => ['nullable', 'integer', 'min:0'],
+            'price'                      => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'compare_at_price'           => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'cost_price'                 => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'condition'                  => ['required', 'in:new,like_new,good,acceptable,refurbished'],
             'condition_notes'            => ['nullable', 'string', 'max:500'],
             'primary_shipping_method_id' => ['nullable', 'exists:shipping_methods,id'],

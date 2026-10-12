@@ -70,9 +70,9 @@ class AdminListing extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
-        'price'        => 'integer',
-        'compare_at_price' => 'integer',
-        'cost_price'   => 'integer',
+        'price'        => \App\Casts\DecimalMoney::class,
+        'compare_at_price' => \App\Casts\DecimalMoney::class,
+        'cost_price'   => \App\Casts\DecimalMoney::class,
         'shipping_cost'=> 'integer',
         'is_global_shipping' => 'boolean',
         'vendor_covers_delivery' => 'boolean',

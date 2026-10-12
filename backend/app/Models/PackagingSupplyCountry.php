@@ -23,7 +23,7 @@ class PackagingSupplyCountry extends Model
     protected function casts(): array
     {
         return [
-            'unit_cost' => 'integer',
+            'unit_cost' => \App\Casts\DecimalMoney::class,
             'stock_available' => 'integer',
             'is_active' => 'boolean',
         ];
@@ -45,7 +45,7 @@ class PackagingSupplyCountry extends Model
             return 'Free';
         }
 
-        return number_format($this->unit_cost) . ' ' . ($this->country?->currency_code ?? config('app.currency', 'SAR'));
+        return \App\Support\Money::format($this->unit_cost) . ' ' . ($this->country?->currency_code ?? config('app.currency', 'SAR'));
     }
 
     public function isFree(): bool

@@ -47,7 +47,7 @@
         <template x-if="isMetered">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mt-3">{{ __('marketer.promote.step1_budget_label') }} (<span x-text="slot.currency"></span>)</label>
-                <input type="number" min="1" x-model.number="form.budget" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm w-full">
+                <input type="number" step="0.01" min="1" x-model.number="form.budget" class="rounded-lg border border-gray-200 px-3 py-2.5 text-sm w-full">
             </div>
         </template>
         <p class="text-xs text-gray-400" x-text="dateHint"></p>

@@ -12,7 +12,7 @@ class WarrantyPlanService
 {
     public const CACHE_VERSION_KEY = 'warranty_plans_cache_version';
 
-    public function getPlansForProduct(Product $product, string $countryId, string $currency, int $listingPrice = 0): array
+    public function getPlansForProduct(Product $product, string $countryId, string $currency, int|float $listingPrice = 0): array
     {
         $categoryId = $product->category_id;
 
@@ -67,7 +67,7 @@ class WarrantyPlanService
         Cache::put(self::CACHE_VERSION_KEY, $cacheInc + 1);
     }
 
-    private function formatPlan(WarrantyPlan $plan, int $listingPrice = 0): array
+    private function formatPlan(WarrantyPlan $plan, int|float $listingPrice = 0): array
     {
         return [
             'id' => $plan->id,

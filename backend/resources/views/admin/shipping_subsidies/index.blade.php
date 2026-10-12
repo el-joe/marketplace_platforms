@@ -86,7 +86,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_subsidies_section.subsidy_cap_label') }} <span class="text-danger-500">*</span></label>
-                    <input type="number" name="subsidy_cap" step="1" min="0" placeholder="{{ __('admin.shipping_subsidies_section.subsidy_cap_placeholder') }}"
+                    <input type="number" name="subsidy_cap" step="0.01" min="0" placeholder="{{ __('admin.shipping_subsidies_section.subsidy_cap_placeholder') }}"
                            class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                     <p id="subsidy-cap-hint" class="text-xs text-gray-500 mt-1">{{ __('admin.shipping_subsidies_section.subsidy_cap_hint') }}</p>
                 </div>
@@ -130,12 +130,12 @@
                     <div x-show="splitType === 'fixed'" class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_subsidies_section.vendor_fixed_amount_label') }}</label>
-                            <input type="number" name="vendor_fixed_amount" x-model.number="vendorFixedAmount" min="0" step="1"
+                            <input type="number" name="vendor_fixed_amount" x-model.number="vendorFixedAmount" min="0" step="0.01"
                                    class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.shipping_subsidies_section.admin_fixed_amount_label') }}</label>
-                            <input type="number" name="admin_fixed_amount" x-model.number="adminFixedAmount" min="0" step="1"
+                            <input type="number" name="admin_fixed_amount" x-model.number="adminFixedAmount" min="0" step="0.01"
                                    class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
                         </div>
                         <p class="text-xs text-gray-500 col-span-2">{{ __('admin.shipping_subsidies_section.fixed_amount_hint') }}</p>

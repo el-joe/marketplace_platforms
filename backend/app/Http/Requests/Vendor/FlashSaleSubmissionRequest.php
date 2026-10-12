@@ -17,7 +17,7 @@ class FlashSaleSubmissionRequest extends FormRequest
 
         return [
             'vendor_listing_id'        => [$isUpdate ? 'prohibited' : 'required', 'uuid'],
-            'flash_price'              => [$isUpdate ? 'sometimes' : 'required', 'integer', 'min:1'],
+            'flash_price'              => [$isUpdate ? 'sometimes' : 'required', 'numeric', 'decimal:0,2', 'min:1'],
             'quantity_committed'       => [$isUpdate ? 'sometimes' : 'required', 'integer', 'min:1'],
             'max_quantity_per_customer' => ['nullable', 'integer', 'min:1'],
             'vendor_notes'             => ['nullable', 'string', 'max:1000'],

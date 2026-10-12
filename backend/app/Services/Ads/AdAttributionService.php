@@ -2,6 +2,7 @@
 
 namespace App\Services\Ads;
 
+use App\Support\Money;
 use App\Enums\PaidAdAdvertiserType;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\PaidAdBooking;
@@ -42,8 +43,8 @@ class AdAttributionService
             ->when($windowEnd, fn ($q) => $q->where('referral_clicked_at', '<=', $windowEnd))
             ->get();
 
-        $commissionEarned = (int) $conversions->sum('commission_amount');
-        $adSpend = (int) $booking->total_spend;
+        $commissionEarned = Money::number($conversions->sum('commission_amount'));
+        $adSpend = Money::number($booking->total_spend);
 
         return [
             'invitation_id' => $invitation->id,

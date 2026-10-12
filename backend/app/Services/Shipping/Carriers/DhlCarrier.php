@@ -175,7 +175,7 @@ class DhlCarrier implements ShippingCarrierInterface
             $price = $body['products'][0]['totalPrice'][0] ?? null;
 
             return [
-                'rate' => $price ? (int) ($price['price'] * 100) : 0,
+                'rate' => $price ? round((float) $price['price'], 2) : 0,
                 'currency' => $price['priceCurrency'] ?? 'USD',
                 'estimated_days' => $body['products'][0]['deliveryCapabilities']['estimatedDeliveryDateAndTime'] ?? 3,
                 'service_name' => 'DHL Express',

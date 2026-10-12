@@ -31,6 +31,11 @@ class AdImpression extends Model
         'converted_at',
     ];
 
+    protected $casts = [
+        'bid_at_impression' => \App\Casts\DecimalMoney::class,
+        'cost_charged' => \App\Casts\DecimalMoney::class,
+    ];
+
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(AdCampaign::class, 'ad_campaign_id');

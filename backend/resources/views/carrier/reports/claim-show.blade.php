@@ -24,10 +24,10 @@
                 <div><dt class="text-gray-500 text-xs uppercase">{{ __('carrier.reports.col_tracking') }}</dt>
                     <dd class="font-mono text-xs mt-0.5">{{ $claim->shipment?->tracking_number ?? '—' }}</dd></div>
                 <div><dt class="text-gray-500 text-xs uppercase">{{ __('carrier.reports.col_claimed') }} ({{ $currency }})</dt>
-                    <dd class="font-bold mt-0.5">{{ number_format($claim->claimed_amount) }}</dd></div>
+                    <dd class="font-bold mt-0.5">{{ \App\Support\Money::format($claim->claimed_amount) }}</dd></div>
                 <div><dt class="text-gray-500 text-xs uppercase">{{ __('carrier.reports.col_compensated') }} ({{ $currency }})</dt>
                     <dd class="font-bold {{ $claim->compensated_amount ? 'text-red-600' : 'text-gray-400' }} mt-0.5">
-                        {{ $claim->compensated_amount ? number_format($claim->compensated_amount) : '—' }}
+                        {{ $claim->compensated_amount ? \App\Support\Money::format($claim->compensated_amount) : '—' }}
                     </dd></div>
             </dl>
             <div class="mt-4 border-t border-gray-100 pt-4">

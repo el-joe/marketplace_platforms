@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\Classified\CreateInquiryRequest;
 use App\Http\Requests\Customer\Travel\CreateBookingRequest;
@@ -295,7 +296,7 @@ class ListingController extends Controller
             ),
             'payment_options' => $this->enrichment->getPaymentOptions(
                 $country,
-                (int) ($buyBoxListing?->price ?? 0),
+                Money::number($buyBoxListing?->price ?? 0),
                 $customer,
             ),
         ];

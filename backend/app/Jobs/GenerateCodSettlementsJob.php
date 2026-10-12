@@ -39,12 +39,13 @@ class GenerateCodSettlementsJob implements ShouldQueue
                     $periodStart = $uncoveredAssignments->min('delivered_at')->toDateString();
                     $periodEnd   = $uncoveredAssignments->max('delivered_at')->toDateString();
 
-                    $totalCollected = $uncoveredAssignments->sum('cod_amount_collected');
+                    $totalCollected = round((float) $uncoveredAssignments->sum('cod_amount_collected'), 2);
 
                     $totalEarnings = DeliveryAgentEarning::where('agent_id', $agent->id)
                         ->whereIn('delivery_assignment_id', $uncoveredAssignments->pluck('id'))
                         ->where('status', '!=', 'cancelled')
                         ->sum('amount');
+                    $totalEarnings = round((float) $totalEarnings, 2);
 
                     // Aggregate per-assignment discrepancies into the settlement record.
                     $discrepancyAssignments = $uncoveredAssignments->filter(
@@ -54,11 +55,11 @@ class GenerateCodSettlementsJob implements ShouldQueue
                     $discrepancyNotes    = $discrepancyAssignments
                         ->map(fn($a) => "Assignment {$a->id}: {$a->discrepancy_note}")
                         ->implode("\n");
-                    $discrepancyAmountCents = $discrepancyAssignments->sum(function ($a) {
+                    $discrepancyAmountCents = round((float) $discrepancyAssignments->sum(function ($a) {
                         // Recalculate shortfall per assignment using the sub-order's order total.
-                        $expected = (int) ($a->subOrder?->order?->total ?? 0);
-                        return max(0, $expected - (int) $a->cod_amount_collected);
-                    });
+                        $expected = $a->subOrder?->order?->total ?? 0;
+                        return max(0, round($expected - $a->cod_amount_collected, 2));
+                    }), 2);
 
                     $settlement = DeliveryAgentCodSettlement::create([
                         'agent_id'                   => $agent->id,
@@ -66,7 +67,7 @@ class GenerateCodSettlementsJob implements ShouldQueue
                         'period_end'                 => $periodEnd,
                         'total_cod_collected'  => $totalCollected,
                         'total_earnings_owed'  => $totalEarnings,
-                        'net_to_remit'         => max(0, $totalCollected - $totalEarnings),
+                        'net_to_remit'         => max(0, round($totalCollected - $totalEarnings, 2)),
                         'status'                     => 'pending',
                         'has_collection_discrepancy' => $hasDiscrepancy,
                         'discrepancy_notes'          => $hasDiscrepancy ? $discrepancyNotes : null,

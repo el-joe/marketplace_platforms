@@ -30,6 +30,7 @@ class Shipment extends Model
     protected function casts(): array
     {
         return [
+            'shipping_cost_actual' => \App\Casts\DecimalMoney::class,
             'status' => ShipmentStatus::class,
         ];
     }

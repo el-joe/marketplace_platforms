@@ -92,7 +92,7 @@ class Vendor extends Model
             'last_login_at' => 'datetime',
             'payout_hold_active' => 'boolean',
             'store_rating_avg' => 'float',
-            'total_sales' => 'integer',
+            'total_sales' => \App\Casts\DecimalMoney::class,
             'return_rate_pct' => 'float',
             'cancellation_rate_pct' => 'float',
             'strikes_count' => 'integer',

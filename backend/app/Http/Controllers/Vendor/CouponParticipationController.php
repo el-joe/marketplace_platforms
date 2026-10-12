@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\CouponParticipationInvitation;
@@ -76,7 +77,7 @@ class CouponParticipationController extends Controller
             );
         } catch (ValidationException $e) {
             if (isset($e->errors()['error'])) {
-                $balance = (int) app(CouponParticipationInvitationService::class)->walletFor(CouponParticipationRequest::TYPE_VENDOR, $vendor->id, $invitationModel->currency)->balance;
+                $balance = Money::number(app(CouponParticipationInvitationService::class)->walletFor(CouponParticipationRequest::TYPE_VENDOR, $vendor->id, $invitationModel->currency)->balance);
 
                 return response()->json(['error' => 'insufficient_balance', 'balance' => $balance], 422);
             }

@@ -22,7 +22,7 @@ class CustomerWallet extends Model
     ];
 
     protected $casts = [
-        'balance' => 'integer',
+        'balance' => \App\Casts\DecimalMoney::class,
     ];
 
     public function customer(): BelongsTo
@@ -40,13 +40,13 @@ class CustomerWallet extends Model
         return $this->hasMany(VoucherRedemption::class, 'customer_wallet_id');
     }
 
-    public function credit(int $amount): void
+    public function credit(int|float $amount): void
     {
         DB::table('customer_wallets')->where('id', $this->id)->increment('balance', $amount);
         $this->refresh();
     }
 
-    public function debit(int $amount): void
+    public function debit(int|float $amount): void
     {
         if ($this->balance < $amount) {
             throw new InsufficientWalletBalanceException();

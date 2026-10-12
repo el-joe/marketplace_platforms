@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdjustGiftCardBalanceRequest;
 use App\Http\Requests\Admin\StoreBatchRequest;
@@ -48,7 +49,7 @@ class AdminGiftCardController extends Controller
             ->pluck('total_revenue', 'currency_code');
 
         foreach ($stats as $stat) {
-            $stat->total_revenue = (int) ($revenueByCurrency[$stat->currency_code] ?? 0);
+            $stat->total_revenue = Money::number($revenueByCurrency[$stat->currency_code] ?? 0);
         }
 
         $recentBatches = GiftCardBatch::with('createdByAdmin:id,name')->latest()->take(5)->get();
@@ -94,8 +95,8 @@ class AdminGiftCardController extends Controller
                 'id' => $row->id,
                 'code' => e($row->code),
                 'code_masked' => e($row->masked_code),
-                'amount' => (int) $row->amount,
-                'remaining_balance' => (int) $row->remaining_balance,
+                'amount' => Money::number($row->amount),
+                'remaining_balance' => Money::number($row->remaining_balance),
                 'currency_code' => $row->currency_code,
                 'status' => $row->status,
                 'redeemed_by' => $row->redeemedBy?->name,
@@ -169,7 +170,7 @@ class AdminGiftCardController extends Controller
             return [
                 'id' => $row->id,
                 'code' => e($row->masked_code),
-                'amount' => (int) $row->amount,
+                'amount' => Money::number($row->amount),
                 'currency_code' => $row->currency_code,
                 'status' => $row->status,
                 'redeemed_by' => $row->redeemedBy?->name,
@@ -309,7 +310,7 @@ class AdminGiftCardController extends Controller
                 'id' => $row->id,
                 'buyer_name' => $row->buyer?->name,
                 'buyer_email' => $row->buyer?->email,
-                'amount_paid' => (int) $row->amount_paid,
+                'amount_paid' => Money::number($row->amount_paid),
                 'currency_code' => $row->currency_code,
                 'is_gift' => $row->is_gift,
                 'recipient_email' => $row->recipient_email,

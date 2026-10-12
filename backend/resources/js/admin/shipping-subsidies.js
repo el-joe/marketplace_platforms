@@ -183,7 +183,7 @@ function initSubsidyModal() {
             warehouse_id: $form.find('[name="warehouse_id"]').val(),
             shipping_zone_id: $form.find('[name="shipping_zone_id"]').val(),
             shipping_method_id: $form.find('[name="shipping_method_id"]').val(),
-            subsidy_cap: parseInt($form.find('[name="subsidy_cap"]').val(), 10) || 0,
+            subsidy_cap: parseFloat($form.find('[name="subsidy_cap"]').val()) || 0,
             max_subsidy_weight_grams: maxWeight === '' ? null : parseInt(maxWeight, 10),
             currency: $form.find('[name="currency"]').val(),
             is_active: $form.find('[name="is_active"]').is(':checked'),
@@ -192,10 +192,10 @@ function initSubsidyModal() {
                 ? (parseInt($form.find('[name="vendor_share_pct"]').val(), 10) || 0)
                 : null,
             vendor_fixed_amount: splitType === 'fixed'
-                ? (parseInt($form.find('[name="vendor_fixed_amount"]').val(), 10) || 0)
+                ? (parseFloat($form.find('[name="vendor_fixed_amount"]').val()) || 0)
                 : null,
             admin_fixed_amount: splitType === 'fixed'
-                ? (parseInt($form.find('[name="admin_fixed_amount"]').val(), 10) || 0)
+                ? (parseFloat($form.find('[name="admin_fixed_amount"]').val()) || 0)
                 : null,
         };
 

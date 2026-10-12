@@ -110,14 +110,14 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_edit.price') }} <span class="text-red-500">*</span></label>
-                            <input type="number" name="price" value="{{ old('price', $listing->price) }}" min="1" required
+                            <input type="number" step="0.01" name="price" value="{{ old('price', $listing->price) }}" min="1" required
                                    @disabled($isLocked)
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-50 disabled:text-gray-400 @error('price') border-red-500 @enderror">
                             @error('price') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('marketer.static_text.marketer_listings_edit.compare_at_price') }}</label>
-                            <input type="number" name="compare_at_price" value="{{ old('compare_at_price', $listing->compare_at_price) }}" min="1"
+                            <input type="number" step="0.01" name="compare_at_price" value="{{ old('compare_at_price', $listing->compare_at_price) }}" min="1"
                                    @disabled($isLocked)
                                    class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-50 disabled:text-gray-400">
                         </div>

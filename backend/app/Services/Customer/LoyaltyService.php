@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Setting;
@@ -40,7 +41,7 @@ class LoyaltyService
         }
 
         $earnRate   = (float) Setting::get('loyalty_earn_rate', 0.01);
-        $subtotal   = (int) $subOrder->subtotal; // BIGINT base-currency units
+        $subtotal   = (float) $subOrder->subtotal; // DECIMAL(19,4) base-currency amount
         $pointsEarned = floor($subtotal * $earnRate * 100) / 100; // DECIMAL(10,2)
 
         if ($pointsEarned <= 0) {
@@ -69,12 +70,12 @@ class LoyaltyService
     /**
      * Calculate the base-currency discount amount for a given redemption request.
      *
-     * Returns the discount in base-currency BIGINT units (FLOOR applied).
+     * Returns the discount in base-currency units, floored to 2 decimals.
      * Does NOT mutate any balances — call this at checkout preview time.
      *
      * @throws ValidationException if points are below minimum or customer has insufficient balance.
      */
-    public function calculateRedemptionDiscount(Customer $customer, float $pointsToUse, int $orderTotal): int
+    public function calculateRedemptionDiscount(Customer $customer, float $pointsToUse, int|float $orderTotal): int|float
     {
         if (! $this->isEnabled()) {
             throw ValidationException::withMessages([
@@ -98,10 +99,10 @@ class LoyaltyService
         }
 
         // FLOOR for the monetary conversion — never round up discounts.
-        $discountAmount = (int) floor($pointsToUse * $redeemRate);
+        $discountAmount = Money::number(floor($pointsToUse * $redeemRate * 100 + 1e-9) / 100);
 
         // Redemption cannot exceed the order total.
-        return min($discountAmount, $orderTotal);
+        return Money::number(min($discountAmount, (float) $orderTotal));
     }
 
     /**
@@ -173,7 +174,7 @@ class LoyaltyService
             'balance'          => $balance,
             'min_redeem'       => $minRedeem,
             'redeem_rate'      => $redeemRate,
-            'max_discount'     => $enabled ? (int) floor($balance * $redeemRate) : 0,
+            'max_discount'     => $enabled ? Money::number(floor($balance * $redeemRate * 100 + 1e-9) / 100) : 0,
             'currency'         => $currency,
             'applicable'       => $enabled && $balance >= $minRedeem,
         ];

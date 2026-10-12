@@ -26,8 +26,8 @@ class VoucherRedemption extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
-        'wallet_balance_after' => 'integer',
+        'amount' => \App\Casts\DecimalMoney::class,
+        'wallet_balance_after' => \App\Casts\DecimalMoney::class,
         'redeemed_at' => 'datetime',
     ];
 

@@ -72,7 +72,7 @@
     <label class="text-xs text-gray-600">{{ __('partner.bank_transfer_proof_label') }}</label>
     <input type="file" name="bank_transfer_proof" class="w-full text-xs" :required="method === 'bank_transfer'" />
 </div>
-                            <input type="number" name="offered_fee_amount" min="{{ $invitation->min_fee_amount }}" value="{{ $invitation->min_fee_amount }}" class="input w-full" required />
+                            <input type="number" step="0.01" name="offered_fee_amount" min="{{ $invitation->min_fee_amount }}" value="{{ $invitation->min_fee_amount }}" class="input w-full" required />
                             <button type="submit" :disabled="method === \'wallet\' && balance < minFee" :class="method === \'wallet\' && balance < minFee ? \'opacity-50 cursor-not-allowed\' : \'\'" class="btn btn-primary whitespace-nowrap">{{ __('partner.cp_submit_request') }}</button>
                         </form>
                     @endif

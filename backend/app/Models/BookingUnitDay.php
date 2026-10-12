@@ -24,7 +24,7 @@ class BookingUnitDay extends Model
         return [
             'date' => 'date',
             'includes_overnight' => 'boolean',
-            'price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
         ];
     }
 

@@ -405,16 +405,16 @@
                         <div class="rounded-lg border border-gray-200 p-3">
                             <p class="text-gray-500 text-xs mb-1">{{ __('admin.customers_section.current_balance_label') }}</p>
                             <p class="font-bold text-gray-900" id="wallet-current-balance">
-                                {{ number_format($walletStats['balance']) }} {{ strtoupper($walletStats['currency_code'] ?? '') }}
+                                {{ \App\Support\Money::format($walletStats['balance']) }} {{ strtoupper($walletStats['currency_code'] ?? '') }}
                             </p>
                         </div>
                         <div class="rounded-lg border border-gray-200 p-3">
                             <p class="text-gray-500 text-xs mb-1">{{ __('admin.customers_section.total_credited') }}</p>
-                            <p class="font-bold text-success-700">{{ number_format($walletStats['total_credited']) }}</p>
+                            <p class="font-bold text-success-700">{{ \App\Support\Money::format($walletStats['total_credited']) }}</p>
                         </div>
                         <div class="rounded-lg border border-gray-200 p-3">
                             <p class="text-gray-500 text-xs mb-1">{{ __('admin.customers_section.total_debited') }}</p>
-                            <p class="font-bold text-danger-700">{{ number_format($walletStats['total_debited']) }}</p>
+                            <p class="font-bold text-danger-700">{{ \App\Support\Money::format($walletStats['total_debited']) }}</p>
                         </div>
                         <div class="rounded-lg border border-gray-200 p-3">
                             <p class="text-gray-500 text-xs mb-1">{{ __('admin.customers_section.transaction_count') }}</p>
@@ -435,7 +435,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.customers_section.amount_label') }} <span class="text-danger-500">*</span></label>
-                            <input type="number" id="wallet-adjust-amount" class="form-input w-full" min="1" step="1">
+                            <input type="number" id="wallet-adjust-amount" class="form-input w-full" min="1" step="0.01">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.customers_section.note_label') }} <span class="text-danger-500">*</span></label>

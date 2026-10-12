@@ -79,7 +79,7 @@
                 <label class="block">{{ __('marketer.price') }}
                     <span class="text-xs text-gray-500" x-show="rule && (rule.min !== null || rule.max !== null)">
                         ({{ __('marketer.price_range_hint') }}: <span x-text="(rule.min ?? 0) + ' - ' + (rule.max ?? '∞')"></span>)</span>
-                    <input type="number" name="price" min="0" step="1" value="{{ old('price', $listing->price ?? '') }}" class="mt-1 w-full border-gray-300 rounded-lg">
+                    <input type="number" name="price" min="0" step="0.01" value="{{ old('price', $listing->price ?? '') }}" class="mt-1 w-full border-gray-300 rounded-lg">
                 </label>
             </template>
         </div>

@@ -400,10 +400,10 @@ Only rendered when the logged-in admin has 'products.cost_data.view'.
                 },
 
                 syncLandedCost() {
-                    const mfr = parseInt(this.form.manufacturer_cost) || 0;
-                    const ship = parseInt(this.form.shipping_cost) || 0;
+                    const mfr = parseFloat(this.form.manufacturer_cost) || 0;
+                    const ship = parseFloat(this.form.shipping_cost) || 0;
                     if (mfr + ship > 0) {
-                        this.form.landed_cost = mfr + ship;
+                        this.form.landed_cost = Math.round((mfr + ship) * 100) / 100;
                     }
                 },
 

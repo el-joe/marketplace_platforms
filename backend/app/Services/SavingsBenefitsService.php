@@ -16,7 +16,7 @@ class SavingsBenefitsService
      * @param  string $countryId  countries.id UUID
      * @param  string $currency   3-char currency code matching the order
      */
-    public function get(int $orderTotal, string $countryId, string $currency): array
+    public function get(int|float $orderTotal, string $countryId, string $currency): array
     {
         $installments = $this->bnplInstallments($orderTotal, $countryId, $currency)
             ->merge($this->bankInstallments($countryId))
@@ -29,7 +29,7 @@ class SavingsBenefitsService
         ];
     }
 
-    private function bnplInstallments(int $orderTotal, string $countryId, string $currency): Collection
+    private function bnplInstallments(int|float $orderTotal, string $countryId, string $currency): Collection
     {
         // BNPL gateways not yet configured in the new payment_gateways schema.
         // Return empty until a BNPL gateway (e.g. Tabby) is added to payment_gateways seeder.
@@ -42,7 +42,7 @@ class SavingsBenefitsService
         return collect();
     }
 
-    private function cardOffers(int $orderTotal, string $countryId): Collection
+    private function cardOffers(int|float $orderTotal, string $countryId): Collection
     {
         $version = Cache::get(self::CACHE_VERSION_KEY, 1);
         $offers = Cache::remember("benefits:card_offers_v{$version}:{$countryId}", 300, fn () =>
@@ -62,7 +62,7 @@ class SavingsBenefitsService
                 && (!$offer['min_order_amount'] || $offer['min_order_amount'] <= $orderTotal))
             ->map(function (array $offer) use ($orderTotal) {
                 $cashback = $offer['cashback_type'] === 'percentage'
-                    ? (int) floor($orderTotal * (float) $offer['cashback_pct'] / 100)
+                    ? round($orderTotal * (float) $offer['cashback_pct'] / 100, 2)
                     : $offer['cashback_fixed_amount'];
 
                 if ($offer['max_cashback_amount'] && $cashback > $offer['max_cashback_amount']) {
@@ -71,13 +71,13 @@ class SavingsBenefitsService
 
                 $labelEn = str_replace(
                     ['{amount}', '{card_name}'],
-                    [$cashback, $offer['card_name_en']],
+                    [\App\Support\Money::number($cashback), $offer['card_name_en']],
                     $offer['label_template_en']
                 );
                 $labelAr = $offer['label_template_ar']
                     ? str_replace(
                         ['{amount}', '{card_name}'],
-                        [$cashback, $offer['card_name_ar']],
+                        [\App\Support\Money::number($cashback), $offer['card_name_ar']],
                         $offer['label_template_ar']
                     )
                     : null;
@@ -91,7 +91,7 @@ class SavingsBenefitsService
                     'card_image_url'  => $this->resolveLogoUrl($offer['card_image_path']),
                     'cashback_type'   => $offer['cashback_type'],
                     'cashback_pct'    => (string) $offer['cashback_pct'],
-                    'cashback_amount' => $cashback,
+                    'cashback_amount' => \App\Support\Money::number($cashback),
                     'label_en'        => $labelEn,
                     'label_ar'        => $labelAr,
                     'apply_url'       => $offer['apply_url'],
@@ -109,9 +109,9 @@ class SavingsBenefitsService
         Cache::put(self::CACHE_VERSION_KEY, $version + 1);
     }
 
-    private function resolveInstallmentLabel(string $template, int $n, int $amount): string
+    private function resolveInstallmentLabel(string $template, int $n, int|float $amount): string
     {
-        return str_replace(['{n}', '{amount}'], [$n, $amount], $template);
+        return str_replace(['{n}', '{amount}'], [$n, \App\Support\Money::number($amount)], $template);
     }
 
     private function resolveLogoUrl(?string $path): ?string

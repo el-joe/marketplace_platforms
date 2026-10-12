@@ -61,7 +61,7 @@
         ['stat_active', $mcActive],
         ['stat_pending', $mcPending],
         ['stat_conversions', $mcStats['conversions'] ?? 0],
-        ['stat_spent', number_format($mcStats['commission_budget_spent'] ?? 0).' '.$mcCurrency],
+        ['stat_spent', \App\Support\Money::format($mcStats['commission_budget_spent'] ?? 0).' '.$mcCurrency],
     ] as [$key, $value])
         <div class="bg-white rounded-2xl border border-gray-200 p-4">
             <p class="text-xs text-gray-400 mb-1">{{ __($mcT.$key) }}</p>
@@ -112,11 +112,11 @@
                             <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ __('partner.marketer_campaigns_my.commission_type.'.$campaign->commission_type) }}</td>
                             <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $campaign->invitations_count }} / {{ $campaign->accepted_invitations_count }}</td>
                             <td class="px-4 py-3 whitespace-nowrap {{ $fee > 0 ? 'text-orange-700' : 'text-green-600' }}">
-                                {{ $fee > 0 ? number_format($fee).' '.$mcCurrency : __($mcT.'free') }}
+                                {{ $fee > 0 ? \App\Support\Money::format($fee).' '.$mcCurrency : __($mcT.'free') }}
                             </td>
                             <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
-                                {{ number_format((int) $campaign->commission_budget_spent) }} /
-                                {{ $campaign->max_commission_budget !== null && $campaign->max_commission_budget > 0 ? number_format($campaign->max_commission_budget) : __($mcT.'unlimited') }}
+                                {{ \App\Support\Money::format((int) $campaign->commission_budget_spent) }} /
+                                {{ $campaign->max_commission_budget !== null && $campaign->max_commission_budget > 0 ? \App\Support\Money::format($campaign->max_commission_budget) : __($mcT.'unlimited') }}
                             </td>
                             <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ $campaign->created_at->format('Y-m-d') }}</td>
                             <td class="px-4 py-3">

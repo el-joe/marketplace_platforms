@@ -66,7 +66,7 @@ class BankTransferGateway extends AbstractPaymentGateway
         );
     }
 
-    public function refund(string $transactionReference, int $amountCents, string $reason): RefundResult
+    public function refund(string $transactionReference, int|float $amountCents, string $reason): RefundResult
     {
         return new RefundResult(
             success: false,

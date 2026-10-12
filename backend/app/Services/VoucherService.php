@@ -91,7 +91,7 @@ class VoucherService
                 ['balance' => 0, 'pending_balance' => 0]
             );
 
-            $newBalance = $wallet->balance + $voucher->amount;
+            $newBalance = \App\Support\Money::number(round($wallet->balance + $voucher->amount, 4));
             $wallet->balance = $newBalance;
             $wallet->save();
 

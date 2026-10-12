@@ -29,16 +29,16 @@ class WarrantyPlan extends Model
             'features_ar' => 'array',
             'country_ids' => 'array',
             'is_active' => 'boolean',
-            'price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
             'price_pct' => 'decimal:2',
             'sort_order' => 'integer',
         ];
     }
 
-    public function resolvePrice(int $listingPrice): int
+    public function resolvePrice(int|float $listingPrice): int|float
     {
         if ($this->price_type === 'percentage' && $this->price_pct !== null) {
-            return (int) floor($listingPrice * (float) $this->price_pct / 100);
+            return \App\Support\Money::number(round($listingPrice * (float) $this->price_pct / 100, 2));
         }
 
         return $this->price;

@@ -26,7 +26,7 @@ class CommissionCalculatorTest extends TestCase
 
     public function test_tiering_disabled_uses_standard_rate(): void
     {
-        $this->assertSame(2, CommissionCalculator::calculate(30, 8.0));
+        $this->assertEquals(2.4, CommissionCalculator::calculate(30, 8.0));
     }
 
     public function test_price_exactly_at_threshold_uses_high_rate(): void
@@ -34,9 +34,9 @@ class CommissionCalculatorTest extends TestCase
         $this->assertSame(6, CommissionCalculator::calculate(60, 6.0, 60, 10.0));
     }
 
-    public function test_price_just_above_threshold_uses_standard_rate_floored(): void
+    public function test_price_just_above_threshold_uses_standard_rate_rounded_to_two_decimals(): void
     {
-        $this->assertSame(3, CommissionCalculator::calculate(61, 6.0, 60, 10.0));
+        $this->assertEquals(3.66, CommissionCalculator::calculate(61, 6.0, 60, 10.0));
     }
 
     public function test_flat_amount_is_per_unit(): void

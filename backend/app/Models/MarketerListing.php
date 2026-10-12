@@ -76,8 +76,8 @@ class MarketerListing extends Model
         return [
             'status' => MarketerListingStatus::class,
             'fulfillment_model' => FulfillmentModel::class,
-            'price' => 'integer',
-            'compare_at_price' => 'integer',
+            'price' => \App\Casts\DecimalMoney::class,
+            'compare_at_price' => \App\Casts\DecimalMoney::class,
             'approved_at' => 'datetime',
             'low_stock_threshold' => 'integer',
             'declared_weight_grams' => 'integer',

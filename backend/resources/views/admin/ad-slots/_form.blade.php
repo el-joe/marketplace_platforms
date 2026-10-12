@@ -129,7 +129,7 @@
                 type="number"
                 name="base_rate_display"
                 value="{{ old('base_rate_display', $baseRateDisplay) }}"
-                step="1"
+                step="0.01"
                 min="0"
                 class="form-input w-full @error('base_rate_display') border-red-400 @enderror"
                 placeholder="0"

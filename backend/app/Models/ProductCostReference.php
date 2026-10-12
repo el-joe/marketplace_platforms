@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,9 +34,9 @@ class ProductCostReference extends Model
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
     protected $casts = [
-        'manufacturer_cost' => 'integer',
-        'shipping_cost' => 'integer',
-        'landed_cost' => 'integer',
+        'manufacturer_cost' => \App\Casts\DecimalMoney::class,
+        'shipping_cost' => \App\Casts\DecimalMoney::class,
+        'landed_cost' => \App\Casts\DecimalMoney::class,
         'platform_margin_pct' => 'decimal:2',
         'competitor_links' => 'array',
         'competitor_last_checked' => 'datetime',
@@ -95,7 +96,7 @@ class ProductCostReference extends Model
     public function landedCostFormatted(string $currency = ''): string
     {
         return $this->landed_cost !== null
-            ? number_format($this->landed_cost, 2) . ($currency ? ' ' . $currency : '')
+            ? number_format((float) $this->landed_cost, 2) . ($currency ? ' ' . $currency : '')
             : '—';
     }
 
@@ -103,19 +104,19 @@ class ProductCostReference extends Model
      * Compute landed cost from components (factory + shipping).
      * Does NOT save — use this for display / pre-fill.
      */
-    public function computedLanded(): ?int
+    public function computedLanded(): int|float|null
     {
         if ($this->manufacturer_cost === null && $this->shipping_cost === null) {
             return null;
         }
-        return (int) (($this->manufacturer_cost ?? 0) + ($this->shipping_cost ?? 0));
+        return Money::number(($this->manufacturer_cost ?? 0) + ($this->shipping_cost ?? 0));
     }
 
     /**
      * Calculate margin percentage given a selling price in base currency units.
      * Returns null if landed_cost is not set.
      */
-    public function calculateMargin(int $sellingPrice): ?float
+    public function calculateMargin(int|float $sellingPrice): ?float
     {
         $landed = $this->landed_cost ?? $this->computedLanded();
         if (!$landed || $sellingPrice <= 0) {
@@ -127,7 +128,7 @@ class ProductCostReference extends Model
     /**
      * True when a vendor listing's price is at or below landed cost.
      */
-    public function isBelowLandedCost(int $sellingPriceCents): bool
+    public function isBelowLandedCost(int|float $sellingPriceCents): bool
     {
         $landed = $this->landed_cost ?? $this->computedLanded();
         return $landed !== null && $sellingPriceCents <= $landed;
@@ -142,7 +143,7 @@ class ProductCostReference extends Model
         return array_map(fn($c) => [
             'name' => $c['name'] ?? '',
             'url' => $c['url'] ?? '',
-            'price' => isset($c['price']) ? (int) $c['price'] : null,
+            'price' => isset($c['price']) ? Money::number($c['price']) : null,
             'last_checked' => $c['last_checked'] ?? null,
         ], $links);
     }

@@ -34,7 +34,7 @@
         <div class="flex flex-wrap gap-4">
             @foreach($stats['revenue_this_month'] as $row)
                 <div class="text-sm">
-                    <span class="font-semibold text-gray-900">{{ number_format($row['total']) }}</span>
+                    <span class="font-semibold text-gray-900">{{ \App\Support\Money::format($row['total']) }}</span>
                     <span class="text-gray-500">{{ $row['currency'] }}</span>
                 </div>
             @endforeach

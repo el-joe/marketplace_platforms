@@ -9,7 +9,7 @@ namespace App\Services\Checkout;
  * totals), so `prepare` and `place-order` can never disagree as long as
  * they are fed the same inputs (D1/D2 in enhancement.md P-01).
  *
- * All monetary fields are BIGINT base-currency units.
+ * All monetary fields are DECIMAL(19,4) base-currency amounts (int when whole, float when fractional).
  */
 final class PricedCart
 {
@@ -20,15 +20,15 @@ final class PricedCart
     public function __construct(
         public readonly array $lines,
         public readonly array $subOrders,
-        public readonly int $subtotal,
-        public readonly int $discount,
-        public readonly int $loyaltyDiscount,
-        public readonly int $shipping,
-        public readonly int $codFee,
-        public readonly int $tax,
-        public readonly int $warrantyTotal,
-        public readonly int $giftCardApplied,
-        public readonly int $total,
+        public readonly int|float $subtotal,
+        public readonly int|float $discount,
+        public readonly int|float $loyaltyDiscount,
+        public readonly int|float $shipping,
+        public readonly int|float $codFee,
+        public readonly int|float $tax,
+        public readonly int|float $warrantyTotal,
+        public readonly int|float $giftCardApplied,
+        public readonly int|float $total,
         public readonly string $currency,
         // docs/plans/international_product_shipping.md Phase 3 / design
         // decision #5 (adopted Q2 answer): DDP — customs duty for
@@ -36,7 +36,7 @@ final class PricedCart
         // into $total, never hidden inside $shipping. Mirrors how
         // $loyaltyDiscount was added to this class. Zero for an order with
         // no international lines.
-        public readonly int $customsDuty = 0,
+        public readonly int|float $customsDuty = 0,
     ) {}
 
     /**

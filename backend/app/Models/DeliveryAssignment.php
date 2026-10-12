@@ -50,6 +50,7 @@ class DeliveryAssignment extends Model
     protected function casts(): array
     {
         return [
+            'cod_amount_collected' => \App\Casts\DecimalMoney::class,
             'assigned_at' => 'datetime',
             'accepted_at' => 'datetime',
             'picked_up_at' => 'datetime',

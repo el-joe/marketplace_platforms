@@ -36,7 +36,7 @@
             ['label' => __('travel.campaigns.stats.conversions'), 'value' => $stats['conversions'], 'cls' => 'text-amber-600'],
         ] as $s)
             <div class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-center shadow-sm">
-                <p class="text-2xl font-bold {{ $s['cls'] }}">{{ number_format($s['value']) }}</p>
+                <p class="text-2xl font-bold {{ $s['cls'] }}">{{ \App\Support\Money::format($s['value']) }}</p>
                 <p class="mt-1 text-xs text-gray-500">{{ $s['label'] }}</p>
             </div>
         @endforeach

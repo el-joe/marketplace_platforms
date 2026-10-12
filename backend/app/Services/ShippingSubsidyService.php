@@ -6,6 +6,7 @@ use App\Models\CartItem;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
 use App\Services\Checkout\CartLineSource;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -61,7 +62,7 @@ class ShippingSubsidyService
         // only sees this one vendor's items, so this is the vendor's own
         // subtotal - the same subtotal CheckoutController computes per group
         // in resolveVendorShipping().
-        $orderSubtotal = (int) $vendorCartItems->sum(fn ($item) => $item->unit_price * $item->quantity);
+        $orderSubtotal = round((float) $vendorCartItems->sum(fn ($item) => $item->unit_price * $item->quantity), 2);
 
         $billable = 0;
         $customerPays = 0;
@@ -101,6 +102,11 @@ class ShippingSubsidyService
         if (! $sawRate) {
             return $this->noShippingAvailable($billable);
         }
+
+        $customerPays = Money::number(round($customerPays, 2));
+        $carrierCost = Money::number(round($carrierCost, 2));
+        $adminSubsidy = Money::number(round($adminSubsidy, 2));
+        $vendorContribution = Money::number(round($vendorContribution, 2));
 
         return [
             'raw_fee' => $carrierCost,

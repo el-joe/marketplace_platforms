@@ -15,8 +15,8 @@ class MarketerAdPackageSubscription extends Model
 
     protected function casts(): array
     {
-        return ['price' => 'integer', 'vat_pct' => 'integer', 'duration_days' => 'integer',
-            'amount_paid' => 'integer', 'vat_amount' => 'integer',
+        return ['price' => \App\Casts\DecimalMoney::class, 'vat_pct' => 'integer', 'duration_days' => 'integer',
+            'amount_paid' => \App\Casts\DecimalMoney::class, 'vat_amount' => \App\Casts\DecimalMoney::class,
             'starts_at' => 'datetime', 'expires_at' => 'datetime'];
     }
 

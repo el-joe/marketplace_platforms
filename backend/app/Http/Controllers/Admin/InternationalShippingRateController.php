@@ -93,18 +93,18 @@ class InternationalShippingRateController extends Controller
             'origin_country_id' => ['required', 'exists:countries,id'],
             'destination_country_id' => ['required', 'exists:countries,id', 'different:origin_country_id'],
             'carrier_id' => ['nullable', 'exists:shipping_carriers,id'],
-            'base_fee' => ['required', 'integer', 'min:0'],
-            'rate_per_kg' => ['required', 'integer', 'min:0'],
-            'customs_fee_flat' => ['nullable', 'integer', 'min:0'],
+            'base_fee' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'rate_per_kg' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'customs_fee_flat' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'min_eta_days' => ['required', 'integer', 'min:0'],
             'max_eta_days' => ['required', 'integer', 'min:0', 'gte:min_eta_days'],
             'is_active' => ['boolean'],
         ]);
 
-        // Every money column is BIGINT storing base-currency integer minor units — never a float.
-        $data['base_fee'] = (int) $data['base_fee'];
-        $data['rate_per_kg'] = (int) $data['rate_per_kg'];
-        $data['customs_fee_flat'] = isset($data['customs_fee_flat']) ? (int) $data['customs_fee_flat'] : null;
+        // Money columns are DECIMAL(19,4); accept up to 2 decimals.
+        $data['base_fee'] = round((float) $data['base_fee'], 2);
+        $data['rate_per_kg'] = round((float) $data['rate_per_kg'], 2);
+        $data['customs_fee_flat'] = isset($data['customs_fee_flat']) ? round((float) $data['customs_fee_flat'], 2) : null;
 
         return $data;
     }

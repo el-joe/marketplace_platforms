@@ -84,12 +84,12 @@ class CheckoutRollbackService
 
     private function refundWallet(Order $order): void
     {
-        if ((int) $order->wallet_amount_used <= 0) {
+        if ((float) $order->wallet_amount_used <= 0) {
             return;
         }
 
         try {
-            $this->checkoutWalletService->refundToWallet($order->customer, $order, (int) $order->wallet_amount_used);
+            $this->checkoutWalletService->refundToWallet($order->customer, $order, \App\Support\Money::number($order->wallet_amount_used));
             $order->update(['wallet_amount_used' => 0]);
         } catch (\Throwable $e) {
             Log::error('Failed to refund wallet during rollback', [

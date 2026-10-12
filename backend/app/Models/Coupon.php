@@ -64,8 +64,8 @@ class Coupon extends Model
         'valid_until' => 'datetime',
         'is_active' => 'boolean',
         'is_stackable' => 'boolean',
-        'min_order_amount' => 'integer',
-        'max_discount' => 'integer',
+        'min_order_amount' => \App\Casts\DecimalMoney::class,
+        'max_discount' => \App\Casts\DecimalMoney::class,
         'value' => 'decimal:2',
     ];
 

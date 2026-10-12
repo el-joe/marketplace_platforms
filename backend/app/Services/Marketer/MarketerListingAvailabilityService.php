@@ -2,6 +2,7 @@
 
 namespace App\Services\Marketer;
 
+use App\Support\Money;
 use App\Enums\MarketerListingStatus;
 use App\Models\AdminListing;
 use App\Models\MarketerListing;
@@ -35,18 +36,18 @@ class MarketerListingAvailabilityService
     }
 
     /**
-     * @return array{0: int, 1: int} [min_price, max_price], inclusive, BIGINT base-currency.
+     * @return array{0: int|float, 1: int|float} [min_price, max_price], inclusive, base-currency (2 dp).
      */
-    public function priceBounds(int $sourcePrice): array
+    public function priceBounds(int|float $sourcePrice): array
     {
         $pct = $this->priceBoundPct();
-        $min = (int) floor($sourcePrice * (1 - $pct / 100));
-        $max = (int) ceil($sourcePrice * (1 + $pct / 100));
+        $min = floor(round((float) $sourcePrice * (1 - $pct / 100) * 100, 4)) / 100;
+        $max = ceil(round((float) $sourcePrice * (1 + $pct / 100) * 100, 4)) / 100;
 
-        return [max($min, 0), $max];
+        return [Money::number(max($min, 0)), Money::number($max)];
     }
 
-    public function isPriceInBounds(int $price, int $sourcePrice): bool
+    public function isPriceInBounds(int|float $price, int|float $sourcePrice): bool
     {
         [$min, $max] = $this->priceBounds($sourcePrice);
 
@@ -122,7 +123,7 @@ class MarketerListingAvailabilityService
             && ($source->status?->value ?? $source->status) === 'active';
 
         $priceOk = $source !== null
-            && $this->isPriceInBounds((int) $listing->getRawOriginal('price'), (int) $source->getRawOriginal('price'));
+            && $this->isPriceInBounds(Money::number($listing->getRawOriginal('price')), Money::number($source->getRawOriginal('price')));
 
         if (! $available || ! $priceOk) {
             if ($listing->status !== MarketerListingStatus::Paused || $listing->paused_reason !== 'source_unavailable') {

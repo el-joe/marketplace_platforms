@@ -14,7 +14,7 @@ class FakeDiscountDetectionService
      *   is_suspect: bool,
      *   confidence: float (0-1),
      *   reasons: string[],
-     *   average_price_30d: int|null,
+     *   average_price_30d: int|float|null,
      *   average_price_30d_formatted: string,
      *   price_history_count: int,
      *   checks: { is_price_barely_below_avg, is_price_recently_inflated, discount_is_artificial }
@@ -22,8 +22,8 @@ class FakeDiscountDetectionService
      */
     public function analyze(FlashSaleSubmission $submission): array
     {
-        $flashPrice    = (int) $submission->flash_price;
-        $originalPrice = (int) $submission->original_price;
+        $flashPrice    = (float) $submission->flash_price;
+        $originalPrice = (float) $submission->original_price;
 
         $history = FlashSalePriceHistory::query()
             ->when(
@@ -51,7 +51,7 @@ class FakeDiscountDetectionService
             ];
         }
 
-        $avgPrice30d = (int) round($history->avg('price'));
+        $avgPrice30d = round((float) $history->avg('price'), 2);
 
         // Check 1: flash price barely below 30-day average
         $isPriceBarellyBelowAvg = $avgPrice30d > 0 && $flashPrice >= ($avgPrice30d * 0.95);
@@ -67,7 +67,7 @@ class FakeDiscountDetectionService
         }
 
         // Check 3: original_price appears inflated vs history
-        $maxHistoricalPrice       = (int) $history->max('price');
+        $maxHistoricalPrice       = (float) $history->max('price');
         $isDiscountArtificial     = $maxHistoricalPrice > 0 && $maxHistoricalPrice < ($originalPrice * 0.90);
 
         $triggeredCount = (int) $isPriceBarellyBelowAvg + (int) $isPriceRecentlyInflated + (int) $isDiscountArtificial;

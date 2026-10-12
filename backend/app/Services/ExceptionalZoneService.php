@@ -6,9 +6,10 @@ use App\Models\City;
 use App\Models\PlatformShippingSubsidy;
 use App\Models\VendorExceptionalZoneAlert;
 use App\Models\VendorListing;
+use App\Support\Money;
 
 /**
- * All money values are BIGINT base currency units — never divide or
+ * All money values are DECIMAL(19,4) base currency units — never divide or
  * multiply by 100 here.
  */
 class ExceptionalZoneService
@@ -21,7 +22,7 @@ class ExceptionalZoneService
      * Returns null if no exceptional zone applies.
      * Returns an array with gap details if one does.
      */
-    public function resolve(VendorListing $listing, City $city, int $normalShippingFee): ?array
+    public function resolve(VendorListing $listing, City $city, int|float $normalShippingFee): ?array
     {
         if (! $listing->warehouse_id) {
             return null;
@@ -37,13 +38,13 @@ class ExceptionalZoneService
             return null;
         }
 
-        $reportedCarrierFee = (int) $alert->reported_carrier_fee;
+        $reportedCarrierFee = $alert->reported_carrier_fee;
 
         if ($reportedCarrierFee <= $normalShippingFee) {
             return null;
         }
 
-        $gap = $reportedCarrierFee - $normalShippingFee;
+        $gap = round($reportedCarrierFee - $normalShippingFee, 2);
 
         $zoneId = $city->shipping_zone_id;
         $subsidyRule = null;
@@ -61,18 +62,18 @@ class ExceptionalZoneService
 
         if ($subsidyRule) {
             if ($subsidyRule->split_type === 'percentage') {
-                $vendorContribution = (int) floor($gap * $subsidyRule->vendor_share_pct / 100);
-                $adminSubsidy = $gap - $vendorContribution;
+                $vendorContribution = round($gap * $subsidyRule->vendor_share_pct / 100, 2);
+                $adminSubsidy = round($gap - $vendorContribution, 2);
 
                 if ($subsidyRule->subsidy_cap > 0 && $adminSubsidy > $subsidyRule->subsidy_cap) {
-                    $excess = $adminSubsidy - $subsidyRule->subsidy_cap;
+                    $excess = round($adminSubsidy - $subsidyRule->subsidy_cap, 2);
                     $adminSubsidy = $subsidyRule->subsidy_cap;
                     $vendorContribution += $excess;
                 }
             } else {
-                $vendorContribution = min((int) $subsidyRule->vendor_fixed_amount, $gap);
-                $adminSubsidy = min((int) $subsidyRule->admin_fixed_amount, $gap - $vendorContribution);
-                $residual = $gap - $vendorContribution - $adminSubsidy;
+                $vendorContribution = min($subsidyRule->vendor_fixed_amount, $gap);
+                $adminSubsidy = min($subsidyRule->admin_fixed_amount, round($gap - $vendorContribution, 2));
+                $residual = round($gap - $vendorContribution - $adminSubsidy, 2);
                 $adminSubsidy += $residual;
             }
 
@@ -80,8 +81,8 @@ class ExceptionalZoneService
             // the gap exactly (zero-sum, no rounding leakage). Any drift lands
             // on the admin side rather than silently under/over-charging the
             // vendor.
-            $drift = $gap - ($vendorContribution + $adminSubsidy);
-            if ($drift !== 0) {
+            $drift = round($gap - ($vendorContribution + $adminSubsidy), 2);
+            if (abs($drift) > 0.00005) {
                 $adminSubsidy += $drift;
             }
 
@@ -96,9 +97,9 @@ class ExceptionalZoneService
         return [
             'alert_id' => $alert->id,
             'reported_carrier_fee' => $reportedCarrierFee,
-            'gap' => $gap,
-            'vendor_contribution' => $vendorContribution,
-            'admin_subsidy' => $adminSubsidy,
+            'gap' => Money::number($gap),
+            'vendor_contribution' => Money::number(round($vendorContribution, 2)),
+            'admin_subsidy' => Money::number(round($adminSubsidy, 2)),
             'subsidy_rule_id' => $subsidyRuleId,
         ];
     }

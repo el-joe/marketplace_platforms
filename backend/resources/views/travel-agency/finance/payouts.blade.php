@@ -26,9 +26,9 @@
                             <td class="px-4 py-2 text-gray-900">{{ $row['period'] }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $row['currency'] }}</td>
                             <td class="px-4 py-2 text-right text-gray-900">{{ number_format($row['bookings_count']) }}</td>
-                            <td class="px-4 py-2 text-right text-gray-900">{{ number_format($row['gross']) }}</td>
-                            <td class="px-4 py-2 text-right text-amber-600">{{ number_format($row['commission']) }}</td>
-                            <td class="px-4 py-2 text-right font-semibold text-emerald-600">{{ number_format($row['net_payout']) }}</td>
+                            <td class="px-4 py-2 text-right text-gray-900">{{ \App\Support\Money::format($row['gross']) }}</td>
+                            <td class="px-4 py-2 text-right text-amber-600">{{ \App\Support\Money::format($row['commission']) }}</td>
+                            <td class="px-4 py-2 text-right font-semibold text-emerald-600">{{ \App\Support\Money::format($row['net_payout']) }}</td>
                         </tr>
                     @empty
                         <tr>

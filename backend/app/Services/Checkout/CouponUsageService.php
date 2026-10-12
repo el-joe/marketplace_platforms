@@ -40,7 +40,7 @@ class CouponUsageService
         string $couponId,
         Customer $customer,
         Order $order,
-        int $discountAmount,
+        int|float $discountAmount,
         int $simulateDelaySeconds = 0,
     ): CouponUsage {
         /** @var Coupon $coupon */

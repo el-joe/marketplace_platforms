@@ -235,7 +235,7 @@ class WarrantyPlanController extends Controller
             $data['price'] = 0;
             $data['price_pct'] = (float) $validated['price_pct'];
         } else {
-            $data['price'] = (int) round((float) $validated['price']);
+            $data['price'] = round((float) $validated['price'], 2);
             $data['price_pct'] = null;
         }
 

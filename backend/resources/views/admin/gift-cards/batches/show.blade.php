@@ -71,7 +71,7 @@
             <div class="text-xs text-gray-500 mt-1">{{ __('admin.gift_cards_section.total_purchased') }}</div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <div class="text-2xl font-black text-emerald-600">{{ number_format((int) $purchaseStats['total_revenue']) }} {{ $batch->currency_code }}</div>
+            <div class="text-2xl font-black text-emerald-600">{{ \App\Support\Money::format($purchaseStats['total_revenue']) }} {{ $batch->currency_code }}</div>
             <div class="text-xs text-gray-500 mt-1">{{ __('admin.gift_cards_section.total_revenue') }}</div>
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">

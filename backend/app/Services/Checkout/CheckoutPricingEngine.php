@@ -31,8 +31,8 @@ use Illuminate\Validation\ValidationException;
  * selection resolution and per-line/sub-order/order tax computation
  * (enhancement.md P-01).
  *
- * Money is BIGINT base-currency units; never multiply/divide by 100 here
- * except when converting a DECIMAL percentage into a fraction.
+ * Money is DECIMAL(19,4) base-currency amounts carried as int|float (whole -> int), rounded half up to 2 dp
+ * wherever a percentage is applied; never multiply/divide by 100 here except when converting a percentage into a fraction.
  *
  * D1: platform commission is computed on the gross line price before the
  * coupon discount (not implemented here — see commission services); the
@@ -48,13 +48,13 @@ class CheckoutPricingEngine
         private readonly WarrantyPlanService $warrantyPlanService,
     ) {}
 
-    public function calculateTax(int $amountCents, Country $country): int
+    public function calculateTax(int|float $amountCents, Country $country): int|float
     {
         if ($amountCents <= 0) {
             return 0;
         }
 
-        return (int) round($amountCents * ((float) $country->vat_rate / 100));
+        return $this->wholeIfPossible(round($amountCents * ((float) $country->vat_rate / 100), 2));
     }
 
     /**
@@ -64,12 +64,12 @@ class CheckoutPricingEngine
      * App\Services\CheckoutCalculationService::resolveCartItems().
      *
      * @param  array<int, mixed>  $items
-     * @return array{discount: int, error: ?string, type: ?string, allocations: array<string, int>, free_shipping_seller_parties: array<int, string>, max_discount: ?int, funded_by: ?string}
+     * @return array{discount: int|float, error: ?string, type: ?string, allocations: array<string, int|float>, free_shipping_seller_parties: array<int, string>, max_discount: int|float|null, funded_by: ?string}
      */
     public function applyCoupon(
         Coupon $coupon,
         ?Customer $customer,
-        int $subtotalCents,
+        int|float $subtotalCents,
         string $currency,
         array $items,
         ?string $countryId = null,
@@ -84,7 +84,7 @@ class CheckoutPricingEngine
 
         $lines = $this->normalizeAll($items);
         $applicableLines = array_filter($lines, fn (array $l) => $this->lineMatchesScope($l, $coupon));
-        $applicableSubtotal = array_sum(array_map(fn (array $l) => $l['line_subtotal'], $applicableLines));
+        $applicableSubtotal = $this->wholeIfPossible(array_sum(array_map(fn (array $l) => $l['line_subtotal'], $applicableLines)));
 
         if ($applicableSubtotal <= 0) {
             return array_merge($empty, ['error' => __('common.exceptions.checkout.coupon.no_applicable_items')]);
@@ -105,7 +105,7 @@ class CheckoutPricingEngine
                 }
             }
 
-            $discount = $cheapest ? (int) $cheapest['unit_price'] : 0;
+            $discount = $cheapest ? $cheapest['unit_price'] : 0;
             $discount = min($discount, $applicableSubtotal);
 
             return array_merge($empty, [
@@ -124,8 +124,8 @@ class CheckoutPricingEngine
         }
 
         $discount = match ($type) {
-            'percentage' => (int) round($applicableSubtotal * ((float) $coupon->value / 100)),
-            'fixed_amount' => (int) round((float) $coupon->value),
+            'percentage' => $this->wholeIfPossible(round($applicableSubtotal * ((float) $coupon->value / 100), 2)),
+            'fixed_amount' => $this->wholeIfPossible(round((float) $coupon->value, 2)),
             default => 0,
         };
 
@@ -147,12 +147,14 @@ class CheckoutPricingEngine
 
     /**
      * Largest-remainder pro-rata allocation of $total across $weights so the
-     * allocations sum to exactly $total (P-01 task 2).
+     * allocations sum to exactly $total (P-01 task 2). Whole totals over whole
+     * weights are split in whole units; anything fractional is split in 1/100
+     * units (the precision money is charged at), so the parts still sum exactly.
      *
-     * @param  array<string, int>  $weights
-     * @return array<string, int>
+     * @param  array<string, int|float>  $weights
+     * @return array<string, int|float>
      */
-    public function allocateProRata(int $total, array $weights): array
+    public function allocateProRata(int|float $total, array $weights): array
     {
         $weights = array_filter($weights, fn ($w) => $w > 0);
 
@@ -160,20 +162,30 @@ class CheckoutPricingEngine
             return array_fill_keys(array_keys($weights), 0);
         }
 
+        $allWhole = floor((float) $total) == $total;
+        foreach ($weights as $w) {
+            if (floor((float) $w) != $w) {
+                $allWhole = false;
+                break;
+            }
+        }
+        $scale = $allWhole ? 1 : 100;
+
+        $totalUnits = (int) round($total * $scale);
         $sumWeights = array_sum($weights);
         $result = [];
         $remainders = [];
         $floorSum = 0;
 
         foreach ($weights as $key => $weight) {
-            $exact = ($total * $weight) / $sumWeights;
-            $floor = (int) floor($exact);
+            $exact = ($totalUnits * $weight) / $sumWeights;
+            $floor = (int) floor($exact + 1e-9);
             $result[$key] = $floor;
-            $remainders[$key] = $exact - $floor;
+            $remainders[$key] = max(0.0, $exact - $floor);
             $floorSum += $floor;
         }
 
-        $remainderToDistribute = $total - $floorSum;
+        $remainderToDistribute = $totalUnits - $floorSum;
 
         $keysByRemainder = array_keys($remainders);
         usort($keysByRemainder, function ($a, $b) use ($remainders) {
@@ -184,7 +196,11 @@ class CheckoutPricingEngine
             $result[$keysByRemainder[$i]] += 1;
         }
 
-        return $result;
+        if ($scale === 1) {
+            return $result;
+        }
+
+        return array_map(fn (int $units) => $this->wholeIfPossible($units / $scale), $result);
     }
 
     /**
@@ -197,19 +213,19 @@ class CheckoutPricingEngine
     public function allocateProRataDecimal(int|float $total, array $weights): array
     {
         if (floor((float) $total) == $total) {
-            return $this->allocateProRata((int) $total, $weights);
+            return $this->allocateProRata($total, $weights);
         }
 
         $scaled = $this->allocateProRata((int) round($total * 10000), array_map(fn ($w) => (int) round($w * 10000), $weights));
 
-        return array_map(fn ($v) => $v / 10000, $scaled);
+        return array_map(fn ($v) => $this->wholeIfPossible($v / 10000), $scaled);
     }
 
     /**
      * @param  array<int, mixed>  $items
      * @param  array<int|string, array{listing_id?: string, warranty_plan_id: string}>  $warrantySelections  keyed either
      *                                                                                                       by cart item id (Customer\CheckoutCalculationService shape) or numeric index (Api\CheckoutCalculationService shape)
-     * @return array{selections: array<string, array{plan: WarrantyPlan, price: int}>, total: int}
+     * @return array{selections: array<string, array{plan: WarrantyPlan, price: int|float}>, total: int|float}
      */
     public function resolveWarrantySelections(array $items, array $warrantySelections, Country $country, string $currency): array
     {
@@ -245,7 +261,7 @@ class CheckoutPricingEngine
 
             $product = $line['product'];
             if ($product) {
-                $applicablePlanIds = collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $currency, (int) $line['unit_price']))
+                $applicablePlanIds = collect($this->warrantyPlanService->getPlansForProduct($product, $country->id, $currency, $line['unit_price']))
                     ->pluck('id')
                     ->all();
 
@@ -272,10 +288,10 @@ class CheckoutPricingEngine
                 ]);
             }
 
-            $resolvedPrice = $plan->resolvePrice((int) $line['unit_price']);
+            $resolvedPrice = $plan->resolvePrice($line['unit_price']);
 
             $selections[$lineKey] = ['plan' => $plan, 'price' => $resolvedPrice];
-            $total += $resolvedPrice;
+            $total = $this->wholeIfPossible($total + $resolvedPrice);
         }
 
         return ['selections' => $selections, 'total' => $total];
@@ -287,24 +303,24 @@ class CheckoutPricingEngine
      * data, so the sums always reconcile exactly (P-01 acceptance criteria).
      *
      * @param  array<int, mixed>  $items
-     * @param  array<string, int>  $couponAllocations  line key => coupon discount amount
-     * @param  array<string, int>  $loyaltyAllocations  line key => loyalty discount amount
-     * @param  array<string, array{plan: WarrantyPlan, price: int}>  $warrantySelections  line key => resolved warranty
-     * @param  array<string, int>  $shippingByGroup  vendor key (or 'platform') => shipping fee for that sub-order
+     * @param  array<string, int|float>  $couponAllocations  line key => coupon discount amount
+     * @param  array<string, int|float>  $loyaltyAllocations  line key => loyalty discount amount
+     * @param  array<string, array{plan: WarrantyPlan, price: int|float}>  $warrantySelections  line key => resolved warranty
+     * @param  array<string, int|float>  $shippingByGroup  vendor key (or 'platform') => shipping fee for that sub-order
      */
     public function priceCart(
         array $items,
         Country $country,
-        int $shippingFeeCents,
-        int $codFeeCents,
-        int $couponDiscountCents,
+        int|float $shippingFeeCents,
+        int|float $codFeeCents,
+        int|float $couponDiscountCents,
         array $couponAllocations,
-        int $loyaltyDiscountCents,
+        int|float $loyaltyDiscountCents,
         array $loyaltyAllocations,
-        int $giftCardAppliedCents,
+        int|float $giftCardAppliedCents,
         array $warrantySelections,
         array $shippingByGroup = [],
-        int $customsDutyCents = 0,
+        int|float $customsDutyCents = 0,
     ): PricedCart {
         $lines = $this->normalizeAll($items);
 
@@ -317,9 +333,9 @@ class CheckoutPricingEngine
         foreach ($lines as $l) {
             $key = $l['key'];
             $lineSubtotal = $l['line_subtotal'];
-            $lineDiscount = (int) ($couponAllocations[$key] ?? 0);
-            $lineLoyalty = (int) ($loyaltyAllocations[$key] ?? 0);
-            $taxable = max(0, $lineSubtotal - $lineDiscount - $lineLoyalty);
+            $lineDiscount = $this->wholeIfPossible($couponAllocations[$key] ?? 0);
+            $lineLoyalty = $this->wholeIfPossible($loyaltyAllocations[$key] ?? 0);
+            $taxable = $this->wholeIfPossible(max(0, $lineSubtotal - $lineDiscount - $lineLoyalty));
             $lineTax = $this->calculateTax($taxable, $country);
 
             $warranty = $warrantySelections[$key] ?? null;
@@ -333,7 +349,7 @@ class CheckoutPricingEngine
             // warrantyPrice/warrantyTax, and the order/sub-order level totals) so the
             // frontend can still show them, without this specific field diverging from
             // the persisted value (see docs/formula.md §1).
-            $lineTotal = $lineSubtotal - $lineDiscount + $lineTax;
+            $lineTotal = $this->wholeIfPossible($lineSubtotal - $lineDiscount + $lineTax);
 
             $pricedLines[] = new PricedLine(
                 id: $key,
@@ -362,20 +378,24 @@ class CheckoutPricingEngine
             $orderWarrantyTotal += $warrantyPrice;
         }
 
+        $orderSubtotal = $this->wholeIfPossible($orderSubtotal);
+        $orderTax = $this->wholeIfPossible($orderTax);
+        $orderWarrantyTotal = $this->wholeIfPossible($orderWarrantyTotal);
+
         $subOrders = [];
         foreach ($groups as $vendorKey => $g) {
             $subOrders[$vendorKey] = new PricedSubOrder(
                 vendorId: $vendorKey === 'platform' ? null : $vendorKey,
-                subtotal: $g['subtotal'],
-                discount: $g['discount'],
-                loyaltyDiscount: $g['loyalty_discount'],
-                tax: $g['tax'],
-                warrantyTotal: $g['warranty_total'],
-                shipping: (int) ($shippingByGroup[$vendorKey] ?? 0),
+                subtotal: $this->wholeIfPossible($g['subtotal']),
+                discount: $this->wholeIfPossible($g['discount']),
+                loyaltyDiscount: $this->wholeIfPossible($g['loyalty_discount']),
+                tax: $this->wholeIfPossible($g['tax']),
+                warrantyTotal: $this->wholeIfPossible($g['warranty_total']),
+                shipping: $this->wholeIfPossible($shippingByGroup[$vendorKey] ?? 0),
             );
         }
 
-        $total = max(0, $orderSubtotal
+        $total = $this->wholeIfPossible(max(0, $orderSubtotal
             - $couponDiscountCents
             - $loyaltyDiscountCents
             + $shippingFeeCents
@@ -383,7 +403,7 @@ class CheckoutPricingEngine
             + $orderTax
             + $orderWarrantyTotal
             + $customsDutyCents
-            - $giftCardAppliedCents);
+            - $giftCardAppliedCents));
 
         return new PricedCart(
             lines: $pricedLines,
@@ -419,13 +439,13 @@ class CheckoutPricingEngine
      * up paying fee_fixed exactly once in total.
      *
      * @param  array<int, mixed>  $items  same shape priceCart() accepts
-     * @param  array<string, int>  $couponAllocations  line key => coupon discount (from applyCoupon())
-     * @param  array<string, int>  $vendorContributionByGroup  vendor key (or 'platform') => vendor_contribution_amount
-     * @param  array<string, int>  $adminSubsidyByGroup  vendor key (or 'platform') => admin_subsidy_amount
-     * @param  array<string, int>  $carrierRawFeeByGroup  vendor key (or 'platform') => the shipping resolver's raw (pre-subsidy) carrier fee for that group; falls back to the group's charged shipping when no resolver ran (e.g. FBN/admin — see enhancement.md P-03 task 3 note)
-     * @param  array<string, int>  $chargedShippingByGroup  vendor key (or 'platform') => shipping fee charged to the customer for that group (same values priceCart() was given as $shippingByGroup)
+     * @param  array<string, int|float>  $couponAllocations  line key => coupon discount (from applyCoupon())
+     * @param  array<string, int|float>  $vendorContributionByGroup  vendor key (or 'platform') => vendor_contribution_amount
+     * @param  array<string, int|float>  $adminSubsidyByGroup  vendor key (or 'platform') => admin_subsidy_amount
+     * @param  array<string, int|float>  $carrierRawFeeByGroup  vendor key (or 'platform') => the shipping resolver's raw (pre-subsidy) carrier fee for that group; falls back to the group's charged shipping when no resolver ran (e.g. FBN/admin — see enhancement.md P-03 task 3 note)
+     * @param  array<string, int|float>  $chargedShippingByGroup  vendor key (or 'platform') => shipping fee charged to the customer for that group (same values priceCart() was given as $shippingByGroup)
      * @return array{
-     *   lines: array<string, array{vendor_coupon_cost:int, platform_coupon_cost:int, platform_commission_after_discount:int, marketer_commission:int}>,
+     *   lines: array<string, array{vendor_coupon_cost:int|float, platform_coupon_cost:int|float, platform_commission_after_discount:int|float, marketer_commission:int|float}>,
      *   sub_orders: array<string, array{
      *     vendor_coupon_cost:int, platform_coupon_cost:int, platform_commission:int, platform_commission_after_discount:int,
      *     marketer_commission:int, marketer_commission_owner:?string, warranty_revenue:int, gateway_fee:int,
@@ -444,19 +464,19 @@ class CheckoutPricingEngine
         array $carrierRawFeeByGroup,
         array $chargedShippingByGroup,
         float $gatewayFeePct,
-        int $gatewayFeeFixed,
-        int $amountDueGatewayCents,
+        int|float $gatewayFeeFixed,
+        int|float $amountDueGatewayCents,
         bool $isCod,
-        int $codFeeCents,
-        int $warrantyTotalCents,
+        int|float $codFeeCents,
+        int|float $warrantyTotalCents,
     ): array {
         $lines = $this->normalizeAll($items);
 
-        $vendorSharePct = 0;
+        $vendorSharePct = 0.0;
         if ($coupon !== null) {
             $vendorSharePct = match ((string) ($coupon->funded_by ?? 'platform')) {
-                'vendor' => 100,
-                'shared' => (int) ($coupon->vendor_share_pct ?? 0),
+                'vendor' => 100.0,
+                'shared' => (float) ($coupon->vendor_share_pct ?? 0),
                 default => 0,
             };
         }
@@ -477,9 +497,9 @@ class CheckoutPricingEngine
             $groupKey = $l['vendor_id'] ?? 'platform';
             $isPlatformLine = $l['vendor_id'] === null;
 
-            $lineDiscount = (int) ($couponAllocations[$key] ?? 0);
-            $vendorCouponCost = (int) round($lineDiscount * $vendorSharePct / 100);
-            $platformCouponCost = $lineDiscount - $vendorCouponCost;
+            $lineDiscount = $this->wholeIfPossible($couponAllocations[$key] ?? 0);
+            $vendorCouponCost = $this->wholeIfPossible(round($lineDiscount * $vendorSharePct / 100, 2));
+            $platformCouponCost = $this->wholeIfPossible($lineDiscount - $vendorCouponCost);
 
             if ($isPlatformLine) {
                 // The platform is the seller for admin-listing lines — there
@@ -498,7 +518,7 @@ class CheckoutPricingEngine
             // listing price, not the marketer's resale price.
             $marketerCommission = 0;
             if ($l['is_marketer'] && $l['marketer_commission_type'] === 'fixed') {
-                $marketerCommission = $l['marketer_commission_raw'] * $l['quantity'];
+                $marketerCommission = $this->wholeIfPossible($l['marketer_commission_raw'] * $l['quantity']);
             }
 
             $groups[$groupKey]['vendor_id'] = $isPlatformLine ? null : $l['vendor_id'];
@@ -531,7 +551,7 @@ class CheckoutPricingEngine
         //    amount. fee_fixed is included exactly once in the total below.
         $gatewayFeeTotal = $isCod || $amountDueGatewayCents <= 0
             ? 0
-            : (int) floor($amountDueGatewayCents * $gatewayFeePct / 100) + $gatewayFeeFixed;
+            : $this->wholeIfPossible(round($amountDueGatewayCents * $gatewayFeePct / 100, 2) + $gatewayFeeFixed);
 
         $groupGrossWeights = [];
         foreach ($groups as $groupKey => $g) {
@@ -548,7 +568,7 @@ class CheckoutPricingEngine
         foreach ($groups as $groupKey => $g) {
             $isPlatformGroup = $groupKey === 'platform';
 
-            $platformCommissionAfterDiscount = $g['raw_commission'];
+            $platformCommissionAfterDiscount = $this->wholeIfPossible($g['raw_commission']);
             if (! $isPlatformGroup && $g['vendor_id'] !== null) {
                 $vendor = Vendor::find($g['vendor_id']);
                 $platformCommissionAfterDiscount = $vendor?->applyCommissionDiscount($g['raw_commission']) ?? $g['raw_commission'];
@@ -558,24 +578,24 @@ class CheckoutPricingEngine
             // (deducted from vendor_payout below) and owed to the tax authority, so it is not platform income.
             $commissionVatRate = (! $isPlatformGroup && (bool) setting('commission_vat_enabled', true)) ? (float) $country->vat_rate : 0.0;
             $commissionVat = $this->wholeIfPossible(round($platformCommissionAfterDiscount * $commissionVatRate / 100, 4));
-            $commissionVatTotal += $commissionVat;
+            $commissionVatTotal = $this->wholeIfPossible($commissionVatTotal + $commissionVat);
 
-            $gatewayFee = (int) ($gatewayFeeByGroup[$groupKey] ?? 0);
-            $vendorContribution = (int) ($vendorContributionByGroup[$groupKey] ?? 0);
-            $adminSubsidy = (int) ($adminSubsidyByGroup[$groupKey] ?? 0);
-            $chargedShipping = (int) ($chargedShippingByGroup[$groupKey] ?? 0);
-            $carrierShippingCost = (int) ($carrierRawFeeByGroup[$groupKey] ?? $chargedShipping);
-            $shippingGap = max(0, $carrierShippingCost - $chargedShipping - $vendorContribution - $adminSubsidy);
+            $gatewayFee = $this->wholeIfPossible($gatewayFeeByGroup[$groupKey] ?? 0);
+            $vendorContribution = $this->wholeIfPossible($vendorContributionByGroup[$groupKey] ?? 0);
+            $adminSubsidy = $this->wholeIfPossible($adminSubsidyByGroup[$groupKey] ?? 0);
+            $chargedShipping = $this->wholeIfPossible($chargedShippingByGroup[$groupKey] ?? 0);
+            $carrierShippingCost = $this->wholeIfPossible($carrierRawFeeByGroup[$groupKey] ?? $chargedShipping);
+            $shippingGap = $this->wholeIfPossible(max(0, $carrierShippingCost - $chargedShipping - $vendorContribution - $adminSubsidy));
             // shipping_revenue = shipping_charged - carrier_cost (see
             // enhancement.md P-03 report for the full derivation of why
             // vendor_contribution/admin_subsidy are added back into
             // platform_net separately rather than folded in here).
-            $shippingRevenue = $chargedShipping - $carrierShippingCost;
+            $shippingRevenue = $this->wholeIfPossible($chargedShipping - $carrierShippingCost);
 
             $marketerOwner = $g['marketer_owner'];
             $marketerCommission = $g['marketer_commission'];
-            $marketerCommissionTotal += $marketerCommission;
-            $carrierCostCoveredTotal += $carrierShippingCost;
+            $marketerCommissionTotal = $this->wholeIfPossible($marketerCommissionTotal + $marketerCommission);
+            $carrierCostCoveredTotal = $this->wholeIfPossible($carrierCostCoveredTotal + $carrierShippingCost);
 
             if ($isPlatformGroup) {
                 $vendorPayout = 0;
@@ -596,12 +616,12 @@ class CheckoutPricingEngine
             // group's gateway_fee share is already paid by that vendor via
             // vendor_payout above, so subtracting it again here would
             // double-count it (D4: "gateway_fee(platform share)").
-            $platformNet += $platformCommissionAfterDiscount
+            $platformNet = $this->wholeIfPossible($platformNet + $platformCommissionAfterDiscount
                 + $shippingRevenue
                 - $g['platform_coupon_cost']
                 - $adminSubsidy
                 - ($marketerOwner === 'platform' ? $marketerCommission : 0)
-                - ($isPlatformGroup ? $gatewayFee : 0);
+                - ($isPlatformGroup ? $gatewayFee : 0));
 
             // Allocate the group's after-discount commission back across its
             // lines (weighted by each line's raw commission), so
@@ -616,13 +636,13 @@ class CheckoutPricingEngine
 
             $subOrders[$groupKey] = [
                 'vendor_id' => $g['vendor_id'],
-                'vendor_coupon_cost' => $g['vendor_coupon_cost'],
-                'platform_coupon_cost' => $g['platform_coupon_cost'],
-                'platform_commission' => $g['raw_commission'],
+                'vendor_coupon_cost' => $this->wholeIfPossible($g['vendor_coupon_cost']),
+                'platform_coupon_cost' => $this->wholeIfPossible($g['platform_coupon_cost']),
+                'platform_commission' => $this->wholeIfPossible($g['raw_commission']),
                 'platform_commission_after_discount' => $platformCommissionAfterDiscount,
                 'commission_vat' => $commissionVat,
                 'commission_vat_rate' => $commissionVatRate,
-                'marketer_commission' => $marketerCommission,
+                'marketer_commission' => $this->wholeIfPossible($marketerCommission),
                 'marketer_commission_owner' => $marketerOwner,
                 'gateway_fee' => $gatewayFee,
                 'carrier_shipping_cost' => $carrierShippingCost,
@@ -637,7 +657,7 @@ class CheckoutPricingEngine
         // several vendor groups). Warranty is 100% underwritten by the
         // platform (documented simplification — D3's coverage-start timing
         // is not implemented here, only revenue attribution).
-        $platformNet += $codFeeCents + $warrantyTotalCents;
+        $platformNet = $this->wholeIfPossible($platformNet + $codFeeCents + $warrantyTotalCents);
 
         return [
             'sub_orders' => $subOrders,
@@ -660,12 +680,12 @@ class CheckoutPricingEngine
      * asks for. FBN/FBP is read from the sub-order's own fulfillment_model
      * (never global_system_type — that mismatch was the bug).
      *
-     * @return array{0: int, 1: ?string} [commission amount, category id used]
+     * @return array{0: int|float, 1: ?string} [commission amount, category id used]
      */
     /**
      * @param  Collection<string, Category>|null  $categoryCache  pre-loaded categories keyed by id (with commissionTiers eager-loaded)
      */
-    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
+    private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int|float $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
     {
         [$dynamic, $resolvedCategoryId] = $this->resolveDynamicCommission($vendor, $categoryId, $fulfillmentModel, $country, $baseAmountCents, $quantity, $categoryCache);
 
@@ -681,7 +701,7 @@ class CheckoutPricingEngine
      * @param  Collection<string, Category>|null  $categoryCache
      * @return array{0: int|float, 1: ?string}
      */
-    private function resolveDynamicCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
+    private function resolveDynamicCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int|float $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
     {
         $today = Carbon::today()->toDateString();
 
@@ -738,18 +758,18 @@ class CheckoutPricingEngine
             }
 
             if ($best !== null) {
-                $amount = (int) round($baseAmountCents * ((float) $best->rate_pct) / 100);
-                $amount = max($amount, (int) $best->min_commission);
+                $amount = round($baseAmountCents * ((float) $best->rate_pct) / 100, 2);
+                $amount = max($amount, (float) $best->min_commission);
                 if ($best->max_commission !== null) {
-                    $amount = min($amount, (int) $best->max_commission);
+                    $amount = min($amount, (float) $best->max_commission);
                 }
 
-                return [$amount, $best->category_id];
+                return [$this->wholeIfPossible($amount), $best->category_id];
             }
         }
 
         if ($vendor !== null && (float) $vendor->commission_rate > 0) {
-            $amount = (int) round($baseAmountCents * ((float) $vendor->commission_rate) / 100);
+            $amount = $this->wholeIfPossible(round($baseAmountCents * ((float) $vendor->commission_rate) / 100, 2));
 
             return [$amount, $categoryId];
         }
@@ -795,7 +815,7 @@ class CheckoutPricingEngine
         // commissionTiers is eager-loaded via $categoryCache in computeMoneySplit() to avoid N+1.
         // Country-specific tiers (country_id = $country->id) take precedence over global tiers (country_id IS NULL).
         $safeQty = max(1, $quantity);
-        $unitPrice = intdiv($baseAmountCents + $safeQty - 1, $safeQty);
+        $unitPrice = round($baseAmountCents / $safeQty, 4);
         $allTiers = $resolved->relationLoaded('commissionTiers')
             ? $resolved->commissionTiers
             : CategoryCommissionTier::where('category_id', $resolved->id)->orderBy('price_from')->get();
@@ -814,7 +834,7 @@ class CheckoutPricingEngine
         $amount = CommissionCalculator::calculate(
             baseAmount: $baseAmountCents,
             standardRate: $tier !== null ? (float) $tier->commission_rate : $pct,
-            minCommission: $tier !== null ? (int) $tier->min_commission : 0,
+            minCommission: $tier !== null ? $this->wholeIfPossible((float) $tier->min_commission) : 0,
             quantity: $quantity,
             flatAmount: $fixed,
             includeFlat: true,
@@ -862,7 +882,7 @@ class CheckoutPricingEngine
     private function validateCouponEligibility(
         Coupon $coupon,
         ?Customer $customer,
-        int $subtotalCents,
+        int|float $subtotalCents,
         string $currency,
         array $items,
         ?string $countryId = null,
@@ -1057,7 +1077,7 @@ class CheckoutPricingEngine
     //    shape used by App\Services\CheckoutCalculationService ──────────
 
     /**
-     * @return array<int, array{key: string, vendor_id: ?string, category_id: ?string, product_id: ?string, unit_price: int, quantity: int, line_subtotal: int, shipping_type: string, product: mixed}>
+     * @return array<int, array{key: string, vendor_id: ?string, category_id: ?string, product_id: ?string, unit_price: int|float, quantity: int, line_subtotal: int|float, shipping_type: string, product: mixed}>
      */
     private function normalizeAll(array $items): array
     {
@@ -1081,9 +1101,9 @@ class CheckoutPricingEngine
                 'vendor_id' => $item['is_admin'] ?? false ? null : ($item['vendor_id'] ?? null),
                 'category_id' => $product?->category_id,
                 'product_id' => $variant?->product_id,
-                'unit_price' => (int) $item['unit_price'],
+                'unit_price' => $this->wholeIfPossible((float) $item['unit_price']),
                 'quantity' => (int) $item['quantity'],
-                'line_subtotal' => (int) $item['unit_price'] * (int) $item['quantity'],
+                'line_subtotal' => $this->wholeIfPossible(round((float) $item['unit_price'] * (int) $item['quantity'], 2)),
                 'shipping_type' => ($item['is_admin'] ?? false) ? 'fbn' : match ($listing?->fulfillment_model?->value ?? $listing?->fulfillment_model ?? null) {
                     'fbn' => 'fbn',
                     'cross_dock' => 'fbp',
@@ -1092,7 +1112,7 @@ class CheckoutPricingEngine
                 'product' => $product,
                 'listing_id' => $listing?->id,
                 'fulfillment_model' => ($item['is_admin'] ?? false) ? 'fbn' : (string) ($listing?->fulfillment_model?->value ?? $listing?->fulfillment_model ?? 'fbm'),
-                'commission_base_unit_price' => (int) $item['unit_price'],
+                'commission_base_unit_price' => $this->wholeIfPossible((float) $item['unit_price']),
                 'is_marketer' => false,
                 'marketer_id' => null,
                 'marketer_owner' => null,
@@ -1124,7 +1144,7 @@ class CheckoutPricingEngine
                 // D5: the owner pays. P13 peer promotion: the owner influencer (the seller) pays the promoter.
                 $marketerOwner = $campaign->vendor_listing_id ? 'vendor' : ($campaign->marketer_listing_id ? 'marketer' : 'platform');
                 $marketerCommissionType = (string) $campaign->commission_type;
-                $marketerCommissionRaw = (int) ($campaign->marketer_commission_amount ?? 0);
+                $marketerCommissionRaw = $this->wholeIfPossible((float) ($campaign->marketer_commission_amount ?? 0));
             }
         }
 
@@ -1133,9 +1153,9 @@ class CheckoutPricingEngine
             'vendor_id' => ($source && ! $source->isAdminSeller()) ? $source->sellerParty : null,
             'category_id' => $product?->category_id,
             'product_id' => $variant?->product_id,
-            'unit_price' => (int) $item->unit_price,
+            'unit_price' => $this->wholeIfPossible((float) $item->unit_price),
             'quantity' => (int) $item->quantity,
-            'line_subtotal' => (int) $item->unit_price * (int) $item->quantity,
+            'line_subtotal' => $this->wholeIfPossible(round((float) $item->unit_price * (int) $item->quantity, 2)),
             'shipping_type' => ($source === null || $source->isAdminSeller()) ? 'fbn' : match ($source->fulfillmentModel) {
                 'fbn' => 'fbn',
                 'cross_dock' => 'fbp',
@@ -1147,7 +1167,7 @@ class CheckoutPricingEngine
             // vendor's own listing price (fulfilment listing), never the
             // marketer's resale price.
             'fulfillment_model' => $source?->isAdminSeller() ? 'fbn' : (string) ($source?->fulfillmentModel ?? 'fbm'),
-            'commission_base_unit_price' => (int) ($listing?->price ?? $item->unit_price),
+            'commission_base_unit_price' => $this->wholeIfPossible((float) ($listing?->price ?? $item->unit_price)),
             'is_marketer' => $isMarketer,
             'marketer_id' => ($isMarketer && $item instanceof CartItem) ? $item->marketerListing?->marketer_id : null,
             'marketer_owner' => $marketerOwner,

@@ -192,7 +192,7 @@ class AuthController extends Controller
 
         return [
             'deliveries_today' => $todayShift?->total_deliveries ?? 0,
-            'earnings_today'   => (int) ($todayShift?->getRawOriginal('total_earnings') ?? 0),
+            'earnings_today'   => \App\Support\Money::number($todayShift?->getRawOriginal('total_earnings') ?? 0),
             'shift_started_at' => $todayShift?->actual_start?->toIso8601String(),
             'currency'         => $agent->country?->currency_code
                 ?? $agent->zone?->country?->currency_code

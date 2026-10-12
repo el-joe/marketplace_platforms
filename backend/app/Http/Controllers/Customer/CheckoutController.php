@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Support\Money;
 use App\Enums\AdminListingStatus;
 use App\Enums\CouponType;
 use App\Enums\DeliveryInstruction;
@@ -160,7 +161,7 @@ class CheckoutController extends Controller
         array $cartLineSources,
         array &$vendorShipping,
         string $destinationCountryId,
-    ): int {
+    ): int|float {
         $customsDutyCents = 0;
 
         $grouped = $cartItems->groupBy(fn ($item) => $cartLineSources[$item->id]->sellerParty);
@@ -183,8 +184,8 @@ class CheckoutController extends Controller
                 $weightGrams,
             );
 
-            $oldShipping = (int) ($vendorShipping['per_vendor'][$vendorId]['shipping'] ?? 0);
-            $vendorShipping['total'] = max(0, (int) $vendorShipping['total'] - $oldShipping + $quote['shipping_fee']);
+            $oldShipping = Money::number($vendorShipping['per_vendor'][$vendorId]['shipping'] ?? 0);
+            $vendorShipping['total'] = Money::number(max(0, $vendorShipping['total'] - $oldShipping + $quote['shipping_fee']));
             $vendorShipping['per_vendor'][$vendorId]['shipping'] = $quote['shipping_fee'];
             $vendorShipping['per_vendor'][$vendorId]['international'] = true;
             $vendorShipping['per_vendor'][$vendorId]['international_carrier_id'] = $quote['carrier_id'];
@@ -192,7 +193,7 @@ class CheckoutController extends Controller
             $vendorShipping['per_vendor'][$vendorId]['international_eta_min_days'] = $quote['min_eta_days'];
             $vendorShipping['per_vendor'][$vendorId]['international_eta_max_days'] = $quote['max_eta_days'];
 
-            $customsDutyCents += $quote['customs_fee'];
+            $customsDutyCents = Money::number($customsDutyCents + $quote['customs_fee']);
         }
 
         return $customsDutyCents;
@@ -207,7 +208,7 @@ class CheckoutController extends Controller
      * coupon.funded_by — same vendor_coupon_cost/platform_coupon_cost split
      * P-03 already computes for the merchandise discount).
      */
-    private function applyFreeShippingDiscount(?Coupon $coupon, array $couponResult, array &$vendorShipping): int
+    private function applyFreeShippingDiscount(?Coupon $coupon, array $couponResult, array &$vendorShipping): int|float
     {
         if (! $coupon) {
             return 0;
@@ -225,11 +226,12 @@ class CheckoutController extends Controller
 
         $eligibleShipping = 0;
         foreach ($sellerParties as $sp) {
-            $eligibleShipping += (int) ($vendorShipping['per_vendor'][$sp]['shipping'] ?? 0);
+            $eligibleShipping += (float) ($vendorShipping['per_vendor'][$sp]['shipping'] ?? 0);
         }
+        $eligibleShipping = Money::number($eligibleShipping);
 
         $shippingDiscount = $coupon->max_discount !== null
-            ? min($eligibleShipping, (int) $coupon->max_discount)
+            ? min($eligibleShipping, $coupon->max_discount)
             : $eligibleShipping;
 
         if ($shippingDiscount <= 0) {
@@ -241,15 +243,15 @@ class CheckoutController extends Controller
             if ($remaining <= 0) {
                 break;
             }
-            $current = (int) ($vendorShipping['per_vendor'][$sp]['shipping'] ?? 0);
+            $current = Money::number($vendorShipping['per_vendor'][$sp]['shipping'] ?? 0);
             $reduce = min($current, $remaining);
             if ($reduce > 0) {
-                $vendorShipping['per_vendor'][$sp]['shipping'] = $current - $reduce;
-                $remaining -= $reduce;
+                $vendorShipping['per_vendor'][$sp]['shipping'] = Money::number($current - $reduce);
+                $remaining = Money::number($remaining - $reduce);
             }
         }
 
-        $vendorShipping['total'] = max(0, (int) $vendorShipping['total'] - $shippingDiscount);
+        $vendorShipping['total'] = Money::number(max(0, $vendorShipping['total'] - $shippingDiscount));
 
         return $shippingDiscount;
     }
@@ -408,8 +410,8 @@ class CheckoutController extends Controller
                 ? $this->calculationService->calculateShipping($address, $country, $methodId, $groupItems->all(), $isCod)
                 : ['fee' => 0, 'cod_extra_fee' => 0, 'is_free' => true, 'cod_available' => false];
 
-            $totalShippingFee += $calc['fee'];
-            $codExtraFee += $calc['cod_extra_fee'];
+            $totalShippingFee = Money::number($totalShippingFee + $calc['fee']);
+            $codExtraFee = Money::number($codExtraFee + $calc['cod_extra_fee']);
             $shippingGroups[$methodId] = array_merge($calc, ['method' => $method]);
         }
 
@@ -462,7 +464,7 @@ class CheckoutController extends Controller
             $coupon = $cart->coupon;
         }
 
-        $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+        $subtotal = Money::number(round(collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity), 2));
         $hasAffiliatePromo = (bool) $cart->affiliate_promo_code_id;
         $freeShippingDiscountCents = 0;
 
@@ -496,7 +498,7 @@ class CheckoutController extends Controller
 
                 if (! $promoResult['error'] && $promoResult['discount'] > 0) {
                     $discountCents += $promoResult['discount'];
-                    $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => $i->unit_price * $i->quantity])->all();
+                    $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => round($i->unit_price * $i->quantity, 2)])->all();
                     foreach ($this->pricingEngine->allocateProRata($promoResult['discount'], $weights) as $k => $v) {
                         $discountAllocations[$k] = ($discountAllocations[$k] ?? 0) + $v;
                     }
@@ -550,7 +552,7 @@ class CheckoutController extends Controller
                 'type' => $cpg->gateway?->type,
                 'is_redirect' => in_array($cpg->gateway?->code, ['thawani', 'paytabs']),
                 'fee_pct' => (float) $cpg->fee_pct,
-                'fee_fixed' => (int) $cpg->fee_fixed,
+                'fee_fixed' => Money::number($cpg->fee_fixed),
                 'is_configured' => $cpg->is_configured,
                 'environment' => $cpg->environment,
                 'image_url' => $cpg->gateway?->image
@@ -594,7 +596,7 @@ class CheckoutController extends Controller
             'order_summary' => $summary,
             'shipping' => [
                 'total_fee' => $vendorShipping['total'],
-                'is_free' => $vendorShipping['total'] === 0,
+                'is_free' => $vendorShipping['total'] == 0,
                 'groups' => collect($shippingGroups)->map(fn ($g, $id) => [
                     'shipping_method_id' => $id,
                     'method_name' => $g['method']?->name,
@@ -604,7 +606,7 @@ class CheckoutController extends Controller
                     'estimated_delivery_days_max' => $g['method']?->max_delivery_days,
                 ])->values(),
                 'delivery_fee' => $vendorShipping['total'],
-                'is_free_delivery' => $vendorShipping['total'] === 0,
+                'is_free_delivery' => $vendorShipping['total'] == 0,
                 'vendor_delivery' => $vendorDeliveryResponse,
             ],
             'address' => new CheckoutAddressResource($address, $country),
@@ -848,7 +850,7 @@ class CheckoutController extends Controller
             $cart->currency,
         );
 
-        $subtotal = (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity);
+        $subtotal = Money::number(round(collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity), 2));
         $hasAffiliatePromo = (bool) $cart->affiliate_promo_code_id;
 
         $coupon = null;
@@ -891,7 +893,7 @@ class CheckoutController extends Controller
 
                 if (! $promoResult['error'] && $promoResult['discount'] > 0) {
                     $discountCents += $promoResult['discount'];
-                    $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => $i->unit_price * $i->quantity])->all();
+                    $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => round($i->unit_price * $i->quantity, 2)])->all();
                     foreach ($this->pricingEngine->allocateProRata($promoResult['discount'], $weights) as $k => $v) {
                         $discountAllocations[$k] = ($discountAllocations[$k] ?? 0) + $v;
                     }
@@ -941,7 +943,7 @@ class CheckoutController extends Controller
             }
 
             if ($loyaltyDiscount > 0) {
-                $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => $i->unit_price * $i->quantity])->all();
+                $weights = collect($cartItems)->mapWithKeys(fn ($i) => [$i->id => round($i->unit_price * $i->quantity, 2)])->all();
                 $loyaltyAllocations = $this->pricingEngine->allocateProRata($loyaltyDiscount, $weights);
             }
         }
@@ -968,9 +970,9 @@ class CheckoutController extends Controller
         // Computed once here (outside the transaction, alongside everything
         // else place-order prices) and persisted as-is below, the same
         // pattern P-01 established for tax/discount.
-        $chargedShippingByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => (int) $v['shipping'])->all();
-        $vendorContributionByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => (int) $v['vendor_contribution'])->all();
-        $adminSubsidyByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => (int) $v['platform_subsidy'])->all();
+        $chargedShippingByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => Money::number($v['shipping']))->all();
+        $vendorContributionByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => Money::number($v['vendor_contribution']))->all();
+        $adminSubsidyByGroup = collect($vendorShipping['per_vendor'])->map(fn ($v) => Money::number($v['platform_subsidy']))->all();
         // raw_fee is only resolved for FBP lines that went through
         // ShippingSubsidyService (see resolveVendorShipping) — for FBN /
         // admin-listing groups there is no independent carrier quote in
@@ -980,14 +982,14 @@ class CheckoutController extends Controller
         // here).
         $carrierRawFeeByGroup = collect($vendorShipping['per_vendor'])
             ->filter(fn ($v) => ($v['raw_fee'] ?? 0) > 0)
-            ->map(fn ($v) => (int) $v['raw_fee'])
+            ->map(fn ($v) => Money::number($v['raw_fee']))
             ->all();
 
         // Same wallet-amount resolution place-order uses later (line ~1032)
         // to decide how much of the order is actually settled through the
         // card gateway (D4: gateway fee is only charged on that portion).
-        $walletAmountForGatewayCents = (int) ($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $pricedCart->total : 0));
-        $amountDueGatewayCents = ($isCod || $isWallet) ? 0 : max(0, $pricedCart->total - $walletAmountForGatewayCents);
+        $walletAmountForGatewayCents = Money::number($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $pricedCart->total : 0));
+        $amountDueGatewayCents = ($isCod || $isWallet) ? 0 : Money::number(max(0, $pricedCart->total - $walletAmountForGatewayCents));
 
         $moneySplit = $this->pricingEngine->computeMoneySplit(
             items: $cartItems,
@@ -999,7 +1001,7 @@ class CheckoutController extends Controller
             carrierRawFeeByGroup: $carrierRawFeeByGroup,
             chargedShippingByGroup: $chargedShippingByGroup,
             gatewayFeePct: $isCod ? 0.0 : (float) $methodConfig->fee_pct,
-            gatewayFeeFixed: $isCod ? 0 : (int) $methodConfig->fee_fixed,
+            gatewayFeeFixed: $isCod ? 0 : Money::number($methodConfig->fee_fixed),
             amountDueGatewayCents: $amountDueGatewayCents,
             isCod: $isCod,
             codFeeCents: $codFeeCents,
@@ -1170,7 +1172,7 @@ class CheckoutController extends Controller
                         : null;
                     $subOrderShippingMethodId = $items->first()->selected_shipping_method_id;
                     $subOrderShippingMethod = $resolveShippingMethod($subOrderShippingMethodId);
-                    $vendorSubtotal = (int) $items->sum(fn ($i) => $i->unit_price * $i->quantity);
+                    $vendorSubtotal = Money::number(round($items->sum(fn ($i) => $i->unit_price * $i->quantity), 2));
                     $fulfillmentModel = $firstSource->fulfillmentModel;
 
                     $vendorShippingCents = $vendorShippingMap[$sellerParty]['shipping'] ?? 0;
@@ -1234,7 +1236,7 @@ class CheckoutController extends Controller
                                 'commission_fixed' => 0,
                                 'commission_amount' => 0,
                                 'commission_category_id' => null,
-                                'vendor_payout_share' => $cartItem->unit_price * $cartItem->quantity,
+                                'vendor_payout_share' => round($cartItem->unit_price * $cartItem->quantity, 2),
                             ];
                         }
                         $lineSplit = $groupSplit['lines'][$cartItem->id] ?? null;
@@ -1352,13 +1354,13 @@ class CheckoutController extends Controller
                         $listing = $itemSource->fulfilmentListing;
                         $commission = $itemCommissions[$cartItem->id];
                         $pricedLine = $pricedLinesByItemId[$cartItem->id] ?? null;
-                        $lineSubtotal = $pricedLine?->lineSubtotal ?? ($cartItem->unit_price * $cartItem->quantity);
+                        $lineSubtotal = $pricedLine?->lineSubtotal ?? round($cartItem->unit_price * $cartItem->quantity, 2);
                         $lineDiscount = $pricedLine?->lineDiscount ?? 0;
                         // D2: tax = round((line_subtotal - line_discount) * vat%),
                         // computed once by CheckoutPricingEngine and persisted as-is
                         // (no recalculation here — enhancement.md P-01 task 4).
                         $lineTax = $pricedLine?->lineTax ?? 0;
-                        $lineTotal = $lineSubtotal - $lineDiscount + $lineTax;
+                        $lineTotal = Money::number(round($lineSubtotal - $lineDiscount + $lineTax, 4));
 
                         $itemShippingMethod = $resolveShippingMethod($cartItem->selected_shipping_method_id);
                         $itemShippingMethodSnapshot = $itemShippingMethod
@@ -1478,7 +1480,7 @@ class CheckoutController extends Controller
                     $subOrders[] = $subOrder;
                 }
 
-                $walletAmountToUse = (int) ($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $order->total : 0));
+                $walletAmountToUse = Money::number($validated['wallet_amount_used'] ?? $validated['wallet_amount_to_use'] ?? ($isWallet ? $order->total : 0));
                 if ($walletAmountToUse > 0) {
                     $wallet = Wallet::where('owner_type', WalletOwnerType::Customer)
                         ->where('owner_id', $customer->id)
@@ -1656,7 +1658,7 @@ class CheckoutController extends Controller
             // gateway only for what the wallet didn't already cover —
             // charging $order->total here double-charged the customer for
             // the wallet portion applyWalletToOrder() already debited above.
-            $gatewayAmountCents = max(0, $order->total - (int) $result['wallet_amount_used']);
+            $gatewayAmountCents = Money::number(max(0, round((float) $order->total - (float) $result['wallet_amount_used'], 4)));
             try {
                 $paymentResult = $this->paymentService->initiatePayment($order, $methodConfig, $validated['idempotency_key'], $gatewayAmountCents);
                 if (! $paymentResult->success) {
@@ -1834,16 +1836,16 @@ class CheckoutController extends Controller
      * on top for each cart line whose fulfilling warehouse has one configured.
      *
      * @param  array<CartItem>  $cartItems
-     * @return array{total: int, per_vendor: array<string, array{shipping: int, surcharge: int, raw_fee: int, platform_subsidy: int, vendor_contribution: int, billable_weight_grams: int, is_free_by_platform: bool, is_free_by_vendor: bool}>}
+     * @return array{total: int|float, per_vendor: array<string, array{shipping: int|float, surcharge: int|float, raw_fee: int|float, platform_subsidy: int|float, vendor_contribution: int|float, billable_weight_grams: int, is_free_by_platform: bool, is_free_by_vendor: bool}>}
      */
     private function resolveVendorShipping(
         array $cartItems,
         array $cartLineSources,
-        int $baseFeeCents,
+        int|float $baseFeeCents,
         ?ShippingZone $zone = null,
         ?ShippingMethod $method = null,
     ): array {
-        $subtotalAll = max(1, (int) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity));
+        $subtotalAll = max(0.01, (float) collect($cartItems)->sum(fn ($i) => $i->unit_price * $i->quantity));
         // Group by seller_party (vendor id, or 'platform' for admin-listing /
         // platform-fulfilled marketer lines) rather than the raw
         // vendorListing relation, so admin and marketer lines are grouped
@@ -1854,7 +1856,7 @@ class CheckoutController extends Controller
         $perVendor = [];
 
         foreach ($grouped as $vendorId => $items) {
-            $vendorSubtotal = (int) $items->sum(fn ($i) => $i->unit_price * $i->quantity);
+            $vendorSubtotal = Money::number(round($items->sum(fn ($i) => $i->unit_price * $i->quantity), 2));
             $firstSource = $cartLineSources[$items->first()->id];
             $isPlatform = $firstSource->isAdminSeller();
             $firstListing = $firstSource->fulfilmentListing;
@@ -1870,28 +1872,28 @@ class CheckoutController extends Controller
             } elseif ($isFbp) {
                 // No resolvable zone/method (should not happen once an address is set) - fall back
                 // to the previous proportional split so shipping is never silently dropped.
-                $vendorBaseShippingCents = (int) round($baseFeeCents * ($vendorSubtotal / $subtotalAll));
+                $vendorBaseShippingCents = Money::number(round($baseFeeCents * ($vendorSubtotal / $subtotalAll), 2));
             }
 
             $surchargeCents = 0;
             if ($isFbp) {
                 foreach ($items as $cartItem) {
                     $warehouseId = $this->resolveCartItemWarehouseId($cartLineSources[$cartItem->id]);
-                    $surchargeCents += $this->cityShippingSurchargeService->resolveSurcharge($vendorId, $warehouseId);
+                    $surchargeCents = Money::number($surchargeCents + $this->cityShippingSurchargeService->resolveSurcharge($vendorId, $warehouseId));
                 }
             } elseif ($isFbn) {
                 // Configurable base fee — defaults to 0 (free, platform bears the cost)
                 // until a business decision sets FBN_BASE_SHIPPING_FEE.
-                $vendorBaseShippingCents = (int) config('checkout.fbn_base_shipping_fee', 0);
+                $vendorBaseShippingCents = Money::number(config('checkout.fbn_base_shipping_fee', 0));
 
                 foreach ($items as $cartItem) {
                     $warehouseId = $this->resolveCartItemWarehouseId($cartLineSources[$cartItem->id]);
-                    $surchargeCents += $this->warehouseShippingSurchargeService->resolveSurcharge($warehouseId);
+                    $surchargeCents = Money::number($surchargeCents + $this->warehouseShippingSurchargeService->resolveSurcharge($warehouseId));
                 }
             }
 
-            $vendorShippingCents = $vendorBaseShippingCents + $surchargeCents;
-            $totalCents += $vendorShippingCents;
+            $vendorShippingCents = Money::number($vendorBaseShippingCents + $surchargeCents);
+            $totalCents = Money::number($totalCents + $vendorShippingCents);
 
             $perVendor[$vendorId] = [
                 'shipping' => $vendorShippingCents,
@@ -1916,7 +1918,7 @@ class CheckoutController extends Controller
     {
         if ($vendorShipping['shipping'] > 0) {
             return __('common.exceptions.checkout.delivery_platform_covered', [
-                'amount' => $vendorShipping['platform_subsidy'],
+                'amount' => Money::format($vendorShipping['platform_subsidy']),
             ]);
         }
 

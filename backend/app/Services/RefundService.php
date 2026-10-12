@@ -12,6 +12,7 @@ use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Notifications\Customer\WalletCredited;
 use App\Services\Customer\CheckoutWalletService;
+use App\Support\Money;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -151,10 +152,10 @@ class RefundService
                 }
 
                 if ($liability === 'customer') {
-                    $gatewayFeeDeducted = (int) round(
-                        ((int) $originalTransaction->gateway_fee) * ($grossAmount / max(1, (int) $originalTransaction->amount))
+                    $gatewayFeeDeducted = Money::round(
+                        ((float) $originalTransaction->gateway_fee) * ($grossAmount / max(0.01, (float) $originalTransaction->amount))
                     );
-                    $taxDeducted = (int) round($gatewayFeeDeducted * self::GATEWAY_FEE_TAX_RATE);
+                    $taxDeducted = Money::round($gatewayFeeDeducted * self::GATEWAY_FEE_TAX_RATE);
                 }
             }
 
@@ -212,7 +213,7 @@ class RefundService
      */
     public function settle(Refund $refund, Order $order, string $resolvedDestination, ?PaymentTransaction $originalTransaction = null, bool $reverseLedger = true): void
     {
-        $netAmount = (int) $refund->net_refund;
+        $netAmount = Money::number($refund->net_refund);
 
         try {
             if ($resolvedDestination === 'gateway') {
@@ -300,7 +301,7 @@ class RefundService
     }
 
     /**
-     * @return array{0: int, 1: ?string, 2: string} [grossAmountCents, subOrderId, refundType]
+     * @return array{0: int|float, 1: ?string, 2: string} [grossAmountCents, subOrderId, refundType]
      */
     private function computeAmount(Order $order, RefundScope $scope, string $liability): array
     {
@@ -311,7 +312,7 @@ class RefundService
         $subOrder = SubOrder::where('id', $scope->subOrderId)->where('order_id', $order->id)->firstOrFail();
 
         if ($scope->kind === RefundScope::KIND_SHIPPING) {
-            return [(int) $subOrder->shipping, $subOrder->id, 'shipping_only'];
+            return [Money::number($subOrder->shipping), $subOrder->id, 'shipping_only'];
         }
 
         // KIND_ITEMS
@@ -332,7 +333,7 @@ class RefundService
                 continue;
             }
 
-            $amount += $this->lineShare($item, min($qtyRequested, (int) $item->quantity));
+            $amount = Money::number($amount + $this->lineShare($item, min($qtyRequested, (int) $item->quantity)));
         }
 
         // Any item not even mentioned in the scope also blocks "every item
@@ -345,7 +346,7 @@ class RefundService
 
         $includeShipping = $everyItemFullyRefunded || in_array($liability, ['seller', 'platform', 'carrier'], true);
         if ($includeShipping) {
-            $amount += (int) $subOrder->shipping;
+            $amount = Money::number($amount + (float) $subOrder->shipping);
         }
 
         $isFullSubOrder = $everyItemFullyRefunded;
@@ -358,17 +359,17 @@ class RefundService
      * CheckoutPricingEngine at place-order) pro-rated to the quantity
      * actually being refunded.
      */
-    private function lineShare(OrderItem $item, int $qty): int
+    private function lineShare(OrderItem $item, int $qty): int|float
     {
         if ((int) $item->quantity <= 0) {
             return 0;
         }
 
         if ($qty >= (int) $item->quantity) {
-            return (int) $item->line_total;
+            return Money::number($item->line_total);
         }
 
-        return (int) round((float) bcdiv(bcmul($item->line_total, (string) $qty, 4), (string) $item->quantity, 4));
+        return Money::number(round((float) bcdiv(bcmul((string) $item->line_total, (string) $qty, 4), (string) $item->quantity, 4), 2));
     }
 
     private function mapReason(string $reason): string
@@ -382,7 +383,7 @@ class RefundService
 
     private function updateOrderPaymentStatus(Order $order): void
     {
-        $totalRefunded = (int) Refund::where('order_id', $order->id)
+        $totalRefunded = (float) Refund::where('order_id', $order->id)
             ->where('status', 'completed')
             ->sum('amount');
 
@@ -390,7 +391,7 @@ class RefundService
             return;
         }
 
-        $newStatus = $totalRefunded >= (int) $order->total ? 'refunded' : 'partially_refunded';
+        $newStatus = $totalRefunded + 0.00005 >= (float) $order->total ? 'refunded' : 'partially_refunded';
         $order->update(['payment_status' => $newStatus]);
     }
 
@@ -412,6 +413,6 @@ class RefundService
             return;
         }
 
-        $this->ledgerService->reversePartialCapture($order, (int) $refund->amount, (string) $refund->id, "Refund {$refund->id}");
+        $this->ledgerService->reversePartialCapture($order, Money::number($refund->amount), (string) $refund->id, "Refund {$refund->id}");
     }
 }

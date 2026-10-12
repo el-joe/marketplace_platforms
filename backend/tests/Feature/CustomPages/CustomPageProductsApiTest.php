@@ -4,10 +4,13 @@ namespace Tests\Feature\CustomPages;
 
 use App\Models\Category;
 use App\Models\CustomPage;
+use App\Models\MarketerListing;
 use App\Models\Slug;
+use App\Models\VendorListing;
 use App\Services\CustomPageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
 
@@ -16,6 +19,7 @@ class CustomPageProductsApiTest extends TestCase
     use RefreshDatabase;
 
     private MarketplaceScenario $s;
+
     private string $base;
 
     protected function setUp(): void
@@ -31,11 +35,12 @@ class CustomPageProductsApiTest extends TestCase
     private function page(array $a = [], array $cats = []): string
     {
         $p = CustomPage::create($a + ['name_en' => 'P', 'name_ar' => 'ص', 'is_active' => true, 'has_filters' => true]);
-        $slug = "pg-" . strtolower(\Illuminate\Support\Str::random(10));
+        $slug = 'pg-'.strtolower(Str::random(10));
         Slug::create(['slug_url' => $slug, 'sluggable_type' => CustomPage::class, 'sluggable_id' => $p->id] + $this->slugExtras());
         if ($cats) {
             app(CustomPageService::class)->syncCategories($p, $cats);
         }
+
         return $slug;
     }
 
@@ -46,12 +51,21 @@ class CustomPageProductsApiTest extends TestCase
 
     private function api(string $slug, array $q = [])
     {
-        return $this->getJson($this->base . '?' . http_build_query(['category' => $slug] + $q));
+        return $this->getJson($this->base.'?'.http_build_query(['category' => $slug] + $q));
     }
 
+    /**
+     * Which listing tables the page served. Resolved from the listing id, not the card's `listing_type`
+     * label: that label shows Express (FBN) vendor listings as `admin` (global_system_type), which is a
+     * display classification and not the page's listing-type filter under test.
+     */
     private function types($r): array
     {
-        return collect($r->json('data.items'))->pluck('listing_type')->unique()->sort()->values()->all();
+        return collect($r->json('data.items'))->pluck('listing_id')->map(fn ($id) => match (true) {
+            VendorListing::whereKey($id)->exists() => 'vendor',
+            MarketerListing::whereKey($id)->exists() => 'marketer',
+            default => 'admin',
+        })->unique()->sort()->values()->all();
     }
 
     public function test_admin_only(): void
@@ -90,7 +104,7 @@ class CustomPageProductsApiTest extends TestCase
     {
         $slug = $this->page([], [$this->s->category->id]);
         $this->assertSame(4, $this->api($slug)->assertOk()->json('data.meta.total'));
-        $other = Category::create(['id' => (string) \Illuminate\Support\Str::uuid(), 'slug' => 'oth-' . uniqid(), 'name_en' => 'O', 'name_ar' => 'O', 'is_active' => true]);
+        $other = Category::create(['id' => (string) Str::uuid(), 'slug' => 'oth-'.uniqid(), 'name_en' => 'O', 'name_ar' => 'O', 'is_active' => true]);
         $this->assertSame(0, $this->api($this->page([], [$other->id]))->assertOk()->json('data.meta.total'));
         $r = $this->api($this->page())->assertOk();
         $this->assertSame(0, $r->json('data.meta.total'));
@@ -103,7 +117,8 @@ class CustomPageProductsApiTest extends TestCase
         $r = $this->api($slug, ['price_min' => 1100, 'price_max' => 5000])->assertOk();
         $this->assertSame(1, $r->json('data.meta.total')); // vendor fbn 1200 only
         $asc = collect($this->api($slug, ['sort' => 'price_asc'])->json('data.items'))->pluck('price')->all();
-        $sorted = $asc; sort($sorted);
+        $sorted = $asc;
+        sort($sorted);
         $this->assertSame($sorted, $asc);
         $desc = collect($this->api($slug, ['sort' => 'price_desc'])->json('data.items'))->pluck('price')->all();
         $this->assertSame(array_reverse($sorted), $desc);

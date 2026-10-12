@@ -40,10 +40,10 @@
 
     {{-- ─── Stats ────────────────────────────────────────────────────────────────── --}}
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        <x-stat-card title="{{ __('admin.ad_slots.total_slots') }}" :value="number_format($stats['total'])" iconBg="bg-gray-100 text-gray-600" />
+        <x-stat-card title="{{ __('admin.ad_slots.total_slots') }}" :value="\App\Support\Money::format($stats['total'])" iconBg="bg-gray-100 text-gray-600" />
         <x-stat-card title="{{ __('admin.ad_slots.available') }}" :value="number_format($stats['available'])"
             iconBg="bg-success-100 text-success-600" />
-        <x-stat-card title="{{ __('admin.ad_slots.unavailable') }}" :value="number_format($stats['total'] - $stats['available'])"
+        <x-stat-card title="{{ __('admin.ad_slots.unavailable') }}" :value="\App\Support\Money::format($stats['total'] - $stats['available'])"
             iconBg="bg-warning-100 text-warning-600" />
     </div>
 

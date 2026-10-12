@@ -7,7 +7,7 @@ readonly class PaymentVerificationResult
     public function __construct(
         public bool    $success,
         public string  $status,  // 'succeeded'|'pending'|'failed'|'cancelled'
-        public int     $amountCents,
+        public int|float $amountCents,
         public string  $currency,
         public ?string $gatewayTransactionId = null,
         public ?string $failureCode = null,

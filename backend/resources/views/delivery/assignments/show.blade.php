@@ -25,7 +25,7 @@
         $items = $assignment->subOrder?->items ?? collect();
         $customer = $order?->customer;
         $isCod = $order?->payment_method === 'cod';
-        $expectedCodCents = $isCod ? (int) ($order->total ?? 0) : 0;
+        $expectedCodCents = $isCod ? ($order->total ?? 0) : 0;
     @endphp
 
     {{-- ── Status + Order Number ───────────────────────────────────────────────── --}}
@@ -181,7 +181,7 @@
                                 {{ __('delivery.cod.collected_amount') }}
                             </label>
                             <input type="number" id="cod-amount-input" x-model.number="codAmountCollected"
-                                min="0" step="1"
+                                min="0" step="0.01"
                                 placeholder="{{ number_format($expectedCodCents, 2) }}"
                                 class="w-full bg-slate-700 text-slate-100 rounded-xl p-3 text-center text-xl font-bold border-2 border-slate-600 focus:border-yellow-400 focus:outline-none transition-colors"
                                 inputmode="decimal">

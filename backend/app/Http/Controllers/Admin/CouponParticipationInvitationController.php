@@ -90,7 +90,7 @@ class CouponParticipationInvitationController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'max_participants' => ['required', 'integer', 'min:1'],
-            'min_fee_amount' => ['required', 'integer', 'min:0'],
+            'min_fee_amount' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
             'currency' => ['required', 'string', Rule::exists('currencies', 'code')->where('is_active', true)],
             'registration_deadline' => ['required', 'date', 'after:now'],
         ]);

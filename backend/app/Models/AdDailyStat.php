@@ -24,6 +24,11 @@ class AdDailyStat extends Model
         'average_position',
     ];
 
+    protected $casts = [
+        'spend' => \App\Casts\DecimalMoney::class,
+        'revenue_attributed' => \App\Casts\DecimalMoney::class,
+    ];
+
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(AdCampaign::class, 'ad_campaign_id');

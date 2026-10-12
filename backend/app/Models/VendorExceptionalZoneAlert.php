@@ -33,7 +33,7 @@ class VendorExceptionalZoneAlert extends Model
 
     protected $casts = [
         'city_ids' => 'array',
-        'reported_carrier_fee' => 'integer',
+        'reported_carrier_fee' => \App\Casts\DecimalMoney::class,
         'reviewed_at' => 'datetime',
     ];
 

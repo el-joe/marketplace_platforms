@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\City;
-use App\Models\CustomerSpecialRequest;
 use App\Models\Customer;
+use App\Models\CustomerSpecialRequest;
 use App\Models\Marketer;
 use App\Models\MarketerAdmin;
+use App\Models\MarketerJob;
+use App\Models\MarketerMarketerJob;
 use App\Models\MarketerProfile;
 use App\Notifications\Marketer\BrokerSpecialRequestNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +25,9 @@ class SpecialRequestRoutingTest extends TestCase
     use RefreshDatabase;
 
     private MarketplaceScenario $s;
+
     private City $cityY;
+
     private Category $otherCategory;
 
     protected function setUp(): void
@@ -31,27 +35,31 @@ class SpecialRequestRoutingTest extends TestCase
         parent::setUp();
         Notification::fake();
         $this->s = MarketplaceScenario::make()->build();
-        $this->s->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
+        $this->s->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
         $this->cityY = City::create([
             'country_id' => $this->s->country->id, 'name_ar' => 'ابوظبي', 'name_en' => 'Abu Dhabi',
             'shipping_zone_id' => $this->s->shippingZone->id, 'is_active' => true, 'cod_available' => true,
         ]);
         $this->otherCategory = Category::factory()->create();
-        RateLimiter::clear('special-request:' . $this->s->customer->id);
+        RateLimiter::clear('special-request:'.$this->s->customer->id);
     }
 
     private function broker(array $profile = [], array $marketer = []): MarketerAdmin
     {
         $m = Marketer::create(array_merge([
-            'name' => 'B ' . Str::random(4), 'email' => Str::random(8) . '@example.test',
-            'phone' => '+9715' . fake()->numerify('########'), 'marketer_type' => 'affiliate',
+            'name' => 'B '.Str::random(4), 'email' => Str::random(8).'@example.test',
+            'phone' => '+9715'.fake()->numerify('########'), 'marketer_type' => 'affiliate',
             'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(),
             'onboarding_completed_at' => now(),
         ], $marketer));
         MarketerProfile::create(array_merge(['marketer_id' => $m->id], $profile));
+        // The job (marketer_jobs pivot), not the legacy marketer_type column, decides affiliate/influencer.
+        $key = $marketer['marketer_type'] ?? 'affiliate';
+        $job = MarketerJob::firstOrCreate(['key' => $key], ['name_ar' => $key, 'name_en' => $key, 'is_active' => true, 'sort_order' => 1]);
+        MarketerMarketerJob::create(['marketer_id' => $m->id, 'marketer_job_id' => $job->id]);
 
         return MarketerAdmin::create([
-            'marketer_id' => $m->id, 'name' => 'A', 'email' => Str::random(8) . '@example.test',
+            'marketer_id' => $m->id, 'name' => 'A', 'email' => Str::random(8).'@example.test',
             'password' => Hash::make('password'), 'is_owner' => true, 'is_active' => true,
         ]);
     }
@@ -127,7 +135,7 @@ class SpecialRequestRoutingTest extends TestCase
     {
         $a1 = $this->broker(['broker_category_id' => $this->s->category->id, 'broker_serves_all_cities' => true]);
         $a2 = MarketerAdmin::create([
-            'marketer_id' => $a1->marketer_id, 'name' => 'A2', 'email' => Str::random(8) . '@example.test',
+            'marketer_id' => $a1->marketer_id, 'name' => 'A2', 'email' => Str::random(8).'@example.test',
             'password' => Hash::make('password'), 'is_owner' => false, 'is_active' => true,
         ]);
 
@@ -182,7 +190,7 @@ class SpecialRequestRoutingTest extends TestCase
     public function test_customer_cannot_read_or_close_other_customers_request(): void
     {
         $other = Customer::create([
-            'name' => 'O', 'email' => Str::random(8) . '@example.test', 'phone' => '+9715' . fake()->numerify('########'),
+            'name' => 'O', 'email' => Str::random(8).'@example.test', 'phone' => '+9715'.fake()->numerify('########'),
             'password' => Hash::make('password'), 'country_id' => $this->s->country->id, 'status' => 'active',
         ]);
         $r = $this->req(null, null, 'open', $other);

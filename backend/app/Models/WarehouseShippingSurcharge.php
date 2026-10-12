@@ -22,6 +22,7 @@ class WarehouseShippingSurcharge extends Model
     protected function casts(): array
     {
         return [
+            'extra_amount_cents' => \App\Casts\DecimalMoney::class,
             'is_active' => 'boolean',
         ];
     }

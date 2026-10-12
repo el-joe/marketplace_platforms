@@ -103,7 +103,7 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
         $billingCutoff = $month->copy()->endOfMonth();
 
         foreach ($inventories as $inv) {
-            $rateCents = (int) ($inv->rate_per_unit ?? 0);
+            $rateCents = round((float) ($inv->rate_per_unit ?? 0), 4);
             if ($rateCents <= 0) {
                 $skipped++;
 
@@ -160,7 +160,7 @@ class GenerateFbnStorageFeesJob implements ShouldQueue
                 ? ((float) $inv->declared_length_cm * (float) $inv->declared_width_cm * (float) $inv->declared_height_cm) / 1_000_000
                 : 0;
 
-            $totalCents = $withinFree ? 0 : (int) round($volumeM3 * $rateCents * $inv->quantity_on_hand);
+            $totalCents = $withinFree ? 0 : round($volumeM3 * $rateCents * $inv->quantity_on_hand, 2);
 
             try {
                 FbnStorageFee::updateOrCreate(

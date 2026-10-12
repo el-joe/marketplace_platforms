@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Money;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\Currency;
@@ -77,13 +78,13 @@ class FinancialReportController extends Controller
                 'currency_code'   => $currency,
                 'is_launched'     => $country->is_launched,
                 'order_count'     => $rev ? (int) $rev->order_count : 0,
-                'revenue'   => $rev ? (int) $rev->total : 0,
-                'commission'      => $com ? (int) $com->commission : 0,
-                'gateway_fee'     => $gwf ? (int) $gwf->gateway_fee : 0,
-                'vat'             => $vatR ? (int) $vatR->collected_vat : 0,
+                'revenue'   => $rev ? Money::number($rev->total) : 0,
+                'commission'      => $com ? Money::number($com->commission) : 0,
+                'gateway_fee'     => $gwf ? Money::number($gwf->gateway_fee) : 0,
+                'vat'             => $vatR ? Money::number($vatR->collected_vat) : 0,
                 'vat_discrepancy' => $vatR?->has_vat_discrepancy ?? false,
-                'marketer'        => $mkt ? (int) $mkt->net : 0,
-                'ad_revenue'      => $ad ? (int) $ad->spend : 0,
+                'marketer'        => $mkt ? Money::number($mkt->net) : 0,
+                'ad_revenue'      => $ad ? Money::number($ad->spend) : 0,
             ];
         });
 
@@ -179,12 +180,12 @@ class FinancialReportController extends Controller
 
             $fmt = fn($amount) => number_format($amount, 2, '.', '');
 
-            $revCents = $rev ? (int) $rev->total : 0;
-            $comCents = $com ? (int) $com->commission : 0;
-            $gwfCents = $gwf ? (int) $gwf->gateway_fee : 0;
-            $vatCents = $vatR ? (int) $vatR->collected_vat : 0;
-            $mktCents = $mkt ? (int) $mkt->net : 0;
-            $adCents  = $ad ? (int) $ad->spend : 0;
+            $revCents = $rev ? Money::number($rev->total) : 0;
+            $comCents = $com ? Money::number($com->commission) : 0;
+            $gwfCents = $gwf ? Money::number($gwf->gateway_fee) : 0;
+            $vatCents = $vatR ? Money::number($vatR->collected_vat) : 0;
+            $mktCents = $mkt ? Money::number($mkt->net) : 0;
+            $adCents  = $ad ? Money::number($ad->spend) : 0;
 
             $rows->push([
                 $country->name_en,

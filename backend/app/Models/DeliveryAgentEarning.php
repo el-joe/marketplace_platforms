@@ -26,7 +26,7 @@ class DeliveryAgentEarning extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'integer',
+            'amount' => \App\Casts\DecimalMoney::class,
             'paid_at' => 'datetime',
             'status' => DeliveryAgentEarningStatus::class,
         ];

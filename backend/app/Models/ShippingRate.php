@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,14 +32,14 @@ class ShippingRate extends Model
 
     protected $casts = [
         "is_active" => "boolean",
-        "base_fee" => "integer",
-        "carrier_rate" => "integer",
-        "carrier_rate_per_kg" => "integer",
-        "rate_per_kg" => "integer",
+        "base_fee" => \App\Casts\DecimalMoney::class,
+        "carrier_rate" => \App\Casts\DecimalMoney::class,
+        "carrier_rate_per_kg" => \App\Casts\DecimalMoney::class,
+        "rate_per_kg" => \App\Casts\DecimalMoney::class,
         "min_weight_grams" => "integer",
         "volumetric_divisor" => "integer",
-        "free_shipping_threshold" => "integer",
-        "cod_extra_fee" => "integer",
+        "free_shipping_threshold" => \App\Casts\DecimalMoney::class,
+        "cod_extra_fee" => \App\Casts\DecimalMoney::class,
     ];
 
     public function originZone(): BelongsTo
@@ -83,9 +84,9 @@ class ShippingRate extends Model
             : null;
     }
 
-    public function getGapAttribute(): int
+    public function getGapAttribute(): int|float
     {
-        return max(0, $this->carrier_rate - $this->base_fee);
+        return Money::number(max(0, round($this->carrier_rate - $this->base_fee, 2)));
     }
 
     public function hasGap(): bool
@@ -93,19 +94,19 @@ class ShippingRate extends Model
         return $this->gap > 0;
     }
 
-    public function calculateCost(int $weightGrams, bool $isCod = false): int
+    public function calculateCost(int $weightGrams, bool $isCod = false): int|float
     {
         $base = $this->base_fee;
         $weightKg = $weightGrams / 1000;
-        $weightCost = (int) ($weightKg * $this->rate_per_kg);
+        $weightCost = round($weightKg * $this->rate_per_kg, 2);
         $total = $base + $weightCost;
         if ($isCod) {
             $total += $this->cod_extra_fee;
         }
-        return $total;
+        return Money::number(round($total, 2));
     }
 
-    public function isFreeShipping(int $orderValueCents): bool
+    public function isFreeShipping(int|float $orderValueCents): bool
     {
         return $this->free_shipping_threshold !== null
             && $orderValueCents >= $this->free_shipping_threshold;

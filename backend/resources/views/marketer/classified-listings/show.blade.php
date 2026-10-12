@@ -11,7 +11,7 @@
             <div class="text-sm text-gray-500">{{ $listing->listing_number }} · {{ $listing->classifiedCategory?->name }} · {{ $listing->country?->name_ar ?? '' }}</div>
             <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100">{{ __('marketer.status_'.$listing->status->value) }}</span>
         </div>
-        <div class="font-bold text-lg">{{ number_format($listing->price) }} {{ $listing->currency }}
+        <div class="font-bold text-lg">{{ \App\Support\Money::format($listing->price) }} {{ $listing->currency }}
             @if($listing->price_negotiable)<span class="text-xs text-gray-500">({{ __('marketer.price_negotiable') }})</span>@endif</div>
         <div class="text-sm text-gray-600">{{ __('marketer.listing_purpose_'.$listing->listing_purpose) }}</div>
         <p class="text-sm text-gray-700">{{ app()->getLocale() === 'ar' ? $listing->description_ar : $listing->description_en }}</p>

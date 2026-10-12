@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Models\Address;
 use App\Models\Coupon;
 use App\Models\Country;
@@ -120,7 +121,7 @@ class ProductDetailEnrichmentService
             foreach ($rates as $rate) {
                 $method = $rate->shippingMethod;
 
-                $feeCents = $rate->base_fee + (int) round(($weightGrams / 1000) * $rate->rate_per_kg);
+                $feeCents = Money::number(round((float) $rate->base_fee + ($weightGrams / 1000) * (float) $rate->rate_per_kg, 2));
                 $isFree = $rate->free_shipping_threshold !== null && $feeCents <= $rate->free_shipping_threshold;
                 if ($isFree) {
                     $feeCents = 0;
@@ -313,21 +314,21 @@ class ProductDetailEnrichmentService
         })->values()->all();
     }
 
-    private function estimatedSavingCents(Coupon $coupon, int $priceCents, int $cheapestShippingFeeCents): int
+    private function estimatedSavingCents(Coupon $coupon, int|float $priceCents, int|float $cheapestShippingFeeCents): int|float
     {
         return match ($coupon->type->value) {
             'percentage' => min(
-                (int) floor($priceCents * (float) $coupon->value / 100),
+                Money::number(round($priceCents * (float) $coupon->value / 100, 2)),
                 $coupon->max_discount ?? PHP_INT_MAX,
             ),
-            'fixed_amount' => (int) $coupon->value,
+            'fixed_amount' => Money::number($coupon->value),
             'free_shipping' => $cheapestShippingFeeCents,
-            'bogo' => (int) floor($priceCents / 2),
+            'bogo' => Money::number(round($priceCents / 2, 2)),
             default => 0,
         };
     }
 
-    private function cheapestShippingFeeEstimate(?VendorListing $buyBoxListing): int
+    private function cheapestShippingFeeEstimate(?VendorListing $buyBoxListing): int|float
     {
         if (!$buyBoxListing || !$buyBoxListing->country_id) {
             return 0;
@@ -338,12 +339,12 @@ class ProductDetailEnrichmentService
             ->orderBy('base_fee')
             ->first();
 
-        return $rate?->base_fee ?? 0;
+        return Money::number($rate?->base_fee ?? 0);
     }
 
     // ── Section 4: payment_options ──────────────────────────────────────────
 
-    public function getPaymentOptions(Country $country, int $productPriceCents, ?Customer $customer): array
+    public function getPaymentOptions(Country $country, int|float $productPriceCents, ?Customer $customer): array
     {
         $gatewayIds = $this->cacheRememberTagged(
             "country_payment_gateways_pdp:{$country->id}",

@@ -2,6 +2,7 @@
 
 namespace App\Services\Customer;
 
+use App\Support\Money;
 use App\Http\Resources\Customer\ProductListResource;
 use App\Models\Attribute;
 use App\Models\Country;
@@ -111,8 +112,8 @@ class ProductQueryService
 
         return [
             'price_range' => [
-                'min' => $priceRange ? (int) $priceRange->low : 0,
-                'max' => $priceRange ? (int) $priceRange->high : 0,
+                'min' => $priceRange ? Money::number($priceRange->low) : 0,
+                'max' => $priceRange ? Money::number($priceRange->high) : 0,
             ],
             'attributes' => $this->attributeFacets($base, $categoryIds ?? []),
         ];
@@ -323,10 +324,10 @@ class ProductQueryService
             $builder->where('bb.brand_id', $filters['brand']);
         }
         if (!empty($filters['price_min'])) {
-            $builder->where('bb.min_price', '>=', (int) $filters['price_min']);
+            $builder->where('bb.min_price', '>=', Money::number($filters['price_min']));
         }
         if (!empty($filters['price_max'])) {
-            $builder->where('bb.max_price', '<=', (int) $filters['price_max']);
+            $builder->where('bb.max_price', '<=', Money::number($filters['price_max']));
         }
         if (!empty($filters['rating_min'])) {
             $builder->where('bb.rating_avg', '>=', $filters['rating_min']);

@@ -17,6 +17,10 @@ class AdCampaignCategoryTarget extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'bid_override' => \App\Casts\DecimalMoney::class,
+    ];
+
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(AdCampaign::class, 'ad_campaign_id');

@@ -11,12 +11,12 @@ final class PricedSubOrder
 {
     public function __construct(
         public readonly ?string $vendorId,
-        public readonly int $subtotal,
-        public readonly int $discount,
-        public readonly int $loyaltyDiscount,
-        public readonly int $tax,
-        public readonly int $warrantyTotal,
-        public readonly int $shipping,
+        public readonly int|float $subtotal,
+        public readonly int|float $discount,
+        public readonly int|float $loyaltyDiscount,
+        public readonly int|float $tax,
+        public readonly int|float $warrantyTotal,
+        public readonly int|float $shipping,
     ) {}
 
     public function toArray(): array

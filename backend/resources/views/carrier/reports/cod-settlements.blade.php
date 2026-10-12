@@ -133,9 +133,9 @@
                         {{ \Carbon\Carbon::parse($s->period_start)->format('d M Y') }}
                         &rarr; {{ \Carbon\Carbon::parse($s->period_end)->format('d M Y') }}
                     </td>
-                    <td class="px-4 py-3 text-right text-gray-600">{{ number_format($s->total_cod_collected) }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">{{ number_format($s->total_earnings_owed) }}</td>
-                    <td class="px-4 py-3 text-right font-bold text-gray-900">{{ number_format($s->net_to_remit) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($s->total_cod_collected) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($s->total_earnings_owed) }}</td>
+                    <td class="px-4 py-3 text-right font-bold text-gray-900">{{ \App\Support\Money::format($s->net_to_remit) }}</td>
                     <td class="px-4 py-3 text-center">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-{{ $sc }}-100 text-{{ $sc }}-700 capitalize">
                             {{ $s->status }}
@@ -147,7 +147,7 @@
                     <td class="px-4 py-3 text-center">
                         @if($s->has_collection_discrepancy)
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">
-                                &#9888; {{ number_format($s->discrepancy_amount) }}
+                                &#9888; {{ \App\Support\Money::format($s->discrepancy_amount) }}
                             </span>
                         @else
                             <span class="text-gray-300 text-xs">—</span>

@@ -136,12 +136,12 @@
                     </div>
                     <div>
                         <label for="pt-from" class="{{ $label }}">{{ __('commissions.platform_form.price_from') }}</label>
-                        <input id="pt-from" type="number" name="price_from" min="0" step="1" required class="{{ $input }}">
+                        <input id="pt-from" type="number" name="price_from" min="0" step="0.01" required class="{{ $input }}">
                         <p data-error-for="price_from" class="hidden text-xs text-red-700"></p>
                     </div>
                     <div>
                         <label for="pt-to" class="{{ $label }}">{{ __('commissions.platform_form.price_to') }}</label>
-                        <input id="pt-to" type="number" name="price_to" min="1" step="1" class="{{ $input }}">
+                        <input id="pt-to" type="number" name="price_to" min="1" step="0.01" class="{{ $input }}">
                         <p data-error-for="price_to" class="hidden text-xs text-red-700"></p>
                     </div>
                     <div>
@@ -151,7 +151,7 @@
                     </div>
                     <div>
                         <label for="pt-min" class="{{ $label }}">{{ __('commissions.columns.min') }}</label>
-                        <input id="pt-min" type="number" name="min_commission" min="0" step="1" class="{{ $input }}">
+                        <input id="pt-min" type="number" name="min_commission" min="0" step="0.01" class="{{ $input }}">
                         <p data-error-for="min_commission" class="hidden text-xs text-red-700"></p>
                     </div>
                 </div>

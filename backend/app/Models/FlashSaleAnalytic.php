@@ -33,11 +33,11 @@ class FlashSaleAnalytic extends Model
     {
         return [
             'date' => 'date',
-            'gross_revenue' => 'integer',
-            'revenue_at_normal_price' => 'integer',
-            'discount_given' => 'integer',
-            'platform_commission' => 'integer',
-            'vendor_payout' => 'integer',
+            'gross_revenue' => \App\Casts\DecimalMoney::class,
+            'revenue_at_normal_price' => \App\Casts\DecimalMoney::class,
+            'discount_given' => \App\Casts\DecimalMoney::class,
+            'platform_commission' => \App\Casts\DecimalMoney::class,
+            'vendor_payout' => \App\Casts\DecimalMoney::class,
             'conversion_rate' => 'decimal:4',
         ];
     }

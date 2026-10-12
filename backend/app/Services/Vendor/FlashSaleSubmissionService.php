@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Support\Money;
 use App\Enums\FlashSaleSubmissionStatus;
 use App\Models\FlashSale;
 use App\Models\FlashSaleSubmission;
@@ -19,8 +20,8 @@ class FlashSaleSubmissionService
             ->where('vendor_id', $vendor->id)
             ->firstOrFail();
 
-        $flashPrice    = (int) $data['flash_price'];
-        $originalPrice = (int) $listing->price;
+        $flashPrice    = Money::number($data['flash_price']);
+        $originalPrice = Money::number($listing->price);
 
         if ($flashPrice >= $originalPrice) {
             abort(422, 'flash_price must be strictly less than the current listing price.');
@@ -56,8 +57,8 @@ class FlashSaleSubmissionService
         $updates = [];
 
         if (isset($data['flash_price'])) {
-            $flashPrice    = (int) $data['flash_price'];
-            $originalPrice = (int) $submission->original_price;
+            $flashPrice    = Money::number($data['flash_price']);
+            $originalPrice = Money::number($submission->original_price);
 
             if ($flashPrice >= $originalPrice) {
                 abort(422, 'flash_price must be strictly less than the original listing price.');

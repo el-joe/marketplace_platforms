@@ -381,7 +381,7 @@
                     <div class="grid grid-cols-3 gap-6 text-sm text-center">
                         <div>
                             <div class="text-xs text-gray-500 mb-1">{{ __('admin.vendors.total_gmv') }}</div>
-                            <div class="text-lg font-bold text-gray-900">{{ number_format($vendor->total_sales, 0) }}</div>
+                            <div class="text-lg font-bold text-gray-900">{{ \App\Support\Money::format($vendor->total_sales) }}</div>
                             <div class="text-xs text-gray-400">{{ __('admin.vendors.avg_label') }} <span id="avg-gmv">—</span></div>
                         </div>
                         <div>
@@ -825,7 +825,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.vendors.total_earned') }}</dt>
-                        <dd class="font-medium text-gray-900">{{ number_format($acquisitionCommission->total_earned) }} {{ $acquisitionCommission->currency }}</dd>
+                        <dd class="font-medium text-gray-900">{{ \App\Support\Money::format($acquisitionCommission->total_earned) }} {{ $acquisitionCommission->currency }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500">{{ __('admin.vendors.expires_on') }}</dt>

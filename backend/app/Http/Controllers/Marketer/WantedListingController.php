@@ -44,8 +44,8 @@ class WantedListingController extends Controller
             'title_ar'               => ['required', 'string', 'max:255'],
             'title_en'               => ['nullable', 'string', 'max:255'],
             'description_ar'         => ['nullable', 'string'],
-            'budget_min'             => ['nullable', 'integer', 'min:0'],
-            'budget_max'             => ['nullable', 'integer', 'min:0', 'gte:budget_min'],
+            'budget_min'             => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
+            'budget_max'             => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'gte:budget_min'],
             'expires_at'             => ['nullable', 'date', 'after:now'],
         ]);
 
