@@ -46,6 +46,7 @@ class SpecialRequestRoutingTest extends TestCase
             'name' => 'B ' . Str::random(4), 'email' => Str::random(8) . '@example.test',
             'phone' => '+9715' . fake()->numerify('########'), 'marketer_type' => 'affiliate',
             'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(),
+            'onboarding_completed_at' => now(),
         ], $marketer));
         MarketerProfile::create(array_merge(['marketer_id' => $m->id], $profile));
 

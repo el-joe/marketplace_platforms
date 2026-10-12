@@ -106,4 +106,20 @@ class FixedCommissionTest extends TestCase
             ->putJson(route('admin.categories.fixed-commission.update'), ['fixed_commission_pct' => 150, 'amounts' => []])
             ->assertStatus(422);
     }
+
+    public function test_categories_list_shows_fixed_commission_modal_with_saved_values(): void
+    {
+        $s = MarketplaceScenario::make()->build();
+        $admin = Admin::factory()->create();
+        $this->grantCategoryPermissions($admin);
+        app(FixedCommissionService::class)->update(4, [$s->country->id => '1.9']);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.categories.index'))
+            ->assertOk()
+            ->assertSee('id="fixed-commission-modal"', false)
+            ->assertSee('value="4"', false)
+            ->assertSee('value="1.9"', false)
+            ->assertDontSee('bulk-commission', false);
+    }
 }
