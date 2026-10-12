@@ -21,6 +21,7 @@ class MarketerCampaignInvitation extends Model
         'replaced_invitation_id',
         'total_commission_earned', 'total_conversions',
         'platform_fee_amount', 'platform_fee_currency',
+        'platform_fee_vat_rate', 'platform_fee_vat_amount', 'platform_fee_paid_via', 'platform_fee_paid_at',
         'platform_fee_status', 'platform_fee_payer', 'platform_fee_recorded_at',
     ];
 
@@ -30,6 +31,8 @@ class MarketerCampaignInvitation extends Model
         'whatsapp_sent' => 'boolean',
         'whatsapp_sent_at' => 'datetime',
         'platform_fee_recorded_at' => 'datetime',
+        'platform_fee_paid_at' => 'datetime',
+        'platform_fee_vat_rate' => 'decimal:2',
     ];
 
     public function campaign(): BelongsTo
@@ -60,6 +63,17 @@ class MarketerCampaignInvitation extends Model
     public function samples(): HasMany
     {
         return $this->hasMany(MarketerCampaignSample::class, 'invitation_id');
+    }
+
+    public function payoutItems(): HasMany
+    {
+        return $this->hasMany(PayoutItem::class, 'invitation_id');
+    }
+
+    /** Fee + VAT: what the payer is actually charged. */
+    public function platformFeeTotal(): int
+    {
+        return (int) $this->platform_fee_amount + (int) $this->platform_fee_vat_amount;
     }
 
     public function isPending(): bool

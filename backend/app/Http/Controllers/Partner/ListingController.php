@@ -445,8 +445,14 @@ class ListingController extends Controller
 
         $currency = Country::find($countryId)?->currency_code ?? '';
 
+        $quoteService = app(MarketerCampaignQuoteService::class);
+        $fee = (int) ($feeSetting?->fee_per_influencer ?? 0);
+        $vatRate = $quoteService->vatRate($countryId);
+
         return response()->json([
-            'fee_per_influencer' => $feeSetting?->fee_per_influencer ?? 0,
+            'fee_per_influencer' => $fee,
+            'vat_rate' => $vatRate,
+            'fee_vat_per_influencer' => $quoteService->vatOn($fee, $vatRate),
             'currency' => $currency,
         ]);
     }

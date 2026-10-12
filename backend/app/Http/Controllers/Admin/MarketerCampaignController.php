@@ -10,6 +10,7 @@ use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignCategoryRule;
 use App\Models\MarketerCampaignInvitation;
+use Illuminate\Support\Facades\DB;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
@@ -160,12 +161,23 @@ class MarketerCampaignController extends Controller
 
         abort_unless($invitation->campaign_id === $marketerCampaign->id, 403);
 
-        abort_unless($invitation->platform_fee_status === 'pending', 422,
-            'الرسوم مدفوعة بالفعل أو غير مطبقة.');
+        // Same lock + status guard as the wallet collector and the weekly statement:
+        // a fee already settled there can't be marked paid again (and vice versa).
+        $marked = DB::transaction(function () use ($invitation) {
+            $locked = MarketerCampaignInvitation::whereKey($invitation->id)->lockForUpdate()->first();
+            if (! $locked || $locked->platform_fee_status !== 'pending' || $locked->payoutItems()->exists()) {
+                return false;
+            }
+            $locked->update([
+                'platform_fee_status' => 'paid',
+                'platform_fee_paid_via' => 'admin',
+                'platform_fee_paid_at' => now(),
+            ]);
 
-        $invitation->update([
-            'platform_fee_status' => 'paid',
-        ]);
+            return true;
+        });
+
+        abort_unless($marked, 422, 'الرسوم مدفوعة بالفعل أو غير مطبقة.');
 
         return back()->with('success', 'تم تسجيل دفع رسوم الإنفلوينسر.');
     }

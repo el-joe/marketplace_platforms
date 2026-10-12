@@ -6,6 +6,7 @@ use App\Enums\FbnStorageFeeStatus;
 use App\Enums\VendorGlobalStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\Admin;
+use App\Models\MarketerCampaignInvitation;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
 use App\Models\PackagingSupplyRequest;
@@ -103,6 +104,24 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                         }
 
                         DB::transaction(function () use ($calc, $currency, $vendor, $primaryAccount) {
+                            // Influencer fees: lock each invitation and re-check it is still
+                            // `pending` (the wallet collector may have paid it since the
+                            // calculation). A fee that is no longer pending is not charged here.
+                            $feeLines = [];
+                            foreach ($calc['influencer_fee_items'] ?? [] as $entry) {
+                                $locked = MarketerCampaignInvitation::whereKey($entry['item']->id)->lockForUpdate()->first();
+                                if ($locked
+                                    && $locked->platform_fee_status === 'pending'
+                                    && ! $locked->payoutItems()->exists()) {
+                                    $feeLines[] = ['invitation' => $locked, 'fee' => (int) $locked->platform_fee_amount, 'vat' => (int) $locked->platform_fee_vat_amount];
+                                }
+                            }
+                            $skipped = (int) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'], $feeLines));
+                            if ($skipped !== 0) {
+                                $calc['net_amount'] += $skipped;
+                                $calc['other_adjustments'] += $skipped;
+                            }
+
                             $payout = Payout::create([
                                 'payout_number' => $this->generatePayoutNumber(),
                                 'vendor_id' => $vendor->id,
@@ -195,6 +214,32 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                     'commission' => $entry['commission_amount'],
                                     'net' => -$entry['commission_amount'],
                                     'description' => "عينة ترويج مع المسوقين — Promotion sample — {$productName} × {$sample->quantity}",
+                                ]);
+                            }
+
+                            // Influencer platform fee (+VAT): one line per invitation, then the
+                            // invitation is marked paid in the same transaction.
+                            foreach ($feeLines as $line) {
+                                $invitation = $line['invitation'];
+                                $marketerName = $invitation->marketer?->name ?? '—';
+                                $campaignTitle = $invitation->campaign?->title ?: ('#'.substr((string) $invitation->campaign_id, 0, 8));
+                                $total = $line['fee'] + $line['vat'];
+
+                                PayoutItem::create([
+                                    'payout_id' => $payout->id,
+                                    'item_type' => 'influencer_fee',
+                                    'invitation_id' => $invitation->id,
+                                    'gross' => 0,
+                                    'commission' => 0,
+                                    'vat_amount' => $line['vat'],
+                                    'net' => -$total,
+                                    'description' => "رسوم مؤثر — Influencer fee — {$marketerName} — {$campaignTitle}",
+                                ]);
+
+                                $invitation->update([
+                                    'platform_fee_status' => 'paid',
+                                    'platform_fee_paid_via' => 'statement',
+                                    'platform_fee_paid_at' => now(),
                                 ]);
                             }
 

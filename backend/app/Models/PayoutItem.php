@@ -17,6 +17,8 @@ class PayoutItem extends Model
         'marketer_conversion_id',
         'sample_item_id',
         'campaign_sample_id',
+        'invitation_id',
+        'vat_amount',
         'gross',
         'commission',
         'net',
@@ -41,6 +43,11 @@ class PayoutItem extends Model
     public function campaignSample(): BelongsTo
     {
         return $this->belongsTo(MarketerCampaignSample::class, 'campaign_sample_id');
+    }
+
+    public function invitation(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaignInvitation::class, 'invitation_id');
     }
 
     public function sampleItem(): BelongsTo

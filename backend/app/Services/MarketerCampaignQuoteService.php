@@ -48,6 +48,25 @@ class MarketerCampaignQuoteService
     }
 
     /**
+     * VAT rate (percent) of the country: the same `countries.vat_rate` the
+     * checkout, ad billing and financial reports use.
+     */
+    public function vatRate(?string $countryId): float
+    {
+        if (! $countryId) {
+            return 0.0;
+        }
+
+        return (float) (Country::whereKey($countryId)->value('vat_rate') ?? 0);
+    }
+
+    /** VAT on a fee (BIGINT base units, rounded half up like CheckoutPricingEngine). */
+    public function vatOn(int $amount, float $ratePct): int
+    {
+        return $amount > 0 && $ratePct > 0 ? (int) round($amount * ($ratePct / 100)) : 0;
+    }
+
+    /**
      * Indicative commission for ONE unit sold at the listing price, resolved
      * like LastClickAttributionService does at sale time: country/category
      * setting by marketer type, else the commission rule, then the marketer's
@@ -101,7 +120,7 @@ class MarketerCampaignQuoteService
      * @param  array<int, string>  $marketerIds
      * @return array{
      *   currency: string, fee_per_influencer: int, influencer_count: int, affiliate_count: int,
-     *   total_fee: int, fee_payer: string, rows: array<int, array<string, mixed>>,
+     *   total_fee: int, vat_rate: float, fee_vat_per_influencer: int, total_fee_vat: int, total_fee_with_vat: int, fee_payer: string, rows: array<int, array<string, mixed>>,
      *   influencer_sample_qty: int, affiliate_sample_qty: int, platform_sample_qty: int,
      *   sample_total: int, sample_count: int, stock_available: int, stock_reserved_by_other_campaigns: int, stock_min: int
      * }
@@ -120,6 +139,9 @@ class MarketerCampaignQuoteService
                 ->get()
             : collect();
 
+        $vatRate = $this->vatRate($listing->country_id);
+        $feeVat = $this->vatOn($feePer, $vatRate);
+
         $rows = [];
         $influencers = 0;
         $affiliates = 0;
@@ -132,6 +154,8 @@ class MarketerCampaignQuoteService
                 'name' => $m->name,
                 'type' => $isInfluencer ? 'influencer' : 'affiliate',
                 'fee' => $isInfluencer ? $feePer : 0,
+                'fee_vat' => $isInfluencer ? $feeVat : 0,
+                'fee_total' => $isInfluencer ? $feePer + $feeVat : 0,
                 'commission' => $commission,
             ];
         }
@@ -146,6 +170,10 @@ class MarketerCampaignQuoteService
             'influencer_count' => $influencers,
             'affiliate_count' => $affiliates,
             'total_fee' => $influencers * $feePer,
+            'vat_rate' => $vatRate,
+            'fee_vat_per_influencer' => $feeVat,
+            'total_fee_vat' => $influencers * $feeVat,
+            'total_fee_with_vat' => $influencers * ($feePer + $feeVat),
             'fee_payer' => setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' ? 'vendor' : 'marketer',
             'rows' => $rows,
             // Effective quantities (admin minimums applied), see CampaignSampleService.

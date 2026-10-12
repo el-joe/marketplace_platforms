@@ -875,13 +875,33 @@ class MarketerCampaignService
         $wallet = $walletService->getOrCreateWallet($ownerType, $ownerId, $invitation->platform_fee_currency ?? $invitation->campaign->currency);
 
         try {
-            $walletService->debit(
-                $wallet,
-                (int) $invitation->platform_fee_amount,
-                'marketer_campaign_invitation_platform_fee',
-                $invitation->id,
-                'Influencer platform fee for accepted campaign invitation'
-            );
+            // The invitation row is locked and its status re-read, so a concurrent
+            // statement run (GenerateVendorPayoutsJob) or a second collector can never
+            // settle the same fee twice: the loser sees `paid` and does nothing.
+            return DB::transaction(function () use ($invitation, $walletService, $wallet) {
+                $locked = MarketerCampaignInvitation::whereKey($invitation->id)->lockForUpdate()->first();
+                if (! $locked || $locked->platform_fee_status !== 'pending' || $locked->payoutItems()->exists()) {
+                    return false;
+                }
+
+                // Fee + VAT leaves the wallet in a single debit.
+                $walletService->debit(
+                    $wallet,
+                    $locked->platformFeeTotal(),
+                    'marketer_campaign_invitation_platform_fee',
+                    $locked->id,
+                    'Influencer platform fee for accepted campaign invitation'
+                );
+
+                $locked->update([
+                    'platform_fee_status' => 'paid',
+                    'platform_fee_paid_via' => 'wallet',
+                    'platform_fee_paid_at' => now(),
+                ]);
+                $invitation->setRawAttributes($locked->getAttributes(), true);
+
+                return true;
+            });
         } catch (InsufficientBalanceException $e) {
             if ($throwWhenShort) {
                 throw $e;
@@ -889,10 +909,6 @@ class MarketerCampaignService
 
             return false;
         }
-
-        $invitation->update(['platform_fee_status' => 'paid']);
-
-        return true;
     }
 
     /**
@@ -923,6 +939,8 @@ class MarketerCampaignService
             // Platform fee applies per accepted invitation, influencer type only. Affiliate is always free.
             // Payer is configurable: the influencer's own wallet (default) or the seller's wallet.
             $feeAmount = 0;
+            $feeVatRate = 0.0;
+            $feeVat = 0;
             $feeStatus = 'not_applicable';
             $feePayer = null;
 
@@ -932,6 +950,11 @@ class MarketerCampaignService
 
                 $feeAmount = $feeSetting?->fee_per_influencer ?? 0;
                 $feeStatus = $feeAmount > 0 ? 'pending' : 'waived';
+
+                // VAT of the campaign country (countries.vat_rate), snapshotted on the invitation.
+                $quoteService = app(MarketerCampaignQuoteService::class);
+                $feeVatRate = $feeAmount > 0 ? $quoteService->vatRate($campaign->country_id) : 0.0;
+                $feeVat = $quoteService->vatOn((int) $feeAmount, $feeVatRate);
 
                 $feePayer = setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' && $campaign->vendor_id
                     ? 'vendor'
@@ -944,6 +967,8 @@ class MarketerCampaignService
                 'marketer_note' => $marketerNote,
                 'platform_fee_amount' => $feeAmount,
                 'platform_fee_currency' => $campaign->currency,
+                'platform_fee_vat_rate' => $feeVatRate,
+                'platform_fee_vat_amount' => $feeVat,
                 'platform_fee_status' => $feeStatus,
                 'platform_fee_payer' => $feeAmount > 0 ? $feePayer : null,
                 'platform_fee_recorded_at' => now(),

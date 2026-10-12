@@ -8812,6 +8812,8 @@ return [
 
     // ─── payouts ───────────────────────────────────────────
     'payouts' => [
+        'influencer_fee' => 'رسوم مؤثر',
+        'influencer_fee_vat_note' => 'الرسوم :fee + ضريبة :vat',
         'promotion_sample' => 'عينة ترويج',
         'gateway_fee' => 'رسوم البوابة',
         'title' => 'المدفوعات',

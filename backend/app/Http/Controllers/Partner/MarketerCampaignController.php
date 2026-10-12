@@ -197,7 +197,7 @@ class MarketerCampaignController extends Controller
         return redirect()
             ->to(route('partner.listings.show', $listing->id).'#marketer_campaign')
             ->with('success', $quote['total_fee'] > 0
-                ? __('partner.marketer_campaigns.created_with_fee', ['fee' => number_format($quote['total_fee']), 'currency' => $quote['currency']])
+                ? __('partner.marketer_campaigns.created_with_fee', ['fee' => number_format($quote['total_fee_with_vat']), 'currency' => $quote['currency']])
                 : 'تم إنشاء حملة الماركتر بنجاح.');
     }
 

@@ -116,8 +116,6 @@ class PayoutController extends Controller
             ->where('payout_number', $payoutNumber)
             ->with([
                 'items.subOrder',
-                'items.promotionRequest.vendorListing.productVariant.product',
-                'items.promotionRequest.adminListing.productVariant.product',
                 'bankAccount',
             ])
             ->firstOrFail();

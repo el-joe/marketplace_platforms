@@ -9,6 +9,7 @@ use App\Enums\RefundStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
+use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\PackagingSupplyRequest;
 use App\Models\PaymentTransaction;
@@ -179,7 +180,11 @@ class PayoutCalculationService
             // carry the admin sale commission (see CampaignSampleService).
             [$sampleCommission, $sampleItems] = $this->selectSampleCommissions($vendor, $currency, $netBeforeSamples);
 
-            $netBeforeAds = $netBeforeSamples - $sampleCommission;
+            // Influencer platform fees (+VAT) the seller's wallet did not cover during
+            // the week: deducted here against the weekly sales, once.
+            [$influencerFees, $feeItems] = $this->selectInfluencerFees($vendor, $currency, $netBeforeSamples - $sampleCommission);
+
+            $netBeforeAds = $netBeforeSamples - $sampleCommission - $influencerFees;
 
             [$adFees, $adChargeIds] = $this->selectAdCharges($vendor, $currency, $netBeforeAds);
 
@@ -196,7 +201,9 @@ class PayoutCalculationService
                 'chargebacks_deducted' => $chargebacksDeducted,
                 'storage_fees' => $storageFeesTotal,
                 'ad_fees' => $adFees,
-                'other_adjustments' => -($packagingTotal + $subscriptionTotal),
+                'other_adjustments' => -($packagingTotal + $subscriptionTotal + $influencerFees),
+                'influencer_fees' => $influencerFees,
+                'influencer_fee_items' => $feeItems,
                 'net_amount' => max(0, $netAmount),
                 'currency' => $currency,
                 'sub_order_ids' => $subOrderIds,
@@ -233,6 +240,45 @@ class PayoutCalculationService
             }
             $sum += $amount;
             $items[] = ['item' => $sample, 'commission_amount' => $amount];
+        }
+
+        return [$sum, $items];
+    }
+
+    /**
+     * Influencer fees (fee + VAT) still `pending` at statement time for this vendor:
+     * accepted, seller-paid, not on any statement yet (payout_items.invitation_id is
+     * unique). Oldest first, as far as the statement can absorb; the rest rolls
+     * forward. The job re-checks each row under a lock before writing the line.
+     *
+     * @return array{0: int, 1: array<int, array{item: MarketerCampaignInvitation, fee: int, vat: int}>}
+     */
+    private function selectInfluencerFees(Vendor $vendor, string $currency, int $netBefore): array
+    {
+        $cap = max(0, $netBefore);
+        $sum = 0;
+        $items = [];
+
+        $invitations = MarketerCampaignInvitation::query()
+            ->where('status', 'accepted')
+            ->where('platform_fee_status', 'pending')
+            ->where('platform_fee_payer', 'vendor')
+            ->where('platform_fee_amount', '>', 0)
+            ->where('platform_fee_currency', $currency)
+            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
+            ->whereDoesntHave('payoutItems')
+            ->with(['campaign:id,title', 'marketer:id,name'])
+            ->orderBy('responded_at')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($invitations as $invitation) {
+            $total = $invitation->platformFeeTotal();
+            if ($sum + $total > $cap) {
+                break;
+            }
+            $sum += $total;
+            $items[] = ['item' => $invitation, 'fee' => (int) $invitation->platform_fee_amount, 'vat' => (int) $invitation->platform_fee_vat_amount];
         }
 
         return [$sum, $items];

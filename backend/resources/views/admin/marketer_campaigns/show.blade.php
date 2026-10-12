@@ -388,6 +388,7 @@
                                         @else
                                             <span class="font-semibold text-gray-800">
                                                 {{ number_format($invitation->platform_fee_amount) }} {{ $invitation->platform_fee_currency }}
+                                                @if($invitation->platform_fee_vat_amount > 0)<span class="block text-[11px] text-gray-500">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ number_format($invitation->platform_fee_vat_amount) }}</span>@endif
                                             </span>
                                         @endif
                                     </td>

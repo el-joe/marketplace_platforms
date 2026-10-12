@@ -121,6 +121,7 @@
                         <option value="refunds" @selected($type === 'refunds')>{{ __('partner.finance.refunds') }}</option>
                         <option value="payouts" @selected($type === 'payouts')>{{ __('partner.finance.payouts') }}</option>
                         <option value="samples" @selected($type === 'samples')>{{ __('partner.finance.promotion_sample') }}</option>
+                        <option value="influencer_fees" @selected($type === 'influencer_fees')>{{ __('partner.finance.influencer_fee') }}</option>
                     </select>
                 </div>
             </form>
@@ -157,6 +158,7 @@
                                     'refund' => ['bg-red-100 text-red-700',   __('partner.finance.refund')],
                                     'payout' => ['bg-blue-100 text-blue-700', __('partner.finance.payout')],
                                     'promotion_sample' => ['bg-purple-100 text-purple-700', __('partner.finance.promotion_sample')],
+                                    'influencer_fee' => ['bg-orange-100 text-orange-700', __('partner.finance.influencer_fee')],
                                     default  => ['bg-gray-100 text-gray-600', $txn['type']],
                                 };
 

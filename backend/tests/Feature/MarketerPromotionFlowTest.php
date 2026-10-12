@@ -208,7 +208,7 @@ class MarketerPromotionFlowTest extends TestCase
         (new CollectPendingInfluencerFeesJob)->handle(app(MarketerCampaignService::class));
 
         $this->assertSame('paid', $inv->fresh()->platform_fee_status);
-        $this->assertSame(1100, $vendorWallet->fresh()->balance);
+        $this->assertSame(2000 - 945, $vendorWallet->fresh()->balance, "fee 900 + 5% VAT 45");
     }
 
     public function test_marketer_paid_fee_keeps_current_behaviour(): void
@@ -223,6 +223,6 @@ class MarketerPromotionFlowTest extends TestCase
 
         $this->assertSame('paid', $inv->fresh()->platform_fee_status);
         $this->assertSame('marketer', $inv->fresh()->platform_fee_payer);
-        $this->assertSame(100, $wallet->fresh()->balance);
+        $this->assertSame(1000 - 945, $wallet->fresh()->balance, "fee 900 + 5% VAT 45");
     }
 }

@@ -8804,6 +8804,8 @@ return [
 
     // ─── payouts ───────────────────────────────────────────
     'payouts' => [
+        'influencer_fee' => 'Influencer fee',
+        'influencer_fee_vat_note' => 'Fee :fee + VAT :vat',
         'promotion_sample' => 'Promotion sample',
         'gateway_fee' => 'Gateway Fee',
         'title' => 'Payouts',

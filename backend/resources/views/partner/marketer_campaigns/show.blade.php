@@ -249,6 +249,20 @@
                 </button>
             </div>
         @endif
+        @php
+            $feeInvites = $marketerCampaign->invitations->where('status', 'accepted')->where('platform_fee_amount', '>', 0);
+            $feeNet = (int) $feeInvites->sum('platform_fee_amount');
+            $feeVatSum = (int) $feeInvites->sum('platform_fee_vat_amount');
+        @endphp
+        @if ($feeNet > 0)
+            <div class="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-gray-700" data-testid="campaign-fee-summary">
+                <div class="font-semibold text-gray-800 mb-1">{{ __('partner.marketer_campaigns.fee_summary_title') }}</div>
+                {{ __('partner.marketer_campaigns.fee_summary', [
+                    'fee' => number_format($feeNet), 'vat' => number_format($feeVatSum), 'total' => number_format($feeNet + $feeVatSum),
+                    'currency' => $marketerCampaign->currency,
+                ]) }}
+            </div>
+        @endif
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             @if ($marketerCampaign->invitations->isEmpty())
                 <p class="p-6 text-center text-sm text-gray-400">{{ __('partner.marketer_campaigns_my.no_invitations') }}</p>
@@ -288,7 +302,24 @@
                                         $rowFee = (int) ($invitation->platform_fee_amount ?: ($qRow['fee'] ?? 0));
                                         $rowCommission = (int) ($qRow['commission']['amount'] ?? 0);
                                     @endphp
-                                    <td class="px-4 py-3 text-gray-700">{{ $rowFee > 0 ? number_format($rowFee).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.free_label') }}</td>
+                                    @php
+                                        $rowVat = $invitation->platform_fee_amount > 0
+                                            ? (int) $invitation->platform_fee_vat_amount
+                                            : (int) ($qRow['fee_vat'] ?? 0);
+                                    @endphp
+                                    <td class="px-4 py-3 text-gray-700">
+                                        @if ($rowFee > 0)
+                                            {{ number_format($rowFee).' '.$marketerCampaign->currency }}
+                                            <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-vat">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ number_format($rowVat).' '.$marketerCampaign->currency }}</span>
+                                            @if ($invitation->platform_fee_status === 'pending')
+                                                <span class="block text-[11px] text-orange-600">{{ __('partner.marketer_campaigns.fee_status_pending') }}</span>
+                                            @elseif ($invitation->platform_fee_status === 'paid')
+                                                <span class="block text-[11px] text-green-600">{{ __('partner.marketer_campaigns.fee_status_paid_'.($invitation->platform_fee_paid_via ?: 'wallet')) }}</span>
+                                            @endif
+                                        @else
+                                            {{ __('partner.marketer_campaigns.free_label') }}
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-gray-700">{{ $rowCommission > 0 ? number_format($rowCommission).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.commission_not_set') }}</td>
                                     <td class="px-4 py-3">
                                         @if ($invitation->referral_link)

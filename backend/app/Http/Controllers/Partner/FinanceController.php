@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
 use App\Models\Refund;
@@ -150,6 +151,41 @@ class FinanceController extends Controller
                         'commission' => $commission,
                         'net' => -$commission,
                         'payout_number' => null,
+                        'receipt_url' => null,
+                    ]);
+                });
+        }
+
+        // Influencer platform fees (+VAT): settled from the wallet during the week or
+        // deducted in the weekly statement; still-pending ones show as unsettled.
+        if (in_array($type, ['all', 'influencer_fees'])) {
+            MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid'])
+                ->where('platform_fee_payer', 'vendor')
+                ->where('platform_fee_amount', '>', 0)
+                ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendorId))
+                ->whereBetween('platform_fee_recorded_at', [$dateFrom, $dateTo])
+                ->with('campaign:id,title', 'marketer:id,name', 'payoutItems.payout:id,payout_number')
+                ->get()
+                ->each(function ($inv) use (&$rows) {
+                    $total = $inv->platformFeeTotal();
+                    $rows->push([
+                        'type' => 'influencer_fee',
+                        'date' => $inv->platform_fee_recorded_at,
+                        'reference' => $inv->campaign?->title ?: ('#'.substr((string) $inv->campaign_id, 0, 8)),
+                        'description' => __('partner.finance.influencer_fee_line', [
+                            'name' => $inv->marketer?->name ?? '—',
+                            'fee' => number_format($inv->platform_fee_amount),
+                            'vat' => number_format($inv->platform_fee_vat_amount),
+                            'rate' => (float) $inv->platform_fee_vat_rate,
+                            'status' => $inv->platform_fee_status === 'paid'
+                                ? __('partner.finance.fee_settled_'.($inv->platform_fee_paid_via ?: 'wallet'))
+                                : __('partner.finance.fee_unsettled'),
+                        ]),
+                        'amount' => -$total,
+                        'gross' => 0,
+                        'commission' => 0,
+                        'net' => -$total,
+                        'payout_number' => $inv->payoutItems->first()?->payout?->payout_number,
                         'receipt_url' => null,
                     ]);
                 });

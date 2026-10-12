@@ -118,6 +118,7 @@
                                         </td>
                                         <td class="px-4 py-2 text-center font-medium">
                                             <span x-show="row.fee > 0" class="text-orange-700" x-text="money(row.fee)"></span>
+                                            <span x-show="row.fee_vat > 0" class="block text-[11px] text-gray-500">+ {{ __('partner.marketer_campaigns.vat_label') }} <span x-text="money(row.fee_vat)"></span></span>
                                             <span x-show="!(row.fee > 0)" class="text-green-600">{{ __('partner.marketer_campaigns.free_label') }}</span>
                                         </td>
                                         <td class="px-4 py-2 text-center text-gray-800">
@@ -139,6 +140,18 @@
                                         <span x-show="quote.total_fee > 0" x-text="money(quote.total_fee)"></span>
                                         <span x-show="!(quote.total_fee > 0)">{{ __('partner.marketer_campaigns.free_label') }}</span>
                                     </td>
+                                    <td></td>
+                                </tr>
+                                <tr x-show="quote.total_fee > 0" data-testid="quote-vat-row">
+                                    <td colspan="2" class="px-4 py-2 text-start text-gray-600">
+                                        {{ __('partner.marketer_campaigns.vat_label') }} (<span x-text="quote.vat_rate"></span>%)
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-gray-700" x-text="money(quote.total_fee_vat)"></td>
+                                    <td></td>
+                                </tr>
+                                <tr x-show="quote.total_fee > 0" class="border-t border-gray-200">
+                                    <td colspan="2" class="px-4 py-2 text-start font-semibold text-gray-800">{{ __('partner.marketer_campaigns.fees_incl_vat') }}</td>
+                                    <td class="px-4 py-2 text-center font-bold text-orange-700" x-text="money(quote.total_fee_with_vat)"></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -350,7 +363,7 @@
                 },
                 async refreshQuote() {
                     if (!this.selectedMarketers.length) {
-                        this.quote = Object.assign({}, this.quote, { rows: [], influencer_count: 0, total_fee: 0 });
+                        this.quote = Object.assign({}, this.quote, { rows: [], influencer_count: 0, total_fee: 0, total_fee_vat: 0, total_fee_with_vat: 0 });
                         return;
                     }
                     try {

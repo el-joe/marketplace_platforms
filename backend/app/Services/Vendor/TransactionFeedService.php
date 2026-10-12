@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
 use App\Models\PayoutItem;
@@ -43,6 +44,10 @@ class TransactionFeedService
 
             if (! $type || $type === 'promotion_sample') {
                 $items = $items->merge($this->fetchPromotionSamples($vendor, $dateFrom, $dateTo));
+            }
+
+            if (! $type || $type === 'influencer_fee') {
+                $items = $items->merge($this->fetchInfluencerFees($vendor, $dateFrom, $dateTo));
             }
 
             return $items->sortByDesc('date')->values()->all();
@@ -124,6 +129,43 @@ class TransactionFeedService
                 'commission' => $commission,
                 'net' => -$commission,
                 'payout_status' => $payout ? $payout->payout_number.' ('.$payout->status?->value.')' : 'unsettled',
+            ];
+        });
+    }
+
+    /**
+     * Influencer platform fee lines (fee + VAT): settled from the wallet during the
+     * week, or deducted in a weekly statement (payout_items.invitation_id).
+     */
+    private function fetchInfluencerFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
+    {
+        $invitations = MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid'])
+            ->where('platform_fee_payer', 'vendor')
+            ->where('platform_fee_amount', '>', 0)
+            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
+            ->when($dateFrom, fn ($q) => $q->where('platform_fee_recorded_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
+            ->when($dateTo, fn ($q) => $q->where('platform_fee_recorded_at', '<=', Carbon::parse($dateTo)->endOfDay()))
+            ->with(['campaign:id,title', 'marketer:id,name', 'payoutItems.payout:id,payout_number,status'])
+            ->get();
+
+        return $invitations->map(function ($inv) {
+            $payout = $inv->payoutItems->first()?->payout;
+            $total = $inv->platformFeeTotal();
+            $status = $payout
+                ? $payout->payout_number.' ('.$payout->status?->value.')'
+                : ($inv->platform_fee_status === 'paid' ? 'wallet' : 'unsettled');
+
+            return [
+                'type' => 'influencer_fee',
+                'date' => $inv->platform_fee_recorded_at?->toISOString(),
+                'reference' => $inv->campaign?->title,
+                'description' => 'رسوم مؤثر / Influencer fee — '.($inv->marketer?->name ?? '—'),
+                'gross' => 0,
+                'commission' => 0,
+                'fee' => (int) $inv->platform_fee_amount,
+                'vat' => (int) $inv->platform_fee_vat_amount,
+                'net' => -$total,
+                'payout_status' => $status,
             ];
         });
     }
