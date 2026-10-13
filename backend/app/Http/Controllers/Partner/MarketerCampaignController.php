@@ -13,6 +13,7 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
+use App\Services\WalletService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use App\Support\Money;
@@ -102,6 +103,11 @@ class MarketerCampaignController extends Controller
         $affiliateCount = $allMarketers->reject($isInfluencer)->filter(fn ($m) => $m->marketerJobs->contains('key', 'affiliate'))->count();
         $quote = $quoteService->quote($vendorListing, []);
 
+        // Seller wallet (same wallet the Wallet page and fee collection use).
+        $wallet = app(WalletService::class)->getOrCreateWallet('vendor', $this->vendorId(), $vendorListing->currency ?: $quote['currency']);
+        $walletBalance = (float) $wallet->balance;
+        $walletCurrency = $wallet->currency;
+
         // Same rule MarketerCampaignService enforces on submit, surfaced here.
         $minStock = (int) ($vendorListing->productVariant?->product?->category?->min_stock_for_campaign ?? 10);
         $availableStock = app(InventoryService::class)->availableStock($vendorListing);
@@ -112,7 +118,7 @@ class MarketerCampaignController extends Controller
             - $sampleService->pendingReservedQty($vendorListing)
             - $sampleService->adminQty($vendorListing->productVariant?->product?->category);
 
-        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'quote', 'minStock', 'availableStock', 'stockAfterFixedSample'));
+        return view('partner.marketer_campaigns.create', compact('vendorListing', 'marketerVendors', 'affiliateCount', 'walletBalance', 'walletCurrency', 'quote', 'minStock', 'availableStock', 'stockAfterFixedSample'));
     }
 
     public function store(Request $request)

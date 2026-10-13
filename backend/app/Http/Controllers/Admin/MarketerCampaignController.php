@@ -17,6 +17,7 @@ use App\Models\Vendor;
 use App\Models\VendorListing;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InsufficientStockException;
+use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
 use App\Services\ReferralCodeResolver;
 use App\Support\Marketer\CampaignOwner;
@@ -93,7 +94,24 @@ class MarketerCampaignController extends Controller
 
         $referralChains = app(ReferralCodeResolver::class)->chainsFor($marketerCampaign);
 
-        return view('admin.marketer_campaigns.show', compact('marketerCampaign', 'commissionSetting', 'categories', 'classifiedCategories', 'referralChains'));
+        // Marketers the vendor picked. Invitations only exist once the campaign is approved, so until then this
+        // (plus the live quote of fees/commission/samples) is what the admin reviews.
+        $requestedIds = array_values(array_filter((array) $marketerCampaign->requested_marketer_vendor_ids));
+        $requestedMarketers = $requestedIds
+            ? Marketer::whereIn('id', $requestedIds)->with(['marketerJobs', 'marketerProfile'])->get()
+            : collect();
+
+        $requestedQuote = null;
+        $quoteRows = collect();
+        if ($requestedMarketers->isNotEmpty() && $marketerCampaign->vendorListing) {
+            $requestedQuote = app(MarketerCampaignQuoteService::class)->quote($marketerCampaign->vendorListing, $requestedIds);
+            $quoteRows = collect($requestedQuote['rows'])->keyBy('id');
+        }
+
+        return view('admin.marketer_campaigns.show', compact(
+            'marketerCampaign', 'commissionSetting', 'categories', 'classifiedCategories', 'referralChains',
+            'requestedMarketers', 'requestedQuote', 'quoteRows'
+        ));
     }
 
     public function approve(Request $request, MarketerCampaign $marketerCampaign)

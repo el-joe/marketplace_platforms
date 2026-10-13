@@ -240,6 +240,18 @@ class MarketerCampaignService
                 'vendor_ad_notes' => $data['vendor_ad_notes'] ?? null,
             ]);
 
+            // The vendor never types a commission: show the admin-configured default straight away so a campaign
+            // awaiting review does not display 0 (approval re-resolves it only when it is still unset).
+            if ($data['commission_type'] !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
+                $defaults = $this->resolveDefaultCommission($campaign);
+                if ($defaults !== null) {
+                    $campaign->update([
+                        'marketer_commission_amount' => $defaults['marketer_commission_amount'],
+                        'platform_commission_amount' => $defaults['platform_commission_amount'],
+                    ]);
+                }
+            }
+
             if ($data['commission_type'] === 'tiered' && ! empty($data['tiered_rules'])) {
                 foreach ($data['tiered_rules'] as $i => $rule) {
                     MarketerCampaignTieredRule::create([

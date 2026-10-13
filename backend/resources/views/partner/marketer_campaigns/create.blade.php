@@ -167,16 +167,24 @@
                 </div>
             @endif
 
+            <div class="rounded-xl border border-gray-200 bg-white p-3 text-sm flex items-center justify-between" data-testid="wallet-balance">
+                <span class="text-gray-600">{{ __('partner.marketer_campaigns.wallet_balance') }}</span>
+                <a href="{{ route('partner.wallet.index') }}" class="font-semibold {{ $walletBalance <= 0 ? 'text-red-600' : 'text-gray-800' }}">{{ \App\Support\Money::format($walletBalance) }} {{ $walletCurrency }}</a>
+            </div>
+
             {{-- Affiliates: open to all registered affiliates, no individual picking --}}
             <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" name="open_to_affiliates" value="1" class="mt-1 rounded border-gray-300 text-blue-600"
-                           x-model="openAffiliates" @checked(old('open_to_affiliates')) @disabled($affiliateCount === 0)>
+                           x-model="openAffiliates" @checked(old('open_to_affiliates'))>
                     <span class="text-sm text-blue-900">
                         <span class="font-semibold">{{ __('partner.marketer_campaigns.open_to_affiliates_title') }}</span>
                         <span class="block text-xs mt-1">{{ __('partner.marketer_campaigns.open_to_affiliates_desc', ['count' => $affiliateCount]) }}</span>
                         <span class="block text-xs mt-1">{{ __('partner.marketer_campaigns.affiliate_sample_qty_line', ['qty' => $quote['affiliate_sample_qty']]) }}</span>
                         <span class="block text-xs mt-1 text-green-700">{{ __('partner.marketer_campaigns.affiliate_fee_free') }}</span>
+                        @if($affiliateCount === 0)
+                            <span class="block text-xs mt-1 text-amber-700">{{ __('partner.marketer_campaigns.no_affiliates_available') }}</span>
+                        @endif
                     </span>
                 </label>
             </div>

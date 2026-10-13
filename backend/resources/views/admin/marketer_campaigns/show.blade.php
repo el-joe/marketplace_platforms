@@ -262,7 +262,8 @@
 
     {{-- ── Marketers (read-only — invitations already sent at campaign creation) ── --}}
     <div x-show="tab === 'marketers'">
-        <x-card title="{{ __('admin.marketer_campaigns.tab_marketers') }} ({{ $marketerCampaign->invitations->count() }})">
+        <x-card title="{{ __('admin.marketer_campaigns.tab_marketers') }} ({{ $marketerCampaign->invitations->count() + $requestedMarketers->reject(fn ($m) => $marketerCampaign->invitations->contains('marketer_id', $m->id))->count() }})">
+            @include('admin.marketer_campaigns._requested_marketers')
             @forelse($marketerCampaign->invitations as $inv)
                 <div class="flex items-center justify-between p-3 rounded-lg border mb-2
                     {{ $inv->status === 'accepted' ? 'bg-green-50 border-green-200' :
@@ -291,7 +292,9 @@
                     </div>
                 </div>
             @empty
-                <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
+                @if($requestedMarketers->isEmpty())
+                    <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
+                @endif
             @endforelse
         </x-card>
     </div>
@@ -360,8 +363,11 @@
                     </ul>
                 </div>
             @endif
+            @include('admin.marketer_campaigns._requested_marketers')
             @if($marketerCampaign->invitations->isEmpty())
-                <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
+                @if($requestedMarketers->isEmpty())
+                    <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_invitations') }}</p>
+                @endif
             @else
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">

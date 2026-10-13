@@ -2735,6 +2735,8 @@ return [
         'fee_payer_marketer_notice' => 'The fee is paid by the influencer.',
         'commission_estimate_note' => 'Commission is defined by the platform per category and marketer (after any marketer discount) and cannot be edited. Estimate per unit at the listing price :price.',
         'open_to_affiliates_title' => 'Open to all registered affiliates',
+        'no_affiliates_available' => 'No active affiliates in your country yet - the offer will not reach anyone until some join.',
+        'wallet_balance' => 'Your wallet balance',
         'open_to_affiliates_desc' => 'The offer is sent to every active affiliate in your country (:count) - no individual selection.',
         'affiliate_sample_qty_line' => 'Samples set by the platform: :qty per affiliate.',
         'affiliate_fee_free' => 'No platform fee for affiliates.',

@@ -112,4 +112,32 @@ class MarketerCampaignOpenToAffiliatesTest extends TestCase
 
         $this->store(['marketer_ids' => [$inf->id], 'max_commission_budget' => '10.123'])->assertSessionHasErrors('max_commission_budget');
     }
+
+    public function test_checkbox_is_enabled_without_affiliates_and_create_form_shows_wallet_balance(): void
+    {
+        $html = $this->actingAs($this->vendorAdmin, 'vendor')
+            ->get(route('partner.marketer-campaigns.create', $this->s->vendorListingFbn->id))
+            ->assertOk()->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/name="open_to_affiliates"[^>]*disabled/', $html);
+        $this->assertStringContainsString('data-testid="wallet-balance"', $html);
+    }
+
+    public function test_admin_campaign_page_lists_requested_marketers_before_approval(): void
+    {
+        $influencer = F::influencer($this->s);
+        $this->store(['marketer_ids' => [$influencer->id]])->assertSessionHasNoErrors();
+        $campaign = MarketerCampaign::where('vendor_listing_id', $this->s->vendorListingFbn->id)->sole();
+        $this->assertSame([$influencer->id], $campaign->requested_marketer_vendor_ids);
+
+        Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
+        Permission::firstOrCreate(['name' => 'marketer_campaigns.view', 'guard_name' => 'admin']);
+        $admin = Admin::first();
+        $admin->givePermissionTo('marketer_campaigns.view');
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.marketer-campaigns.show', $campaign->id))
+            ->assertOk()
+            ->assertSee('data-testid="requested-marketers"', false)
+            ->assertSee($influencer->name);
+    }
 }
