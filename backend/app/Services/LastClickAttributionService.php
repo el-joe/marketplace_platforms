@@ -178,9 +178,7 @@ class LastClickAttributionService
                     $commissionAmount = round((float) $campaign->marketer_commission_amount * $item->quantity, 2);
 
                     $categoryId = $item->commission_category_id;
-                    $setting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
-                        ->where('category_id', $categoryId)
-                        ->first();
+                    $setting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $categoryId);
                     $marketer = $invitation->marketer;
 
                     // Approval stores the AFFILIATE default on the campaign (it is shared by every invitee). An

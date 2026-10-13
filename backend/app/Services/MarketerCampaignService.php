@@ -384,9 +384,7 @@ class MarketerCampaignService
             return ['marketer_commission_amount' => 0.0, 'platform_commission_amount' => 0.0];
         }
 
-        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
-            ->where('category_id', $category->id)
-            ->first();
+        $countrySetting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $category->id);
 
         $perUnit = (float) ($promoter->isInfluencer()
             ? $countrySetting?->influencer_commission_amount
@@ -804,9 +802,7 @@ class MarketerCampaignService
         $categoryRate = app(CommissionRuleResolver::class)
             ->resolve(null, 'products', $category);
 
-        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
-            ->where('category_id', $category->id)
-            ->first();
+        $countrySetting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $category->id);
 
         $marketerCommission = 0.0;
         if ($countrySetting) {
@@ -854,9 +850,7 @@ class MarketerCampaignService
         $categoryRate = app(CommissionRuleResolver::class)
             ->resolve(null, 'open_market', $category);
 
-        $countrySetting = MarketerCommissionCountrySetting::where('country_id', $campaign->country_id)
-            ->where('category_id', $category->id)
-            ->first();
+        $countrySetting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $category->id);
 
         $marketerCommission = 0.0;
         if ($countrySetting) {

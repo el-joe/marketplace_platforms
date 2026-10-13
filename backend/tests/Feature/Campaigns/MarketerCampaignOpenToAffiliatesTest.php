@@ -3,10 +3,13 @@
 namespace Tests\Feature\Campaigns;
 
 use App\Models\Admin;
+use App\Models\Category;
 use App\Models\Country;
 use App\Models\MarketerCampaign;
+use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\VendorAdmin;
+use App\Services\MarketerCampaignQuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -139,5 +142,31 @@ class MarketerCampaignOpenToAffiliatesTest extends TestCase
             ->assertOk()
             ->assertSee('data-testid="requested-marketers"', false)
             ->assertSee($influencer->name);
+    }
+
+    public function test_quote_uses_the_commission_set_on_a_parent_category_and_its_own_when_present(): void
+    {
+        $parent = Category::create([
+            'id' => (string) Str::uuid(), 'name_en' => 'Abaya', 'name_ar' => 'عباية', 'slug' => 'abaya-'.Str::lower(Str::random(6)),
+            'is_active' => true, 'is_visible' => true,
+        ]);
+        $this->s->category->update(['parent_id' => $parent->id]);
+        $influencer = F::influencer($this->s);
+        $countryId = $this->s->vendorListingFbn->country_id;
+
+        MarketerCommissionCountrySetting::create([
+            'category_id' => $parent->id, 'country_id' => $countryId,
+            'influencer_commission_amount' => 10, 'affiliate_commission_amount' => 5, 'currency' => 'AED',
+        ]);
+
+        $quote = app(MarketerCampaignQuoteService::class)->quote($this->s->vendorListingFbn->fresh(), [$influencer->id]);
+        $this->assertEquals(10, $quote['rows'][0]['commission']['amount']);
+
+        MarketerCommissionCountrySetting::create([
+            'category_id' => $this->s->category->id, 'country_id' => $countryId,
+            'influencer_commission_amount' => 3, 'affiliate_commission_amount' => 1, 'currency' => 'AED',
+        ]);
+        $quote = app(MarketerCampaignQuoteService::class)->quote($this->s->vendorListingFbn->fresh(), [$influencer->id]);
+        $this->assertEquals(3, $quote['rows'][0]['commission']['amount']);
     }
 }

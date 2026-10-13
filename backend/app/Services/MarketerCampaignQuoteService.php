@@ -86,9 +86,7 @@ class MarketerCampaignQuoteService
         $amount = 0.0;
 
         if ($category) {
-            $setting = MarketerCommissionCountrySetting::where('country_id', $listing->country_id)
-                ->where('category_id', $category->id)
-                ->first();
+            $setting = MarketerCommissionCountrySetting::forCategory($listing->country_id, $category->id);
             $perUnit = $setting
                 ? (float) ($isInfluencer ? $setting->influencer_commission_amount : $setting->affiliate_commission_amount)
                 : 0;
