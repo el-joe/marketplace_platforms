@@ -392,6 +392,13 @@ class NavigationService
                 'icon' => 'megaphone',
                 'items' => [
                     [
+                        'label' => __('admin.nav.marketing_fees'),
+                        'route' => 'admin.marketing-fees.index',
+                        'icon' => 'banknotes',
+                        'permission' => 'marketer_commission_settings.view',
+                        'badge' => null,
+                    ],
+                    [
                         'label' => __('admin.nav.banners'),
                         'route' => 'admin.banners.index',
                         'icon' => 'photo',

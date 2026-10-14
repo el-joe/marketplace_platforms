@@ -70,6 +70,7 @@ use App\Http\Controllers\Admin\MarketerJobController;
 use App\Http\Controllers\Admin\MarketerListingController;
 use App\Http\Controllers\Admin\MarketerPromotionFineController;
 use App\Http\Controllers\Admin\MarketerSettingsController;
+use App\Http\Controllers\Admin\MarketingFeeController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\OrderController;
@@ -1130,6 +1131,18 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
             ->middleware('admin.permission:marketer_campaigns.approve');
         Route::post('/{marketerCampaign}/approve-request', [MarketerCampaignController::class, 'approveRequest'])->name('approve-request')
             ->middleware('admin.permission:marketer_campaigns.approve');
+    });
+
+    // ─── Marketing Fees (fixed per country, variable per country x category x type) ───
+    Route::prefix('marketing-fees')->name('marketing-fees.')->middleware('admin.permission:marketer_commission_settings.view')->group(function () {
+        Route::get('/', [MarketingFeeController::class, 'index'])->name('index');
+        Route::get('/categories', [MarketingFeeController::class, 'searchCategories'])->name('categories');
+        Route::post('/calculate', [MarketingFeeController::class, 'calculate'])->name('calculate');
+        Route::middleware('admin.permission:marketer_fee_settings.edit')->group(function () {
+            Route::post('/fixed', [MarketingFeeController::class, 'updateFixed'])->name('update-fixed');
+            Route::post('/variable', [MarketingFeeController::class, 'updateVariable'])->name('update-variable');
+            Route::delete('/variable/{setting}', [MarketingFeeController::class, 'destroyVariable'])->name('destroy-variable');
+        });
     });
 
     // ─── Marketer Settings (Commission & Fees) ────────────────────────────────────

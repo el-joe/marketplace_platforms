@@ -398,6 +398,7 @@ return [
         'marketer_campaigns' => 'Marketer Campaigns',
         'marketer_campaigns_financials' => 'Marketer Campaigns Revenue',
         'marketer_settings' => 'Marketer Settings',
+        'marketing_fees' => 'Marketing Fees',
         'marketer_jobs' => 'Marketer Jobs',
         'all_marketers' => 'All Marketers',
         'campaigns' => 'Campaigns',
