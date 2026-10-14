@@ -271,6 +271,9 @@
                 @if(session('success'))
                     <div class="mb-4 p-4 bg-green-100 text-green-800 rounded-lg">{{ session('success') }}</div>
                 @endif
+                @if(session('warning'))
+                    <div class="mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg" data-testid="flash-warning">{{ session('warning') }}</div>
+                @endif
                 @if(session('error'))
                     <div class="mb-4 p-4 bg-red-100 text-red-800 rounded-lg">{{ session('error') }}</div>
                 @endif

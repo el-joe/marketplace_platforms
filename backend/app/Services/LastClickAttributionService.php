@@ -6,7 +6,6 @@ use App\Models\FlashSaleMarketerInvitation;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
-use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Notifications\Marketer\NewConversionNotification;
@@ -175,33 +174,18 @@ class LastClickAttributionService
                 case 'fixed':
                 case 'last_click':
                 default:
-                    $commissionAmount = round((float) $campaign->marketer_commission_amount * $item->quantity, 2);
-
                     $categoryId = $item->commission_category_id;
-                    $setting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $categoryId);
                     $marketer = $invitation->marketer;
+                    $resolver = new AffiliateCommissionResolver($this->commissionRates);
 
-                    // Approval stores the AFFILIATE default on the campaign (it is shared by every invitee). An
-                    // amount equal to that default is not a typed override, so the marketer's own type rate applies.
-                    $isStoredDefault = $setting
-                        && abs((float) $campaign->marketer_commission_amount - (float) $setting->affiliate_commission_amount) < 0.00005;
-
-                    if ($commissionAmount <= 0 || $isStoredDefault) {
-                        if ($setting) {
-                            $perUnit = $marketer->isInfluencer()
-                                ? $setting->influencer_commission_amount
-                                : $setting->affiliate_commission_amount;
-                            $commissionAmount = round((float) $perUnit * $item->quantity, 2);
-                        }
-                    }
-
-                    if ($commissionAmount <= 0) {
-                        $commissionAmount = $this->commissionRates->calculateCommissionAmount(
-                            $invitation->marketer_id,
-                            $item->commission_category_id,
-                            $item->line_total,
-                            (int) $item->quantity
-                        );
+                    // A per-unit amount typed on the campaign (admin approval, peer promotion) wins. The affiliate
+                    // default stored at approval is not a typed override: the marketer's own rule, else the
+                    // category default (affiliates only, D11) is resolved on the real line instead.
+                    $campaignPerUnit = (float) $campaign->marketer_commission_amount;
+                    if ($campaignPerUnit > 0 && ! $this->isStoredCategoryDefault($campaign, $categoryId, $item, $resolver)) {
+                        $commissionAmount = round($campaignPerUnit * $item->quantity, 2);
+                    } else {
+                        $commissionAmount = $resolver->forConversion($marketer, $campaign, $categoryId, $item->line_total, (int) $item->quantity);
                     }
                     break;
             }
@@ -273,5 +257,25 @@ class LastClickAttributionService
                 fn ($ma) => $ma->notify(new NewConversionNotification($conversion, $ma->id))
             );
         });
+    }
+
+    /** True when the campaign's per-unit amount is just the category affiliate default stored at approval. */
+    private function isStoredCategoryDefault(MarketerCampaign $campaign, ?string $categoryId, OrderItem $item, AffiliateCommissionResolver $resolver): bool
+    {
+        $stored = (float) $campaign->marketer_commission_amount;
+        $prices = array_filter([
+            $campaign->vendorListing?->price,
+            $campaign->adminListing?->price,
+            $item->quantity > 0 ? (float) $item->line_total / (int) $item->quantity : null,
+        ], fn ($price) => $price !== null);
+
+        foreach ($prices as $price) {
+            $default = $resolver->categoryDefault($campaign->country_id, $categoryId, $price, 1);
+            if ($default > 0 && abs($default - $stored) < 0.005) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

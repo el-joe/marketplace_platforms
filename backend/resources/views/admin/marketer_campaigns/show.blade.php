@@ -236,15 +236,20 @@
                 <div class="bg-gray-50 rounded-lg p-3 text-center">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.influencer_commission_label') }}</div>
                     <div class="font-semibold text-green-700">
-                        {{ \App\Support\Money::format($commissionSetting?->influencer_commission_amount ?? 0) }}
-                        {{ $marketerCampaign->currency }}
+                        {{ rtrim(rtrim(number_format((float) ($commissionSetting?->influencer_fee_share_pct ?? 0), 2), '0'), '.') }}%
                     </div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3 text-center">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.affiliate_commission_label') }}</div>
                     <div class="font-semibold text-green-700">
-                        {{ \App\Support\Money::format($commissionSetting?->affiliate_commission_amount ?? 0) }}
-                        {{ $marketerCampaign->currency }}
+                        @php $affMode = $commissionSetting?->affiliate_commission_mode; @endphp
+                        @if($commissionSetting && $commissionSetting->affiliateAmountFor(100, 1) > 0)
+                            @if(in_array($affMode, ['percentage', 'both'], true)){{ rtrim(rtrim(number_format((float) $commissionSetting->affiliate_commission_rate, 2), '0'), '.') }}%@endif
+                            @if($affMode === 'both') + @endif
+                            @if(in_array($affMode, ['fixed', 'both'], true)){{ \App\Support\Money::format($commissionSetting->affiliate_commission_flat) }} {{ $marketerCampaign->currency }}@endif
+                        @else
+                            —
+                        @endif
                     </div>
                 </div>
             </div>

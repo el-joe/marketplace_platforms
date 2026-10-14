@@ -40,6 +40,7 @@ use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
+use App\Services\MarketerFeeShareResolver;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
@@ -375,8 +376,11 @@ class ListingController extends Controller
         if (! $productId || ! $countryId) {
             return response()->json([
                 'fee_per_influencer' => 0,
-                'influencer_commission_amount' => 0,
-                'affiliate_commission_amount' => 0,
+                'influencer_fee_share_pct' => 0,
+                'affiliate_commission_mode' => null,
+                'affiliate_commission_rate' => 0,
+                'affiliate_commission_flat' => 0,
+                'affiliate_estimated_amount' => 0,
                 'currency' => '',
                 'affiliate_fee_is_free' => true,
             ]);
@@ -386,11 +390,7 @@ class ListingController extends Controller
 
         $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
 
-        $commissionSetting = $category
-            ? MarketerCommissionCountrySetting::where('category_id', $category->id)
-                ->where('country_id', $countryId)
-                ->first()
-            : null;
+        $commissionSetting = $category ? MarketerCommissionCountrySetting::forCategory($countryId, $category->id) : null;
 
         $currency = Country::find($countryId)?->currency_code ?? '';
 
@@ -411,8 +411,12 @@ class ListingController extends Controller
             'commission_flat_amount' => $rule?->commission_flat_amount,
             'estimated_amount' => $rule ? $rule->resolveAmount($price, $quantity) : 0,
             'fee_per_influencer' => $feeSetting?->fee_per_influencer ?? 0,
-            'influencer_commission_amount' => $commissionSetting?->influencer_commission_amount ?? 0,
-            'affiliate_commission_amount' => $commissionSetting?->affiliate_commission_amount ?? 0,
+            'influencer_fee_share_pct' => (float) ($commissionSetting?->influencer_fee_share_pct ?? 0),
+            'influencer_fee_share_amount' => app(MarketerFeeShareResolver::class)->splitWithPct($feeSetting?->fee_per_influencer ?? 0, (float) ($commissionSetting?->influencer_fee_share_pct ?? 0))['marketer_payout'],
+            'affiliate_commission_mode' => $commissionSetting?->affiliate_commission_mode,
+            'affiliate_commission_rate' => (float) ($commissionSetting?->affiliate_commission_rate ?? 0),
+            'affiliate_commission_flat' => (float) ($commissionSetting?->affiliate_commission_flat ?? 0),
+            'affiliate_estimated_amount' => $commissionSetting?->affiliateAmountFor($price, $quantity) ?? 0,
             'currency' => $currency,
             'affiliate_fee_is_free' => true,
             'category_name' => $category?->name_ar ?? $category?->name_en ?? '',

@@ -140,7 +140,7 @@ class MarketingFeeServiceTest extends TestCase
         $this->assertSame(4.9, round($first['total_fee'] + $second['total_fee'], 2));
     }
 
-    public function test_new_marketing_fee_columns_exist_and_old_amount_columns_are_kept(): void
+    public function test_new_marketing_fee_columns_exist_and_old_amount_columns_are_dropped(): void
     {
         foreach (['fulfillment_type', 'campaign_subtotal', 'marketing_fee_fixed', 'marketing_fee_variable', 'marketing_fee_total', 'campaign_grand_total', 'affiliate_fee_accrued', 'affiliate_fee_settled_at', 'marketing_fee_fixed_accrued'] as $column) {
             $this->assertTrue(Schema::hasColumn('marketer_campaigns', $column), $column);
@@ -148,8 +148,11 @@ class MarketingFeeServiceTest extends TestCase
         foreach (['platform_fee_marketing_amount', 'marketer_fee_share_pct', 'marketer_payout_amount', 'marketer_credited_at', 'marketer_payout_wallet_tx_id'] as $column) {
             $this->assertTrue(Schema::hasColumn('marketer_campaign_invitations', $column), $column);
         }
-        foreach (['influencer_fee_share_pct', 'affiliate_commission_mode', 'affiliate_commission_rate', 'affiliate_commission_flat', 'influencer_commission_amount', 'affiliate_commission_amount'] as $column) {
+        foreach (['influencer_fee_share_pct', 'affiliate_commission_mode', 'affiliate_commission_rate', 'affiliate_commission_flat'] as $column) {
             $this->assertTrue(Schema::hasColumn('marketer_commission_country_settings', $column), $column);
+        }
+        foreach (['influencer_commission_'.'amount', 'affiliate_commission_'.'amount'] as $column) {
+            $this->assertFalse(Schema::hasColumn('marketer_commission_country_settings', $column), $column);
         }
         $this->assertTrue(Schema::hasTable('marketer_campaign_fee_accruals'));
     }

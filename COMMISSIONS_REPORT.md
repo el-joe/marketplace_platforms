@@ -144,7 +144,7 @@ Related columns:
 
 ### 2.3 Country × category fixed amounts
 
-`marketer_commission_country_settings` holds `influencer_commission_amount` and `affiliate_commission_amount` per category and country. They are edited in Admin → Category → "Marketer commission" (`CategoryController::updateMarketerCommission`, route `categories/{id}/marketer-commission`). The partner listing form (`Partner\ListingController`) also reads them.
+`marketer_commission_country_settings` holds, per category and country, `influencer_fee_share_pct` (share of the influencer campaign fee) and the affiliate default (`affiliate_commission_mode` fixed|percentage|both, `affiliate_commission_rate`, `affiliate_commission_flat`). The old `influencer_commission_amount` / `affiliate_commission_amount` columns were dropped (values dumped to `storage/app/legacy`). They are edited in Admin → Category → "Marketer commission" (`CategoryController::updateMarketerCommission`, route `categories/{id}/marketer-commission`). The partner listing form (`Partner\ListingController`) also reads them.
 
 ### 2.4 Vendor listing influencer % and affiliate %
 

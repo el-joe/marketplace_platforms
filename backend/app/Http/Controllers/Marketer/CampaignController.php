@@ -151,16 +151,23 @@ class CampaignController extends Controller
         };
 
         try {
-            $this->campaignService->requestCampaign($this->marketer(), $source, $validated);
+            $campaign = $this->campaignService->requestCampaign($this->marketer(), $source, $validated);
         } catch (PeerPromotionException $e) {
             return back()->withInput()->with('error', __('marketer.campaigns.peer.errors.'.$e->reason, $e->context));
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('marketer.campaigns.active')
+        $redirect = redirect()->route('marketer.campaigns.active')
             ->with('success', $validated['listing_type'] === 'marketer_listing'
                 ? __('marketer.campaigns.peer.started')
                 : __('Campaign request submitted successfully.'));
+
+        // D12: a peer promotion with no profile rule for the category earns nothing per sale; say so up front.
+        if ($campaign->hasNoPeerCommission()) {
+            $redirect->with('warning', __('marketer.campaigns.peer.no_commission_warning'));
+        }
+
+        return $redirect;
     }
 }

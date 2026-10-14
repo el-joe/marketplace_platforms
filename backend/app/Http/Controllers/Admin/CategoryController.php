@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
@@ -498,22 +499,33 @@ class CategoryController extends Controller
     public function updateMarketerCommission(Request $request, Category $category)
     {
         abort_unless(auth('admin')->user()->can('marketer_commission_settings.edit'), 403);
-        $request->validate([
+        $data = $request->validate([
             'country_id' => 'required|uuid|exists:countries,id',
-            'influencer_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
-            'affiliate_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'influencer_fee_share_pct' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
+            'affiliate_commission_mode' => ['required', Rule::in(['fixed', 'percentage', 'both'])],
+            'affiliate_commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
+            'affiliate_commission_flat' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,4'],
             'currency' => 'required|string|size:3',
         ]);
 
+        $mode = $data['affiliate_commission_mode'];
+
+        // The part a mode does not use is stored as 0 so a stale value never resurfaces when the mode changes back.
         MarketerCommissionCountrySetting::updateOrCreate(
-            ['category_id' => $category->id, 'country_id' => $request->country_id],
+            ['category_id' => $category->id, 'country_id' => $data['country_id']],
             [
-                'influencer_commission_amount' => round((float) $request->input('influencer_commission_amount'), 2),
-                'affiliate_commission_amount' => round((float) $request->input('affiliate_commission_amount'), 2),
-                'currency' => $request->currency,
+                'influencer_fee_share_pct' => round((float) ($data['influencer_fee_share_pct'] ?? 0), 4),
+                'affiliate_commission_mode' => $mode,
+                'affiliate_commission_rate' => $mode === 'fixed' ? 0 : round((float) ($data['affiliate_commission_rate'] ?? 0), 4),
+                'affiliate_commission_flat' => $mode === 'percentage' ? 0 : round((float) ($data['affiliate_commission_flat'] ?? 0), 4),
+                'currency' => $data['currency'],
                 'updated_by_admin_id' => auth()->guard('admin')->id(),
             ]
         );
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => __('admin.categories.marketer_commission_saved')]);
+        }
 
         return back()->with('success', __('admin.categories.marketer_commission_saved'));
     }

@@ -38,8 +38,12 @@ document.addEventListener('DOMContentLoaded', function () {
         samplesLoaded: false,
         tieredRules: [],
         feePerInfluencer: 0,
-        influencerCommission: 0,
-        affiliateCommission: 0,
+        influencerFeeSharePct: 0,
+        influencerFeeShareAmount: 0,
+        affiliateMode: null,
+        affiliateRate: 0,
+        affiliateFlat: 0,
+        affiliateEstimate: 0,
         currency: '',
         pricingLoaded: false,
     };
@@ -151,8 +155,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const lines = [];
-        if (state.influencerCommission > 0) lines.push(`الإنفلوينسر: ${state.influencerCommission} ${state.currency} لكل بيعة`);
-        if (state.affiliateCommission > 0) lines.push(`الأفيلييت: ${state.affiliateCommission} ${state.currency} لكل بيعة`);
+        if (state.influencerFeeSharePct > 0) lines.push(`الإنفلوينسر: ${state.influencerFeeSharePct}% من رسوم الحملة (${state.influencerFeeShareAmount} ${state.currency})`);
+        if (state.affiliateEstimate > 0) {
+            const parts = [];
+            if (['percentage', 'both'].includes(state.affiliateMode)) parts.push(`${state.affiliateRate}%`);
+            if (['fixed', 'both'].includes(state.affiliateMode)) parts.push(`${state.affiliateFlat} ${state.currency}`);
+            lines.push(`الأفيلييت: ${parts.join(' + ')} لكل وحدة مباعة (≈ ${state.affiliateEstimate} ${state.currency})`);
+        }
         commissionBreakdownEl.textContent = lines.length ? lines.join(' | ') : 'لم يتم تحديد الكوميشن لهذه الفئة بعد';
     }
 
@@ -201,8 +210,12 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             const data = await res.json();
             state.feePerInfluencer = data.fee_per_influencer ?? 0;
-            state.influencerCommission = data.influencer_commission_amount ?? 0;
-            state.affiliateCommission = data.affiliate_commission_amount ?? 0;
+            state.influencerFeeSharePct = Number(data.influencer_fee_share_pct ?? 0);
+            state.influencerFeeShareAmount = Number(data.influencer_fee_share_amount ?? 0);
+            state.affiliateMode = data.affiliate_commission_mode ?? null;
+            state.affiliateRate = Number(data.affiliate_commission_rate ?? 0);
+            state.affiliateFlat = Number(data.affiliate_commission_flat ?? 0);
+            state.affiliateEstimate = Number(data.affiliate_estimated_amount ?? 0);
             state.currency = data.currency ?? '';
             state.pricingLoaded = true;
             const info = document.getElementById('marketer-commission-info');

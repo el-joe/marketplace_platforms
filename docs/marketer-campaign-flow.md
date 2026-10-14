@@ -179,8 +179,8 @@ Campaign record
 
 ```
 resolveDefaultCommission()
-  └── MarketerCommissionCountrySetting (country + marketer_type)
-        ├── affiliate_commission_amount → marketer_commission_amount
+  └── AffiliateCommissionResolver::categoryDefault() (category Marketers tab, country, ancestor fallback)
+        ├── affiliate_commission_mode / _rate / _flat, per-unit estimate at the listing price → marketer_commission_amount
         └── CommissionRuleResolver::resolve() → platform_commission_amount
 ```
 
@@ -190,9 +190,10 @@ resolveDefaultCommission()
 base = marketer_commission_amount × quantity
      │
      ├── tiered? → lookup MarketerCampaignTieredRule where from_sale_number <= current_sale_count
-     ├── no tiered → use campaign.marketer_commission_amount
-     │             → fallback: MarketerCommissionCountrySetting
-     │             → fallback: MarketerCommissionRateService::calculateCommissionAmount()
+     ├── no tiered → campaign.marketer_commission_amount when it was typed (admin approval / peer promotion)
+     │             → else AffiliateCommissionResolver: marketer profile rule (MarketerCommissionRateService)
+     │                  → affiliate default of the category tab (affiliates only; influencers earn a fee share instead)
+     │                  → 0
      │
      ├── flash_sale_bonus: + FlashSaleMarketerInvitation bonus if live flash sale
      └── discount: MarketerProfile::applyCommissionDiscount() reduces total

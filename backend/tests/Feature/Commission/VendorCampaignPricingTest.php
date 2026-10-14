@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Commission;
 
+use App\Models\Category;
+use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerCommissionRule;
+use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\VendorAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -46,5 +49,40 @@ class VendorCampaignPricingTest extends TestCase
     {
         $this->pricing(['price' => 100])->assertOk()
             ->assertJsonPath('commission_mode', null)->assertJsonPath('estimated_amount', 0);
+    }
+
+    public function test_returns_the_fee_share_and_the_affiliate_default_with_ancestor_fallback(): void
+    {
+        MarketerInfluencerFeeCountrySetting::updateOrCreate(
+            ['country_id' => $this->s->country->id],
+            ['fee_per_influencer' => 9, 'currency' => 'AED', 'updated_by_admin_id' => null]
+        );
+        $parent = Category::create([
+            'id' => (string) Str::uuid(), 'name_en' => 'P', 'name_ar' => 'ب', 'slug' => 'p-'.Str::lower(Str::random(6)),
+            'is_active' => true, 'is_visible' => true,
+        ]);
+        $this->s->category->update(['parent_id' => $parent->id]);
+        MarketerCommissionCountrySetting::create([
+            'category_id' => $parent->id, 'country_id' => $this->s->country->id, 'currency' => 'AED',
+            'influencer_fee_share_pct' => 20, 'affiliate_commission_mode' => 'both', 'affiliate_commission_rate' => 10, 'affiliate_commission_flat' => 3,
+        ]);
+
+        $this->pricing(['price' => 200, 'quantity' => 2])->assertOk()
+            ->assertJsonPath('influencer_fee_share_pct', 20)
+            ->assertJsonPath('influencer_fee_share_amount', 1.8)
+            ->assertJsonPath('affiliate_commission_mode', 'both')
+            ->assertJsonPath('affiliate_commission_rate', 10)
+            ->assertJsonPath('affiliate_commission_flat', 3)
+            ->assertJsonPath('affiliate_estimated_amount', 26)
+            ->assertJsonMissingPath('influencer_commission_'.'amount')
+            ->assertJsonMissingPath('affiliate_commission_'.'amount');
+    }
+
+    public function test_without_a_category_setting_the_new_fields_are_zero(): void
+    {
+        $this->pricing(['price' => 100])->assertOk()
+            ->assertJsonPath('influencer_fee_share_pct', 0)
+            ->assertJsonPath('affiliate_commission_mode', null)
+            ->assertJsonPath('affiliate_estimated_amount', 0);
     }
 }

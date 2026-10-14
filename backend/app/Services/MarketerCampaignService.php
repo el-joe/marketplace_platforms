@@ -18,7 +18,6 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCampaignTieredRule;
 use App\Models\MarketerCategoryCommission;
-use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerCommissionRule;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerListing;
@@ -373,10 +372,9 @@ class MarketerCampaignService
     }
 
     /**
-     * Admin-defined commission of the promoter's marketer type for the listing's category
-     * (same source the vendor flow shows: marketer_commission_country_settings), with the
-     * platform rule applied on top. Zero is allowed: conversion time then falls back to the
-     * promoter's own category rule (MarketerCommissionRateService).
+     * Per-unit commission of a peer promotion = the promoter's profile rule for the listing's category
+     * (D12), with the platform rule applied on top. Zero is allowed: the campaign then shows a
+     * "no commission configured" warning and conversions resolve the profile rule again at sale time.
      *
      * @return array{marketer_commission_amount: float, platform_commission_amount: float}
      */
@@ -387,11 +385,11 @@ class MarketerCampaignService
             return ['marketer_commission_amount' => 0.0, 'platform_commission_amount' => 0.0];
         }
 
-        $countrySetting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $category->id);
-
-        $perUnit = (float) ($promoter->isInfluencer()
-            ? $countrySetting?->influencer_commission_amount
-            : $countrySetting?->affiliate_commission_amount);
+        // D11/D12: an influencer has no per-sale default on the category tab; the only per-unit commission of a peer
+        // promotion is the promoter's own profile rule ("Commission Rates by Category"), else 0 (no commission).
+        $perUnit = (float) (app(MarketerCommissionRateService::class)
+            ->resolveRule($promoter, $category->id)
+            ?->resolveAmount((float) ($listing->price ?? 0), 1, true) ?? 0);
 
         $platform = 0.0;
         if ($perUnit > 0) {
@@ -805,16 +803,12 @@ class MarketerCampaignService
         $categoryRate = app(CommissionRuleResolver::class)
             ->resolve(null, 'products', $category);
 
-        $countrySetting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $category->id);
-
-        $marketerCommission = 0.0;
-        if ($countrySetting) {
-            // Both marketer types default to the affiliate rate here — the
-            // campaign is shared across whichever marketers accept the
-            // invitation, and per-marketer-type differences are already
-            // applied per-conversion in LastClickAttributionService.
-            $marketerCommission = (float) $countrySetting->affiliate_commission_amount;
-        }
+        // Per-unit estimate of the category-tab AFFILIATE default (the campaign is shared across whichever marketers
+        // accept; influencers have no default per-sale commission, D11) at the listing price. Percentage parts are
+        // re-resolved on the real line at sale time (LastClickAttributionService).
+        $listingPrice = (float) ($campaign->vendorListing?->price ?? $campaign->adminListing?->price ?? 0);
+        $marketerCommission = app(AffiliateCommissionResolver::class)
+            ->categoryDefault($campaign->country_id, $category->id, $listingPrice, 1);
 
         if ($marketerCommission <= 0) {
             return null;
@@ -853,12 +847,8 @@ class MarketerCampaignService
         $categoryRate = app(CommissionRuleResolver::class)
             ->resolve(null, 'open_market', $category);
 
-        $countrySetting = MarketerCommissionCountrySetting::forCategory($campaign->country_id, $category->id);
-
-        $marketerCommission = 0.0;
-        if ($countrySetting) {
-            $marketerCommission = (float) $countrySetting->affiliate_commission_amount;
-        }
+        $marketerCommission = app(AffiliateCommissionResolver::class)
+            ->categoryDefault($campaign->country_id, $category->id, (float) ($campaign->classifiedListing?->price ?? 0), 1);
 
         if ($marketerCommission <= 0) {
             return null;

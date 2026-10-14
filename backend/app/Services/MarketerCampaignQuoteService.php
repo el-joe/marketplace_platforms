@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Country;
 use App\Models\Marketer;
-use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\VendorListing;
 use App\Services\Campaign\CampaignSampleService;
@@ -16,7 +15,7 @@ use Illuminate\Support\Collection;
  * Read-only pricing preview for a vendor-listing marketer campaign.
  *
  * Everything here comes from admin-controlled settings (influencer fee per
- * country, country/category commission settings, marketer_commission_rules
+ * country, category fee share / affiliate default, marketer_commission_rules
  * and the marketer's profile discount). The vendor never supplies a number:
  * the create form shows this quote and the server re-computes it on store.
  * Amounts are DECIMAL(19,4) base-currency units (floats here, rounded to 2 dp for display and charging).
@@ -69,47 +68,24 @@ class MarketerCampaignQuoteService
     }
 
     /**
-     * Indicative commission for ONE unit sold at the listing price, resolved
-     * like LastClickAttributionService does at sale time: country/category
-     * setting by marketer type, else the commission rule, then the marketer's
-     * profile discount.
+     * Indicative per-sale commission for ONE unit sold at the listing price, resolved like
+     * LastClickAttributionService does at sale time (AffiliateCommissionResolver): the marketer's own profile
+     * rule, else the category-tab affiliate default (affiliates only, D11), else 0.
      *
      * @return array{amount: float, mode: ?string, rate: ?float, flat: ?float, source: string}
      */
     public function commissionFor(Marketer $marketer, VendorListing $listing, ?Category $category, bool $isInfluencer): array
     {
-        $price = (float) $listing->price;
-        $source = 'none';
-        $mode = null;
-        $rate = null;
-        $flat = null;
-        $amount = 0.0;
+        $resolved = app(AffiliateCommissionResolver::class)
+            ->resolve($marketer, $listing->country_id, $category?->id, (float) $listing->price, 1);
 
-        if ($category) {
-            $setting = MarketerCommissionCountrySetting::forCategory($listing->country_id, $category->id);
-            $perUnit = $setting
-                ? (float) ($isInfluencer ? $setting->influencer_commission_amount : $setting->affiliate_commission_amount)
-                : 0;
-            if ($perUnit > 0) {
-                $amount = $perUnit;
-                $source = 'country_category';
-                $mode = 'fixed';
-                $flat = $perUnit;
-            }
-        }
-
-        if ($amount <= 0) {
-            $rule = app(CommissionRuleResolver::class)->resolve($marketer->id, 'products', $category, true);
-            if ($rule) {
-                $amount = (float) $rule->resolveAmount($price, 1);
-                $source = 'rule';
-                $mode = $rule->commission_mode;
-                $rate = (float) $rule->commission_rate;
-                $flat = $rule->commission_flat_amount !== null ? (float) $rule->commission_flat_amount : null;
-            }
-        }
-
-        return ['amount' => $amount, 'mode' => $mode, 'rate' => $rate, 'flat' => $flat, 'source' => $source];
+        return [
+            'amount' => $resolved['amount'],
+            'mode' => $resolved['mode'],
+            'rate' => $resolved['rate'],
+            'flat' => $resolved['flat'],
+            'source' => $resolved['source'],
+        ];
     }
 
     /**
@@ -144,7 +120,15 @@ class MarketerCampaignQuoteService
         foreach ($marketers as $m) {
             $isInfluencer = $m->marketerJobs->contains('key', 'influencer');
             $isInfluencer ? $influencers++ : $affiliates++;
-            $commission = $this->commissionFor($m, $listing, $category, $isInfluencer);
+            $perSale = $this->commissionFor($m, $listing, $category, $isInfluencer);
+            $split = $isInfluencer
+                ? app(MarketerFeeShareResolver::class)->split($feePer, $listing->country_id, $category?->id)
+                : ['share_pct' => 0.0, 'marketer_payout' => 0.0, 'platform_keeps' => 0.0];
+            // Influencers earn a share of the campaign fee (shown as their estimate); a per-sale rule is only
+            // present when the admin set one on their profile. Affiliates earn the per-unit commission.
+            $commission = $isInfluencer
+                ? ['amount' => $split['marketer_payout'], 'mode' => null, 'rate' => $split['share_pct'], 'flat' => null, 'source' => 'fee_share']
+                : $perSale;
             $rows[] = [
                 'id' => $m->id,
                 'name' => $m->name,
@@ -153,6 +137,10 @@ class MarketerCampaignQuoteService
                 'fee_vat' => $isInfluencer ? $feeVat : 0.0,
                 'fee_total' => $isInfluencer ? round($feePer + $feeVat, 2) : 0.0,
                 'commission' => $commission,
+                'per_sale_commission' => $perSale,
+                'fee_share_pct' => $split['share_pct'],
+                'marketer_payout' => $split['marketer_payout'],
+                'platform_keeps' => $split['platform_keeps'],
             ];
         }
 

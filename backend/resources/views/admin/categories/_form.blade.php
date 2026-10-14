@@ -464,52 +464,106 @@
                 @if(!$isEdit)
                     <p class="text-sm text-gray-400 italic">{{ __('admin.categories.save_category_first_for_shipping') }}</p>
                 @else
-                    {{-- Commission per Country --}}
+                    {{-- Marketer settings per country: influencer fee share + affiliate default commission --}}
                     <div>
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ __('admin.categories.marketer_commission_per_country') }}</h4>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-1">{{ __('admin.categories.marketer_commission_per_country') }}</h4>
+                        <p class="text-xs text-gray-500 mb-3">{{ __('admin.categories.marketer_settings_intro') }}</p>
 
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.categories.country_column_ar') }}</th>
-                                        <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.categories.currency_column') }}</th>
-                                        <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.categories.influencer_commission') }}</th>
-                                        <th class="px-3 py-2 text-right font-medium text-gray-500">{{ __('admin.categories.affiliate_commission') }}</th>
-                                        <th class="px-3 py-2 text-right font-medium text-gray-500"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @foreach ($activeCountries as $country)
-                                        @php $setting = $marketerCommissions->get($country->id); @endphp
-                                        <tr>
-                                            <form method="POST" action="{{ route('admin.categories.marketer-commission.update', $category->id) }}" class="contents">
-                                                @csrf
-                                                <input type="hidden" name="country_id" value="{{ $country->id }}">
-                                                <input type="hidden" name="currency" value="{{ $setting->currency ?? $country->currency_code }}">
-                                                <td class="px-3 py-2 text-gray-900">{{ $country->name_ar }}</td>
-                                                <td class="px-3 py-2 text-gray-700">{{ $setting->currency ?? $country->currency_code }}</td>
-                                                <td class="px-3 py-2">
-                                                    <input type="number" min="0" step="0.01" name="influencer_commission_amount"
-                                                        value="{{ $setting->influencer_commission_amount ?? 0 }}"
-                                                        class="w-24 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    <input type="number" min="0" step="0.01" name="affiliate_commission_amount"
-                                                        value="{{ $setting->affiliate_commission_amount ?? 0 }}"
-                                                        class="w-24 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    <button type="submit"
-                                                        class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
-                                                        {{ __('common.save') }}
-                                                    </button>
-                                                </td>
-                                            </form>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="space-y-4" data-testid="marketer-country-settings">
+                            @foreach ($activeCountries as $country)
+                                @php
+                                    $setting = $marketerCommissions->get($country->id);
+                                    $currencyCode = $setting->currency ?? $country->currency_code;
+                                    $mode = $setting->affiliate_commission_mode ?? 'percentage';
+                                @endphp
+                                {{-- This tab sits inside the category <form>, so each country saves through fetch (a nested <form> is dropped by the browser). --}}
+                                <div class="rounded-lg border border-gray-200 p-4"
+                                    data-country-id="{{ $country->id }}"
+                                    x-data="{
+                                        mode: @js($mode),
+                                        saving: false,
+                                        message: '',
+                                        failed: false,
+                                        async save() {
+                                            this.saving = true; this.message = ''; this.failed = false;
+                                            const data = new FormData();
+                                            data.append('_token', document.querySelector('meta[name=csrf-token]')?.content || @js(csrf_token()));
+                                            this.$refs.box.querySelectorAll('[data-field]').forEach(el => data.append(el.dataset.field, el.value));
+                                            try {
+                                                const res = await fetch(@js(route('admin.categories.marketer-commission.update', $category->id)), {
+                                                    method: 'POST', body: data,
+                                                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                                                });
+                                                const json = await res.json().catch(() => ({}));
+                                                if (!res.ok) {
+                                                    this.failed = true;
+                                                    this.message = json.errors ? Object.values(json.errors).flat()[0] : (json.message || @js(__('admin.categories.marketer_commission_failed')));
+                                                } else {
+                                                    this.message = json.message || @js(__('admin.categories.marketer_commission_saved'));
+                                                }
+                                            } catch (e) {
+                                                this.failed = true; this.message = @js(__('admin.categories.marketer_commission_failed'));
+                                            }
+                                            this.saving = false;
+                                        },
+                                    }">
+                                    <div x-ref="box">
+                                        <input type="hidden" data-field="country_id" value="{{ $country->id }}">
+                                        <input type="hidden" data-field="currency" value="{{ $currencyCode }}">
+
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="font-semibold text-gray-900">{{ $country->name_ar }} <span class="text-xs font-normal text-gray-500">({{ $currencyCode }})</span></div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            {{-- Influencers --}}
+                                            <div>
+                                                <div class="text-xs font-semibold text-purple-700 uppercase mb-2">{{ __('admin.categories.influencer_fee_share_title') }}</div>
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.influencer_fee_share_pct') }}</label>
+                                                <input type="number" min="0" max="100" step="any" data-field="influencer_fee_share_pct"
+                                                    value="{{ rtrim(rtrim(number_format((float) ($setting->influencer_fee_share_pct ?? 0), 4, '.', ''), '0'), '.') ?: 0 }}"
+                                                    class="w-32 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
+                                                <p class="text-[11px] text-gray-500 mt-1">{{ __('admin.categories.influencer_fee_share_help') }}</p>
+                                            </div>
+
+                                            {{-- Affiliates --}}
+                                            <div>
+                                                <div class="text-xs font-semibold text-blue-700 uppercase mb-2">{{ __('admin.categories.affiliate_default_title') }}</div>
+                                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.affiliate_mode') }}</label>
+                                                <select data-field="affiliate_commission_mode" x-model="mode"
+                                                    class="rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
+                                                    <option value="percentage">{{ __('admin.categories.affiliate_mode_percentage') }}</option>
+                                                    <option value="fixed">{{ __('admin.categories.affiliate_mode_fixed') }}</option>
+                                                    <option value="both">{{ __('admin.categories.affiliate_mode_both') }}</option>
+                                                </select>
+                                                <div class="flex flex-wrap gap-4 mt-3">
+                                                    <div x-show="mode !== 'fixed'">
+                                                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.affiliate_rate') }}</label>
+                                                        <input type="number" min="0" max="100" step="any" data-field="affiliate_commission_rate"
+                                                            value="{{ rtrim(rtrim(number_format((float) ($setting->affiliate_commission_rate ?? 0), 4, '.', ''), '0'), '.') ?: 0 }}"
+                                                            class="w-32 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
+                                                    </div>
+                                                    <div x-show="mode !== 'percentage'">
+                                                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.affiliate_flat', ['currency' => $currencyCode]) }}</label>
+                                                        <input type="number" min="0" step="any" data-field="affiliate_commission_flat"
+                                                            value="{{ rtrim(rtrim(number_format((float) ($setting->affiliate_commission_flat ?? 0), 4, '.', ''), '0'), '.') ?: 0 }}"
+                                                            class="w-32 rounded-md border-gray-300 shadow-sm text-sm focus:border-primary-500 focus:ring-primary-500">
+                                                    </div>
+                                                </div>
+                                                <p class="text-[11px] text-gray-500 mt-1">{{ __('admin.categories.affiliate_default_help') }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-3 flex items-center gap-3">
+                                        <button type="button" @click="save()" :disabled="saving"
+                                            class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50">
+                                            {{ __('common.save') }}
+                                        </button>
+                                        <span x-show="message" x-text="message" class="text-xs" :class="failed ? 'text-red-600' : 'text-green-600'"></span>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
 

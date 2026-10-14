@@ -144,9 +144,9 @@ class MarketerSaleSettlementTest extends TestCase
 
     public function test_peer_proxy_sale_settles_to_the_owner_who_pays_the_promoter(): void
     {
-        P::commission($this->s, 3000);
         $owner = F::influencer($this->s);
         $promoter = F::influencer($this->s);
+        P::promoterRule($this->s, $promoter, 3000);
         $campaign = P::request($promoter, P::ownListing($this->s, $owner, 20));
         $proxy = MarketerListing::where('invitation_id', $campaign->invitations()->sole()->id)->sole();
 

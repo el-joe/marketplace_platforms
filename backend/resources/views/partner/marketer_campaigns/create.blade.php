@@ -326,8 +326,13 @@
                 commissionLabel(c) {
                     // Read-only, as resolved by the server from admin settings.
                     let txt = this.money(c.amount);
-                    if (c.source === 'rule' && c.mode !== 'fixed' && c.rate) {
-                        txt += ' (' + c.rate + '%)';
+                    if (c.source === 'fee_share') {
+                        txt += ' (' + c.rate + '% {{ __("partner.marketer_campaigns.fee_share_of_fee") }})';
+                    } else {
+                        txt += ' {{ __("partner.marketer_campaigns.per_unit_sold") }}';
+                        if (c.mode !== 'fixed' && c.rate) {
+                            txt += ' (' + c.rate + '%)';
+                        }
                     }
                     return txt;
                 },

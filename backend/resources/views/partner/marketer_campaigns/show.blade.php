@@ -300,7 +300,7 @@
                                     @php
                                         $qRow = $quoteRows[$invitation->marketer_id] ?? null;
                                         $rowFee = (int) ($invitation->platform_fee_amount ?: ($qRow['fee'] ?? 0));
-                                        $rowCommission = (int) ($qRow['commission']['amount'] ?? 0);
+                                        $rowCommission = (float) ($qRow['commission']['amount'] ?? 0);
                                     @endphp
                                     @php
                                         $rowVat = $invitation->platform_fee_amount > 0

@@ -13,14 +13,11 @@ class MarketerCommissionCountrySetting extends Model
 
     protected $fillable = [
         'category_id', 'country_id',
-        'influencer_commission_amount', 'affiliate_commission_amount',
         'influencer_fee_share_pct', 'affiliate_commission_mode', 'affiliate_commission_rate', 'affiliate_commission_flat',
         'currency', 'updated_by_admin_id',
     ];
 
     protected $casts = [
-        'influencer_commission_amount' => DecimalMoney::class,
-        'affiliate_commission_amount' => DecimalMoney::class,
         'influencer_fee_share_pct' => 'decimal:4',
         'affiliate_commission_rate' => 'decimal:4',
         'affiliate_commission_flat' => DecimalMoney::class,
@@ -43,6 +40,19 @@ class MarketerCommissionCountrySetting extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Affiliate default for ONE sale line: fixed = flat x qty; percentage = line_total x rate%; both = sum
+     * (same maths as MarketerCommissionRule / MarketerCategoryCommission). 0 when nothing is configured.
+     */
+    public function affiliateAmountFor(int|float|string $lineTotal, int $quantity = 1): float
+    {
+        return (new MarketerCommissionRule([
+            'commission_mode' => $this->affiliate_commission_mode ?: 'percentage',
+            'commission_rate' => (float) $this->affiliate_commission_rate,
+            'commission_flat_amount' => $this->affiliate_commission_flat,
+        ]))->resolveAmount($lineTotal, $quantity, true);
     }
 
     public function category(): BelongsTo

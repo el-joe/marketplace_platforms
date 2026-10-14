@@ -2,9 +2,10 @@
 
 namespace Tests\Support;
 
+use App\Models\Category;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
-use App\Models\MarketerCommissionCountrySetting;
+use App\Models\MarketerCommissionRule;
 use App\Models\MarketerListing;
 use App\Models\WarehouseInventory;
 use App\Services\MarketerCampaignService;
@@ -41,13 +42,20 @@ class PeerPromotionFixtures
         return $listing->fresh();
     }
 
-    /** Admin-defined per-unit influencer commission for the scenario category + country. */
-    public static function commission(MarketplaceScenario $s, int $influencerAmount = 3000): void
+    /**
+     * The promoter's own profile rule ("Commission Rates by Category", fixed per unit) for the scenario category.
+     * D11/D12: this is the only per-sale commission an influencer can have; there is no category-tab default.
+     */
+    public static function promoterRule(MarketplaceScenario $s, Marketer $promoter, int $perUnit = 3000): MarketerCommissionRule
     {
-        MarketerCommissionCountrySetting::updateOrCreate(
-            ['category_id' => $s->category->id, 'country_id' => $s->country->id],
-            ['influencer_commission_amount' => $influencerAmount, 'affiliate_commission_amount' => 1000, 'currency' => 'AED']
-        );
+        return MarketerCommissionRule::create([
+            'marketer_id' => $promoter->id,
+            'scope' => 'products',
+            'category_type' => Category::class,
+            'category_id' => $s->category->id,
+            'commission_mode' => 'fixed',
+            'commission_flat_amount' => $perUnit,
+        ]);
     }
 
     public static function request(Marketer $promoter, MarketerListing $listing): MarketerCampaign

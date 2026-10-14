@@ -59,9 +59,9 @@ class PeerPromotionConversionTest extends TestCase
 
     public function test_order_through_the_promoters_listing_reserves_the_owners_stock_and_credits_the_promoter(): void
     {
-        P::commission($this->s, 3000);
         $owner = F::influencer($this->s);
         $promoter = F::influencer($this->s);
+        P::promoterRule($this->s, $promoter, 3000);
         $ownerListing = P::ownListing($this->s, $owner, 20);
         $campaign = P::request($promoter, $ownerListing);
         $invitation = $campaign->invitations()->sole();
@@ -100,9 +100,9 @@ class PeerPromotionConversionTest extends TestCase
 
     public function test_commission_is_credited_to_the_promoter_wallet_not_the_owner(): void
     {
-        P::commission($this->s, 3000);
         $owner = F::influencer($this->s);
         $promoter = F::influencer($this->s);
+        P::promoterRule($this->s, $promoter, 3000);
         $campaign = P::request($promoter, P::ownListing($this->s, $owner, 20));
         $proxy = MarketerListing::where('invitation_id', $campaign->invitations()->sole()->id)->sole();
 

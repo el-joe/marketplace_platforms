@@ -226,4 +226,15 @@ class MarketerCampaign extends Model
                          ?? $this->title ?? '—',
         };
     }
+
+    /**
+     * Peer promotion (influencer promotes an influencer's listing) whose promoter has no commission rule for the
+     * category: it earns nothing per sale until the admin sets a rule on his profile (D12).
+     */
+    public function hasNoPeerCommission(): bool
+    {
+        return $this->marketer_listing_id !== null
+            && $this->commission_type !== 'tiered'
+            && (float) $this->marketer_commission_amount <= 0;
+    }
 }

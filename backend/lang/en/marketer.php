@@ -198,6 +198,8 @@ return [
             'promote' => 'Promote',
             'already_this_month' => 'Already promoted this month',
             'none' => 'No influencer products are available to promote right now.',
+            'no_commission_warning' => 'This promotion has no commission configured: you have no commission rule for this product\'s category, so you earn nothing per sale until the admin sets one on your profile.',
+            'no_commission_short' => 'No commission configured',
             'started' => 'Promotion started. Your referral link is ready under Active Campaigns.',
             'promoted_title' => 'Promoted by other influencers',
             'promoted_hint' => 'Influencers who promote your products.',

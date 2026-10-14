@@ -88,6 +88,10 @@ class CampaignController extends Controller
             ], 422);
         }
 
-        return response()->json(['success' => true, 'data' => $campaign], 201);
+        return response()->json([
+            'success' => true,
+            'data' => $campaign,
+            'warning' => $campaign->hasNoPeerCommission() ? __('marketer.campaigns.peer.no_commission_warning') : null,
+        ], 201);
     }
 }

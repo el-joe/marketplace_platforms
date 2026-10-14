@@ -58,6 +58,37 @@ class PeerPromotionMarketerPanelTest extends TestCase
         }
     }
 
+    public function test_request_without_a_profile_commission_warns_and_flags_the_campaign(): void
+    {
+        $owner = F::influencer($this->s);
+        $listing = P::ownListing($this->s, $owner);
+        $me = F::influencer($this->s);
+
+        $this->requestPeer($listing->id, F::marketerLogin($me))
+            ->assertRedirect(route('marketer.campaigns.active'))
+            ->assertSessionHas('warning', __('marketer.campaigns.peer.no_commission_warning'));
+
+        $this->actingAs(F::marketerLogin($me), 'marketer')->get(route('marketer.campaigns.active'))
+            ->assertOk()
+            ->assertSee('data-testid="no-commission-warning"', false);
+    }
+
+    public function test_request_with_a_profile_commission_has_no_warning(): void
+    {
+        $owner = F::influencer($this->s);
+        $listing = P::ownListing($this->s, $owner);
+        $me = F::influencer($this->s);
+        P::promoterRule($this->s, $me, 3000);
+
+        $this->requestPeer($listing->id, F::marketerLogin($me))
+            ->assertRedirect(route('marketer.campaigns.active'))
+            ->assertSessionMissing('warning');
+
+        $this->actingAs(F::marketerLogin($me), 'marketer')->get(route('marketer.campaigns.active'))
+            ->assertOk()
+            ->assertDontSee('data-testid="no-commission-warning"', false);
+    }
+
     public function test_request_starts_an_active_promotion_and_shows_it_under_active_campaigns(): void
     {
         $me = F::influencer($this->s);

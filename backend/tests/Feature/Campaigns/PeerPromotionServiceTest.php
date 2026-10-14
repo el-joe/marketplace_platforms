@@ -5,6 +5,7 @@ namespace Tests\Feature\Campaigns;
 use App\Enums\PromotionCategory;
 use App\Exceptions\PeerPromotionException;
 use App\Models\MarketerCampaign;
+use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerListing;
 use App\Services\Marketer\PromotionQuotaService;
 use App\Services\MarketerCampaignService;
@@ -43,9 +44,9 @@ class PeerPromotionServiceTest extends TestCase
 
     public function test_request_creates_an_active_campaign_with_an_accepted_invitation_and_a_proxy_listing(): void
     {
-        P::commission($this->s, 3000);
         $owner = F::influencer($this->s);
         $promoter = F::influencer($this->s);
+        P::promoterRule($this->s, $promoter, 3000);
         $listing = P::ownListing($this->s, $owner);
 
         $campaign = P::request($promoter, $listing);
@@ -176,17 +177,25 @@ class PeerPromotionServiceTest extends TestCase
         $this->assertSame(0, $quota->doneFor($promoter->fresh(), PromotionCategory::VendorRequests, now()));
     }
 
-    public function test_commission_falls_back_to_zero_when_the_admin_set_none_and_platform_rule_applies_otherwise(): void
+    public function test_peer_commission_is_the_promoters_profile_rule_and_zero_without_one_even_with_a_category_default(): void
     {
+        // D11/D12: the category-tab affiliate default and fee share never give an influencer a per-sale commission.
+        MarketerCommissionCountrySetting::create([
+            'category_id' => $this->s->category->id, 'country_id' => $this->s->country->id,
+            'influencer_fee_share_pct' => 20, 'affiliate_commission_mode' => 'fixed', 'affiliate_commission_flat' => 1000, 'currency' => 'AED',
+        ]);
         $owner = F::influencer($this->s);
-        $promoter = F::influencer($this->s);
+        $withoutRule = F::influencer($this->s);
+        $withRule = F::influencer($this->s);
+        P::promoterRule($this->s, $withRule, 4500);
 
-        $campaign = P::request($promoter, P::ownListing($this->s, $owner));
-        $this->assertSame(0, (int) $campaign->marketer_commission_amount); // resolved per conversion by the promoter's own rule
+        $campaign = P::request($withoutRule, P::ownListing($this->s, $owner));
+        $this->assertSame(0, (int) $campaign->marketer_commission_amount);
+        $this->assertTrue($campaign->hasNoPeerCommission());
 
-        P::commission($this->s, 4500);
-        $campaign2 = P::request(F::influencer($this->s), P::ownListing($this->s, $owner));
+        $campaign2 = P::request($withRule, P::ownListing($this->s, $owner));
         $this->assertSame(4500, (int) $campaign2->marketer_commission_amount);
+        $this->assertFalse($campaign2->hasNoPeerCommission());
     }
 
     public function test_pausing_the_owners_listing_pauses_the_proxy_listing(): void

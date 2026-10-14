@@ -84,9 +84,7 @@ class MarketerCampaignController extends Controller
             ?? $marketerCampaign->marketerListing?->productVariant?->product?->category_id;
 
         $commissionSetting = $categoryId
-            ? MarketerCommissionCountrySetting::where('category_id', $categoryId)
-                ->where('country_id', $marketerCampaign->country_id)
-                ->first()
+            ? MarketerCommissionCountrySetting::forCategory($marketerCampaign->country_id, $categoryId)
             : null;
 
         $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);

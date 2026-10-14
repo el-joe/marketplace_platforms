@@ -19,6 +19,7 @@ use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
+use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerListing;
 use App\Models\MarketerProfile;
@@ -87,7 +88,11 @@ class MarketerCampaignLifecycleTest extends TestCase
         F::setting('marketer_attribution_window_days', 60);
         F::setting('marketer_referral_grace_days', 7);
         F::categoryQty($this->s, platform: 1, influencer: 2, affiliate: 0, minStock: 10);
-        P::commission($this->s, 3000);
+        // Category Marketers tab: affiliate default (what an approved campaign stores) + influencer fee share.
+        MarketerCommissionCountrySetting::updateOrCreate(
+            ['category_id' => $this->s->category->id, 'country_id' => $this->s->country->id],
+            ['affiliate_commission_mode' => 'fixed', 'affiliate_commission_flat' => 1000, 'influencer_fee_share_pct' => 20, 'currency' => 'AED']
+        );
         MarketerInfluencerFeeCountrySetting::updateOrCreate(
             ['country_id' => $this->s->country->id],
             ['fee_per_influencer' => 1000, 'currency' => 'AED', 'updated_by_admin_id' => null]
@@ -121,13 +126,14 @@ class MarketerCampaignLifecycleTest extends TestCase
 
     // ───────── helpers ─────────
 
-    /** An approved influencer with a 30% platform cut and a campaign WhatsApp number. */
+    /** An approved influencer with a 30% platform cut, a campaign WhatsApp number and a 3000 per-unit profile rule (D11: the only per-sale commission an influencer has). */
     private function influencer(int $cut = 30)
     {
         $m = F::influencer($this->s);
         $m->update(['whatsapp_for_campaigns' => '+97150'.random_int(1000000, 9999999), 'country_id' => $this->s->country->id]);
         MarketerProfile::where('marketer_id', $m->id)->update(['platform_cut_percentage' => $cut, 'profile_slug' => 'p-'.Str::lower(Str::random(6))]);
         F::marketerLogin($m);
+        P::promoterRule($this->s, $m, 3000);
 
         return $m->fresh();
     }
