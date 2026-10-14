@@ -318,7 +318,6 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('categories')->name('categories.')->middleware('admin.permission:categories.view')->group(function () {
         Route::get('/create', [CategoryController::class, 'create'])->name('create');
         Route::post('/reorder', [CategoryController::class, 'reorder'])->name('reorder');
-        Route::put('/fixed-commission', [CategoryController::class, 'updateFixedCommission'])->name('fixed-commission.update')->middleware('admin.permission:categories.edit');
         Route::get('/', [CategoryController::class, 'index'])->name('index');
         Route::post('/', [CategoryController::class, 'store'])->name('store');
         Route::get('/{category}/edit', [CategoryController::class, 'edit'])->name('edit');

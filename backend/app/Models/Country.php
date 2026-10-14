@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use App\Casts\DecimalMoney;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Collection;
 
 class Country extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -29,7 +32,6 @@ class Country extends Model
         'default_locale',
         'timezone',
         'vat_rate',
-        'fixed_commission_amount',
         'is_active',
         'is_launched',
         'cod_available',
@@ -43,11 +45,10 @@ class Country extends Model
         'is_active' => 'boolean',
         'is_launched' => 'boolean',
         'cod_available' => 'boolean',
-        'cod_max_amount' => \App\Casts\DecimalMoney::class,
-        'cod_supermall_max_amount' => \App\Casts\DecimalMoney::class,
+        'cod_max_amount' => DecimalMoney::class,
+        'cod_supermall_max_amount' => DecimalMoney::class,
         'cod_supermall_category_id' => 'string',
         'vat_rate' => 'decimal:2',
-        'fixed_commission_amount' => 'decimal:4',
         'launched_at' => 'datetime',
     ];
 
@@ -75,7 +76,6 @@ class Country extends Model
     {
         return $this->belongsTo(Category::class, 'cod_supermall_category_id');
     }
-
 
     public function countryPaymentGateways(): HasMany
     {
@@ -124,20 +124,18 @@ class Country extends Model
 
     // ── Document requirements helper ───────────────────────────────────────
 
-    public function requiredDocumentTypesFor(): \Illuminate\Support\Collection
+    public function requiredDocumentTypesFor(): Collection
     {
         return VendorDocumentType::where('is_active', true)
-            ->whereHas('countryRequirements', fn ($q) =>
-                $q->where('country_id', $this->id)
-                  ->where('requirement_level', '!=', 'not_applicable')
+            ->whereHas('countryRequirements', fn ($q) => $q->where('country_id', $this->id)
+                ->where('requirement_level', '!=', 'not_applicable')
             )
-            ->with(['countryRequirements' => fn ($q) =>
-                $q->where('country_id', $this->id)
+            ->with(['countryRequirements' => fn ($q) => $q->where('country_id', $this->id),
             ])
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($type) => [
-                'type'              => $type,
+                'type' => $type,
                 'requirement_level' => $type->countryRequirements->first()->requirement_level,
             ]);
     }

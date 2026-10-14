@@ -15,7 +15,6 @@ use App\Models\File;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Slug;
 use App\Services\CategoryService;
-use App\Services\Shared\FixedCommissionService;
 use App\Traits\HasDataTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -65,8 +64,6 @@ class CategoryController extends Controller
             ],
             'roots' => $roots,
             'defaultShippingByCategory' => $defaultShippingByCategory,
-            'fixedCommissionPct' => app(FixedCommissionService::class)->percentage(),
-            'fixedCommissionCountries' => Country::orderBy('name_en')->get(['id', 'name_en', 'iso_code_2', 'currency_code', 'fixed_commission_amount']),
         ]);
     }
 
@@ -472,29 +469,6 @@ class CategoryController extends Controller
             'success' => true,
             'show_in_footer' => (bool) $categoryModel->fresh()->show_in_footer,
         ]);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Global Fixed Commission (one % for all + a flat amount per country)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function updateFixedCommission(Request $request, FixedCommissionService $fixedCommission): JsonResponse
-    {
-        $data = $request->validate([
-            'fixed_commission_pct' => ['required', 'numeric', 'between:0,100'],
-            'amounts' => ['required', 'array'],
-            'amounts.*' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,4'],
-        ]);
-
-        $validCountryIds = Country::whereIn('id', array_keys($data['amounts']))->pluck('id')->all();
-
-        $fixedCommission->update(
-            (float) $data['fixed_commission_pct'],
-            array_intersect_key($data['amounts'], array_flip($validCountryIds)),
-            auth('admin')->id()
-        );
-
-        return response()->json(['success' => true, 'message' => __('admin.categories.fixed_commission_saved')]);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

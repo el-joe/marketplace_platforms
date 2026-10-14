@@ -26,7 +26,6 @@ function isEditMode() {
 document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('categories-table')) {
         initTree();
-        initFixedCommission();
         initFeaturedToggle();
         initVisibleToggle();
         initFooterVisibleToggle();
@@ -157,43 +156,6 @@ function applySearch(table, query) {
         const id = row.dataset.id;
         row.style.display = visibleIds.has(id) ? '' : 'none';
         row.classList.toggle('bg-amber-50', matchedIds.has(id));
-    });
-}
-
-// ─── Fixed commission (global % + flat amount per country) ────────────────────
-
-function initFixedCommission() {
-    const btn = document.getElementById('fixed-commission-btn');
-    const modal = document.getElementById('fixed-commission-modal');
-    if (!btn || !modal) return;
-
-    const close = function () { modal.classList.add('hidden'); };
-
-    btn.addEventListener('click', function () { modal.classList.remove('hidden'); });
-    document.getElementById('fixed-commission-backdrop')?.addEventListener('click', close);
-    document.getElementById('fixed-commission-cancel')?.addEventListener('click', close);
-
-    document.getElementById('fixed-commission-apply')?.addEventListener('click', function () {
-        const pct = document.getElementById('fixed-commission-pct')?.value;
-        if (pct === '' || pct === null) return;
-
-        const amounts = {};
-        modal.querySelectorAll('.fixed-commission-amount').forEach(function (input) {
-            amounts[input.dataset.countryId] = input.value === '' ? 0 : input.value;
-        });
-
-        $.ajax({
-            url: window.ROUTES_CAT?.fixedCommission,
-            method: 'PUT',
-            data: JSON.stringify({ fixed_commission_pct: pct, amounts: amounts }),
-            contentType: 'application/json',
-            headers: { 'X-CSRF-TOKEN': csrfToken() },
-        }).done(function (res) {
-            window.Toast?.success(res.message || t('admin.categories.commission_updated'));
-            close();
-        }).fail(function (xhr) {
-            window.Toast?.error(xhr.responseJSON?.message || t('admin.categories.update_commission_failed'));
-        });
     });
 }
 

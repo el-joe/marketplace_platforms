@@ -18,7 +18,6 @@ use App\Models\ShippingRate;
 use App\Models\VendorListing;
 use App\Models\WarrantyPlan;
 use App\Services\Checkout\CheckoutPricingEngine;
-use App\Services\Shared\FixedCommissionService;
 use App\Services\WarrantyPlanService;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
@@ -153,8 +152,7 @@ class CheckoutCalculationService
         $lineSubtotal = $unitPriceCents * $quantity;
         $pctComponent = round($lineSubtotal * $pct / 100, 2);
         $fixedComponent = $fixed * $quantity;
-        $fixedCommission = app(FixedCommissionService::class)->calculate($lineSubtotal, $country, $quantity);
-        $commissionAmount = Money::number($pctComponent + $fixedComponent + $fixedCommission);
+        $commissionAmount = Money::number($pctComponent + $fixedComponent);
 
         return [
             'commission_rate_pct' => $pct,

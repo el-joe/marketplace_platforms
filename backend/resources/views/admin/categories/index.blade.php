@@ -11,14 +11,7 @@
 
         {{-- Toolbar --}}
         <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div class="flex items-center gap-2">
-                @if(auth('admin')->user()->can('categories.edit'))
-                    <button type="button" id="fixed-commission-btn" class="btn btn-ghost btn-sm">
-                        <x-heroicon name="percent-badge" class="w-4 h-4 mr-1" />
-                        {{ __('admin.categories.fixed_commission') }}
-                    </button>
-                @endif
-            </div>
+            <div class="flex items-center gap-2"></div>
             <div class="flex items-center gap-2 ms-auto">
                 <div class="relative w-64">
                     <x-heroicon name="magnifying-glass" class="w-4 h-4 absolute inset-s-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -71,45 +64,11 @@
             </div>
         </div>
 
-        {{-- Fixed Commission Modal --}}
-        <div id="fixed-commission-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div class="absolute inset-0 bg-black/50" id="fixed-commission-backdrop"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto">
-                <h3 class="font-semibold text-gray-900">{{ __('admin.categories.fixed_commission') }}</h3>
-                <p class="text-sm text-gray-500">{{ __('admin.categories.fixed_commission_hint') }}</p>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.fixed_commission_pct') }}</label>
-                    <input type="number" id="fixed-commission-pct" min="0" max="100" step="0.01" class="input w-full"
-                        value="{{ rtrim(rtrim(number_format((float) $fixedCommissionPct, 2, '.', ''), '0'), '.') ?: '0' }}"
-                        placeholder="{{ __('admin.categories.commission_rate_placeholder') }}" />
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('admin.categories.fixed_commission_amount_per_country') }}</label>
-                    <div class="space-y-2">
-                        @foreach($fixedCommissionCountries as $country)
-                            <div class="flex items-center gap-2">
-                                <span class="flex-1 text-sm text-gray-700">{{ $country->name_en }}</span>
-                                <input type="number" min="0" step="0.0001" class="input w-32 fixed-commission-amount"
-                                    data-country-id="{{ $country->id }}"
-                                    value="{{ rtrim(rtrim(number_format((float) $country->fixed_commission_amount, 4, '.', ''), '0'), '.') ?: '0' }}" />
-                                <span class="w-10 text-xs text-gray-400">{{ $country->currency_code }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button type="button" id="fixed-commission-cancel" class="btn btn-ghost flex-1">{{ __('common.cancel') }}</button>
-                    <button type="button" id="fixed-commission-apply" class="btn btn-primary flex-1">{{ __('common.save') }}</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <script>
         window.TRANSLATIONS = window.TRANSLATIONS || {};
         Object.assign(window.TRANSLATIONS, {
-            commissionUpdated: @json(__('admin.categories.fixed_commission_saved')),
             commissionUpdateFailed: @json(__('admin.categories.commission_update_failed')),
             featuredBadge: @json(__('admin.categories.featured_badge')),
             addBadge: @json(__('admin.categories.add_badge')),
@@ -123,7 +82,6 @@
         });
 
         window.ROUTES_CAT = {
-            fixedCommission: '{{ route('admin.categories.fixed-commission.update') }}',
             toggleFeatured: '{{ url('categories') }}/:id/toggle-featured',
             toggleVisible:  '{{ url('categories') }}/:id/toggle-visible',
             destroy: '{{ url('categories') }}/:id',
