@@ -1,5 +1,9 @@
 @extends('layouts.admin')
 
+@push('scripts')
+    @vite('resources/js/components/select2.js')
+@endpush
+
 @section('title', __('marketing_fees.title'))
 
 @section('content')
