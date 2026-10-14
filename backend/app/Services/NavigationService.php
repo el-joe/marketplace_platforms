@@ -30,7 +30,6 @@ use App\Models\WarrantyClaim;
 use App\Models\WarrantyPlan;
 use App\Models\WarrantyPurchase;
 use App\Models\WishlistGroup;
-use App\Services\Admin\Commissions\CommissionTabRegistry;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -632,14 +631,6 @@ class NavigationService
                 'group' => __('admin.nav.finance'),
                 'icon' => 'banknotes',
                 'items' => [
-                    ...($this->canViewCommissions() ? [
-                        [
-                            'label' => __('admin.nav.commissions'),
-                            'route' => 'admin.commissions.index',
-                            'icon' => 'banknotes',
-                            'badge' => null,
-                        ],
-                    ] : []),
                     [
                         'label' => __('admin.nav.payouts'),
                         'route' => 'admin.payouts.index',
@@ -962,16 +953,6 @@ class NavigationService
         ];
 
         return $this->filterByPermissions($groups);
-    }
-
-    /**
-     * The unified /commissions page spans many permissions; show the link when the admin may open any tab.
-     */
-    protected function canViewCommissions(): bool
-    {
-        $user = Auth::guard('admin')->user();
-
-        return $user !== null && CommissionTabRegistry::visibleFor($user) !== [];
     }
 
     /**

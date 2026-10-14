@@ -670,19 +670,12 @@ class CheckoutPricingEngine
     }
 
     /**
-     * Resolve platform commission for one vendor line: commissions table
-     * (vendor+category, vendor-only or category-only rows, highest
-     * priority/most specific wins) → vendors.commission_rate override (only
-     * when > 0 — the column is NOT NULL DEFAULT 0, so 0 means "no
-     * vendor-level override" here) → country_category → category chain
-     * (walking ancestors), exactly the precedence enhancement.md P-03 task 1
-     * asks for. FBN/FBP is read from the sub-order's own fulfillment_model
-     * (never global_system_type — that mismatch was the bug).
+     * Platform commission for one vendor line. Read ONLY from the category edit page settings:
+     * country_categories override → category chain (walking ancestors) with price tiers. FBN/FBP is read
+     * from the sub-order's own fulfillment_model.
      *
-     * @return array{0: int|float, 1: ?string} [commission amount, category id used]
-     */
-    /**
      * @param  Collection<string, Category>|null  $categoryCache  pre-loaded categories keyed by id (with commissionTiers eager-loaded)
+     * @return array{0: int|float, 1: ?string} [commission amount, category id used]
      */
     private function resolveCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int|float $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
     {
@@ -690,84 +683,16 @@ class CheckoutPricingEngine
     }
 
     /**
-     * The category-driven ("dynamic") part of the commission: Commission rules, vendor override or the
-     * category chain with country overrides and price tiers.
+     * The category chain with country overrides and price tiers.
      *
      * @param  Collection<string, Category>|null  $categoryCache
      * @return array{0: int|float, 1: ?string}
      */
     private function resolveDynamicCommission(?Vendor $vendor, ?string $categoryId, string $fulfillmentModel, Country $country, int|float $baseAmountCents, int $quantity = 1, ?Collection $categoryCache = null): array
     {
-        $today = Carbon::today()->toDateString();
-
-        $categoryChainIds = [];
         $category = $categoryId
             ? ($categoryCache?->get($categoryId) ?? Category::find($categoryId))
             : null;
-        $walker = $category;
-        $levels = 0;
-        while ($walker !== null && $levels < 6) {
-            $categoryChainIds[] = $walker->id;
-            $walker = $walker->parent;
-            $levels++;
-        }
-
-        if ($vendor !== null || ! empty($categoryChainIds)) {
-            $rows = Commission::query()
-                ->where(function ($q) use ($vendor) {
-                    $q->whereNull('vendor_id');
-                    if ($vendor !== null) {
-                        $q->orWhere('vendor_id', $vendor->id);
-                    }
-                })
-                ->where(function ($q) use ($categoryChainIds) {
-                    $q->whereNull('category_id');
-                    if (! empty($categoryChainIds)) {
-                        $q->orWhereIn('category_id', $categoryChainIds);
-                    }
-                })
-                ->where('effective_from', '<=', $today)
-                ->where(function ($q) use ($today) {
-                    $q->whereNull('effective_until')->orWhere('effective_until', '>=', $today);
-                })
-                ->get();
-
-            $best = null;
-            $bestScore = -1;
-            $bestCategoryDepth = PHP_INT_MAX;
-            foreach ($rows as $row) {
-                $isVendorSpecific = $vendor !== null && $row->vendor_id === $vendor->id;
-                $categoryDepth = $row->category_id ? array_search($row->category_id, $categoryChainIds, true) : null;
-                $isCategorySpecific = $categoryDepth !== false && $categoryDepth !== null;
-
-                $score = ($isVendorSpecific ? 2 : 0) + ($isCategorySpecific ? 1 : 0);
-                $depth = $isCategorySpecific ? $categoryDepth : PHP_INT_MAX;
-
-                if ($score > $bestScore
-                    || ($score === $bestScore && $depth < $bestCategoryDepth)
-                    || ($score === $bestScore && $depth === $bestCategoryDepth && $best !== null && $row->priority > $best->priority)) {
-                    $best = $row;
-                    $bestScore = $score;
-                    $bestCategoryDepth = $depth;
-                }
-            }
-
-            if ($best !== null) {
-                $amount = round($baseAmountCents * ((float) $best->rate_pct) / 100, 2);
-                $amount = max($amount, (float) $best->min_commission);
-                if ($best->max_commission !== null) {
-                    $amount = min($amount, (float) $best->max_commission);
-                }
-
-                return [$this->wholeIfPossible($amount), $best->category_id];
-            }
-        }
-
-        if ($vendor !== null && (float) $vendor->commission_rate > 0) {
-            $amount = $this->wholeIfPossible(round($baseAmountCents * ((float) $vendor->commission_rate) / 100, 2));
-
-            return [$amount, $categoryId];
-        }
 
         // Category chain fallback: walk up to the nearest ancestor (self first)
         // that has a per-country override or a non-zero base rate, then apply

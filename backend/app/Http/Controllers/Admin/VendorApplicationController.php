@@ -15,12 +15,14 @@ use App\Models\VendorDocument;
 use App\Services\VendorApprovalService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VendorApplicationController extends Controller
 {
@@ -30,13 +32,11 @@ class VendorApplicationController extends Controller
     /** Required document types that must be verified before approval */
     private const REQUIRED_DOC_TYPES = ['business_license', 'tax_certificate', 'owner_id'];
 
-    public function __construct(private VendorApprovalService $approvalService)
-    {
-    }
+    public function __construct(private VendorApprovalService $approvalService) {}
 
     // ─── Index ────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): \Illuminate\View\View|\Symfony\Component\HttpFoundation\StreamedResponse
+    public function index(Request $request): View|StreamedResponse
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('vendors.view'), 403);
@@ -65,7 +65,7 @@ class VendorApplicationController extends Controller
 
     // ─── DataTable ────────────────────────────────────────────────────────────
 
-    private function buildApplicationsQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    private function buildApplicationsQuery(Request $request): Builder
     {
         $query = Vendor::query()
             ->with(['country', 'documents', 'bankAccounts'])
@@ -76,33 +76,30 @@ class VendorApplicationController extends Controller
                 VendorGlobalStatus::Pending->value,
                 VendorGlobalStatus::UnderReview->value,
                 VendorGlobalStatus::Rejected->value,
-            ])
-            ;
-
-
+            ]);
 
         return $this->applyFilters($query, $request, [
-            'search' => fn($q, $v) => $q->where(function ($qq) use ($v) {
+            'search' => fn ($q, $v) => $q->where(function ($qq) use ($v) {
                 $qq->where('vendors.name', 'like', "%{$v}%")
                     ->orWhere('vendors.email', 'like', "%{$v}%")
                     ->orWhere('vendors.store_name', 'like', "%{$v}%");
             }),
-            'country_id' => fn($q, $v) => $q->where('country_id', $v),
-            'status' => fn($q, $v) => $q->where('global_status', $v),
-            'date_from' => fn($q, $v) => $q->whereDate('created_at', '>=', $v),
-            'date_to' => fn($q, $v) => $q->whereDate('created_at', '<=', $v),
-            'days_min' => fn($q, $v) => $q->where('onboarding_completed_at', '<=', now()->subDays((int) $v)),
-            'days_max' => fn($q, $v) => $q->where('onboarding_completed_at', '>=', now()->subDays((int) $v)),
+            'country_id' => fn ($q, $v) => $q->where('country_id', $v),
+            'status' => fn ($q, $v) => $q->where('global_status', $v),
+            'date_from' => fn ($q, $v) => $q->whereDate('created_at', '>=', $v),
+            'date_to' => fn ($q, $v) => $q->whereDate('created_at', '<=', $v),
+            'days_min' => fn ($q, $v) => $q->where('onboarding_completed_at', '<=', now()->subDays((int) $v)),
+            'days_max' => fn ($q, $v) => $q->where('onboarding_completed_at', '>=', now()->subDays((int) $v)),
         ]);
     }
 
-    private function exportApplications(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function exportApplications(Request $request): StreamedResponse
     {
         $applications = $this->buildApplicationsQuery($request)->latest('created_at')->get();
 
         $headers = ['Applicant', 'Email', 'Store', 'Country', 'Status', 'Applied At'];
 
-        $rows = $applications->map(fn(Vendor $vendor) => [
+        $rows = $applications->map(fn (Vendor $vendor) => [
             $vendor->name,
             $vendor->email,
             $vendor->store_name,
@@ -157,7 +154,7 @@ class VendorApplicationController extends Controller
 
             // Documents X / Y verified
             $totalDocs = $vendor->documents->count();
-            $verifiedDocs = $vendor->documents->filter(fn($d) => $d->status === VendorDocumentStatus::Approved)->count();
+            $verifiedDocs = $vendor->documents->filter(fn ($d) => $d->status === VendorDocumentStatus::Approved)->count();
             $docsStatus = "{$verifiedDocs}/{$totalDocs} verified";
             $docsColor = $verifiedDocs === $totalDocs && $totalDocs > 0 ? 'text-green-600' : 'text-yellow-600';
 
@@ -171,15 +168,15 @@ class VendorApplicationController extends Controller
             ];
             $bankStatus = $primaryBank?->verification_status?->value ?? 'none';
             $bc = $bankColors[$bankStatus] ?? 'gray';
-            $bankBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{$bc}-100 text-{$bc}-700\">" . ucfirst($bankStatus) . "</span>";
+            $bankBadge = "<span class=\"inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{$bc}-100 text-{$bc}-700\">".ucfirst($bankStatus).'</span>';
 
             $showUrl = route('admin.vendor-applications.show', $vendor->id);
-            $actions = "<div class=\"flex items-center gap-1\">"
-                . "<a href=\"{$showUrl}\" class=\"btn btn-xs btn-primary\">Review</a>"
-                . "</div>";
+            $actions = '<div class="flex items-center gap-1">'
+                ."<a href=\"{$showUrl}\" class=\"btn btn-xs btn-primary\">Review</a>"
+                .'</div>';
 
             return [
-                'store_name' => '<div><span class="font-medium">' . e($vendor->store_name) . '</span>' . '<br><span class="text-xs text-gray-400">' . $statusBadge . '</span></div>',
+                'store_name' => '<div><span class="font-medium">'.e($vendor->store_name).'</span>'.'<br><span class="text-xs text-gray-400">'.$statusBadge.'</span></div>',
                 'business_name' => e($vendor->business_name ?? '—'),
                 'country' => e($vendor->country?->name_en ?? '—'),
                 'business_type' => e($vendor->business_type?->label() ?? '—'),
@@ -195,7 +192,7 @@ class VendorApplicationController extends Controller
 
     // ─── Show ─────────────────────────────────────────────────────────────────
 
-    public function show(Vendor $vendor): \Illuminate\View\View
+    public function show(Vendor $vendor): View
     {
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('vendors.view'), 403);
@@ -215,23 +212,24 @@ class VendorApplicationController extends Controller
 
         // Required docs checklist
         $requiredDocs = collect(self::REQUIRED_DOC_TYPES)->mapWithKeys(function ($type) use ($vendor) {
-            $doc = $vendor->documents->first(fn($d) => $d->documentType?->code === $type);
+            $doc = $vendor->documents->first(fn ($d) => $d->documentType?->code === $type);
+
             return [
                 $type => [
                     'label' => $this->docTypeLabel($type),
                     'doc' => $doc,
                     'uploaded' => (bool) $doc,
                     'verified' => $doc ? $doc->status === VendorDocumentStatus::Approved : false,
-                ]
+                ],
             ];
         });
 
         // Checklist items (for right panel)
-        $businessInfoComplete = !empty($vendor->business_name) && !empty($vendor->business_type);
-        $allRequiredUploaded = $requiredDocs->every(fn($d) => $d['uploaded']);
-        $allRequiredVerified = $requiredDocs->every(fn($d) => $d['verified']);
+        $businessInfoComplete = ! empty($vendor->business_name) && ! empty($vendor->business_type);
+        $allRequiredUploaded = $requiredDocs->every(fn ($d) => $d['uploaded']);
+        $allRequiredVerified = $requiredDocs->every(fn ($d) => $d['verified']);
         $hasBankAccount = $vendor->bankAccounts->isNotEmpty();
-        $storeProfileComplete = !empty($vendor->store_name) && !empty($vendor->store_description);
+        $storeProfileComplete = ! empty($vendor->store_name) && ! empty($vendor->store_description);
 
         $onboardingComplete = (bool) $vendor->onboarding_completed_at;
 
@@ -245,8 +243,8 @@ class VendorApplicationController extends Controller
         ];
 
         $canApprove = collect($checklist)
-            ->reject(fn($c) => ($c['required'] ?? true) === false)
-            ->every(fn($c) => $c['pass']);
+            ->reject(fn ($c) => ($c['required'] ?? true) === false)
+            ->every(fn ($c) => $c['pass']);
 
         return view('admin.vendor-applications.show', compact(
             'vendor',
@@ -265,7 +263,7 @@ class VendorApplicationController extends Controller
         $admin = auth('admin')->user();
         abort_unless($admin->hasPermissionTo('vendors.edit'), 403);
 
-        if (!in_array($vendor->global_status, [VendorGlobalStatus::Pending, VendorGlobalStatus::UnderReview], true)) {
+        if (! in_array($vendor->global_status, [VendorGlobalStatus::Pending, VendorGlobalStatus::UnderReview], true)) {
             return response()->json(['message' => 'Application is not pending review.'], 422);
         }
 
@@ -297,14 +295,13 @@ class VendorApplicationController extends Controller
         abort_unless($admin->hasPermissionTo('vendors.edit'), 403);
 
         $request->validate([
-            'commission_rate_override' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'account_manager_admin_id' => ['nullable', 'string', 'exists:admins,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $blockers = $this->approvalService->getApprovalBlockers($vendor);
 
-        if (!empty($blockers)) {
+        if (! empty($blockers)) {
             return response()->json([
                 'message' => 'Vendor cannot be approved yet.',
                 'blockers' => $blockers,
@@ -319,11 +316,6 @@ class VendorApplicationController extends Controller
                 'approved_at' => now(),
             ]);
 
-            // 2. Commission rate override
-            if ($request->filled('commission_rate_override')) {
-                $vendor->update(['commission_rate' => $request->input('commission_rate_override')]);
-            }
-
             // 3. Account manager
             if ($request->filled('account_manager_admin_id')) {
                 $vendor->update(['account_manager_admin_id' => $request->input('account_manager_admin_id')]);
@@ -331,7 +323,7 @@ class VendorApplicationController extends Controller
 
             // 4. Create VendorAdmin (owner role) if not exists
             $exists = VendorAdmin::where('vendor_id', $vendor->id)->where('is_owner', true)->exists();
-            if (!$exists) {
+            if (! $exists) {
                 $owner = VendorAdmin::create([
                     'vendor_id' => $vendor->id,
                     'name' => $vendor->business_name ?? $vendor->store_name,
@@ -365,8 +357,8 @@ class VendorApplicationController extends Controller
         ]);
 
         $reason = $request->input('rejection_reason');
-        if (!empty($request->input('rejection_codes'))) {
-            $codes = implode(', ', array_map(fn($c) => ucwords(str_replace('_', ' ', $c)), $request->input('rejection_codes')));
+        if (! empty($request->input('rejection_codes'))) {
+            $codes = implode(', ', array_map(fn ($c) => ucwords(str_replace('_', ' ', $c)), $request->input('rejection_codes')));
             $reason = "[{$codes}] {$reason}";
         }
 

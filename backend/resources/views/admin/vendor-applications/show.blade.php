@@ -338,15 +338,6 @@
                         :value-label="$vendor->accountManagerAdmin?->name"
                         placeholder="{{ __('admin.vendor_applications.search_admin_placeholder') }}"
                         search-param="q" />
-                    <x-form-input
-                        type="number"
-                        name="commission_rate_override_display"
-                        label="{{ __('admin.vendor_applications.commission_rate_override') }}"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        placeholder="{{ __('admin.vendor_applications.leave_empty_category_default') }}"
-                        :value="$vendor->commission_rate" />
                 </div>
             </x-card>
 
@@ -434,13 +425,6 @@
             {{ \Illuminate\Support\Str::before(__('admin.vendor_applications.approve_application_notice'), ':name') }}<strong id="approve-vendor-name"></strong>{{ \Illuminate\Support\Str::after(__('admin.vendor_applications.approve_application_notice'), ':name') }}
         </p>
         <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.vendor_applications.commission_rate_override') }}</label>
-                <input type="number" id="approve-commission" class="form-input w-full text-sm" step="0.01" min="0" max="100"
-                    placeholder="{{ __('admin.vendor_applications.leave_empty_category_default') }}"
-                    value="{{ $vendor->commission_rate }}">
-                <p class="text-xs text-gray-400 mt-1">{{ __('admin.vendor_applications.current_label', ['value' => $vendor->commission_rate ? $vendor->commission_rate . '%' : __('admin.vendor_applications.category_default')]) }}</p>
-            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.vendor_applications.account_manager_label') }}</label>
                 <select id="approve-account-manager" class="form-input w-full text-sm">

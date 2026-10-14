@@ -279,7 +279,6 @@ function initShowPage() {
 
     document.getElementById('confirm-approve-btn')?.addEventListener('click', async () => {
         const payload = {
-            commission_rate_override: document.getElementById('approve-commission').value || null,
             account_manager_admin_id: document.getElementById('approve-account-manager').value || null,
             notes: document.getElementById('approve-notes').value || null,
         };
