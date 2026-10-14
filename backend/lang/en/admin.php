@@ -1758,6 +1758,10 @@ return [
         'fee_free_affiliate' => 'Free (Affiliate)',
         'fee_paid' => 'Paid',
         'mark_as_paid' => 'Mark as paid',
+        'marketing_fees_label' => 'marketing fees',
+        'marketer_fee_share_line' => 'Marketer share :pct% = :amount (:status)',
+        'marketer_fee_share_credited' => 'credited :date',
+        'marketer_fee_share_not_credited' => 'not credited yet',
         'fee_waived' => 'Waived',
         'delivery_address' => 'Delivery Address',
         'no_address_recorded' => 'No address recorded yet',
@@ -8886,6 +8890,7 @@ return [
     'payouts' => [
         'influencer_fee' => 'Influencer fee',
         'influencer_fee_vat_note' => 'Fee :fee + VAT :vat',
+        'influencer_fee_vat_marketing_note' => 'Fee :fee + VAT :vat + marketing fees :marketing',
         'promotion_sample' => 'Promotion sample',
         'gateway_fee' => 'Gateway Fee',
         'title' => 'Payouts',

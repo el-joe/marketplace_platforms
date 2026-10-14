@@ -135,7 +135,7 @@ class TransactionFeedService
     }
 
     /**
-     * Influencer platform fee lines (fee + VAT): settled from the wallet during the
+     * Influencer platform fee lines (fee + VAT + marketing fees): settled from the wallet during the
      * week, or deducted in a weekly statement (payout_items.invitation_id).
      */
     private function fetchInfluencerFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
@@ -160,11 +160,13 @@ class TransactionFeedService
                 'type' => 'influencer_fee',
                 'date' => $inv->platform_fee_recorded_at?->toISOString(),
                 'reference' => $inv->campaign?->title,
-                'description' => 'رسوم مؤثر / Influencer fee — '.($inv->marketer?->name ?? '—'),
+                'description' => 'رسوم مؤثر / Influencer fee — '.($inv->marketer?->name ?? '—')
+                    .((float) $inv->platform_fee_marketing_amount > 0 ? ' (+ رسوم تسويق / marketing fees '.Money::format($inv->platform_fee_marketing_amount).')' : ''),
                 'gross' => 0,
                 'commission' => 0,
                 'fee' => Money::number($inv->platform_fee_amount),
                 'vat' => Money::number($inv->platform_fee_vat_amount),
+                'marketing_fee' => Money::number($inv->platform_fee_marketing_amount),
                 'net' => Money::number(-$total),
                 'payout_status' => $status,
             ];

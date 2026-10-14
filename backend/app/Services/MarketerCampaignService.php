@@ -1100,19 +1100,19 @@ class MarketerCampaignService
             // The invitation row is locked and its status re-read, so a concurrent
             // statement run (GenerateVendorPayoutsJob) or a second collector can never
             // settle the same fee twice: the loser sees `paid` and does nothing.
-            return DB::transaction(function () use ($invitation, $walletService, $wallet) {
+            $paid = DB::transaction(function () use ($invitation, $walletService, $wallet) {
                 $locked = MarketerCampaignInvitation::whereKey($invitation->id)->lockForUpdate()->first();
                 if (! $locked || $locked->platform_fee_status !== 'pending' || $locked->payoutItems()->exists()) {
                     return false;
                 }
 
-                // Fee + VAT leaves the wallet in a single debit.
+                // Fee + VAT + marketing fees leave the wallet in a single debit.
                 $walletService->debit(
                     $wallet,
                     $locked->platformFeeTotal(),
                     'marketer_campaign_invitation_platform_fee',
                     $locked->id,
-                    'Influencer platform fee for accepted campaign invitation'
+                    'Influencer platform fee + VAT + marketing fees for accepted campaign invitation'
                 );
 
                 $locked->update([
@@ -1124,6 +1124,13 @@ class MarketerCampaignService
 
                 return true;
             });
+
+            // After the vendor charge is committed: a failed/frozen marketer credit never undoes it (retry job).
+            if ($paid) {
+                app(MarketerFeePayoutService::class)->creditForInvitation($invitation);
+            }
+
+            return $paid;
         } catch (InsufficientBalanceException $e) {
             if ($throwWhenShort) {
                 throw $e;
@@ -1159,12 +1166,16 @@ class MarketerCampaignService
             $marketer = $invitation->marketer;
 
             // Platform fee applies per accepted invitation, influencer type only. Affiliate is always free.
-            // Payer is configurable: the influencer's own wallet (default) or the seller's wallet.
+            // D7: the vendor always pays on vendor campaigns; only campaigns without a vendor
+            // (admin-owned listings) keep the marketer-pays branch.
             $feeAmount = 0.0;
             $feeVatRate = 0.0;
             $feeVat = 0.0;
             $feeStatus = 'not_applicable';
             $feePayer = null;
+            $marketingShare = 0.0;
+            $sharePct = 0.0;
+            $marketerPayout = 0.0;
 
             // Peer promotions (P13) carry no promotion fee: there is no seller to bill.
             if ($marketer->isInfluencer() && ! $campaign->marketer_listing_id) {
@@ -1179,9 +1190,16 @@ class MarketerCampaignService
                 $feeVatRate = $feeAmount > 0 ? $quoteService->vatRate($campaign->country_id) : 0.0;
                 $feeVat = $quoteService->vatOn($feeAmount, $feeVatRate);
 
-                $feePayer = setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' && $campaign->vendor_id
-                    ? 'vendor'
-                    : 'marketer';
+                $feePayer = $campaign->vendor_id ? 'vendor' : 'marketer';
+
+                if ($feeAmount > 0 && $feePayer === 'vendor') {
+                    $marketingShare = $this->allocateMarketingShare($campaign, $invitation);
+
+                    // Fee share (D1): paid to the marketer wallet once the vendor charge is paid.
+                    $split = app(MarketerFeeShareResolver::class)->split($feeAmount, $campaign->country_id, $this->campaignCategoryId($campaign));
+                    $sharePct = $split['share_pct'];
+                    $marketerPayout = $split['marketer_payout'];
+                }
             }
 
             $invitation->update([
@@ -1192,6 +1210,9 @@ class MarketerCampaignService
                 'platform_fee_currency' => $campaign->currency,
                 'platform_fee_vat_rate' => $feeVatRate,
                 'platform_fee_vat_amount' => $feeVat,
+                'platform_fee_marketing_amount' => $marketingShare,
+                'marketer_fee_share_pct' => $sharePct,
+                'marketer_payout_amount' => $marketerPayout,
                 'platform_fee_status' => $feeStatus,
                 'platform_fee_payer' => $feeAmount > 0 ? $feePayer : null,
                 'platform_fee_recorded_at' => now(),
@@ -1216,6 +1237,46 @@ class MarketerCampaignService
 
             $this->createMarketerListingFromInvitation($invitation);
         });
+    }
+
+    /**
+     * Marketing-fee share of one accepted influencer invitation (plan 4.3), from the campaign snapshot taken at
+     * creation: snapshot marketing total / N, N = influencer invitations requested (replacements do not count
+     * twice). The last accepted invitation takes the rounding remainder, so accepting all of them sums to the
+     * snapshot exactly. The campaign row is locked so concurrent acceptances cannot over-allocate.
+     */
+    private function allocateMarketingShare(MarketerCampaign $campaign, MarketerCampaignInvitation $invitation): float
+    {
+        $locked = MarketerCampaign::whereKey($campaign->id)->lockForUpdate()->first() ?? $campaign;
+        $total = (float) $locked->marketing_fee_total;
+        if ($total <= 0) {
+            return 0.0;
+        }
+
+        $replacedIds = MarketerCampaignInvitation::where('campaign_id', $campaign->id)
+            ->whereNotNull('replaced_invitation_id')
+            ->pluck('replaced_invitation_id');
+        $requested = max(1, MarketerCampaignInvitation::where('campaign_id', $campaign->id)
+            ->whereNotIn('id', $replacedIds)
+            ->whereHas('marketer.marketerJobs', fn ($q) => $q->where('key', 'influencer'))
+            ->count());
+
+        $others = MarketerCampaignInvitation::where('campaign_id', $campaign->id)
+            ->where('status', 'accepted')
+            ->where('platform_fee_amount', '>', 0)
+            ->where('id', '!=', $invitation->id);
+        $acceptedBefore = (clone $others)->count();
+        $remaining = max(0.0, round($total - (float) (clone $others)->sum('platform_fee_marketing_amount'), 2));
+
+        return $acceptedBefore + 1 >= $requested
+            ? $remaining
+            : min($remaining, round($total / $requested, 2));
+    }
+
+    private function campaignCategoryId(MarketerCampaign $campaign): ?string
+    {
+        return $campaign->vendorListing?->productVariant?->product?->category_id
+            ?? $campaign->adminListing?->productVariant?->product?->category_id;
     }
 
     /**

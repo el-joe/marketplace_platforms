@@ -246,12 +246,12 @@ class PayoutCalculationService
     }
 
     /**
-     * Influencer fees (fee + VAT) still `pending` at statement time for this vendor:
+     * Influencer fees (fee + VAT + marketing fees) still `pending` at statement time for this vendor:
      * accepted, seller-paid, not on any statement yet (payout_items.invitation_id is
      * unique). Oldest first, as far as the statement can absorb; the rest rolls
      * forward. The job re-checks each row under a lock before writing the line.
      *
-     * @return array{0: float, 1: array<int, array{item: MarketerCampaignInvitation, fee: float, vat: float}>}
+     * @return array{0: float, 1: array<int, array{item: MarketerCampaignInvitation, fee: float, vat: float, marketing: float}>}
      */
     private function selectInfluencerFees(Vendor $vendor, string $currency, float $netBefore): array
     {
@@ -278,7 +278,12 @@ class PayoutCalculationService
                 break;
             }
             $sum = round($sum + $total, 2);
-            $items[] = ['item' => $invitation, 'fee' => (float) $invitation->platform_fee_amount, 'vat' => (float) $invitation->platform_fee_vat_amount];
+            $items[] = [
+                'item' => $invitation,
+                'fee' => (float) $invitation->platform_fee_amount,
+                'vat' => (float) $invitation->platform_fee_vat_amount,
+                'marketing' => (float) $invitation->platform_fee_marketing_amount,
+            ];
         }
 
         return [$sum, $items];

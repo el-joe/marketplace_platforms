@@ -222,6 +222,7 @@
                                     <th class="text-right py-3 px-5 font-medium">{{ __('partner.payouts.description') }}</th>
                                     <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.fee_excl_vat') }}</th>
                                     <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.vat') }}</th>
+                                    <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.marketing_fees') }}</th>
                                     <th class="py-3 px-4 text-center font-medium">{{ __('partner.payouts.amount') }}</th>
                                 </tr>
                             </thead>
@@ -229,8 +230,9 @@
                                 @foreach($influencerFeeItems as $item)
                                     <tr>
                                         <td class="py-3 px-5 text-gray-700">{{ $item->description }}</td>
-                                        <td class="py-3 px-4 text-center">{{ number_format(abs($item->net) - $item->vat_amount, 2) }}</td>
+                                        <td class="py-3 px-4 text-center">{{ number_format(abs($item->net) - $item->vat_amount - $item->marketing_fee_amount, 2) }}</td>
                                         <td class="py-3 px-4 text-center">{{ number_format($item->vat_amount, 2) }}</td>
+                                        <td class="py-3 px-4 text-center">{{ number_format($item->marketing_fee_amount, 2) }}</td>
                                         <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}</td>
                                     </tr>
                                 @endforeach
@@ -238,8 +240,9 @@
                             <tfoot class="border-t border-gray-200 bg-gray-50">
                                 <tr class="text-sm font-semibold text-gray-800">
                                     <td class="py-3 px-5">{{ __('partner.payouts.total') }}</td>
-                                    <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net) - $i->vat_amount), 2) }}</td>
+                                    <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net) - $i->vat_amount - $i->marketing_fee_amount), 2) }}</td>
                                     <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum('vat_amount'), 2) }}</td>
+                                    <td class="py-3 px-4 text-center">{{ number_format($influencerFeeItems->sum('marketing_fee_amount'), 2) }}</td>
                                     <td class="py-3 px-4 text-center text-red-500">− {{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net)), 2) }} {{ $payout->currency }}</td>
                                 </tr>
                             </tfoot>

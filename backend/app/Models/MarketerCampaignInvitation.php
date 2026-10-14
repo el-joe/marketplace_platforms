@@ -84,10 +84,15 @@ class MarketerCampaignInvitation extends Model
         return $this->hasMany(PayoutItem::class, 'invitation_id');
     }
 
-    /** Fee + VAT: what the payer is actually charged. */
+    /** Fee + VAT + this invitation's marketing-fee share: what the payer is actually charged. */
     public function platformFeeTotal(): float
     {
-        return round((float) $this->platform_fee_amount + (float) $this->platform_fee_vat_amount, 2);
+        return round(
+            (float) $this->platform_fee_amount
+            + (float) $this->platform_fee_vat_amount
+            + (float) $this->platform_fee_marketing_amount,
+            2
+        );
     }
 
     public function whatsappFailed(): bool

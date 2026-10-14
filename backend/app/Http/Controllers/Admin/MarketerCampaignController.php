@@ -19,6 +19,7 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InsufficientStockException;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
+use App\Services\MarketerFeePayoutService;
 use App\Services\ReferralCodeResolver;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
@@ -211,6 +212,8 @@ class MarketerCampaignController extends Controller
         });
 
         abort_unless($marked, 422, 'الرسوم مدفوعة بالفعل أو غير مطبقة.');
+
+        app(MarketerFeePayoutService::class)->creditForInvitation($invitation);
 
         return back()->with('success', 'تم تسجيل دفع رسوم الإنفلوينسر.');
     }

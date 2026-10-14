@@ -20,6 +20,7 @@ class PayoutItem extends Model
         'campaign_sample_id',
         'invitation_id',
         'vat_amount',
+        'marketing_fee_amount',
         'gross',
         'commission',
         'net',
@@ -28,6 +29,7 @@ class PayoutItem extends Model
 
     protected $casts = [
         'vat_amount' => DecimalMoney::class,
+        'marketing_fee_amount' => DecimalMoney::class,
         'gross' => DecimalMoney::class,
         'commission' => DecimalMoney::class,
         'net' => DecimalMoney::class,

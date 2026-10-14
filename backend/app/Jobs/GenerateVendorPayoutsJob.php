@@ -18,6 +18,7 @@ use App\Models\Vendor;
 use App\Models\VendorBankAccount;
 use App\Models\VendorSubscriptionInvoice;
 use App\Notifications\Admin\PayoutBatchReadyForApproval;
+use App\Services\MarketerFeePayoutService;
 use App\Services\PayoutCalculationService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -103,7 +104,8 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                             continue;
                         }
 
-                        DB::transaction(function () use ($calc, $currency, $vendor, $primaryAccount) {
+                        $paidInvitations = [];
+                        DB::transaction(function () use ($calc, $currency, $vendor, $primaryAccount, &$paidInvitations) {
                             // Influencer fees: lock each invitation and re-check it is still
                             // `pending` (the wallet collector may have paid it since the
                             // calculation). A fee that is no longer pending is not charged here.
@@ -113,10 +115,15 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 if ($locked
                                     && $locked->platform_fee_status === 'pending'
                                     && ! $locked->payoutItems()->exists()) {
-                                    $feeLines[] = ['invitation' => $locked, 'fee' => (float) $locked->platform_fee_amount, 'vat' => (float) $locked->platform_fee_vat_amount];
+                                    $feeLines[] = [
+                                        'invitation' => $locked,
+                                        'fee' => (float) $locked->platform_fee_amount,
+                                        'vat' => (float) $locked->platform_fee_vat_amount,
+                                        'marketing' => (float) $locked->platform_fee_marketing_amount,
+                                    ];
                                 }
                             }
-                            $skipped = round((float) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'], $feeLines)), 2);
+                            $skipped = round((float) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'] + $l['marketing'], $feeLines)), 2);
                             if (abs($skipped) > 0) {
                                 $calc['net_amount'] = round($calc['net_amount'] + $skipped, 2);
                                 $calc['other_adjustments'] = round($calc['other_adjustments'] + $skipped, 2);
@@ -223,7 +230,7 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 $invitation = $line['invitation'];
                                 $marketerName = $invitation->marketer?->name ?? '—';
                                 $campaignTitle = $invitation->campaign?->title ?: ('#'.substr((string) $invitation->campaign_id, 0, 8));
-                                $total = $line['fee'] + $line['vat'];
+                                $total = round($line['fee'] + $line['vat'] + $line['marketing'], 2);
 
                                 PayoutItem::create([
                                     'payout_id' => $payout->id,
@@ -232,8 +239,10 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                     'gross' => 0,
                                     'commission' => 0,
                                     'vat_amount' => $line['vat'],
+                                    'marketing_fee_amount' => $line['marketing'],
                                     'net' => -$total,
-                                    'description' => "رسوم مؤثر — Influencer fee — {$marketerName} — {$campaignTitle}",
+                                    'description' => "رسوم مؤثر — Influencer fee — {$marketerName} — {$campaignTitle}"
+                                        .($line['marketing'] > 0 ? ' — رسوم تسويق — Marketing fees '.number_format($line['marketing'], 2, '.', '') : ''),
                                 ]);
 
                                 $invitation->update([
@@ -241,6 +250,7 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                     'platform_fee_paid_via' => 'statement',
                                     'platform_fee_paid_at' => now(),
                                 ]);
+                                $paidInvitations[] = $invitation;
                             }
 
                             if (! empty($calc['ad_charge_ids'])) {
@@ -250,6 +260,12 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 ]);
                             }
                         });
+
+                        // The influencer fee share is credited after the statement is committed; a failure is
+                        // logged and retried by RetryMarketerFeeCreditsJob, never rolling the statement back.
+                        foreach ($paidInvitations as $paidInvitation) {
+                            app(MarketerFeePayoutService::class)->creditForInvitation($paidInvitation);
+                        }
 
                         $generated++;
                     }

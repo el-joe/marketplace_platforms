@@ -146,11 +146,21 @@ class CampaignInfluencerFeeServiceTest extends TestCase
         $this->assertSame('pending', $inv->fresh()->platform_fee_status);
     }
 
-    public function test_marketer_paid_fee_includes_vat_and_blocks_acceptance_when_short(): void
+    public function test_vendor_always_pays_even_when_the_marketer_payer_setting_is_set(): void
     {
         F::setting('marketer_influencer_fee_payer', 'marketer');
+        $inv = $this->accepted(); // empty vendor wallet, empty marketer wallet: acceptance is not blocked
+
+        $this->assertSame('accepted', $inv->status);
+        $this->assertSame('vendor', $inv->platform_fee_payer);
+        $this->assertSame('pending', $inv->platform_fee_status);
+    }
+
+    public function test_campaign_without_a_vendor_keeps_the_marketer_paid_branch_and_blocks_acceptance_when_short(): void
+    {
         $campaign = F::campaign($this->s, [$inf = F::influencer($this->s)]);
         $this->svc->approveCampaign($campaign, Admin::factory()->create());
+        $campaign->update(['vendor_id' => null]); // platform-owned campaign: no seller to bill
         $inv = $campaign->invitations()->sole();
         $wallets = app(WalletService::class);
         $mw = $wallets->getOrCreateWallet('marketer', $inf->id, 'AED');
@@ -166,7 +176,9 @@ class CampaignInfluencerFeeServiceTest extends TestCase
         $wallets->credit($mw, 1, 'test', null, 'topup');
         $this->svc->acceptInvitation($inv->fresh());
         $this->assertSame('paid', $inv->fresh()->platform_fee_status);
+        $this->assertSame('marketer', $inv->fresh()->platform_fee_payer);
         $this->assertSame(0, $mw->fresh()->balance);
+        $this->assertSame(0, (int) $inv->fresh()->marketer_payout_amount, 'no vendor charge, no fee share');
     }
 
     public function test_affiliates_and_zero_fee_countries_have_no_fee_and_no_vat(): void

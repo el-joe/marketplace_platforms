@@ -445,6 +445,12 @@
                                                 {{ \App\Support\Money::format($invitation->platform_fee_amount) }} {{ $invitation->platform_fee_currency }}
                                                 @if($invitation->platform_fee_vat_amount > 0)<span class="block text-[11px] text-gray-500">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ \App\Support\Money::format($invitation->platform_fee_vat_amount) }}</span>@endif
                                             </span>
+                                            @if($invitation->platform_fee_marketing_amount > 0)
+                                                <span class="block text-[11px] text-gray-500" data-testid="admin-invitation-marketing">+ {{ __('admin.marketer_campaigns.marketing_fees_label') }} {{ \App\Support\Money::format($invitation->platform_fee_marketing_amount) }}</span>
+                                            @endif
+                                            @if($invitation->marketer_payout_amount > 0)
+                                                <span class="block text-[11px] text-indigo-600" data-testid="admin-invitation-payout">{{ __('admin.marketer_campaigns.marketer_fee_share_line', ['pct' => (float) $invitation->marketer_fee_share_pct, 'amount' => \App\Support\Money::format($invitation->marketer_payout_amount), 'status' => $invitation->marketer_credited_at ? __('admin.marketer_campaigns.marketer_fee_share_credited', ['date' => $invitation->marketer_credited_at->format('d M Y')]) : __('admin.marketer_campaigns.marketer_fee_share_not_credited')]) }}</span>
+                                            @endif
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-center">

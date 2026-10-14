@@ -1763,6 +1763,10 @@ return [
         'fee_free_affiliate' => 'مجاني (أفيلييت)',
         'fee_paid' => 'مدفوعة',
         'mark_as_paid' => 'تسجيل كمدفوعة',
+        'marketing_fees_label' => 'رسوم التسويق',
+        'marketer_fee_share_line' => 'حصة المسوّق :pct% = :amount (:status)',
+        'marketer_fee_share_credited' => 'أُضيفت :date',
+        'marketer_fee_share_not_credited' => 'لم تُضف بعد',
         'fee_waived' => 'معفاة',
         'delivery_address' => 'عنوان التوصيل',
         'no_address_recorded' => 'لم يُسجَّل عنوان بعد',
@@ -8894,6 +8898,7 @@ return [
     'payouts' => [
         'influencer_fee' => 'رسوم مؤثر',
         'influencer_fee_vat_note' => 'الرسوم :fee + ضريبة :vat',
+        'influencer_fee_vat_marketing_note' => 'الرسوم :fee + ضريبة :vat + رسوم التسويق :marketing',
         'promotion_sample' => 'عينة ترويج',
         'gateway_fee' => 'رسوم البوابة',
         'title' => 'المدفوعات',

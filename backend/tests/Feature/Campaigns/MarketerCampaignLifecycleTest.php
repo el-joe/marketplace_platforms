@@ -360,7 +360,11 @@ class MarketerCampaignLifecycleTest extends TestCase
         $conversion->update(['approved_at' => now()->subDays(4)]);
         (new ReleaseMarketerPendingCommissionJob)->handle();
         $wallet = $this->wallet('marketer', $a->id);
-        $this->assertSame($net, $wallet->balance);
+        // A's wallet also holds the fee share credited when the seller's fee was paid (P5): fee 1000 x share %.
+        $feeShare = (int) $invA->fresh()->marketer_payout_amount;
+        $this->assertGreaterThan(0, $feeShare);
+        $this->assertNotNull($invA->fresh()->marketer_credited_at);
+        $this->assertSame($net + $feeShare, $wallet->balance);
         $this->actingAs($this->login($a), 'marketer')->get(route('marketer.finance.wallet'))
             ->assertOk()->assertSee(number_format($net));
 
@@ -368,7 +372,7 @@ class MarketerCampaignLifecycleTest extends TestCase
             ->post(route('marketer.finance.wallet.withdraw'), ['amount' => $net, 'bank_name' => 'Bank', 'bank_iban' => 'AE000000000000'])
             ->assertSessionHasNoErrors();
         $wallet->refresh();
-        $this->assertSame(0, $wallet->balance);
+        $this->assertSame($feeShare, $wallet->balance);
         $this->assertSame($net, $wallet->pending_balance);
         $tx = WalletTransaction::where('wallet_id', $wallet->id)->where('source_type', 'marketer_conversion')->sole();
         $this->assertSame($net, $tx->amount);

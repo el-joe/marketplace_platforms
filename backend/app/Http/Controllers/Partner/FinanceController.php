@@ -141,7 +141,7 @@ class FinanceController extends Controller
                 ->with('campaign:id,title,vendor_listing_id', 'payoutItems.payout:id,payout_number')
                 ->get()
                 ->each(function ($sample) use (&$rows) {
-                    $commission = \App\Support\Money::number($sample->commission_amount);
+                    $commission = Money::number($sample->commission_amount);
                     $rows->push([
                         'type' => 'promotion_sample',
                         'date' => $sample->stock_deducted_at,
@@ -173,10 +173,11 @@ class FinanceController extends Controller
                         'type' => 'influencer_fee',
                         'date' => $inv->platform_fee_recorded_at,
                         'reference' => $inv->campaign?->title ?: ('#'.substr((string) $inv->campaign_id, 0, 8)),
-                        'description' => __('partner.finance.influencer_fee_line', [
+                        'description' => __($inv->platform_fee_marketing_amount > 0 ? 'partner.finance.influencer_fee_line_with_marketing' : 'partner.finance.influencer_fee_line', [
                             'name' => $inv->marketer?->name ?? '—',
                             'fee' => Money::format($inv->platform_fee_amount),
                             'vat' => Money::format($inv->platform_fee_vat_amount),
+                            'marketing' => Money::format($inv->platform_fee_marketing_amount),
                             'rate' => (float) $inv->platform_fee_vat_rate,
                             'status' => $inv->platform_fee_status === 'paid'
                                 ? __('partner.finance.fee_settled_'.($inv->platform_fee_paid_via ?: 'wallet'))

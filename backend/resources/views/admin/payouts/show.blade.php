@@ -158,7 +158,7 @@
                                             @elseif($item->item_type === 'influencer_fee')
                                                 <span class="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-orange-200">{{ __('admin.payouts.influencer_fee') }}</span>
                                                 <span class="block mt-1 font-sans text-gray-500">{{ $item->description }}</span>
-                                                <span class="block font-sans text-gray-500">{{ __('admin.payouts.influencer_fee_vat_note', ['fee' => $fmt(abs($item->net) - $item->vat_amount), 'vat' => $fmt($item->vat_amount)]) }}</span>
+                                                <span class="block font-sans text-gray-500">{{ __('admin.payouts.influencer_fee_vat_marketing_note', ['fee' => $fmt(abs($item->net) - $item->vat_amount - $item->marketing_fee_amount), 'vat' => $fmt($item->vat_amount), 'marketing' => $fmt($item->marketing_fee_amount)]) }}</span>
                                             @else
                                                 {{ $item->subOrder->sub_order_number ?? $item->sub_order_id }}
                                             @endif

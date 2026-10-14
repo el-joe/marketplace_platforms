@@ -254,14 +254,15 @@
         @endif
         @php
             $feeInvites = $marketerCampaign->invitations->where('status', 'accepted')->where('platform_fee_amount', '>', 0);
-            $feeNet = (int) $feeInvites->sum('platform_fee_amount');
-            $feeVatSum = (int) $feeInvites->sum('platform_fee_vat_amount');
+            $feeNet = (float) $feeInvites->sum('platform_fee_amount');
+            $feeVatSum = (float) $feeInvites->sum('platform_fee_vat_amount');
+            $feeMarketingSum = (float) $feeInvites->sum('platform_fee_marketing_amount');
         @endphp
         @if ($feeNet > 0)
             <div class="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-gray-700" data-testid="campaign-fee-summary">
                 <div class="font-semibold text-gray-800 mb-1">{{ __('partner.marketer_campaigns.fee_summary_title') }}</div>
-                {{ __('partner.marketer_campaigns.fee_summary', [
-                    'fee' => \App\Support\Money::format($feeNet), 'vat' => \App\Support\Money::format($feeVatSum), 'total' => \App\Support\Money::format($feeNet + $feeVatSum),
+                {{ __($feeMarketingSum > 0 ? 'partner.marketer_campaigns.fee_summary_with_marketing' : 'partner.marketer_campaigns.fee_summary', [
+                    'fee' => \App\Support\Money::format($feeNet), 'vat' => \App\Support\Money::format($feeVatSum), 'marketing' => \App\Support\Money::format($feeMarketingSum), 'total' => \App\Support\Money::format($feeNet + $feeVatSum + $feeMarketingSum),
                     'currency' => $marketerCampaign->currency,
                 ]) }}
             </div>
@@ -302,18 +303,22 @@
                                     </td>
                                     @php
                                         $qRow = $quoteRows[$invitation->marketer_id] ?? null;
-                                        $rowFee = (int) ($invitation->platform_fee_amount ?: ($qRow['fee'] ?? 0));
+                                        $rowFee = (float) ($invitation->platform_fee_amount ?: ($qRow['fee'] ?? 0));
                                         $rowCommission = (float) ($qRow['commission']['amount'] ?? 0);
                                     @endphp
                                     @php
                                         $rowVat = $invitation->platform_fee_amount > 0
-                                            ? (int) $invitation->platform_fee_vat_amount
-                                            : (int) ($qRow['fee_vat'] ?? 0);
+                                            ? (float) $invitation->platform_fee_vat_amount
+                                            : (float) ($qRow['fee_vat'] ?? 0);
+                                        $rowMarketing = (float) $invitation->platform_fee_marketing_amount;
                                     @endphp
                                     <td class="px-4 py-3 text-gray-700">
                                         @if ($rowFee > 0)
                                             {{ \App\Support\Money::format($rowFee).' '.$marketerCampaign->currency }}
                                             <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-vat">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ \App\Support\Money::format($rowVat).' '.$marketerCampaign->currency }}</span>
+                                            @if ($rowMarketing > 0)
+                                                <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-marketing">+ {{ __('partner.finance.marketing_fees_label') }} {{ \App\Support\Money::format($rowMarketing).' '.$marketerCampaign->currency }}</span>
+                                            @endif
                                             @if ($invitation->platform_fee_status === 'pending')
                                                 <span class="block text-[11px] text-orange-600">{{ __('partner.marketer_campaigns.fee_status_pending') }}</span>
                                             @elseif ($invitation->platform_fee_status === 'paid')

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\WhatsAppGateway;
 use App\Enums\PromotionCategory;
 use App\Jobs\CollectPendingInfluencerFeesJob;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
@@ -141,7 +142,7 @@ class MarketerPromotionFlowTest extends TestCase
                 return true;
             }
         };
-        $this->app->instance(\App\Contracts\WhatsAppGateway::class, $fake);
+        $this->app->instance(WhatsAppGateway::class, $fake);
         app()->call([new SendCampaignWhatsAppNotificationJob($inv->id), 'handle']);
         $this->assertTrue($inv->fresh()->whatsapp_sent);
         $this->assertStringContainsString('/invitations/'.$inv->id.'/whatsapp/accept', $fake->last);
@@ -214,12 +215,13 @@ class MarketerPromotionFlowTest extends TestCase
         (new CollectPendingInfluencerFeesJob)->handle(app(MarketerCampaignService::class));
 
         $this->assertSame('paid', $inv->fresh()->platform_fee_status);
-        $this->assertSame(2000 - 945, $vendorWallet->fresh()->balance, "fee 900 + 5% VAT 45");
+        $this->assertSame(2000 - 945, $vendorWallet->fresh()->balance, 'fee 900 + 5% VAT 45');
     }
 
-    public function test_marketer_paid_fee_keeps_current_behaviour(): void
+    public function test_marketer_paid_fee_keeps_current_behaviour_for_campaigns_without_a_vendor(): void
     {
         $this->setting('marketer_influencer_fee_payer', 'marketer');
+        $this->s->marketerCampaign->update(['vendor_id' => null]); // D7: a vendor campaign is always vendor-paid
         $wallets = app(WalletService::class);
         $wallet = $wallets->getOrCreateWallet('marketer', $this->s->marketer->id, 'AED');
         $wallets->credit($wallet, 1000, 'test', null, 'topup');
@@ -229,6 +231,6 @@ class MarketerPromotionFlowTest extends TestCase
 
         $this->assertSame('paid', $inv->fresh()->platform_fee_status);
         $this->assertSame('marketer', $inv->fresh()->platform_fee_payer);
-        $this->assertSame(1000 - 945, $wallet->fresh()->balance, "fee 900 + 5% VAT 45");
+        $this->assertSame(1000 - 945, $wallet->fresh()->balance, 'fee 900 + 5% VAT 45');
     }
 }
