@@ -54,6 +54,9 @@ use Illuminate\Support\Str;
 
 class MarketerCampaignService
 {
+    /** Default for the `marketer_campaign_allowed_fulfilment_models` setting (cross_dock = billed as FBM). */
+    public const DEFAULT_ALLOWED_FULFILMENT_MODELS = ['fbn', 'fbm', 'cross_dock'];
+
     /**
      * Create a new campaign from vendor panel.
      * $data keys: vendor_listing_id|admin_listing_id, country_id, currency,
@@ -110,7 +113,7 @@ class MarketerCampaignService
      *
      * Fulfilment model: previously hardcoded to 'fbn' for vendor listings.
      * Now controlled by the `marketer_campaign_allowed_fulfilment_models`
-     * setting (default ['fbn','fbm']) so FBP vendor listings can run
+     * setting (default ['fbn','fbm','cross_dock']) so FBP vendor listings can run
      * campaigns too, per product-owner confirmation in enhancement.md P-14.
      *
      * Invitation timing (P-14 task 4): invitations are NO LONGER dispatched
@@ -138,7 +141,7 @@ class MarketerCampaignService
                     ? VendorListing::where('id', $source->vendorListingId)->where('vendor_id', $owner->id)->firstOrFail()
                     : VendorListing::where('id', $source->vendorListingId)->firstOrFail();
 
-                $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+                $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS);
                 if (! in_array($listing->fulfillment_model?->value, $allowedModels, true)) {
                     throw new \RuntimeException("Campaigns are not allowed for {$listing->fulfillment_model?->value} listings.");
                 }

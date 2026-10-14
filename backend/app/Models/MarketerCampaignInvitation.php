@@ -25,6 +25,8 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_amount', 'platform_fee_currency',
         'platform_fee_vat_rate', 'platform_fee_vat_amount', 'platform_fee_paid_via', 'platform_fee_paid_at',
         'platform_fee_status', 'platform_fee_payer', 'platform_fee_recorded_at',
+        'platform_fee_marketing_amount', 'marketer_fee_share_pct', 'marketer_payout_amount',
+        'marketer_credited_at', 'marketer_payout_wallet_tx_id',
     ];
 
     protected $casts = [
@@ -41,6 +43,10 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_amount' => DecimalMoney::class,
         'platform_fee_vat_amount' => DecimalMoney::class,
         'total_commission_earned' => DecimalMoney::class,
+        'platform_fee_marketing_amount' => DecimalMoney::class,
+        'marketer_fee_share_pct' => 'decimal:4',
+        'marketer_payout_amount' => DecimalMoney::class,
+        'marketer_credited_at' => 'datetime',
     ];
 
     public function campaign(): BelongsTo

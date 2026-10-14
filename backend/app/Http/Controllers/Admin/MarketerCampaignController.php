@@ -422,7 +422,7 @@ class MarketerCampaignController extends Controller
         $listings = VendorListing::with('productVariant.product')
             ->where('vendor_id', $request->vendor_id)
             ->where('status', 'active')
-            ->whereIn('fulfillment_model', (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']))
+            ->whereIn('fulfillment_model', (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS))
             ->when($request->filled('search'), fn ($q) => $q->whereHas('productVariant.product', fn ($q2) => $q2->where('name_en', 'like', "%{$request->search}%")
             )
             )

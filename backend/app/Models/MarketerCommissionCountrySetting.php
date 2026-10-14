@@ -14,12 +14,16 @@ class MarketerCommissionCountrySetting extends Model
     protected $fillable = [
         'category_id', 'country_id',
         'influencer_commission_amount', 'affiliate_commission_amount',
+        'influencer_fee_share_pct', 'affiliate_commission_mode', 'affiliate_commission_rate', 'affiliate_commission_flat',
         'currency', 'updated_by_admin_id',
     ];
 
     protected $casts = [
         'influencer_commission_amount' => DecimalMoney::class,
         'affiliate_commission_amount' => DecimalMoney::class,
+        'influencer_fee_share_pct' => 'decimal:4',
+        'affiliate_commission_rate' => 'decimal:4',
+        'affiliate_commission_flat' => DecimalMoney::class,
     ];
 
     /**

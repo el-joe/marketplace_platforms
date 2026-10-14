@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\DecimalMoney;
+use App\Enums\MarketingFeeType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,9 @@ class MarketerCampaign extends Model
         'platform_sample_qty_snapshot', 'per_marketer_sample_qty_snapshot',
         'title', 'notes',
         'selected_ad_types', 'vendor_ad_notes',
+        'fulfillment_type', 'campaign_subtotal', 'marketing_fee_fixed', 'marketing_fee_variable',
+        'marketing_fee_total', 'campaign_grand_total',
+        'affiliate_fee_accrued', 'affiliate_fee_settled_at', 'marketing_fee_fixed_accrued',
     ];
 
     protected $attributes = [
@@ -44,6 +48,15 @@ class MarketerCampaign extends Model
         'commission_budget_spent' => DecimalMoney::class,
         'marketer_commission_amount' => DecimalMoney::class,
         'platform_commission_amount' => DecimalMoney::class,
+        'campaign_subtotal' => DecimalMoney::class,
+        'marketing_fee_fixed' => DecimalMoney::class,
+        'marketing_fee_variable' => DecimalMoney::class,
+        'marketing_fee_total' => DecimalMoney::class,
+        'campaign_grand_total' => DecimalMoney::class,
+        'affiliate_fee_accrued' => DecimalMoney::class,
+        'marketing_fee_fixed_accrued' => DecimalMoney::class,
+        'affiliate_fee_settled_at' => 'datetime',
+        'fulfillment_type' => MarketingFeeType::class,
     ];
 
     public function vendor(): BelongsTo

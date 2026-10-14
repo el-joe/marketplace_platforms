@@ -46,6 +46,7 @@ use App\Services\ShippingWeightService;
 use App\Services\Vendor\CategoryContractService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
+use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
 use Illuminate\Database\Eloquent\Builder;
@@ -629,12 +630,12 @@ class ListingController extends Controller
                 'campaign_id',
                 (clone $marketerCampaignsBase)->select('id')
             )->count(),
-            'commission_budget_spent' => \App\Support\Money::number((clone $marketerCampaignsBase)->sum('commission_budget_spent')),
+            'commission_budget_spent' => Money::number((clone $marketerCampaignsBase)->sum('commission_budget_spent')),
         ];
 
         // Why (if at all) the "New campaign" button must be disabled.
         $marketerCampaignBlock = null;
-        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS);
         if ($listing->status !== VendorListingStatus::Active) {
             $marketerCampaignBlock = __('partner.listings.show.marketer_campaign.blocked_not_active');
         } elseif (! in_array($listing->fulfillment_model?->value, $allowedModels, true)) {
@@ -1208,7 +1209,7 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($listing, $validated, $request, $weightClass) {
             $listing->update([
-                'price' => round((float) $validated["price"], 2),
+                'price' => round((float) $validated['price'], 2),
                 'condition' => $validated['condition'],
                 'fulfillment_model' => $validated['fulfillment_model'],
                 'fbm_payment_gateway_id' => $validated['fulfillment_model'] === 'fbm' ? ($validated['fbm_payment_gateway_id'] ?? null) : null,

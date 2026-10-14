@@ -90,7 +90,7 @@ class MarketerCampaignController extends Controller
     public function create(VendorListing $vendorListing)
     {
         abort_unless($vendorListing->vendor_id === $this->vendorId(), 403);
-        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS);
         abort_unless(in_array($vendorListing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
 
         $vendorListing->load('productVariant.product.category');
@@ -145,7 +145,7 @@ class MarketerCampaignController extends Controller
             ->with('productVariant.product.category')
             ->firstOrFail();
 
-        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', ['fbn', 'fbm']);
+        $allowedModels = (array) setting('marketer_campaign_allowed_fulfilment_models', MarketerCampaignService::DEFAULT_ALLOWED_FULFILMENT_MODELS);
         abort_unless(in_array($listing->fulfillment_model?->value, $allowedModels, true), 403, 'حملات الماركتر غير متاحة لهذا نوع التخزين.');
 
         $quoteService = app(MarketerCampaignQuoteService::class);
