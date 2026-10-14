@@ -73,6 +73,7 @@
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.product') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.country') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.commission_type') }}</th>
+                        <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('marketing_fees.campaign.list_grand_total') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.status') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.invited') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.created_at') }}</th>
@@ -90,6 +91,16 @@
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $product?->name_ar ?? $product?->name_en ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $campaign->country?->name_ar ?? $campaign->country?->name_en ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ __('partner.marketer_campaigns_my.commission_type.' . $campaign->commission_type) }}</td>
+                            <td class="px-4 py-3 text-gray-600" data-testid="campaign-grand-total">
+                                @if ($campaign->campaign_grand_total !== null)
+                                    {{ \App\Support\Money::format($campaign->campaign_grand_total) }} {{ $campaign->currency }}
+                                    @if ($campaign->fulfillment_type)
+                                        <span class="block text-[11px] text-gray-400">{{ $campaign->fulfillment_type->label() }}</span>
+                                    @endif
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $st['cls'] }}">
                                     {{ $st['label'] }}

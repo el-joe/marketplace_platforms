@@ -65,15 +65,18 @@ class MarketerCampaignDefaultCommissionTest extends TestCase
         $this->assertEquals(round((float) $this->s->vendorListingFbn->price * 0.10 + 3, 2), (float) $campaign->marketer_commission_amount);
     }
 
-    public function test_only_a_fee_share_configured_leaves_the_campaign_amount_at_zero(): void
+    public function test_only_a_fee_share_configured_leaves_the_amount_at_zero_and_the_influencer_campaign_still_approves(): void
     {
         $this->default('percentage', 0, 0, sharePct: 20);
 
         $campaign = F::campaign($this->s, [F::influencer($this->s)], 0);
 
         $this->assertEquals(0, $campaign->marketer_commission_amount);
-        $this->expectException(\RuntimeException::class);
+
+        // Influencers are paid by the fee share (P4 guard change): a zero per-sale amount no longer blocks approval.
         app(MarketerCampaignService::class)->approveCampaign($campaign, Admin::first());
+
+        $this->assertSame('active', $campaign->fresh()->status);
     }
 
     public function test_auto_approval_uses_the_percentage_default(): void

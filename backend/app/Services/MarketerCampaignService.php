@@ -210,7 +210,13 @@ class MarketerCampaignService
                 $data['max_commission_budget'] = $data['max_commission_budget'] ?? 0;
             }
 
-            $campaign = MarketerCampaign::create([
+            // Vendor-listing campaigns snapshot the server-side quote (never client numbers) so later setting
+            // changes do not rewrite what the vendor was shown; platform/marketer-owned ones carry no vendor charge.
+            $feeSnapshot = $listing instanceof VendorListing && $owner->isVendor()
+                ? $this->feeSnapshot($listing, $marketerVendors->pluck('id')->all())
+                : [];
+
+            $campaign = MarketerCampaign::create($feeSnapshot + [
                 'vendor_id' => $owner->isVendor() ? $owner->id : null,
                 'owner_type' => $owner->isMarketer() ? 'marketer' : $owner->type,
                 // Peer campaigns: the real owner is the listing's influencer, the promoter is requested_by.
@@ -309,6 +315,39 @@ class MarketerCampaignService
 
             return $campaign;
         });
+    }
+
+    /** True when the campaign targets at least one marketer and every one of them is an influencer. */
+    public function isInfluencerOnly(MarketerCampaign $campaign): bool
+    {
+        $ids = array_values(array_filter((array) ($campaign->requested_marketer_vendor_ids ?? [])));
+        if ($ids === []) {
+            return false;
+        }
+
+        $marketers = Marketer::whereIn('id', $ids)->with('marketerJobs')->get();
+
+        return $marketers->isNotEmpty() && $marketers->every(fn (Marketer $m) => $m->isInfluencer());
+    }
+
+    /**
+     * Campaign fee snapshot columns from a fresh server-side quote.
+     *
+     * @param  array<int, string>  $marketerIds
+     * @return array<string, mixed>
+     */
+    private function feeSnapshot(VendorListing $listing, array $marketerIds): array
+    {
+        $quote = app(MarketerCampaignQuoteService::class)->quote($listing, $marketerIds);
+
+        return [
+            'fulfillment_type' => $quote['fulfillment_type'],
+            'campaign_subtotal' => $quote['campaign_subtotal'],
+            'marketing_fee_fixed' => $quote['marketing']['fixed_fee'],
+            'marketing_fee_variable' => $quote['marketing']['variable_fee'],
+            'marketing_fee_total' => $quote['marketing']['total'],
+            'campaign_grand_total' => $quote['campaign_grand_total'],
+        ];
     }
 
     /**
@@ -511,7 +550,9 @@ class MarketerCampaignService
             }
         }
 
-        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
+        // Influencer campaigns are paid by the fee share, not a per-sale amount (D2/D11), so only a campaign that
+        // targets affiliates (or has no marketer list to prove otherwise) needs a resolvable per-unit commission.
+        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0 && ! $this->isInfluencerOnly($campaign)) {
             throw new \RuntimeException(
                 'Cannot approve a campaign with a zero marketer commission amount. Set it first.'
             );
@@ -749,7 +790,7 @@ class MarketerCampaignService
         if ($campaign->commission_type !== 'tiered') {
             $defaults = $this->resolveDefaultCommission($campaign);
 
-            if ($defaults === null) {
+            if ($defaults === null && ! $this->isInfluencerOnly($campaign)) {
                 $campaign->update(['auto_approve_at' => now()->addDays(3)]);
 
                 Admin::query()->get()->each(
@@ -759,8 +800,10 @@ class MarketerCampaignService
                 return;
             }
 
-            $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
-            $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
+            if ($defaults !== null) {
+                $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
+                $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
+            }
         } elseif ($campaign->tieredRules()->count() === 0) {
             // No tiers configured — nothing to auto-approve into.
             $campaign->update(['auto_approve_at' => now()->addDays(3)]);

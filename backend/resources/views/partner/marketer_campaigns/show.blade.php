@@ -180,6 +180,9 @@
                 @endif
             </div>
         </div>
+        @if ($marketerCampaign->vendor_listing_id)
+            <x-marketer-campaign-fee-snapshot :campaign="$marketerCampaign" />
+        @endif
 
         @if ($marketerCampaign->commission_type === 'tiered' && $marketerCampaign->tieredRules->isNotEmpty())
             <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

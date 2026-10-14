@@ -441,9 +441,13 @@ class ListingController extends Controller
                 ->with('productVariant.product.category')
                 ->firstOrFail();
 
-            return response()->json(
-                app(MarketerCampaignQuoteService::class)->quote($listing, array_values(array_filter((array) request()->input('marketer_ids', []), 'is_string')))
-            );
+            $quoteService = app(MarketerCampaignQuoteService::class);
+
+            return response()->json($quoteService->withWallet(
+                $quoteService->quote($listing, array_values(array_filter((array) request()->input('marketer_ids', []), 'is_string'))),
+                $vendor->id,
+                $listing->currency,
+            ));
         }
 
         $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();

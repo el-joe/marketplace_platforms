@@ -11,7 +11,7 @@
         </div>
 
         @if($requestedQuote)
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-sm">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3 text-sm">
                 <div class="rounded-lg border border-gray-200 p-3">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.quote_selected') }}</div>
                     <div class="font-semibold text-gray-800">
@@ -25,6 +25,14 @@
                     @if($requestedQuote['total_fee_vat'] > 0)
                         <div class="text-[11px] text-gray-500">{{ __('admin.marketer_campaigns.quote_incl_vat', ['vat' => \App\Support\Money::format($requestedQuote['total_fee_vat'])]) }}</div>
                     @endif
+                </div>
+                <div class="rounded-lg border border-gray-200 p-3" data-testid="requested-grand-total">
+                    <div class="text-xs text-gray-500 mb-1">{{ __('marketing_fees.campaign.grand_total') }}</div>
+                    <div class="font-semibold text-gray-800">{{ \App\Support\Money::format($marketerCampaign->campaign_grand_total ?? $requestedQuote['campaign_grand_total']) }} {{ $currency }}</div>
+                    <div class="text-[11px] text-gray-500">
+                        {{ __('marketing_fees.campaign.marketing_fees') }}: {{ \App\Support\Money::format($marketerCampaign->marketing_fee_total ?? $requestedQuote['marketing']['total']) }}
+                        · {{ ($marketerCampaign->fulfillment_type ?? \App\Enums\MarketingFeeType::from($requestedQuote['fulfillment_type']))->label() }}
+                    </div>
                 </div>
                 <div class="rounded-lg border border-gray-200 p-3">
                     <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.quote_samples') }}</div>

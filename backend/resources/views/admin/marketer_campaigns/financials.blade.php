@@ -76,6 +76,8 @@
                     <th class="text-right py-2 px-3">{{ __('admin.marketer_campaigns.influencer_column') }}</th>
                     <th class="text-right py-2 px-3">{{ __('admin.marketer_campaigns.affiliate_column') }}</th>
                     <th class="text-right py-2 px-3">{{ __('admin.marketer_campaigns.fees_column') }}</th>
+                    <th class="text-right py-2 px-3">{{ __('marketing_fees.campaign.marketing_fees') }}</th>
+                    <th class="text-right py-2 px-3">{{ __('marketing_fees.campaign.grand_total') }}</th>
                     <th class="text-right py-2 px-3">{{ __('admin.marketer_campaigns.fee_status_column') }}</th>
                     <th class="text-right py-2 px-3">{{ __('admin.marketer_campaigns.conversions_column') }}</th>
                     <th class="text-right py-2 px-3">{{ __('admin.marketer_campaigns.commission_owed_column') }}</th>
@@ -98,6 +100,15 @@
                         <td class="py-2 px-3">{{ $influencerAccepted }}</td>
                         <td class="py-2 px-3">{{ $affiliateAccepted }}</td>
                         <td class="py-2 px-3">{{ \App\Support\Money::format($feeExpected) }} {{ $campaign->currency }}</td>
+                        <td class="py-2 px-3" data-testid="financials-marketing-fee">
+                            @if($campaign->campaign_grand_total !== null)
+                                {{ \App\Support\Money::format($campaign->marketing_fee_total) }} {{ $campaign->currency }}
+                                @if($campaign->fulfillment_type)<span class="block text-[11px] text-gray-400">{{ $campaign->fulfillment_type->label() }}</span>@endif
+                            @else
+                                —
+                            @endif
+                        </td>
+                        <td class="py-2 px-3" data-testid="financials-grand-total">{{ $campaign->campaign_grand_total !== null ? \App\Support\Money::format($campaign->campaign_grand_total).' '.$campaign->currency : '—' }}</td>
                         <td class="py-2 px-3">
                             @if($feePending > 0)
                                 <span class="text-orange-500">{{ str_replace(':amount', \App\Support\Money::format($feePending), __('admin.marketer_campaigns.fee_status_pending')) }}</span>
@@ -115,7 +126,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center text-gray-500 py-6">{{ __('admin.marketer_campaigns.no_campaigns') }}</td>
+                        <td colspan="11" class="text-center text-gray-500 py-6">{{ __('admin.marketer_campaigns.no_campaigns') }}</td>
                     </tr>
                 @endforelse
             </tbody>

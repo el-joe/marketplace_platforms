@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\MarketingFeeType;
 use App\Models\Category;
 use App\Models\Country;
 use App\Models\Marketer;
@@ -89,10 +90,35 @@ class MarketerCampaignQuoteService
     }
 
     /**
+     * Adds the vendor wallet comparison against the grand total, computed server-side so the form does no money math.
+     *
+     * @param  array<string, mixed>  $quote
+     * @return array<string, mixed>
+     */
+    public function withWallet(array $quote, string $vendorId, ?string $currency): array
+    {
+        $wallet = app(WalletService::class)->getOrCreateWallet('vendor', $vendorId, $currency ?: ($quote['currency'] ?? ''));
+        $balance = (float) $wallet->balance;
+        $grandTotal = (float) ($quote['campaign_grand_total'] ?? 0);
+
+        $quote['wallet'] = [
+            'balance' => round($balance, 2),
+            'currency' => $wallet->currency,
+            'shortfall' => round(max(0.0, $grandTotal - $balance), 2),
+            'sufficient' => $balance >= $grandTotal,
+        ];
+
+        return $quote;
+    }
+
+    /**
      * @param  array<int, string>  $marketerIds
      * @return array{
      *   currency: string, fee_per_influencer: float, influencer_count: int, affiliate_count: int,
      *   total_fee: float, vat_rate: float, fee_vat_per_influencer: float, total_fee_vat: float, total_fee_with_vat: float, fee_payer: string, rows: array<int, array<string, mixed>>,
+     *   fulfillment_type: string, fulfillment_type_label: string,
+     *   marketing: array{fixed_fee: float, variable_fee: float, total: float},
+     *   campaign_subtotal: float, campaign_grand_total: float,
      *   influencer_sample_qty: int, affiliate_sample_qty: int, platform_sample_qty: int,
      *   sample_total: int, sample_count: int, stock_available: int, stock_reserved_by_other_campaigns: int, stock_min: int
      * }
@@ -144,6 +170,13 @@ class MarketerCampaignQuoteService
             ];
         }
 
+        // Subtotal = influencer fees + VAT. Marketing fees (fixed + variable, no VAT) are added on top; the
+        // billing type follows the listing's fulfillment model. Affiliate-only campaigns have a zero subtotal at
+        // creation (their fees accrue per order), so their marketing fees are zero here.
+        $campaignSubtotal = round($influencers * ($feePer + $feeVat), 2);
+        $type = MarketingFeeType::fromListingModel($listing->fulfillment_model);
+        $marketing = app(MarketingFeeService::class)->calculate($campaignSubtotal, $listing->country_id, $category?->id, $type);
+
         $sampleService = app(CampaignSampleService::class);
         $plan = $sampleService->plan($category, $influencers, $affiliates > 0);
         $minStock = (int) ($category?->min_stock_for_campaign ?? 10);
@@ -157,7 +190,16 @@ class MarketerCampaignQuoteService
             'vat_rate' => $vatRate,
             'fee_vat_per_influencer' => $feeVat,
             'total_fee_vat' => round($influencers * $feeVat, 2),
-            'total_fee_with_vat' => round($influencers * ($feePer + $feeVat), 2),
+            'total_fee_with_vat' => $campaignSubtotal,
+            'fulfillment_type' => $type->value,
+            'fulfillment_type_label' => $type->label(),
+            'marketing' => [
+                'fixed_fee' => $marketing['fixed_fee'],
+                'variable_fee' => $marketing['variable_fee'],
+                'total' => $marketing['total_fee'],
+            ],
+            'campaign_subtotal' => $campaignSubtotal,
+            'campaign_grand_total' => round($campaignSubtotal + $marketing['total_fee'], 2),
             'fee_payer' => setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' ? 'vendor' : 'marketer',
             'rows' => $rows,
             // Effective quantities (admin minimums applied), see CampaignSampleService.

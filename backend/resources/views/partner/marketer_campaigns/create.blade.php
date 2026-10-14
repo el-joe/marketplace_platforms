@@ -164,6 +164,52 @@
                         <span x-show="quote.fee_payer !== 'vendor'">{{ __('partner.marketer_campaigns.fee_payer_marketer_notice') }}</span>
                     </p>
                     <p class="text-xs text-gray-400 mt-1">{{ __('partner.marketer_campaigns.commission_estimate_note', ['price' => \App\Support\Money::format($vendorListing->price).' '.$vendorListing->currency]) }}</p>
+
+                    {{-- Server-computed breakdown (quote JSON from partner.listings.marketer-fee); no math here. --}}
+                    <div class="mt-4 rounded-lg border border-orange-200 bg-orange-50/40 p-4 text-sm" data-testid="campaign-cost-breakdown">
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <h5 class="font-semibold text-gray-800">{{ __('marketing_fees.campaign.breakdown_title') }}</h5>
+                            <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700" data-testid="fulfillment-type-label">
+                                {{ __('marketing_fees.campaign.fulfillment_type') }}: <strong x-text="quote.fulfillment_type_label"></strong>
+                            </span>
+                        </div>
+                        <dl class="divide-y divide-orange-100">
+                            <div class="flex justify-between py-1.5">
+                                <dt class="text-gray-600">{{ __('marketing_fees.campaign.influencer_fees') }}
+                                    <span class="text-xs text-gray-400">(<span x-text="quote.influencer_count"></span> &times; <span x-text="money(quote.fee_per_influencer)"></span>)</span></dt>
+                                <dd class="font-medium text-gray-800" x-text="money(quote.total_fee)"></dd>
+                            </div>
+                            <div class="flex justify-between py-1.5">
+                                <dt class="text-gray-600">{{ __('marketing_fees.campaign.vat') }} (<span x-text="quote.vat_rate"></span>%)</dt>
+                                <dd class="font-medium text-gray-800" x-text="money(quote.total_fee_vat)"></dd>
+                            </div>
+                            <div class="flex justify-between py-1.5">
+                                <dt class="font-semibold text-gray-800">{{ __('marketing_fees.campaign.subtotal') }}</dt>
+                                <dd class="font-semibold text-gray-900" data-testid="quote-subtotal" x-text="money(quote.campaign_subtotal)"></dd>
+                            </div>
+                            <div class="flex justify-between py-1.5">
+                                <dt class="text-gray-600">{{ __('marketing_fees.campaign.fixed_fee') }}</dt>
+                                <dd class="font-medium text-gray-800" x-text="money(quote.marketing.fixed_fee)"></dd>
+                            </div>
+                            <div class="flex justify-between py-1.5">
+                                <dt class="text-gray-600">{{ __('marketing_fees.campaign.variable_fee') }}</dt>
+                                <dd class="font-medium text-gray-800" x-text="money(quote.marketing.variable_fee)"></dd>
+                            </div>
+                            <div class="flex justify-between py-1.5">
+                                <dt class="font-semibold text-gray-800">{{ __('marketing_fees.campaign.marketing_fees') }}</dt>
+                                <dd class="font-semibold text-gray-900" data-testid="quote-marketing-total" x-text="money(quote.marketing.total)"></dd>
+                            </div>
+                            <div class="flex justify-between py-2 border-t-2 border-orange-200">
+                                <dt class="font-bold text-gray-900">{{ __('marketing_fees.campaign.grand_total') }}</dt>
+                                <dd class="font-bold text-orange-700" data-testid="quote-grand-total" x-text="money(quote.campaign_grand_total)"></dd>
+                            </div>
+                        </dl>
+                        <p class="mt-2 text-xs text-gray-500">{{ __('marketing_fees.campaign.note_charged_on_accept') }}</p>
+                        <p x-show="quote.wallet && quote.wallet.sufficient && quote.campaign_grand_total > 0" class="mt-2 text-xs text-green-700">{{ __('marketing_fees.campaign.wallet_enough') }}</p>
+                        <p x-show="quote.wallet && !quote.wallet.sufficient" x-cloak class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" data-testid="wallet-shortfall-warning">
+                            {!! str_replace(':shortfall', '<strong x-text="money(quote.wallet.shortfall)"></strong>', e(__('marketing_fees.campaign.wallet_short', ['shortfall' => ':shortfall']))) !!}
+                        </p>
+                    </div>
                 </div>
             @endif
 
@@ -187,6 +233,12 @@
                         @endif
                     </span>
                 </label>
+            </div>
+
+            <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-xs text-blue-900 space-y-1" data-testid="affiliate-billing-explanation">
+                <div class="text-sm font-semibold">{{ __('marketing_fees.campaign.affiliate_title') }}</div>
+                <p>{{ __('marketing_fees.campaign.affiliate_commission') }}</p>
+                <p>{{ __('marketing_fees.campaign.affiliate_marketing_fees') }}</p>
             </div>
 
             <div>
@@ -382,10 +434,6 @@
                     this.refreshQuote();
                 },
                 async refreshQuote() {
-                    if (!this.selectedMarketers.length) {
-                        this.quote = Object.assign({}, this.quote, { rows: [], influencer_count: 0, total_fee: 0, total_fee_vat: 0, total_fee_with_vat: 0 });
-                        return;
-                    }
                     try {
                         const params = new URLSearchParams({ listing_id: '{{ $vendorListing->id }}' });
                         this.selectedMarketers.forEach(m => params.append('marketer_ids[]', m.id));

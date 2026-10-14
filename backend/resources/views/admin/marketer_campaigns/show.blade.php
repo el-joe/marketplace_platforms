@@ -53,6 +53,10 @@
     </a>
 </div>
 
+@if($marketerCampaign->vendor_listing_id)
+    <x-marketer-campaign-fee-snapshot :campaign="$marketerCampaign" class="mb-6" />
+@endif
+
 {{-- Financial Summary Bar --}}
 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
 

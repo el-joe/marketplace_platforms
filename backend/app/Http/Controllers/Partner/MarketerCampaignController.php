@@ -13,7 +13,6 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
-use App\Services\WalletService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use App\Support\Money;
@@ -101,12 +100,10 @@ class MarketerCampaignController extends Controller
         // Only influencers are picked one by one; affiliates are "open to all".
         $marketerVendors = $allMarketers->filter($isInfluencer)->values();
         $affiliateCount = $allMarketers->reject($isInfluencer)->filter(fn ($m) => $m->marketerJobs->contains('key', 'affiliate'))->count();
-        $quote = $quoteService->quote($vendorListing, []);
-
-        // Seller wallet (same wallet the Wallet page and fee collection use).
-        $wallet = app(WalletService::class)->getOrCreateWallet('vendor', $this->vendorId(), $vendorListing->currency ?: $quote['currency']);
-        $walletBalance = (float) $wallet->balance;
-        $walletCurrency = $wallet->currency;
+        // Seller wallet (same wallet the Wallet page and fee collection use) is part of the quote.
+        $quote = $quoteService->withWallet($quoteService->quote($vendorListing, []), $this->vendorId(), $vendorListing->currency);
+        $walletBalance = $quote['wallet']['balance'];
+        $walletCurrency = $quote['wallet']['currency'];
 
         // Same rule MarketerCampaignService enforces on submit, surfaced here.
         $minStock = (int) ($vendorListing->productVariant?->product?->category?->min_stock_for_campaign ?? 10);
@@ -204,7 +201,7 @@ class MarketerCampaignController extends Controller
         return redirect()
             ->to(route('partner.listings.show', $listing->id).'#marketer_campaign')
             ->with('success', $quote['total_fee'] > 0
-                ? __('partner.marketer_campaigns.created_with_fee', ['fee' => Money::format($quote['total_fee_with_vat']), 'currency' => $quote['currency']])
+                ? __('marketing_fees.campaign.created_with_grand_total', ['total' => Money::format($quote['campaign_grand_total']), 'currency' => $quote['currency']])
                 : 'تم إنشاء حملة الماركتر بنجاح.');
     }
 
