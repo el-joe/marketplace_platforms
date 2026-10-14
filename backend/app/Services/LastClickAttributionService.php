@@ -144,7 +144,9 @@ class LastClickAttributionService
 
     private function recordConversion(MarketerCampaignInvitation $invitation, Order $order, OrderItem $item, ?array $click): void
     {
-        DB::transaction(function () use ($invitation, $order, $item, $click) {
+        $pausedForBudget = false;
+
+        DB::transaction(function () use ($invitation, $order, $item, $click, &$pausedForBudget) {
             // Row-lock the campaign for the whole compute+spend+pause
             // sequence (enhancement.md P-12 task 2 — same reserve pattern
             // as P-04's CouponUsageService::reserve()).
@@ -246,6 +248,7 @@ class LastClickAttributionService
                 && in_array($campaign->status, ['active', 'auto_approved'], true)
             ) {
                 $campaign->update(['status' => 'paused']);
+                $pausedForBudget = true;
                 Log::info('MarketerCampaign auto-paused: commission budget exhausted.', [
                     'campaign_id' => $campaign->id,
                     'spent' => $campaign->commission_budget_spent,
@@ -257,6 +260,11 @@ class LastClickAttributionService
                 fn ($ma) => $ma->notify(new NewConversionNotification($conversion, $ma->id))
             );
         });
+
+        // P6: budget exhausted -> settle the affiliate marketing fees accrued so far (later approvals settle on arrival).
+        if ($pausedForBudget) {
+            app(AffiliateFeeSettlementService::class)->settleIfClosed($invitation->campaign_id, 'budget_exhausted');
+        }
     }
 
     /** True when the campaign's per-unit amount is just the category affiliate default stored at approval. */

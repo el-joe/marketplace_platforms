@@ -164,6 +164,7 @@ return [
 
     // Campaigns
     'campaigns' => [
+        'view_details' => 'Details and fee history',
         'active_title' => 'Active Campaigns',
         'no_active' => 'No active campaigns',
         'no_active_hint' => 'Accept a campaign invitation to start earning commissions',

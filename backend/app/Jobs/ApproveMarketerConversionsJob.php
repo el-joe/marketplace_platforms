@@ -4,6 +4,8 @@ namespace App\Jobs;
 
 use App\Models\MarketerCampaignConversion;
 use App\Models\Wallet;
+use App\Services\AffiliateFeeAccrualService;
+use App\Services\AffiliateFeeSettlementService;
 use App\Services\LedgerService;
 use App\Services\MarketerCommissionStatementService;
 use Illuminate\Bus\Queueable;
@@ -53,7 +55,9 @@ class ApproveMarketerConversionsJob implements ShouldQueue
 
     private function approveOne(MarketerCampaignConversion $conversion, LedgerService $ledgerService): void
     {
-        DB::transaction(function () use ($conversion, $ledgerService) {
+        $approved = false;
+
+        DB::transaction(function () use ($conversion, $ledgerService, &$approved) {
             $locked = MarketerCampaignConversion::where('id', $conversion->id)->lockForUpdate()->first();
             if (! $locked || $locked->status !== 'pending') {
                 return;
@@ -112,6 +116,24 @@ class ApproveMarketerConversionsJob implements ShouldQueue
                     ],
                 ]);
             }
+
+            $approved = true;
+            $this->accrueAffiliateFee($locked);
         });
+
+        // Late approval on a campaign that already finished / hit its budget: settle the new accrual at once.
+        if ($approved) {
+            app(AffiliateFeeSettlementService::class)->settleIfClosed($conversion->campaign_id, 'late_approval');
+        }
+    }
+
+    /** P6: affiliate marketing-fee accrual, atomic with the approval; a failure must never block the approval. */
+    private function accrueAffiliateFee(MarketerCampaignConversion $conversion): void
+    {
+        try {
+            app(AffiliateFeeAccrualService::class)->accrue($conversion->refresh());
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

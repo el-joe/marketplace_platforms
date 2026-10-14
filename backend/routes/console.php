@@ -2,6 +2,7 @@
 
 use App\Jobs\ActivateFulfilledCouponInvitationJob;
 use App\Jobs\Ads\PaidAdSchedulerJob;
+use App\Jobs\AffiliateFeeSettlementJob;
 use App\Jobs\AggregateAnalyticsCacheJob;
 use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\AutoCompleteOrdersJob;
@@ -179,6 +180,8 @@ Schedule::call(function () {
 Schedule::command('marketers:promotion-quota-reminders')->dailyAt('09:00')->name('marketer-promotion-quota-reminders');
 Schedule::job(new CollectPendingInfluencerFeesJob)->dailyAt('04:00')->name('collect-pending-influencer-fees');
 Schedule::job(new RetryMarketerFeeCreditsJob)->hourly()->name('retry-marketer-fee-credits');
+// P6: safety net for affiliate marketing-fee settlement (closed campaigns with unsettled accruals, wallet retries).
+Schedule::job(new AffiliateFeeSettlementJob)->hourly()->withoutOverlapping()->name('affiliate-fee-settlement');
 
 // P12: close the previous month's promotion quotas on the 1st (fine marketers who ended short, once per marketer/category/month)
 Schedule::command('promotion:close-month')->monthlyOn(1, '00:30')->withoutOverlapping()->name('promotion-close-month');

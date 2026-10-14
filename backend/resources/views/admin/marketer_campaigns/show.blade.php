@@ -57,6 +57,9 @@
     <x-marketer-campaign-fee-snapshot :campaign="$marketerCampaign" class="mb-6" />
 @endif
 
+<x-affiliate-fee-history :campaign="$marketerCampaign" audience="admin" class="mb-6"
+    :settle-route="auth('admin')->user()->can('marketer_campaigns.approve') ? route('admin.marketer-campaigns.settle-affiliate-fees', $marketerCampaign) : null" />
+
 {{-- Financial Summary Bar --}}
 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
 

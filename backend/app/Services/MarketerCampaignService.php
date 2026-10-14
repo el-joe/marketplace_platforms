@@ -619,6 +619,9 @@ class MarketerCampaignService
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
             $this->syncListingCampaignEnabled($campaign);
         });
+
+        // P6: a cancelled campaign settles the affiliate marketing fees accrued so far.
+        app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'cancelled');
     }
 
     /**
@@ -1524,6 +1527,9 @@ class MarketerCampaignService
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
             $this->syncListingCampaignEnabled($campaign);
         });
+
+        // P6: a finished campaign settles the affiliate marketing fees accrued so far.
+        app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'finished');
 
         $totalConversions = (int) $campaign->conversions()->count();
         $totalCommissionEarned = (float) $campaign->conversions()->sum('commission_amount');

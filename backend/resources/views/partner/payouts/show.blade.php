@@ -20,6 +20,7 @@
     $subOrderItems = $payout->items->where('item_type', 'sub_order');
     $promotionFeeItems = $payout->items->where('item_type', 'promotion_fee');
     $influencerFeeItems = $payout->items->where('item_type', 'influencer_fee');
+    $affiliateFeeItems = $payout->items->where('item_type', 'affiliate_marketing_fee');
     $promotionSampleItems = $payout->items->where('item_type', 'promotion_sample');
 @endphp
 
@@ -246,6 +247,28 @@
                                     <td class="py-3 px-4 text-center text-red-500">− {{ number_format($influencerFeeItems->sum(fn($i) => abs($i->net)), 2) }} {{ $payout->currency }}</td>
                                 </tr>
                             </tfoot>
+                        </table>
+                    </div>
+                </details>
+            @endif
+
+            {{-- Affiliate marketing fees accrued on affiliate campaigns, deducted in this statement --}}
+            @if($affiliateFeeItems->isNotEmpty())
+                <details open class="bg-white rounded-2xl border border-gray-200 overflow-hidden group" id="affiliate-fee-lines">
+                    <summary class="px-5 py-4 border-b border-gray-100 flex items-center justify-between cursor-pointer select-none list-none">
+                        <h3 class="font-semibold text-gray-800">{{ __('marketing_fees.affiliate.payout_title') }}</h3>
+                        <span class="text-xs text-gray-400">{{ __('partner.payouts.promotion_fee_count', ['count' => $affiliateFeeItems->count()]) }}</span>
+                    </summary>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-gray-50">
+                                @foreach($affiliateFeeItems as $item)
+                                    <tr>
+                                        <td class="py-3 px-5 text-gray-700">{{ $item->description }}</td>
+                                        <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
                         </table>
                     </div>
                 </details>

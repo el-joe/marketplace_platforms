@@ -1127,6 +1127,8 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
         Route::patch('/{marketerCampaign}/invitations/{invitation}/mark-fee-paid', [MarketerCampaignController::class, 'markInvitationFeePaid'])->name('invitations.mark-fee-paid');
         Route::post('/{marketerCampaign}/category-rules/sync', [MarketerCampaignController::class, 'syncCategoryRules'])->name('category-rules.sync')
             ->middleware('admin.permission:marketer_campaigns.create');
+        Route::post('/{marketerCampaign}/settle-affiliate-fees', [MarketerCampaignController::class, 'settleAffiliateFees'])->name('settle-affiliate-fees')
+            ->middleware('admin.permission:marketer_campaigns.approve');
         Route::patch('/{marketerCampaign}/commission', [MarketerCampaignController::class, 'updateCommission'])->name('commission.update')
             ->middleware('admin.permission:marketer_campaigns.approve');
         Route::post('/{marketerCampaign}/approve-request', [MarketerCampaignController::class, 'approveRequest'])->name('approve-request')

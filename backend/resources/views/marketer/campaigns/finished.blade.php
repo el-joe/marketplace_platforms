@@ -32,6 +32,9 @@
                 <div><span class="text-gray-500">{{ __('marketer.campaigns.conversions_label') }} </span><strong>{{ number_format($inv->conversions_count ?? 0) }}</strong></div>
                 <div><span class="text-gray-500">{{ __('marketer.campaigns.earnings_label') }} </span><strong class="text-green-600">{{ number_format($inv->conversions_sum_commission_amount ?? 0) }} {{ $inv->campaign->currency }}</strong></div>
             </div>
+            <div class="text-end mt-2">
+                <a href="{{ route('marketer.campaigns.show', $inv->id) }}" class="text-xs font-semibold text-yellow-700 hover:underline" data-testid="campaign-details-link">{{ __('marketer.campaigns.view_details') }}</a>
+            </div>
         </div>
         @endforeach
 

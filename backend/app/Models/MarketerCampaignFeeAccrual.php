@@ -11,6 +11,10 @@ class MarketerCampaignFeeAccrual extends Model
 {
     use HasUuids;
 
+    public const ENTRY_ACCRUAL = 'accrual';
+
+    public const ENTRY_REVERSAL = 'reversal';
+
     public const STATUS_ACCRUED = 'accrued';
 
     public const STATUS_SETTLED = 'settled';
@@ -18,11 +22,11 @@ class MarketerCampaignFeeAccrual extends Model
     public const STATUS_REVERSED = 'reversed';
 
     protected $fillable = [
-        'campaign_id', 'invitation_id', 'conversion_id', 'order_id', 'order_item_id',
+        'campaign_id', 'invitation_id', 'conversion_id', 'entry_type', 'order_id', 'order_item_id',
         'quantity', 'line_total', 'commission_base',
         'marketing_fixed_delta', 'marketing_variable_delta', 'marketing_total_delta',
         'running_base', 'running_marketing_total',
-        'status', 'settled_at',
+        'status', 'settled_at', 'settlement_id',
     ];
 
     protected $casts = [
@@ -45,6 +49,16 @@ class MarketerCampaignFeeAccrual extends Model
     public function invitation(): BelongsTo
     {
         return $this->belongsTo(MarketerCampaignInvitation::class, 'invitation_id');
+    }
+
+    public function settlement(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaignFeeSettlement::class, 'settlement_id');
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 
     public function conversion(): BelongsTo

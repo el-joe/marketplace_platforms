@@ -183,6 +183,7 @@
         @if ($marketerCampaign->vendor_listing_id)
             <x-marketer-campaign-fee-snapshot :campaign="$marketerCampaign" />
         @endif
+        <x-affiliate-fee-history :campaign="$marketerCampaign" audience="vendor" />
 
         @if ($marketerCampaign->commission_type === 'tiered' && $marketerCampaign->tieredRules->isNotEmpty())
             <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

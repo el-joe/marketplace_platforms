@@ -58,6 +58,10 @@
             </div>
             @endif
 
+            <div class="text-end">
+                <a href="{{ route('marketer.campaigns.show', $inv->id) }}" class="text-xs font-semibold text-yellow-700 hover:underline" data-testid="campaign-details-link">{{ __('marketer.campaigns.view_details') }}</a>
+            </div>
+
             {{-- Samples summary --}}
             @if($inv->samples->isNotEmpty())
             <div class="text-xs text-gray-500">

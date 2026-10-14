@@ -19,6 +19,7 @@ class PayoutItem extends Model
         'sample_item_id',
         'campaign_sample_id',
         'invitation_id',
+        'affiliate_fee_settlement_id',
         'vat_amount',
         'marketing_fee_amount',
         'gross',
@@ -58,6 +59,11 @@ class PayoutItem extends Model
     public function invitation(): BelongsTo
     {
         return $this->belongsTo(MarketerCampaignInvitation::class, 'invitation_id');
+    }
+
+    public function affiliateFeeSettlement(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaignFeeSettlement::class, 'affiliate_fee_settlement_id');
     }
 
     public function sampleItem(): BelongsTo

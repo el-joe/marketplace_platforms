@@ -15,6 +15,7 @@ use App\Models\MarketerCampaignSample;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Services\AffiliateFeeSettlementService;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InsufficientStockException;
 use App\Services\MarketerCampaignQuoteService;
@@ -23,8 +24,10 @@ use App\Services\MarketerFeePayoutService;
 use App\Services\ReferralCodeResolver;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
+use App\Support\Money;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -393,6 +396,19 @@ class MarketerCampaignController extends Controller
                 'mode' => $mode,
             ]);
         }
+    }
+
+    /** P6: settle the unsettled affiliate marketing fees of the campaign now (idempotent; incremental). */
+    public function settleAffiliateFees(MarketerCampaign $marketerCampaign): RedirectResponse
+    {
+        $settlement = app(AffiliateFeeSettlementService::class)->settle($marketerCampaign, 'admin');
+
+        return back()->with(
+            $settlement ? 'success' : 'error',
+            $settlement
+                ? __('marketing_fees.affiliate.settle_done', ['amount' => Money::format($settlement->amount), 'currency' => $settlement->currency])
+                : __('marketing_fees.affiliate.settle_nothing')
+        );
     }
 
     public function updateCommission(Request $request, MarketerCampaign $marketerCampaign): JsonResponse

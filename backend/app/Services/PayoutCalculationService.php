@@ -9,6 +9,7 @@ use App\Enums\RefundStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
+use App\Models\MarketerCampaignFeeSettlement;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\PackagingSupplyRequest;
@@ -184,7 +185,10 @@ class PayoutCalculationService
             // the week: deducted here against the weekly sales, once.
             [$influencerFees, $feeItems] = $this->selectInfluencerFees($vendor, $currency, $netBeforeSamples - $sampleCommission);
 
-            $netBeforeAds = round($netBeforeSamples - $sampleCommission - $influencerFees, 2);
+            // Affiliate marketing fees (settlements the wallet did not cover): deducted here, once.
+            [$affiliateFees, $affiliateFeeItems] = $this->selectAffiliateFeeSettlements($vendor, $currency, $netBeforeSamples - $sampleCommission - $influencerFees);
+
+            $netBeforeAds = round($netBeforeSamples - $sampleCommission - $influencerFees - $affiliateFees, 2);
 
             [$adFees, $adChargeIds] = $this->selectAdCharges($vendor, $currency, $netBeforeAds);
 
@@ -201,9 +205,11 @@ class PayoutCalculationService
                 'chargebacks_deducted' => $chargebacksDeducted,
                 'storage_fees' => $storageFeesTotal,
                 'ad_fees' => $adFees,
-                'other_adjustments' => -round($packagingTotal + $subscriptionTotal + $influencerFees, 2),
+                'other_adjustments' => -round($packagingTotal + $subscriptionTotal + $influencerFees + $affiliateFees, 2),
                 'influencer_fees' => $influencerFees,
                 'influencer_fee_items' => $feeItems,
+                'affiliate_fees' => $affiliateFees,
+                'affiliate_fee_items' => $affiliateFeeItems,
                 'net_amount' => max(0, $netAmount),
                 'currency' => $currency,
                 'sub_order_ids' => $subOrderIds,
@@ -284,6 +290,41 @@ class PayoutCalculationService
                 'vat' => (float) $invitation->platform_fee_vat_amount,
                 'marketing' => (float) $invitation->platform_fee_marketing_amount,
             ];
+        }
+
+        return [$sum, $items];
+    }
+
+    /**
+     * Pending affiliate marketing-fee settlements of this vendor/currency (wallet did not cover them), oldest first,
+     * as far as the statement can absorb; the rest rolls forward. payout_items.affiliate_fee_settlement_id is unique,
+     * and the job re-checks each row under a lock.
+     *
+     * @return array{0: float, 1: array<int, array{item: MarketerCampaignFeeSettlement, amount: float}>}
+     */
+    private function selectAffiliateFeeSettlements(Vendor $vendor, string $currency, float $netBefore): array
+    {
+        $cap = max(0.0, $netBefore);
+        $sum = 0.0;
+        $items = [];
+
+        $settlements = MarketerCampaignFeeSettlement::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('currency', $currency)
+            ->where('status', MarketerCampaignFeeSettlement::STATUS_PENDING)
+            ->whereDoesntHave('payoutItems')
+            ->with('campaign:id,title')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($settlements as $settlement) {
+            $amount = (float) $settlement->amount;
+            if (round($sum + $amount, 2) > $cap) {
+                break;
+            }
+            $sum = round($sum + $amount, 2);
+            $items[] = ['item' => $settlement, 'amount' => $amount];
         }
 
         return [$sum, $items];

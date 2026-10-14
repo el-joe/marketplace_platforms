@@ -164,6 +164,7 @@ return [
 
     // Campaigns
     'campaigns' => [
+        'view_details' => 'التفاصيل وسجل الرسوم',
         'active_title' => 'الحملات النشطة',
         'no_active' => 'لا توجد حملات نشطة',
         'no_active_hint' => 'اقبل دعوة حملة لتبدأ كسب العمولات',

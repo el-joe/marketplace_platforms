@@ -8,6 +8,7 @@ use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\Admin;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
+use App\Models\MarketerCampaignFeeSettlement;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\PackagingSupplyRequest;
 use App\Models\PaidAdCharge;
@@ -123,7 +124,19 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                     ];
                                 }
                             }
-                            $skipped = round((float) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'] + $l['marketing'], $feeLines)), 2);
+                            // Affiliate marketing-fee settlements: same lock + re-check.
+                            $affiliateLines = [];
+                            foreach ($calc['affiliate_fee_items'] ?? [] as $entry) {
+                                $lockedSettlement = MarketerCampaignFeeSettlement::whereKey($entry['item']->id)->lockForUpdate()->first();
+                                if ($lockedSettlement
+                                    && $lockedSettlement->status === MarketerCampaignFeeSettlement::STATUS_PENDING
+                                    && ! $lockedSettlement->payoutItems()->exists()) {
+                                    $affiliateLines[] = $lockedSettlement;
+                                }
+                            }
+                            $skippedAffiliate = round((float) ($calc['affiliate_fees'] ?? 0) - array_sum(array_map(fn ($l) => (float) $l->amount, $affiliateLines)), 2);
+
+                            $skipped = round((float) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'] + $l['marketing'], $feeLines)) + $skippedAffiliate, 2);
                             if (abs($skipped) > 0) {
                                 $calc['net_amount'] = round($calc['net_amount'] + $skipped, 2);
                                 $calc['other_adjustments'] = round($calc['other_adjustments'] + $skipped, 2);
@@ -251,6 +264,28 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                     'platform_fee_paid_at' => now(),
                                 ]);
                                 $paidInvitations[] = $invitation;
+                            }
+
+                            // Affiliate marketing fees accrued on affiliate campaigns: one line per settlement.
+                            foreach ($affiliateLines as $settlement) {
+                                $campaignTitle = $settlement->campaign?->title ?: ('#'.substr((string) $settlement->campaign_id, 0, 8));
+
+                                PayoutItem::create([
+                                    'payout_id' => $payout->id,
+                                    'item_type' => 'affiliate_marketing_fee',
+                                    'affiliate_fee_settlement_id' => $settlement->id,
+                                    'gross' => 0,
+                                    'commission' => 0,
+                                    'marketing_fee_amount' => (float) $settlement->amount,
+                                    'net' => -(float) $settlement->amount,
+                                    'description' => "رسوم تسويق عمولة — Affiliate marketing fees — {$campaignTitle}",
+                                ]);
+
+                                $settlement->update([
+                                    'status' => MarketerCampaignFeeSettlement::STATUS_PAID,
+                                    'paid_via' => 'statement',
+                                    'paid_at' => now(),
+                                ]);
                             }
 
                             if (! empty($calc['ad_charge_ids'])) {

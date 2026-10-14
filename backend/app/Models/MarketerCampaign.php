@@ -146,6 +146,16 @@ class MarketerCampaign extends Model
         return $this->hasMany(MarketerCampaignConversion::class, 'campaign_id');
     }
 
+    public function feeAccruals(): HasMany
+    {
+        return $this->hasMany(MarketerCampaignFeeAccrual::class, 'campaign_id')->orderBy('created_at')->orderBy('id');
+    }
+
+    public function feeSettlements(): HasMany
+    {
+        return $this->hasMany(MarketerCampaignFeeSettlement::class, 'campaign_id');
+    }
+
     public function samples(): HasMany
     {
         return $this->hasMany(MarketerCampaignSample::class, 'campaign_id');

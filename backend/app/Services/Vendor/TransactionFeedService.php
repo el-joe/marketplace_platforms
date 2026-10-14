@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Models\MarketerCampaignFeeSettlement;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
@@ -49,6 +50,10 @@ class TransactionFeedService
 
             if (! $type || $type === 'influencer_fee') {
                 $items = $items->merge($this->fetchInfluencerFees($vendor, $dateFrom, $dateTo));
+            }
+
+            if (! $type || $type === 'affiliate_marketing_fee') {
+                $items = $items->merge($this->fetchAffiliateMarketingFees($vendor, $dateFrom, $dateTo));
             }
 
             return $items->sortByDesc('date')->values()->all();
@@ -168,6 +173,38 @@ class TransactionFeedService
                 'vat' => Money::number($inv->platform_fee_vat_amount),
                 'marketing_fee' => Money::number($inv->platform_fee_marketing_amount),
                 'net' => Money::number(-$total),
+                'payout_status' => $status,
+            ];
+        });
+    }
+
+    /**
+     * Affiliate marketing-fee settlements (D4/D10: only the marketing fees on affiliate commissions): debited from
+     * the wallet when the campaign finished / hit its budget, else deducted in a weekly statement.
+     */
+    private function fetchAffiliateMarketingFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
+    {
+        $settlements = MarketerCampaignFeeSettlement::where('vendor_id', $vendor->id)
+            ->when($dateFrom, fn ($q) => $q->where('created_at', '>=', Carbon::parse($dateFrom)->startOfDay()))
+            ->when($dateTo, fn ($q) => $q->where('created_at', '<=', Carbon::parse($dateTo)->endOfDay()))
+            ->with(['campaign:id,title', 'payoutItems.payout:id,payout_number,status'])
+            ->get();
+
+        return $settlements->map(function ($settlement) {
+            $payout = $settlement->payoutItems->first()?->payout;
+            $status = $payout
+                ? $payout->payout_number.' ('.$payout->status?->value.')'
+                : ($settlement->status === 'paid' ? 'wallet' : 'unsettled');
+
+            return [
+                'type' => 'affiliate_marketing_fee',
+                'date' => $settlement->created_at?->toISOString(),
+                'reference' => $settlement->campaign?->title,
+                'description' => 'رسوم تسويق عمولة / Affiliate marketing fees',
+                'gross' => 0,
+                'commission' => 0,
+                'marketing_fee' => Money::number($settlement->amount),
+                'net' => Money::number(-(float) $settlement->amount),
                 'payout_status' => $status,
             ];
         });

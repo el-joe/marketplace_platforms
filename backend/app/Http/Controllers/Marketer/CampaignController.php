@@ -81,6 +81,33 @@ class CampaignController extends Controller
     }
 
     /**
+     * Campaign page of one of the marketer's own accepted invitations, with the per-order history of the
+     * affiliate marketing fees their sales generate (own rows only; no vendor wallet or settlement details).
+     */
+    public function show(string $invitation): View
+    {
+        $marketer = $this->marketer();
+
+        $invitation = MarketerCampaignInvitation::where('marketer_id', $marketer->id)
+            ->where('status', 'accepted')
+            ->whereKey($invitation)
+            ->with([
+                'campaign.vendor',
+                'campaign.country',
+                'campaign.vendorListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.vendorListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
+                'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
+            ])
+            ->withCount('conversions')
+            ->withSum('conversions', 'commission_amount')
+            ->firstOrFail();
+
+        return view('marketer.campaigns.show', compact('marketer', 'invitation'));
+    }
+
+    /**
      * P13 (R11): other influencers' own FBN products an influencer may promote. Excludes his own
      * listings, flags owners he already promoted this calendar month.
      */

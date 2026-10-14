@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\MarketerCampaignFeeSettlement;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\Payout;
@@ -188,6 +189,33 @@ class FinanceController extends Controller
                         'commission' => 0,
                         'net' => -$total,
                         'payout_number' => $inv->payoutItems->first()?->payout?->payout_number,
+                        'receipt_url' => null,
+                    ]);
+                });
+        }
+
+        // Affiliate marketing fees (settlements): paid from the wallet at once, or deducted in the weekly statement.
+        if (in_array($type, ['all', 'affiliate_fees'])) {
+            MarketerCampaignFeeSettlement::where('vendor_id', $vendorId)
+                ->whereBetween('created_at', [$dateFrom, $dateTo])
+                ->with('campaign:id,title', 'payoutItems.payout:id,payout_number')
+                ->get()
+                ->each(function ($settlement) use (&$rows) {
+                    $amount = Money::number($settlement->amount);
+                    $rows->push([
+                        'type' => 'affiliate_marketing_fee',
+                        'date' => $settlement->created_at,
+                        'reference' => $settlement->campaign?->title ?: ('#'.substr((string) $settlement->campaign_id, 0, 8)),
+                        'description' => __('marketing_fees.affiliate.finance_line', [
+                            'status' => $settlement->status === 'paid'
+                                ? __('partner.finance.fee_settled_'.($settlement->paid_via ?: 'wallet'))
+                                : __('partner.finance.fee_unsettled'),
+                        ]),
+                        'amount' => -$amount,
+                        'gross' => 0,
+                        'commission' => 0,
+                        'net' => -$amount,
+                        'payout_number' => $settlement->payoutItems->first()?->payout?->payout_number,
                         'receipt_url' => null,
                     ]);
                 });
