@@ -24,6 +24,7 @@ use App\Jobs\RecalculateBestSellerRankingsJob;
 use App\Jobs\ReleaseExpiredLocksJob;
 use App\Jobs\ReleaseMarketerPendingCommissionJob;
 use App\Jobs\ResetAdCampaignDailyBudgetJob;
+use App\Jobs\RetryInvitationFeeRefundsJob;
 use App\Jobs\RetryMarketerFeeCreditsJob;
 use App\Jobs\SettleMarketerSalesJob;
 use App\Jobs\TransitionFlashSaleStatusJob;
@@ -180,6 +181,8 @@ Schedule::call(function () {
 Schedule::command('marketers:promotion-quota-reminders')->dailyAt('09:00')->name('marketer-promotion-quota-reminders');
 Schedule::job(new CollectPendingInfluencerFeesJob)->dailyAt('04:00')->name('collect-pending-influencer-fees');
 Schedule::job(new RetryMarketerFeeCreditsJob)->hourly()->name('retry-marketer-fee-credits');
+// P7: refunds of cancelled campaigns that failed earlier (frozen vendor wallet) and marketer fee-share clawbacks.
+Schedule::job(new RetryInvitationFeeRefundsJob)->hourly()->withoutOverlapping()->name('retry-invitation-fee-refunds');
 // P6: safety net for affiliate marketing-fee settlement (closed campaigns with unsettled accruals, wallet retries).
 Schedule::job(new AffiliateFeeSettlementJob)->hourly()->withoutOverlapping()->name('affiliate-fee-settlement');
 

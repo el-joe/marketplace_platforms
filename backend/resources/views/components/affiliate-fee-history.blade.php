@@ -23,9 +23,11 @@
     $totalFees = round((float) $rows->sum(fn ($r) => (float) $r->marketing_total_delta), 2);
     $settledFees = round((float) $rows->whereNotNull('settlement_id')->sum(fn ($r) => (float) $r->marketing_total_delta), 2);
     $unsettledFees = round($totalFees - $settledFees, 2);
-    $pendingStatement = $isMarketer ? collect() : $campaign->feeSettlements()->where('status', 'pending')->get();
+    $pendingStatement = $isMarketer ? collect() : $campaign->feeSettlements()->where('status', 'pending')->where('kind', 'charge')->get();
+    // P7: refund-after-settlement credits to the vendor are history rows of their own (vendor and admin only).
+    $refunds = $isMarketer ? collect() : $campaign->feeSettlements()->where('kind', 'refund')->orderBy('created_at')->get();
 
-    $show = $rows->isNotEmpty() || $isMarketer || (! $isMarketer && $campaign->vendor_id && $campaign->invitations->contains(fn ($i) => $i->marketer?->isAffiliate()));
+    $show = $rows->isNotEmpty() || $refunds->isNotEmpty() || $isMarketer || (! $isMarketer && $campaign->vendor_id && $campaign->invitations->contains(fn ($i) => $i->marketer?->isAffiliate()));
 @endphp
 
 @if($show)
@@ -48,7 +50,7 @@
         </div>
     @endforeach
 
-    @if($rows->isEmpty())
+    @if($rows->isEmpty() && $refunds->isEmpty())
         <p class="text-xs text-gray-500">{{ __('marketing_fees.affiliate.empty') }}</p>
     @else
         <div class="overflow-x-auto">
@@ -78,6 +80,16 @@
                             <td class="px-3 py-2 text-end {{ $reversal ? 'text-red-600' : '' }}" dir="ltr">{{ Money::format($row->marketing_total_delta) }}</td>
                             <td class="px-3 py-2 text-end font-medium" dir="ltr">{{ Money::format($row->display_running) }}</td>
                             <td class="px-3 py-2"><span class="rounded-full px-2 py-0.5 text-xs {{ $statusKey === 'settled' ? 'bg-green-100 text-green-700' : ($statusKey === 'reversed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700') }}">{{ __('marketing_fees.affiliate.status_'.$statusKey) }}</span></td>
+                        </tr>
+                    @endforeach
+                    @foreach($refunds as $refund)
+                        <tr data-testid="affiliate-refund-row" class="bg-green-50">
+                            <td class="px-3 py-2 text-xs font-semibold text-green-800" colspan="2">{{ __('marketing_fees.affiliate.refund_row') }}</td>
+                            <td class="px-3 py-2"></td>
+                            <td class="px-3 py-2"></td>
+                            <td class="px-3 py-2 text-end text-green-700" dir="ltr">+{{ Money::format($refund->amount) }}</td>
+                            <td class="px-3 py-2 text-end text-xs text-gray-500">{{ $refund->created_at?->format('Y/m/d') }}</td>
+                            <td class="px-3 py-2"><span class="rounded-full px-2 py-0.5 text-xs {{ $refund->status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">{{ __('marketing_fees.affiliate.refund_status_'.($refund->status === 'paid' ? 'credited' : 'pending')) }}</span></td>
                         </tr>
                     @endforeach
                 </tbody>

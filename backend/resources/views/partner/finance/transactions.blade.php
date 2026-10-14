@@ -161,6 +161,8 @@
                                     'promotion_sample' => ['bg-purple-100 text-purple-700', __('partner.finance.promotion_sample')],
                                     'influencer_fee' => ['bg-orange-100 text-orange-700', __('partner.finance.influencer_fee')],
                                     'affiliate_marketing_fee' => ['bg-orange-100 text-orange-700', __('marketing_fees.affiliate.finance_type')],
+                                    'influencer_fee_refund' => ['bg-green-100 text-green-700', __('partner.finance.influencer_fee_refund')],
+                                    'affiliate_marketing_fee_refund' => ['bg-green-100 text-green-700', __('marketing_fees.affiliate.finance_refund_type')],
                                     default  => ['bg-gray-100 text-gray-600', $txn['type']],
                                 };
 

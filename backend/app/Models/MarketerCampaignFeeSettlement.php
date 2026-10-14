@@ -16,7 +16,17 @@ class MarketerCampaignFeeSettlement extends Model
 
     public const STATUS_PAID = 'paid';
 
-    protected $fillable = ['campaign_id', 'vendor_id', 'currency', 'amount', 'status', 'paid_via', 'paid_at', 'trigger'];
+    public const KIND_CHARGE = 'charge';
+
+    /** P7: a refund-after-settlement credit to the vendor (amount is positive, it is money back). */
+    public const KIND_REFUND = 'refund';
+
+    protected $fillable = ['campaign_id', 'vendor_id', 'currency', 'amount', 'status', 'paid_via', 'paid_at', 'trigger', 'kind'];
+
+    public function isRefund(): bool
+    {
+        return $this->kind === self::KIND_REFUND;
+    }
 
     protected $casts = [
         'amount' => DecimalMoney::class,

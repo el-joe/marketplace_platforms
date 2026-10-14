@@ -605,6 +605,10 @@ class MarketerCampaignService
 
             $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignRejectedNotification($campaign)));
         });
+
+        // P7: charged influencer invitations are refunded / voided, the marketer fee share is reversed.
+        app(MarketerInvitationRefundService::class)->refundCampaign($campaign, 'campaign_rejected');
+        app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'rejected');
     }
 
     /**
@@ -619,6 +623,9 @@ class MarketerCampaignService
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
             $this->syncListingCampaignEnabled($campaign);
         });
+
+        // P7: charged influencer invitations are refunded / voided, the marketer fee share is reversed.
+        app(MarketerInvitationRefundService::class)->refundCampaign($campaign, 'campaign_cancelled');
 
         // P6: a cancelled campaign settles the affiliate marketing fees accrued so far.
         app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'cancelled');

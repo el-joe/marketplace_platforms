@@ -269,18 +269,131 @@ class AffiliateFeeAccrualAndSettlementTest extends TestCase
         $this->assertEqualsWithDelta(45.10, (float) $this->vendorWallet()->fresh()->balance, 0.0001);
     }
 
-    public function test_a_refund_after_settlement_stays_unsettled_and_never_creates_a_negative_charge(): void
+    private function refundCredits()
+    {
+        return WalletTransaction::where('wallet_id', $this->vendorWallet()->id)
+            ->where('source_type', AffiliateFeeSettlementService::REFUND_WALLET_SOURCE)->get();
+    }
+
+    public function test_a_refund_after_settlement_credits_the_percentage_part_to_the_vendor_once(): void
     {
         $conversion = $this->approvedConversion(20.00);
         $this->topUp(50);
         app(MarketerCampaignService::class)->cancelCampaign($this->campaign->fresh());
         $this->assertCount(1, $this->walletDebits());
+        $this->assertEqualsWithDelta(46.10, (float) $this->vendorWallet()->fresh()->balance, 0.0001);
 
+        // 3.90 charged (1.90 flat + 10% of 20). The refund gives back only the 10% part: 2.00. The flat stays.
+        app(MarketerConversionReversalService::class)->reverseOne($conversion->fresh());
         app(MarketerConversionReversalService::class)->reverseOne($conversion->fresh());
         app(AffiliateFeeSettlementService::class)->settleIfClosed($this->campaign->fresh());
+        app(AffiliateFeeSettlementService::class)->settle($this->campaign->fresh());
+        (new AffiliateFeeSettlementJob)->handle(app(AffiliateFeeSettlementService::class));
 
         $this->assertCount(1, $this->walletDebits());
-        $this->assertNull($this->accruals()->last()->settlement_id);
+        $this->assertCount(1, $this->refundCredits());
+        $this->assertEqualsWithDelta(2.00, (float) $this->refundCredits()->first()->amount, 0.0001);
+        $this->assertSame($this->campaign->id, $this->refundCredits()->first()->source_id);
+        $this->assertEqualsWithDelta(48.10, (float) $this->vendorWallet()->fresh()->balance, 0.0001);
+
+        $refund = MarketerCampaignFeeSettlement::where('campaign_id', $this->campaign->id)->where('kind', 'refund')->sole();
+        $this->assertSame('paid', $refund->status);
+        $this->assertEqualsWithDelta(2.00, (float) $refund->amount, 0.0001);
+        $this->assertEqualsWithDelta(1.90, (float) $this->campaign->fresh()->affiliate_fee_accrued, 0.0001);
+        $this->assertSame($refund->id, $this->accruals()->last()->settlement_id);
+        $this->assertSame(0, PayoutItem::where('affiliate_fee_settlement_id', $refund->id)->count());
+    }
+
+    public function test_open_campaign_accruals_and_reversals_net_into_one_charge_and_a_late_one_refunds_at_once(): void
+    {
+        $first = $this->approvedConversion(20.00);
+        $this->approvedConversion(10.00);
+        $this->topUp(50);
+        app(MarketerConversionReversalService::class)->reverseOne($first->fresh()); // -2.00 while still open
+        app(MarketerCampaignService::class)->markCampaignDone($this->campaign->fresh());
+
+        // 3.90 + 1.00 - 2.00 = 2.90: one charge, nothing to refund.
+        $this->assertEqualsWithDelta(2.90, (float) $this->walletDebits()->sole()->amount, 0.0001);
+        $this->assertCount(0, $this->refundCredits());
+
+        // A refund of the second order after the close is credited back at once (1.00), capped by what was charged.
+        $second = MarketerCampaignConversion::where('campaign_id', $this->campaign->id)->where('status', 'approved')->sole();
+        app(MarketerConversionReversalService::class)->reverseOne($second);
+        $this->assertEqualsWithDelta(1.00, (float) $this->refundCredits()->sole()->amount, 0.0001);
+        $this->assertEqualsWithDelta(50 - 2.90 + 1.00, (float) $this->vendorWallet()->fresh()->balance, 0.0001);
+    }
+
+    public function test_a_frozen_vendor_wallet_leaves_the_refund_pending_and_the_hourly_job_credits_it_once(): void
+    {
+        $conversion = $this->approvedConversion(20.00);
+        $this->topUp(50);
+        app(MarketerCampaignService::class)->cancelCampaign($this->campaign->fresh());
+        $this->vendorWallet()->update(['is_frozen' => true, 'frozen_reason' => 'test']);
+
+        app(MarketerConversionReversalService::class)->reverseOne($conversion->fresh());
+        $refund = MarketerCampaignFeeSettlement::where('campaign_id', $this->campaign->id)->where('kind', 'refund')->sole();
+        $this->assertSame('pending', $refund->status);
+        $this->assertCount(0, $this->refundCredits());
+
+        $this->vendorWallet()->update(['is_frozen' => false]);
+        (new AffiliateFeeSettlementJob)->handle(app(AffiliateFeeSettlementService::class));
+        (new AffiliateFeeSettlementJob)->handle(app(AffiliateFeeSettlementService::class));
+
+        $this->assertSame('paid', $refund->fresh()->status);
+        $this->assertCount(1, $this->refundCredits());
+        // A refund settlement is never collected from the wallet or put on a statement.
+        $this->assertCount(1, $this->walletDebits());
+        $this->assertFalse(app(AffiliateFeeSettlementService::class)->collectFromWallet($refund->fresh()));
+    }
+
+    public function test_the_refund_is_a_history_row_on_the_vendor_and_admin_pages_and_in_the_finance_feed(): void
+    {
+        $conversion = $this->approvedConversion(20.00);
+        $this->topUp(50);
+        app(MarketerCampaignService::class)->cancelCampaign($this->campaign->fresh());
+        app(MarketerConversionReversalService::class)->reverseOne($conversion->fresh());
+
+        $vendorAdmin = VendorAdmin::create([
+            'vendor_id' => $this->s->vendor->id, 'name' => 'Owner', 'email' => 'va-'.Str::lower(Str::random(8)).'@example.test',
+            'password' => bcrypt('password'), 'role' => 'owner', 'is_owner' => true, 'is_active' => true,
+        ]);
+        foreach (['listings.view', 'marketer_campaigns.view', 'marketer_campaigns.create', 'marketer_campaigns.edit', 'marketer_campaigns.delete', 'marketer_campaigns.cancel'] as $name) {
+            $vendorAdmin->givePermissionTo(Permission::firstOrCreate(['name' => $name, 'guard_name' => 'vendor']));
+        }
+        $this->actingAs($vendorAdmin, 'vendor')
+            ->get(route('partner.marketer-campaigns.show', $this->campaign))
+            ->assertOk()
+            ->assertSee('data-testid="affiliate-refund-row"', false)
+            ->assertSee(__('marketing_fees.affiliate.refund_row'))
+            ->assertSee('dir="ltr">+2</td>', false);
+
+        $vendorAdmin->givePermissionTo(Permission::firstOrCreate(['name' => 'finance.view', 'guard_name' => 'vendor']));
+        $this->actingAs($vendorAdmin->fresh(), 'vendor')
+            ->get(route('partner.finance.transactions', ['date_from' => now()->subDay()->toDateString(), 'date_to' => now()->addDay()->toDateString()]))
+            ->assertOk()
+            ->assertSee(__('marketing_fees.affiliate.finance_refund_line'));
+
+        $feed = app(TransactionFeedService::class)->getFeed($this->s->vendor, 'affiliate_marketing_fee', null, null, 1, 50);
+        $types = collect($feed['items'])->pluck('net', 'type')->all();
+        $this->assertEqualsWithDelta(-3.90, $types['affiliate_marketing_fee'], 0.0001);
+        $this->assertEqualsWithDelta(2.00, $types['affiliate_marketing_fee_refund'], 0.0001);
+
+        $perms = ['marketer_campaigns.view', 'marketer_campaigns.approve', 'vendors.assigned_only'];
+        foreach ($perms as $p) {
+            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'admin']);
+        }
+        $admin = Admin::factory()->create();
+        $admin->givePermissionTo($perms);
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.marketer-campaigns.show', $this->campaign))
+            ->assertOk()
+            ->assertSee('data-testid="affiliate-refund-row"', false);
+
+        // The marketer never sees the vendor's refund row.
+        $this->actingAs(F::marketerLogin($this->s->marketer), 'marketer')
+            ->get(route('marketer.campaigns.show', $this->s->marketerCampaignInvitation->id))
+            ->assertOk()
+            ->assertDontSee('affiliate-refund-row', false);
     }
 
     public function test_budget_exhaustion_settles_what_was_accrued(): void

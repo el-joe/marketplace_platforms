@@ -138,5 +138,8 @@ class MarketerConversionReversalService
                 report($e);
             }
         });
+
+        // P7: a refund that arrives after the campaign closed (and settled) is credited back to the vendor at once.
+        app(AffiliateFeeSettlementService::class)->settleIfClosed($conversion->campaign_id, 'late_reversal');
     }
 }

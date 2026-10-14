@@ -27,6 +27,8 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_status', 'platform_fee_payer', 'platform_fee_recorded_at',
         'platform_fee_marketing_amount', 'marketer_fee_share_pct', 'marketer_payout_amount',
         'marketer_credited_at', 'marketer_payout_wallet_tx_id',
+        'platform_fee_refunded_at', 'platform_fee_refund_amount', 'platform_fee_refund_wallet_tx_id', 'platform_fee_voided_at',
+        'platform_fee_refund_reason', 'marketer_credit_reversed_at', 'marketer_credit_reversal_wallet_tx_id', 'marketer_clawback_amount',
     ];
 
     protected $casts = [
@@ -47,6 +49,11 @@ class MarketerCampaignInvitation extends Model
         'marketer_fee_share_pct' => 'decimal:4',
         'marketer_payout_amount' => DecimalMoney::class,
         'marketer_credited_at' => 'datetime',
+        'platform_fee_refunded_at' => 'datetime',
+        'platform_fee_voided_at' => 'datetime',
+        'platform_fee_refund_amount' => DecimalMoney::class,
+        'marketer_credit_reversed_at' => 'datetime',
+        'marketer_clawback_amount' => DecimalMoney::class,
     ];
 
     public function campaign(): BelongsTo
@@ -118,6 +125,22 @@ class MarketerCampaignInvitation extends Model
     public function isInfluencerType(): bool
     {
         return $this->marketer?->isInfluencer();
+    }
+
+    public function isFeeRefunded(): bool
+    {
+        return $this->platform_fee_refunded_at !== null;
+    }
+
+    public function isFeeVoided(): bool
+    {
+        return $this->platform_fee_voided_at !== null;
+    }
+
+    /** True while the marketer still owes a fee-share reversal (wallet was short or frozen). */
+    public function hasPendingClawback(): bool
+    {
+        return $this->marketer_credit_reversed_at === null && (float) $this->marketer_clawback_amount > 0;
     }
 
     public function hasPendingFee(): bool

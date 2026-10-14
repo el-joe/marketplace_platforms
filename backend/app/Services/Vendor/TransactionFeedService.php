@@ -145,7 +145,7 @@ class TransactionFeedService
      */
     private function fetchInfluencerFees(Vendor $vendor, ?string $dateFrom, ?string $dateTo): Collection
     {
-        $invitations = MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid'])
+        $invitations = MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid', 'refunded'])
             ->where('platform_fee_payer', 'vendor')
             ->where('platform_fee_amount', '>', 0)
             ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
@@ -154,14 +154,14 @@ class TransactionFeedService
             ->with(['campaign:id,title', 'marketer:id,name', 'payoutItems.payout:id,payout_number,status'])
             ->get();
 
-        return $invitations->map(function ($inv) {
+        return $invitations->flatMap(function ($inv) {
             $payout = $inv->payoutItems->first()?->payout;
             $total = $inv->platformFeeTotal();
             $status = $payout
                 ? $payout->payout_number.' ('.$payout->status?->value.')'
-                : ($inv->platform_fee_status === 'paid' ? 'wallet' : 'unsettled');
+                : (in_array($inv->platform_fee_status, ['paid', 'refunded'], true) ? 'wallet' : 'unsettled');
 
-            return [
+            $rows = [[
                 'type' => 'influencer_fee',
                 'date' => $inv->platform_fee_recorded_at?->toISOString(),
                 'reference' => $inv->campaign?->title,
@@ -174,7 +174,27 @@ class TransactionFeedService
                 'marketing_fee' => Money::number($inv->platform_fee_marketing_amount),
                 'net' => Money::number(-$total),
                 'payout_status' => $status,
-            ];
+            ]];
+
+            // P7: a refunded fee shows its own credit line (fee + VAT + marketing fees given back to the wallet).
+            if ($inv->platform_fee_refunded_at) {
+                $refund = Money::number($inv->platform_fee_refund_amount);
+                $rows[] = [
+                    'type' => 'influencer_fee_refund',
+                    'date' => $inv->platform_fee_refunded_at->toISOString(),
+                    'reference' => $inv->campaign?->title,
+                    'description' => 'استرداد رسوم مؤثر / Influencer fee refund — '.($inv->marketer?->name ?? '—'),
+                    'gross' => 0,
+                    'commission' => 0,
+                    'fee' => Money::number($inv->platform_fee_amount),
+                    'vat' => Money::number($inv->platform_fee_vat_amount),
+                    'marketing_fee' => Money::number($inv->platform_fee_marketing_amount),
+                    'net' => $refund,
+                    'payout_status' => 'wallet',
+                ];
+            }
+
+            return $rows;
         });
     }
 
@@ -196,15 +216,17 @@ class TransactionFeedService
                 ? $payout->payout_number.' ('.$payout->status?->value.')'
                 : ($settlement->status === 'paid' ? 'wallet' : 'unsettled');
 
+            $refund = $settlement->isRefund();
+
             return [
-                'type' => 'affiliate_marketing_fee',
+                'type' => $refund ? 'affiliate_marketing_fee_refund' : 'affiliate_marketing_fee',
                 'date' => $settlement->created_at?->toISOString(),
                 'reference' => $settlement->campaign?->title,
-                'description' => 'رسوم تسويق عمولة / Affiliate marketing fees',
+                'description' => $refund ? 'استرداد رسوم تسويق عمولة / Affiliate marketing fees refund' : 'رسوم تسويق عمولة / Affiliate marketing fees',
                 'gross' => 0,
                 'commission' => 0,
                 'marketing_fee' => Money::number($settlement->amount),
-                'net' => Money::number(-(float) $settlement->amount),
+                'net' => Money::number($refund ? (float) $settlement->amount : -(float) $settlement->amount),
                 'payout_status' => $status,
             ];
         });

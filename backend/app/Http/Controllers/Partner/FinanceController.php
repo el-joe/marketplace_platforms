@@ -161,7 +161,7 @@ class FinanceController extends Controller
         // Influencer platform fees (+VAT): settled from the wallet during the week or
         // deducted in the weekly statement; still-pending ones show as unsettled.
         if (in_array($type, ['all', 'influencer_fees'])) {
-            MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid'])
+            MarketerCampaignInvitation::whereIn('platform_fee_status', ['pending', 'paid', 'refunded'])
                 ->where('platform_fee_payer', 'vendor')
                 ->where('platform_fee_amount', '>', 0)
                 ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendorId))
@@ -180,7 +180,7 @@ class FinanceController extends Controller
                             'vat' => Money::format($inv->platform_fee_vat_amount),
                             'marketing' => Money::format($inv->platform_fee_marketing_amount),
                             'rate' => (float) $inv->platform_fee_vat_rate,
-                            'status' => $inv->platform_fee_status === 'paid'
+                            'status' => in_array($inv->platform_fee_status, ['paid', 'refunded'], true)
                                 ? __('partner.finance.fee_settled_'.($inv->platform_fee_paid_via ?: 'wallet'))
                                 : __('partner.finance.fee_unsettled'),
                         ]),
@@ -191,6 +191,23 @@ class FinanceController extends Controller
                         'payout_number' => $inv->payoutItems->first()?->payout?->payout_number,
                         'receipt_url' => null,
                     ]);
+
+                    // P7: the refund of a paid fee (wallet credit) is its own positive line.
+                    if ($inv->platform_fee_refunded_at) {
+                        $refund = Money::number($inv->platform_fee_refund_amount);
+                        $rows->push([
+                            'type' => 'influencer_fee_refund',
+                            'date' => $inv->platform_fee_refunded_at,
+                            'reference' => $inv->campaign?->title ?: ('#'.substr((string) $inv->campaign_id, 0, 8)),
+                            'description' => __('partner.finance.influencer_fee_refund_line', ['name' => $inv->marketer?->name ?? '—']),
+                            'amount' => $refund,
+                            'gross' => 0,
+                            'commission' => 0,
+                            'net' => $refund,
+                            'payout_number' => null,
+                            'receipt_url' => null,
+                        ]);
+                    }
                 });
         }
 
@@ -202,19 +219,23 @@ class FinanceController extends Controller
                 ->get()
                 ->each(function ($settlement) use (&$rows) {
                     $amount = Money::number($settlement->amount);
+                    $refund = $settlement->isRefund();
+                    $signed = $refund ? $amount : -$amount;
                     $rows->push([
-                        'type' => 'affiliate_marketing_fee',
+                        'type' => $refund ? 'affiliate_marketing_fee_refund' : 'affiliate_marketing_fee',
                         'date' => $settlement->created_at,
                         'reference' => $settlement->campaign?->title ?: ('#'.substr((string) $settlement->campaign_id, 0, 8)),
-                        'description' => __('marketing_fees.affiliate.finance_line', [
-                            'status' => $settlement->status === 'paid'
-                                ? __('partner.finance.fee_settled_'.($settlement->paid_via ?: 'wallet'))
-                                : __('partner.finance.fee_unsettled'),
-                        ]),
-                        'amount' => -$amount,
+                        'description' => $refund
+                            ? __('marketing_fees.affiliate.finance_refund_line')
+                            : __('marketing_fees.affiliate.finance_line', [
+                                'status' => $settlement->status === 'paid'
+                                    ? __('partner.finance.fee_settled_'.($settlement->paid_via ?: 'wallet'))
+                                    : __('partner.finance.fee_unsettled'),
+                            ]),
+                        'amount' => $signed,
                         'gross' => 0,
                         'commission' => 0,
-                        'net' => -$amount,
+                        'net' => $signed,
                         'payout_number' => $settlement->payoutItems->first()?->payout?->payout_number,
                         'receipt_url' => null,
                     ]);

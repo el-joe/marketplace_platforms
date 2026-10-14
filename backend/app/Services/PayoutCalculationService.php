@@ -312,6 +312,7 @@ class PayoutCalculationService
             ->where('vendor_id', $vendor->id)
             ->where('currency', $currency)
             ->where('status', MarketerCampaignFeeSettlement::STATUS_PENDING)
+            ->where('kind', MarketerCampaignFeeSettlement::KIND_CHARGE)
             ->whereDoesntHave('payoutItems')
             ->with('campaign:id,title')
             ->orderBy('created_at')

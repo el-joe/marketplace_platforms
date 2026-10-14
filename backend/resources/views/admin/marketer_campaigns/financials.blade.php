@@ -93,6 +93,7 @@
                         $feeExpected = $accepted->sum('platform_fee_amount');
                         $feePending  = $accepted->where('platform_fee_status', 'pending')->sum('platform_fee_amount');
                         $feePaid     = $accepted->where('platform_fee_status', 'paid')->sum('platform_fee_amount');
+                        $feeRefunded = $accepted->where('platform_fee_status', 'refunded')->sum('platform_fee_refund_amount');
                     @endphp
                     <tr>
                         <td class="py-2 px-3">{{ $campaign->vendor?->store_name ?? '—' }}</td>
@@ -112,6 +113,8 @@
                         <td class="py-2 px-3">
                             @if($feePending > 0)
                                 <span class="text-orange-500">{{ str_replace(':amount', \App\Support\Money::format($feePending), __('admin.marketer_campaigns.fee_status_pending')) }}</span>
+                            @elseif($feeRefunded > 0)
+                                <span class="text-green-700" data-testid="financials-refunded">{{ __('admin.marketer_campaigns.fee_refunded_total', ['amount' => \App\Support\Money::format($feeRefunded), 'currency' => $campaign->currency]) }}</span>
                             @elseif($feeExpected > 0 && $feePaid === $feeExpected)
                                 <span class="text-green-600">{{ __('admin.marketer_campaigns.fee_status_paid') }}</span>
                             @else

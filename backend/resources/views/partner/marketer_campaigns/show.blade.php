@@ -324,6 +324,10 @@
                                                 <span class="block text-[11px] text-orange-600">{{ __('partner.marketer_campaigns.fee_status_pending') }}</span>
                                             @elseif ($invitation->platform_fee_status === 'paid')
                                                 <span class="block text-[11px] text-green-600">{{ __('partner.marketer_campaigns.fee_status_paid_'.($invitation->platform_fee_paid_via ?: 'wallet')) }}</span>
+                                            @elseif ($invitation->platform_fee_status === 'refunded')
+                                                <span class="block text-[11px] text-green-700" data-testid="invitation-fee-refunded">{{ __('partner.marketer_campaigns.fee_status_refunded', ['amount' => \App\Support\Money::format($invitation->platform_fee_refund_amount).' '.$marketerCampaign->currency, 'date' => $invitation->platform_fee_refunded_at?->format('Y/m/d')]) }}</span>
+                                            @elseif ($invitation->platform_fee_voided_at)
+                                                <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-voided">{{ __('partner.marketer_campaigns.fee_status_voided') }}</span>
                                             @endif
                                         @else
                                             {{ __('partner.marketer_campaigns.free_label') }}

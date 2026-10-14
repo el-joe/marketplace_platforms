@@ -406,7 +406,7 @@ class MarketerCampaignController extends Controller
         return back()->with(
             $settlement ? 'success' : 'error',
             $settlement
-                ? __('marketing_fees.affiliate.settle_done', ['amount' => Money::format($settlement->amount), 'currency' => $settlement->currency])
+                ? __($settlement->isRefund() ? 'marketing_fees.affiliate.settle_refund_done' : 'marketing_fees.affiliate.settle_done', ['amount' => Money::format($settlement->amount), 'currency' => $settlement->currency])
                 : __('marketing_fees.affiliate.settle_nothing')
         );
     }

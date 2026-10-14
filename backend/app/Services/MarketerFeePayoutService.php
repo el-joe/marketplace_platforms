@@ -31,6 +31,8 @@ class MarketerFeePayoutService
                     || $locked->platform_fee_payer !== 'vendor'
                     || $locked->marketer_credited_at !== null
                     || $locked->marketer_payout_wallet_tx_id !== null
+                    || $locked->marketer_credit_reversed_at !== null
+                    || in_array($locked->campaign?->status, ['cancelled', 'rejected'], true)
                     || (float) $locked->marketer_payout_amount <= 0
                     || ! $locked->marketer?->isInfluencer()) {
                     return false;

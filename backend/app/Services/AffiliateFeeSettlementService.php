@@ -24,6 +24,8 @@ class AffiliateFeeSettlementService
 {
     public const WALLET_SOURCE = 'marketer_campaign_affiliate_marketing_fee';
 
+    public const REFUND_WALLET_SOURCE = 'marketer_campaign_affiliate_marketing_fee_refund';
+
     public function __construct(private readonly WalletService $wallets = new WalletService) {}
 
     /** True when the campaign finished/cancelled or was auto-paused because its commission budget ran out. */
@@ -66,9 +68,22 @@ class AffiliateFeeSettlementService
                 ->lockForUpdate()
                 ->get();
 
-            $amount = round((float) $rows->sum(fn ($r) => (float) $r->marketing_total_delta), 2);
-            if ($rows->isEmpty() || $amount <= 0) {
+            $net = round((float) $rows->sum(fn ($r) => (float) $r->marketing_total_delta), 2);
+            if ($rows->isEmpty() || $net == 0.0) {
                 return null;
+            }
+
+            // P7: a negative net is a refund-after-settlement (reversed percentage parts of fees the vendor already
+            // paid or owes): credited to the vendor instead of being left dangling. Capped at what was charged.
+            $isRefund = $net < 0;
+            $amount = abs($net);
+            if ($isRefund) {
+                $charged = (float) MarketerCampaignFeeSettlement::where('campaign_id', $locked->id)->where('kind', MarketerCampaignFeeSettlement::KIND_CHARGE)->sum('amount');
+                $refunded = (float) MarketerCampaignFeeSettlement::where('campaign_id', $locked->id)->where('kind', MarketerCampaignFeeSettlement::KIND_REFUND)->sum('amount');
+                $amount = round(min($amount, max(0.0, $charged - $refunded)), 2);
+                if ($amount <= 0) {
+                    return null;
+                }
             }
 
             $settlement = MarketerCampaignFeeSettlement::create([
@@ -78,6 +93,7 @@ class AffiliateFeeSettlementService
                 'amount' => $amount,
                 'status' => MarketerCampaignFeeSettlement::STATUS_PENDING,
                 'trigger' => $trigger,
+                'kind' => $isRefund ? MarketerCampaignFeeSettlement::KIND_REFUND : MarketerCampaignFeeSettlement::KIND_CHARGE,
             ]);
 
             foreach ($rows as $row) {
@@ -96,7 +112,7 @@ class AffiliateFeeSettlementService
         });
 
         if ($settlement) {
-            $this->collectFromWallet($settlement);
+            $settlement->isRefund() ? $this->refundToWallet($settlement) : $this->collectFromWallet($settlement);
         }
 
         return $settlement?->fresh();
@@ -112,7 +128,7 @@ class AffiliateFeeSettlementService
         try {
             return DB::transaction(function () use ($settlement) {
                 $locked = MarketerCampaignFeeSettlement::whereKey($settlement->id)->lockForUpdate()->first();
-                if (! $locked || $locked->status !== MarketerCampaignFeeSettlement::STATUS_PENDING || $locked->payoutItems()->exists()) {
+                if (! $locked || $locked->isRefund() || $locked->status !== MarketerCampaignFeeSettlement::STATUS_PENDING || $locked->payoutItems()->exists()) {
                     return false;
                 }
 
@@ -143,6 +159,43 @@ class AffiliateFeeSettlementService
     }
 
     /**
+     * P7: credits a refund settlement to the vendor wallet (source REFUND_WALLET_SOURCE, source_id = campaign id).
+     * Locked + status re-read, so it is credited once; a frozen wallet leaves it `pending` for the hourly retry.
+     */
+    public function refundToWallet(MarketerCampaignFeeSettlement $settlement): bool
+    {
+        try {
+            return DB::transaction(function () use ($settlement) {
+                $locked = MarketerCampaignFeeSettlement::whereKey($settlement->id)->lockForUpdate()->first();
+                if (! $locked || ! $locked->isRefund() || $locked->status !== MarketerCampaignFeeSettlement::STATUS_PENDING) {
+                    return false;
+                }
+
+                $wallet = $this->wallets->getOrCreateWallet('vendor', $locked->vendor_id, $locked->currency);
+                $this->wallets->credit(
+                    $wallet,
+                    $locked->amount,
+                    self::REFUND_WALLET_SOURCE,
+                    $locked->campaign_id,
+                    'Refund of affiliate marketing fees after settlement, campaign '.substr((string) $locked->campaign_id, 0, 8)
+                );
+
+                $locked->update([
+                    'status' => MarketerCampaignFeeSettlement::STATUS_PAID,
+                    'paid_via' => 'wallet',
+                    'paid_at' => now(),
+                ]);
+
+                return true;
+            });
+        } catch (\RuntimeException $e) {
+            Log::warning('Affiliate marketing fee refund deferred (wallet frozen).', ['settlement_id' => $settlement->id, 'error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
+    /**
      * Hourly safety net: settle every closed campaign that still has unsettled rows, then retry the wallet for
      * pending settlements. Returns [settlements created, wallet collections].
      *
@@ -167,7 +220,7 @@ class AffiliateFeeSettlementService
             ->whereDoesntHave('payoutItems')
             ->get()
             ->each(function ($settlement) use (&$collected) {
-                if ($this->collectFromWallet($settlement)) {
+                if ($settlement->isRefund() ? $this->refundToWallet($settlement) : $this->collectFromWallet($settlement)) {
                     $collected++;
                 }
             });

@@ -451,7 +451,16 @@
                                             @if($invitation->platform_fee_marketing_amount > 0)
                                                 <span class="block text-[11px] text-gray-500" data-testid="admin-invitation-marketing">+ {{ __('admin.marketer_campaigns.marketing_fees_label') }} {{ \App\Support\Money::format($invitation->platform_fee_marketing_amount) }}</span>
                                             @endif
-                                            @if($invitation->marketer_payout_amount > 0)
+                                            @if($invitation->platform_fee_refunded_at)
+                                                <span class="block text-[11px] text-green-700" data-testid="admin-invitation-refund">{{ __('admin.marketer_campaigns.fee_refunded_line', ['amount' => \App\Support\Money::format($invitation->platform_fee_refund_amount), 'currency' => $invitation->platform_fee_currency, 'date' => $invitation->platform_fee_refunded_at->format('d M Y')]) }}</span>
+                                            @elseif($invitation->platform_fee_voided_at)
+                                                <span class="block text-[11px] text-gray-500" data-testid="admin-invitation-voided">{{ __('admin.marketer_campaigns.fee_voided_line', ['date' => $invitation->platform_fee_voided_at->format('d M Y')]) }}</span>
+                                            @endif
+                                            @if($invitation->marketer_credit_reversed_at && $invitation->marketer_credited_at)
+                                                <span class="block text-[11px] text-red-600" data-testid="admin-invitation-reversal">{{ __('admin.marketer_campaigns.marketer_fee_share_reversed', ['amount' => \App\Support\Money::format($invitation->marketer_payout_amount), 'date' => $invitation->marketer_credit_reversed_at->format('d M Y')]) }}</span>
+                                            @elseif($invitation->hasPendingClawback())
+                                                <span class="block text-[11px] text-red-600" data-testid="admin-invitation-clawback">{{ __('admin.marketer_campaigns.marketer_clawback_pending', ['amount' => \App\Support\Money::format($invitation->marketer_clawback_amount)]) }}</span>
+                                            @elseif($invitation->marketer_payout_amount > 0)
                                                 <span class="block text-[11px] text-indigo-600" data-testid="admin-invitation-payout">{{ __('admin.marketer_campaigns.marketer_fee_share_line', ['pct' => (float) $invitation->marketer_fee_share_pct, 'amount' => \App\Support\Money::format($invitation->marketer_payout_amount), 'status' => $invitation->marketer_credited_at ? __('admin.marketer_campaigns.marketer_fee_share_credited', ['date' => $invitation->marketer_credited_at->format('d M Y')]) : __('admin.marketer_campaigns.marketer_fee_share_not_credited')]) }}</span>
                                             @endif
                                         @endif
@@ -479,8 +488,10 @@
                                                 </form>
                                                 @endif
                                             </div>
+                                        @elseif($invitation->platform_fee_status === 'refunded')
+                                            <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full" data-testid="admin-invitation-refunded-badge">{{ __('admin.marketer_campaigns.fee_refunded') }}</span>
                                         @elseif($invitation->platform_fee_status === 'waived')
-                                            <span class="text-xs text-gray-400">{{ __('admin.marketer_campaigns.fee_waived') }}</span>
+                                            <span class="text-xs text-gray-400">{{ $invitation->platform_fee_voided_at ? __('admin.marketer_campaigns.fee_voided') : __('admin.marketer_campaigns.fee_waived') }}</span>
                                         @endif
                                     </td>
                                 </tr>

@@ -22,6 +22,22 @@
             @endif
         </div>
 
+        {{-- P7: pending clawback of fee shares from cancelled campaigns --}}
+        @if(($pendingClawbacks ?? collect())->isNotEmpty())
+        <div class="bg-red-50 border border-red-200 rounded-xl p-5 text-sm" data-testid="wallet-clawbacks">
+            <h2 class="font-semibold text-red-800 mb-1">{{ __('marketer.finance.clawback_title') }}</h2>
+            <p class="text-xs text-red-700 mb-2">{{ __('marketer.finance.clawback_hint') }}</p>
+            <ul class="space-y-1">
+                @foreach($pendingClawbacks as $clawback)
+                    <li class="flex justify-between gap-3 text-red-800" data-testid="wallet-clawback-row">
+                        <span>{{ $clawback->campaign?->title ?: '#'.substr((string) $clawback->campaign_id, 0, 8) }}</span>
+                        <span class="font-bold" dir="ltr">−{{ \App\Support\Money::format($clawback->marketer_clawback_amount) }} {{ $wallet->currency }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
         {{-- Net statement (P11) --}}
         <div class="bg-white rounded-xl border p-5" data-wallet-statement>
             <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.statement_title') }}</h2>

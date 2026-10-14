@@ -110,7 +110,14 @@ class FinanceController extends Controller
 
         $salesTotals = app(MarketerSaleSettlementService::class)->totalsFor($marketer->id);
 
-        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals'));
+        // P7: fee-share credits taken back from a cancelled campaign that the wallet could not cover yet.
+        $pendingClawbacks = MarketerCampaignInvitation::with('campaign:id,title')
+            ->where('marketer_id', $marketer->id)
+            ->whereNull('marketer_credit_reversed_at')
+            ->where('marketer_clawback_amount', '>', 0)
+            ->get();
+
+        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals', 'pendingClawbacks'));
     }
 
     public function requestWithdrawal(Request $request)
