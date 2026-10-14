@@ -77,6 +77,7 @@ Route::middleware(['marketer.api.auth', 'marketer.api.active'])->group(function 
 
     Route::get('/finance/commissions', [FinanceController::class, 'commissions']);
     Route::get('/finance/wallet', [FinanceController::class, 'wallet']);
+    Route::get('/finance/reports', [FinanceController::class, 'reports']);
     Route::post('/finance/withdrawals', [FinanceController::class, 'requestWithdrawal']);
 
     // Paid ad slots (AS-07) — marketer booking of admin-managed placements/page-block slots

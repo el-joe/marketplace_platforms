@@ -50,6 +50,8 @@
         ];
     @endphp
 
+    @include('partner.finance._marketing_totals', ['marketingTitle' => __('marketing_fees.reports.vendor_campaign_totals_title')])
+
     @if ($campaigns->isEmpty())
         <div class="rounded-xl border-2 border-dashed border-gray-200 py-16 text-center">
             <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

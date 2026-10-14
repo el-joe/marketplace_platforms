@@ -255,6 +255,10 @@ return [
 
     // Finance
     'finance' => [
+        'tx_source' => [
+            'fee_share' => 'حصة رسوم الحملة',
+            'fee_share_reversal' => 'عكس حصة رسوم الحملة',
+        ],
         'commissions_title' => 'العمولات',
         'total_earned_label' => 'إجمالي العمولات المحصّلة',
         'gross_header' => 'العمولة الإجمالية',

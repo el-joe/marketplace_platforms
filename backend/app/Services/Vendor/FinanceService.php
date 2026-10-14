@@ -7,6 +7,7 @@ use App\Models\CountryCategory;
 use App\Models\Payout;
 use App\Models\Vendor;
 use App\Models\VendorBankAccount;
+use App\Services\MarketingFeeReportService;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -37,14 +38,18 @@ class FinanceService
                 'pending_payout' => (int) $pendingPayout,
                 'last_payout_date' => $lastPayout?->processed_at?->toDateString(),
                 'next_payout_date' => $this->resolveNextPayoutDate($vendor->payout_schedule),
-                'payout_schedule' => $vendor->payout_schedule,
+                'payout_schedule' => $vendor->payout_schedule instanceof \BackedEnum ? $vendor->payout_schedule->value : $vendor->payout_schedule,
                 'payout_on_hold' => (bool) $vendor->payout_hold_active,
+                // P8: marketer-campaign charges as separate lines per currency (never blended).
+                'marketing' => app(MarketingFeeReportService::class)->vendorTotals($vendor->id),
             ];
         });
     }
 
-    private function resolveNextPayoutDate(string $schedule): string
+    private function resolveNextPayoutDate(string|\BackedEnum $schedule): string
     {
+        // Vendor::payout_schedule is cast to the PayoutSchedule enum; the string overload crashed the summary.
+        $schedule = $schedule instanceof \BackedEnum ? $schedule->value : $schedule;
         $today = Carbon::today();
 
         return match ($schedule) {

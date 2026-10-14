@@ -13,6 +13,7 @@ use App\Notifications\Marketer\PayoutScheduled;
 use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\Marketer\PromotionPenaltyService;
 use App\Services\MarketerCommissionStatementService;
+use App\Services\MarketingFeeReportService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -117,7 +118,9 @@ class FinanceController extends Controller
             ->where('marketer_clawback_amount', '>', 0)
             ->get();
 
-        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals', 'pendingClawbacks'));
+        $feeShare = app(MarketingFeeReportService::class)->marketerFeeShare($marketer->id);
+
+        return view('marketer.finance.wallet', compact('wallet', 'transactions', 'withdrawalRequests', 'statementTotals', 'salesTotals', 'pendingClawbacks', 'feeShare'));
     }
 
     public function requestWithdrawal(Request $request)

@@ -502,11 +502,100 @@
         </div>
     </div>
 
+    {{-- P8: campaign fee earnings (fee share per campaign), affiliate commissions and wallet --}}
+    <div class="bg-white rounded-xl border shadow-sm overflow-hidden" id="campaign-fee-earnings" data-campaign-fee-earnings>
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="font-bold text-gray-800">{{ __('marketing_fees.reports.earnings_title') }}</h3>
+            <p class="text-xs text-gray-500 mt-1">{{ __('marketing_fees.reports.earnings_hint_admin') }}</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 border-b border-gray-100 text-sm" data-earnings-totals>
+            @forelse($earnings['fee_share']['totals'] as $ccy => $t)
+                <div class="rounded-lg bg-gray-50 p-3" data-currency="{{ $ccy }}">
+                    <div class="text-xs text-gray-400 mb-1">{{ __('marketing_fees.reports.fee_share_totals') }} · {{ $ccy }}</div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.credited') }}</span><span class="font-semibold text-green-600" data-total="credited">{{ \App\Support\Money::format($t['credited']) }}</span></div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.reversed') }}</span><span class="font-semibold text-red-600" data-total="reversed">{{ \App\Support\Money::format($t['reversed']) }}</span></div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.clawback') }}</span><span class="font-semibold text-red-600" data-total="clawback">{{ \App\Support\Money::format($t['clawback']) }}</span></div>
+                    <div class="flex justify-between border-t mt-1 pt-1"><span>{{ __('marketing_fees.reports.net') }}</span><span class="font-bold" data-total="net">{{ \App\Support\Money::format($t['net']) }}</span></div>
+                </div>
+            @empty
+                <div class="text-gray-400 sm:col-span-3">{{ __('marketing_fees.reports.fee_share_empty') }}</div>
+            @endforelse
+            @foreach($marketerWallets as $w)
+                <div class="rounded-lg bg-gray-50 p-3" data-wallet="{{ $w->currency }}">
+                    <div class="text-xs text-gray-400 mb-1">{{ __('marketing_fees.reports.wallet_balance') }} · {{ $w->currency }}</div>
+                    <div class="text-lg font-bold" data-wallet-balance>{{ \App\Support\Money::format($w->balance) }} {{ $w->currency }}</div>
+                    @if($w->is_frozen)<div class="text-xs text-red-600">{{ __('marketer.finance.wallet_frozen_badge') }}</div>@endif
+                </div>
+            @endforeach
+        </div>
+
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm" data-fee-share-table>
+            <thead class="bg-gray-50 text-xs text-gray-500"><tr>
+                <th class="px-4 py-2 text-start">{{ __('marketing_fees.reports.col_campaign') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('marketing_fees.reports.col_fee') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('marketing_fees.reports.col_share_pct') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('marketing_fees.reports.col_credited') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('marketing_fees.reports.col_credited_at') }}</th>
+                <th class="px-4 py-2 text-center">{{ __('marketing_fees.reports.col_state') }}</th>
+            </tr></thead>
+            <tbody class="divide-y divide-gray-100">
+            @forelse($earnings['fee_share']['rows'] as $row)
+                <tr data-fee-share-row data-state="{{ $row['state'] }}">
+                    <td class="px-4 py-2"><a href="{{ route('admin.marketer-campaigns.show', $row['campaign_id']) }}" class="text-primary-600 hover:underline">{{ $row['campaign_title'] }}</a></td>
+                    <td class="px-4 py-2 text-center">{{ \App\Support\Money::format($row['fee']) }} {{ $row['currency'] }}</td>
+                    <td class="px-4 py-2 text-center">{{ rtrim(rtrim(number_format($row['share_pct'], 2), '0'), '.') }}%</td>
+                    <td class="px-4 py-2 text-center font-semibold">{{ \App\Support\Money::format($row['amount']) }} {{ $row['currency'] }}</td>
+                    <td class="px-4 py-2 text-center text-xs text-gray-500">{{ $row['credited_at']?->format('Y-m-d H:i') ?? '—' }}</td>
+                    <td class="px-4 py-2 text-center text-xs">
+                        {{ __('marketing_fees.reports.state_'.$row['state']) }}
+                        @if($row['state'] === 'clawback')<span class="text-red-600">(−{{ \App\Support\Money::format($row['clawback_amount']) }} {{ $row['currency'] }})</span>@endif
+                        @if($row['state'] === 'reversed' && $row['reversed_at'])<span class="text-gray-400">{{ $row['reversed_at']->format('Y-m-d') }}</span>@endif
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">{{ __('marketing_fees.reports.fee_share_empty') }}</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+        </div>
+
+        <div class="px-6 py-3 border-t border-gray-100 bg-gray-50">
+            <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ __('marketing_fees.reports.affiliate_commissions_title') }}</h4>
+            <div class="overflow-x-auto">
+            <table class="w-full text-sm" data-affiliate-earnings-table>
+                <thead class="text-xs text-gray-500"><tr>
+                    <th class="py-1 text-start">{{ __('marketing_fees.reports.col_campaign') }}</th>
+                    <th class="py-1 text-center">{{ __('marketing_fees.reports.col_orders') }}</th>
+                    <th class="py-1 text-center">{{ __('marketing_fees.reports.col_commission') }}</th>
+                    <th class="py-1 text-center">{{ __('marketing_fees.reports.col_marketing_fees_generated') }}</th>
+                </tr></thead>
+                <tbody class="divide-y divide-gray-100">
+                @forelse($earnings['affiliate']['rows'] as $row)
+                    <tr data-affiliate-row>
+                        <td class="py-1.5"><a href="{{ route('admin.marketer-campaigns.show', $row['campaign_id']) }}" class="text-primary-600 hover:underline">{{ $row['campaign_title'] }}</a></td>
+                        <td class="py-1.5 text-center">{{ $row['orders'] }}</td>
+                        <td class="py-1.5 text-center font-semibold" data-col="commission">{{ \App\Support\Money::format($row['commission']) }} {{ $row['currency'] }}</td>
+                        <td class="py-1.5 text-center" data-col="marketing_fees">{{ \App\Support\Money::format($row['marketing_fees']) }} {{ $row['currency'] }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="py-4 text-center text-gray-400">{{ __('marketing_fees.reports.affiliate_empty') }}</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
     {{-- Category commission overrides --}}
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">%</span>
-            <h3 class="font-bold text-gray-800">{{ __('admin.marketers.commission_by_category') }}</h3>
+            <div>
+                <h3 class="font-bold text-gray-800">{{ __('admin.marketers.commission_by_category') }}</h3>
+                <p class="text-xs text-gray-500 mt-1" data-commission-precedence-note>{{ __('marketing_fees.reports.commission_precedence_note') }}</p>
+            </div>
         </div>
         <div class="overflow-x-auto">
         <table class="w-full text-sm">

@@ -20,8 +20,11 @@ use App\Models\MarketerMarketerJobCategory;
 use App\Models\MarketerSaleSettlement;
 use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelCategory;
+use App\Models\Wallet;
 use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\MarketerCommissionStatementService;
+use App\Services\MarketingFeeReportService;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -171,7 +174,11 @@ class MarketerController extends Controller
         $salesTotals = $salesService->totalsFor($marketer->id);
         $sales = MarketerSaleSettlement::with('order:id,order_number')->where('marketer_id', $marketer->id)->latest()->limit(25)->get();
 
-        return view('admin.marketers.show', compact('conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
+        // P8: fee-share earnings per campaign, affiliate totals and wallet balance(s), from the stored snapshots/ledgers.
+        $earnings = app(MarketingFeeReportService::class)->marketerEarnings($marketer->id);
+        $marketerWallets = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketer->id)->orderBy('currency')->get();
+
+        return view('admin.marketers.show', compact('earnings', 'marketerWallets', 'conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
     }
 
     /**
@@ -259,9 +266,9 @@ class MarketerController extends Controller
             'ad_price' => $validated['ad_price'] ?? 0,
             'ad_price_currency' => $validated['ad_price_currency'] ?? null,
             'can_self_edit_ad_price' => $request->boolean('can_self_edit_ad_price'),
-            'story_price' => isset($validated['story_price']) ? \App\Support\Money::number($validated['story_price']) : null,
-            'post_price' => isset($validated['post_price']) ? \App\Support\Money::number($validated['post_price']) : null,
-            'video_price' => isset($validated['video_price']) ? \App\Support\Money::number($validated['video_price']) : null,
+            'story_price' => isset($validated['story_price']) ? Money::number($validated['story_price']) : null,
+            'post_price' => isset($validated['post_price']) ? Money::number($validated['post_price']) : null,
+            'video_price' => isset($validated['video_price']) ? Money::number($validated['video_price']) : null,
             'commission_discount_type' => $validated['commission_discount_type'] ?? 'none',
             'commission_discount_flat' => $validated['commission_discount_flat'] ?? 0,
             'commission_discount_percentage' => $validated['commission_discount_percentage'] ?? 0,

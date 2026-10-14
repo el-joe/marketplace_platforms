@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
-use App\Support\Money;
 use App\Models\Currency;
-use App\Models\DeliveryAgentPayout;
 use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\PaidAdBooking;
 use App\Models\Refund;
 use App\Models\SubOrder;
+use App\Models\WalletWithdrawalRequest;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 // NOTE (enhancement.md P-11): App\Models\MarketerPayout, referenced by the
 // pre-existing marketerPayoutsByCountry() method below, does not exist in
@@ -107,13 +108,14 @@ class FinancialReportService
             if (! $rate || $rate == 0) {
                 return 0; // skip unknown currencies rather than dividing by zero
             }
+
             return $row->total / $rate;
         });
 
         return [
-            'total_usd'  => round($totalUsd, 2),
-            'label'      => 'Estimated USD equivalent (indicative — uses stored exchange rates, not realised FX)',
-            'as_of'      => now()->toIso8601String(),
+            'total_usd' => round($totalUsd, 2),
+            'label' => 'Estimated USD equivalent (indicative — uses stored exchange rates, not realised FX)',
+            'as_of' => now()->toIso8601String(),
             'by_country' => $byCountry,
         ];
     }
@@ -172,25 +174,29 @@ class FinancialReportService
     /**
      * Marketer payouts disbursed per country/currency.
      *
-     * Uses the currency stored on each marketer_payout row (which is set from
-     * the conversion currency at payout-generation time, not the marketer's
-     * home country — a marketer can earn in multiple currencies).
+     * There is no MarketerPayout model/table (the original query threw "class not found" and took the whole
+     * report endpoint down with it). The money that actually leaves the platform to a marketer is a processed
+     * withdrawal of the marketer wallet, so those are summed here, by the currency of the request and the
+     * marketer's country. Tax is deducted before the credit (statement), so tax_deducted is always 0 here.
      */
     public function marketerPayoutsByCountry(Carbon $from, Carbon $to): Collection
     {
-        return MarketerPayout::query()
-            ->whereBetween('marketer_payouts.created_at', [$from->startOfDay(), $to->copy()->endOfDay()])
-            ->join('marketers', 'marketers.id', '=', 'marketer_payouts.marketer_id')
+        return WalletWithdrawalRequest::query()
+            ->where('wallet_withdrawal_requests.status', 'processed')
+            ->whereBetween(DB::raw('COALESCE(wallet_withdrawal_requests.processed_at, wallet_withdrawal_requests.updated_at)'), [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->join('wallets', 'wallets.id', '=', 'wallet_withdrawal_requests.wallet_id')
+            ->where('wallets.owner_type', 'marketer')
+            ->join('marketers', 'marketers.id', '=', 'wallets.owner_id')
             ->join('countries', 'countries.id', '=', 'marketers.country_id')
-            ->groupBy('countries.id', 'countries.name_en', 'marketer_payouts.currency')
+            ->groupBy('countries.id', 'countries.name_en', 'wallet_withdrawal_requests.currency')
             ->selectRaw('
                 countries.id                              AS country_id,
                 countries.name_en                         AS country_name,
-                marketer_payouts.currency                 AS currency_code,
-                SUM(marketer_payouts.gross_commission) AS gross,
-                SUM(marketer_payouts.tax_deduction)    AS tax_deducted,
-                SUM(marketer_payouts.net_amount)       AS net,
-                COUNT(*)                                   AS payout_count
+                wallet_withdrawal_requests.currency       AS currency_code,
+                SUM(wallet_withdrawal_requests.amount)    AS gross,
+                0                                         AS tax_deducted,
+                SUM(wallet_withdrawal_requests.amount)    AS net,
+                COUNT(*)                                  AS payout_count
             ')
             ->get();
     }
@@ -420,20 +426,37 @@ class FinancialReportService
             ->value('net'));
 
         return [
-            'period_start'                  => $from->toDateString(),
-            'period_end'                    => $to->toDateString(),
-            'currency'                      => $currency,
-            'platform_commission'          => Money::number($subOrderTotals->platform_commission),
-            'shipping_revenue'              => $shippingRevenue,
-            'cod_fees'                       => Money::number($orderTotals->cod_fees),
-            'warranty_revenue'               => Money::number($orderTotals->warranty_revenue),
-            'coupon_cost_platform'          => Money::number($subOrderTotals->coupon_cost_platform),
-            'shipping_subsidy'               => Money::number($subOrderTotals->shipping_subsidy),
-            'gateway_fees'                   => Money::number($subOrderTotals->gateway_fees),
-            'marketer_commission_platform'  => Money::number($subOrderTotals->marketer_commission_platform),
-            'refunds_platform_liable'        => $refundsPlatformLiable,
+            'period_start' => $from->toDateString(),
+            'period_end' => $to->toDateString(),
+            'currency' => $currency,
+            'platform_commission' => Money::number($subOrderTotals->platform_commission),
+            'shipping_revenue' => $shippingRevenue,
+            'cod_fees' => Money::number($orderTotals->cod_fees),
+            'warranty_revenue' => Money::number($orderTotals->warranty_revenue),
+            'coupon_cost_platform' => Money::number($subOrderTotals->coupon_cost_platform),
+            'shipping_subsidy' => Money::number($subOrderTotals->shipping_subsidy),
+            'gateway_fees' => Money::number($subOrderTotals->gateway_fees),
+            'marketer_commission_platform' => Money::number($subOrderTotals->marketer_commission_platform),
+            'refunds_platform_liable' => $refundsPlatformLiable,
             // The reconciliation anchor — always ledger-sourced (see docblock).
-            'net'                            => $this->platformNetForPeriod($from, $to, $currency),
+            'net' => $this->platformNetForPeriod($from, $to, $currency),
         ];
+    }
+
+    /**
+     * P8: marketing-fee / marketer-payout lines per country + currency and per billing type (FBM (cross_dock) /
+     * FBN / FBP) with a `total` row, read from the stored snapshots and ledgers (see MarketingFeeReportService).
+     *
+     * DECISION (decisions log): these figures are NOT folded into platformNetForPeriod()/summaryForPeriod(). That
+     * net is the ledger reconciliation anchor (ledger_entries) and influencer/marketing fees are wallet and
+     * statement movements that never post ledger entries, so adding them would break the "net == ledger" property
+     * and the existing totals. The figures live in this separate block, with their own platform_margin.
+     *
+     * @param  array{country_id?: ?string, currency?: ?string, type?: ?string}  $filters
+     * @return array<int, array<string, mixed>>
+     */
+    public function marketingFeeLines(Carbon $from, Carbon $to, array $filters = []): array
+    {
+        return app(MarketingFeeReportService::class)->platformReport($from, $to, $filters)['rows'];
     }
 }

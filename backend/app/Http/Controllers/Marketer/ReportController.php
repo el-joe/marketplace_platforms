@@ -3,21 +3,23 @@
 namespace App\Http\Controllers\Marketer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Services\MarketingFeeReportService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class ReportController extends Controller
 {
-    private function marketer(): \App\Models\Marketer
+    private function marketer(): Marketer
     {
         return Auth::guard('marketer')->user()->marketer;
     }
 
     public function index(): View
     {
-        $marketer      = $this->marketer();
+        $marketer = $this->marketer();
         $invitationIds = MarketerCampaignInvitation::where('marketer_id', $marketer->id)->pluck('id');
 
         $conversions = MarketerCampaignConversion::whereIn('invitation_id', $invitationIds)
@@ -38,9 +40,9 @@ class ReportController extends Controller
 
         $stats = [
             'total_conversions' => (clone $conversionQuery)->count(),
-            'total_earnings'    => (clone $conversionQuery)->where('commissioned', true)->sum('commission_amount'),
-            'pending_earnings'  => (clone $conversionQuery)->where('commissioned', false)->sum('commission_amount'),
-            'total_campaigns'   => MarketerCampaignInvitation::where('marketer_id', $marketer->id)
+            'total_earnings' => (clone $conversionQuery)->where('commissioned', true)->sum('commission_amount'),
+            'pending_earnings' => (clone $conversionQuery)->where('commissioned', false)->sum('commission_amount'),
+            'total_campaigns' => MarketerCampaignInvitation::where('marketer_id', $marketer->id)
                 ->where('status', 'accepted')
                 ->distinct('campaign_id')
                 ->count('campaign_id'),
@@ -67,7 +69,13 @@ class ReportController extends Controller
             ->limit(12)
             ->get();
 
+        $report = app(MarketingFeeReportService::class);
+        $feeShare = $report->marketerFeeShare($marketer->id);
+        $affiliate = $report->marketerAffiliateTotals($marketer->id);
+
         return view('marketer.reports.index', compact(
+            'feeShare',
+            'affiliate',
             'marketer',
             'conversions',
             'stats',

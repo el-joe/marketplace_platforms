@@ -38,6 +38,20 @@
         </div>
         @endif
 
+        {{-- P8: campaign fee-share credits (influencer campaigns) --}}
+        @if(! empty($feeShare['totals']))
+        <div class="bg-white rounded-xl border p-5" data-wallet-fee-share>
+            <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketing_fees.reports.fee_share_totals') }}</h2>
+            <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                @php $fs = $feeShare['totals'][$wallet->currency] ?? ['credited' => 0, 'reversed' => 0, 'clawback' => 0, 'net' => 0]; @endphp
+                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.credited') }}</dt><dd class="font-bold text-green-600" data-fs="credited">{{ \App\Support\Money::format($fs['credited']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.reversed') }}</dt><dd class="font-bold text-red-600" data-fs="reversed">−{{ \App\Support\Money::format($fs['reversed']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.clawback') }}</dt><dd class="font-bold text-red-600" data-fs="clawback">−{{ \App\Support\Money::format($fs['clawback']) }}</dd></div>
+                <div><dt class="text-xs text-gray-400">{{ __('marketing_fees.reports.net') }}</dt><dd class="font-bold" data-fs="net">{{ \App\Support\Money::format($fs['net']) }} {{ $wallet->currency }}</dd></div>
+            </dl>
+        </div>
+        @endif
+
         {{-- Net statement (P11) --}}
         <div class="bg-white rounded-xl border p-5" data-wallet-statement>
             <h2 class="font-semibold text-gray-800 mb-3">{{ __('marketer.finance.statement_title') }}</h2>
@@ -130,6 +144,9 @@
             @forelse($transactions as $tx)
                 <div class="px-5 py-3 flex items-center justify-between border-b last:border-0">
                     <div>
+                        @if($tx->sourceLabel())
+                            <span class="inline-block mb-0.5 px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $tx->source_type === 'marketer_campaign_fee_share' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}" data-tx-source="{{ $tx->source_type }}">{{ $tx->sourceLabel() }}</span>
+                        @endif
                         <p class="text-sm font-medium text-gray-900">{{ $tx->description }}</p>
                         <p class="text-xs text-gray-400">{{ $tx->created_at->format('d M Y H:i') }}</p>
                     </div>

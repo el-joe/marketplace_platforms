@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Models\WalletTransaction;
+use App\Services\Marketer\PromotionPenaltyService;
+use App\Services\MarketingFeeReportService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +43,32 @@ class FinanceController extends Controller
         return response()->json(['success' => true, 'data' => $conversions]);
     }
 
+    /**
+     * P8: same report figures as the web Reports page: fee-share earnings per campaign (+ totals per currency)
+     * and affiliate campaign totals. Marketing fees are vendor money and are never exposed to the marketer.
+     */
+    public function reports(): JsonResponse
+    {
+        $marketer = $this->marketer();
+        $report = app(MarketingFeeReportService::class);
+        $affiliate = $report->marketerAffiliateTotals($marketer->id);
+
+        $stripFees = fn (array $row) => collect($row)->except('marketing_fees')->all();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'fee_share' => $report->marketerFeeShare($marketer->id),
+                'affiliate' => [
+                    'rows' => $affiliate['rows']->map($stripFees)->values(),
+                    'totals' => collect($affiliate['totals'])->map($stripFees)->all(),
+                ],
+                'transaction_labels' => collect(WalletTransaction::SOURCE_LABELS)
+                    ->mapWithKeys(fn ($key, $source) => [$source => __('marketer.finance.tx_source.'.$key)])->all(),
+            ],
+        ]);
+    }
+
     public function wallet(): JsonResponse
     {
         $marketer = $this->marketer();
@@ -55,10 +84,14 @@ class FinanceController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'balance'             => $wallet->balance,
-                'pending_balance'     => $wallet->pending_balance,
-                'currency'            => $wallet->currency,
-                'transactions'        => $wallet->transactions()->take(20)->get(),
+                'balance' => $wallet->balance,
+                'pending_balance' => $wallet->pending_balance,
+                'currency' => $wallet->currency,
+                'transactions' => $wallet->transactions()->take(20)->get()->map(fn ($tx) => array_merge($tx->toArray(), [
+                    'source_label' => $tx->sourceLabel(),
+                ]))->values(),
+                'fee_share' => app(MarketingFeeReportService::class)->marketerFeeShare($marketer->id)['totals'][$wallet->currency]
+                    ?? ['credited' => 0, 'reversed' => 0, 'clawback' => 0, 'net' => 0, 'pending' => 0],
                 'withdrawal_requests' => $wallet->withdrawalRequests()->take(10)->get(),
             ],
         ]);
@@ -75,13 +108,13 @@ class FinanceController extends Controller
         }
 
         $data = $request->validate([
-            'amount'    => ['required', 'numeric', 'min:0.01', 'decimal:0,2'],
+            'amount' => ['required', 'numeric', 'min:0.01', 'decimal:0,2'],
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
 
         // Pending promotion fines are taken before the payout request.
-        app(\App\Services\Marketer\PromotionPenaltyService::class)->collect($marketer);
+        app(PromotionPenaltyService::class)->collect($marketer);
 
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 

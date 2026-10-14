@@ -13,6 +13,7 @@ use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
+use App\Services\MarketingFeeReportService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use App\Support\Money;
@@ -226,7 +227,9 @@ class MarketerCampaignController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('partner.marketer_campaigns.index', compact('campaigns'));
+        $marketingTotals = app(MarketingFeeReportService::class)->vendorTotals($this->vendorId());
+
+        return view('partner.marketer_campaigns.index', compact('campaigns', 'marketingTotals'));
     }
 
     public function show(MarketerCampaign $marketerCampaign)

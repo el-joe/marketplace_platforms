@@ -72,6 +72,90 @@
     </div>
     @endif
 
+    {{-- P8: fee-share earnings per influencer campaign + totals --}}
+    @if($feeShare['rows']->isNotEmpty())
+    <div class="bg-white rounded-xl border border-gray-200 p-6" data-fee-share-report>
+        <h3 class="font-bold text-gray-800 mb-1">{{ __('marketing_fees.reports.fee_share_title') }}</h3>
+        <p class="text-xs text-gray-400 mb-4">{{ __('marketing_fees.reports.fee_share_hint_marketer') }}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-sm">
+            @foreach($feeShare['totals'] as $ccy => $t)
+                <div class="rounded-lg bg-gray-50 p-3" data-currency="{{ $ccy }}">
+                    <div class="text-xs text-gray-400 mb-1">{{ $ccy }}</div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.credited') }}</span><span class="font-semibold text-green-600" data-total="credited">{{ \App\Support\Money::format($t['credited']) }}</span></div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.reversed') }}</span><span class="font-semibold text-red-600" data-total="reversed">{{ \App\Support\Money::format($t['reversed']) }}</span></div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.clawback') }}</span><span class="font-semibold text-red-600" data-total="clawback">{{ \App\Support\Money::format($t['clawback']) }}</span></div>
+                    <div class="flex justify-between border-t mt-1 pt-1"><span>{{ __('marketing_fees.reports.net') }}</span><span class="font-bold" data-total="net">{{ \App\Support\Money::format($t['net']) }}</span></div>
+                </div>
+            @endforeach
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-gray-500 text-xs border-b border-gray-100">
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_campaign') }}</th>
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_fee') }}</th>
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_share_pct') }}</th>
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_credited') }}</th>
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_state') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($feeShare['rows'] as $row)
+                    <tr class="border-b border-gray-50" data-fee-share-row data-state="{{ $row['state'] }}">
+                        <td class="py-2 font-semibold text-gray-800">{{ $row['campaign_title'] }}</td>
+                        <td class="py-2">{{ \App\Support\Money::format($row['fee']) }} {{ $row['currency'] }}</td>
+                        <td class="py-2">{{ rtrim(rtrim(number_format($row['share_pct'], 2), '0'), '.') }}%</td>
+                        <td class="py-2 text-green-600 font-semibold">{{ \App\Support\Money::format($row['amount']) }} {{ $row['currency'] }}</td>
+                        <td class="py-2 text-xs">
+                            {{ __('marketing_fees.reports.state_'.$row['state']) }}
+                            @if($row['credited_at'])<span class="text-gray-400">{{ $row['credited_at']->format('Y-m-d') }}</span>@endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- P8: affiliate campaign totals --}}
+    @if($affiliate['rows']->isNotEmpty())
+    <div class="bg-white rounded-xl border border-gray-200 p-6" data-affiliate-report>
+        <h3 class="font-bold text-gray-800 mb-1">{{ __('marketing_fees.reports.affiliate_campaigns_title') }}</h3>
+        <p class="text-xs text-gray-400 mb-4">{{ __('marketing_fees.reports.affiliate_hint_marketer') }}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-sm">
+            @foreach($affiliate['totals'] as $ccy => $t)
+                <div class="rounded-lg bg-gray-50 p-3" data-currency="{{ $ccy }}">
+                    <div class="text-xs text-gray-400 mb-1">{{ $ccy }}</div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.col_campaigns') }}</span><span class="font-semibold" data-total="campaigns">{{ $t['campaigns'] }}</span></div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.col_orders') }}</span><span class="font-semibold" data-total="orders">{{ $t['orders'] }}</span></div>
+                    <div class="flex justify-between"><span>{{ __('marketing_fees.reports.col_commission') }}</span><span class="font-bold text-green-600" data-total="commission">{{ \App\Support\Money::format($t['commission']) }}</span></div>
+                </div>
+            @endforeach
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-gray-500 text-xs border-b border-gray-100">
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_campaign') }}</th>
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_orders') }}</th>
+                        <th class="text-start py-2">{{ __('marketing_fees.reports.col_commission') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($affiliate['rows'] as $row)
+                    <tr class="border-b border-gray-50" data-affiliate-row>
+                        <td class="py-2 font-semibold text-gray-800">{{ $row['campaign_title'] }}</td>
+                        <td class="py-2">{{ $row['orders'] }}</td>
+                        <td class="py-2 text-green-600 font-semibold" data-col="commission">{{ \App\Support\Money::format($row['commission']) }} {{ $row['currency'] }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     {{-- Conversion history --}}
     <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h3 class="font-bold text-gray-800 mb-4">{{ __('marketer.reports.conversion_history_heading') }}</h3>

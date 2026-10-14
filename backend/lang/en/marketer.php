@@ -255,6 +255,10 @@ return [
 
     // Finance
     'finance' => [
+        'tx_source' => [
+            'fee_share' => 'Campaign fee share',
+            'fee_share_reversal' => 'Campaign fee share reversal',
+        ],
         'commissions_title' => 'Commissions',
         'total_earned_label' => 'Total collected commissions',
         'gross_header' => 'Gross commission',

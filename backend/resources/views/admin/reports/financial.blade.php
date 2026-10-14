@@ -127,6 +127,33 @@
     </div>
 </div>
 
+{{-- ─── Marketing fees & marketer payouts (per country + currency, per fulfillment type) ───────────── --}}
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6" id="marketing-fees-section">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 border-b border-gray-100">
+        <div>
+            <h2 class="text-sm font-semibold text-gray-800">{{ __('marketing_fees.reports.finance_title') }}</h2>
+            <span class="text-xs text-gray-400">{{ __('marketing_fees.reports.finance_desc') }}</span>
+        </div>
+        <button id="btn-export-marketing" type="button" class="btn btn-secondary btn-sm">{{ __('marketing_fees.reports.export_csv') }}</button>
+    </div>
+    <div id="marketing-empty" class="hidden py-10 text-center text-sm text-gray-400">{{ __('admin.finance.no_data_for_period') }}</div>
+    <div class="overflow-x-auto" id="marketing-wrap">
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                    <th class="px-4 py-2.5 text-start font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.country') }}</th>
+                    <th class="px-4 py-2.5 text-start font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.type') }}</th>
+                    @foreach (['influencer_fees', 'influencer_vat', 'marketing_influencer', 'marketing_affiliate', 'payouts', 'affiliate_commissions', 'refunds', 'platform_margin'] as $col)
+                        <th class="px-4 py-2.5 text-end font-semibold text-gray-600 whitespace-nowrap">{{ __('marketing_fees.reports.fin_'.$col) }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody id="marketing-tbody" class="divide-y divide-gray-100"></tbody>
+        </table>
+    </div>
+    <p class="px-4 py-2 text-xs text-gray-400">{{ __('marketing_fees.reports.finance_margin_note') }}</p>
+</div>
+
 {{-- ─── Exceptional Zone Subsidies panel ───────────────────────────────────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -344,12 +371,38 @@ Object.assign(window.TRANSLATIONS, {
                 tableWrap.classList.remove('hidden');
                 render();
                 renderExceptionalZoneSubsidies(json.exceptional_zone_subsidies || { by_currency: [], top_zones: [] });
+                renderMarketing((json.marketing || {}).rows || []);
             })
             .catch(() => {
                 tableLoading.classList.add('hidden');
                 tableWrap.classList.remove('hidden');
                 tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-red-500 text-sm">${window.TRANSLATIONS.financeFailedToLoadData}</td></tr>`;
             });
+    }
+
+    // ── Marketing fees & marketer payouts (never blended across currencies) ──
+    function renderMarketing(rows) {
+        const body  = document.getElementById('marketing-tbody');
+        const empty = document.getElementById('marketing-empty');
+        document.getElementById('marketing-wrap').classList.toggle('hidden', rows.length === 0);
+        empty.classList.toggle('hidden', rows.length !== 0);
+
+        body.innerHTML = rows.map(r => {
+            const ccy = r.currency;
+            const cls = r.type === 'total' ? 'bg-gray-50 font-semibold' : '';
+            return `<tr class="${cls}" data-type="${r.type}" data-currency="${ccy}">
+                <td class="px-4 py-2.5 whitespace-nowrap text-gray-900">${r.country_name} <span class="text-xs text-gray-400">${ccy}</span></td>
+                <td class="px-4 py-2.5 whitespace-nowrap text-gray-700">${r.type_label}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.influencer_fees)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.influencer_vat)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.influencer_marketing_fees)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.affiliate_marketing_fees)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.payouts_net)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.affiliate_commissions)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums">${fmt(r.refunds)} ${ccy}</td>
+                <td class="px-4 py-2.5 text-end tabular-nums font-medium text-green-700">${fmt(r.platform_margin)} ${ccy}</td>
+            </tr>`;
+        }).join('');
     }
 
     // ── Exceptional Zone Subsidies ────────────────────────────────────────
@@ -470,6 +523,10 @@ Object.assign(window.TRANSLATIONS, {
         window.location.href = `{{ route('admin.reports.financial.export') }}?${params}`;
     }
     btnExport.addEventListener('click', () => exportReport('csv'));
+    document.getElementById('btn-export-marketing').addEventListener('click', () => {
+        const params = new URLSearchParams({ from: filterFrom.value, to: filterTo.value, section: 'marketing', format: 'csv' });
+        window.location.href = `{{ route('admin.reports.financial.export') }}?${params}`;
+    });
     document.getElementById('btn-export-excel').addEventListener('click', () => exportReport('excel'));
     document.getElementById('btn-export-word').addEventListener('click', () => exportReport('word'));
 

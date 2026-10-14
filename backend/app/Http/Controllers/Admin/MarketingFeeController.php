@@ -8,16 +8,22 @@ use App\Models\Category;
 use App\Models\Country;
 use App\Models\MarketingFeeCategorySetting;
 use App\Models\MarketingFeeCountrySetting;
+use App\Services\MarketingFeeReportService;
 use App\Services\MarketingFeeService;
+use App\Traits\HasExport;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** Admin "Marketing Fees": fixed fee per country, variable fee per country x category x type, calculator. */
 class MarketingFeeController extends Controller
 {
+    use HasExport;
+
     public function index(Request $request): View
     {
         $countries = Country::where('is_active', true)->orderBy('name_ar')->get();
@@ -32,7 +38,68 @@ class MarketingFeeController extends Controller
         $types = MarketingFeeType::cases();
         $tab = in_array($request->query('tab'), ['fixed', 'variable', 'report'], true) ? $request->query('tab') : 'fixed';
 
-        return view('admin.marketing_fees.index', compact('countries', 'countrySettings', 'variableSettings', 'types', 'tab'));
+        $report = $this->reportData($request);
+        $currencies = Country::where('is_active', true)->whereNotNull('currency_code')->distinct()->orderBy('currency_code')->pluck('currency_code');
+
+        return view('admin.marketing_fees.index', compact('countries', 'countrySettings', 'variableSettings', 'types', 'tab', 'report', 'currencies'));
+    }
+
+    /** Report tab CSV: the per-type campaign table, then the affiliate accrual table. */
+    public function exportReport(Request $request): StreamedResponse
+    {
+        $data = $this->reportData($request);
+        $rows = collect();
+
+        $m = fn ($v) => number_format((float) $v, 2, '.', '');
+
+        foreach ($data['campaigns'] as $r) {
+            $rows->push([
+                __('marketing_fees.reports.section_influencer'), $r['country_name'], $r['currency'], $r['type_label'],
+                (int) $r['campaigns'], (int) $r['influencers'], $m($r['subtotal']), $m($r['fixed_fee']), $m($r['variable_fee']), $m($r['marketing_fees']),
+                $m($r['grand_total']), $m($r['collected']), $m($r['pending']), '', '', '', '', '',
+            ]);
+        }
+        foreach ($data['affiliate'] as $r) {
+            $rows->push([
+                __('marketing_fees.reports.section_affiliate'), $r['country_name'], $r['currency'], $r['type_label'],
+                '', '', '', '', '', '', '', '', '',
+                $m($r['accrued']), $m($r['refunded']), $m($r['settled']), $m($r['pending']), $m($r['settlement_refunds']),
+            ]);
+        }
+
+        $headers = [
+            'Section', 'Country', 'Currency', 'Type',
+            'Campaigns', 'Influencers', 'Subtotal', 'Fixed fee', 'Variable fee', 'Marketing fees',
+            'Grand total', 'Collected', 'Pending',
+            'Affiliate accrued', 'Affiliate refunded (reversed)', 'Affiliate settled', 'Affiliate pending settlement', 'Refunded after settlement',
+        ];
+
+        return $this->exportCsv('marketing-fees-report-'.$data['from']->toDateString().'-to-'.$data['to']->toDateString(), $headers, $rows);
+    }
+
+    /** @return array{from: Carbon, to: Carbon, campaigns: array, affiliate: array} */
+    private function reportData(Request $request): array
+    {
+        $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'type' => ['nullable', Rule::enum(MarketingFeeType::class)],
+            'country_id' => ['nullable', 'uuid'],
+            'currency' => ['nullable', 'string', 'size:3'],
+        ]);
+
+        $from = $request->filled('from') ? Carbon::parse($request->query('from')) : now()->startOfMonth();
+        $to = $request->filled('to') ? Carbon::parse($request->query('to')) : now();
+        $filters = array_filter($request->only(['country_id', 'currency', 'type']));
+
+        $service = app(MarketingFeeReportService::class);
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'campaigns' => $service->campaignTypeReport($from, $to, $filters),
+            'affiliate' => $service->affiliateAccrualReport($from, $to, $filters),
+        ];
     }
 
     public function updateFixed(Request $request): RedirectResponse

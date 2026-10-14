@@ -10,6 +10,7 @@ use App\Models\Payout;
 use App\Models\Refund;
 use App\Models\SubOrder;
 use App\Models\VendorListing;
+use App\Services\MarketingFeeReportService;
 use App\Support\Money;
 use App\Traits\HasExport;
 use Carbon\Carbon;
@@ -253,7 +254,10 @@ class FinanceController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
+        $marketingTotals = app(MarketingFeeReportService::class)->vendorTotals($vendorId, $dateFrom, $dateTo);
+
         return view('partner.finance.transactions', compact(
+            'marketingTotals',
             'vendor',
             'currency',
             'transactions',

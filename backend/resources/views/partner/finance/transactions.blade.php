@@ -88,6 +88,9 @@
 
     </div>
 
+    {{-- P8: separate marketer-campaign totals for the selected range --}}
+    @include('partner.finance._marketing_totals', ['marketingTitle' => __('marketing_fees.reports.vendor_totals_title')])
+
     {{-- Transaction log --}}
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
 

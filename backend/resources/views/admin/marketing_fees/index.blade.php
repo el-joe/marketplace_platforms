@@ -165,9 +165,124 @@
             </div>
         </div>
 
-        {{-- Report (stub until P8) --}}
-        <div x-show="tab === 'report'" x-cloak class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-sm text-gray-600" data-report-stub>
-            {{ __('marketing_fees.report_stub') }}
+        {{-- Report: read from the stored campaign snapshots / accrual ledger, never from current settings --}}
+        <div x-show="tab === 'report'" x-cloak class="space-y-6" data-marketing-fee-report>
+            @if ($report)
+                @php
+                    $fmtMoney = fn ($v) => \App\Support\Money::format($v);
+                    $reportQuery = array_filter(request()->only(['from', 'to', 'country_id', 'currency', 'type']));
+                @endphp
+                <form method="GET" action="{{ route('admin.marketing-fees.index') }}" class="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm" data-report-filters>
+                    <input type="hidden" name="tab" value="report">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('common.from') }}</label>
+                        <input type="date" name="from" value="{{ $report['from']->toDateString() }}" class="{{ $input }}" dir="ltr">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('common.to') }}</label>
+                        <input type="date" name="to" value="{{ $report['to']->toDateString() }}" class="{{ $input }}" dir="ltr">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.country') }}</label>
+                        <select name="country_id" class="{{ $input }}">
+                            <option value="">{{ __('marketing_fees.all_countries') }}</option>
+                            @foreach ($countries as $country)
+                                <option value="{{ $country->id }}" @selected(request('country_id') === $country->id)>{{ app()->getLocale() === 'ar' ? $country->name_ar : $country->name_en }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.currency') }}</label>
+                        <select name="currency" class="{{ $input }}">
+                            <option value="">{{ __('marketing_fees.reports.all_currencies') }}</option>
+                            @foreach ($currencies as $code)
+                                <option value="{{ $code }}" @selected(request('currency') === $code)>{{ $code }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.type') }}</label>
+                        <select name="type" class="{{ $input }}">
+                            <option value="">{{ __('marketing_fees.reports.all_types') }}</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type->value }}" @selected(request('type') === $type->value)>{{ $type->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="{{ $btn }}">{{ __('marketing_fees.reports.apply') }}</button>
+                    <a href="{{ route('admin.marketing-fees.report.export', $reportQuery) }}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50" data-report-export>{{ __('marketing_fees.reports.export_csv') }}</a>
+                </form>
+
+                {{-- Influencer campaigns, per country + currency + type (campaign snapshot) --}}
+                <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.influencer_title') }}</h2>
+                    <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.influencer_hint') }}</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-influencer>
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    @foreach (['country', 'type', 'campaigns', 'influencers', 'subtotal', 'fixed', 'variable', 'marketing_fees', 'grand_total', 'collected', 'pending'] as $col)
+                                        <th class="px-3 py-2 text-start font-medium text-gray-500 whitespace-nowrap">{{ __('marketing_fees.reports.col_'.$col) }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse ($report['campaigns'] as $r)
+                                    <tr class="{{ $r['type'] === 'total' ? 'bg-gray-50 font-semibold' : '' }}" data-row-type="{{ $r['type'] }}" data-currency="{{ $r['currency'] }}">
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['country_name'] }} <span class="text-xs text-gray-400">{{ $r['currency'] }}</span></td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['type_label'] }}</td>
+                                        <td class="px-3 py-2 tabular-nums">{{ (int) $r['campaigns'] }}</td>
+                                        <td class="px-3 py-2 tabular-nums">{{ (int) $r['influencers'] }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="subtotal">{{ $fmtMoney($r['subtotal']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="fixed">{{ $fmtMoney($r['fixed_fee']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="variable">{{ $fmtMoney($r['variable_fee']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="marketing">{{ $fmtMoney($r['marketing_fees']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="grand_total">{{ $fmtMoney($r['grand_total']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-green-700" data-col="collected">{{ $fmtMoney($r['collected']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-amber-700" data-col="pending">{{ $fmtMoney($r['pending']) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="11" class="px-3 py-6 text-center text-gray-500">{{ __('marketing_fees.reports.empty') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {{-- Affiliate accruals: accrued vs settled vs refunded --}}
+                <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-base font-semibold text-gray-900">{{ __('marketing_fees.reports.affiliate_title') }}</h2>
+                    <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.reports.affiliate_hint') }}</p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm" data-report-affiliate>
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    @foreach (['country', 'type', 'orders', 'commission', 'accrued', 'refunded', 'settled', 'pending', 'settlement_refunds'] as $col)
+                                        <th class="px-3 py-2 text-start font-medium text-gray-500 whitespace-nowrap">{{ __('marketing_fees.reports.col_aff_'.$col) }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse ($report['affiliate'] as $r)
+                                    <tr class="{{ $r['type'] === 'total' ? 'bg-gray-50 font-semibold' : '' }}" data-row-type="{{ $r['type'] }}" data-currency="{{ $r['currency'] }}">
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['country_name'] }} <span class="text-xs text-gray-400">{{ $r['currency'] }}</span></td>
+                                        <td class="px-3 py-2 whitespace-nowrap">{{ $r['type_label'] }}</td>
+                                        <td class="px-3 py-2 tabular-nums">{{ (int) $r['orders'] }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="commission">{{ $fmtMoney($r['commission']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="accrued">{{ $fmtMoney($r['accrued']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-red-600" data-col="refunded">{{ $fmtMoney($r['refunded']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-green-700" data-col="settled">{{ $fmtMoney($r['settled']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums text-amber-700" data-col="pending">{{ $fmtMoney($r['pending']) }}</td>
+                                        <td class="px-3 py-2 tabular-nums" data-col="settlement_refunds">{{ $fmtMoney($r['settlement_refunds']) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="9" class="px-3 py-6 text-center text-gray-500">{{ __('marketing_fees.reports.empty') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 

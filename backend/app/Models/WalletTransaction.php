@@ -51,6 +51,20 @@ class WalletTransaction extends Model
         });
     }
 
+    /** Source types with a readable label (key under marketer.finance.tx_source.*). */
+    public const SOURCE_LABELS = [
+        'marketer_campaign_fee_share' => 'fee_share',
+        'marketer_campaign_fee_share_reversal' => 'fee_share_reversal',
+    ];
+
+    /** Readable label of a known source_type (campaign fee share credit / reversal), else null. */
+    public function sourceLabel(): ?string
+    {
+        $key = self::SOURCE_LABELS[$this->source_type] ?? null;
+
+        return $key ? __('marketer.finance.tx_source.'.$key) : null;
+    }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);

@@ -209,6 +209,9 @@
                 @endif
             </div>
 
+            {{-- P8: separate marketer-campaign totals of this statement --}}
+            @include('partner.finance._marketing_totals', ['marketingTotals' => $statementMarketing, 'marketingTitle' => __('marketing_fees.reports.vendor_statement_title')])
+
             {{-- Influencer platform fees (+VAT) deducted in this statement --}}
             @if($influencerFeeItems->isNotEmpty())
                 <details open class="bg-white rounded-2xl border border-gray-200 overflow-hidden group" id="influencer-fee-lines">

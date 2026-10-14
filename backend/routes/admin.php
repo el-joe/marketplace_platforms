@@ -1139,6 +1139,7 @@ Route::middleware(['auth.admin', 'admin.vendor.scope'])->group(function () {
     Route::prefix('marketing-fees')->name('marketing-fees.')->middleware('admin.permission:marketer_commission_settings.view')->group(function () {
         Route::get('/', [MarketingFeeController::class, 'index'])->name('index');
         Route::get('/categories', [MarketingFeeController::class, 'searchCategories'])->name('categories');
+        Route::get('/report/export', [MarketingFeeController::class, 'exportReport'])->name('report.export');
         Route::post('/calculate', [MarketingFeeController::class, 'calculate'])->name('calculate');
         Route::middleware('admin.permission:marketer_fee_settings.edit')->group(function () {
             Route::post('/fixed', [MarketingFeeController::class, 'updateFixed'])->name('update-fixed');
