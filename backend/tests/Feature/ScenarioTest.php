@@ -2,8 +2,43 @@
 
 namespace Tests\Feature;
 
+use App\DTOs\Refund\RefundScope;
+use App\Enums\CancelActor;
 use App\Enums\FulfillmentModel;
+use App\Http\Controllers\Api\Marketer\FinanceController;
+use App\Http\Controllers\Marketer\ContractController;
+use App\Jobs\ApproveMarketerConversionsJob;
+use App\Jobs\ExpireWarrantyPurchasesJob;
+use App\Jobs\GenerateVendorPayoutsJob;
+use App\Jobs\ReleaseMarketerPendingCommissionJob;
+use App\Models\CartItem;
+use App\Models\InventoryMovement;
+use App\Models\MarketerCampaign;
+use App\Models\MarketerCampaignInvitation;
+use App\Models\MarketerListing;
+use App\Models\Order;
+use App\Observers\SubOrderObserver;
+use App\Services\Checkout\CheckoutPricingEngine;
+use App\Services\Checkout\CheckoutRollbackService;
+use App\Services\Checkout\CouponEligibilityService;
+use App\Services\Checkout\CouponUsageService;
+use App\Services\Customer\CartService;
+use App\Services\FinancialReportService;
+use App\Services\Inventory\InventoryService;
+use App\Services\Marketer\MarketerListingAvailabilityService;
+use App\Services\MarketerCampaignService;
+use App\Services\MarketerConversionReversalService;
+use App\Services\OrderCancellationService;
+use App\Services\Payments\PaymentMethodMapper;
+use App\Services\PayoutCalculationService;
+use App\Services\RefundService;
+use App\Services\ReturnRequestService;
+use App\Services\WarrantyClaimResolutionService;
+use App\Support\Marketer\CampaignOwner;
+use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Tests\Support\AssertsOrderMoney;
 use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
@@ -16,8 +51,8 @@ use Tests\TestCase;
  */
 class ScenarioTest extends TestCase
 {
-    use RefreshDatabase;
     use AssertsOrderMoney;
+    use RefreshDatabase;
 
     public function test_scenario_builds_every_entity_with_no_sql_errors(): void
     {
@@ -95,12 +130,12 @@ class ScenarioTest extends TestCase
         //    across coupon/warranty/wallet-gateway/multi-line combinations,
         //    plus the 409 price_changed path).
         $scenario = MarketplaceScenario::make()->build();
-        $scenario->country->update(['site_code' => 'ae-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6))]);
+        $scenario->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
 
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
 
-        \App\Models\CartItem::create([
+        CartItem::create([
             'cart_id' => $cart->id,
             'vendor_listing_id' => $scenario->vendorListingFbp->id,
             'quantity' => 1,
@@ -118,12 +153,12 @@ class ScenarioTest extends TestCase
         $prepare->assertOk();
 
         $place = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", array_merge($payload, [
-            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+            'idempotency_key' => (string) Str::uuid(),
         ]));
         $place->assertStatus(201);
 
         $orderNumber = $place->json('data.order.order_number') ?? $place->json('data.order_number');
-        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+        $order = Order::where('order_number', $orderNumber)->first();
 
         $this->assertNotNull($order);
         $this->assertSame((int) $prepare->json('data.order_summary.total'), (int) $order->total);
@@ -133,12 +168,12 @@ class ScenarioTest extends TestCase
     public function test_p02_place_order_supports_admin_and_marketer_listing_items(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-        $scenario->country->update(['site_code' => 'ae-'.\Illuminate\Support\Str::lower(\Illuminate\Support\Str::random(6))]);
+        $scenario->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
 
         // A campaign sourced from an ADMIN listing (P-02 gap #1): the
         // pre-existing resolveMarketerCartItems() only resolved campaigns
         // whose source was a vendor listing.
-        $campaignFromAdminListing = \App\Models\MarketerCampaign::create([
+        $campaignFromAdminListing = MarketerCampaign::create([
             // enhancement.md P-14: admin-listing campaigns are platform-owned,
             // not borrowed onto a vendor.
             'vendor_id' => null,
@@ -155,15 +190,15 @@ class ScenarioTest extends TestCase
             'status' => 'active',
         ]);
 
-        $adminCampaignInvitation = \App\Models\MarketerCampaignInvitation::create([
+        $adminCampaignInvitation = MarketerCampaignInvitation::create([
             'campaign_id' => $campaignFromAdminListing->id,
             'marketer_id' => $scenario->marketer->id,
             'status' => 'accepted',
             'responded_at' => now(),
-            'referral_code' => 'REF-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+            'referral_code' => 'REF-'.Str::upper(Str::random(8)),
         ]);
 
-        $adminCampaignMarketerListing = \App\Models\MarketerListing::create([
+        $adminCampaignMarketerListing = MarketerListing::create([
             'marketer_id' => $scenario->marketer->id,
             'product_variant_id' => $scenario->variants[0]->id,
             'listing_category' => 'product',
@@ -175,14 +210,14 @@ class ScenarioTest extends TestCase
             'currency' => 'AED',
             'status' => 'active',
             'condition' => 'new',
-            'referral_code' => 'ML-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+            'referral_code' => 'ML-'.Str::upper(Str::random(8)),
         ]);
 
         // An INDEPENDENT marketer listing (P-02 gap #2): no invitation/
         // campaign at all — created the way Marketer/ListingController@store
         // creates one (enhancement.md P-15: source is resolved and bound
         // explicitly at creation time, not re-derived at checkout).
-        $independentMarketerListing = \App\Models\MarketerListing::create([
+        $independentMarketerListing = MarketerListing::create([
             'marketer_id' => $scenario->marketer->id,
             'product_variant_id' => $scenario->variants[1]->id,
             'listing_category' => 'product',
@@ -194,14 +229,14 @@ class ScenarioTest extends TestCase
             'currency' => 'AED',
             'status' => 'active',
             'condition' => 'new',
-            'referral_code' => 'ML-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(8)),
+            'referral_code' => 'ML-'.Str::upper(Str::random(8)),
         ]);
 
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
 
         // 1) Plain admin (platform) listing.
-        \App\Models\CartItem::create([
+        CartItem::create([
             'cart_id' => $cart->id,
             'admin_listing_id' => $scenario->adminListing->id,
             'quantity' => 1,
@@ -210,7 +245,7 @@ class ScenarioTest extends TestCase
         ]);
 
         // 2) Plain vendor listing.
-        \App\Models\CartItem::create([
+        CartItem::create([
             'cart_id' => $cart->id,
             'vendor_listing_id' => $scenario->vendorListingFbn->id,
             'quantity' => 1,
@@ -219,7 +254,7 @@ class ScenarioTest extends TestCase
         ]);
 
         // 3) Campaign marketer listing sourced from an admin listing.
-        \App\Models\CartItem::create([
+        CartItem::create([
             'cart_id' => $cart->id,
             'marketer_listing_id' => $adminCampaignMarketerListing->id,
             'quantity' => 1,
@@ -228,7 +263,7 @@ class ScenarioTest extends TestCase
         ]);
 
         // 4) Independent marketer listing.
-        \App\Models\CartItem::create([
+        CartItem::create([
             'cart_id' => $cart->id,
             'marketer_listing_id' => $independentMarketerListing->id,
             'quantity' => 1,
@@ -243,13 +278,13 @@ class ScenarioTest extends TestCase
         ];
 
         $place = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", array_merge($payload, [
-            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+            'idempotency_key' => (string) Str::uuid(),
         ]));
 
         $place->assertStatus(201);
 
         $orderNumber = $place->json('data.order.order_number') ?? $place->json('data.order_number');
-        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+        $order = Order::where('order_number', $orderNumber)->first();
         $this->assertNotNull($order);
         $this->assertMoneyBalanced($order);
 
@@ -317,7 +352,7 @@ class ScenarioTest extends TestCase
         //    plus a balanced double-entry ledger at capture).
         $scenario = MarketplaceScenario::make()->build();
         $this->assertNotNull($scenario->vendor->id);
-        $engine = app(\App\Services\Checkout\CheckoutPricingEngine::class);
+        $engine = app(CheckoutPricingEngine::class);
         $this->assertTrue(method_exists($engine, 'computeMoneySplit'));
     }
 
@@ -332,8 +367,8 @@ class ScenarioTest extends TestCase
         //    and release-on-rollback keeps times_used accurate after a decline.
         $scenario = MarketplaceScenario::make()->build();
         $this->assertNotNull($scenario->coupons['percentage_platform']->id);
-        $this->assertTrue(class_exists(\App\Services\Checkout\CouponEligibilityService::class));
-        $this->assertTrue(class_exists(\App\Services\Checkout\CouponUsageService::class));
+        $this->assertTrue(class_exists(CouponEligibilityService::class));
+        $this->assertTrue(class_exists(CouponUsageService::class));
     }
 
     public function test_p05_payment_methods_wallet_cod_gateway_bank_transfer(): void
@@ -346,8 +381,8 @@ class ScenarioTest extends TestCase
         // 403 case.
         $scenario = MarketplaceScenario::make()->build();
         $this->assertNotNull($scenario->customerWallet->id);
-        $this->assertTrue(class_exists(\App\Services\Checkout\CheckoutRollbackService::class));
-        $this->assertTrue(class_exists(\App\Services\Payments\PaymentMethodMapper::class));
+        $this->assertTrue(class_exists(CheckoutRollbackService::class));
+        $this->assertTrue(class_exists(PaymentMethodMapper::class));
     }
 
     public function test_p06_cancellation_engine_reverses_money_correctly(): void
@@ -359,8 +394,8 @@ class ScenarioTest extends TestCase
         // coupon/warranty/marketer-conversion reversal and full-order
         // ledger balancing.
         $scenario = MarketplaceScenario::make()->build();
-        $this->assertTrue(class_exists(\App\Services\OrderCancellationService::class));
-        $this->assertTrue(class_exists(\App\Enums\CancelActor::class));
+        $this->assertTrue(class_exists(OrderCancellationService::class));
+        $this->assertTrue(class_exists(CancelActor::class));
         $this->assertNotNull($scenario->customer->id);
     }
 
@@ -372,8 +407,8 @@ class ScenarioTest extends TestCase
         // returning N of M units refunds exactly that unit's persisted
         // share, and RefundProcessingJob no longer double-credits.
         $scenario = MarketplaceScenario::make()->build();
-        $this->assertTrue(class_exists(\App\Services\RefundService::class));
-        $this->assertTrue(class_exists(\App\DTOs\Refund\RefundScope::class));
+        $this->assertTrue(class_exists(RefundService::class));
+        $this->assertTrue(class_exists(RefundScope::class));
         $this->assertNotNull($scenario->customer->id);
     }
 
@@ -396,9 +431,9 @@ class ScenarioTest extends TestCase
         // coverage-start rule, the daily ExpireWarrantyPurchasesJob,
         // cancellation, and brand-vs-platform claim windows/resolution.
         $scenario = MarketplaceScenario::make()->build();
-        $this->assertTrue(class_exists(\App\Observers\SubOrderObserver::class));
-        $this->assertTrue(class_exists(\App\Jobs\ExpireWarrantyPurchasesJob::class));
-        $this->assertTrue(class_exists(\App\Services\WarrantyClaimResolutionService::class));
+        $this->assertTrue(class_exists(SubOrderObserver::class));
+        $this->assertTrue(class_exists(ExpireWarrantyPurchasesJob::class));
+        $this->assertTrue(class_exists(WarrantyClaimResolutionService::class));
         $this->assertNotNull($scenario->warrantyPlanFlat->id);
     }
 
@@ -410,7 +445,7 @@ class ScenarioTest extends TestCase
         // restock to the original warehouse row, exchange replacement
         // sub-orders, and the items-only refund scope.
         $scenario = MarketplaceScenario::make()->build();
-        $this->assertTrue(class_exists(\App\Services\ReturnRequestService::class));
+        $this->assertTrue(class_exists(ReturnRequestService::class));
         $this->assertNotNull($scenario->category->id);
     }
 
@@ -424,9 +459,9 @@ class ScenarioTest extends TestCase
         // groups, and FinancialReportService::summaryForPeriod()'s net reconciles
         // exactly against a direct ledger query.
         $scenario = MarketplaceScenario::make()->build();
-        $this->assertTrue(class_exists(\App\Services\PayoutCalculationService::class));
-        $this->assertTrue(class_exists(\App\Services\FinancialReportService::class));
-        $this->assertTrue(class_exists(\App\Jobs\GenerateVendorPayoutsJob::class));
+        $this->assertTrue(class_exists(PayoutCalculationService::class));
+        $this->assertTrue(class_exists(FinancialReportService::class));
+        $this->assertTrue(class_exists(GenerateVendorPayoutsJob::class));
         $this->assertNotNull($scenario->vendor->id);
     }
 
@@ -440,9 +475,9 @@ class ScenarioTest extends TestCase
         // (ApproveMarketerConversionsJob / ReleaseMarketerPendingCommissionJob),
         // and reversal on cancel/return.
         $scenario = MarketplaceScenario::make()->build();
-        $this->assertTrue(class_exists(\App\Jobs\ApproveMarketerConversionsJob::class));
-        $this->assertTrue(class_exists(\App\Jobs\ReleaseMarketerPendingCommissionJob::class));
-        $this->assertTrue(class_exists(\App\Services\MarketerConversionReversalService::class));
+        $this->assertTrue(class_exists(ApproveMarketerConversionsJob::class));
+        $this->assertTrue(class_exists(ReleaseMarketerPendingCommissionJob::class));
+        $this->assertTrue(class_exists(MarketerConversionReversalService::class));
         $this->assertNotNull($scenario->marketerCampaignInvitation->id);
     }
 
@@ -459,11 +494,11 @@ class ScenarioTest extends TestCase
 
         $this->assertStock($scenario->vendorListingFbp, 50, 0);
 
-        $allocations = app(\App\Services\Inventory\InventoryService::class)->reserve(
+        $allocations = app(InventoryService::class)->reserve(
             $scenario->vendorListingFbp,
             5,
             'order',
-            (string) \Illuminate\Support\Str::uuid(),
+            (string) Str::uuid(),
             actorType: 'customer',
             actorId: $scenario->customer->id,
         );
@@ -472,7 +507,7 @@ class ScenarioTest extends TestCase
         $this->assertSame(5, $allocations[0]['quantity']);
         $this->assertStock($scenario->vendorListingFbp, 50, 5);
 
-        $movement = \App\Models\InventoryMovement::where('warehouse_inventory_id', $allocations[0]['warehouse_inventory_id'])
+        $movement = InventoryMovement::where('warehouse_inventory_id', $allocations[0]['warehouse_inventory_id'])
             ->where('movement_type', 'reservation')
             ->first();
         $this->assertNotNull($movement);
@@ -488,21 +523,23 @@ class ScenarioTest extends TestCase
         // lifecycle fixes) lives in tests/Feature/MarketerCampaignSourcesTest.php.
         // This placeholder proves the wiring MarketplaceScenario provides
         // is enough to exercise CampaignOwner/CampaignSource end to end.
+        // The queue is synchronous in tests and would run the delayed auto-approve job at once.
+        Queue::fake();
         $scenario = MarketplaceScenario::make()->build();
 
-        $this->assertTrue(class_exists(\App\Support\Marketer\CampaignOwner::class));
-        $this->assertTrue(class_exists(\App\Support\Marketer\CampaignSource::class));
+        $this->assertTrue(class_exists(CampaignOwner::class));
+        $this->assertTrue(class_exists(CampaignSource::class));
 
-        $campaign = app(\App\Services\MarketerCampaignService::class)->createCampaign(
-            \App\Support\Marketer\CampaignOwner::vendor($scenario->vendor),
-            \App\Support\Marketer\CampaignSource::vendorListing($scenario->vendorListingFbp->id),
+        $campaign = app(MarketerCampaignService::class)->createCampaign(
+            CampaignOwner::vendor($scenario->vendor),
+            CampaignSource::vendorListing($scenario->vendorListingFbp->id),
             [
-                'country_id'            => $scenario->country->id,
-                'currency'              => 'AED',
-                'commission_type'       => 'fixed',
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
                 'max_commission_budget' => 100000,
                 'marketer_commission_amount' => 5000,
-                'marketer_ids'           => [$scenario->marketer->id],
+                'marketer_ids' => [$scenario->marketer->id],
             ]
         );
 
@@ -522,7 +559,7 @@ class ScenarioTest extends TestCase
         // tests/Feature/MarketerListingSourceTest.php.
         $scenario = MarketplaceScenario::make()->build();
 
-        $this->assertTrue(class_exists(\App\Services\Marketer\MarketerListingAvailabilityService::class));
+        $this->assertTrue(class_exists(MarketerListingAvailabilityService::class));
         $this->assertSame('vendor_listing', $scenario->marketerListing->source_type);
         $this->assertSame($scenario->vendorListingFbp->id, $scenario->marketerListing->source_listing_id);
     }
@@ -537,8 +574,8 @@ class ScenarioTest extends TestCase
         // lives in tests/Feature/Marketer/MarketerLifecycleTest.php.
         $scenario = MarketplaceScenario::make()->build();
 
-        $this->assertTrue(class_exists(\App\Http\Controllers\Marketer\ContractController::class));
-        $this->assertTrue(class_exists(\App\Http\Controllers\Api\Marketer\FinanceController::class));
+        $this->assertTrue(class_exists(ContractController::class));
+        $this->assertTrue(class_exists(FinanceController::class));
         $this->assertNotNull($scenario->marketer->id);
     }
 }

@@ -113,7 +113,7 @@ class CampaignWizardService
         $marketerIds = $picked;
         if ($openToAffiliates) {
             $openIds = $eligible
-                ->filter(fn ($m) => array_intersect([MarketerType::Affiliate, MarketerType::Broker], MarketerType::heldBy($m)) !== []
+                ->filter(fn ($m) => array_filter(MarketerType::heldBy($m), fn (MarketerType $t) => $t !== MarketerType::Influencer) !== []
                     && ! in_array($m->id, $picked, true))
                 ->keys()->all();
             $openIds = array_values(array_diff($openIds, array_keys($this->conflictingMarketers($itemColumn, $itemId, $openIds))));

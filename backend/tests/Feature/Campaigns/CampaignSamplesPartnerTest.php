@@ -71,6 +71,7 @@ class CampaignSamplesPartnerTest extends TestCase
             ->post(route('partner.marketer-campaigns.store'), [
                 'vendor_listing_id' => $this->s->vendorListingFbn->id,
                 'marketer_ids' => [$inf->id],
+                'max_commission_budget' => 5000,
             ])
             ->assertSessionHas('error');
         $this->assertSame(0, MarketerCampaign::where('vendor_listing_id', $this->s->vendorListingFbn->id)->count(), 'blocked: no campaign created');
@@ -86,6 +87,7 @@ class CampaignSamplesPartnerTest extends TestCase
             ->post(route('partner.marketer-campaigns.store'), [
                 'vendor_listing_id' => $this->s->vendorListingFbn->id,
                 'marketer_ids' => [$a->id, $b->id],
+                'max_commission_budget' => 5000,
             ])
             ->assertSessionMissing('error')
             ->assertSessionHasNoErrors()

@@ -47,8 +47,8 @@ class ReferralCodeAttributionTest extends TestCase
     /** Returns [campaign, A (pending), B (the replacement invitation after A is rejected)]. */
     private function replacedPair(string $how = 'reject'): array
     {
-        $a = F::influencer($this->s);
-        $b = F::influencer($this->s);
+        $a = F::affiliate($this->s);
+        $b = F::affiliate($this->s);
         $campaign = R::pendingCampaign($this->s, $a);
         $invA = R::invitationOf($campaign, $a);
 

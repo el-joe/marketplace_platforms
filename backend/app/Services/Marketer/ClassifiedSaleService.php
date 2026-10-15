@@ -63,7 +63,7 @@ class ClassifiedSaleService
             ->with('marketer.marketerJobs')
             ->get()
             ->filter(fn (MarketerCampaignInvitation $i) => $i->marketer
-                && array_intersect([MarketerType::Affiliate, MarketerType::Broker], MarketerType::heldBy($i->marketer)) !== [])
+                && array_filter(MarketerType::heldBy($i->marketer), fn (MarketerType $t) => $t !== MarketerType::Influencer) !== [])
             ->map(fn (MarketerCampaignInvitation $i) => [
                 'id' => $i->marketer_id,
                 'name' => $i->marketer->name,

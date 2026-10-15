@@ -72,7 +72,7 @@
 @if ($marketerCampaign->vendor_listing_id || $marketerCampaign->classified_listing_id || $marketerCampaign->travel_package_id)
     <x-marketer-campaign-cost :campaign="$marketerCampaign" audience="vendor" />
 @endif
-<x-marketer-campaign-calculations :campaign="$marketerCampaign" :calculations="$calculations" :price="$examplePrice" />
+<x-marketer-campaign-calculations :campaign="$marketerCampaign" :calculations="$calculations" :price="$price" />
 
 {{-- Status timeline --}}
 <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">

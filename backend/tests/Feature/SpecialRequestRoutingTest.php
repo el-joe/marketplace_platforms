@@ -48,13 +48,13 @@ class SpecialRequestRoutingTest extends TestCase
     {
         $m = Marketer::create(array_merge([
             'name' => 'B '.Str::random(4), 'email' => Str::random(8).'@example.test',
-            'phone' => '+9715'.fake()->numerify('########'), 'marketer_type' => 'affiliate',
+            'phone' => '+9715'.fake()->numerify('########'), 'marketer_type' => 'broker',
             'global_status' => 'active', 'country_id' => $this->s->country->id, 'approved_at' => now(),
             'onboarding_completed_at' => now(),
         ], $marketer));
         MarketerProfile::create(array_merge(['marketer_id' => $m->id], $profile));
-        // The job (marketer_jobs pivot), not the legacy marketer_type column, decides affiliate/influencer.
-        $key = $marketer['marketer_type'] ?? 'affiliate';
+        // v3: the job (marketer_jobs pivot) decides the type; special requests are a broker feature.
+        $key = $marketer['marketer_type'] ?? 'broker';
         $job = MarketerJob::firstOrCreate(['key' => $key], ['name_ar' => $key, 'name_en' => $key, 'is_active' => true, 'sort_order' => 1]);
         MarketerMarketerJob::create(['marketer_id' => $m->id, 'marketer_job_id' => $job->id]);
 
@@ -124,10 +124,12 @@ class SpecialRequestRoutingTest extends TestCase
     {
         $p = ['broker_category_id' => $this->s->category->id, 'broker_serves_all_cities' => true];
         $vendorType = $this->broker($p, ['marketer_type' => 'influencer']);
+        $affiliate = $this->broker($p, ['marketer_type' => 'affiliate']);
         $inactive = $this->broker($p, ['global_status' => 'suspended']);
 
         $this->store()->assertStatus(201)->assertJsonPath('data.brokers_notified', 0);
         Notification::assertNotSentTo($vendorType, BrokerSpecialRequestNotification::class);
+        Notification::assertNotSentTo($affiliate, BrokerSpecialRequestNotification::class);
         Notification::assertNotSentTo($inactive, BrokerSpecialRequestNotification::class);
     }
 
@@ -180,7 +182,7 @@ class SpecialRequestRoutingTest extends TestCase
         $this->assertSame([$noCityReq->id], $ids2);
     }
 
-    public function test_marketer_layout_and_profile_render_for_affiliate(): void
+    public function test_marketer_layout_and_profile_render_for_broker(): void
     {
         $b = $this->broker(['broker_category_id' => $this->s->category->id, 'broker_serves_all_cities' => true]);
         $this->actingAs($b, 'marketer')->get(route('marketer.special-requests.index'))->assertOk();

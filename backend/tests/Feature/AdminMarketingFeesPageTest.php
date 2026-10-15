@@ -166,7 +166,7 @@ class AdminMarketingFeesPageTest extends TestCase
         ]);
 
         $this->actingAs($this->viewer(), 'admin')->postJson(route('admin.marketing-fees.calculate'), [
-            'mode' => 'influencer', 'subtotal' => 18.90, 'country_id' => $this->country->id,
+            'subtotal' => 18.90, 'country_id' => $this->country->id,
             'category_id' => $this->category->id, 'fulfillment_type' => 'fbn',
         ])->assertOk()->assertJson([
             'fixed_fee' => 1.9, 'variable_fee' => 1.89, 'marketing_fees' => 3.79, 'grand_total' => 22.69,
@@ -174,26 +174,12 @@ class AdminMarketingFeesPageTest extends TestCase
         ]);
     }
 
-    public function test_calculator_affiliate_follow_up_accrual_skips_flat_amounts(): void
-    {
-        MarketingFeeCountrySetting::create(['country_id' => $this->country->id, 'fixed_amount' => 1.9, 'fixed_percentage' => 0]);
-        MarketingFeeCategorySetting::create([
-            'country_id' => $this->country->id, 'category_id' => $this->category->id, 'fulfillment_type' => 'fbn', 'fixed_amount' => 0, 'percentage' => 10,
-        ]);
-        $admin = $this->viewer();
-        $body = ['mode' => 'affiliate', 'subtotal' => 20, 'country_id' => $this->country->id, 'category_id' => $this->category->id, 'fulfillment_type' => 'fbn'];
-
-        $this->actingAs($admin, 'admin')->postJson(route('admin.marketing-fees.calculate'), $body)
-            ->assertOk()->assertJson(['marketing_fees' => 3.9]);
-        $this->actingAs($admin, 'admin')->postJson(route('admin.marketing-fees.calculate'), $body + ['first_order' => false])
-            ->assertOk()->assertJson(['marketing_fees' => 2.0]);
-    }
-
     public function test_calculator_requires_permission_and_valid_input(): void
     {
-        $body = ['mode' => 'influencer', 'subtotal' => 10, 'country_id' => $this->country->id, 'fulfillment_type' => 'fbn'];
+        $body = ['subtotal' => 10, 'country_id' => $this->country->id, 'fulfillment_type' => 'fbn'];
         $this->actingAs($this->admin([]), 'admin')->postJson(route('admin.marketing-fees.calculate'), $body)->assertForbidden();
-        $this->actingAs($this->viewer(), 'admin')->postJson(route('admin.marketing-fees.calculate'), ['mode' => 'x'] + $body)->assertUnprocessable();
+        $this->actingAs($this->viewer(), 'admin')->postJson(route('admin.marketing-fees.calculate'), ['fulfillment_type' => 'x'] + $body)->assertUnprocessable();
+        $this->actingAs($this->viewer(), 'admin')->postJson(route('admin.marketing-fees.calculate'), ['subtotal' => -1] + $body)->assertUnprocessable();
     }
 
     public function test_category_search_returns_path_labels(): void

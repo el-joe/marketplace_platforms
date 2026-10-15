@@ -47,10 +47,10 @@ class MarketerCampaignOpenToAffiliatesTest extends TestCase
 
     private function store(array $payload)
     {
-        return $this->actingAs($this->vendorAdmin, 'vendor')->post(route('partner.marketer-campaigns.store'), [
+        return $this->actingAs($this->vendorAdmin, 'vendor')->post(route('partner.marketer-campaigns.store'), $payload + [
             'vendor_listing_id' => $this->s->vendorListingFbn->id,
             'max_commission_budget' => 1000,
-        ] + $payload);
+        ]);
     }
 
     public function test_open_to_affiliates_invites_every_eligible_affiliate_and_no_influencer_is_needed(): void
@@ -92,7 +92,7 @@ class MarketerCampaignOpenToAffiliatesTest extends TestCase
         $this->actingAs($this->vendorAdmin, 'vendor')
             ->get(route('partner.marketer-campaigns.create', $this->s->vendorListingFbn->id))
             ->assertOk()
-            ->assertSee(__('partner.marketer_campaigns.open_to_affiliates_desc', ['count' => 1]));
+            ->assertSee(__('marketer_campaigns.vertical.product.open_desc', ['count' => 1]));
     }
 
     public function test_budget_accepts_cents_but_not_a_third_decimal(): void

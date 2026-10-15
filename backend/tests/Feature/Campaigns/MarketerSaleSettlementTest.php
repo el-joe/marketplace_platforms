@@ -176,12 +176,12 @@ class MarketerSaleSettlementTest extends TestCase
         app(MarketerSaleSettlementService::class)->settleAllEligible();
         $row = MarketerSaleSettlement::sole();
 
-        (new ReleaseMarketerPendingCommissionJob)->handle();
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
         $this->assertSame(0, $this->wallet($owner->id)->balance, 'still inside the clearing window');
 
         $row->update(['credited_at' => now()->subDays(4)]);
-        (new ReleaseMarketerPendingCommissionJob)->handle();
-        (new ReleaseMarketerPendingCommissionJob)->handle();
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
 
         $wallet = $this->wallet($owner->id);
         $this->assertSame($row->net_amount, $wallet->balance);
@@ -274,7 +274,7 @@ class MarketerSaleSettlementTest extends TestCase
         $owner = $this->settledOwner();
         $row = MarketerSaleSettlement::sole();
         $row->update(['credited_at' => now()->subDays(4)]);
-        (new ReleaseMarketerPendingCommissionJob)->handle();
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
         $wallet = $this->wallet($owner->id);
         app(WalletService::class)->requestWithdrawal($wallet, $row->net_amount, ['bank_name' => 'B', 'bank_iban' => 'AE00']);
 

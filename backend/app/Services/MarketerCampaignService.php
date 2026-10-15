@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\ClassifiedListingStatus;
-use App\Enums\CommissionVertical;
 use App\Enums\MarketerType;
 use App\Enums\TravelPackageStatus;
 use App\Exceptions\PeerPromotionException;
@@ -20,17 +19,17 @@ use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\MarketerListing;
+use App\Models\TravelAgency;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
-use App\Models\TravelAgency;
 use App\Notifications\Admin\CampaignMarketerReassignedNotification;
 use App\Notifications\Admin\NewCampaignPendingNotification;
 use App\Notifications\Marketer\CampaignExpired;
-use App\Notifications\TravelAgency\CampaignUpdated;
 use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
 use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
 use App\Notifications\Marketer\PeerPromotionStartedNotification;
+use App\Notifications\TravelAgency\CampaignUpdated;
 use App\Notifications\Vendor\CampaignApprovedNotification;
 use App\Notifications\Vendor\CampaignAutoApprovedNotification;
 use App\Notifications\Vendor\CampaignDoneNotification;
@@ -46,6 +45,7 @@ use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use App\Support\Marketer\CampaignSubject;
+use App\Support\Money;
 use Carbon\CarbonInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -479,9 +479,15 @@ class MarketerCampaignService
     {
         $promoter = Marketer::findOrFail($campaign->requested_by_marketer_id);
 
+        // Per-unit commission snapshot: the promoter's profile rule for the listing's category (zero without a rule).
+        $perUnit = app(MarketerCommissionCalculator::class)
+            ->compute($promoter, $campaign, (float) ($listing->price ?? 0), 1, null, null, MarketerType::Influencer, true)
+            ->gross;
+
         $campaign->update([
             'status' => 'active',
             'reviewed_at' => now(),
+            'marketer_commission_amount' => $perUnit,
         ]);
 
         $invitation = $this->dispatchInvitation($campaign, $promoter->id);
@@ -742,7 +748,7 @@ class MarketerCampaignService
                 }
                 if ($budget + 0.004 < (float) $campaign->influencer_fixed_reserved) {
                     throw new \RuntimeException(__('marketer_campaigns.errors.fixed_exceeds_budget', [
-                        'fixed' => \App\Support\Money::format($campaign->influencer_fixed_reserved), 'budget' => \App\Support\Money::format($budget),
+                        'fixed' => Money::format($campaign->influencer_fixed_reserved), 'budget' => Money::format($budget),
                     ]));
                 }
 

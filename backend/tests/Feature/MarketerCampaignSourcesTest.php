@@ -6,14 +6,14 @@ use App\Enums\MarketerListingStatus;
 use App\Models\Admin;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\MarketerCampaign;
+use App\Models\MarketerListing;
 use App\Services\Checkout\CartLineSource;
 use App\Services\MarketerCampaignService;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\Support\MarketplaceScenario;
 use Illuminate\Support\Facades\Queue;
+use Tests\Support\MarketplaceScenario;
 use Tests\TestCase;
 
 /**
@@ -41,12 +41,12 @@ class MarketerCampaignSourcesTest extends TestCase
             CampaignOwner::vendor($scenario->vendor),
             CampaignSource::vendorListing($scenario->vendorListingFbn->id),
             [
-                'country_id'            => $scenario->country->id,
-                'currency'              => 'AED',
-                'commission_type'       => 'fixed',
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
                 'max_commission_budget' => 100000,
                 'marketer_commission_amount' => 5000,
-                'marketer_ids'          => [$scenario->marketer->id],
+                'marketer_ids' => [$scenario->marketer->id],
             ]
         );
 
@@ -69,7 +69,7 @@ class MarketerCampaignSourcesTest extends TestCase
         $invitation->refresh();
         $this->assertSame('accepted', $invitation->status);
 
-        $marketerListing = \App\Models\MarketerListing::where('invitation_id', $invitation->id)->first();
+        $marketerListing = MarketerListing::where('invitation_id', $invitation->id)->first();
         $this->assertNotNull($marketerListing);
         $this->assertSame(MarketerListingStatus::Active, $marketerListing->status);
         $this->assertSame($scenario->vendorListingFbn->product_variant_id, $marketerListing->product_variant_id);
@@ -79,11 +79,11 @@ class MarketerCampaignSourcesTest extends TestCase
         // vendor pays commission on their own campaign).
         $cart = Cart::create(['country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
         $cartItem = CartItem::create([
-            'cart_id'             => $cart->id,
+            'cart_id' => $cart->id,
             'marketer_listing_id' => $marketerListing->id,
-            'quantity'            => 1,
-            'unit_price'          => $marketerListing->price,
-            'added_at'            => now(),
+            'quantity' => 1,
+            'unit_price' => $marketerListing->price,
+            'added_at' => now(),
         ]);
 
         $resolved = CartLineSource::resolve($cartItem);
@@ -110,12 +110,12 @@ class MarketerCampaignSourcesTest extends TestCase
             CampaignOwner::platform(),
             CampaignSource::adminListing($scenario->adminListing->id),
             [
-                'country_id'            => $scenario->country->id,
-                'currency'              => 'AED',
-                'commission_type'       => 'fixed',
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
                 'max_commission_budget' => 100000,
                 'marketer_commission_amount' => 5000,
-                'marketer_ids'          => [$scenario->marketer->id],
+                'marketer_ids' => [$scenario->marketer->id],
             ]
         );
 
@@ -129,16 +129,16 @@ class MarketerCampaignSourcesTest extends TestCase
         $this->assertNotNull($invitation);
 
         $this->service()->acceptInvitation($invitation);
-        $marketerListing = \App\Models\MarketerListing::where('invitation_id', $invitation->id)->first();
+        $marketerListing = MarketerListing::where('invitation_id', $invitation->id)->first();
         $this->assertNotNull($marketerListing);
 
         $cart = Cart::create(['country_id' => $scenario->country->id, 'currency' => 'AED', 'subtotal' => 0, 'discount' => 0, 'estimated_shipping' => 0, 'estimated_tax' => 0, 'estimated_total' => 0]);
         $cartItem = CartItem::create([
-            'cart_id'             => $cart->id,
+            'cart_id' => $cart->id,
             'marketer_listing_id' => $marketerListing->id,
-            'quantity'            => 1,
-            'unit_price'          => $marketerListing->price,
-            'added_at'            => now(),
+            'quantity' => 1,
+            'unit_price' => $marketerListing->price,
+            'added_at' => now(),
         ]);
 
         $resolved = CartLineSource::resolve($cartItem);
@@ -158,9 +158,9 @@ class MarketerCampaignSourcesTest extends TestCase
             $scenario->marketer,
             CampaignSource::vendorListing($scenario->vendorListingFbn->id),
             [
-                'country_id'            => $scenario->country->id,
-                'currency'              => 'AED',
-                'commission_type'       => 'fixed',
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
                 'max_commission_budget' => 100000,
             ]
         );
@@ -172,7 +172,7 @@ class MarketerCampaignSourcesTest extends TestCase
         $this->assertSame(0, $campaign->invitations()->count());
 
         $this->service()->approveMarketerRequest($campaign, [
-            'marketer_commission_amount' => 4000,
+            'max_commission_budget' => 100000,
         ]);
         $campaign->refresh();
 
@@ -185,7 +185,7 @@ class MarketerCampaignSourcesTest extends TestCase
         // Auto-accepted — the marketer already asked to promote it.
         $this->assertSame('accepted', $invitation->status);
 
-        $marketerListing = \App\Models\MarketerListing::where('invitation_id', $invitation->id)->first();
+        $marketerListing = MarketerListing::where('invitation_id', $invitation->id)->first();
         $this->assertNotNull($marketerListing);
         $this->assertSame(MarketerListingStatus::Active, $marketerListing->status);
     }
@@ -200,12 +200,12 @@ class MarketerCampaignSourcesTest extends TestCase
             CampaignOwner::vendor($scenario->vendor),
             CampaignSource::vendorListing($scenario->vendorListingFbn->id),
             [
-                'country_id'            => $scenario->country->id,
-                'currency'              => 'AED',
-                'commission_type'       => 'fixed',
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
                 'max_commission_budget' => 100000,
                 'marketer_commission_amount' => 5000,
-                'marketer_ids'          => [$scenario->marketer->id],
+                'marketer_ids' => [$scenario->marketer->id],
             ]
         );
 
@@ -232,12 +232,12 @@ class MarketerCampaignSourcesTest extends TestCase
             CampaignOwner::vendor($scenario->vendor),
             CampaignSource::vendorListing($scenario->vendorListingFbn->id),
             [
-                'country_id'            => $scenario->country->id,
-                'currency'              => 'AED',
-                'commission_type'       => 'fixed',
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
                 'max_commission_budget' => 100000,
                 'marketer_commission_amount' => 5000,
-                'marketer_ids'          => [$scenario->marketer->id],
+                'marketer_ids' => [$scenario->marketer->id],
             ]
         );
 
@@ -245,7 +245,7 @@ class MarketerCampaignSourcesTest extends TestCase
         $campaign->refresh();
         $invitation = $campaign->invitations()->first();
         $this->service()->acceptInvitation($invitation);
-        $marketerListing = \App\Models\MarketerListing::where('invitation_id', $invitation->id)->first();
+        $marketerListing = MarketerListing::where('invitation_id', $invitation->id)->first();
 
         // vendorListingFbn starts with 40 on hand; category default
         // min_stock_for_campaign is 10. Drop stock to below that.

@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Log;
  * row lock on the campaign:
  *
  *   - one conversion per source, ever (idempotent);
- *   - influencers never get per-sale conversions: their fixed amount is paid once at campaign completion;
+ *   - influencers never get per-sale conversions on normal campaigns: their fixed amount is paid once at campaign
+ *     completion (peer promotion is the exception: the promoter earns his profile rule per sale);
  *   - gross / fee / net are computed by MarketerCommissionCalculator and snapshotted on the row;
  *   - the Max Commission Budget is never exceeded: the last commission is shortened to what is left, and the
  *     campaign is marked done as soon as nothing useful is left (commission_budget_spent + influencer_fixed_reserved);
@@ -67,8 +68,10 @@ class CampaignSaleRecorder
                 return;
             }
 
-            $result = $this->calculator->compute($marketer, $campaign, $basis, $quantity, $invitation, $categoryId);
-            if ($result->marketerType === MarketerType::Influencer) {
+            // A peer promoter (an influencer promoting another influencer's listing) is paid per sale by his profile rule.
+            $peer = $campaign->isPeerPromotion();
+            $result = $this->calculator->compute($marketer, $campaign, $basis, $quantity, $invitation, $categoryId, null, $peer);
+            if ($result->marketerType === MarketerType::Influencer && ! $peer) {
                 return; // paid once per campaign by InfluencerFixedService, never per sale
             }
 

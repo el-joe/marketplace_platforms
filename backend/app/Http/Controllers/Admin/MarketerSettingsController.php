@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\CommissionVertical;
 use App\Http\Controllers\Controller;
+use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\ReleaseMarketerPendingCommissionJob;
 use App\Models\Category;
 use App\Models\ClassifiedCategory;
@@ -15,6 +16,7 @@ use App\Models\Setting;
 use App\Models\TravelCategory;
 use App\Services\LastClickAttributionService;
 use App\Services\ReferralCodeResolver;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,7 +67,7 @@ class MarketerSettingsController extends Controller
         $general = [
             'marketer_referral_grace_days' => ReferralCodeResolver::graceDays(),
             'marketer_payout_clearing_days' => max(0, (int) setting('marketer_payout_clearing_days', ReleaseMarketerPendingCommissionJob::DEFAULT_CLEARING_DAYS)),
-            'marketer_classified_approval_days' => max(0, (int) setting('marketer_classified_approval_days', \App\Jobs\ApproveMarketerConversionsJob::DEFAULT_CLASSIFIED_APPROVAL_DAYS)),
+            'marketer_classified_approval_days' => max(0, (int) setting('marketer_classified_approval_days', ApproveMarketerConversionsJob::DEFAULT_CLASSIFIED_APPROVAL_DAYS)),
             'marketer_attribution_window_days' => max(1, (int) setting('marketer_attribution_window_days', LastClickAttributionService::DEFAULT_ATTRIBUTION_WINDOW_DAYS)),
             'marketer_peer_campaign_min_stock' => max(1, (int) setting('marketer_peer_campaign_min_stock', 1)),
         ];
@@ -183,10 +185,13 @@ class MarketerSettingsController extends Controller
         $validated = $request->validate([
             'marketer_referral_grace_days' => ['required', 'integer', 'min:0', 'max:90'],
             'marketer_payout_clearing_days' => ['required', 'integer', 'min:0', 'max:60'],
-            'marketer_classified_approval_days' => ['required', 'integer', 'min:0', 'max:60'],
+            'marketer_classified_approval_days' => ['nullable', 'integer', 'min:0', 'max:60'],
             'marketer_attribution_window_days' => ['required', 'integer', 'min:1', 'max:365'],
             'marketer_peer_campaign_min_stock' => ['required', 'integer', 'min:1', 'max:100000'],
         ]);
+
+        // Optional fields left blank keep their current value.
+        $validated = array_filter($validated, fn ($value) => $value !== null);
 
         foreach ($validated as $key => $value) {
             Setting::updateOrCreate(
@@ -250,7 +255,7 @@ class MarketerSettingsController extends Controller
         return $message ? $response->with('success', $message) : $response;
     }
 
-    /** @return class-string<\Illuminate\Database\Eloquent\Model> */
+    /** @return class-string<Model> */
     private function categoryModel(CommissionVertical $vertical): string
     {
         return match ($vertical) {

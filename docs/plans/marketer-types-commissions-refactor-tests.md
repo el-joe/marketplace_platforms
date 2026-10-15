@@ -171,3 +171,7 @@ Replaced by the new files above:
 6. **Remaining legacy tests not re-verified**: suites that use `CampaignSampleFixtures::campaign()` (samples, referral-code, WhatsApp, sale-settlement tests) were checked only for references to removed classes/columns/routes, not for behaviour changes (for example campaign fee charging at approval).
 7. **Money precision**: conversions, wallets and invitations store decimals; two tests compare floats with `assertEquals`. If a wallet column is still integer minor units anywhere, those assertions need `assertEqualsWithDelta`.
 8. **Legacy markers still present on purpose** (not bugs): `marketer_campaigns.commission_type` / `marketer_commission_amount` (peer-promotion pricing), invitations' pre-v3 `platform_fee_*` history, `payout_items.marketing_fee_amount`, `marketer_sale_settlements` (Q13).
+
+## Test run result (2026-10-15)
+Full suite run on MariaDB `marketplace_test`: **841 tests, 838 passed, 3 skipped, 0 failures** (5077 assertions).
+Fixes made during the run: enum-to-string bugs, optional `marketer_classified_approval_days`, peer promotion commissions kept (per-sale for peer campaigns), restored `promotion:expire-items` (vendor promotion expiry). Fines/minimums/penalties stay removed. No migration files were deleted; the schema dump was not regenerated.

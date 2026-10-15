@@ -11,6 +11,7 @@ use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
 use App\Models\Order;
 use App\Models\Wallet;
+use App\Services\Customer\CartService;
 use App\Services\LastClickAttributionService;
 use App\Services\OrderCancellationService;
 use App\Services\OrderStateMachine;
@@ -53,7 +54,7 @@ class MarketerAttributionConversionTest extends TestCase
     private function placeMarketerListingOrder(MarketplaceScenario $scenario, int $qty = 1): Order
     {
         $this->actingAs($scenario->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
 
         CartItem::create([
@@ -120,13 +121,13 @@ class MarketerAttributionConversionTest extends TestCase
         $this->assertNotNull($conversion);
 
         // Return window not passed yet — still pending.
-        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+        app()->call([new ApproveMarketerConversionsJob, 'handle']);
         $conversion->refresh();
         $this->assertSame('pending', $conversion->status);
 
         // Move the return window into the past and re-run the job.
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
-        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+        app()->call([new ApproveMarketerConversionsJob, 'handle']);
 
         $conversion->refresh();
         $this->assertSame('approved', $conversion->status);
@@ -139,14 +140,14 @@ class MarketerAttributionConversionTest extends TestCase
         $this->assertSame(0, $wallet->balance);
 
         // Clearing window not passed yet — still pending_balance.
-        (new ReleaseMarketerPendingCommissionJob())->handle();
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
         $wallet->refresh();
         $this->assertEquals($totalCommission, $wallet->pending_balance);
         $this->assertSame(0, $wallet->balance);
 
         // After the clearing window, it moves into the spendable balance.
         $conversion->update(['approved_at' => now()->subDays(4)]);
-        (new ReleaseMarketerPendingCommissionJob())->handle();
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
 
         $wallet->refresh();
         $conversion->refresh();
@@ -166,7 +167,7 @@ class MarketerAttributionConversionTest extends TestCase
         $item = $order->items->firstWhere('marketer_listing_id', $scenario->marketerListing->id);
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
 
-        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+        app()->call([new ApproveMarketerConversionsJob, 'handle']);
 
         $conversion = MarketerCampaignConversion::where('order_item_id', $item->id)->first();
         $this->assertSame('approved', $conversion->status);
@@ -201,7 +202,7 @@ class MarketerAttributionConversionTest extends TestCase
         $this->assertEquals(round($conversion->gross_commission_amount - $conversion->commission_fee_amount, 2), $conversion->net_commission_amount);
 
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
-        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+        app()->call([new ApproveMarketerConversionsJob, 'handle']);
 
         $wallet = Wallet::where('owner_type', 'marketer')->where('owner_id', $scenario->marketer->id)->firstOrFail();
         $this->assertEquals($conversion->fresh()->net_commission_amount, $wallet->pending_balance);

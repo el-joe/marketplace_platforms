@@ -89,7 +89,7 @@ class MarketerCampaignQuoteService
     public function openAudienceCount(CampaignSubject|VendorListing|ClassifiedListing|TravelPackage $item): int
     {
         return $this->eligibleMarketers($item)
-            ->filter(fn (Marketer $m) => array_intersect([MarketerType::Affiliate, MarketerType::Broker], MarketerType::heldBy($m)) !== [])
+            ->filter(fn (Marketer $m) => array_filter(MarketerType::heldBy($m), fn (MarketerType $t) => $t !== MarketerType::Influencer) !== [])
             ->count();
     }
 

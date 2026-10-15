@@ -45,6 +45,8 @@ class MarketerCommissionCalculator
      * @param  int|float|string  $basis  sale amount in campaign currency (ignored for influencers)
      * @param  int  $quantity  sold items; multiplies a broker's fixed part (1 for classified and travel)
      * @param  MarketerType|null  $type  force a type; by default the invitation / marketer decide (effectiveType())
+     * @param  bool  $perSale  peer promotion: an influencer is paid per sale by his profile rule (fixed + percentage)
+     *                         instead of the once-per-campaign fixed amount
      */
     public function compute(
         Marketer $marketer,
@@ -54,6 +56,7 @@ class MarketerCommissionCalculator
         ?MarketerCampaignInvitation $invitation = null,
         ?string $categoryId = null,
         ?MarketerType $type = null,
+        bool $perSale = false,
     ): CommissionResult {
         $vertical = self::verticalOf($campaign);
         $categoryId ??= $this->categoryIdFor($campaign);
@@ -64,7 +67,9 @@ class MarketerCommissionCalculator
         $rule = $this->profileRule($marketer, $vertical, $categoryId);
 
         [$gross, $source, $mode, $rate, $fixed] = match ($type) {
-            MarketerType::Influencer => $this->influencer($campaign, $invitation, $rule, $vertical, $categoryId),
+            MarketerType::Influencer => $perSale
+                ? $this->fixedAndPercentage($rule, $basis, $quantity)
+                : $this->influencer($campaign, $invitation, $rule, $vertical, $categoryId),
             MarketerType::Affiliate => $this->percentageOnly($rule, $basis),
             MarketerType::Broker => $this->fixedAndPercentage($rule, $basis, $quantity),
         };
@@ -86,7 +91,7 @@ class MarketerCommissionCalculator
             quantity: $quantity,
             feePercentage: $detail['percentage'],
             feeFixed: $detail['fixed'],
-            perCampaign: $type === MarketerType::Influencer,
+            perCampaign: $type === MarketerType::Influencer && ! $perSale,
         );
     }
 

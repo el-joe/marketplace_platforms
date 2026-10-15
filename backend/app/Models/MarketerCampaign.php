@@ -234,12 +234,12 @@ class MarketerCampaign extends Model
     }
 
     /**
-     * Peer promotion (influencer promotes an influencer's listing). In v3 it earns no per-sale commission: the
-     * promoter's reward is decided by the owner outside the campaign engine.
+     * Peer promotion (influencer promotes an influencer's listing) whose promoter has no profile commission rule for
+     * the listing's category: it earns nothing per sale.
      */
     public function hasNoPeerCommission(): bool
     {
-        return $this->marketer_listing_id !== null;
+        return $this->marketer_listing_id !== null && (float) $this->marketer_commission_amount <= 0;
     }
 
     /** Budget claimed by affiliate / broker commissions and the influencers' reserved fixed amounts. */

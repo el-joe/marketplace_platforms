@@ -11,6 +11,7 @@ use App\Models\LedgerEntry;
 use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
+use App\Models\MarketerCommissionRule;
 use App\Models\MarketerContract;
 use App\Models\MarketerContractAcceptance;
 use App\Models\MarketerContractVersion;
@@ -18,6 +19,7 @@ use App\Models\MarketerListing;
 use App\Models\Order;
 use App\Models\Wallet;
 use App\Models\WalletWithdrawalRequest;
+use App\Services\Customer\CartService;
 use App\Services\MarketerCampaignService;
 use App\Services\OrderStateMachine;
 use App\Support\Marketer\CampaignOwner;
@@ -25,6 +27,7 @@ use App\Support\Marketer\CampaignSource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Tests\Support\AssertsOrderMoney;
@@ -48,8 +51,8 @@ use Tests\TestCase;
  */
 class MarketerLifecycleTest extends TestCase
 {
-    use RefreshDatabase;
     use AssertsOrderMoney;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -58,7 +61,7 @@ class MarketerLifecycleTest extends TestCase
         // Prevents ProcessInvitationTimeoutJob (dispatched with a delay)
         // from running synchronously under QUEUE_CONNECTION=sync and
         // expiring/replacing the invitation before the test can accept it.
-        \Illuminate\Support\Facades\Queue::fake();
+        Queue::fake();
     }
 
     private function approvedAdmin(): Admin
@@ -79,13 +82,13 @@ class MarketerLifecycleTest extends TestCase
     public function test_marketer_cannot_accept_invitation_without_approval_and_contract_acceptance(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-        $scenario->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
+        $scenario->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
 
         $marketer = Marketer::create([
-            'name'          => 'Gated Marketer',
-            'email'         => 'gated-' . Str::lower(Str::random(6)) . '@example.test',
+            'name' => 'Gated Marketer',
+            'email' => 'gated-'.Str::lower(Str::random(6)).'@example.test',
             'marketer_type' => 'affiliate',
-            'country_id'    => $scenario->country->id,
+            'country_id' => $scenario->country->id,
             'global_status' => 'pending',
         ]);
 
@@ -94,12 +97,12 @@ class MarketerLifecycleTest extends TestCase
             CampaignOwner::vendor($scenario->vendor),
             CampaignSource::vendorListing($scenario->vendorListingFbp->id),
             [
-                'country_id'                => $scenario->country->id,
-                'currency'                  => 'AED',
-                'commission_type'           => 'fixed',
-                'max_commission_budget'     => 1000000,
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
+                'max_commission_budget' => 1000000,
                 'marketer_commission_amount' => 5000,
-                'marketer_ids'              => [], // pending marketer can't be invited yet
+                'marketer_ids' => [], // pending marketer can't be invited yet
             ]
         );
         $admin = $this->approvedAdmin();
@@ -121,10 +124,10 @@ class MarketerLifecycleTest extends TestCase
         $contract = MarketerContract::create(['marketer_id' => $marketer->id, 'current_version' => 1, 'is_required' => true]);
         $version = MarketerContractVersion::create([
             'marketer_contract_id' => $contract->id,
-            'version_number'       => 1,
-            'content_type'         => 'text',
-            'text_content'         => 'Terms.',
-            'is_active'            => true,
+            'version_number' => 1,
+            'content_type' => 'text',
+            'text_content' => 'Terms.',
+            'is_active' => true,
         ]);
 
         $invitation->refresh();
@@ -137,9 +140,9 @@ class MarketerLifecycleTest extends TestCase
 
         // 3) Accept the contract -> now it works.
         MarketerContractAcceptance::create([
-            'marketer_id'                   => $marketer->id,
-            'marketer_contract_version_id'  => $version->id,
-            'accepted_at'                   => now(),
+            'marketer_id' => $marketer->id,
+            'marketer_contract_version_id' => $version->id,
+            'accepted_at' => now(),
         ]);
         $this->assertTrue($marketer->hasAcceptedContract());
 
@@ -152,17 +155,17 @@ class MarketerLifecycleTest extends TestCase
     public function test_full_marketer_lifecycle_register_through_withdrawal_payout(): void
     {
         $scenario = MarketplaceScenario::make()->build();
-        $scenario->country->update(['site_code' => 'ae-' . Str::lower(Str::random(6))]);
+        $scenario->country->update(['site_code' => 'ae-'.Str::lower(Str::random(6))]);
 
         // ── 1. Register ──────────────────────────────────────────────────
-        $email = 'lifecycle-' . Str::lower(Str::random(6)) . '@example.test';
+        $email = 'lifecycle-'.Str::lower(Str::random(6)).'@example.test';
         $registerResponse = $this->post('http://marketer.localhost/register', [
-            'name'                  => 'Lifecycle Marketer',
-            'email'                 => $email,
-            'password'              => 'password123',
+            'name' => 'Lifecycle Marketer',
+            'email' => $email,
+            'password' => 'password123',
             'password_confirmation' => 'password123',
-            'marketer_type'         => 'affiliate',
-            'country_id'            => $scenario->country->id,
+            'marketer_type' => 'affiliate',
+            'country_id' => $scenario->country->id,
         ], ['HTTP_HOST' => 'marketer.localhost']);
         $registerResponse->assertStatus(302);
 
@@ -170,7 +173,7 @@ class MarketerLifecycleTest extends TestCase
         $this->assertSame('pending', $marketer->global_status->value);
 
         // v3: an affiliate earns a percentage of the item price by his profile rule.
-        \App\Models\MarketerCommissionRule::create([
+        MarketerCommissionRule::create([
             'marketer_id' => $marketer->id, 'scope' => 'products', 'commission_mode' => 'percentage', 'commission_rate' => 10,
         ]);
 
@@ -188,10 +191,10 @@ class MarketerLifecycleTest extends TestCase
         $contract = MarketerContract::create(['marketer_id' => $marketer->id, 'current_version' => 1, 'is_required' => true]);
         $version = MarketerContractVersion::create([
             'marketer_contract_id' => $contract->id,
-            'version_number'       => 1,
-            'content_type'         => 'text',
-            'text_content'         => 'Standard marketer terms.',
-            'is_active'            => true,
+            'version_number' => 1,
+            'content_type' => 'text',
+            'text_content' => 'Standard marketer terms.',
+            'is_active' => true,
         ]);
 
         // Onboarding (job type/profile/documents) is a separate flow; the MarketerAuth middleware gates every other route on it.
@@ -213,12 +216,12 @@ class MarketerLifecycleTest extends TestCase
             CampaignOwner::vendor($scenario->vendor),
             CampaignSource::vendorListing($scenario->vendorListingFbp->id),
             [
-                'country_id'                 => $scenario->country->id,
-                'currency'                    => 'AED',
-                'commission_type'             => 'fixed',
-                'max_commission_budget'       => 1000000,
-                'marketer_commission_amount'  => 5000,
-                'marketer_ids'                => [$marketer->id],
+                'country_id' => $scenario->country->id,
+                'currency' => 'AED',
+                'commission_type' => 'fixed',
+                'max_commission_budget' => 1000000,
+                'marketer_commission_amount' => 5000,
+                'marketer_ids' => [$marketer->id],
             ]
         );
         $campaignService->approveCampaign($campaign, $admin);
@@ -254,15 +257,15 @@ class MarketerLifecycleTest extends TestCase
 
         // ── 7. Customer buys via the marketer listing ────────────────────
         $this->actingAs($scenario->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($scenario->customer, $scenario->country->id, $scenario->country->currency_code);
 
         CartItem::create([
-            'cart_id'              => $cart->id,
-            'marketer_listing_id'  => $marketerListing->id,
-            'quantity'             => 1,
-            'unit_price'           => (int) $marketerListing->price,
-            'added_at'             => now(),
+            'cart_id' => $cart->id,
+            'marketer_listing_id' => $marketerListing->id,
+            'quantity' => 1,
+            'unit_price' => (int) $marketerListing->price,
+            'added_at' => now(),
         ]);
 
         // The marketer's contract is required, so the customer must accept it first.
@@ -272,10 +275,10 @@ class MarketerLifecycleTest extends TestCase
         )->assertStatus(201)->json('acceptance_id');
 
         $placeResponse = $this->postJson("/api/customer/v1/{$scenario->country->site_code}/checkout/place-order", [
-            'contract_acceptance_ids'    => [$acceptanceId],
-            'address_id'                 => $scenario->customerAddress->id,
+            'contract_acceptance_ids' => [$acceptanceId],
+            'address_id' => $scenario->customerAddress->id,
             'country_payment_gateway_id' => $scenario->countryPaymentGateways['cod']->id,
-            'idempotency_key'            => (string) Str::uuid(),
+            'idempotency_key' => (string) Str::uuid(),
         ]);
         $placeResponse->assertStatus(201);
 
@@ -302,13 +305,13 @@ class MarketerLifecycleTest extends TestCase
         }
 
         // Return window has not passed yet: still pending.
-        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+        app()->call([new ApproveMarketerConversionsJob, 'handle']);
         $conversion->refresh();
         $this->assertSame('pending', $conversion->status);
 
         // ── 9. ApproveMarketerConversionsJob after the return window ─────
         $item->update(['return_eligible_until' => now()->subDay()->toDateString()]);
-        app()->call([new ApproveMarketerConversionsJob(), 'handle']);
+        app()->call([new ApproveMarketerConversionsJob, 'handle']);
 
         $conversion->refresh();
         $this->assertSame('approved', $conversion->status);
@@ -321,7 +324,7 @@ class MarketerLifecycleTest extends TestCase
 
         // ── 10. ReleaseMarketerPendingCommissionJob after clearing days ──
         $conversion->update(['approved_at' => now()->subDays(4)]);
-        (new ReleaseMarketerPendingCommissionJob())->handle();
+        app()->call([new ReleaseMarketerPendingCommissionJob, 'handle']);
 
         $wallet->refresh();
         $conversion->refresh();
@@ -332,7 +335,7 @@ class MarketerLifecycleTest extends TestCase
         // ── 11. Marketer requests a withdrawal ────────────────────────────
         $withdrawResponse = $this->actingAs($marketerAdmin, 'marketer')
             ->post('http://marketer.localhost/finance/wallet/withdraw', [
-                'amount'    => $totalCommission,
+                'amount' => $totalCommission,
                 'bank_name' => 'Test Bank',
                 'bank_iban' => 'AE0000000000000000000',
             ], ['HTTP_HOST' => 'marketer.localhost']);

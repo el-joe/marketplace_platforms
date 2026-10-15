@@ -163,3 +163,9 @@ Schedule::job(new CompleteEndedMarketerCampaignsJob)->dailyAt('04:00')->withoutO
 
 // Confirmed trip bookings whose trip is over become completed (releases marketer commissions); retries agency campaign fees.
 Schedule::job(new CompleteTravelBookingsJob)->dailyAt('03:45')->withoutOverlapping()->name('complete-travel-bookings');
+
+// Expire vendor promotions / promotion items past their end date
+Schedule::command('promotion:expire-items')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

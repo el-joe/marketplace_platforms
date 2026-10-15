@@ -16,6 +16,7 @@ use App\Models\CountryCategory;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Customer;
+use App\Models\MarketerCampaign;
 use App\Models\Order;
 use App\Models\Vendor;
 use App\Models\WarrantyPlan;
@@ -516,7 +517,7 @@ class CheckoutPricingEngine
             // Marketer commission (D5): owner pays; base is the vendor
             // listing price, not the marketer's resale price.
             $marketerCommission = 0;
-            if ($l['is_marketer'] && $l['marketer_commission_type'] === 'fixed') {
+            if ($l['is_marketer'] && in_array($l['marketer_commission_type'], ['fixed', MarketerCampaign::COMMISSION_TYPE], true)) {
                 $marketerCommission = $this->wholeIfPossible($l['marketer_commission_raw'] * $l['quantity']);
             }
 

@@ -2,10 +2,15 @@
 
 namespace Tests\Feature\Commission;
 
+use App\Enums\GlobalSystemType;
 use App\Models\CartItem;
+use App\Models\Commission;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCommissionRule;
+use App\Models\MarketerJob;
+use App\Models\MarketerMarketerJob;
 use App\Models\Order;
+use App\Services\Customer\CartService;
 use App\Services\LastClickAttributionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -39,7 +44,7 @@ class CommissionReconciliationTest extends TestCase
     private function place(MarketplaceScenario $s, array $lines, ?string $coupon = null): Order
     {
         $this->actingAs($s->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code);
         foreach ($lines as [$listing, $qty]) {
             CartItem::create([
@@ -102,12 +107,12 @@ class CommissionReconciliationTest extends TestCase
         // fixture category: 10% + fixed 200 (FBP). The legacy `commissions` table and
         // vendor-level rate take precedence over the category chain and carry no fixed
         // component, so remove them to exercise the category pct+fixed path.
-        \App\Models\Commission::query()->delete();
+        Commission::query()->delete();
         $s->vendor->forceFill(['commission_rate' => 0])->save();
         // Keep the display breakdown (rate/fixed) coherent with the charged pair: the fixture listing is
         // fulfilled FBM (priced with the FBP pair) but defaults to global_system_type express_fbn, which
         // makes the stored rate/fixed come from the FBN pair (see CommissionSnapshotInvariantTest).
-        $s->vendorListingFbp->forceFill(['global_system_type' => \App\Enums\GlobalSystemType::MerchantFbp])->save();
+        $s->vendorListingFbp->forceFill(['global_system_type' => GlobalSystemType::MerchantFbp])->save();
         $order = $this->place($s, [[$s->vendorListingFbp, 3]]);
         $item = $order->subOrders()->first()->items()->first();
         $this->assertSame(3, (int) $item->quantity);
@@ -145,13 +150,17 @@ class CommissionReconciliationTest extends TestCase
     {
         $s = $this->scenario();
         $s->marketerCampaign->update(['marketer_commission_amount' => 0, 'commission_type' => 'fixed']);
+        // v3: only a broker is paid fixed + percentage; replace the scenario's affiliate rule (one rule per marketer/scope/category).
+        $job = MarketerJob::firstOrCreate(['key' => 'broker'], ['name_ar' => 'broker', 'name_en' => 'broker', 'is_active' => true, 'sort_order' => 1]);
+        MarketerMarketerJob::create(['marketer_id' => $s->marketer->id, 'marketer_job_id' => $job->id]);
+        MarketerCommissionRule::where('marketer_id', $s->marketer->id)->where('scope', 'products')->whereNull('category_id')->delete();
         MarketerCommissionRule::create([
             'marketer_id' => $s->marketer->id, 'scope' => 'products',
             'commission_mode' => 'both', 'commission_rate' => 10, 'commission_flat_amount' => 5,
         ]);
 
         $this->actingAs($s->customer, 'customer');
-        $cart = app(\App\Services\Customer\CartService::class)
+        $cart = app(CartService::class)
             ->getOrCreateCart($s->customer, $s->country->id, $s->country->currency_code);
         CartItem::create([
             'cart_id' => $cart->id, 'marketer_listing_id' => $s->marketerListing->id, 'quantity' => 2,
@@ -167,7 +176,7 @@ class CommissionReconciliationTest extends TestCase
         $item = $order->subOrders()->first()->items()->first();
 
         MarketerCampaignConversion::where('order_item_id', $item->id)->delete();
-        $item->forceFill(['quantity' => 2, 'line_total' => 200])->save();
+        $item->forceFill(['quantity' => 2, 'line_total' => 200, 'line_subtotal' => 200, 'line_discount' => 0])->save();
         app(LastClickAttributionService::class)->resolveAndRecordConversion($order->fresh(), null);
 
         $conv = MarketerCampaignConversion::where('order_item_id', $item->id)->firstOrFail();

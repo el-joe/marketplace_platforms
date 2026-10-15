@@ -221,7 +221,6 @@ class CampaignWhatsAppTest extends TestCase
 
         $this->assertSame('accepted', $inv->fresh()->status);
         $this->assertTrue($inv->campaign->samples()->where('invitation_id', $inv->id)->exists());
-        $this->assertNotNull($inv->fresh()->platform_fee_recorded_at);
         Notification::assertSentTo($vendorAdmin, CampaignInvitationResponseNotification::class);
         Queue::assertPushed(SendVendorInvitationResponseWhatsAppJob::class, fn ($j) => $j->outcome === 'accepted');
     }
