@@ -2,34 +2,31 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\MarketerCommissionDiscountType;
-use App\Enums\PromotionCategory;
+use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
-use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionRule;
 use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
 use App\Models\MarketerMarketerJobCategory;
 use App\Models\MarketerSaleSettlement;
-use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelCategory;
 use App\Models\Wallet;
+use App\Http\Requests\Admin\StoreMarketerCategoryCommissionRequest;
+use App\Models\MarketerDefaultCommission;
+use App\Services\Marketer\MarketerDefaultCommissionResolver;
 use App\Services\Marketer\MarketerSaleSettlementService;
-use App\Services\MarketerCommissionStatementService;
+use App\Services\Marketer\MarketerEarningsService;
 use App\Services\MarketingFeeReportService;
 use App\Support\Money;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -135,7 +132,6 @@ class MarketerController extends Controller
             'approvedBy',
             'marketerProfile',
             'invitations.campaign.vendor',
-            'categoryCommissions.category',
             'marketerJobs',
             'marketerJobAssignments.marketerJob.categories',
             'marketerJobAssignments.categoryScopes',
@@ -159,14 +155,16 @@ class MarketerController extends Controller
             'travel' => $travelCategories,
         ]);
         $commissionCurrency = $marketer->country?->currency_code ?: config('app.currency', 'SAR');
+        $commissionTypes = MarketerType::heldBy($marketer);
+        $commissionDefaults = $this->commissionDefaultsFor($marketer, $commissionCategories);
 
-        $statement = app(MarketerCommissionStatementService::class);
+        $statement = app(MarketerEarningsService::class);
         $conversions = MarketerCampaignConversion::with(['campaign', 'order', 'invitation.marketer.marketerProfile'])
             ->whereIn('invitation_id', $marketer->invitations->pluck('id'))
             ->latest()->limit(25)->get()
-            ->each(fn ($c) => $c->setAttribute('statement', $statement->forConversion($c)));
+            ->each(fn ($c) => $c->setAttribute('statement', $statement->breakdown($c)));
         $statementTotals = collect(['gross', 'cut', 'vat', 'net'])->mapWithKeys(
-            fn ($k) => [$k => (int) $conversions->where('status', 'approved')->sum(fn ($c) => $c->statement[$k])]
+            fn ($k) => [$k => round((float) $conversions->where('status', 'approved')->sum(fn ($c) => $c->statement[$k]), 2)]
         );
 
         // Sales of this marketer's own listings (seller_type = marketer): gross -> platform commission -> VAT -> ... -> net.
@@ -178,7 +176,7 @@ class MarketerController extends Controller
         $earnings = app(MarketingFeeReportService::class)->marketerEarnings($marketer->id);
         $marketerWallets = Wallet::where('owner_type', 'marketer')->where('owner_id', $marketer->id)->orderBy('currency')->get();
 
-        return view('admin.marketers.show', compact('earnings', 'marketerWallets', 'conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency'));
+        return view('admin.marketers.show', compact('earnings', 'marketerWallets', 'conversions', 'statementTotals', 'salesTotals', 'sales', 'marketer', 'categories', 'cities', 'classifiedCategories', 'commissionRules', 'commissionCategories', 'commissionCurrency', 'commissionTypes', 'commissionDefaults'));
     }
 
     /**
@@ -251,13 +249,6 @@ class MarketerController extends Controller
             'broker_category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'broker_city_id' => ['nullable', 'uuid', 'exists:cities,id'],
             'broker_serves_all_cities' => ['nullable', 'boolean'],
-            'promotion_category' => ['nullable', Rule::enum(PromotionCategory::class)],
-            'monthly_promotion_target' => ['nullable', 'integer', 'min:0', 'max:1000'],
-            'commission_discount_type' => ['nullable', Rule::enum(MarketerCommissionDiscountType::class)],
-            'commission_discount_flat' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
-            'commission_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'commission_discount_notes' => ['nullable', 'string', 'max:2000'],
-            'platform_cut_percentage' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
         ]);
 
         $profile = $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
@@ -269,14 +260,8 @@ class MarketerController extends Controller
             'story_price' => isset($validated['story_price']) ? Money::number($validated['story_price']) : null,
             'post_price' => isset($validated['post_price']) ? Money::number($validated['post_price']) : null,
             'video_price' => isset($validated['video_price']) ? Money::number($validated['video_price']) : null,
-            'commission_discount_type' => $validated['commission_discount_type'] ?? 'none',
-            'commission_discount_flat' => $validated['commission_discount_flat'] ?? 0,
-            'commission_discount_percentage' => $validated['commission_discount_percentage'] ?? 0,
-            'commission_discount_notes' => $validated['commission_discount_notes'] ?? null,
             'specialty_ar' => $validated['specialty_ar'] ?? null,
             'specialty_en' => $validated['specialty_en'] ?? null,
-            'promotion_category' => $validated['promotion_category'] ?? null,
-            'monthly_promotion_target' => $validated['monthly_promotion_target'] ?? null,
         ];
 
         // Sample-size measurement fields only apply to influencer marketers.
@@ -289,8 +274,8 @@ class MarketerController extends Controller
             ]);
         }
 
-        // Broker specialization (category + city) only applies to affiliate marketers.
-        if ($marketer->isAffiliate()) {
+        // Broker specialization (category + city) only applies to broker marketers.
+        if ($marketer->isBroker()) {
             $data['broker_category_id'] = $validated['broker_category_id'] ?? null;
             $data['broker_serves_all_cities'] = $request->boolean('broker_serves_all_cities');
             $data['broker_city_id'] = $data['broker_serves_all_cities']
@@ -298,68 +283,46 @@ class MarketerController extends Controller
                 : ($validated['broker_city_id'] ?? null);
         }
 
-        // Admin cut %: only touched when the field is submitted (other forms post to this action too).
-        $oldCut = (float) $profile->platform_cut_percentage;
-        if ($request->has('platform_cut_percentage')) {
-            $data['platform_cut_percentage'] = $validated['platform_cut_percentage'] ?? 0;
-        }
-
         $profile->fill($data)->save();
-
-        $newCut = (float) $profile->platform_cut_percentage;
-        if ($oldCut !== $newCut) {
-            DB::table('activity_log')->insert([
-                'id' => (string) Str::uuid(),
-                'log_name' => 'marketers',
-                'description' => 'platform_cut_percentage_changed',
-                'subject_type' => Marketer::class,
-                'subject_id' => $marketer->id,
-                'causer_type' => Admin::class,
-                'causer_id' => auth('admin')->id(),
-                'properties' => json_encode(['old' => $oldCut, 'new' => $newCut]),
-                'event' => 'updated',
-                'created_at' => now(),
-            ]);
-        }
 
         return back()->with('success', 'تم حفظ بيانات البروفايل.');
     }
 
     /**
-     * Store or update a marketer × category commission override.
-     * category_id = null means "default rate for all categories".
+     * Store or update a marketer x category commission rule.
+     * category_id = null means "default for all categories of that scope".
+     *
+     * Type rules (enforced by StoreMarketerCategoryCommissionRequest): influencer = fixed amount per campaign only,
+     * affiliate = percentage only, broker = fixed, percentage or both. The commission-fee override
+     * (fee_percentage / fee_fixed) is optional; empty means "use the default from Marketer Settings".
      */
-    public function storeCategoryCommission(Request $request, Marketer $marketer)
+    public function storeCategoryCommission(StoreMarketerCategoryCommissionRequest $request, Marketer $marketer)
     {
-        abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
-
-        $validated = $request->validate([
-            'scope' => ['nullable', 'in:products,open_market,travel'],
-            'category_id' => ['nullable', 'uuid'],
-            'excluded_category_ids' => ['nullable', 'array'],
-            'excluded_category_ids.*' => ['uuid'],
-            'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'commission_flat_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
-            'commission_min_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
-        ]);
+        $validated = $request->validated();
+        $type = $request->marketerType();
 
         $rate = (float) ($validated['commission_rate'] ?? 0);
         $flat = round((float) ($validated['commission_flat_amount'] ?? 0), 2);
-        if ($rate <= 0 && $flat <= 0) {
-            throw ValidationException::withMessages([
-                'commission_rate' => __('admin.marketer_commission_required'),
-            ]);
+        if ($type === MarketerType::Influencer) {
+            $rate = 0.0;
+        } elseif ($type === MarketerType::Affiliate) {
+            $flat = 0.0;
         }
+
         $mode = ($rate > 0 && $flat > 0) ? 'both' : ($flat > 0 ? 'fixed' : 'percentage');
+        $minAmount = $type === MarketerType::Influencer ? 0 : (float) ($validated['commission_min_amount'] ?? 0);
         $payload = [
+            'marketer_type' => $type?->value,
             'commission_mode' => $mode,
             'commission_rate' => $rate,
             'commission_flat_amount' => $flat > 0 ? $flat : null,
-            'commission_min_amount' => ($validated['commission_min_amount'] ?? 0) > 0 ? round((float) $validated['commission_min_amount'], 2) : null,
+            'commission_min_amount' => $minAmount > 0 ? round($minAmount, 2) : null,
+            'fee_percentage' => isset($validated['fee_percentage']) ? round((float) $validated['fee_percentage'], 4) : null,
+            'fee_fixed' => isset($validated['fee_fixed']) ? round((float) $validated['fee_fixed'], 2) : null,
         ];
 
         $categoryId = $validated['category_id'] ?? null;
-        $scope = $validated['scope'] ?? 'products';
+        $scope = $validated['scope'];
         $catClass = MarketerCommissionRule::categoryClassFor($scope);
         if ($categoryId && ! $catClass::whereKey($categoryId)->exists()) {
             throw ValidationException::withMessages(['category_id' => __('validation.exists', ['attribute' => 'category_id'])]);
@@ -384,61 +347,52 @@ class MarketerController extends Controller
                     'category_type' => $categoryId ? $catClass : null, 'category_id' => $categoryId,
                 ]);
             }
-
-            // The legacy mirror tables have no commission_min_amount column (live schema) and nothing reads them.
-            $mirror = Arr::except($payload, ['commission_min_amount']);
-
-            if ($scope === 'open_market') {
-                OpenMarketCategoryCommission::updateOrCreate(
-                    ['marketer_id' => $marketer->id, 'classified_category_id' => $categoryId],
-                    $mirror + ['updated_by_admin_id' => auth('admin')->id()]
-                );
-            } elseif ($scope === 'products') {
-                $existing = MarketerCategoryCommission::where('marketer_id', $marketer->id)
-                    ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId), fn ($q) => $q->whereNull('category_id'))
-                    ->first();
-
-                if ($existing) {
-                    $existing->update($mirror + ['updated_by_admin_id' => auth('admin')->id()]);
-                } else {
-                    MarketerCategoryCommission::create($mirror + [
-                        'marketer_id' => $marketer->id,
-                        'category_id' => $categoryId,
-                        'updated_by_admin_id' => auth('admin')->id(),
-                    ]);
-                }
-            }
         });
 
-        return back()->with('success', 'تم حفظ نسبة العمولة.');
+        return back()->with('success', __('marketer_commissions.saved'));
     }
 
     public function destroyCategoryCommission(Marketer $marketer, string $commission)
     {
         abort_unless(auth('admin')->user()->can('marketers.manage'), 403);
 
-        $rule = MarketerCommissionRule::where('marketer_id', $marketer->id)->find($commission);
-        if ($rule) {
-            $catId = $rule->category_id;
-            if ($rule->scope === 'products') {
-                MarketerCategoryCommission::where('marketer_id', $marketer->id)
-                    ->when($catId, fn ($q) => $q->where('category_id', $catId), fn ($q) => $q->whereNull('category_id'))->delete();
-            } elseif ($rule->scope === 'open_market') {
-                OpenMarketCategoryCommission::where('marketer_id', $marketer->id)
-                    ->when($catId, fn ($q) => $q->where('classified_category_id', $catId), fn ($q) => $q->whereNull('classified_category_id'))->delete();
-            }
-            $rule->delete();
+        MarketerCommissionRule::where('marketer_id', $marketer->id)->findOrFail($commission)->delete();
 
-            return back()->with('success', 'تم حذف نسبة العمولة.');
+        return back()->with('success', __('marketer_commissions.deleted'));
+    }
+
+    /**
+     * What an empty field resolves to for this marketer: the platform defaults from Marketer Settings
+     * (influencer fixed amount per campaign + commission fee), keyed by rule scope, with per-category influencer overrides.
+     *
+     * @return array<string, array{influencer: float, fee_percentage: float, fee_fixed: float, categories: array<string, float>}>
+     */
+    private function commissionDefaultsFor(Marketer $marketer, $commissionCategories): array
+    {
+        $resolver = app(MarketerDefaultCommissionResolver::class);
+        $countryId = $marketer->country_id;
+        $out = [];
+
+        foreach (MarketerCommissionRule::SCOPES as $scope) {
+            $vertical = MarketerCommissionRule::verticalFor($scope);
+            $fee = $resolver->commissionFee($countryId, $vertical);
+            $categories = [];
+            if ($countryId) {
+                $categories = MarketerDefaultCommission::query()
+                    ->where('country_id', $countryId)->where('category_type', $vertical->value)->whereNotNull('category_id')
+                    ->pluck('influencer_fixed_amount', 'category_id')
+                    ->map(fn ($v) => (float) $v)->all();
+            }
+
+            $out[$scope] = [
+                'influencer' => $resolver->influencerFixedAmount($countryId, $vertical),
+                'fee_percentage' => $fee['percentage'],
+                'fee_fixed' => $fee['fixed'],
+                'categories' => $categories,
+            ];
         }
 
-        // Backward compatible: legacy row id.
-        $legacy = MarketerCategoryCommission::where('marketer_id', $marketer->id)->findOrFail($commission);
-        MarketerCommissionRule::where('marketer_id', $marketer->id)->where('scope', 'products')
-            ->when($legacy->category_id, fn ($q) => $q->where('category_id', $legacy->category_id), fn ($q) => $q->whereNull('category_id'))->delete();
-        $legacy->delete();
-
-        return back()->with('success', 'تم حذف نسبة العمولة.');
+        return $out;
     }
 
     public function approve(Marketer $marketer)

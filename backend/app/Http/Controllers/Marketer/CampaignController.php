@@ -42,7 +42,6 @@ class CampaignController extends Controller
                 'campaign.adminListing.productVariant' => fn ($q) => $q->withTrashed(),
                 'campaign.adminListing.productVariant.product' => fn ($q) => $q->withTrashed(),
                 'campaign.country',
-                'campaign.tieredRules',
                 'samples',
             ])
             ->withCount('conversions')

@@ -24,7 +24,7 @@
             ? \App\Models\FlashSaleMarketerInvitation::where('marketer_id', $marketer->id)->where('status', 'pending')->count()
             : 0;
         $openSpecialRequests = 0;
-        if ($marketer && $marketer->isAffiliate()) {
+        if ($marketer && $marketer->isBroker()) {
             $openSpecialRequests = \Illuminate\Support\Facades\Cache::remember('marketer:special-requests-count:' . $marketer->id, 60, function () use ($marketer) {
                 $bp = $marketer->marketerProfile;
                 return $bp ? \App\Models\CustomerSpecialRequest::matchingBroker($bp)->count() : 0;
@@ -50,8 +50,8 @@
             @if($marketer)
             <div class="px-5 py-2 border-b border-gray-700">
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold
-                    {{ $marketer->isInfluencer() ? 'bg-purple-900 text-purple-200' : 'bg-blue-900 text-blue-200' }}">
-                    {{ $marketer->isInfluencer() ? '🎬 مؤثر (Influencer)' : '🔗 أفيليت (Affiliate)' }}
+                    {{ $marketer->isInfluencer() ? 'bg-purple-900 text-purple-200' : ($marketer->isBroker() ? 'bg-emerald-900 text-emerald-200' : 'bg-blue-900 text-blue-200') }}">
+                    {{ $marketer->isInfluencer() ? '🎬 مؤثر (Influencer)' : ($marketer->isBroker() ? '🤝 وسيط (Broker)' : '🔗 أفيليت (Affiliate)') }}
                 </span>
             </div>
             @endif
@@ -66,7 +66,7 @@
                     {{ __('marketer.static_text.layouts_marketer.statistics') }}
                 </a>
 
-                @if($marketer && $marketer->isAffiliate())
+                @if($marketer && $marketer->isBroker())
                 <a href="{{ route('marketer.special-requests.index') }}"
                    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           {{ request()->routeIs('marketer.special-requests.*') ? 'bg-yellow-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

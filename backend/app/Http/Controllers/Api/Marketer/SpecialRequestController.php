@@ -13,7 +13,7 @@ class SpecialRequestController extends Controller
     {
         $marketer = Auth::guard('marketer_api')->user()->marketer;
 
-        abort_unless($marketer->isAffiliate() && $marketer->global_status?->value === 'active', 403);
+        abort_unless($marketer->isBroker() && $marketer->global_status?->value === 'active', 403);
 
         return $marketer->marketerProfile()->firstOrCreate(['marketer_id' => $marketer->id]);
     }

@@ -81,8 +81,8 @@ class ProfileController extends Controller
 
         $profile->fill($request->only(['bio_ar', 'bio_en', 'specialty_ar', 'specialty_en', 'video_url', 'social_links', 'contact_details']));
 
-        // Broker specialization: affiliate marketers only.
-        if ($marketer->isAffiliate()) {
+        // Broker specialization: brokers only.
+        if ($marketer->isBroker()) {
             $serveAll = $request->boolean('broker_serves_all_cities');
             $profile->fill([
                 'broker_category_id' => $request->input('broker_category_id') ?: null,

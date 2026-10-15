@@ -55,14 +55,6 @@
 
         <x-card title="{{ __('admin.marketer_campaigns.commission_terms') }}">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <x-form.select name="commission_type" label="{{ __('admin.marketer_campaigns.commission_type_column') }}" required
-                    :options="[
-                        'fixed' => __('admin.marketer_campaigns.commission_type_fixed'),
-                        'percentage' => __('admin.marketer_campaigns.commission_type_percentage'),
-                        'last_click' => __('admin.marketer_campaigns.commission_type_last_click'),
-                        'tiered' => __('admin.marketer_campaigns.commission_type_tiered'),
-                    ]" />
-
                 <div class="space-y-1">
                     <label for="currency" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.currency') }} <span class="text-danger-500">*</span></label>
                     <input type="text" name="currency" id="currency" readonly required
@@ -74,29 +66,28 @@
 
                 <div class="space-y-1">
                     <label for="max_commission_budget" class="block text-sm font-medium text-gray-700">{{ __('admin.marketer_campaigns.max_commission_budget') }} <span class="text-danger-500">*</span></label>
-                    <input type="number" name="max_commission_budget" id="max_commission_budget" min="0" step="0.01" required
+                    <input type="number" name="max_commission_budget" id="max_commission_budget" min="0" step="0.01" required value="{{ old('max_commission_budget') }}"
                         class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
-                </div>
-            </div>
-        </x-card>
-
-        <x-card title="نطاق الأقسام (منتجات / سوق مفتوح)">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div class="space-y-2">
-                    <x-form.select name="product_category_selection_mode" id="product_category_selection_mode"
-                        label="أقسام المنتجات"
-                        :options="['all' => 'كل الأقسام', 'include' => 'أقسام محددة (تضمين)', 'exclude' => 'كل الأقسام باستثناء']" />
-                    <x-form.select name="product_category_ids" id="product_category_ids" label="اختر الأقسام" :select2="true" :multiple="true"
-                        :options="$categories->mapWithKeys(fn($c) => [$c->id => $c->name_ar])->toArray()" />
+                    <p class="text-xs text-gray-500 mt-1">{{ __('marketer_campaigns.admin.budget_help') }}</p>
                 </div>
 
-                <div class="space-y-2">
-                    <x-form.select name="classified_category_selection_mode" id="classified_category_selection_mode"
-                        label="أقسام السوق المفتوح"
-                        :options="['all' => 'كل الأقسام', 'include' => 'أقسام محددة (تضمين)', 'exclude' => 'كل الأقسام باستثناء']" />
-                    <x-form.select name="classified_category_ids" id="classified_category_ids" label="اختر الأقسام" :select2="true" :multiple="true"
-                        :options="$classifiedCategories->mapWithKeys(fn($c) => [$c->id => $c->name_ar])->toArray()" />
+                <div class="space-y-1">
+                    <label for="ends_at" class="block text-sm font-medium text-gray-700">{{ __('marketer_campaigns.wizard.ends_at_label') }}</label>
+                    <input type="date" name="ends_at" id="ends_at" value="{{ old('ends_at') }}" min="{{ now()->addDay()->toDateString() }}"
+                        class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500" />
+                    <p class="text-xs text-gray-500 mt-1">{{ __('marketer_campaigns.wizard.ends_at_help') }}</p>
                 </div>
+
+                <label class="sm:col-span-2 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 cursor-pointer">
+                    <input type="checkbox" name="open_to_affiliates" value="1" class="mt-1 rounded border-gray-300 text-blue-600" @checked(old('open_to_affiliates'))>
+                    <span class="text-sm text-blue-900">
+                        <span class="font-semibold">{{ __('marketer_campaigns.wizard.open_title') }}</span>
+                        <span class="block text-xs mt-1">{{ __('marketer_campaigns.admin.open_help') }}</span>
+                    </span>
+                </label>
+                <p class="sm:col-span-2 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
+                    <i class="fas fa-lock me-1"></i>{{ __('marketer_campaigns.wizard.commission_set_by_platform') }}
+                </p>
             </div>
         </x-card>
 

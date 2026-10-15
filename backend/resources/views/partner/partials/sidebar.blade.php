@@ -88,6 +88,7 @@
         @if($isClassifiedVendor)
         <x-partner-nav-group :label="__('partner.nav.open_market')">
             <x-partner-nav-item route="partner.classifieds.index" icon="squares-plus" :label="__('partner.nav.my_classifieds')" />
+            <x-partner-nav-item route="partner.marketer-campaigns.index" icon="megaphone" :label="__('partner.nav.vendor_campaigns_created')" />
         </x-partner-nav-group>
         @endif
 

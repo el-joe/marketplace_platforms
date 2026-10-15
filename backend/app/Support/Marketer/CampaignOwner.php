@@ -3,6 +3,7 @@
 namespace App\Support\Marketer;
 
 use App\Models\Marketer;
+use App\Models\TravelAgency;
 use App\Models\Vendor;
 
 /**
@@ -16,7 +17,7 @@ use App\Models\Vendor;
 final class CampaignOwner
 {
     private function __construct(
-        public readonly string $type, // 'vendor' | 'platform' | 'marketer'
+        public readonly string $type, // 'vendor' | 'platform' | 'marketer' | 'travel_agency'
         public readonly ?string $id,
     ) {
     }
@@ -24,6 +25,12 @@ final class CampaignOwner
     public static function vendor(Vendor|string $vendor): self
     {
         return new self('vendor', is_string($vendor) ? $vendor : $vendor->id);
+    }
+
+    /** A travel agency promoting its own trips (owner_type travel_agency, owner_id = agency id, no vendor). */
+    public static function travelAgency(TravelAgency|string $agency): self
+    {
+        return new self('travel_agency', is_string($agency) ? $agency : $agency->id);
     }
 
     public static function platform(): self
@@ -39,6 +46,17 @@ final class CampaignOwner
     public function isVendor(): bool
     {
         return $this->type === 'vendor';
+    }
+
+    public function isTravelAgency(): bool
+    {
+        return $this->type === 'travel_agency';
+    }
+
+    /** Vendors and travel agencies fund their own campaigns (budget + campaign fee); the platform and marketers do not. */
+    public function isOwnerFunded(): bool
+    {
+        return $this->isVendor() || $this->isTravelAgency();
     }
 
     public function isPlatform(): bool

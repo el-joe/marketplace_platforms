@@ -3,6 +3,9 @@
 @php
     $product = $marketerCampaign->vendorListing?->productVariant?->product
         ?? $marketerCampaign->adminListing?->productVariant?->product;
+    $campaignVertical = in_array($marketerCampaign->campaign_category, ['classified', 'travel'], true) ? $marketerCampaign->campaign_category : 'product';
+    $isProductCampaign = $campaignVertical === 'product';
+    $promotedTitle = $marketerCampaign->getPromotedTitle();
 
     $statusMap = [
         'pending_admin' => ['label' => __('partner.marketer_campaigns_my.status.pending_admin'), 'cls' => 'bg-yellow-100 text-yellow-700'],
@@ -48,13 +51,13 @@
         <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
         </svg>
-        <span class="text-gray-800 font-medium truncate max-w-xs">{{ $marketerCampaign->title ?: ($product?->name_ar ?? $product?->name_en) }}</span>
+        <span class="text-gray-800 font-medium truncate max-w-xs">{{ $marketerCampaign->title ?: $promotedTitle }}</span>
     </nav>
 
     {{-- Header --}}
     <div class="flex items-start justify-between gap-4 flex-wrap">
         <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-2xl font-bold text-gray-900">{{ $marketerCampaign->title ?: ($product?->name_ar ?? $product?->name_en ?? '—') }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900">{{ $marketerCampaign->title ?: $promotedTitle }}</h1>
             <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold {{ $st['cls'] }}">
                 {{ $st['label'] }}
             </span>
@@ -105,12 +108,12 @@
     {{-- Tab nav --}}
     <div class="border-b border-gray-200">
         <nav class="-mb-px flex gap-x-6 overflow-x-auto">
-            @foreach ([
+            @foreach (array_filter([
                 'info'        => __('partner.marketer_campaigns_my.tab_info'),
                 'marketers'   => __('partner.marketer_campaigns_my.tab_marketers'),
                 'conversions' => __('partner.marketer_campaigns_my.tab_conversions'),
-                'samples'     => __('partner.marketer_campaigns_my.tab_samples'),
-            ] as $tabKey => $tabLabel)
+                'samples'     => $isProductCampaign ? __('partner.marketer_campaigns_my.tab_samples') : null,
+            ]) as $tabKey => $tabLabel)
                 <button type="button"
                     @click="tab = '{{ $tabKey }}'"
                     :class="tab === '{{ $tabKey }}' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
@@ -126,20 +129,19 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 class="mb-4 text-sm font-semibold text-gray-800">{{ __('partner.marketer_campaigns_my.tab_info') }}</h3>
             <div class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm md:grid-cols-3">
-                @foreach ([
-                    __('partner.marketer_campaigns_my.field.product') => $product?->name_ar ?? $product?->name_en ?? '—',
+                @foreach (array_filter([
+                    __('partner.marketer_campaigns_my.field.item') => $promotedTitle,
                     __('partner.marketer_campaigns_my.field.country') => $marketerCampaign->country?->name_ar ?? $marketerCampaign->country?->name_en ?? '—',
                     __('partner.marketer_campaigns_my.field.currency') => $marketerCampaign->currency ?? '—',
-                    __('partner.marketer_campaigns_my.field.commission_type') => __('partner.marketer_campaigns_my.commission_type.' . $marketerCampaign->commission_type),
                     __('partner.marketer_campaigns_my.field.max_commission_budget') => $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—',
-                    __('partner.marketer_campaigns_my.field.platform_commission_amount') => $marketerCampaign->platform_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->platform_commission_amount) : '—',
-                    __('partner.marketer_campaigns_my.field.marketer_commission_amount') => $marketerCampaign->marketer_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->marketer_commission_amount) : '—',
-                    __('partner.marketer_campaigns_my.field.platform_sample_qty') => $marketerCampaign->platform_sample_qty_snapshot ?? 0,
-                    __('partner.marketer_campaigns_my.field.per_marketer_sample_qty') => $marketerCampaign->per_marketer_sample_qty_snapshot ?? 0,
+                    __('marketer_campaigns.cost.ends_at') => $marketerCampaign->ends_at?->format('Y/m/d') ?? __('marketer_campaigns.cost.no_end_date'),
+                    __('marketer_campaigns.wizard.audience') => $marketerCampaign->open_to_affiliates ? __('marketer_campaigns.wizard.audience_open') : __('marketer_campaigns.wizard.audience_picked'),
+                    __('partner.marketer_campaigns_my.field.platform_sample_qty') => $isProductCampaign ? ($marketerCampaign->platform_sample_qty_snapshot ?? 0) : null,
+                    __('partner.marketer_campaigns_my.field.per_marketer_sample_qty') => $isProductCampaign ? ($marketerCampaign->per_marketer_sample_qty_snapshot ?? 0) : null,
                     __('partner.marketer_campaigns_my.field.created_at') => $marketerCampaign->created_at->format('Y-m-d H:i'),
                     __('partner.marketer_campaigns_my.field.reviewed_at') => $marketerCampaign->reviewed_at?->format('Y-m-d H:i') ?? '—',
                     __('partner.marketer_campaigns_my.field.auto_approve_at') => $marketerCampaign->auto_approve_at?->format('Y-m-d H:i') ?? '—',
-                ] as $label => $value)
+                ], fn ($v) => $v !== null) as $label => $value)
                     <div>
                         <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ $label }}</dt>
                         <dd class="mt-0.5 font-medium text-gray-900">{{ $value }}</dd>
@@ -180,34 +182,10 @@
                 @endif
             </div>
         </div>
-        @if ($marketerCampaign->vendor_listing_id)
-            <x-marketer-campaign-fee-snapshot :campaign="$marketerCampaign" />
+        @if ($marketerCampaign->vendor_listing_id || $marketerCampaign->classified_listing_id)
+            <x-marketer-campaign-cost :campaign="$marketerCampaign" audience="vendor" />
         @endif
-        <x-affiliate-fee-history :campaign="$marketerCampaign" audience="vendor" />
-
-        @if ($marketerCampaign->commission_type === 'tiered' && $marketerCampaign->tieredRules->isNotEmpty())
-            <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <h3 class="px-5 pt-4 text-sm font-semibold text-gray-800">{{ __('partner.marketer_campaigns_my.tiered_rules') }}</h3>
-                <table class="mt-3 min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.from_sale_number') }}</th>
-                            <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.platform_commission_amount') }}</th>
-                            <th class="px-4 py-2 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.currency') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach ($marketerCampaign->tieredRules as $rule)
-                            <tr>
-                                <td class="px-4 py-2">{{ $rule->from_sale_number }}</td>
-                                <td class="px-4 py-2">{{ \App\Support\Money::format($rule->commission_amount) }}</td>
-                                <td class="px-4 py-2">{{ $rule->currency }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
+        <x-marketer-campaign-calculations :campaign="$marketerCampaign" :calculations="$calculations" :price="$examplePrice" />
 
         {{-- Status timeline --}}
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -253,21 +231,6 @@
                 </button>
             </div>
         @endif
-        @php
-            $feeInvites = $marketerCampaign->invitations->where('status', 'accepted')->where('platform_fee_amount', '>', 0);
-            $feeNet = (float) $feeInvites->sum('platform_fee_amount');
-            $feeVatSum = (float) $feeInvites->sum('platform_fee_vat_amount');
-            $feeMarketingSum = (float) $feeInvites->sum('platform_fee_marketing_amount');
-        @endphp
-        @if ($feeNet > 0)
-            <div class="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-gray-700" data-testid="campaign-fee-summary">
-                <div class="font-semibold text-gray-800 mb-1">{{ __('partner.marketer_campaigns.fee_summary_title') }}</div>
-                {{ __($feeMarketingSum > 0 ? 'partner.marketer_campaigns.fee_summary_with_marketing' : 'partner.marketer_campaigns.fee_summary', [
-                    'fee' => \App\Support\Money::format($feeNet), 'vat' => \App\Support\Money::format($feeVatSum), 'marketing' => \App\Support\Money::format($feeMarketingSum), 'total' => \App\Support\Money::format($feeNet + $feeVatSum + $feeMarketingSum),
-                    'currency' => $marketerCampaign->currency,
-                ]) }}
-            </div>
-        @endif
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             @if ($marketerCampaign->invitations->isEmpty())
                 <p class="p-6 text-center text-sm text-gray-400">{{ __('partner.marketer_campaigns_my.no_invitations') }}</p>
@@ -279,8 +242,7 @@
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.marketer') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.type') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.status') }}</th>
-                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns.fees_col') }}</th>
-                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns.commission_col') }} <span class="block text-[10px] font-normal text-gray-400">{{ __('partner.marketer_campaigns.set_by_platform_label') }}</span></th>
+                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('marketer_campaigns.cost.paid_how_col') }} <span class="block text-[10px] font-normal text-gray-400">{{ __('partner.marketer_campaigns.set_by_platform_label') }}</span></th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.referral_link') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.qr_code') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.responded_at') }}</th>
@@ -302,38 +264,17 @@
                                             {{ $ist['label'] }}
                                         </span>
                                     </td>
-                                    @php
-                                        $qRow = $quoteRows[$invitation->marketer_id] ?? null;
-                                        $rowFee = (float) ($invitation->platform_fee_amount ?: ($qRow['fee'] ?? 0));
-                                        $rowCommission = (float) ($qRow['commission']['amount'] ?? 0);
-                                    @endphp
-                                    @php
-                                        $rowVat = $invitation->platform_fee_amount > 0
-                                            ? (float) $invitation->platform_fee_vat_amount
-                                            : (float) ($qRow['fee_vat'] ?? 0);
-                                        $rowMarketing = (float) $invitation->platform_fee_marketing_amount;
-                                    @endphp
+                                    @php $calc = $calculations[$invitation->id] ?? null; @endphp
                                     <td class="px-4 py-3 text-gray-700">
-                                        @if ($rowFee > 0)
-                                            {{ \App\Support\Money::format($rowFee).' '.$marketerCampaign->currency }}
-                                            <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-vat">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ \App\Support\Money::format($rowVat).' '.$marketerCampaign->currency }}</span>
-                                            @if ($rowMarketing > 0)
-                                                <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-marketing">+ {{ __('partner.finance.marketing_fees_label') }} {{ \App\Support\Money::format($rowMarketing).' '.$marketerCampaign->currency }}</span>
-                                            @endif
-                                            @if ($invitation->platform_fee_status === 'pending')
-                                                <span class="block text-[11px] text-orange-600">{{ __('partner.marketer_campaigns.fee_status_pending') }}</span>
-                                            @elseif ($invitation->platform_fee_status === 'paid')
-                                                <span class="block text-[11px] text-green-600">{{ __('partner.marketer_campaigns.fee_status_paid_'.($invitation->platform_fee_paid_via ?: 'wallet')) }}</span>
-                                            @elseif ($invitation->platform_fee_status === 'refunded')
-                                                <span class="block text-[11px] text-green-700" data-testid="invitation-fee-refunded">{{ __('partner.marketer_campaigns.fee_status_refunded', ['amount' => \App\Support\Money::format($invitation->platform_fee_refund_amount).' '.$marketerCampaign->currency, 'date' => $invitation->platform_fee_refunded_at?->format('Y/m/d')]) }}</span>
-                                            @elseif ($invitation->platform_fee_voided_at)
-                                                <span class="block text-[11px] text-gray-500" data-testid="invitation-fee-voided">{{ __('partner.marketer_campaigns.fee_status_voided') }}</span>
-                                            @endif
+                                        @if ($calc && $calc->perCampaign)
+                                            {{ \App\Support\Money::format($invitation->influencer_fixed_amount ?? $calc->gross).' '.$marketerCampaign->currency }}
+                                            <span class="block text-[11px] text-purple-600">{{ __('marketer_campaigns.calc.fixed_status.'.($invitation->influencer_fixed_status ?: 'none')) }}</span>
+                                        @elseif ($calc && $calc->mode !== \App\Services\Marketer\CommissionResult::MODE_NONE)
+                                            <span class="block">{{ __('marketer_campaigns.cost.per_sale_'.$calc->mode, ['rate' => rtrim(rtrim(number_format((float) $calc->rate, 2), '0'), '.'), 'fixed' => \App\Support\Money::format($calc->fixedAmount ?? 0).' '.$marketerCampaign->currency]) }}</span>
                                         @else
-                                            {{ __('partner.marketer_campaigns.free_label') }}
+                                            <span class="text-xs text-gray-400">{{ __('partner.marketer_campaigns.commission_not_set') }}</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-gray-700">{{ $rowCommission > 0 ? \App\Support\Money::format($rowCommission).' '.$marketerCampaign->currency : __('partner.marketer_campaigns.commission_not_set') }}</td>
                                     <td class="px-4 py-3">
                                         @if ($invitation->referral_link)
                                             <div class="flex items-center gap-2">
@@ -430,7 +371,7 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.order_number') }}</th>
+                                <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.reference') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.date') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.commission_earned') }}</th>
                                 <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.field.click_time') }}</th>
@@ -439,7 +380,7 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach ($marketerCampaign->conversions as $conversion)
                                 <tr>
-                                    <td class="px-4 py-3 font-medium text-gray-900">{{ $conversion->order?->order_number ?? $conversion->order_id }}</td>
+                                    <td class="px-4 py-3 font-medium text-gray-900">{{ $conversion->reference() }}</td>
                                     <td class="px-4 py-3 text-gray-500">{{ $conversion->created_at?->format('Y-m-d') ?? '—' }}</td>
                                     <td class="px-4 py-3 text-gray-700">{{ \App\Support\Money::format($conversion->commission_amount) }} {{ $conversion->currency }}</td>
                                     <td class="px-4 py-3 text-gray-500">{{ $conversion->referral_clicked_at?->format('Y-m-d H:i') ?? '—' }}</td>
@@ -452,7 +393,8 @@
         </div>
     </div>
 
-    {{-- ═══ Tab 4: Samples ═══ --}}
+    {{-- ═══ Tab 4: Samples (product campaigns only) ═══ --}}
+    @if ($isProductCampaign)
     <div x-show="tab === 'samples'" x-cloak class="space-y-6" x-data="sampleAttributesModal()">
         @php
             $platformSamples = $marketerCampaign->samples->where('sample_owner', 'platform');
@@ -612,6 +554,7 @@
             </div>
         </div>
     </div>
+    @endif
 
 </div>
 

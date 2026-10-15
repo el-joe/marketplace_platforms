@@ -16,8 +16,6 @@ use App\Models\InventoryMovement;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignConversion;
-use App\Models\MarketerCommissionCountrySetting;
-use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\PaymentGateway;
 use App\Models\PlatformShippingSubsidy;
 use App\Models\Product;
@@ -34,19 +32,14 @@ use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use App\Notifications\Admin\ListingResubmittedNotification;
 use App\Services\Campaign\CampaignSampleService;
-use App\Services\CommissionRuleResolver;
 use App\Services\Inventory\InventoryService;
 use App\Services\ListingCertificationGate;
 use App\Services\ListingShippingResolver;
-use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
-use App\Services\MarketerFeeShareResolver;
 use App\Services\Shared\PageCacheService;
 use App\Services\Shared\PromoBadgeSyncService;
 use App\Services\ShippingWeightService;
 use App\Services\Vendor\CategoryContractService;
-use App\Support\Marketer\CampaignOwner;
-use App\Support\Marketer\CampaignSource;
 use App\Support\Money;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -73,7 +66,6 @@ class ListingController extends Controller
     public function __construct(
         private readonly ListingShippingResolver $shippingResolver,
         private readonly ShippingWeightService $weightService,
-        private readonly MarketerCampaignService $marketerCampaignService,
     ) {}
 
     private const HANDLING_CLASSES = ['standard', 'refrigerated', 'fragile', 'special_tech'];
@@ -364,108 +356,6 @@ class ListingController extends Controller
         ]);
     }
 
-    /**
-     * Returns the influencer platform fee per slot and marketer commission
-     * per conversion for a product's category, for a given country.
-     */
-    public function campaignPricing(Request $request): JsonResponse
-    {
-        $productId = $request->input('product_id');
-        $countryId = $request->input('country_id');
-
-        if (! $productId || ! $countryId) {
-            return response()->json([
-                'fee_per_influencer' => 0,
-                'influencer_fee_share_pct' => 0,
-                'affiliate_commission_mode' => null,
-                'affiliate_commission_rate' => 0,
-                'affiliate_commission_flat' => 0,
-                'affiliate_estimated_amount' => 0,
-                'currency' => '',
-                'affiliate_fee_is_free' => true,
-            ]);
-        }
-
-        $category = Product::find($productId)?->category;
-
-        $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
-
-        $commissionSetting = $category ? MarketerCommissionCountrySetting::forCategory($countryId, $category->id) : null;
-
-        $currency = Country::find($countryId)?->currency_code ?? '';
-
-        $resolver = app(CommissionRuleResolver::class);
-        if ($request->input('scope') === 'open_market') {
-            $rule = $request->filled('classified_category_id')
-                ? $resolver->resolve(null, 'open_market', (string) $request->input('classified_category_id'))
-                : $resolver->resolve(null, 'open_market');
-        } else {
-            $rule = $category ? $resolver->resolve(null, 'products', $category) : null;
-        }
-        $price = round((float) ($request->input('price') ?? 0), 2);
-        $quantity = max(1, (int) ($request->input('quantity') ?? 1));
-
-        return response()->json([
-            'commission_mode' => $rule?->commission_mode,
-            'commission_rate' => $rule?->commission_rate,
-            'commission_flat_amount' => $rule?->commission_flat_amount,
-            'estimated_amount' => $rule ? $rule->resolveAmount($price, $quantity) : 0,
-            'fee_per_influencer' => $feeSetting?->fee_per_influencer ?? 0,
-            'influencer_fee_share_pct' => (float) ($commissionSetting?->influencer_fee_share_pct ?? 0),
-            'influencer_fee_share_amount' => app(MarketerFeeShareResolver::class)->splitWithPct($feeSetting?->fee_per_influencer ?? 0, (float) ($commissionSetting?->influencer_fee_share_pct ?? 0))['marketer_payout'],
-            'affiliate_commission_mode' => $commissionSetting?->affiliate_commission_mode,
-            'affiliate_commission_rate' => (float) ($commissionSetting?->affiliate_commission_rate ?? 0),
-            'affiliate_commission_flat' => (float) ($commissionSetting?->affiliate_commission_flat ?? 0),
-            'affiliate_estimated_amount' => $commissionSetting?->affiliateAmountFor($price, $quantity) ?? 0,
-            'currency' => $currency,
-            'affiliate_fee_is_free' => true,
-            'category_name' => $category?->name_ar ?? $category?->name_en ?? '',
-        ]);
-    }
-
-    /**
-     * Influencer platform fee for the vendor's own country. Fee is
-     * country-based only (not category-based), so no product is needed.
-     */
-    public function getInfluencerFee(): JsonResponse
-    {
-        $vendor = auth()->guard('vendor')->user()->vendor;
-        $countryId = $vendor->country_id;
-
-        // Per-marketer breakdown (fee + admin-set commission, read-only) for the
-        // campaign create form. Only ids are read from the client; every number
-        // is resolved server-side from admin settings.
-        if (request()->filled('listing_id')) {
-            $listing = VendorListing::where('id', request()->input('listing_id'))
-                ->where('vendor_id', $vendor->id)
-                ->with('productVariant.product.category')
-                ->firstOrFail();
-
-            $quoteService = app(MarketerCampaignQuoteService::class);
-
-            return response()->json($quoteService->withWallet(
-                $quoteService->quote($listing, array_values(array_filter((array) request()->input('marketer_ids', []), 'is_string'))),
-                $vendor->id,
-                $listing->currency,
-            ));
-        }
-
-        $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $countryId)->first();
-
-        $currency = Country::find($countryId)?->currency_code ?? '';
-
-        $quoteService = app(MarketerCampaignQuoteService::class);
-        $fee = (float) ($feeSetting?->fee_per_influencer ?? 0);
-        $vatRate = $quoteService->vatRate($countryId);
-
-        return response()->json([
-            'fee_per_influencer' => $fee,
-            'vat_rate' => $vatRate,
-            'fee_vat_per_influencer' => $quoteService->vatOn($fee, $vatRate),
-            'currency' => $currency,
-        ]);
-    }
-
     public function slugPreview(string $product, string $variant): JsonResponse
     {
         $productModel = Product::query()->whereNull('deleted_at')->findOrFail($product);
@@ -619,14 +509,12 @@ class ListingController extends Controller
         $marketerCampaignsBase = MarketerCampaign::where('vendor_listing_id', $listing->id);
 
         $marketerCampaigns = (clone $marketerCampaignsBase)
-            ->with(['tieredRules'])
             ->withCount([
                 'invitations',
                 'invitations as accepted_invitations_count' => fn ($q) => $q->where('status', 'accepted'),
                 'invitations as pending_invitations_count' => fn ($q) => $q->where('status', 'pending'),
                 'conversions',
             ])
-            ->withSum('invitations as invitations_fee_total', 'platform_fee_amount')
             ->latest()
             ->paginate(10, ['*'], 'campaigns_page')
             ->fragment('marketer_campaign');
@@ -820,12 +708,6 @@ class ListingController extends Controller
             'refurbished' => 'مُجدَّد',
         ];
 
-        $marketerVendors = Marketer::where('global_status', 'active')
-            ->where('country_id', $countryId)
-            ->orderBy('name')
-            ->with('marketerJobs')
-            ->get(['id', 'name']);
-
         $fbmGateways = PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
 
         return view('partner.listings.create', compact(
@@ -834,8 +716,7 @@ class ListingController extends Controller
             'countries',
             'fulfillmentModels',
             'conditions',
-            'countryId',
-            'marketerVendors'
+            'countryId'
         ));
     }
 
@@ -902,14 +783,6 @@ class ListingController extends Controller
             'declared_height_cm' => ['nullable', 'numeric', 'min:0.1'],
             'handling_class' => ['required', 'in:'.implode(',', self::HANDLING_CLASSES)],
             'primary_shipping_method_id' => ['nullable', 'uuid', 'exists:shipping_methods,id'],
-            'campaign_enabled' => ['nullable', 'boolean'],
-            'commission_type' => ['nullable', 'required_if:campaign_enabled,1', 'in:fixed,tiered,last_click'],
-            'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'marketer_ids' => ['nullable', 'array', 'required_if:campaign_enabled,1'],
-            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
-            'tiered_rules' => ['nullable', 'array'],
-            'tiered_rules.*.from_sale_number' => ['nullable', 'integer', 'min:1'],
-            'tiered_rules.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $warehouse = Warehouse::findOrFail($request->warehouse_id);
@@ -1069,28 +942,6 @@ class ListingController extends Controller
 
         $message = $status === VendorListingStatus::Active->value ? 'تم إنشاء القائمة بنجاح وهي نشطة الآن.' : 'تم إنشاء القائمة وهي قيد المراجعة.';
 
-        if ($request->boolean('campaign_enabled')) {
-            try {
-                $this->marketerCampaignService->createCampaign(
-                    CampaignOwner::vendor($vendor),
-                    CampaignSource::vendorListing($listing->id),
-                    array_merge($request->only([
-                        'commission_type', 'max_commission_budget',
-                    ]), [
-                        'country_id' => $listing->country_id,
-                        'currency' => $listing->currency,
-                        'marketer_ids' => $request->input('marketer_ids', []),
-                        'tiered_rules' => $request->input('tiered_rules', []),
-                    ])
-                );
-
-                $message .= ' تم إنشاء حملة الماركتر بنجاح.';
-            } catch (\Throwable $e) {
-                Log::warning('Listing created but marketer campaign failed', ['listing_id' => $listing->id, 'error' => $e->getMessage()]);
-                $message .= ' تعذر إنشاء حملة الماركتر: '.$e->getMessage();
-            }
-        }
-
         return response()->json([
             'success' => true,
             'message' => $message,
@@ -1130,12 +981,6 @@ class ListingController extends Controller
         $availableShippingMethods = $this->shippingResolver->resolveForListing($listing);
 
         $vendor = $this->vendor();
-        $marketerVendors = Marketer::where('global_status', 'active')
-            ->where('country_id', $listing->country_id)
-            ->orderBy('name')
-            ->with('marketerJobs')
-            ->get(['id', 'name']);
-
         $productId = $listing->productVariant->product_id;
         $requiresLocalCert = ProductCountry::where('product_id', $productId)
             ->where('country_id', $listing->country_id)
@@ -1155,7 +1000,7 @@ class ListingController extends Controller
 
         $fbmGateways = PaymentGateway::where('code', 'bank_transfer')->get(['id', 'code', 'name', 'name_ar']);
 
-        return view('partner.listings.edit', compact('listing', 'fbmGateways', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'marketerVendors', 'missingCertification'));
+        return view('partner.listings.edit', compact('listing', 'fbmGateways', 'fulfillmentModels', 'conditions', 'availableShippingMethods', 'missingCertification'));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1190,14 +1035,6 @@ class ListingController extends Controller
             'declared_height_cm' => ['nullable', 'numeric', 'min:0.1'],
             'handling_class' => ['required', 'in:'.implode(',', self::HANDLING_CLASSES)],
             'primary_shipping_method_id' => ['nullable', 'uuid', 'exists:shipping_methods,id'],
-            'campaign_enabled' => ['nullable', 'boolean'],
-            'commission_type' => ['nullable', 'required_if:campaign_enabled,1', 'in:fixed,tiered,last_click'],
-            'max_commission_budget' => ['nullable', 'numeric', 'min:0'],
-            'marketer_ids' => ['nullable', 'array', 'required_if:campaign_enabled,1'],
-            'marketer_ids.*' => ['uuid', 'distinct', 'exists:marketers,id'],
-            'tiered_rules' => ['nullable', 'array'],
-            'tiered_rules.*.from_sale_number' => ['nullable', 'integer', 'min:1'],
-            'tiered_rules.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         if (! empty($validated['primary_shipping_method_id'])) {
@@ -1241,28 +1078,6 @@ class ListingController extends Controller
         });
 
         $successMessage = 'تم تحديث القائمة بنجاح.';
-
-        if ($request->boolean('campaign_enabled')) {
-            try {
-                $this->marketerCampaignService->createCampaign(
-                    CampaignOwner::vendor($this->vendor()),
-                    CampaignSource::vendorListing($listing->id),
-                    array_merge($request->only([
-                        'commission_type', 'max_commission_budget',
-                    ]), [
-                        'country_id' => $listing->country_id,
-                        'currency' => $listing->currency,
-                        'marketer_ids' => $request->input('marketer_ids', []),
-                        'tiered_rules' => $request->input('tiered_rules', []),
-                    ])
-                );
-
-                $successMessage .= ' تم إنشاء حملة الماركتر بنجاح.';
-            } catch (\Throwable $e) {
-                Log::warning('Listing updated but marketer campaign failed', ['listing_id' => $listing->id, 'error' => $e->getMessage()]);
-                $successMessage .= ' تعذر إنشاء حملة الماركتر: '.$e->getMessage();
-            }
-        }
 
         return redirect()->route('partner.listings.show', $listing)->with('success', $successMessage);
     }

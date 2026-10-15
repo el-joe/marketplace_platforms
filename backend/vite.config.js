@@ -80,8 +80,6 @@ export default defineConfig({
                 'resources/js/admin/wishlist-overview.js',
                 'resources/js/admin/cost-references.js',
                 'resources/js/admin/influencer-promotions.js',
-                'resources/js/admin/marketer-quotas.js',
-                'resources/js/admin/marketer-quotas-progress.js',
                 'resources/js/admin/celebrity-monthly-report.js',
                 // Portal (portal.noon.loc)
                 'resources/js/portal/app.js',
@@ -92,7 +90,6 @@ export default defineConfig({
                 'resources/js/partner/dashboard.js',
                 'resources/js/partner/orders.js',
                 'resources/js/partner/listings.js',
-                'resources/js/partner/listing-create-campaign.js',
                 'resources/js/partner/inventory.js',
                 'resources/js/partner/payouts.js',
                 'resources/js/partner/bank-accounts.js',

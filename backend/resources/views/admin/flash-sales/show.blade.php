@@ -773,15 +773,6 @@
                 <label class="form-label">{{ __('admin.flash_sales.marketer_ids') }}</label>
                 <textarea id="manual-invite-marketer-ids" rows="5" class="form-textarea w-full font-mono text-sm" placeholder="{{ __('admin.flash_sales.marketer_ids_placeholder') }}"></textarea>
             </div>
-            <div>
-                <label class="form-label">{{ __('admin.flash_sales.extra_commission_rate') }}</label>
-                <input type="number" id="manual-invite-marketer-rate" class="form-input w-full" min="0" max="100" step="0.01" placeholder="0.00">
-            </div>
-            <div>
-                <label class="form-label">{{ __('admin.flash_sales.extra_commission_flat') }}</label>
-                <input type="number" id="manual-invite-marketer-flat" class="form-input w-full" min="0" step="1" placeholder="0">
-                <p class="text-xs text-gray-400 mt-1">{{ __('admin.flash_sales.extra_commission_flat_hint') }}</p>
-            </div>
         </div>
         <x-slot:footer>
             <button type="button" data-modal-close class="btn btn-ghost">{{ __('common.cancel') }}</button>

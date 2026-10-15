@@ -22,6 +22,7 @@
     $influencerFeeItems = $payout->items->where('item_type', 'influencer_fee');
     $affiliateFeeItems = $payout->items->where('item_type', 'affiliate_marketing_fee');
     $promotionSampleItems = $payout->items->where('item_type', 'promotion_sample');
+    $campaignChargeItems = $payout->items->whereIn('item_type', ['campaign_fee', 'campaign_budget_commission']);
 @endphp
 
 @section('title', __('partner.payouts.payout_details_title', ['number' => $payout->payout_number]))
@@ -268,6 +269,31 @@
                                 @foreach($affiliateFeeItems as $item)
                                     <tr>
                                         <td class="py-3 px-5 text-gray-700">{{ $item->description }}</td>
+                                        <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            @endif
+
+            {{-- Marketer campaign charges of this statement: the campaign fee and the commissions paid out of campaign budgets --}}
+            @if($campaignChargeItems->isNotEmpty())
+                <details open class="bg-white rounded-2xl border border-gray-200 overflow-hidden group" id="campaign-charge-lines">
+                    <summary class="px-5 py-4 border-b border-gray-100 flex items-center justify-between cursor-pointer select-none list-none">
+                        <h3 class="font-semibold text-gray-800">{{ __('marketer_campaigns.payout.title') }}</h3>
+                        <span class="text-xs text-gray-400">{{ __('partner.payouts.promotion_fee_count', ['count' => $campaignChargeItems->count()]) }}</span>
+                    </summary>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-gray-50">
+                                @foreach($campaignChargeItems as $item)
+                                    <tr>
+                                        <td class="py-3 px-5 text-gray-700">
+                                            <span class="block text-xs text-gray-400">{{ __('marketer_campaigns.payout.'.$item->item_type) }}</span>
+                                            {{ $item->description }}
+                                        </td>
                                         <td class="py-3 px-4 text-center text-red-500 font-medium">− {{ number_format(abs($item->net), 2) }} {{ $payout->currency }}</td>
                                     </tr>
                                 @endforeach

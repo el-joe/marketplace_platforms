@@ -159,6 +159,17 @@ class Marketer extends Model
         return $this->marketerJobs()->where('key', 'affiliate')->exists();
     }
 
+    public function isBroker(): bool
+    {
+        return $this->marketerJobs()->where('key', 'broker')->exists();
+    }
+
+    /** Affiliates and brokers both earn commission on sales (percentage basis); influencers do not. */
+    public function isCommissionMarketer(): bool
+    {
+        return $this->marketerJobs()->whereIn('key', ['affiliate', 'broker'])->exists();
+    }
+
     /**
      * Categories this marketer is scoped to for the given job + category source.
      * No scope rows means "all categories of that source".

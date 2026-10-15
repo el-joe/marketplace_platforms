@@ -8,8 +8,7 @@ use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\Admin;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
-use App\Models\MarketerCampaignFeeSettlement;
-use App\Models\MarketerCampaignInvitation;
+use App\Models\MarketerCampaign;
 use App\Models\PackagingSupplyRequest;
 use App\Models\PaidAdCharge;
 use App\Models\Payout;
@@ -19,7 +18,7 @@ use App\Models\Vendor;
 use App\Models\VendorBankAccount;
 use App\Models\VendorSubscriptionInvoice;
 use App\Notifications\Admin\PayoutBatchReadyForApproval;
-use App\Services\MarketerFeePayoutService;
+use App\Services\Marketer\CampaignFeeService;
 use App\Services\PayoutCalculationService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -105,38 +104,33 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                             continue;
                         }
 
-                        $paidInvitations = [];
-                        DB::transaction(function () use ($calc, $currency, $vendor, $primaryAccount, &$paidInvitations) {
-                            // Influencer fees: lock each invitation and re-check it is still
-                            // `pending` (the wallet collector may have paid it since the
-                            // calculation). A fee that is no longer pending is not charged here.
-                            $feeLines = [];
-                            foreach ($calc['influencer_fee_items'] ?? [] as $entry) {
-                                $locked = MarketerCampaignInvitation::whereKey($entry['item']->id)->lockForUpdate()->first();
+                        DB::transaction(function () use ($calc, $currency, $vendor, $primaryAccount) {
+                            // Campaign fees: lock each campaign and re-check the fee is still `pending` (the wallet
+                            // charge may have paid it since the calculation). One that is not pending is not charged here.
+                            $campaignFeeLines = [];
+                            foreach ($calc['campaign_fee_items'] ?? [] as $entry) {
+                                $locked = MarketerCampaign::whereKey($entry['item']->id)->lockForUpdate()->first();
                                 if ($locked
-                                    && $locked->platform_fee_status === 'pending'
+                                    && $locked->campaign_fee_status === CampaignFeeService::STATUS_PENDING
                                     && ! $locked->payoutItems()->exists()) {
-                                    $feeLines[] = [
-                                        'invitation' => $locked,
-                                        'fee' => (float) $locked->platform_fee_amount,
-                                        'vat' => (float) $locked->platform_fee_vat_amount,
-                                        'marketing' => (float) $locked->platform_fee_marketing_amount,
-                                    ];
+                                    $campaignFeeLines[] = ['campaign' => $locked, 'fee' => round((float) $locked->marketing_fee_total, 2)];
                                 }
                             }
-                            // Affiliate marketing-fee settlements: same lock + re-check.
-                            $affiliateLines = [];
-                            foreach ($calc['affiliate_fee_items'] ?? [] as $entry) {
-                                $lockedSettlement = MarketerCampaignFeeSettlement::whereKey($entry['item']->id)->lockForUpdate()->first();
-                                if ($lockedSettlement
-                                    && $lockedSettlement->status === MarketerCampaignFeeSettlement::STATUS_PENDING
-                                    && ! $lockedSettlement->payoutItems()->exists()) {
-                                    $affiliateLines[] = $lockedSettlement;
-                                }
-                            }
-                            $skippedAffiliate = round((float) ($calc['affiliate_fees'] ?? 0) - array_sum(array_map(fn ($l) => (float) $l->amount, $affiliateLines)), 2);
 
-                            $skipped = round((float) $calc['influencer_fees'] - array_sum(array_map(fn ($l) => $l['fee'] + $l['vat'] + $l['marketing'], $feeLines)) + $skippedAffiliate, 2);
+                            // Budget commissions: same lock + re-check, so a row already on a statement is never charged twice.
+                            $commissionLines = [];
+                            foreach ($calc['budget_commission_items'] ?? [] as $entry) {
+                                $model = $entry['item']::query()->whereKey($entry['item']->id)->lockForUpdate()->first();
+                                if ($model && ! $model->payoutItems()->exists()) {
+                                    $commissionLines[] = ['type' => $entry['type'], 'model' => $model, 'amount' => $entry['amount']];
+                                }
+                            }
+
+                            $skipped = round(
+                                (float) $calc['campaign_fees'] - array_sum(array_column($campaignFeeLines, 'fee'))
+                                + (float) $calc['budget_commissions'] - array_sum(array_column($commissionLines, 'amount')),
+                                2
+                            );
                             if (abs($skipped) > 0) {
                                 $calc['net_amount'] = round($calc['net_amount'] + $skipped, 2);
                                 $calc['other_adjustments'] = round($calc['other_adjustments'] + $skipped, 2);
@@ -237,54 +231,42 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 ]);
                             }
 
-                            // Influencer platform fee (+VAT): one line per invitation, then the
-                            // invitation is marked paid in the same transaction.
-                            foreach ($feeLines as $line) {
-                                $invitation = $line['invitation'];
-                                $marketerName = $invitation->marketer?->name ?? '—';
-                                $campaignTitle = $invitation->campaign?->title ?: ('#'.substr((string) $invitation->campaign_id, 0, 8));
-                                $total = round($line['fee'] + $line['vat'] + $line['marketing'], 2);
+                            // Campaign fee: one line per campaign, then the campaign is marked paid in the same transaction.
+                            foreach ($campaignFeeLines as $line) {
+                                $campaign = $line['campaign'];
+                                $title = $campaign->title ?: $campaign->getPromotedTitle();
 
                                 PayoutItem::create([
                                     'payout_id' => $payout->id,
-                                    'item_type' => 'influencer_fee',
-                                    'invitation_id' => $invitation->id,
+                                    'item_type' => PayoutItem::TYPE_CAMPAIGN_FEE,
+                                    'campaign_id' => $campaign->id,
                                     'gross' => 0,
                                     'commission' => 0,
-                                    'vat_amount' => $line['vat'],
-                                    'marketing_fee_amount' => $line['marketing'],
-                                    'net' => -$total,
-                                    'description' => "رسوم مؤثر — Influencer fee — {$marketerName} — {$campaignTitle}"
-                                        .($line['marketing'] > 0 ? ' — رسوم تسويق — Marketing fees '.number_format($line['marketing'], 2, '.', '') : ''),
+                                    'marketing_fee_amount' => $line['fee'],
+                                    'net' => -$line['fee'],
+                                    'description' => "رسوم الحملة — Campaign fee — {$title}",
                                 ]);
 
-                                $invitation->update([
-                                    'platform_fee_status' => 'paid',
-                                    'platform_fee_paid_via' => 'statement',
-                                    'platform_fee_paid_at' => now(),
-                                ]);
-                                $paidInvitations[] = $invitation;
+                                app(CampaignFeeService::class)->markPaidViaStatement($campaign);
                             }
 
-                            // Affiliate marketing fees accrued on affiliate campaigns: one line per settlement.
-                            foreach ($affiliateLines as $settlement) {
-                                $campaignTitle = $settlement->campaign?->title ?: ('#'.substr((string) $settlement->campaign_id, 0, 8));
+                            // Commissions the campaign budget paid: one line per released conversion / paid influencer.
+                            foreach ($commissionLines as $line) {
+                                $model = $line['model'];
+                                $isInfluencer = $line['type'] === 'influencer_fixed';
+                                $title = $model->campaign?->title ?: $model->campaign?->getPromotedTitle();
+                                $label = $isInfluencer
+                                    ? 'مبلغ ثابت لمؤثر — Influencer fixed amount — '.($model->marketer?->name ?? '—')
+                                    : 'عمولة مسوق — Marketer commission';
 
                                 PayoutItem::create([
                                     'payout_id' => $payout->id,
-                                    'item_type' => 'affiliate_marketing_fee',
-                                    'affiliate_fee_settlement_id' => $settlement->id,
+                                    'item_type' => PayoutItem::TYPE_CAMPAIGN_BUDGET_COMMISSION,
+                                    ($isInfluencer ? 'invitation_id' : 'marketer_conversion_id') => $model->id,
                                     'gross' => 0,
-                                    'commission' => 0,
-                                    'marketing_fee_amount' => (float) $settlement->amount,
-                                    'net' => -(float) $settlement->amount,
-                                    'description' => "رسوم تسويق عمولة — Affiliate marketing fees — {$campaignTitle}",
-                                ]);
-
-                                $settlement->update([
-                                    'status' => MarketerCampaignFeeSettlement::STATUS_PAID,
-                                    'paid_via' => 'statement',
-                                    'paid_at' => now(),
+                                    'commission' => $line['amount'],
+                                    'net' => -$line['amount'],
+                                    'description' => "{$label} — {$title}",
                                 ]);
                             }
 
@@ -295,12 +277,6 @@ class GenerateVendorPayoutsJob implements ShouldQueue
                                 ]);
                             }
                         });
-
-                        // The influencer fee share is credited after the statement is committed; a failure is
-                        // logged and retried by RetryMarketerFeeCreditsJob, never rolling the statement back.
-                        foreach ($paidInvitations as $paidInvitation) {
-                            app(MarketerFeePayoutService::class)->creditForInvitation($paidInvitation);
-                        }
 
                         $generated++;
                     }

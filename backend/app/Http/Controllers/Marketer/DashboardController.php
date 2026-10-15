@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Marketer;
 use App\Http\Controllers\Controller;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
-use App\Services\Marketer\PromotionQuotaService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -66,11 +65,6 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        $quota = app(PromotionQuotaService::class)->progressFor($marketer);
-
-        $pendingFines = \App\Models\MarketerPromotionFine::where('marketer_id', $marketer->id)
-            ->where('status', 'pending')->where('amount', '>', 0)->orderBy('period')->get();
-
-        return view('marketer.dashboard', compact('marketer', 'stats', 'recentInvitations', 'quota', 'pendingFines'));
+        return view('marketer.dashboard', compact('marketer', 'stats', 'recentInvitations'));
     }
 }

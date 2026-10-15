@@ -2,19 +2,18 @@
 
 use App\Jobs\ActivateFulfilledCouponInvitationJob;
 use App\Jobs\Ads\PaidAdSchedulerJob;
-use App\Jobs\AffiliateFeeSettlementJob;
 use App\Jobs\AggregateAnalyticsCacheJob;
 use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\AutoCompleteOrdersJob;
 use App\Jobs\BannerSchedulerJob;
 use App\Jobs\CheckSlaBreachJob;
-use App\Jobs\CollectPendingInfluencerFeesJob;
 use App\Jobs\ExpirePendingPaymentsJob;
 use App\Jobs\ExpireWarrantyPurchasesJob;
 use App\Jobs\FbnInboundReminderJob;
 use App\Jobs\FlashSaleSchedulerJob;
 use App\Jobs\GenerateCodSettlementsJob;
 use App\Jobs\GenerateFbnStorageFeesJob;
+use App\Jobs\CompleteEndedMarketerCampaignsJob;
 use App\Jobs\GenerateVendorPayoutsJob;
 use App\Jobs\MonitorCampaignStockJob;
 use App\Jobs\PageSchedulerJob;
@@ -24,8 +23,6 @@ use App\Jobs\RecalculateBestSellerRankingsJob;
 use App\Jobs\ReleaseExpiredLocksJob;
 use App\Jobs\ReleaseMarketerPendingCommissionJob;
 use App\Jobs\ResetAdCampaignDailyBudgetJob;
-use App\Jobs\RetryInvitationFeeRefundsJob;
-use App\Jobs\RetryMarketerFeeCreditsJob;
 use App\Jobs\SettleMarketerSalesJob;
 use App\Jobs\TransitionFlashSaleStatusJob;
 use Carbon\Carbon;
@@ -139,24 +136,6 @@ Schedule::job(new RecalculateBestSellerRankingsJob, 'rankings')
     ->withoutOverlapping(30)
     ->name('recalculate-bestseller-rankings');
 
-// Expire overdue promotion request items and trigger auto-reassignment
-Schedule::command('promotion:expire-items')
-    ->everyFifteenMinutes()
-    ->withoutOverlapping()
-    ->runInBackground();
-
-// Send alerts to celebrities below monthly promotion minimum
-Schedule::command('promotion:check-minimums')
-    ->dailyAt('09:00')
-    ->withoutOverlapping()
-    ->runInBackground();
-
-// Apply month-end penalties to celebrities who missed minimums (runs on the 1st for the previous month)
-Schedule::command('promotion:apply-penalties')
-    ->monthlyOn(1, '01:00')
-    ->withoutOverlapping()
-    ->runInBackground();
-
 // enhancement.md P-11 task 3: GenerateVendorPayoutsJob existed but was never
 // scheduled. One entry per vendors.payout_schedule cadence, each computing
 // the period that cadence implies and dispatching the job filtered to only
@@ -178,13 +157,6 @@ Schedule::call(function () {
     GenerateVendorPayoutsJob::dispatch($end->copy()->subMonth(), $end->copy(), 'monthly');
 })->monthlyOn(1, '02:00')->name('generate-vendor-payouts-monthly');
 
-Schedule::command('marketers:promotion-quota-reminders')->dailyAt('09:00')->name('marketer-promotion-quota-reminders');
-Schedule::job(new CollectPendingInfluencerFeesJob)->dailyAt('04:00')->name('collect-pending-influencer-fees');
-Schedule::job(new RetryMarketerFeeCreditsJob)->hourly()->name('retry-marketer-fee-credits');
-// P7: refunds of cancelled campaigns that failed earlier (frozen vendor wallet) and marketer fee-share clawbacks.
-Schedule::job(new RetryInvitationFeeRefundsJob)->hourly()->withoutOverlapping()->name('retry-invitation-fee-refunds');
-// P6: safety net for affiliate marketing-fee settlement (closed campaigns with unsettled accruals, wallet retries).
-Schedule::job(new AffiliateFeeSettlementJob)->hourly()->withoutOverlapping()->name('affiliate-fee-settlement');
+// Campaigns past their end date are completed: fulfilled influencers are paid, the rest released.
+Schedule::job(new CompleteEndedMarketerCampaignsJob)->dailyAt('04:00')->withoutOverlapping()->name('complete-ended-marketer-campaigns');
 
-// P12: close the previous month's promotion quotas on the 1st (fine marketers who ended short, once per marketer/category/month)
-Schedule::command('promotion:close-month')->monthlyOn(1, '00:30')->withoutOverlapping()->name('promotion-close-month');

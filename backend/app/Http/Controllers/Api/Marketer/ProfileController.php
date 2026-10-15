@@ -43,8 +43,8 @@ class ProfileController extends Controller
             $profile->banner_file_id = $this->storeProfileImage($request, 'banner', 'marketer-banners', $profile)->id;
         }
 
-        // Broker specialization: affiliate marketers only.
-        if ($marketer->isAffiliate()) {
+        // Broker specialization: brokers only.
+        if ($marketer->isBroker()) {
             $serveAll = $request->boolean('broker_serves_all_cities');
             $profile->fill([
                 'broker_category_id'       => $request->input('broker_category_id') ?: null,

@@ -2,12 +2,10 @@
 
 namespace Tests\Feature\Campaigns;
 
-use App\Enums\PromotionCategory;
 use App\Exceptions\PeerPromotionException;
 use App\Models\MarketerCampaign;
 use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerListing;
-use App\Services\Marketer\PromotionQuotaService;
 use App\Services\MarketerCampaignService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -160,21 +158,6 @@ class PeerPromotionServiceTest extends TestCase
         // Next calendar month the rule resets.
         $this->travelTo(now()->addMonthNoOverflow()->startOfMonth()->addDay());
         $this->assertSame('active', P::request($promoter, $first)->status);
-    }
-
-    public function test_peer_promotion_counts_for_category_two_quota(): void
-    {
-        $owner = F::influencer($this->s);
-        $promoter = F::influencer($this->s);
-        $promoter->marketerProfile()->update(['promotion_category' => PromotionCategory::PeerInfluencerProducts->value]);
-
-        $quota = app(PromotionQuotaService::class);
-        $this->assertSame(0, $quota->doneFor($promoter->fresh(), PromotionCategory::PeerInfluencerProducts, now()));
-
-        P::request($promoter, P::ownListing($this->s, $owner));
-
-        $this->assertSame(1, $quota->doneFor($promoter->fresh(), PromotionCategory::PeerInfluencerProducts, now()));
-        $this->assertSame(0, $quota->doneFor($promoter->fresh(), PromotionCategory::VendorRequests, now()));
     }
 
     public function test_peer_commission_is_the_promoters_profile_rule_and_zero_without_one_even_with_a_category_default(): void

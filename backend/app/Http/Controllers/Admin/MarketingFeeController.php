@@ -189,28 +189,22 @@ class MarketingFeeController extends Controller
     public function calculate(Request $request, MarketingFeeService $service): JsonResponse
     {
         $validated = $request->validate([
-            'mode' => ['required', Rule::in(['influencer', 'affiliate'])],
             'subtotal' => ['required', 'numeric', 'min:0', 'max:999999999'],
             'country_id' => ['required', 'uuid', 'exists:countries,id'],
             'category_id' => ['nullable', 'uuid', 'exists:categories,id'],
             'fulfillment_type' => ['required', Rule::enum(MarketingFeeType::class)],
-            'first_order' => ['nullable', 'boolean'],
         ]);
 
         $subtotal = round((float) $validated['subtotal'], 2);
-        // Affiliate accruals after the first order only add the percentage parts (flat amounts are charged once).
-        $applyFlat = $validated['mode'] === 'influencer' || $request->boolean('first_order', true);
 
         $fee = $service->calculate(
             $subtotal,
             $validated['country_id'],
             $validated['category_id'] ?? null,
             MarketingFeeType::from($validated['fulfillment_type']),
-            $applyFlat,
         );
 
         return response()->json([
-            'mode' => $validated['mode'],
             'subtotal' => $subtotal,
             'fixed_fee' => $fee['fixed_fee'],
             'variable_fee' => $fee['variable_fee'],

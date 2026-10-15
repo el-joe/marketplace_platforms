@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Casts\DecimalMoney;
+use App\Enums\CommissionVertical;
+use App\Enums\MarketerType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +27,7 @@ class MarketerCommissionRule extends Model
         'commission_mode', 'commission_rate', 'commission_flat_amount', 'updated_by_admin_id',
         'commission_min_amount',
         'rule_key', 'excluded_category_ids',
+        'marketer_type', 'fee_percentage', 'fee_fixed',
     ];
 
     protected static function booted(): void
@@ -34,7 +37,48 @@ class MarketerCommissionRule extends Model
         // uniqueness instead.
         static::saving(function (self $rule) {
             $rule->rule_key = self::makeRuleKey($rule->marketer_id, $rule->scope, $rule->category_type, $rule->category_id);
+            $rule->enforceMarketerType();
         });
+    }
+
+    /**
+     * Type constraints (v3): influencer = fixed amount only, affiliate = percentage only, broker = any.
+     * Legacy rows (marketer_type NULL) are left untouched.
+     */
+    public function enforceMarketerType(): void
+    {
+        $type = $this->marketer_type ? MarketerType::tryFrom((string) $this->marketer_type) : null;
+        if (! $type) {
+            return;
+        }
+
+        if (! $type->allowsPercentage()) {
+            $this->commission_rate = 0;
+            $this->commission_mode = 'fixed';
+        }
+        if (! $type->allowsFixed()) {
+            $this->commission_flat_amount = null;
+            $this->commission_mode = 'percentage';
+        }
+    }
+
+    /** Commission vertical a rule scope belongs to (products -> product, open_market -> classified, travel -> travel). */
+    public static function verticalFor(string $scope): CommissionVertical
+    {
+        return match ($scope) {
+            self::SCOPE_OPEN_MARKET => CommissionVertical::Classified,
+            self::SCOPE_TRAVEL => CommissionVertical::Travel,
+            default => CommissionVertical::Product,
+        };
+    }
+
+    public static function scopeFor(CommissionVertical $vertical): string
+    {
+        return match ($vertical) {
+            CommissionVertical::Classified => self::SCOPE_OPEN_MARKET,
+            CommissionVertical::Travel => self::SCOPE_TRAVEL,
+            CommissionVertical::Product => self::SCOPE_PRODUCTS,
+        };
     }
 
     public static function makeRuleKey(?string $marketerId, string $scope, ?string $categoryType, ?string $categoryId): string
@@ -46,6 +90,8 @@ class MarketerCommissionRule extends Model
         'commission_rate' => 'decimal:2',
         'commission_flat_amount' => DecimalMoney::class,
         'commission_min_amount' => DecimalMoney::class,
+        'fee_percentage' => 'decimal:4',
+        'fee_fixed' => DecimalMoney::class,
         'excluded_category_ids' => 'array',
     ];
 

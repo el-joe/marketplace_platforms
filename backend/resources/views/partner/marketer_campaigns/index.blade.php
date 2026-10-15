@@ -7,12 +7,20 @@
 <div class="px-4 py-6 sm:px-6 lg:px-8 space-y-6">
 
     {{-- Header --}}
+    @php
+        $isClassifiedVendor = auth('vendor')->user()?->vendor?->vendor_type === \App\Enums\VendorType::ClassifiedVendor;
+        $newCampaignUrl = request('listing')
+            ? route('partner.marketer-campaigns.create', request('listing'))
+            : (request('classified')
+                ? route('partner.marketer-campaigns.create-classified', request('classified'))
+                : ($isClassifiedVendor ? route('partner.classifieds.index') : route('partner.listings.index')));
+    @endphp
     <div class="flex items-start justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">{{ __('partner.marketer_campaigns_my.title') }}</h1>
             <p class="mt-1 text-sm text-gray-500">{{ __('partner.marketer_campaigns_my.subtitle') }}</p>
         </div>
-        <a href="{{ request('listing') ? route('partner.marketer-campaigns.create', request('listing')) : route('partner.listings.index') }}"
+        <a href="{{ $newCampaignUrl }}"
            class="shrink-0 bg-yellow-400 hover:bg-yellow-300 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -21,11 +29,11 @@
         </a>
     </div>
 
-    @if (request('listing'))
+    @if (request('listing') || request('classified'))
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
             <span>{{ __('partner.marketer_campaigns_my.listing_filter') }}</span>
             <span class="flex items-center gap-4">
-                <a href="{{ route('partner.listings.show', request('listing')) }}#marketer_campaign" class="font-medium hover:underline">{{ __('partner.marketer_campaigns_my.back_to_listing') }}</a>
+                <a href="{{ request('classified') ? route('partner.classifieds.show', request('classified')) : route('partner.listings.show', request('listing')) }}#marketer_campaign" class="font-medium hover:underline">{{ __('partner.marketer_campaigns_my.back_to_listing') }}</a>
                 <a href="{{ route('partner.marketer-campaigns.index') }}" class="font-medium hover:underline">{{ __('partner.marketer_campaigns_my.clear_filter') }}</a>
             </span>
         </div>
@@ -59,7 +67,7 @@
             </svg>
             <p class="mt-4 text-sm text-gray-500">{{ __('partner.marketer_campaigns_my.no_campaigns') }}</p>
             <p class="mt-2 text-xs text-gray-400">{{ __('partner.marketer_campaigns_my.new_campaign_hint') }}</p>
-            <a href="{{ route('partner.listings.index') }}"
+            <a href="{{ $isClassifiedVendor ? route('partner.classifieds.index') : route('partner.listings.index') }}"
                class="mt-5 inline-flex items-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -72,9 +80,9 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.product') }}</th>
+                        <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.item') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.country') }}</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.commission_type') }}</th>
+                        <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('marketer_campaigns.cost.budget') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('marketing_fees.campaign.list_grand_total') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.status') }}</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-600">{{ __('partner.marketer_campaigns_my.table.invited') }}</th>
@@ -85,14 +93,12 @@
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($campaigns as $campaign)
                         @php
-                            $product = $campaign->vendorListing?->productVariant?->product
-                                ?? $campaign->adminListing?->productVariant?->product;
                             $st = $statusMap[$campaign->status] ?? ['label' => $campaign->status, 'cls' => 'bg-gray-100 text-gray-600'];
                         @endphp
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ $product?->name_ar ?? $product?->name_en ?? '—' }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">{{ $campaign->getPromotedTitle() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $campaign->country?->name_ar ?? $campaign->country?->name_en ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ __('partner.marketer_campaigns_my.commission_type.' . $campaign->commission_type) }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ \App\Support\Money::format($campaign->max_commission_budget) }} {{ $campaign->currency }}</td>
                             <td class="px-4 py-3 text-gray-600" data-testid="campaign-grand-total">
                                 @if ($campaign->campaign_grand_total !== null)
                                     {{ \App\Support\Money::format($campaign->campaign_grand_total) }} {{ $campaign->currency }}

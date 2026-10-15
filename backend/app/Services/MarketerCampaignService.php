@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
-use App\Exceptions\InsufficientBalanceException;
+use App\Enums\ClassifiedListingStatus;
+use App\Enums\CommissionVertical;
+use App\Enums\MarketerType;
+use App\Enums\TravelPackageStatus;
 use App\Exceptions\PeerPromotionException;
 use App\Jobs\ProcessCampaignAutoApproveJob;
 use App\Jobs\ProcessInvitationTimeoutJob;
@@ -16,18 +19,15 @@ use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
-use App\Models\MarketerCampaignTieredRule;
-use App\Models\MarketerCategoryCommission;
-use App\Models\MarketerCommissionRule;
-use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerListing;
-use App\Models\OpenMarketCategoryCommission;
 use App\Models\TravelPackage;
 use App\Models\Vendor;
 use App\Models\VendorListing;
+use App\Models\TravelAgency;
 use App\Notifications\Admin\CampaignMarketerReassignedNotification;
 use App\Notifications\Admin\NewCampaignPendingNotification;
 use App\Notifications\Marketer\CampaignExpired;
+use App\Notifications\TravelAgency\CampaignUpdated;
 use App\Notifications\Marketer\CampaignInvitationReceivedNotification;
 use App\Notifications\Marketer\CampaignInvitationRejectedNotification;
 use App\Notifications\Marketer\PeerPromotionStartedNotification;
@@ -40,8 +40,12 @@ use App\Notifications\Vendor\CampaignRejectedNotification;
 use App\Notifications\Vendor\MarketerReplacedNotification as VendorMarketerReplacedNotification;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InventoryService;
+use App\Services\Marketer\CampaignFeeService;
+use App\Services\Marketer\InfluencerFixedService;
+use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
+use App\Support\Marketer\CampaignSubject;
 use Carbon\CarbonInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -53,16 +57,14 @@ use Illuminate\Support\Str;
 
 class MarketerCampaignService
 {
+    public function __construct(
+        private readonly InfluencerFixedService $influencerFixed,
+        private readonly CampaignFeeService $campaignFees,
+    ) {}
+
     /** Default for the `marketer_campaign_allowed_fulfilment_models` setting (cross_dock = billed as FBM). */
     public const DEFAULT_ALLOWED_FULFILMENT_MODELS = ['fbn', 'fbm', 'cross_dock'];
 
-    /**
-     * Create a new campaign from vendor panel.
-     * $data keys: vendor_listing_id|admin_listing_id, country_id, currency,
-     *             commission_type, max_commission_budget, title, notes,
-     *             marketer_ids (array of Marketer UUIDs),
-     *             tiered_rules (array of {from_sale_number, commission_amount} — only for tiered type)
-     */
     /**
      * Mark conversions as paid when included in a payout.
      * Called from payout processing flow.
@@ -122,6 +124,11 @@ class MarketerCampaignService
      * "accept then get rejected" window: a marketer could previously
      * accept an invitation and get a live referral link for a campaign
      * that was later rejected.
+     *
+     * v3 money model ($data keys): max_commission_budget (required > 0 for vendor campaigns), marketer_ids (everyone
+     * invited), influencer_ids (the influencers among them whose fixed amount is snapshotted and reserved from the
+     * budget; rejected when their total exceeds it), open_to_affiliates, ends_at (optional), title, notes, ad fields.
+     * Commission is never typed: affiliates / brokers earn per sale by their own rule, influencers a fixed amount.
      */
     public function createCampaign(CampaignOwner $owner, CampaignSource $source, array $data): MarketerCampaign
     {
@@ -130,6 +137,7 @@ class MarketerCampaignService
         return DB::transaction(function () use ($owner, $source, $data) {
             $category = null;
             $listing = null;
+            $subject = null;
 
             if ($source->isVendorListing()) {
                 if (! $owner->isVendor() && ! $owner->isMarketer()) {
@@ -163,12 +171,16 @@ class MarketerCampaignService
                 $peerListing = $this->assertPeerPromotionAllowed($owner->id, $source->marketerListingId);
                 $category = $peerListing->productVariant?->product?->category;
             }
-            // Travel/classified sources: no stock/fulfilment check yet — see
-            // CampaignSource docblock. They are schema-ready but unreachable
-            // through any controller in this prompt.
+            // Classified listings and trips: no stock or fulfilment, but the item must be live and belong to the owner.
+            if ($source->isClassifiedListing() || $source->isTravelPackage()) {
+                $subject = $this->assertEligibleSubject($owner, $source);
+                $data['country_id'] = $subject->countryId;
+                $data['currency'] = $subject->currency;
+            }
 
             $marketerVendors = Marketer::whereIn('id', $data['marketer_ids'] ?? [])
                 ->where('global_status', 'active')
+                ->with('marketerJobs')
                 ->get();
 
             // Samples: one fixed admin sample + one per influencer (+ one affiliate
@@ -206,17 +218,23 @@ class MarketerCampaignService
                 // Country/currency are the promoted listing's, never client supplied.
                 $data['country_id'] = $peerListing->country_id;
                 $data['currency'] = $peerListing->currency;
-                $data['commission_type'] = 'fixed';
                 $data['max_commission_budget'] = $data['max_commission_budget'] ?? 0;
             }
 
-            // Vendor-listing campaigns snapshot the server-side quote (never client numbers) so later setting
-            // changes do not rewrite what the vendor was shown; platform/marketer-owned ones carry no vendor charge.
-            $feeSnapshot = $listing instanceof VendorListing && $owner->isVendor()
-                ? $this->feeSnapshot($listing, $marketerVendors->pluck('id')->all())
-                : [];
+            $budget = round((float) ($data['max_commission_budget'] ?? 0), 2);
+            $ownerFunded = ($listing instanceof VendorListing || $subject) && $owner->isOwnerFunded();
+            if ($ownerFunded && $budget <= 0) {
+                throw new \RuntimeException(__('marketer_campaigns.errors.budget_required'));
+            }
+
+            // Owner-funded campaigns (vendor listings, classified listings, trips) snapshot the server-side campaign
+            // fee (never client numbers) so later setting changes do not rewrite what the owner was shown;
+            // platform/marketer-owned ones carry no charge.
+            $feeSnapshot = $ownerFunded ? $this->feeSnapshot($listing ?? $subject->model, $budget) : [];
+            $feeSnapshot['campaign_fee_status'] = $this->campaignFees->initialStatus((float) ($feeSnapshot['marketing_fee_total'] ?? 0), $ownerFunded);
 
             $campaign = MarketerCampaign::create($feeSnapshot + [
+                // A travel agency owns its campaign (owner_type travel_agency, owner_id = agency) with no vendor.
                 'vendor_id' => $owner->isVendor() ? $owner->id : null,
                 'owner_type' => $owner->isMarketer() ? 'marketer' : $owner->type,
                 // Peer campaigns: the real owner is the listing's influencer, the promoter is requested_by.
@@ -230,10 +248,10 @@ class MarketerCampaignService
                 'campaign_category' => $source->category,
                 'country_id' => $data['country_id'],
                 'currency' => $data['currency'],
-                'commission_type' => $data['commission_type'],
-                'max_commission_budget' => $data['max_commission_budget'],
-                'platform_commission_amount' => $data['platform_commission_amount'] ?? 0,
-                'marketer_commission_amount' => $data['marketer_commission_amount'] ?? 0,
+                'commission_type' => MarketerCampaign::COMMISSION_TYPE,
+                'max_commission_budget' => $budget,
+                'open_to_affiliates' => (bool) ($data['open_to_affiliates'] ?? false),
+                'ends_at' => $data['ends_at'] ?? null,
                 'status' => $status,
                 'auto_approve_at' => $owner->isMarketer() ? null : now()->addHours($autoApproveHours),
                 'auto_approved' => false,
@@ -248,32 +266,23 @@ class MarketerCampaignService
                 'vendor_ad_notes' => $data['vendor_ad_notes'] ?? null,
             ]);
 
-            // The vendor never types a commission: show the admin-configured default straight away so a campaign
-            // awaiting review does not display 0 (approval re-resolves it only when it is still unset).
-            if ($data['commission_type'] !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
-                $defaults = $this->resolveDefaultCommission($campaign);
-                if ($defaults !== null) {
-                    $campaign->update([
-                        'marketer_commission_amount' => $defaults['marketer_commission_amount'],
-                        'platform_commission_amount' => $defaults['platform_commission_amount'],
-                    ]);
-                }
-            }
-
-            if ($data['commission_type'] === 'tiered' && ! empty($data['tiered_rules'])) {
-                foreach ($data['tiered_rules'] as $i => $rule) {
-                    MarketerCampaignTieredRule::create([
-                        'campaign_id' => $campaign->id,
-                        'from_sale_number' => $rule['from_sale_number'],
-                        'commission_amount' => $rule['commission_amount'],
-                        'currency' => $data['currency'],
-                        'sort_order' => $i,
-                    ]);
-                }
+            // The influencers' fixed amounts are frozen now and held back from the budget (rejected when they do not fit).
+            // By default every influencer-only marketer among the invitees is an influencer slot.
+            $influencerIds = array_key_exists('influencer_ids', $data)
+                ? array_values(array_intersect((array) $data['influencer_ids'], $marketerVendors->pluck('id')->all()))
+                : $marketerVendors->filter(fn (Marketer $m) => $this->actsAsInfluencer($m))->pluck('id')->values()->all();
+            if (! $isPeer && $influencerIds !== []) {
+                $this->influencerFixed->reserve(
+                    $campaign,
+                    $this->influencerFixed->snapshot($marketerVendors->whereIn('id', $influencerIds), $campaign->country_id, $campaign)
+                );
             }
 
             if ($listing) {
                 $listing->update(['campaign_enabled' => true]);
+            }
+            if ($subject) {
+                $subject->model->update(['campaign_enabled' => true]);
             }
 
             // Fixed admin sample exists from creation, independent of admin review.
@@ -306,9 +315,7 @@ class MarketerCampaignService
             // review (or auto-approve) — invitations are dispatched only
             // once that review passes (see approveCampaign()/autoApproveCampaign()).
             Admin::query()->get()->each(fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign)));
-            if ($owner->isVendor()) {
-                $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignPendingAdminNotification($campaign)));
-            }
+            $this->notifyOwner($campaign, fn () => new CampaignPendingAdminNotification($campaign), 'pending');
 
             ProcessCampaignAutoApproveJob::dispatch($campaign->id)
                 ->delay(now()->addHours($autoApproveHours));
@@ -317,37 +324,90 @@ class MarketerCampaignService
         });
     }
 
-    /** True when the campaign targets at least one marketer and every one of them is an influencer. */
-    public function isInfluencerOnly(MarketerCampaign $campaign): bool
-    {
-        $ids = array_values(array_filter((array) ($campaign->requested_marketer_vendor_ids ?? [])));
-        if ($ids === []) {
-            return false;
-        }
-
-        $marketers = Marketer::whereIn('id', $ids)->with('marketerJobs')->get();
-
-        return $marketers->isNotEmpty() && $marketers->every(fn (Marketer $m) => $m->isInfluencer());
-    }
-
     /**
-     * Campaign fee snapshot columns from a fresh server-side quote.
+     * Campaign fee snapshot columns: the fixed + variable fee on the Max Commission Budget (the campaign total).
      *
-     * @param  array<int, string>  $marketerIds
      * @return array<string, mixed>
      */
-    private function feeSnapshot(VendorListing $listing, array $marketerIds): array
+    private function feeSnapshot(VendorListing|ClassifiedListing|TravelPackage $listing, float $budget): array
     {
-        $quote = app(MarketerCampaignQuoteService::class)->quote($listing, $marketerIds);
+        $subject = CampaignSubject::of($listing);
+        $quote = app(MarketerCampaignQuoteService::class)->quote($subject, [], $budget);
 
         return [
-            'fulfillment_type' => $quote['fulfillment_type'],
+            'fulfillment_type' => $subject->feeType()?->value,
             'campaign_subtotal' => $quote['campaign_subtotal'],
             'marketing_fee_fixed' => $quote['marketing']['fixed_fee'],
             'marketing_fee_variable' => $quote['marketing']['variable_fee'],
             'marketing_fee_total' => $quote['marketing']['total'],
             'campaign_grand_total' => $quote['campaign_grand_total'],
         ];
+    }
+
+    /**
+     * Owner/eligibility rules of a classified-listing or trip campaign (the counterpart of the vendor-listing rules):
+     *
+     *  - a vendor may promote only its own ACTIVE, unexpired classified listing and must be a classified vendor;
+     *  - a travel agency may promote only its own ACTIVE trip that has not departed yet and still has seats;
+     *  - the platform (admin) and marketer requests may promote any such item.
+     *
+     * @throws \RuntimeException with a translated message when the item cannot be promoted
+     */
+    public function assertEligibleSubject(CampaignOwner $owner, CampaignSource $source): CampaignSubject
+    {
+        if ($source->isClassifiedListing()) {
+            $listing = ClassifiedListing::forVendors()->findOrFail($source->classifiedListingId);
+
+            if ($owner->isVendor() && (string) $listing->seller_id !== (string) $owner->id) {
+                throw new \RuntimeException(__('marketer_campaigns.errors.not_your_item'));
+            }
+            if ($owner->isTravelAgency()) {
+                throw new \RuntimeException(__('marketer_campaigns.errors.owner_vertical_mismatch'));
+            }
+            if ($listing->status !== ClassifiedListingStatus::Active || $listing->isExpired()) {
+                throw new \RuntimeException(__('marketer_campaigns.errors.classified_not_active'));
+            }
+
+            return CampaignSubject::of($listing);
+        }
+
+        $package = TravelPackage::with('agency')->findOrFail($source->travelPackageId);
+
+        if ($owner->isTravelAgency() && (string) $package->travel_agency_id !== (string) $owner->id) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.not_your_item'));
+        }
+        if ($owner->isVendor()) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.owner_vertical_mismatch'));
+        }
+        if ($package->status !== TravelPackageStatus::Active || ($package->departure_date && $package->departure_date->isPast() && ! $package->departure_date->isToday())) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.trip_not_active'));
+        }
+        if ($package->seatsRemaining() === 0) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.trip_sold_out'));
+        }
+        if (! $package->agency?->country_id) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.agency_country_missing'));
+        }
+
+        return CampaignSubject::of($package);
+    }
+
+    /**
+     * Owner-side notices: the vendor's admins (vendor campaigns) or the agency's active members (trip campaigns).
+     * $vendorNotification builds the vendor notification lazily; agencies get a CampaignUpdated carrying $event.
+     */
+    private function notifyOwner(MarketerCampaign $campaign, \Closure $vendorNotification, string $event): void
+    {
+        if ($campaign->vendor_id) {
+            $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify($vendorNotification()));
+
+            return;
+        }
+
+        if ($campaign->owner_type === MarketerCampaign::OWNER_TRAVEL_AGENCY && $campaign->owner_id) {
+            TravelAgency::find($campaign->owner_id)?->activeMembers()
+                ->each(fn ($member) => $member->notify(new CampaignUpdated($campaign, $event)));
+        }
     }
 
     /**
@@ -411,38 +471,7 @@ class MarketerCampaignService
     }
 
     /**
-     * Per-unit commission of a peer promotion = the promoter's profile rule for the listing's category
-     * (D12), with the platform rule applied on top. Zero is allowed: the campaign then shows a
-     * "no commission configured" warning and conversions resolve the profile rule again at sale time.
-     *
-     * @return array{marketer_commission_amount: float, platform_commission_amount: float}
-     */
-    private function resolvePeerCommission(MarketerCampaign $campaign, MarketerListing $listing, Marketer $promoter): array
-    {
-        $category = $listing->productVariant?->product?->category;
-        if (! $category) {
-            return ['marketer_commission_amount' => 0.0, 'platform_commission_amount' => 0.0];
-        }
-
-        // D11/D12: an influencer has no per-sale default on the category tab; the only per-unit commission of a peer
-        // promotion is the promoter's own profile rule ("Commission Rates by Category"), else 0 (no commission).
-        $perUnit = (float) (app(MarketerCommissionRateService::class)
-            ->resolveRule($promoter, $category->id)
-            ?->resolveAmount((float) ($listing->price ?? 0), 1, true) ?? 0);
-
-        $platform = 0.0;
-        if ($perUnit > 0) {
-            $rule = app(CommissionRuleResolver::class)->resolve(null, 'products', $category);
-            $platform = $rule
-                ? $this->computeCommissionAmount($rule->commission_mode, $rule->commission_flat_amount, (float) $rule->commission_rate, $perUnit)
-                : 0.0;
-        }
-
-        return ['marketer_commission_amount' => $perUnit, 'platform_commission_amount' => $platform];
-    }
-
-    /**
-     * Peer campaign goes live at once: commission from the category rules, the promoter's
+     * Peer campaign goes live at once: the promoter's
      * invitation is created and accepted (no seller fee: there is no seller to charge and the
      * promotion is part of the promoter's monthly obligation), his referral listing is built.
      */
@@ -450,7 +479,7 @@ class MarketerCampaignService
     {
         $promoter = Marketer::findOrFail($campaign->requested_by_marketer_id);
 
-        $campaign->update($this->resolvePeerCommission($campaign, $listing, $promoter) + [
+        $campaign->update([
             'status' => 'active',
             'reviewed_at' => now(),
         ]);
@@ -484,111 +513,116 @@ class MarketerCampaignService
         };
         $data['country_id'] ??= $requested?->country_id;
         $data['currency'] ??= $requested?->currency;
-        $data['commission_type'] ??= 'fixed';
         $data['max_commission_budget'] ??= 0;
 
         return $this->createCampaign(CampaignOwner::marketer($marketer), $source, $data);
     }
 
     /**
-     * enhancement.md P-14 task 3: the listing owner (vendor or admin)
-     * approves a marketer-originated request — sets commission, flips
-     * ownership to the real owner, activates the campaign, and
-     * auto-accepts the requesting marketer's invitation (they already
-     * asked to promote it; there is no one left to "invite").
+     * enhancement.md P-14 task 3: the listing owner (vendor or admin) approves a marketer-originated request: sets
+     * the Max Commission Budget (`max_commission_budget`), flips ownership to the real owner, activates the campaign
+     * and auto-accepts the requesting marketer's invitation (they already asked to promote it).
+     *
+     * An influencer requester is reserved his fixed amount out of that budget (rejected when it does not fit);
+     * an affiliate / broker earns per sale from the budget like everyone else.
+     *
+     * @param  array{max_commission_budget: int|float|string}  $data
      */
-    public function approveMarketerRequest(MarketerCampaign $campaign, array $commission): void
+    public function approveMarketerRequest(MarketerCampaign $campaign, array $data): void
     {
         if ($campaign->status !== 'marketer_requested') {
             throw new \RuntimeException('Only a marketer_requested campaign can be approved this way.');
         }
 
-        DB::transaction(function () use ($campaign, $commission) {
+        $budget = round((float) ($data['max_commission_budget'] ?? 0), 2);
+        if ($budget <= 0) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.budget_required'));
+        }
+
+        DB::transaction(function () use ($campaign, $budget) {
             $ownerType = $campaign->admin_listing_id ? 'platform' : 'vendor';
             $ownerId = $ownerType === 'vendor' ? $campaign->vendorListing?->vendor_id : null;
 
-            $campaign->update([
+            $fee = $ownerType === 'vendor' && $campaign->vendorListing
+                ? $this->feeSnapshot($campaign->vendorListing, $budget)
+                : [];
+            $fee['campaign_fee_status'] = $this->campaignFees->initialStatus((float) ($fee['marketing_fee_total'] ?? 0), $ownerType === 'vendor');
+
+            $campaign->update($fee + [
                 'owner_type' => $ownerType,
                 'owner_id' => $ownerId,
                 'vendor_id' => $ownerId,
-                'marketer_commission_amount' => $commission['marketer_commission_amount'] ?? $campaign->marketer_commission_amount,
-                'platform_commission_amount' => $commission['platform_commission_amount'] ?? $campaign->platform_commission_amount,
+                'max_commission_budget' => $budget,
                 'status' => 'active',
                 'reviewed_at' => now(),
             ]);
 
-            if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
-                throw new \RuntimeException('Cannot approve a marketer request with a zero commission. Set it first.');
+            $requester = Marketer::with('marketerJobs')->findOrFail($campaign->requested_by_marketer_id);
+            if ($this->actsAsInfluencer($requester)) {
+                $this->influencerFixed->reserve($campaign, $this->influencerFixed->snapshot([$requester], $campaign->country_id, $campaign));
             }
 
             $invitation = $this->dispatchInvitation($campaign, $campaign->requested_by_marketer_id);
             $this->acceptInvitation($invitation->fresh());
         });
+
+        $this->campaignFees->charge($campaign->fresh());
+    }
+
+    /** True when the marketer earns a fixed amount per campaign (influencer only, not also affiliate / broker). */
+    private function actsAsInfluencer(Marketer $marketer): bool
+    {
+        $held = MarketerType::heldBy($marketer);
+
+        return in_array(MarketerType::Influencer, $held, true)
+            && ! in_array(MarketerType::Affiliate, $held, true)
+            && ! in_array(MarketerType::Broker, $held, true);
     }
 
     /**
-     * Admin approves a campaign. Invitations were already dispatched at creation time —
-     * this just activates the campaign so conversions can be tracked.
-     *
-     * enhancement.md P-12 task 4: a campaign cannot go 'active' with 0
-     * commission on both sides (the bug that made every conversion earn
-     * nothing) — the admin must set marketer_commission_amount (and,
-     * for a fixed/last_click campaign, platform_commission_amount) to a
-     * positive value before approving, except for 'tiered' campaigns whose
-     * commission comes from their tiered_rules instead.
+     * Admin approves a campaign: it goes live, invitations are dispatched, and the campaign fee is charged
+     * (vendor wallet first, else the next payout statement).
      */
     public function approveCampaign(MarketerCampaign $campaign, Admin $admin): void
     {
-        // Seller-created campaigns carry no commission (it is never typed by the vendor): resolve the admin's
-        // country/category default now, exactly like the auto-approval does.
-        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0) {
-            $defaults = $this->resolveDefaultCommission($campaign);
-            if ($defaults !== null) {
-                $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
-                $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
-                $campaign->save();
-            }
-        }
+        $this->goLive($campaign, [
+            'status' => 'active',
+            'reviewed_by_admin_id' => $admin->id,
+            'reviewed_at' => now(),
+        ], fn () => $this->notifyOwner(
+            $campaign,
+            fn () => new CampaignApprovedNotification($campaign, $campaign->invitations()->count()),
+            'approved'
+        ));
+    }
 
-        // Influencer campaigns are paid by the fee share, not a per-sale amount (D2/D11), so only a campaign that
-        // targets affiliates (or has no marketer list to prove otherwise) needs a resolvable per-unit commission.
-        if ($campaign->commission_type !== 'tiered' && (float) $campaign->marketer_commission_amount <= 0 && ! $this->isInfluencerOnly($campaign)) {
-            throw new \RuntimeException(
-                'Cannot approve a campaign with a zero marketer commission amount. Set it first.'
-            );
-        }
+    /**
+     * Shared by manual and automatic approval: flip the status, dispatch the invitations (not before: a marketer
+     * must never hold a live link to a campaign that is later rejected), notify, then charge the campaign fee.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function goLive(MarketerCampaign $campaign, array $attributes, \Closure $notify): void
+    {
+        DB::transaction(function () use ($campaign, $attributes, $notify) {
+            $campaign->update($attributes);
 
-        if ($campaign->commission_type === 'tiered' && $campaign->tieredRules()->count() === 0) {
-            throw new \RuntimeException('Cannot approve a tiered campaign with no tiered rules.');
-        }
-
-        DB::transaction(function () use ($campaign, $admin) {
-            $campaign->update([
-                'status' => 'active',
-                'reviewed_by_admin_id' => $admin->id,
-                'reviewed_at' => now(),
-            ]);
-
-            // enhancement.md P-14 task 4: invitations are dispatched only
-            // now, after admin approval — not at creation time.
             foreach ((array) ($campaign->requested_marketer_vendor_ids ?? []) as $marketerId) {
                 $this->dispatchInvitation($campaign, $marketerId);
             }
 
-            $campaign->vendor?->vendorAdmins?->each(
-                fn ($va) => $va->notify(new CampaignApprovedNotification($campaign, $campaign->invitations()->count()))
-            );
+            $notify();
         });
+
+        $this->campaignFees->charge($campaign->fresh());
     }
 
     /**
      * Admin rejects a campaign.
      *
-     * enhancement.md P-14 task 4: rejection cancels any pending invitations
-     * and pauses/archives whatever marketer listings already exist for
-     * this campaign (there should not be any yet, since invitations are
-     * no longer dispatched before approval — but this guards against a
-     * campaign rejected after having been active/auto_approved before).
+     * enhancement.md P-14 task 4: rejection cancels any pending invitations and pauses/archives whatever marketer
+     * listings already exist for this campaign. The influencers' reserved fixed amounts go back to the budget and an
+     * unpaid campaign fee is voided.
      */
     public function rejectCampaign(MarketerCampaign $campaign, Admin $admin, string $reason): void
     {
@@ -601,34 +635,43 @@ class MarketerCampaignService
             ]);
 
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
+            $this->releaseUnpaidMoney($campaign);
             $this->syncListingCampaignEnabled($campaign);
 
-            $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignRejectedNotification($campaign)));
+            $this->notifyOwner($campaign, fn () => new CampaignRejectedNotification($campaign), 'rejected');
         });
-
-        // P7: charged influencer invitations are refunded / voided, the marketer fee share is reversed.
-        app(MarketerInvitationRefundService::class)->refundCampaign($campaign, 'campaign_rejected');
-        app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'rejected');
     }
 
     /**
-     * enhancement.md P-14 task 4: cancel a campaign (vendor/admin self-
-     * service cancel, distinct from admin rejection) — same cleanup as
-     * rejection.
+     * enhancement.md P-14 task 4: cancel a campaign (vendor/admin self-service cancel, distinct from admin
+     * rejection): same cleanup as rejection. Influencers are NOT paid on a cancelled campaign (not fulfilled).
      */
     public function cancelCampaign(MarketerCampaign $campaign): void
     {
         DB::transaction(function () use ($campaign) {
             $campaign->update(['status' => 'cancelled']);
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
+            $this->releaseUnpaidMoney($campaign);
             $this->syncListingCampaignEnabled($campaign);
         });
+    }
 
-        // P7: charged influencer invitations are refunded / voided, the marketer fee share is reversed.
-        app(MarketerInvitationRefundService::class)->refundCampaign($campaign, 'campaign_cancelled');
+    /** Reject / cancel: reserved influencer amounts return to the budget; an unpaid campaign fee is never charged. */
+    private function releaseUnpaidMoney(MarketerCampaign $campaign): void
+    {
+        $campaign->invitations()
+            ->where('influencer_fixed_status', MarketerCampaignInvitation::FIXED_RESERVED)
+            ->get()
+            ->each(fn (MarketerCampaignInvitation $invitation) => $this->influencerFixed->release($invitation, $campaign));
 
-        // P6: a cancelled campaign settles the affiliate marketing fees accrued so far.
-        app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'cancelled');
+        // Pending campaigns have a reservation on the campaign row but no invitations yet: only paid amounts stay.
+        $campaign->update([
+            'influencer_fixed_reserved' => round((float) $campaign->invitations()
+                ->where('influencer_fixed_status', MarketerCampaignInvitation::FIXED_PAID)
+                ->sum('influencer_fixed_amount'), 2),
+        ]);
+
+        $this->campaignFees->void($campaign);
     }
 
     /**
@@ -638,18 +681,21 @@ class MarketerCampaignService
     public const TERMINAL_STATUSES = ['cancelled', 'rejected', 'done', 'completed'];
 
     /**
-     * Keep listing->campaign_enabled true while ANY non-terminal campaign
-     * exists for the promoted listing, and false only when none remain.
+     * Keep campaign_enabled true on the promoted item (vendor listing, admin listing, classified listing or trip)
+     * while ANY non-terminal campaign exists for it, and false only when none remain.
      */
     public function syncListingCampaignEnabled(MarketerCampaign $campaign): void
     {
-        $listing = $campaign->vendorListing ?? $campaign->adminListing;
-        if (! $listing) {
+        [$listing, $column, $listingId] = match ($campaign->campaign_category) {
+            'classified' => [$campaign->classifiedListing, 'classified_listing_id', $campaign->classified_listing_id],
+            'travel' => [$campaign->travelPackage, 'travel_package_id', $campaign->travel_package_id],
+            default => $campaign->vendor_listing_id
+                ? [$campaign->vendorListing, 'vendor_listing_id', $campaign->vendor_listing_id]
+                : [$campaign->adminListing, 'admin_listing_id', $campaign->admin_listing_id],
+        };
+        if (! $listing || ! $listingId) {
             return;
         }
-
-        $column = $campaign->vendor_listing_id ? 'vendor_listing_id' : 'admin_listing_id';
-        $listingId = $campaign->vendor_listing_id ?: $campaign->admin_listing_id;
 
         $hasOpen = MarketerCampaign::where($column, $listingId)
             ->whereNotIn('status', self::TERMINAL_STATUSES)
@@ -661,8 +707,18 @@ class MarketerCampaignService
     }
 
     /**
-     * Edit a still-pending campaign. Marketer list changes are NOT handled
-     * here (use inviteMarketers()/cancel).
+     * The category the campaign's commission rules and fees are looked up by (product category, classified
+     * category; none for trips). Single answer shared by the calculator, the wizard and the reports.
+     */
+    public function campaignCategoryId(MarketerCampaign $campaign): ?string
+    {
+        return app(MarketerCommissionCalculator::class)->categoryIdFor($campaign);
+    }
+
+    /**
+     * Edit a still-pending campaign: title, notes, ad types, end date and the Max Commission Budget. A new budget
+     * re-snapshots the campaign fee and must still cover the influencers' reserved fixed amounts.
+     * Marketer list changes are NOT handled here (use inviteMarketers()/cancel).
      */
     public function updateCampaign(MarketerCampaign $campaign, array $data): MarketerCampaign
     {
@@ -671,27 +727,35 @@ class MarketerCampaignService
         }
 
         return DB::transaction(function () use ($campaign, $data) {
-            $campaign->update([
+            $attributes = [
                 'title' => $data['title'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'commission_type' => $data['commission_type'],
-                'max_commission_budget' => $data['max_commission_budget'] ?? $campaign->max_commission_budget,
                 'selected_ad_types' => $data['selected_ad_types'] ?? null,
                 'vendor_ad_notes' => $data['vendor_ad_notes'] ?? null,
-            ]);
+                'ends_at' => $data['ends_at'] ?? null,
+            ];
 
-            $campaign->tieredRules()->delete();
-            if ($campaign->commission_type === 'tiered') {
-                foreach (array_values($data['tiered_rules'] ?? []) as $i => $rule) {
-                    MarketerCampaignTieredRule::create([
-                        'campaign_id' => $campaign->id,
-                        'from_sale_number' => $rule['from_sale_number'],
-                        'commission_amount' => $rule['commission_amount'],
-                        'currency' => $campaign->currency,
-                        'sort_order' => $i,
-                    ]);
+            if (isset($data['max_commission_budget']) && $campaign->status === 'pending_admin') {
+                $budget = round((float) $data['max_commission_budget'], 2);
+                if ($budget <= 0) {
+                    throw new \RuntimeException(__('marketer_campaigns.errors.budget_required'));
+                }
+                if ($budget + 0.004 < (float) $campaign->influencer_fixed_reserved) {
+                    throw new \RuntimeException(__('marketer_campaigns.errors.fixed_exceeds_budget', [
+                        'fixed' => \App\Support\Money::format($campaign->influencer_fixed_reserved), 'budget' => \App\Support\Money::format($budget),
+                    ]));
+                }
+
+                $attributes['max_commission_budget'] = $budget;
+                $subject = CampaignSubject::fromCampaign($campaign);
+                $ownerFunded = $campaign->vendor_id || $campaign->owner_type === MarketerCampaign::OWNER_TRAVEL_AGENCY;
+                if ($subject && $ownerFunded) {
+                    $fee = $this->feeSnapshot($subject->model, $budget);
+                    $attributes += $fee + ['campaign_fee_status' => $this->campaignFees->initialStatus((float) $fee['marketing_fee_total'], true)];
                 }
             }
+
+            $campaign->update($attributes);
 
             return $campaign->refresh();
         });
@@ -773,18 +837,8 @@ class MarketerCampaignService
     }
 
     /**
-     * Auto-approve a campaign (called by job after the configured timeout).
-     *
-     * enhancement.md P-12 task 4: auto-approval must never activate a
-     * campaign with a 0 commission — the bug that made every conversion
-     * earn nothing. Since nobody set marketer_commission_amount manually
-     * (that's exactly why this is auto-approving instead of an admin
-     * click), pull a default rate from marketer_category_commissions /
-     * MarketerCommissionCountrySetting for the promoted item's category +
-     * the campaign's country. If neither has a default, the campaign
-     * stays 'pending_admin' (auto_approve_at is pushed back so the job
-     * doesn't immediately retry it every run) and admins are notified to
-     * set one manually.
+     * Auto-approve a campaign (called by job after the configured timeout). v3: nothing to resolve (no typed
+     * commission), so a pending campaign simply goes live.
      */
     public function autoApproveCampaign(string $campaignId): void
     {
@@ -797,147 +851,11 @@ class MarketerCampaignService
             return;
         }
 
-        if ($campaign->commission_type !== 'tiered') {
-            $defaults = $this->resolveDefaultCommission($campaign);
-
-            if ($defaults === null && ! $this->isInfluencerOnly($campaign)) {
-                $campaign->update(['auto_approve_at' => now()->addDays(3)]);
-
-                Admin::query()->get()->each(
-                    fn ($admin) => $admin->notify(new NewCampaignPendingNotification($campaign))
-                );
-
-                return;
-            }
-
-            if ($defaults !== null) {
-                $campaign->marketer_commission_amount = $defaults['marketer_commission_amount'];
-                $campaign->platform_commission_amount = $defaults['platform_commission_amount'];
-            }
-        } elseif ($campaign->tieredRules()->count() === 0) {
-            // No tiers configured — nothing to auto-approve into.
-            $campaign->update(['auto_approve_at' => now()->addDays(3)]);
-
-            return;
-        }
-
-        DB::transaction(function () use ($campaign) {
-            $campaign->status = 'auto_approved';
-            $campaign->auto_approved = true;
-            $campaign->reviewed_at = now();
-            $campaign->save();
-
-            // enhancement.md P-14 task 4: invitations are dispatched only
-            // now, after auto-approval — not at creation time.
-            foreach ((array) ($campaign->requested_marketer_vendor_ids ?? []) as $marketerId) {
-                $this->dispatchInvitation($campaign, $marketerId);
-            }
-
-            $campaign->vendor?->vendorAdmins?->each(fn ($va) => $va->notify(new CampaignAutoApprovedNotification($campaign)));
-        });
-    }
-
-    /**
-     * @return array{marketer_commission_amount: float, platform_commission_amount: float}|null
-     */
-    private function resolveDefaultCommission(MarketerCampaign $campaign): ?array
-    {
-        if (($campaign->campaign_category ?? 'product') === 'classified') {
-            return $this->resolveDefaultOpenMarketCommission($campaign);
-        }
-
-        $category = $campaign->vendorListing?->productVariant?->product?->category
-            ?? $campaign->adminListing?->productVariant?->product?->category;
-
-        if (! $category) {
-            return null;
-        }
-
-        $categoryRate = app(CommissionRuleResolver::class)
-            ->resolve(null, 'products', $category);
-
-        // Per-unit estimate of the category-tab AFFILIATE default (the campaign is shared across whichever marketers
-        // accept; influencers have no default per-sale commission, D11) at the listing price. Percentage parts are
-        // re-resolved on the real line at sale time (LastClickAttributionService).
-        $listingPrice = (float) ($campaign->vendorListing?->price ?? $campaign->adminListing?->price ?? 0);
-        $marketerCommission = app(AffiliateCommissionResolver::class)
-            ->categoryDefault($campaign->country_id, $category->id, $listingPrice, 1);
-
-        if ($marketerCommission <= 0) {
-            return null;
-        }
-
-        $platformCommission = $categoryRate
-            ? $this->computeCommissionAmount(
-                $categoryRate->commission_mode,
-                $categoryRate->commission_flat_amount,
-                (float) $categoryRate->commission_rate,
-                $marketerCommission
-            )
-            : 0.0;
-
-        return [
-            'marketer_commission_amount' => $marketerCommission,
-            'platform_commission_amount' => $platformCommission,
-        ];
-    }
-
-    /**
-     * Resolve default commission for an open-market (classified listing)
-     * campaign, using the classified listing's own category tree and the
-     * marketer-agnostic OpenMarketCategoryCommission rules.
-     *
-     * @return array{marketer_commission_amount: float, platform_commission_amount: float}|null
-     */
-    private function resolveDefaultOpenMarketCommission(MarketerCampaign $campaign): ?array
-    {
-        $category = $campaign->classifiedListing?->classifiedCategory;
-
-        if (! $category) {
-            return null;
-        }
-
-        $categoryRate = app(CommissionRuleResolver::class)
-            ->resolve(null, 'open_market', $category);
-
-        $marketerCommission = app(AffiliateCommissionResolver::class)
-            ->categoryDefault($campaign->country_id, $category->id, (float) ($campaign->classifiedListing?->price ?? 0), 1);
-
-        if ($marketerCommission <= 0) {
-            return null;
-        }
-
-        $platformCommission = $categoryRate
-            ? $this->computeCommissionAmount(
-                $categoryRate->commission_mode,
-                $categoryRate->commission_flat_amount,
-                (float) $categoryRate->commission_rate,
-                $marketerCommission
-            )
-            : 0.0;
-
-        return [
-            'marketer_commission_amount' => $marketerCommission,
-            'platform_commission_amount' => $platformCommission,
-        ];
-    }
-
-    /**
-     * Shared commission computation used by both the product-category and
-     * open-market-category commission resolution paths above, mirroring
-     * MarketerCategoryCommission::resolveAmount() /
-     * OpenMarketCategoryCommission::resolveAmount() so all three stay
-     * consistent.
-     *
-     * @param  string  $mode  fixed | percentage | both
-     */
-    private function computeCommissionAmount(string $mode, int|float|string|null $flat, float $rate, int|float|string $base): float
-    {
-        return (new MarketerCommissionRule([
-            'commission_mode' => $mode,
-            'commission_rate' => $rate,
-            'commission_flat_amount' => $flat,
-        ]))->resolveAmount($base, 1, true);
+        $this->goLive($campaign, [
+            'status' => 'auto_approved',
+            'auto_approved' => true,
+            'reviewed_at' => now(),
+        ], fn () => $this->notifyOwner($campaign, fn () => new CampaignAutoApprovedNotification($campaign), 'auto_approved'));
     }
 
     /**
@@ -961,6 +879,9 @@ class MarketerCampaignService
             'referral_code' => $referralCode,
             'referral_link' => rtrim(config('app.frontend_url'), '/')."/r/{$referralCode}",
         ]);
+
+        // The influencer's fixed amount, frozen at campaign creation, travels with his invitation.
+        $this->influencerFixed->applyTo($campaign, $invitation);
 
         // Samples follow the invitation: an influencer gets his own sample row the
         // moment he is invited (a predecessor's undispatched sample is re-pointed,
@@ -1042,7 +963,7 @@ class MarketerCampaignService
             ->whereIn('status', ['pending', 'accepted'])
             ->pluck('status', 'marketer_id');
 
-        $marketers = Marketer::whereIn('id', $marketerIds)->get()->keyBy('id');
+        $marketers = Marketer::whereIn('id', $marketerIds)->with('marketerJobs')->get()->keyBy('id');
 
         foreach ($marketerIds as $marketerId) {
             if ($existingInvitations->has($marketerId)) {
@@ -1054,6 +975,13 @@ class MarketerCampaignService
             $marketer = $marketers->get($marketerId);
             if (! $marketer || $marketer->global_status !== 'active') {
                 $skipped[$marketerId] = 'inactive';
+
+                continue;
+            }
+
+            // An influencer added to a running campaign is reserved his own fixed amount; no room left = not invited.
+            if ($this->actsAsInfluencer($marketer) && ! $this->influencerFixed->reserveFor($campaign, $marketer)) {
+                $skipped[$marketerId] = 'budget_exceeded';
 
                 continue;
             }
@@ -1089,68 +1017,6 @@ class MarketerCampaignService
     }
 
     /**
-     * Debit the per-influencer platform fee of an accepted invitation from the configured payer's wallet.
-     *
-     * @return bool true when the fee is now paid
-     */
-    public function collectInfluencerFee(MarketerCampaignInvitation $invitation, bool $throwWhenShort = false): bool
-    {
-        if ($invitation->platform_fee_status !== 'pending' || (float) $invitation->platform_fee_amount <= 0) {
-            return false;
-        }
-
-        $payerIsVendor = $invitation->platform_fee_payer === 'vendor';
-        $ownerType = $payerIsVendor ? 'vendor' : 'marketer';
-        $ownerId = $payerIsVendor ? $invitation->campaign->vendor_id : $invitation->marketer_id;
-
-        $walletService = app(WalletService::class);
-        $wallet = $walletService->getOrCreateWallet($ownerType, $ownerId, $invitation->platform_fee_currency ?? $invitation->campaign->currency);
-
-        try {
-            // The invitation row is locked and its status re-read, so a concurrent
-            // statement run (GenerateVendorPayoutsJob) or a second collector can never
-            // settle the same fee twice: the loser sees `paid` and does nothing.
-            $paid = DB::transaction(function () use ($invitation, $walletService, $wallet) {
-                $locked = MarketerCampaignInvitation::whereKey($invitation->id)->lockForUpdate()->first();
-                if (! $locked || $locked->platform_fee_status !== 'pending' || $locked->payoutItems()->exists()) {
-                    return false;
-                }
-
-                // Fee + VAT + marketing fees leave the wallet in a single debit.
-                $walletService->debit(
-                    $wallet,
-                    $locked->platformFeeTotal(),
-                    'marketer_campaign_invitation_platform_fee',
-                    $locked->id,
-                    'Influencer platform fee + VAT + marketing fees for accepted campaign invitation'
-                );
-
-                $locked->update([
-                    'platform_fee_status' => 'paid',
-                    'platform_fee_paid_via' => 'wallet',
-                    'platform_fee_paid_at' => now(),
-                ]);
-                $invitation->setRawAttributes($locked->getAttributes(), true);
-
-                return true;
-            });
-
-            // After the vendor charge is committed: a failed/frozen marketer credit never undoes it (retry job).
-            if ($paid) {
-                app(MarketerFeePayoutService::class)->creditForInvitation($invitation);
-            }
-
-            return $paid;
-        } catch (InsufficientBalanceException $e) {
-            if ($throwWhenShort) {
-                throw $e;
-            }
-
-            return false;
-        }
-    }
-
-    /**
      * Marketer accepts an invitation. The marketer's sample already exists since
      * dispatch (legacy invitations without one get it here).
      */
@@ -1173,120 +1039,24 @@ class MarketerCampaignService
 
         DB::transaction(function () use ($invitation, $marketerNote) {
             $campaign = $invitation->campaign;
-            $marketer = $invitation->marketer;
 
-            // Platform fee applies per accepted invitation, influencer type only. Affiliate is always free.
-            // D7: the vendor always pays on vendor campaigns; only campaigns without a vendor
-            // (admin-owned listings) keep the marketer-pays branch.
-            $feeAmount = 0.0;
-            $feeVatRate = 0.0;
-            $feeVat = 0.0;
-            $feeStatus = 'not_applicable';
-            $feePayer = null;
-            $marketingShare = 0.0;
-            $sharePct = 0.0;
-            $marketerPayout = 0.0;
-
-            // Peer promotions (P13) carry no promotion fee: there is no seller to bill.
-            if ($marketer->isInfluencer() && ! $campaign->marketer_listing_id) {
-                $feeSetting = MarketerInfluencerFeeCountrySetting::where('country_id', $campaign->country_id)
-                    ->first();
-
-                $feeAmount = (float) ($feeSetting?->fee_per_influencer ?? 0);
-                $feeStatus = $feeAmount > 0 ? 'pending' : 'waived';
-
-                // VAT of the campaign country (countries.vat_rate), snapshotted on the invitation.
-                $quoteService = app(MarketerCampaignQuoteService::class);
-                $feeVatRate = $feeAmount > 0 ? $quoteService->vatRate($campaign->country_id) : 0.0;
-                $feeVat = $quoteService->vatOn($feeAmount, $feeVatRate);
-
-                $feePayer = $campaign->vendor_id ? 'vendor' : 'marketer';
-
-                if ($feeAmount > 0 && $feePayer === 'vendor') {
-                    $marketingShare = $this->allocateMarketingShare($campaign, $invitation);
-
-                    // Fee share (D1): paid to the marketer wallet once the vendor charge is paid.
-                    $split = app(MarketerFeeShareResolver::class)->split($feeAmount, $campaign->country_id, $this->campaignCategoryId($campaign));
-                    $sharePct = $split['share_pct'];
-                    $marketerPayout = $split['marketer_payout'];
-                }
-            }
-
+            // An influencer's reserved fixed amount stays reserved: it is paid at campaign completion if he is
+            // still on the campaign (accepted) by then, and released back to the budget otherwise.
             $invitation->update([
                 'status' => 'accepted',
                 'responded_at' => now(),
                 'marketer_note' => $marketerNote,
-                'platform_fee_amount' => $feeAmount,
-                'platform_fee_currency' => $campaign->currency,
-                'platform_fee_vat_rate' => $feeVatRate,
-                'platform_fee_vat_amount' => $feeVat,
-                'platform_fee_marketing_amount' => $marketingShare,
-                'marketer_fee_share_pct' => $sharePct,
-                'marketer_payout_amount' => $marketerPayout,
-                'platform_fee_status' => $feeStatus,
-                'platform_fee_payer' => $feeAmount > 0 ? $feePayer : null,
-                'platform_fee_recorded_at' => now(),
             ]);
-
-            // enhancement.md P-16 fix: the fee must actually be debited at acceptance time, not merely
-            // recorded as 'pending'. Marketer-paid: a short balance blocks the acceptance (unchanged).
-            // Vendor-paid: a short balance never blocks the promotion; the daily
-            // CollectPendingInfluencerFeesJob retries until the seller tops up.
-            if ($feeStatus === 'pending' && $feeAmount > 0) {
-                $this->collectInfluencerFee($invitation->fresh(), throwWhenShort: $feePayer === 'marketer');
-            }
 
             // The sample was created when the invitation was dispatched; legacy
             // invitations (created before that) get theirs now. Idempotent.
             $this->syncInvitationSamples($campaign, $invitation);
 
-            $campaign->vendor?->vendorAdmins?->each(
-                fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($invitation, 'accepted'))
-            );
+            $this->notifyOwner($campaign, fn () => new VendorCampaignInvitationResponseNotification($invitation, 'accepted'), 'invitation_accepted');
             SendVendorInvitationResponseWhatsAppJob::dispatch($invitation->id, 'accepted')->afterCommit();
 
             $this->createMarketerListingFromInvitation($invitation);
         });
-    }
-
-    /**
-     * Marketing-fee share of one accepted influencer invitation (plan 4.3), from the campaign snapshot taken at
-     * creation: snapshot marketing total / N, N = influencer invitations requested (replacements do not count
-     * twice). The last accepted invitation takes the rounding remainder, so accepting all of them sums to the
-     * snapshot exactly. The campaign row is locked so concurrent acceptances cannot over-allocate.
-     */
-    private function allocateMarketingShare(MarketerCampaign $campaign, MarketerCampaignInvitation $invitation): float
-    {
-        $locked = MarketerCampaign::whereKey($campaign->id)->lockForUpdate()->first() ?? $campaign;
-        $total = (float) $locked->marketing_fee_total;
-        if ($total <= 0) {
-            return 0.0;
-        }
-
-        $replacedIds = MarketerCampaignInvitation::where('campaign_id', $campaign->id)
-            ->whereNotNull('replaced_invitation_id')
-            ->pluck('replaced_invitation_id');
-        $requested = max(1, MarketerCampaignInvitation::where('campaign_id', $campaign->id)
-            ->whereNotIn('id', $replacedIds)
-            ->whereHas('marketer.marketerJobs', fn ($q) => $q->where('key', 'influencer'))
-            ->count());
-
-        $others = MarketerCampaignInvitation::where('campaign_id', $campaign->id)
-            ->where('status', 'accepted')
-            ->where('platform_fee_amount', '>', 0)
-            ->where('id', '!=', $invitation->id);
-        $acceptedBefore = (clone $others)->count();
-        $remaining = max(0.0, round($total - (float) (clone $others)->sum('platform_fee_marketing_amount'), 2));
-
-        return $acceptedBefore + 1 >= $requested
-            ? $remaining
-            : min($remaining, round($total / $requested, 2));
-    }
-
-    private function campaignCategoryId(MarketerCampaign $campaign): ?string
-    {
-        return $campaign->vendorListing?->productVariant?->product?->category_id
-            ?? $campaign->adminListing?->productVariant?->product?->category_id;
     }
 
     /**
@@ -1468,9 +1238,14 @@ class MarketerCampaignService
 
         // Replacement = same job type, active, never invited to this campaign, and the one
         // who received the fewest invitations in the last 30 days (spreads work evenly).
-        $replacement = Marketer::whereHas('marketerJobs', fn ($q) => $q->whereIn('key', $oldJobKeys))
+        $influencerSlot = $oldInvitation->influencer_fixed_status === MarketerCampaignInvitation::FIXED_RESERVED;
+
+        // An open campaign already reached every eligible affiliate / broker: there is nobody left to replace one with.
+        $replacement = ! $influencerSlot && $campaign->open_to_affiliates ? null : Marketer::whereHas('marketerJobs', fn ($q) => $q->whereIn('key', $oldJobKeys))
             ->whereNotIn('id', $alreadyInvited)
             ->where('global_status', 'active')
+            ->when($campaign->country_id, fn ($q) => $q->where('country_id', $campaign->country_id))
+            ->when($influencerSlot, fn ($q) => $q->whereHas('marketerJobs', fn ($j) => $j->where('key', MarketerType::Influencer->value)))
             ->withCount([
                 'campaignInvitations as accepted_count' => fn ($q) => $q->where('status', 'accepted'),
                 'campaignInvitations as recent_requests_count' => fn ($q) => $q->where('created_at', '>=', $windowStart),
@@ -1480,15 +1255,23 @@ class MarketerCampaignService
             ->orderBy('accepted_count', 'asc')
             ->first();
 
+        // A replacement influencer is reserved HIS OWN fixed amount (the predecessor's goes back to the budget first);
+        // when it does not fit the remaining budget the slot is not refilled.
+        if ($influencerSlot) {
+            if ($replacement && ! $this->influencerFixed->reserveFor($campaign, $replacement, $oldInvitation)) {
+                $replacement = null;
+            }
+            $this->influencerFixed->release($oldInvitation->fresh());
+            $campaign->refresh();
+        }
+
         $oldInvitation->marketer->marketerAdmins->each(
             fn ($ma) => $ma->notify(new CampaignInvitationRejectedNotification($oldInvitation))
         );
 
         $reason = $oldInvitation->status === 'timed_out' ? 'timed_out' : 'rejected';
         // Vendor: tell them the marketer rejected / timed out and a replacement is being searched.
-        $campaign->vendor?->vendorAdmins?->each(
-            fn ($va) => $va->notify(new VendorCampaignInvitationResponseNotification($oldInvitation, $reason))
-        );
+        $this->notifyOwner($campaign, fn () => new VendorCampaignInvitationResponseNotification($oldInvitation, $reason), 'invitation_'.$reason);
         SendVendorInvitationResponseWhatsAppJob::dispatch($oldInvitation->id, $reason);
 
         // The predecessor's sample has not been sent (admin dispatch requires an
@@ -1516,67 +1299,127 @@ class MarketerCampaignService
         // on responded_at (the moment it stopped being the live holder), so this stamp never changes who is credited.
         $oldInvitation->update(['replaced_at' => now()]);
 
-        $campaign->vendor?->vendorAdmins?->each(
-            fn ($va) => $va->notify(new VendorMarketerReplacedNotification($campaign, $oldMarketer, $replacement))
-        );
+        $this->notifyOwner($campaign, fn () => new VendorMarketerReplacedNotification($campaign, $oldMarketer, $replacement), 'marketer_replaced');
         $notifyAdmins($replacement);
     }
 
     /**
-     * Mark a campaign as done when product stock hits zero.
+     * Close a campaign for good: stock gone, Max Commission Budget used up, or the end date reached.
+     *
+     * Pending invitations are cancelled, marketer listings archived, and the influencers are settled: every
+     * influencer still on the campaign (accepted) is paid his fixed amount net of the commission fee; the others
+     * get their reservation released. Idempotent.
      */
     public function markCampaignDone(MarketerCampaign $campaign): void
     {
+        $campaign->refresh();
+        if (in_array($campaign->status, self::TERMINAL_STATUSES, true)) {
+            return;
+        }
+
         DB::transaction(function () use ($campaign) {
             $campaign->update(['status' => 'done']);
             // enhancement.md P-14 task 4: done cancels pending invitations
             // and archives marketer listings, same as reject/cancel.
             $this->cancelPendingInvitationsAndArchiveListings($campaign);
+            $this->influencerFixed->settleCampaign($campaign);
             $this->syncListingCampaignEnabled($campaign);
         });
 
-        // P6: a finished campaign settles the affiliate marketing fees accrued so far.
-        app(AffiliateFeeSettlementService::class)->settleIfClosed($campaign, 'finished');
-
         $totalConversions = (int) $campaign->conversions()->count();
-        $totalCommissionEarned = (float) $campaign->conversions()->sum('commission_amount');
+        $totalCommissionEarned = (float) $campaign->conversions()->sum('commission_amount') + (float) $campaign->invitations()->sum('influencer_fixed_amount');
 
-        $campaign->vendor?->vendorAdmins?->each(
-            fn ($va) => $va->notify(new CampaignDoneNotification($campaign, $totalConversions, $totalCommissionEarned))
-        );
+        $this->notifyOwner($campaign, fn () => new CampaignDoneNotification($campaign, $totalConversions, $totalCommissionEarned), 'done');
 
         $campaign->invitations()->where('status', 'accepted')->with('marketer.marketerAdmins')->get()
-            ->each(fn ($inv) => $inv->marketer->marketerAdmins->each(
-                fn ($va) => $va->notify(new CampaignDoneNotification(
+            ->each(fn ($inv) => $inv->marketer->marketerAdmins->each(function ($va) use ($campaign, $inv) {
+                $va->notify(new CampaignDoneNotification(
                     $campaign,
                     (int) $inv->total_conversions,
                     (float) $inv->total_commission_earned
-                ))
-            ));
-
-        // Notify marketer admins that the campaign has expired/ended.
-        $campaign->invitations()->where('status', 'accepted')->with('marketer.marketerAdmins')->get()
-            ->each(fn ($inv) => $inv->marketer->marketerAdmins->each(
-                fn ($va) => $va->notify(new CampaignExpired($campaign, $va->id))
-            ));
+                ));
+                // Notify marketer admins that the campaign has expired/ended.
+                $va->notify(new CampaignExpired($campaign, $va->id));
+            }));
     }
 
     /**
-     * enhancement.md P-14 task 4: resolve a campaign's source stock and
-     * react — 0 stock marks the campaign done (matches the pre-existing
-     * MonitorCampaignStockJob behaviour), below min_stock_for_campaign
-     * pauses it, at/above min_stock_for_campaign resumes a stock-paused
-     * one. Used both by the ListingStockChanged listener (immediate) and
-     * MonitorCampaignStockJob's scheduled sweep (safety net).
+     * Daily sweep (CompleteEndedMarketerCampaignsJob): campaigns whose end date passed are completed, which pays
+     * the fulfilled influencers.
+     *
+     * @return int campaigns completed
+     */
+    public function completeEndedCampaigns(): int
+    {
+        $count = 0;
+
+        MarketerCampaign::whereIn('status', ['active', 'auto_approved', 'paused'])
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', now())
+            ->each(function (MarketerCampaign $campaign) use (&$count) {
+                $this->markCampaignDone($campaign);
+                $count++;
+            });
+
+        return $count;
+    }
+
+    /**
+     * An affiliate / broker joins a campaign that is open to all registered affiliates and brokers.
+     * Returns the (existing or new) invitation, already accepted. Influencers cannot join: they are picked by the vendor.
+     */
+    public function joinOpenCampaign(MarketerCampaign $campaign, Marketer $marketer): MarketerCampaignInvitation
+    {
+        if (! $campaign->open_to_affiliates || ! in_array($campaign->status, ['active', 'auto_approved'], true)) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.not_open'));
+        }
+        if ($this->actsAsInfluencer($marketer) || $marketer->country_id !== $campaign->country_id) {
+            throw new \RuntimeException(__('marketer_campaigns.errors.not_eligible'));
+        }
+
+        $existing = $campaign->invitations()->where('marketer_id', $marketer->id)->whereIn('status', ['pending', 'accepted'])->first();
+        if ($existing) {
+            if ($existing->status === 'pending') {
+                $this->acceptInvitation($existing);
+            }
+
+            return $existing->fresh();
+        }
+
+        $invitation = $this->dispatchInvitation($campaign, $marketer->id);
+        $this->acceptInvitation($invitation->fresh());
+
+        return $invitation->fresh();
+    }
+
+    /**
+     * enhancement.md P-14 task 4: resolve a campaign's source and react. The sweep (MonitorCampaignStockJob) and the
+     * ListingStockChanged listener call this for every live campaign; each vertical has its own "no longer
+     * sellable" test:
+     *
+     *  product     0 stock marks the campaign done, below min_stock_for_campaign pauses it, back above resumes it;
+     *  classified  a sold / expired / rejected listing is done (a sale ends the campaign); a paused listing pauses
+     *              the campaign and an active one resumes it;
+     *  travel      a sold-out, expired or departed trip is done; a trip pulled back from sale pauses the campaign
+     *              and an active one resumes it.
      */
     public function checkStockAndUpdateStatus(MarketerCampaign $campaign): void
+    {
+        match ($campaign->campaign_category) {
+            'classified' => $this->checkClassifiedAvailability($campaign),
+            'travel' => $this->checkTravelAvailability($campaign),
+            default => $this->checkProductStock($campaign),
+        };
+    }
+
+    private function checkProductStock(MarketerCampaign $campaign): void
     {
         $listing = $campaign->vendor_listing_id
             ? $campaign->vendorListing
             : ($campaign->admin_listing_id ? $campaign->adminListing : null);
 
         if (! $listing) {
-            return; // travel/classified sources have no stock concept yet.
+            return;
         }
 
         $category = $listing->productVariant?->product?->category;
@@ -1597,9 +1440,57 @@ class MarketerCampaignService
             return;
         }
 
-        if ($stock >= $minStock && $campaign->status === 'paused') {
+        // A campaign that used up its budget or reached its end date is over: stock coming back never reopens it.
+        if ($stock >= $minStock && $campaign->status === 'paused' && $this->mayResume($campaign)) {
             $this->resumeCampaignAfterRestock($campaign);
         }
+    }
+
+    private function checkClassifiedAvailability(MarketerCampaign $campaign): void
+    {
+        $listing = $campaign->classifiedListing;
+        if (! $listing || ! in_array($campaign->status, ['active', 'auto_approved', 'paused'], true)) {
+            return;
+        }
+
+        if (in_array($listing->status, [ClassifiedListingStatus::Sold, ClassifiedListingStatus::Expired, ClassifiedListingStatus::Rejected], true) || $listing->isExpired()) {
+            $this->markCampaignDone($campaign);
+
+            return;
+        }
+
+        if ($listing->status === ClassifiedListingStatus::Paused && $campaign->status !== 'paused') {
+            $this->pauseCampaignForLowStock($campaign);
+        } elseif ($listing->status === ClassifiedListingStatus::Active && $campaign->status === 'paused' && $this->mayResume($campaign)) {
+            $this->resumeCampaignAfterRestock($campaign);
+        }
+    }
+
+    private function checkTravelAvailability(MarketerCampaign $campaign): void
+    {
+        $package = $campaign->travelPackage;
+        if (! $package || ! in_array($campaign->status, ['active', 'auto_approved', 'paused'], true)) {
+            return;
+        }
+
+        $departed = $package->departure_date && $package->departure_date->isPast() && ! $package->departure_date->isToday();
+        if ($departed || in_array($package->status, [TravelPackageStatus::SoldOut, TravelPackageStatus::Expired], true) || $package->seatsRemaining() === 0) {
+            $this->markCampaignDone($campaign);
+
+            return;
+        }
+
+        if ($package->status !== TravelPackageStatus::Active && $campaign->status !== 'paused') {
+            $this->pauseCampaignForLowStock($campaign);
+        } elseif ($package->status === TravelPackageStatus::Active && $campaign->status === 'paused' && $this->mayResume($campaign)) {
+            $this->resumeCampaignAfterRestock($campaign);
+        }
+    }
+
+    /** A budget-exhausted or past-its-end-date campaign is over: availability coming back never reopens it. */
+    private function mayResume(MarketerCampaign $campaign): bool
+    {
+        return ! $campaign->isBudgetExhausted() && ! ($campaign->ends_at && $campaign->ends_at->isPast());
     }
 
     /**

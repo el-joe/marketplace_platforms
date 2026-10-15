@@ -29,7 +29,19 @@ class MarketerCampaignInvitation extends Model
         'marketer_credited_at', 'marketer_payout_wallet_tx_id',
         'platform_fee_refunded_at', 'platform_fee_refund_amount', 'platform_fee_refund_wallet_tx_id', 'platform_fee_voided_at',
         'platform_fee_refund_reason', 'marketer_credit_reversed_at', 'marketer_credit_reversal_wallet_tx_id', 'marketer_clawback_amount',
+        // v3: influencer fixed amount per campaign (snapshot, reserved from the campaign budget).
+        'influencer_fixed_amount', 'influencer_fixed_status', 'influencer_fixed_source',
+        'influencer_fixed_reserved_at', 'influencer_fixed_paid_at', 'influencer_fixed_released_at',
+        'influencer_fixed_fee_amount', 'influencer_fixed_net_amount', 'influencer_fixed_wallet_tx_id',
     ];
+
+    public const FIXED_NONE = 'none';
+
+    public const FIXED_RESERVED = 'reserved';
+
+    public const FIXED_PAID = 'paid';
+
+    public const FIXED_RELEASED = 'released';
 
     protected $casts = [
         'expires_at' => 'datetime',
@@ -54,6 +66,12 @@ class MarketerCampaignInvitation extends Model
         'platform_fee_refund_amount' => DecimalMoney::class,
         'marketer_credit_reversed_at' => 'datetime',
         'marketer_clawback_amount' => DecimalMoney::class,
+        'influencer_fixed_amount' => DecimalMoney::class,
+        'influencer_fixed_fee_amount' => DecimalMoney::class,
+        'influencer_fixed_net_amount' => DecimalMoney::class,
+        'influencer_fixed_reserved_at' => 'datetime',
+        'influencer_fixed_paid_at' => 'datetime',
+        'influencer_fixed_released_at' => 'datetime',
     ];
 
     public function campaign(): BelongsTo

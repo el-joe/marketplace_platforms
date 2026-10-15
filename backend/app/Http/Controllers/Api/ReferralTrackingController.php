@@ -18,7 +18,7 @@ class ReferralTrackingController extends Controller
 
     /**
      * GET /r/{code}
-     * Track a referral click and return/redirect to the product page.
+     * Track a referral click and return/redirect to the promoted product, classified listing or trip.
      * Responds with JSON when called via fetch (the Next.js /r/[code] page),
      * falls back to a plain redirect for any non-JS/legacy direct navigation.
      */
@@ -36,9 +36,9 @@ class ReferralTrackingController extends Controller
         // grace over, cancelled or done campaign) records NO click and carries NO ref: the customer
         // just lands on the product page and no commission is created for anybody.
         if (! $this->resolver->acceptsNewClicks($invitation)) {
-            $slug = $this->resolver->productSlug($invitation->campaign);
+            $path = $this->resolver->destinationPath($invitation->campaign);
 
-            return $this->respond($request, $slug ? "{$frontendUrl}/products/{$slug}" : $frontendUrl, false);
+            return $this->respond($request, $path ? $frontendUrl.$path : $frontendUrl, false);
         }
 
         $sessionId = $request->header('X-Session-Id')
@@ -46,7 +46,16 @@ class ReferralTrackingController extends Controller
             ?? $request->cookie('session_id')
             ?? session()->getId();
 
-        $this->attributionService->recordClick($code, $sessionId);
+        $this->attributionService->recordClick($code, $sessionId, $invitation);
+
+        // Classified listings and trips have no marketer listing: the link lands on the promoted item itself. The
+        // click (remembered per session) is matched when the visitor sends an inquiry or books the trip.
+        if (in_array($invitation->campaign?->campaign_category, ['classified', 'travel'], true)) {
+            $path = $this->resolver->destinationPath($invitation->campaign);
+            $destination = $path ? $frontendUrl.$path.'?ref='.urlencode($code) : $frontendUrl.'?ref='.urlencode($code);
+
+            return $this->respond($request, $destination, true);
+        }
 
         // enhancement.md P-16: redirect to the MARKETER listing this
         // invitation created (App\Models\MarketerListing, keyed by

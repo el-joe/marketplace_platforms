@@ -43,9 +43,6 @@ class FlashSaleController extends Controller
                 $invitation->conversions_earned = \App\Models\MarketerCampaignConversion::where('flash_sale_id', $invitation->flash_sale_id)
                     ->whereHas('invitation', fn ($q) => $q->where('marketer_id', $invitation->marketer_id))
                     ->count();
-                $invitation->bonus_earned = \App\Models\MarketerCampaignConversion::where('flash_sale_id', $invitation->flash_sale_id)
-                    ->whereHas('invitation', fn ($q) => $q->where('marketer_id', $invitation->marketer_id))
-                    ->sum('flash_sale_bonus_amount');
                 return $invitation;
             });
 

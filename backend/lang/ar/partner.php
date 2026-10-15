@@ -864,6 +864,7 @@ return [
         'influencer' => 'مؤثر',
         'celebrity' => 'مشهور',
         'affiliate' => 'أفلييت',
+        'broker' => 'وسيط',
         'brand_ambassador' => 'سفير براند',
     ],
 
@@ -2622,6 +2623,7 @@ return [
         'commission_set_by_platform' => 'عمولة الماركتر تحددها المنصة.',
 
         'table' => [
+            'item' => 'العنصر',
             'product' => 'المنتج',
             'country' => 'الدولة',
             'commission_type' => 'نوع العمولة',
@@ -2631,6 +2633,8 @@ return [
         ],
 
         'field' => [
+            'item' => 'العنصر',
+            'reference' => 'المرجع',
             'stock_deducted' => 'خُصمت من المخزون',
             'commission_charged' => 'العمولة المخصومة',
             'product' => 'المنتج',
@@ -2716,6 +2720,12 @@ return [
     ],
 
     'marketer_campaigns' => [
+        'fulfilment_not_allowed' => 'حملات المسوّقين غير متاحة لنموذج التنفيذ هذا.',
+        'create_failed' => 'تعذر إنشاء الحملة: :error',
+        'update_failed' => 'تعذر تحديث الحملة: :error',
+        'update_success' => 'تم تحديث الحملة.',
+        'request_approved' => 'تمت الموافقة على طلب المسوّق.',
+        'cannot_edit_reviewed' => 'تمت مراجعة هذه الحملة ولم يعد تعديلها ممكنًا.',
         'stock_after_fixed_sample' => 'بعد عينة المنصة الثابتة (:fixed وحدة) يصبح مخزونك القابل للبيع :after وحدة.',
         'sample_breakdown_admin' => 'عينة المنصة',
         'sample_breakdown_influencers' => 'المؤثرون (وحدات لكل مؤثر)',

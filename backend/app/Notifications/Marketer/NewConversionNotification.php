@@ -30,7 +30,9 @@ class NewConversionNotification extends BaseDatabaseBroadcastNotification
             'currency'          => $this->conversion->currency,
             'title'             => 'عملية بيع جديدة',
             'message'           => 'تم تسجيل عملية بيع جديدة عبر حملة "' . $campaign?->getPromotedTitle() . '" بعمولة ' . $this->conversion->commission_amount . ' ' . $this->conversion->currency . '.',
-            'url'               => route('marketer.orders.show', $this->conversion->order_id),
+            'url'               => $this->conversion->order_id
+                ? route('marketer.orders.show', $this->conversion->order_id)
+                : route('marketer.dashboard'),
         ];
     }
 

@@ -358,20 +358,6 @@ class NavigationService
                         'badge' => null,
                     ],
                     [
-                        'label' => __('admin.nav.promotion_products'),
-                        'route' => 'admin.promotion-products.index',
-                        'icon' => 'tag',
-                        'permission' => 'admin_listings.view',
-                        'badge' => null,
-                    ],
-                    [
-                        'label' => __('admin.nav.marketer_fines'),
-                        'route' => 'admin.marketer-fines.index',
-                        'icon' => 'exclamation-triangle',
-                        'permission' => 'marketers.view',
-                        'badge' => null,
-                    ],
-                    [
                         'label' => __('admin.nav.marketer_jobs'),
                         'route' => 'admin.marketer-jobs.index',
                         'icon' => 'briefcase',

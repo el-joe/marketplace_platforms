@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Marketer;
 
+use App\Enums\MarketerType;
 use App\Http\Controllers\Controller;
 use App\Models\Country;
 use App\Models\Marketer;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -41,7 +43,7 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:marketer_admins,email'],
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
-            'marketer_type' => ['required', 'in:influencer,affiliate'],
+            'marketer_type' => ['required', Rule::in(MarketerType::values())],
             'phone' => ['nullable', 'string', 'max:30'],
             'whatsapp_for_campaigns' => ['nullable', 'string', 'max:30'],
             'country_id' => ['required', 'exists:countries,id'],

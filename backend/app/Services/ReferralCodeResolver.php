@@ -55,7 +55,13 @@ class ReferralCodeResolver
     public function find(string $code): ?MarketerCampaignInvitation
     {
         return MarketerCampaignInvitation::where('referral_code', $code)
-            ->with(['campaign.vendorListing.productVariant.product', 'campaign.adminListing.productVariant.product', 'campaign.marketerListing.productVariant.product'])
+            ->with([
+                'campaign.vendorListing.productVariant.product',
+                'campaign.adminListing.productVariant.product',
+                'campaign.marketerListing.productVariant.product',
+                'campaign.classifiedListing:id,slug',
+                'campaign.travelPackage:id,slug',
+            ])
             ->first();
     }
 
@@ -125,6 +131,19 @@ class ReferralCodeResolver
         $listing = $campaign->vendorListing ?? $campaign->adminListing ?? $campaign->marketerListing;
 
         return $listing?->productVariant?->product?->slug;
+    }
+
+    /**
+     * Storefront path (no host) of the item a campaign promotes: the product page, the classified listing or the trip.
+     * Used to send a scan of a referral link to the right page.
+     */
+    public function destinationPath(MarketerCampaign $campaign): ?string
+    {
+        return match ($campaign->campaign_category) {
+            'classified' => $campaign->classifiedListing?->slug ? '/classified/find/'.$campaign->classifiedListing->slug : null,
+            'travel' => $campaign->travelPackage?->slug ? '/flights/packages/'.$campaign->travelPackage->slug : null,
+            default => ($slug = $this->productSlug($campaign)) ? '/products/'.$slug : null,
+        };
     }
 
     /**

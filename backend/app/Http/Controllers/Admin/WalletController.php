@@ -18,7 +18,7 @@ use App\Notifications\Marketer\PayoutProcessedNotification;
 use App\Services\LedgerService;
 use App\Services\Marketer\MarketerSaleSettlementService;
 use App\Services\MarketerCampaignService;
-use App\Services\MarketerCommissionStatementService;
+use App\Services\Marketer\MarketerEarningsService;
 use App\Services\WalletService;
 use App\Traits\HasDataTable;
 use App\Traits\HasExport;
@@ -221,7 +221,7 @@ class WalletController extends Controller
         }
 
         return [
-            'commissions' => app(MarketerCommissionStatementService::class)->totalsForMarketer($wallet->owner_id),
+            'commissions' => app(MarketerEarningsService::class)->totalsForMarketer($wallet->owner_id),
             'sales' => app(MarketerSaleSettlementService::class)->totalsFor($wallet->owner_id),
         ];
     }

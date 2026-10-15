@@ -36,15 +36,14 @@
                     <div class="text-sm text-gray-500 mt-1">
                         {{ $invitation->campaign->vendor->name ?? 'ناوي' }} •
                         {{ $invitation->campaign->country->name_ar ?? '' }} •
-                        {{ __('marketer.invitations.commission_type_label') }} {{ [
-                            'fixed'      => __('marketer.invitations.commission_type_fixed'),
-                            'tiered'     => __('marketer.invitations.commission_type_tiered'),
-                            'last_click' => __('marketer.invitations.commission_type_last_click'),
-                        ][$invitation->campaign->commission_type] ?? '' }}
+                        {{ __('marketer.invitations.commission_type_label') }}
+                        {{ ($invitation->influencer_fixed_status ?? 'none') !== 'none' ? __('marketer_campaigns.marketer_panel.terms_fixed') : __('marketer_campaigns.marketer_panel.terms_percentage') }}
                     </div>
+                    @if(($invitation->influencer_fixed_status ?? 'none') !== 'none')
                     <div class="text-sm font-semibold text-green-700 mt-1">
-                        {{ __('marketer.invitations.commission_label') }} {{ number_format($invitation->campaign->marketer_commission_amount) }} {{ $invitation->campaign->currency }}
+                        {{ __('marketer.invitations.commission_label') }} {{ \App\Support\Money::format($invitation->influencer_fixed_amount) }} {{ $invitation->campaign->currency }}
                     </div>
+                    @endif
                     @if($invitation->isPending() && $invitation->expires_at)
                     <div class="text-xs text-red-500 mt-1">{{ __('marketer.invitations.expires_label') }} {{ $invitation->expires_at->diffForHumans() }}</div>
                     @endif

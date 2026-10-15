@@ -45,6 +45,7 @@ class TravelPackage extends Model
         'contract_file_path',
         'contract_file_original_name',
         'contract_uploaded_at',
+        'campaign_enabled',
     ];
 
     protected static function booted(): void
@@ -78,6 +79,7 @@ class TravelPackage extends Model
             'status' => TravelPackageStatus::class,
             'pricing_tiers_enabled' => 'boolean',
             'show_pricing_tiers_to_customer' => 'boolean',
+            'campaign_enabled' => 'boolean',
         ];
     }
 
@@ -101,6 +103,12 @@ class TravelPackage extends Model
     public function pricingTiers(): HasMany
     {
         return $this->hasMany(TravelPackagePricingTier::class)->orderBy('travelers_count');
+    }
+
+    /** Marketer campaigns promoting this trip. */
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(MarketerCampaign::class, 'travel_package_id');
     }
 
     public function bookings(): HasMany

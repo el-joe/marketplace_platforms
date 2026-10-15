@@ -297,17 +297,7 @@
         <p class="text-xs text-gray-500 mb-4">{{ __('marketing_fees.calculator_hint') }}</p>
         <div class="grid gap-4 md:grid-cols-3">
             <div>
-                <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.mode') }}</label>
-                <div class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm">
-                    <button type="button" @click="mode = 'influencer'; run()" :class="mode === 'influencer' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'" class="px-3 py-1.5">{{ __('marketing_fees.mode_influencer') }}</button>
-                    <button type="button" @click="mode = 'affiliate'; run()" :class="mode === 'affiliate' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700'" class="px-3 py-1.5">{{ __('marketing_fees.mode_affiliate') }}</button>
-                </div>
-                <label x-show="mode === 'affiliate'" x-cloak class="mt-2 flex items-center gap-2 text-xs text-gray-600">
-                    <input type="checkbox" x-model="firstOrder" @change="run()" class="rounded border-gray-300"> {{ __('marketing_fees.first_order') }}
-                </label>
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1" x-text="mode === 'influencer' ? @js(__('marketing_fees.subtotal_influencer')) : @js(__('marketing_fees.subtotal_affiliate'))"></label>
+                <label class="block text-xs text-gray-500 mb-1">{{ __('marketing_fees.subtotal_campaign') }}</label>
                 <input type="number" min="0" step="0.01" x-model="subtotal" @input.debounce.300ms="run()" class="w-full {{ $input }}">
             </div>
             <div>
@@ -347,7 +337,7 @@
     <script>
         function feeCalculator(url) {
             return {
-                mode: 'influencer', subtotal: 18.9, country: @js($countries->first()?->id), type: 'fbn', firstOrder: true,
+                subtotal: 100, country: @js($countries->first()?->id), type: 'fbn',
                 result: null, error: false,
                 async run() {
                     this.error = false;
@@ -356,7 +346,7 @@
                         const res = await fetch(url, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' },
-                            body: JSON.stringify({ mode: this.mode, subtotal: this.subtotal, country_id: this.country, category_id: cat?.value || null, fulfillment_type: this.type, first_order: this.firstOrder }),
+                            body: JSON.stringify({ subtotal: this.subtotal, country_id: this.country, category_id: cat?.value || null, fulfillment_type: this.type }),
                         });
                         if (!res.ok) throw new Error('bad');
                         this.result = await res.json();

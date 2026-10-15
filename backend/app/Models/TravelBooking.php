@@ -26,6 +26,10 @@ class TravelBooking extends Model
         'contract_signature_data',
         'status',
         'cancellation_reason',
+        'marketer_campaign_id',
+        'marketer_id',
+        'referral_code',
+        'completed_at',
     ];
 
     protected function casts(): array
@@ -33,6 +37,7 @@ class TravelBooking extends Model
         return [
             'total_price' => \App\Casts\DecimalMoney::class,
             'contract_signed_at' => 'datetime',
+            'completed_at' => 'datetime',
             'status' => TravelBookingStatus::class,
         ];
     }
@@ -56,6 +61,16 @@ class TravelBooking extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function marketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class);
+    }
+
+    public function marketerCampaign(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaign::class, 'marketer_campaign_id');
     }
 
     public function bookableUnit(): BelongsTo

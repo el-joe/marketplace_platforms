@@ -83,8 +83,8 @@ class ReferralCodeAdminTest extends TestCase
         foreach (['code_history_title', 'code_state_grace', 'code_state_expired', 'code_state_active', 'code_replaces', 'code_col_code'] as $key) {
             $this->assertNotSame('admin.marketer_campaigns.'.$key, __('admin.marketer_campaigns.'.$key));
         }
-        foreach (['referral_grace_title', 'referral_grace_hint', 'referral_grace_days', 'referral_grace_saved'] as $key) {
-            $this->assertNotSame('admin.marketer_settings.'.$key, __('admin.marketer_settings.'.$key));
+        foreach (['referral_grace_label', 'referral_grace_hint', 'saved'] as $key) {
+            $this->assertNotSame('marketer_settings.general.'.$key, __('marketer_settings.general.'.$key));
         }
     }
 
@@ -93,11 +93,11 @@ class ReferralCodeAdminTest extends TestCase
         $this->actingAs($this->admin, 'admin')
             ->get(route('admin.marketer-settings.index'))
             ->assertOk()
-            ->assertSee(__('admin.marketer_settings.referral_grace_title'))
+            ->assertSee(__('marketer_settings.general.referral_grace_label'))
             ->assertSee('name="marketer_referral_grace_days"', false)
             ->assertSee('value="7"', false);
 
-        $this->post(route('admin.marketer-settings.update-referral-grace'), ['marketer_referral_grace_days' => 3])
+        $this->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_referral_grace_days' => 3]))
             ->assertRedirect()->assertSessionHas('success');
 
         Setting::flush();
@@ -108,14 +108,14 @@ class ReferralCodeAdminTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
         foreach ([-1, 91, 'abc', ''] as $bad) {
-            $this->post(route('admin.marketer-settings.update-referral-grace'), ['marketer_referral_grace_days' => $bad])
+            $this->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_referral_grace_days' => $bad]))
                 ->assertSessionHasErrors('marketer_referral_grace_days');
         }
 
         $viewer = Admin::factory()->create();
         $viewer->givePermissionTo('marketer_commission_settings.view');
         $this->actingAs($viewer, 'admin')
-            ->post(route('admin.marketer-settings.update-referral-grace'), ['marketer_referral_grace_days' => 2])
+            ->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_referral_grace_days' => 2]))
             ->assertForbidden();
     }
 
@@ -140,5 +140,16 @@ class ReferralCodeAdminTest extends TestCase
                 ->assertSee('data-replaced-at', false)
                 ->assertSee(__('admin.marketer_campaigns.replaced_at', ['date' => $replaced->replaced_at->format('d M Y H:i')]));
         }
+    }
+
+    /** Full payload of the General tab (all four settings are posted together). */
+    private function general(array $overrides = []): array
+    {
+        return $overrides + [
+            'marketer_referral_grace_days' => 7,
+            'marketer_payout_clearing_days' => 3,
+            'marketer_attribution_window_days' => 7,
+            'marketer_peer_campaign_min_stock' => 1,
+        ];
     }
 }

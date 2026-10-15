@@ -403,18 +403,6 @@
                    class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
             <span class="text-sm text-gray-700">{{ __('admin.admin_listings.campaign_enabled') }}</span>
         </label>
-
-        <div>
-            <label for="promotion_category" class="block text-sm font-medium text-gray-700 mb-1">{{ __('admin.admin_listings.promotion_category') }}</label>
-            <select name="promotion_category" id="promotion_category" class="w-full rounded-lg border-gray-300 text-sm">
-                <option value="">{{ __('admin.admin_listings.promotion_category_none') }}</option>
-                @foreach (\App\Enums\PromotionCategory::listingCategories() as $case)
-                    <option value="{{ $case->value }}" {{ (string) $val('promotion_category', $prefillPromotionCategory ?? '') === (string) $case->value ? 'selected' : '' }}>{{ $case->value }} — {{ $case->label() }}</option>
-                @endforeach
-            </select>
-            <p class="mt-1 text-xs text-gray-500">{{ __('admin.admin_listings.promotion_category_hint') }}</p>
-            @error('promotion_category')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-        </div>
     </div>
 
     {{-- Errors summary + submit --}}

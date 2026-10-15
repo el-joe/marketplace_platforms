@@ -38,8 +38,8 @@
                     <div class="text-xs text-gray-500">{{ __('marketer.campaigns.earned_commission') }}</div>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-3">
-                    <div class="text-lg font-black text-yellow-600">{{ \App\Support\Money::format($inv->campaign->marketer_commission_amount) }}</div>
-                    <div class="text-xs text-gray-500">{{ __('marketer.campaigns.commission_per_sale') }}</div>
+                    <div class="text-lg font-black text-yellow-600">{{ ($inv->influencer_fixed_status ?? 'none') !== 'none' ? \App\Support\Money::format($inv->influencer_fixed_amount) : __('marketer_campaigns.marketer_panel.rate_short') }}</div>
+                    <div class="text-xs text-gray-500">{{ __('marketer_campaigns.marketer_panel.terms_label') }}</div>
                     @if($inv->campaign->hasNoPeerCommission())
                         <div class="text-[11px] text-yellow-700 mt-1" data-testid="no-commission-warning">{{ __('marketer.campaigns.peer.no_commission_short') }}</div>
                     @endif

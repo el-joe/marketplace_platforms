@@ -92,4 +92,14 @@ final class CampaignSource
     {
         return $this->marketerListingId !== null;
     }
+
+    public function isClassifiedListing(): bool
+    {
+        return $this->classifiedListingId !== null;
+    }
+
+    public function isTravelPackage(): bool
+    {
+        return $this->travelPackageId !== null;
+    }
 }

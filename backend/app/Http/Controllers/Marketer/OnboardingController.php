@@ -45,7 +45,7 @@ class OnboardingController extends Controller
 
         $data = $request->validate([
             'job_keys' => ['required', 'array', 'min:1'],
-            'job_keys.*' => ['required', 'string', Rule::in([...$this->service->availableJobKeys(), 'broker'])],
+            'job_keys.*' => ['required', 'string', Rule::in($this->service->availableJobKeys())],
         ]);
         $this->service->setJobTypes($this->marketer(), $data['job_keys']);
 
@@ -66,7 +66,7 @@ class OnboardingController extends Controller
             'marketer' => $marketer,
             'profile' => $marketer->marketerProfile()->first(),
             'isInfluencer' => $this->service->hasJob($marketer, 'influencer'),
-            'isBroker' => $this->service->hasJob($marketer, 'affiliate'),
+            'isBroker' => $this->service->hasJob($marketer, 'broker'),
             'platforms' => MarketerOnboardingService::SOCIAL_PLATFORMS,
             'categories' => Category::orderBy('name_ar')->get(),
             'cities' => City::orderBy('name_ar')->get(),

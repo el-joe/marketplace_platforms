@@ -20,8 +20,8 @@
                 <div class="font-bold text-gray-900 text-lg">{{ $marketer->name }}</div>
                 <div class="text-gray-500 text-sm">{{ $marketer->email }}</div>
                 <span class="inline-flex mt-1 px-2 py-0.5 rounded text-xs font-semibold
-                    {{ $marketer->isInfluencer() ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                    {{ $marketer->isInfluencer() ? __('marketer.profile.type_influencer') : __('marketer.profile.type_affiliate') }}
+                    {{ $marketer->isInfluencer() ? 'bg-purple-100 text-purple-700' : ($marketer->isBroker() ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700') }}">
+                    {{ $marketer->isInfluencer() ? __('marketer.profile.type_influencer') : ($marketer->isBroker() ? __('marketer.profile.type_broker') : __('marketer.profile.type_affiliate')) }}
                 </span>
             </div>
         </div>
@@ -110,7 +110,7 @@
                 <input type="file" name="banner" accept="image/*" class="text-sm text-gray-600">
             </div>
 
-            @if($marketer->isAffiliate())
+            @if($marketer->isBroker())
             <div class="border border-gray-200 rounded-lg p-4 space-y-3" id="broker-specialization">
                 <div class="font-semibold text-gray-700 text-sm">{{ __('marketer.profile.broker_specialization_heading') }}</div>
                 <select name="broker_category_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">

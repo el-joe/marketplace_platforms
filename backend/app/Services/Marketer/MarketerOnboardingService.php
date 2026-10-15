@@ -15,9 +15,6 @@ class MarketerOnboardingService
 {
     public const SOCIAL_PLATFORMS = ['instagram', 'snapchat', 'tiktok', 'twitter', 'youtube', 'facebook'];
 
-    /** "broker" is the public name of the affiliate job. */
-    private const KEY_ALIASES = ['broker' => 'affiliate'];
-
     public const DOC_MIMES = 'pdf,doc,docx,jpg,jpeg,png';
 
     public const DOC_MAX_KB = 5120;
@@ -25,7 +22,7 @@ class MarketerOnboardingService
     /** @return list<string> normalised, de-duplicated job keys that exist and are active */
     public function validJobKeys(array $keys): array
     {
-        $keys = collect($keys)->map(fn ($k) => self::KEY_ALIASES[$k] ?? $k)->unique()->values()->all();
+        $keys = collect($keys)->unique()->values()->all();
 
         return MarketerJob::whereIn('key', $keys)->where('is_active', true)->pluck('key')->all();
     }
@@ -37,7 +34,7 @@ class MarketerOnboardingService
 
     public function normaliseKeys(array $keys): array
     {
-        return collect($keys)->map(fn ($k) => self::KEY_ALIASES[$k] ?? $k)->unique()->values()->all();
+        return collect($keys)->unique()->values()->all();
     }
 
     public function setJobTypes(Marketer $marketer, array $keys): void
@@ -65,7 +62,7 @@ class MarketerOnboardingService
                 );
             }
 
-            if ($this->hasJob($marketer, 'affiliate')) {
+            if ($this->hasJob($marketer, 'broker')) {
                 $serveAll = (bool) ($data['broker_serves_all_cities'] ?? false);
                 $fill['broker_category_id'] = $data['broker_category_id'] ?? null;
                 $fill['broker_serves_all_cities'] = $serveAll;
@@ -129,7 +126,7 @@ class MarketerOnboardingService
         if (in_array('influencer', $keys, true) && ! collect($profile?->social_links ?? [])->filter()->isNotEmpty()) {
             $missing[] = 'social_links';
         }
-        if (in_array('affiliate', $keys, true)) {
+        if (in_array('broker', $keys, true)) {
             if (! $profile?->broker_category_id) {
                 $missing[] = 'broker_category_id';
             }
@@ -173,7 +170,7 @@ class MarketerOnboardingService
             $rules['social_links.*'] = ['nullable', 'url', 'max:500'];
         }
 
-        if ($this->hasJob($marketer, 'affiliate')) {
+        if ($this->hasJob($marketer, 'broker')) {
             $rules['broker_category_id'] = ['required', 'uuid', 'exists:categories,id'];
             $rules['broker_serves_all_cities'] = ['nullable', 'boolean'];
             $rules['broker_city_id'] = ['nullable', 'required_without:broker_serves_all_cities', 'uuid', 'exists:cities,id'];

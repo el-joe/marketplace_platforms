@@ -24,6 +24,7 @@ use App\Models\WishlistItem;
 use App\Services\Customer\BuyBoxService;
 use App\Services\Customer\ClassifiedDetailService;
 use App\Services\Customer\ClassifiedInquiryService;
+use App\Services\Marketer\ListingReferralService;
 use App\Services\Customer\ListingQueryService;
 use App\Services\Customer\ProductDetailEnrichmentService;
 use App\Services\Customer\ProductViewService;
@@ -77,7 +78,7 @@ class ListingController extends Controller
 
         /** @var Customer $customer */
         $customer = auth('customer')->user();
-        $inquiry = $this->inquiryService->create($listing, $customer, $request->validated());
+        $inquiry = $this->inquiryService->create($listing, $customer, $request->validated(), ListingReferralService::sessionIdFrom($request));
 
         $resource = new ListingInquiryResource($inquiry);
         $resource->listingSlug = $slug;

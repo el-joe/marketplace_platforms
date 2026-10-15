@@ -11,7 +11,7 @@
                     <input type="checkbox" name="job_keys[]" value="{{ $key }}" class="sr-only peer"
                            {{ in_array($key, old('job_keys', $selected)) ? 'checked' : '' }}>
                     <div class="peer-checked:border-yellow-400 peer-checked:bg-yellow-50 border-2 border-gray-200 rounded-xl p-5 text-center">
-                        <div class="font-bold">{{ $key === 'affiliate' ? __('marketer.broker') : ($key === 'influencer' ? __('marketer.influencer') : $key) }}</div>
+                        <div class="font-bold">{{ \App\Enums\MarketerType::tryFrom($key)?->label() ?? $key }}</div>
                     </div>
                 </label>
             @endforeach

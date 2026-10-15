@@ -41,39 +41,6 @@
         </div>
     </div>
 
-    {{-- Monthly promotion target (e.g. 2/3) --}}
-    @if(($quota['target'] ?? null) !== null)
-    <div class="rounded-xl border p-5 {{ $quota['warning'] ? 'bg-red-50 border-red-300' : ($quota['level'] === 'watch' ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200') }}">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-xs {{ $quota['warning'] ? 'text-red-600' : 'text-gray-500' }}">{{ __('marketer.quota.title') }}@if($quota['category']) · {{ $quota['category']->label() }}@endif</div>
-                <div class="text-3xl font-black {{ $quota['warning'] ? 'text-red-600' : ($quota['behind'] ? 'text-yellow-500' : 'text-green-600') }}">{{ $quota['done'] }}/{{ $quota['target'] }}</div>
-            </div>
-            <div class="w-40 h-2 rounded-full bg-gray-200 overflow-hidden">
-                <div class="h-full {{ $quota['warning'] ? 'bg-red-500' : 'bg-yellow-400' }}" style="width: {{ $quota['target'] > 0 ? min(100, round($quota['done'] / $quota['target'] * 100)) : 100 }}%"></div>
-            </div>
-        </div>
-        @if($quota['warning'])
-            <p class="text-sm text-red-700 mt-2">{{ __('marketer.quota.warning', ['remaining' => $quota['remaining']]) }}</p>
-        @elseif($quota['level'] === 'watch')
-            <p class="text-sm text-yellow-700 mt-2">{{ __('marketer.quota.watch', ['remaining' => $quota['remaining']]) }}</p>
-        @endif
-        @if(($quota['penalty'] ?? 0) > 0 && $quota['behind'])
-            <p class="text-xs text-red-600 mt-1" data-quota-penalty>{{ __('marketer.quota.penalty_notice', ['amount' => number_format($quota['penalty'])]) }}</p>
-        @endif
-    </div>
-    @endif
-
-    @if(($pendingFines ?? collect())->isNotEmpty())
-    <div class="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700" data-pending-fines>
-        <div class="font-bold mb-1">{{ __('marketer.quota.pending_fines_title') }}</div>
-        @foreach($pendingFines as $fine)
-            <div>{{ $fine->period }} · {{ $fine->promotion_category->label() }} ({{ $fine->done }}/{{ $fine->target }}) — {{ number_format($fine->amount) }} {{ $fine->currency }}</div>
-        @endforeach
-        <div class="text-xs mt-1">{{ __('marketer.quota.pending_fines_hint') }}</div>
-    </div>
-    @endif
-
     {{-- Earnings Chart --}}
     @if(!empty($stats['monthlyEarnings']))
     <div class="bg-white rounded-xl border border-gray-200 p-6">

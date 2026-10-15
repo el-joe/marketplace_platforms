@@ -4,7 +4,7 @@
 @section('page-title', __('partner.listings.add_product_listing_title'))
 
 @push('scripts')
-    @vite(['resources/js/components/select2.js', 'resources/js/partner/listings.js', 'resources/js/partner/listing-create-campaign.js'])
+    @vite(['resources/js/components/select2.js', 'resources/js/partner/listings.js'])
     <script>
         window.LISTINGS_CREATE = {
             productSearchUrl: '{{ route("partner.listings.product-search") }}',
@@ -13,8 +13,6 @@
             warehousesByCountryUrl: '{{ route("partner.listings.warehouses-by-country") }}',
             availableShippingMethodsUrl: '{{ route("partner.listings.available-shipping-methods") }}',
             categorySamplesUrl: '{{ route("partner.listings.category-samples") }}',
-            campaignPricingUrl: '{{ route("partner.listings.campaign-pricing") }}',
-            influencerFeeUrl: '{{ route("partner.listings.marketer-fee") }}',
             storeUrl: '{{ route("partner.listings.store") }}',
             csrf: '{{ csrf_token() }}',
             contractLabels: {
@@ -356,130 +354,10 @@
                         </div>
                     </div>
 
-                    {{-- Marketer Campaign --}}
-                    <div class="bg-white rounded-2xl border border-purple-200 p-6 space-y-4" id="campaign-section">
-                        <label class="flex items-start gap-2 cursor-pointer">
-                            <input type="checkbox" name="campaign_enabled" value="1" id="campaign-enabled-checkbox"
-                                class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-                            <span class="text-sm text-gray-700">
-                                <i class="fas fa-bullhorn text-purple-500 mr-1"></i>
-                                {{ __('partner.static_text.partner_listings_create.enable_a_marketer_campaign_for_this') }}
-                                <span class="block text-xs text-gray-400 mt-0.5">
-                                    {{ __('partner.static_text.partner_listings_create.available_for_fbn_listings_only_lets') }}
-                                </span>
-                            </span>
-                        </label>
-
-                        <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3 hidden" id="campaign-not-fbn-warning">
-                            {{ __('partner.static_text.partner_listings_create.you_must_choose_the_fbn_fulfillment') }}
-                        </p>
-
-                        <div class="space-y-4 hidden" id="campaign-details">
-                            @if($marketerVendors->isEmpty())
-                                <p class="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
-                                    {{ __('partner.listings.create.no_marketers_available') }}
-                                </p>
-                            @else
-                            <x-form.select
-                                name="marketer_ids"
-                                label="{{ __('partner.listings.create.select_marketers_label') }}"
-                                :multiple="true"
-                                :select2="true"
-                                placeholder="{{ __('partner.listings.create.select_marketers_placeholder') }}"
-                            >
-                                @foreach($marketerVendors as $m)
-                                    <option value="{{ $m->id }}" data-type="{{ $m->marketerJobs->first()?->key }}"
-                                            data-name="{{ $m->name }}">
-                                        {{ $m->name }} — {{ $m->isInfluencer() ? __('partner.listings.create.marketer_type_influencer') : __('partner.listings.create.marketer_type_affiliate') }}
-                                    </option>
-                                @endforeach
-                            </x-form.select>
-                            @endif
-
-                            <div class="text-sm text-gray-700 hidden" id="marketer-commission-info"
-                                 data-label="{{ __('partner.listings.marketer_commission_label') }}"></div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="campaign-pricing-cards">
-                                <div class="p-4 rounded-lg border bg-gray-50 border-gray-200" id="fee-card">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <i class="fas fa-receipt text-orange-500 text-sm"></i>
-                                        <span class="text-xs font-semibold text-gray-700">{{ __('partner.listings.create.fee_card_title') }}</span>
-                                    </div>
-                                    <div class="text-sm text-gray-800" id="fee-breakdown-text">{{ __('partner.listings.create.fee_card_placeholder') }}</div>
-                                    <div class="mt-2 text-base font-bold text-orange-700 hidden" id="fee-total-wrap">
-                                        {{ __('partner.listings.create.fee_total_label') }} <span id="fee-total-value">0</span> <span id="fee-currency"></span>
-                                    </div>
-                                </div>
-                                <div class="p-4 rounded-lg border bg-green-50 border-green-200">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <i class="fas fa-percentage text-green-500 text-sm"></i>
-                                        <span class="text-xs font-semibold text-gray-700">{{ __('partner.listings.create.commission_card_title') }}</span>
-                                    </div>
-                                    <div class="text-sm text-gray-800" id="commission-breakdown-text">{{ __('partner.listings.create.commission_card_placeholder') }}</div>
-                                </div>
-                            </div>
-
-                            {{-- Per-marketer fee breakdown table --}}
-                            <div class="hidden" id="marketer-fee-table-wrap">
-                                <h5 class="text-sm font-semibold text-gray-700 mb-2">
-                                    <i class="fas fa-receipt text-orange-500 mr-1"></i>
-                                    {{ __('partner.listings.create.fee_details_title') }}
-                                </h5>
-                                <div class="rounded-lg border border-gray-200 overflow-hidden">
-                                    <table class="w-full text-sm">
-                                        <thead class="bg-gray-50">
-                                            <tr>
-                                                <th class="text-right px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.create.marketer_col') }}</th>
-                                                <th class="text-center px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.create.type_col') }}</th>
-                                                <th class="text-center px-4 py-2 text-gray-600 font-medium">{{ __('partner.listings.create.fees_col') }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="marketer-fee-table-body"></tbody>
-                                        <tfoot class="bg-gray-50 border-t-2 border-gray-200">
-                                            <tr>
-                                                <td colspan="2" class="px-4 py-2 font-semibold text-gray-700 text-right">{{ __('partner.listings.create.platform_fees_total') }}</td>
-                                                <td class="px-4 py-2 text-center font-bold" id="marketer-fee-table-total"></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('partner.listings.create.commission_type_label') }}</label>
-                                <select name="commission_type" id="commission-type-select"
-                                        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
-                                    <option value="fixed">{{ __('partner.listings.commission_type_fixed') }}</option>
-                                    <option value="tiered">{{ __('partner.listings.commission_type_tiered') }}</option>
-                                    <option value="last_click">{{ __('partner.listings.commission_type_last_click') }}</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    {{ __('partner.listings.create.max_commission_budget_label') }}
-                                    <span class="text-xs text-gray-400">({{ auth()->guard('vendor')->user()->vendor->country->currency_code ?? '' }})</span>
-                                </label>
-                                <input type="number" name="max_commission_budget" min="0" step="0.01"
-                                       class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40"
-                                       placeholder="0">
-                            </div>
-
-                            <div class="hidden" id="tiered-rules-section">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('partner.listings.create.tiered_rules_label') }}</label>
-                                <div class="space-y-2" id="tiered-rules-list"></div>
-                                <button type="button" id="add-tier-btn"
-                                        class="mt-2 text-sm text-purple-600 hover:underline">
-                                    {{ __('partner.listings.create.add_tier_btn') }}
-                                </button>
-                            </div>
-
-                            <div class="p-3 bg-purple-50 rounded-lg text-sm text-purple-800">
-                                <i class="fas fa-box-open mr-1"></i>
-                                <span class="font-semibold">{{ __('partner.listings.create.expected_samples_label') }}</span>
-                                <strong id="total-samples-value">0</strong>
-                                <span class="block text-xs text-gray-500 mt-1" id="sample-breakdown-text"></span>
-                            </div>
-                        </div>
+                    {{-- Marketer campaigns are created from the listing's Campaigns tab (after the listing exists). --}}
+                    <div class="flex items-start gap-3 rounded-2xl border border-purple-200 bg-purple-50 p-4 text-sm text-purple-800" id="campaign-section">
+                        <i class="fas fa-bullhorn mt-0.5"></i>
+                        <span>{{ __('marketer_campaigns.wizard.listing_notice') }}</span>
                     </div>
 
                     <div id="contract-panel" class="hidden rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-4">

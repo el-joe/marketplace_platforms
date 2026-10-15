@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminListingStatus;
-use App\Enums\PromotionCategory;
 use App\Http\Controllers\Controller;
 use App\Models\AdminListing;
 use App\Enums\MarketplaceShippingRuleCommissionType;
@@ -222,7 +221,6 @@ class AdminListingController extends Controller
             'warehouses'      => Warehouse::where('type', 'platform_fbn')->where('is_active', true)->orderBy('name')->get(),
             'shippingMethods' => ShippingMethod::where('is_active', true)->orderBy('name')->get(),
             'selectedVariant' => null,
-            'prefillPromotionCategory' => request()->integer('promotion_category') ?: null,
             'breadcrumbs'     => [
                 ['label' => __('admin.nav.dashboard'), 'url' => route('admin.dashboard')],
                 ['label' => __('admin.admin_listings.title'), 'url' => route('admin.admin-listings.index')],
@@ -800,8 +798,6 @@ class AdminListingController extends Controller
             'low_stock_threshold'        => ['required', 'integer', 'min:0'],
             'status'                     => ['required', 'in:active,paused,out_of_stock,archived'],
             'campaign_enabled'           => ['boolean'],
-            // P12: admin-curated products promoted for the monthly quota categories (3 intermediaries / 4 Nawy)
-            'promotion_category'         => ['nullable', Rule::in(array_map(fn ($c) => $c->value, PromotionCategory::listingCategories()))],
             'sold_by_label_en'           => ['nullable', 'string', 'max:150'],
             'sold_by_label_ar'           => ['nullable', 'string', 'max:150'],
             'express_badge_label_en'     => ['nullable', 'string', 'max:100'],

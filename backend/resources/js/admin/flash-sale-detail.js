@@ -666,15 +666,11 @@ function initManualInviteMarketers() {
         const ids = raw.split('\n').map(s => s.trim()).filter(Boolean);
         if (!ids.length) return;
 
-        const rate = document.getElementById('manual-invite-marketer-rate').value;
-
         $.ajax({
             url: window.URLS.inviteMarketers,
             method: 'POST',
             data: {
                 marketer_ids: ids,
-                extra_commission_rate: rate || null,
-                extra_commission_flat_amount: document.getElementById('manual-invite-marketer-flat')?.value || null,
                 _token: $('meta[name="csrf-token"]').attr('content'),
             },
             success(res) {

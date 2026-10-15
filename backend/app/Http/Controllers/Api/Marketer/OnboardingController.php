@@ -21,7 +21,7 @@ class OnboardingController extends Controller
 
         $data = $request->validate([
             'job_keys' => ['required', 'array', 'min:1'],
-            'job_keys.*' => ['required', 'string', Rule::in([...$this->service->availableJobKeys(), 'broker'])],
+            'job_keys.*' => ['required', 'string', Rule::in($this->service->availableJobKeys())],
         ]);
 
         $this->service->setJobTypes($this->marketer(), $data['job_keys']);

@@ -182,15 +182,6 @@
             </div>
             @endif
 
-            <div class="max-w-xs">
-                <label class="block text-sm font-semibold text-gray-700 mb-1">{{ __('admin.marketers.platform_cut_pct') }}</label>
-                <input type="number" step="0.01" min="0" max="100" name="platform_cut_percentage"
-                       value="{{ old('platform_cut_percentage', $marketer->marketerProfile?->platform_cut_percentage ?? 0) }}"
-                       class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400">
-                <p class="text-[11px] text-gray-400 mt-1">{{ __('admin.marketers.platform_cut_hint') }}</p>
-                @error('platform_cut_percentage')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
-            </div>
-
             <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <input type="checkbox" name="can_self_edit_ad_price" value="1"
                        @checked(old('can_self_edit_ad_price', $marketer->marketerProfile?->can_self_edit_ad_price))
@@ -305,7 +296,7 @@
                     <input type="text" name="specialty_en" dir="ltr" maxlength="150" value="{{ old('specialty_en', $marketer->marketerProfile?->specialty_en) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                 </div>
             </div>
-            @if($marketer->isAffiliate())
+            @if($marketer->isBroker())
             <div class="border-t pt-4 mt-2">
                 <h4 class="text-sm font-bold text-gray-700 mb-3">{{ __('admin.marketers.broker_specialization') }}</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -345,31 +336,6 @@
                 </div>
             </div>
             @endif
-
-            {{-- Monthly promotion obligation --}}
-            <div class="border-t border-gray-100 pt-5">
-                <h4 class="text-sm font-bold text-gray-700 mb-3">{{ __('admin.marketers.promotion_obligation') }}</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.promotion_category') }}</label>
-                        <select name="promotion_category" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                            <option value="">{{ __('admin.marketers.promotion_category_none') }}</option>
-                            @foreach(\App\Enums\PromotionCategory::cases() as $case)
-                                <option value="{{ $case->value }}" {{ (string) old('promotion_category', $marketer->marketerProfile?->promotion_category?->value) === (string) $case->value ? 'selected' : '' }}>
-                                    {{ $case->value }} — {{ $case->label() }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.monthly_promotion_target') }}</label>
-                        <input type="number" min="0" max="1000" name="monthly_promotion_target"
-                               value="{{ old('monthly_promotion_target', $marketer->marketerProfile?->monthly_promotion_target) }}"
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                        <p class="text-xs text-gray-400 mt-1">{{ __('admin.marketers.monthly_promotion_target_hint') }}</p>
-                    </div>
-                </div>
-            </div>
 
             <button class="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-gray-800">{{ __('admin.marketers.save') }}</button>
         </form>
@@ -588,107 +554,8 @@
         </div>
     </div>
 
-    {{-- Category commission overrides --}}
-    <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">%</span>
-            <div>
-                <h3 class="font-bold text-gray-800">{{ __('admin.marketers.commission_by_category') }}</h3>
-                <p class="text-xs text-gray-500 mt-1" data-commission-precedence-note>{{ __('marketing_fees.reports.commission_precedence_note') }}</p>
-            </div>
-        </div>
-        <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-500 text-xs">
-                <tr>
-                    <th class="px-6 py-3 text-start">{{ __('admin.marketers.col_category') }}</th>
-                    <th class="px-6 py-3 text-center">{{ __('admin.marketers.col_commission_rate') }}</th>
-                    <th class="px-6 py-3 text-center"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($commissionRules as $cc)
-                <tr class="hover:bg-gray-50/60 transition-colors">
-                    <td class="px-6 py-3 font-medium">
-                        <span class="text-xs text-gray-500">{{ __('admin.marketer_commission_type_'.$cc->scope) }}</span>
-                        · {{ $cc->category ? ($cc->category->name_ar ?: $cc->category->name_en) : __('admin.marketer_commission_default_all') }}
-                        @if(! $cc->category && $cc->excluded_category_ids)
-                        <div class="text-xs text-red-500 font-normal">{{ __('admin.marketer_commission_except') }}: {{ ($commissionCategories[$cc->scope] ?? collect())->whereIn('id', $cc->excluded_category_ids)->map(fn ($x) => $x->name_ar ?: $x->name_en)->implode('، ') }}</div>
-                        @endif
-                    </td>
-                    <td class="px-6 py-3 text-center">
-                        <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">{{ collect([
-                            (float) $cc->commission_rate > 0 ? number_format($cc->commission_rate, 2).'%' : null,
-                            (int) $cc->commission_flat_amount > 0 ? \App\Support\Money::format($cc->commission_flat_amount).' '.$commissionCurrency : null,
-                        ])->filter()->implode(' + ') ?: '0%' }}</span>
-                    </td>
-                    <td class="px-6 py-3 text-center">
-                        <form method="POST" action="{{ route('admin.marketers.category-commissions.destroy', [$marketer, $cc->id]) }}"
-                              onsubmit="return confirm('حذف نسبة العمولة؟');">
-                            @csrf
-                            @method('DELETE')
-                            <button class="text-red-500 hover:text-red-700 text-xs font-semibold">{{ __('admin.static_text.admin_marketers_show.delete') }}</button>
-                        </form>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="3" class="px-6 py-8 text-center text-gray-400">{{ __('admin.marketers.no_custom_commissions') }}</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-        </div>
-        <form method="POST" action="{{ route('admin.marketers.category-commissions.store', $marketer) }}" class="p-4 border-t border-gray-100 bg-gray-50 flex flex-wrap items-end gap-3"
-              x-data='{
-                  scope: "products",
-                  category: "",
-                  cats: @json($commissionCategories->map(fn ($c) => $c->map(fn ($x) => ["id" => $x->id, "name" => $x->name_ar ?: $x->name_en])->values())),
-              }'
-              x-effect="scope; category; $nextTick(() => {
-                  window.initSelect2 && window.initSelect2($($el));
-                  $refs.excl && $($refs.excl).prop('disabled', category !== '').trigger('change.select2');
-              })">
-            @csrf
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_type') }}</label>
-                <select name="scope" x-model="scope" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[160px]">
-                    @foreach(['products', 'open_market', 'travel'] as $sc)
-                    <option value="{{ $sc }}">{{ __('admin.marketer_commission_type_'.$sc) }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.col_category') }}</label>
-                <select name="category_id" data-select2-init x-model="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[180px]">
-                    <option value="">{{ __('admin.marketer_commission_default_all_type') }}</option>
-                    <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
-                </select>
-            </div>
-            <div x-show="category === ''" x-cloak x-effect="scope; $refs.excl && Array.from($refs.excl.options).forEach(o => o.selected = false)">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_except') }}</label>
-                <select name="excluded_category_ids[]" x-ref="excl" data-select2-init multiple :disabled="category !== ''" class="border border-gray-300 rounded-lg px-3 py-2 text-sm min-w-[200px]">
-                    <template x-for="c in cats[scope]" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
-                </select>
-                <p class="text-[11px] text-gray-400 mt-1">{{ __('admin.marketer_commission_except_hint') }}</p>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketers.commission_rate_pct') }}</label>
-                <input type="number" step="0.01" min="0" max="100" name="commission_rate" value="{{ old('commission_rate') }}"
-                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_flat') }} ({{ $commissionCurrency }})</label>
-                <input type="number" step="0.01" min="0" name="commission_flat_amount" value="{{ old('commission_flat_amount') }}"
-                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
-                @error('commission_rate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __('admin.marketer_commission_min') }} ({{ $commissionCurrency }})</label>
-                <input type="number" step="0.01" min="0" name="commission_min_amount" value="{{ old('commission_min_amount') }}"
-                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32">
-            </div>
-            <button class="px-5 py-2 bg-yellow-400 text-gray-900 font-bold rounded-lg text-sm hover:bg-yellow-500 transition-colors">{{ __('admin.marketers.add_or_update') }}</button>
-        </form>
-    </div>
+    {{-- Per-category commission rules, one card per marketer type --}}
+    @include('admin.marketers._commission_rules')
 
     {{-- Exclusive contracts (open-market) --}}
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden">

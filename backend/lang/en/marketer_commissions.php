@@ -1,0 +1,55 @@
+<?php
+
+return [
+    'heading_influencer' => 'Influencer Fixed Commissions',
+    'heading_affiliate' => 'Affiliate Commission Percentages',
+    'heading_broker' => 'Broker Commissions',
+    'heading_generic' => 'Commission Rates by Category',
+
+    'subtitle_influencer' => 'A fixed amount this influencer earns per campaign. Leave a category without a rule to use the default from Marketer Settings.',
+    'subtitle_affiliate' => 'A percentage of the sale amount this affiliate earns. Categories without a rule have no commission.',
+    'subtitle_broker' => 'A fixed amount, a percentage of the sale amount, or both. Categories without a rule have no commission.',
+    'subtitle_generic' => 'Fixed amount, percentage or both, per category.',
+
+    'col_scope_category' => 'Category type / category',
+    'col_commission' => 'Commission',
+    'col_fee' => 'Platform commission fee',
+    'per_campaign' => 'per campaign',
+    'min_per_unit' => 'Minimum :amount per unit',
+    'legacy_rule' => 'Legacy rule (no marketer type)',
+    'legacy_rule_mismatch' => 'does not match this marketer type; re-save it',
+    'fee_default_inline' => 'Default :pct% + :fixed :currency',
+    'delete_confirm' => 'Delete this commission rule?',
+    'empty_influencer' => 'No fixed commissions yet. The default from Marketer Settings applies.',
+    'empty_affiliate' => 'No commission percentages yet.',
+    'empty_broker' => 'No broker commissions yet.',
+    'empty_generic' => 'No custom commission rates yet.',
+
+    'group_commission' => 'Commission',
+    'group_fee' => 'Commission fee override (optional)',
+    'field_percentage' => 'Percentage (%)',
+    'field_fixed' => 'Fixed amount',
+    'field_fixed_per_campaign' => 'Fixed amount per campaign',
+    'field_min' => 'Minimum per unit',
+    'field_fee_percentage' => 'Fee percentage (%)',
+    'field_fee_fixed' => 'Fixed fee',
+    'tooltip_percentage_disabled_influencer' => 'Influencers earn a fixed amount per campaign, so a percentage is not available.',
+    'tooltip_fixed_disabled_affiliate' => 'Affiliates earn a percentage of the sale, so a fixed amount is not available.',
+
+    'preview_default_influencer' => 'Empty: the default :amount :currency per campaign from Marketer Settings applies.',
+    'preview_default_none' => 'Empty: no default is set in Marketer Settings, so this influencer earns nothing for it.',
+    'preview_default_fee' => 'Empty fields use the default fee from Marketer Settings: :pct% + :fixed :currency.',
+    'preview_fee_none' => 'Empty fields use the default fee from Marketer Settings, which is currently no fee.',
+    'preview_example_fixed' => 'Example: a :gross :currency commission minus a :fee fee leaves :net :currency.',
+    'preview_example_sale' => 'Example: on a 1,000 sale the commission is :gross :currency, the platform fee :fee, and the marketer keeps :net :currency.',
+
+    'saved' => 'Commission rule saved.',
+    'deleted' => 'Commission rule deleted.',
+
+    'error_type_not_held' => 'This marketer does not have that marketer type.',
+    'error_influencer_no_percentage' => 'Influencers earn a fixed amount per campaign; a percentage is not allowed.',
+    'error_influencer_fixed_required' => 'Enter the fixed amount per campaign for this influencer.',
+    'error_affiliate_no_fixed' => 'Affiliates earn a percentage only; a fixed amount is not allowed.',
+    'error_affiliate_percentage_required' => 'Enter the commission percentage for this affiliate.',
+    'error_broker_required' => 'Enter a percentage, a fixed amount, or both.',
+];

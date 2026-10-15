@@ -19,9 +19,6 @@
                         <p class="text-xs text-gray-500 mt-1">
                             {{ $invitation->flashSale->sale_starts_at?->format('Y-m-d H:i') }} → {{ $invitation->flashSale->sale_ends_at?->format('Y-m-d H:i') }}
                         </p>
-                        @if($invitation->hasExtraCommission())
-                            <p class="text-xs text-purple-600 font-semibold mt-1">{{ __('marketer.flash_sales.extra_commission') }} {{ $invitation->commissionLabel() }}</p>
-                        @endif
                     </div>
                     <div class="flex gap-2">
                         <form method="POST" action="{{ route('marketer.flash-sales.accept', $invitation) }}">
@@ -50,9 +47,6 @@
                 <div class="bg-white rounded-xl border p-5">
                     <p class="font-semibold text-gray-900">{{ $invitation->flashSale->name_ar ?? $invitation->flashSale->name_en }}</p>
                     <p class="text-xs text-gray-500 mt-1">{{ __('marketer.flash_sales.ends_at') }} {{ $invitation->flashSale->sale_ends_at?->format('Y-m-d H:i') }}</p>
-                    @if($invitation->hasExtraCommission())
-                        <p class="text-xs text-purple-600 font-semibold mt-1">{{ __('marketer.flash_sales.extra_commission_during') }} {{ $invitation->commissionLabel() }}</p>
-                    @endif
                     <p class="text-xs text-gray-400 mt-2">{{ __('marketer.flash_sales.referral_links_hint') }}</p>
                 </div>
                 @endforeach
@@ -72,7 +66,6 @@
                         <tr>
                             <th class="px-4 py-3 text-start">{{ __('marketer.flash_sales.campaign_header') }}</th>
                             <th class="px-4 py-3 text-center">{{ __('marketer.flash_sales.conversions_header') }}</th>
-                            <th class="px-4 py-3 text-center">{{ __('marketer.flash_sales.earned_bonus_header') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -80,7 +73,6 @@
                         <tr>
                             <td class="px-4 py-3">{{ $invitation->flashSale->name_ar ?? $invitation->flashSale->name_en }}</td>
                             <td class="px-4 py-3 text-center">{{ $invitation->conversions_earned }}</td>
-                            <td class="px-4 py-3 text-center font-bold text-purple-600">{{ number_format($invitation->bonus_earned) }}</td>
                         </tr>
                         @endforeach
                     </tbody>

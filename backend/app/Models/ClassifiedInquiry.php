@@ -13,11 +13,22 @@ class ClassifiedInquiry extends Model
     protected $fillable = [
         'classified_listing_id', 'customer_id',
         'message', 'contact_phone', 'status',
+        'marketer_id', 'marketer_campaign_id', 'referral_code',
     ];
 
     protected $casts = [
         'status' => \App\Enums\ClassifiedInquiryStatus::class,
     ];
+
+    public function marketer(): BelongsTo
+    {
+        return $this->belongsTo(Marketer::class);
+    }
+
+    public function marketerCampaign(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaign::class, 'marketer_campaign_id');
+    }
 
     public function listing(): BelongsTo
     {

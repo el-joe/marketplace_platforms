@@ -225,7 +225,7 @@ class ClassifiedController extends Controller
 
         $this->service->recordInquiry($listing, $customer, $request->only(
             'message', 'contact_phone'
-        ));
+        ), \App\Services\Marketer\ListingReferralService::sessionIdFrom($request));
 
         return response()->json(['success' => true]);
     }

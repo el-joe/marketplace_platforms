@@ -1,0 +1,55 @@
+<?php
+
+return [
+    'heading_influencer' => 'العمولات الثابتة للمؤثر',
+    'heading_affiliate' => 'نسب عمولة المسوّق بالعمولة',
+    'heading_broker' => 'عمولات الوسيط',
+    'heading_generic' => 'نسب العمولة بحسب القسم',
+
+    'subtitle_influencer' => 'مبلغ ثابت يكسبه هذا المؤثر عن كل حملة. اترك القسم بلا قاعدة ليُطبَّق الافتراضي من إعدادات المسوّقين.',
+    'subtitle_affiliate' => 'نسبة من مبلغ البيع يكسبها هذا المسوّق بالعمولة. الأقسام التي بلا قاعدة لا عمولة فيها.',
+    'subtitle_broker' => 'مبلغ ثابت أو نسبة من مبلغ البيع أو كلاهما. الأقسام التي بلا قاعدة لا عمولة فيها.',
+    'subtitle_generic' => 'مبلغ ثابت أو نسبة أو كلاهما لكل قسم.',
+
+    'col_scope_category' => 'نوع القسم / القسم',
+    'col_commission' => 'العمولة',
+    'col_fee' => 'رسوم المنصة على العمولة',
+    'per_campaign' => 'عن الحملة',
+    'min_per_unit' => 'حد أدنى :amount للوحدة',
+    'legacy_rule' => 'قاعدة قديمة (بدون نوع مسوّق)',
+    'legacy_rule_mismatch' => 'لا تناسب نوع هذا المسوّق، أعد حفظها',
+    'fee_default_inline' => 'الافتراضي :pct% + :fixed :currency',
+    'delete_confirm' => 'حذف قاعدة العمولة هذه؟',
+    'empty_influencer' => 'لا توجد عمولات ثابتة بعد. يُطبَّق الافتراضي من إعدادات المسوّقين.',
+    'empty_affiliate' => 'لا توجد نسب عمولة بعد.',
+    'empty_broker' => 'لا توجد عمولات للوسيط بعد.',
+    'empty_generic' => 'لا توجد نسب عمولة مخصصة بعد.',
+
+    'group_commission' => 'العمولة',
+    'group_fee' => 'تخصيص رسوم العمولة (اختياري)',
+    'field_percentage' => 'النسبة (%)',
+    'field_fixed' => 'مبلغ ثابت',
+    'field_fixed_per_campaign' => 'مبلغ ثابت عن الحملة',
+    'field_min' => 'حد أدنى للوحدة',
+    'field_fee_percentage' => 'نسبة الرسوم (%)',
+    'field_fee_fixed' => 'رسوم ثابتة',
+    'tooltip_percentage_disabled_influencer' => 'المؤثر يكسب مبلغاً ثابتاً عن الحملة، لذلك لا تتوفر النسبة.',
+    'tooltip_fixed_disabled_affiliate' => 'المسوّق بالعمولة يكسب نسبة من البيع، لذلك لا يتوفر المبلغ الثابت.',
+
+    'preview_default_influencer' => 'إن تُرك فارغاً: يُطبَّق الافتراضي :amount :currency عن الحملة من إعدادات المسوّقين.',
+    'preview_default_none' => 'إن تُرك فارغاً: لا يوجد افتراضي في إعدادات المسوّقين، فلن يكسب هذا المؤثر شيئاً.',
+    'preview_default_fee' => 'الحقول الفارغة تستخدم الرسوم الافتراضية من إعدادات المسوّقين: :pct% + :fixed :currency.',
+    'preview_fee_none' => 'الحقول الفارغة تستخدم الرسوم الافتراضية من إعدادات المسوّقين، وهي حالياً بلا رسوم.',
+    'preview_example_fixed' => 'مثال: عمولة :gross :currency بعد خصم رسوم :fee يبقى منها :net :currency.',
+    'preview_example_sale' => 'مثال: في بيع قيمته 1,000 تكون العمولة :gross :currency والرسوم :fee ويحتفظ المسوّق بـ :net :currency.',
+
+    'saved' => 'تم حفظ قاعدة العمولة.',
+    'deleted' => 'تم حذف قاعدة العمولة.',
+
+    'error_type_not_held' => 'هذا المسوّق لا يحمل نوع المسوّق المطلوب.',
+    'error_influencer_no_percentage' => 'المؤثر يكسب مبلغاً ثابتاً عن الحملة، ولا يُسمح بالنسبة.',
+    'error_influencer_fixed_required' => 'أدخل المبلغ الثابت عن الحملة لهذا المؤثر.',
+    'error_affiliate_no_fixed' => 'المسوّق بالعمولة يكسب نسبة فقط، ولا يُسمح بمبلغ ثابت.',
+    'error_affiliate_percentage_required' => 'أدخل نسبة العمولة لهذا المسوّق بالعمولة.',
+    'error_broker_required' => 'أدخل نسبة أو مبلغاً ثابتاً أو كليهما.',
+];

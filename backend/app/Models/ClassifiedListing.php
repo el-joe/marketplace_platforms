@@ -25,6 +25,7 @@ class ClassifiedListing extends Model
         'rejection_reason', 'approved_by_admin_id', 'approved_at',
         'views_count', 'expires_at', 'barcode_path',
         'is_vendor_listing', 'vendor_listing_reference',
+        'sold_price', 'sold_at', 'sold_via_campaign_id', 'sold_buyer_note', 'campaign_enabled',
     ];
 
     /** @var int Base currency unit (BIGINT) for money fields renamed in this model */
@@ -35,9 +36,12 @@ class ClassifiedListing extends Model
         'longitude'            => 'decimal:7',
         'contract_accepted_at' => 'datetime',
         'approved_at'          => 'datetime',
+        'sold_price'           => \App\Casts\DecimalMoney::class,
+        'sold_at'              => 'datetime',
         'expires_at'           => 'date',
         'price_negotiable'     => 'boolean',
         'is_vendor_listing'    => 'boolean',
+        'campaign_enabled'     => 'boolean',
         'status'               => \App\Enums\ClassifiedListingStatus::class,
     ];
 
@@ -155,5 +159,23 @@ class ClassifiedListing extends Model
     public function getTitleAttribute(): string
     {
         return app()->getLocale() === 'ar' ? $this->title_ar : $this->title_en;
+    }
+
+    /** Campaign through which this listing was sold (set when marked sold with an attributed marketer). */
+    public function soldViaCampaign(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaign::class, 'sold_via_campaign_id');
+    }
+
+    /** Marketer campaigns promoting this listing. */
+    public function campaigns(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MarketerCampaign::class, 'classified_listing_id');
+    }
+
+    /** The campaign currently open to marketers (live or awaiting review), if any. */
+    public function openCampaigns(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->campaigns()->whereNotIn('status', \App\Services\MarketerCampaignService::TERMINAL_STATUSES);
     }
 }

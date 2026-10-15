@@ -86,7 +86,7 @@
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.marketer_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.product_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.country_column') }}</th>
-                    <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.commission_type_column') }}</th>
+                    <th class="py-2 pr-4">{{ __('marketer_campaigns.cost.budget') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.status_column') }}</th>
                     <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.created_column') }}</th>
                     <th class="py-2 pr-4 text-end">{{ __('admin.marketer_campaigns.actions_column') }}</th>
@@ -116,7 +116,7 @@
                         <td class="py-2 pr-4">{{ $marketerName }}</td>
                         <td class="py-2 pr-4">{{ $productName }}</td>
                         <td class="py-2 pr-4">{{ $campaign->country?->name_en ?? '—' }}</td>
-                        <td class="py-2 pr-4">{{ __('admin.marketer_campaigns.commission_type_' . $campaign->commission_type) }}</td>
+                        <td class="py-2 pr-4">{{ (float) $campaign->max_commission_budget > 0 ? \App\Support\Money::format($campaign->max_commission_budget).' '.$campaign->currency : __('marketer_campaigns.cost.unlimited') }}</td>
                         <td class="py-2 pr-4">
                             <x-badge :color="$statusColors[$campaign->status] ?? 'gray'">
                                 {{ __('admin.marketer_campaigns.status_' . $campaign->status) }}

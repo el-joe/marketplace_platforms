@@ -138,8 +138,6 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
         Route::get('/available-shipping-methods', 'availableShippingMethods')->name('available-shipping-methods')->middleware('vendor.can:listings.view');
         Route::get('/search-marketers', 'searchMarketers')->name('search-marketers')->middleware('vendor.can:listings.view');
         Route::get('/category-samples', 'categorySamples')->name('category-samples')->middleware('vendor.can:listings.view');
-        Route::get('/campaign-pricing', 'campaignPricing')->name('campaign-pricing')->middleware('vendor.can:listings.view');
-        Route::get('/marketer-fee', 'getInfluencerFee')->name('marketer-fee')->middleware('vendor.can:listings.view');
         Route::get('/{listing}/edit', 'edit')->name('edit')->middleware('vendor.can:listings.edit');
         Route::put('/{listing}', 'update')->name('update')->middleware('vendor.can:listings.edit');
         Route::post('/{listing}/resubmit', 'resubmit')->name('resubmit')->middleware('vendor.can:listings.create');
@@ -465,10 +463,13 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
 
     // ─── Marketer Campaigns (My Campaigns — vendor's own influencer/affiliate campaigns) ──
-    Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->middleware('vendor.type:product_vendor')->group(function () {
+    // Product vendors promote product listings, classified vendors their classified listings.
+    Route::prefix('marketer-campaigns')->name('marketer-campaigns.')->middleware('vendor.type:product_vendor,classified_vendor')->group(function () {
         Route::get('/', [MarketerCampaignController::class, 'index'])->name('index')->middleware('vendor.can:marketer_campaigns.view');
+        Route::get('/create/classified/{classifiedListing}', [MarketerCampaignController::class, 'createClassified'])->name('create-classified')->middleware('vendor.can:marketer_campaigns.create');
         Route::get('/create/{vendorListing}', [MarketerCampaignController::class, 'create'])->name('create')->middleware('vendor.can:marketer_campaigns.create');
         Route::post('/', [MarketerCampaignController::class, 'store'])->name('store')->middleware('vendor.can:marketer_campaigns.create');
+        Route::get('/quote', [MarketerCampaignController::class, 'quote'])->name('quote')->middleware('vendor.can:marketer_campaigns.create');
         Route::get('/{marketerCampaign}', [MarketerCampaignController::class, 'show'])->name('show')->middleware('vendor.can:marketer_campaigns.view');
         Route::get('/{marketerCampaign}/edit', [MarketerCampaignController::class, 'edit'])->name('edit')->middleware('vendor.can:marketer_campaigns.edit');
         Route::put('/{marketerCampaign}', [MarketerCampaignController::class, 'update'])->name('update')->middleware('vendor.can:marketer_campaigns.edit');
@@ -481,7 +482,7 @@ Route::middleware(['vendor.auth', 'vendor.active'])->group(function () {
     });
     // Keep this route — vendor needs to search for marketers when creating campaigns
     Route::get('/campaigns/search-marketers', [MarketerCampaignController::class, 'searchMarketers'])
-        ->name('campaigns.search-marketers')->middleware(['vendor.can:marketer_campaigns.view', 'vendor.type:product_vendor']);
+        ->name('campaigns.search-marketers')->middleware(['vendor.can:marketer_campaigns.view', 'vendor.type:product_vendor,classified_vendor']);
 
     // ─── Ads ─────────────────────────────────────────────────────────────────
     Route::prefix('ads')->name('ads.')->middleware('vendor.type:product_vendor')->group(function () {

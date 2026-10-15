@@ -105,11 +105,11 @@ class PeerPromotionAdminTest extends TestCase
                 ->assertOk()
                 ->assertSee('data-peer-min-stock', false)
                 ->assertSee('name="marketer_peer_campaign_min_stock"', false)
-                ->assertSee(__('admin.marketer_settings.peer_min_stock_title'));
+                ->assertSee(__('marketer_settings.general.peer_min_stock_label'));
         }
 
         $this->actingAs($admin, 'admin')
-            ->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => 12])
+            ->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_peer_campaign_min_stock' => 12]))
             ->assertRedirect()->assertSessionHas('success');
         Setting::flush();
         $this->assertSame(12, (int) setting('marketer_peer_campaign_min_stock'));
@@ -121,7 +121,7 @@ class PeerPromotionAdminTest extends TestCase
     {
         $admin = $this->settingsAdmin();
         $this->actingAs($admin, 'admin')
-            ->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => 15]);
+            ->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_peer_campaign_min_stock' => 15]));
 
         $owner = F::influencer($this->s);
         $promoter = F::influencer($this->s);
@@ -133,13 +133,24 @@ class PeerPromotionAdminTest extends TestCase
     {
         $this->actingAs($this->settingsAdmin(), 'admin');
         foreach ([0, -3, 'abc', '', 1.5] as $bad) {
-            $this->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => $bad])
+            $this->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_peer_campaign_min_stock' => $bad]))
                 ->assertSessionHasErrors('marketer_peer_campaign_min_stock');
         }
 
         $this->actingAs($this->settingsAdmin(canEdit: false), 'admin')
-            ->post(route('admin.marketer-settings.update-peer-min-stock'), ['marketer_peer_campaign_min_stock' => 5])
+            ->post(route('admin.marketer-settings.general.update'), $this->general(['marketer_peer_campaign_min_stock' => 5]))
             ->assertForbidden();
         $this->assertSame(1, (int) setting('marketer_peer_campaign_min_stock', 1));
+    }
+
+    /** Full payload of the General tab (all four settings are posted together). */
+    private function general(array $overrides = []): array
+    {
+        return $overrides + [
+            'marketer_referral_grace_days' => 7,
+            'marketer_payout_clearing_days' => 3,
+            'marketer_attribution_window_days' => 7,
+            'marketer_peer_campaign_min_stock' => 1,
+        ];
     }
 }

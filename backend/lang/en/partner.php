@@ -864,6 +864,7 @@ return [
         'influencer' => 'Influencer',
         'celebrity' => 'Celebrity',
         'affiliate' => 'Affiliate',
+        'broker' => 'Broker',
         'brand_ambassador' => 'Brand Ambassador',
     ],
 
@@ -2622,6 +2623,7 @@ return [
         'commission_set_by_platform' => 'Marketer commission is set by the platform.',
 
         'table' => [
+            'item' => 'Item',
             'product' => 'Product',
             'country' => 'Country',
             'commission_type' => 'Commission Type',
@@ -2631,6 +2633,8 @@ return [
         ],
 
         'field' => [
+            'item' => 'Item',
+            'reference' => 'Reference',
             'stock_deducted' => 'Taken from stock',
             'commission_charged' => 'Commission charged',
             'product' => 'Product',
@@ -2716,6 +2720,12 @@ return [
     ],
 
     'marketer_campaigns' => [
+        'fulfilment_not_allowed' => 'Marketer campaigns are not available for this fulfilment model.',
+        'create_failed' => 'Could not create the campaign: :error',
+        'update_failed' => 'Could not update the campaign: :error',
+        'update_success' => 'Campaign updated.',
+        'request_approved' => 'The marketer request was approved.',
+        'cannot_edit_reviewed' => 'This campaign has already been reviewed and can no longer be edited.',
         'stock_after_fixed_sample' => 'After the fixed platform sample (:fixed unit(s)) your sellable stock is :after units.',
         'sample_breakdown_admin' => 'Platform sample',
         'sample_breakdown_influencers' => 'Influencers (units each)',

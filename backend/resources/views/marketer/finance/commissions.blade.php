@@ -24,10 +24,9 @@
 
     <div class="bg-white rounded-xl border p-5" data-statement-totals>
         <div class="font-bold mb-3">{{ __('marketer.finance.statement_title') }}</div>
-        <dl class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.gross_header') }}</dt><dd class="font-bold">{{ \App\Support\Money::format($totals['gross']) }}</dd></div>
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }} ({{ rtrim(rtrim(number_format($cutPct, 2), '0'), '.') }}%)</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['cut']) }}</dd></div>
-            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.vat_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['vat']) }}</dd></div>
+            <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.cut_header') }}</dt><dd class="font-bold text-red-600">−{{ \App\Support\Money::format($totals['cut']) }}</dd></div>
             <div><dt class="text-xs text-gray-400">{{ __('marketer.finance.net_header') }}</dt><dd class="font-bold text-green-600">{{ \App\Support\Money::format($totals['net']) }}</dd></div>
         </dl>
         <p class="text-xs text-gray-400 mt-2">{{ __('marketer.finance.statement_hint') }}</p>
@@ -102,7 +101,6 @@
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.cut_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.vat_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.net_header') }}</th>
-                        <th class="px-4 py-3 text-center">{{ __('marketer.finance.flash_sale_bonus_header') }}</th>
                         <th class="px-4 py-3 text-center">{{ __('marketer.finance.status_header') }}</th>
                     </tr>
                 </thead>
@@ -118,13 +116,6 @@
                         <td class="px-4 py-3 text-center text-red-600" data-cut>−{{ \App\Support\Money::format($st['cut']) }}</td>
                         <td class="px-4 py-3 text-center text-red-600" data-vat>−{{ \App\Support\Money::format($st['vat']) }}</td>
                         <td class="px-4 py-3 text-center font-bold text-green-600" data-net>{{ \App\Support\Money::format($st['net']) }} {{ $conv->currency }}</td>
-                        <td class="px-4 py-3 text-center">
-                            @if($conv->flash_sale_bonus_amount)
-                                <span class="text-purple-600 font-bold">+{{ \App\Support\Money::format($conv->flash_sale_bonus_amount) }}</span>
-                            @else
-                                —
-                            @endif
-                        </td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-0.5 rounded text-xs {{ $conv->commissioned ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
                                 {{ $conv->commissioned ? __('marketer.finance.status_paid') : __('marketer.finance.status_pending') }}

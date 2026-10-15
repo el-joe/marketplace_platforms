@@ -11,8 +11,7 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerSaleSettlement;
 use App\Notifications\Marketer\PayoutScheduled;
 use App\Services\Marketer\MarketerSaleSettlementService;
-use App\Services\Marketer\PromotionPenaltyService;
-use App\Services\MarketerCommissionStatementService;
+use App\Services\Marketer\MarketerEarningsService;
 use App\Services\MarketingFeeReportService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
@@ -56,27 +55,26 @@ class FinanceController extends Controller
         $commissionRules = CommissionRuleController::rulesFor($marketer);
 
         [$statements, $totals] = $this->statementFor($conversions->getCollection());
-        $cutPct = (float) ($marketer->marketerProfile?->platform_cut_percentage ?? 0);
 
         $salesService = app(MarketerSaleSettlementService::class);
         $salesTotals = $salesService->totalsFor($marketer->id);
         $sales = MarketerSaleSettlement::with('order:id,order_number')
             ->where('marketer_id', $marketer->id)->latest()->paginate(15, ['*'], 'sales_page')->withQueryString();
 
-        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'cutPct', 'salesTotals', 'sales'));
+        return view('marketer.finance.commissions', compact('conversions', 'totalEarned', 'pendingEarnings', 'commissionRules', 'statements', 'totals', 'salesTotals', 'sales'));
     }
 
-    /** @return array{0: array<string, array>, 1: array{gross: int, cut: int, vat: int, net: int}} */
+    /** @return array{0: array<string, array>, 1: array{gross: float, cut: float, vat: float, net: float}} */
     private function statementFor($conversions): array
     {
-        $service = app(MarketerCommissionStatementService::class);
+        $service = app(MarketerEarningsService::class);
         $rows = [];
-        $totals = ['gross' => 0, 'cut' => 0, 'vat' => 0, 'net' => 0];
+        $totals = ['gross' => 0.0, 'cut' => 0.0, 'vat' => 0.0, 'net' => 0.0];
         foreach ($conversions as $c) {
-            $rows[$c->id] = $b = $service->forConversion($c);
+            $rows[$c->id] = $b = $service->breakdown($c);
             if (in_array($c->status, ['pending', 'approved'], true)) {
                 foreach (array_keys($totals) as $k) {
-                    $totals[$k] += $b[$k];
+                    $totals[$k] = round($totals[$k] + $b[$k], 2);
                 }
             }
         }
@@ -132,9 +130,6 @@ class FinanceController extends Controller
         if (! $currency) {
             return back()->with('error', 'لم يتم تحديد الدولة لهذا الحساب، لا يمكن تحديد عملة المحفظة.');
         }
-
-        // Promotion fines still pending are taken first, so the withdrawal is paid out net of them.
-        app(PromotionPenaltyService::class)->collect($marketer);
 
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 

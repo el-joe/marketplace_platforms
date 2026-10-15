@@ -9,7 +9,8 @@ use App\Enums\RefundStatus;
 use App\Enums\VendorSubscriptionInvoiceStatus;
 use App\Models\FbnDailyOverageFee;
 use App\Models\FbnStorageFee;
-use App\Models\MarketerCampaignFeeSettlement;
+use App\Models\MarketerCampaign;
+use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
 use App\Models\PackagingSupplyRequest;
@@ -181,14 +182,14 @@ class PayoutCalculationService
             // carry the admin sale commission (see CampaignSampleService).
             [$sampleCommission, $sampleItems] = $this->selectSampleCommissions($vendor, $currency, $netBeforeSamples);
 
-            // Influencer platform fees (+VAT) the seller's wallet did not cover during
-            // the week: deducted here against the weekly sales, once.
-            [$influencerFees, $feeItems] = $this->selectInfluencerFees($vendor, $currency, $netBeforeSamples - $sampleCommission);
+            // Campaign fees the seller's wallet did not cover when the campaign went live: deducted here, once.
+            [$campaignFees, $campaignFeeItems] = $this->selectCampaignFees($vendor, $currency, $netBeforeSamples - $sampleCommission);
 
-            // Affiliate marketing fees (settlements the wallet did not cover): deducted here, once.
-            [$affiliateFees, $affiliateFeeItems] = $this->selectAffiliateFeeSettlements($vendor, $currency, $netBeforeSamples - $sampleCommission - $influencerFees);
+            // Commissions paid out of the campaigns' Max Commission Budget since the last statement: affiliate / broker
+            // conversions released to the marketer wallet, and influencer fixed amounts paid at campaign completion.
+            [$budgetCommissions, $budgetCommissionItems] = $this->selectBudgetCommissions($vendor, $currency, $netBeforeSamples - $sampleCommission - $campaignFees);
 
-            $netBeforeAds = round($netBeforeSamples - $sampleCommission - $influencerFees - $affiliateFees, 2);
+            $netBeforeAds = round($netBeforeSamples - $sampleCommission - $campaignFees - $budgetCommissions, 2);
 
             [$adFees, $adChargeIds] = $this->selectAdCharges($vendor, $currency, $netBeforeAds);
 
@@ -205,11 +206,11 @@ class PayoutCalculationService
                 'chargebacks_deducted' => $chargebacksDeducted,
                 'storage_fees' => $storageFeesTotal,
                 'ad_fees' => $adFees,
-                'other_adjustments' => -round($packagingTotal + $subscriptionTotal + $influencerFees + $affiliateFees, 2),
-                'influencer_fees' => $influencerFees,
-                'influencer_fee_items' => $feeItems,
-                'affiliate_fees' => $affiliateFees,
-                'affiliate_fee_items' => $affiliateFeeItems,
+                'other_adjustments' => -round($packagingTotal + $subscriptionTotal + $campaignFees + $budgetCommissions, 2),
+                'campaign_fees' => $campaignFees,
+                'campaign_fee_items' => $campaignFeeItems,
+                'budget_commissions' => $budgetCommissions,
+                'budget_commission_items' => $budgetCommissionItems,
                 'net_amount' => max(0, $netAmount),
                 'currency' => $currency,
                 'sub_order_ids' => $subOrderIds,
@@ -252,80 +253,101 @@ class PayoutCalculationService
     }
 
     /**
-     * Influencer fees (fee + VAT + marketing fees) still `pending` at statement time for this vendor:
-     * accepted, seller-paid, not on any statement yet (payout_items.invitation_id is
-     * unique). Oldest first, as far as the statement can absorb; the rest rolls
-     * forward. The job re-checks each row under a lock before writing the line.
+     * Campaign fees (fixed + variable) still `pending` at statement time: the campaign went live but the vendor
+     * wallet could not cover the fee. payout_items.campaign_id is unique, so a fee is never charged twice. Oldest
+     * first, as far as the statement can absorb; the rest rolls forward. The job re-checks each row under a lock.
      *
-     * @return array{0: float, 1: array<int, array{item: MarketerCampaignInvitation, fee: float, vat: float, marketing: float}>}
+     * @return array{0: float, 1: array<int, array{item: MarketerCampaign, fee: float}>}
      */
-    private function selectInfluencerFees(Vendor $vendor, string $currency, float $netBefore): array
+    private function selectCampaignFees(Vendor $vendor, string $currency, float $netBefore): array
     {
         $cap = max(0.0, $netBefore);
         $sum = 0.0;
         $items = [];
 
-        $invitations = MarketerCampaignInvitation::query()
-            ->where('status', 'accepted')
-            ->where('platform_fee_status', 'pending')
-            ->where('platform_fee_payer', 'vendor')
-            ->where('platform_fee_amount', '>', 0)
-            ->where('platform_fee_currency', $currency)
-            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
+        $campaigns = MarketerCampaign::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('currency', $currency)
+            ->where('campaign_fee_status', 'pending')
+            ->where('marketing_fee_total', '>', 0)
+            ->whereIn('status', ['active', 'auto_approved', 'paused', 'done'])
             ->whereDoesntHave('payoutItems')
-            ->with(['campaign:id,title', 'marketer:id,name'])
-            ->orderBy('responded_at')
+            ->orderBy('reviewed_at')
             ->orderBy('id')
             ->get();
 
-        foreach ($invitations as $invitation) {
-            $total = $invitation->platformFeeTotal();
-            if (round($sum + $total, 2) > $cap) {
+        foreach ($campaigns as $campaign) {
+            $fee = round((float) $campaign->marketing_fee_total, 2);
+            if (round($sum + $fee, 2) > $cap) {
                 break;
             }
-            $sum = round($sum + $total, 2);
-            $items[] = [
-                'item' => $invitation,
-                'fee' => (float) $invitation->platform_fee_amount,
-                'vat' => (float) $invitation->platform_fee_vat_amount,
-                'marketing' => (float) $invitation->platform_fee_marketing_amount,
-            ];
+            $sum = round($sum + $fee, 2);
+            $items[] = ['item' => $campaign, 'fee' => $fee];
         }
 
         return [$sum, $items];
     }
 
     /**
-     * Pending affiliate marketing-fee settlements of this vendor/currency (wallet did not cover them), oldest first,
-     * as far as the statement can absorb; the rest rolls forward. payout_items.affiliate_fee_settlement_id is unique,
-     * and the job re-checks each row under a lock.
+     * Commissions funded by the vendor's campaign budgets, not yet on any statement (payout_items.marketer_conversion_id
+     * / invitation_id are unique):
      *
-     * @return array{0: float, 1: array<int, array{item: MarketerCampaignFeeSettlement, amount: float}>}
+     *   - conversions released to the marketer wallet. Only v3 rows (marketer_type set) are taken: older conversions
+     *     were already deducted from the vendor payout at checkout. The amount is the GROSS commission (the marketer's
+     *     net plus the platform's commission fee);
+     *   - influencer fixed amounts paid at campaign completion (gross as well).
+     *
+     * Oldest first, as far as the statement can absorb; the rest rolls forward.
+     *
+     * @return array{0: float, 1: array<int, array{type: string, item: MarketerCampaignConversion|MarketerCampaignInvitation, amount: float}>}
      */
-    private function selectAffiliateFeeSettlements(Vendor $vendor, string $currency, float $netBefore): array
+    private function selectBudgetCommissions(Vendor $vendor, string $currency, float $netBefore): array
     {
         $cap = max(0.0, $netBefore);
         $sum = 0.0;
         $items = [];
 
-        $settlements = MarketerCampaignFeeSettlement::query()
-            ->where('vendor_id', $vendor->id)
+        $candidates = collect();
+
+        MarketerCampaignConversion::query()
+            ->whereNotNull('marketer_type')
+            ->where('status', 'approved')
+            ->whereNotNull('wallet_released_at')
             ->where('currency', $currency)
-            ->where('status', MarketerCampaignFeeSettlement::STATUS_PENDING)
-            ->where('kind', MarketerCampaignFeeSettlement::KIND_CHARGE)
+            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id))
             ->whereDoesntHave('payoutItems')
             ->with('campaign:id,title')
-            ->orderBy('created_at')
+            ->orderBy('wallet_released_at')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->each(fn (MarketerCampaignConversion $c) => $candidates->push([
+                'at' => $c->wallet_released_at, 'type' => 'conversion', 'item' => $c,
+                'amount' => round((float) ($c->gross_commission_amount ?? $c->commission_amount), 2),
+            ]));
 
-        foreach ($settlements as $settlement) {
-            $amount = (float) $settlement->amount;
-            if (round($sum + $amount, 2) > $cap) {
+        MarketerCampaignInvitation::query()
+            ->where('influencer_fixed_status', MarketerCampaignInvitation::FIXED_PAID)
+            ->where('influencer_fixed_amount', '>', 0)
+            ->whereHas('campaign', fn ($q) => $q->where('vendor_id', $vendor->id)->where('currency', $currency))
+            ->whereDoesntHave('payoutItems')
+            ->with(['campaign:id,title', 'marketer:id,name'])
+            ->orderBy('influencer_fixed_paid_at')
+            ->orderBy('id')
+            ->get()
+            ->each(fn (MarketerCampaignInvitation $i) => $candidates->push([
+                'at' => $i->influencer_fixed_paid_at, 'type' => 'influencer_fixed', 'item' => $i,
+                'amount' => round((float) $i->influencer_fixed_amount, 2),
+            ]));
+
+        foreach ($candidates->sortBy('at')->values() as $entry) {
+            if ($entry['amount'] <= 0) {
+                continue;
+            }
+            if (round($sum + $entry['amount'], 2) > $cap) {
                 break;
             }
-            $sum = round($sum + $amount, 2);
-            $items[] = ['item' => $settlement, 'amount' => $amount];
+            $sum = round($sum + $entry['amount'], 2);
+            $items[] = ['type' => $entry['type'], 'item' => $entry['item'], 'amount' => $entry['amount']];
         }
 
         return [$sum, $items];

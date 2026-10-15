@@ -19,6 +19,7 @@ class PayoutItem extends Model
         'sample_item_id',
         'campaign_sample_id',
         'invitation_id',
+        'campaign_id',
         'affiliate_fee_settlement_id',
         'vat_amount',
         'marketing_fee_amount',
@@ -35,6 +36,15 @@ class PayoutItem extends Model
         'commission' => DecimalMoney::class,
         'net' => DecimalMoney::class,
     ];
+
+    public const TYPE_CAMPAIGN_FEE = 'campaign_fee';
+
+    public const TYPE_CAMPAIGN_BUDGET_COMMISSION = 'campaign_budget_commission';
+
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(MarketerCampaign::class, 'campaign_id');
+    }
 
     public function payout(): BelongsTo
     {

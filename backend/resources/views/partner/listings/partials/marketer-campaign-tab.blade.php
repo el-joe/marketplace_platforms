@@ -80,7 +80,7 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50">
                     <tr class="text-xs text-gray-500">
-                        @foreach(['col_campaign', 'col_status', 'col_type', 'col_invited', 'col_fee', 'col_budget', 'col_created', 'col_actions'] as $col)
+                        @foreach(['col_campaign', 'col_status', 'col_invited', 'col_fee', 'col_budget', 'col_created', 'col_actions'] as $col)
                             <th class="text-start px-4 py-3 font-medium whitespace-nowrap">{{ __($mcT.$col) }}</th>
                         @endforeach
                     </tr>
@@ -98,7 +98,7 @@
                             $canCancelPending = $cStatus === 'pending_admin' && $mcCan('marketer_campaigns.cancel');
                             $canCancelActive = in_array($cStatus, ['active', 'auto_approved', 'paused'], true) && $mcCan('marketer_campaigns.cancel');
                             $canDelete = in_array($cStatus, ['cancelled', 'rejected', 'done', 'completed', 'pending_admin'], true) && $mcCan('marketer_campaigns.delete');
-                            $fee = (int) ($campaign->invitations_fee_total ?? 0);
+                            $fee = (float) ($campaign->marketing_fee_total ?? 0);
                         @endphp
                         <tr class="hover:bg-gray-50 align-top">
                             <td class="px-4 py-3">
@@ -109,13 +109,12 @@
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap {{ $cClass }}">{{ $cLabel }}</span>
                             </td>
-                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ __('partner.marketer_campaigns_my.commission_type.'.$campaign->commission_type) }}</td>
                             <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ $campaign->invitations_count }} / {{ $campaign->accepted_invitations_count }}</td>
                             <td class="px-4 py-3 whitespace-nowrap {{ $fee > 0 ? 'text-orange-700' : 'text-green-600' }}">
                                 {{ $fee > 0 ? \App\Support\Money::format($fee).' '.$mcCurrency : __($mcT.'free') }}
                             </td>
                             <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
-                                {{ \App\Support\Money::format((int) $campaign->commission_budget_spent) }} /
+                                {{ \App\Support\Money::format($campaign->commission_budget_spent) }} /
                                 {{ $campaign->max_commission_budget !== null && $campaign->max_commission_budget > 0 ? \App\Support\Money::format($campaign->max_commission_budget) : __($mcT.'unlimited') }}
                             </td>
                             <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ $campaign->created_at->format('Y-m-d') }}</td>

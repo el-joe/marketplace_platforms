@@ -3,61 +3,74 @@
 namespace App\Jobs;
 
 use App\Models\MarketerCampaignConversion;
-use App\Models\Wallet;
-use App\Services\AffiliateFeeAccrualService;
-use App\Services\AffiliateFeeSettlementService;
-use App\Services\LedgerService;
-use App\Services\MarketerCommissionStatementService;
+use App\Services\Marketer\MarketerCommissionPostingService;
+use App\Services\Marketer\MarketerEarningsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 
 /**
- * enhancement.md P-12 task 3: daily job approving 'pending' conversions
- * once BOTH of these hold for their order item:
- *   - the sub-order has been delivered (or completed);
- *   - the item's return window has passed (return_eligible_until < today,
- *     or null — no returnable item on this order at all).
- * On approval, the commission (base + flash-sale bonus) is credited to the
- * marketer's wallet as pending_balance — not yet spendable, released into
- * `balance` by ReleaseMarketerPendingCommissionJob after the
- * `marketer_payout_clearing_days` setting (default 3) has also passed, a
- * short extra hold on top of the return window so a very-late RTO/dispute
- * doesn't have to claw back money the marketer already withdrew.
+ * Daily job approving 'pending' conversions once the thing they were earned on is final, per conversion_type:
  *
- * Mirrors CaptureCodOnDelivery/ExpireWarrantyPurchasesJob's pattern: this
- * runs on a schedule rather than directly off SubOrderDelivered, because
- * "return window passed" is a date condition that becomes true well after
- * the delivery event fires, not at delivery time itself.
+ *   product_sale      the sub-order is delivered / completed and the item's return window has passed;
+ *   classified_sale   `marketer_classified_approval_days` (default 2) have passed since the sale was triggered;
+ *   travel_booking    the booking is completed (travel_bookings.completed_at);
+ *   classified_inquiry never auto-approved (a lead is not a sale).
+ *
+ * Approval parks the conversion's NET commission (commission fee already taken out when the sale was recorded) in the
+ * marketer wallet's pending_balance. ReleaseMarketerPendingCommissionJob moves it to the spendable balance after
+ * `marketer_payout_clearing_days` and posts the wallet / ledger entries.
  */
 class ApproveMarketerConversionsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(LedgerService $ledgerService): void
+    public const DEFAULT_CLASSIFIED_APPROVAL_DAYS = 2;
+
+    public function handle(MarketerCommissionPostingService $postings, MarketerEarningsService $earnings): void
     {
         MarketerCampaignConversion::where('status', 'pending')
-            ->whereHas('orderItem.subOrder', fn ($q) => $q->whereIn('status', ['delivered', 'completed']))
-            ->where(function ($q) {
-                $q->whereHas('orderItem', fn ($i) => $i->whereNull('return_eligible_until'))
-                    ->orWhereHas('orderItem', fn ($i) => $i->where('return_eligible_until', '<', today()));
-            })
-            ->with(['invitation', 'orderItem.subOrder'])
-            ->chunkById(200, function ($conversions) use ($ledgerService) {
+            ->where(fn (Builder $q) => $this->eligible($q))
+            ->with(['invitation'])
+            ->chunkById(200, function ($conversions) use ($postings, $earnings) {
                 foreach ($conversions as $conversion) {
-                    $this->approveOne($conversion, $ledgerService);
+                    $this->approveOne($conversion, $postings, $earnings);
                 }
             });
     }
 
-    private function approveOne(MarketerCampaignConversion $conversion, LedgerService $ledgerService): void
+    /** Restrict a conversion query to rows whose source is final. */
+    private function eligible(Builder $query): void
     {
-        $approved = false;
+        $classifiedDays = max(0, (int) setting('marketer_classified_approval_days', self::DEFAULT_CLASSIFIED_APPROVAL_DAYS));
 
-        DB::transaction(function () use ($conversion, $ledgerService, &$approved) {
+        $query
+            ->where(function (Builder $q) {
+                $q->where(fn (Builder $p) => $p->whereNull('conversion_type')->orWhere('conversion_type', MarketerCampaignConversion::TYPE_PRODUCT_SALE))
+                    ->whereHas('orderItem.subOrder', fn ($s) => $s->whereIn('status', ['delivered', 'completed']))
+                    ->where(function ($w) {
+                        $w->whereHas('orderItem', fn ($i) => $i->whereNull('return_eligible_until'))
+                            ->orWhereHas('orderItem', fn ($i) => $i->where('return_eligible_until', '<', today()));
+                    });
+            })
+            ->orWhere(function (Builder $q) use ($classifiedDays) {
+                $q->where('conversion_type', MarketerCampaignConversion::TYPE_CLASSIFIED_SALE)
+                    ->whereNotNull('triggered_at')
+                    ->where('triggered_at', '<=', now()->subDays($classifiedDays));
+            })
+            ->orWhere(function (Builder $q) {
+                $q->where('conversion_type', MarketerCampaignConversion::TYPE_TRAVEL_BOOKING)
+                    ->whereHas('travelBooking', fn ($b) => $b->whereNotNull('completed_at'));
+            });
+    }
+
+    private function approveOne(MarketerCampaignConversion $conversion, MarketerCommissionPostingService $postings, MarketerEarningsService $earnings): void
+    {
+        DB::transaction(function () use ($conversion, $postings, $earnings) {
             $locked = MarketerCampaignConversion::where('id', $conversion->id)->lockForUpdate()->first();
             if (! $locked || $locked->status !== 'pending') {
                 return;
@@ -68,72 +81,16 @@ class ApproveMarketerConversionsJob implements ShouldQueue
                 return;
             }
 
-            // P11: snapshot gross -> admin cut -> discount -> VAT -> net once, credit the NET.
-            $snapshot = app(MarketerCommissionStatementService::class)->snapshotAttributes($locked);
-            $totalCommission = $snapshot['net_commission_amount'];
+            // Conversions recorded before v3 carry no fee snapshot: take it now, once.
+            $snapshot = $locked->commission_fee_amount === null ? $earnings->snapshotAttributes($locked) : [];
 
-            $wallet = Wallet::firstOrCreate(
-                ['owner_type' => 'marketer', 'owner_id' => $marketerId],
-                ['balance' => 0, 'pending_balance' => 0, 'currency' => $locked->currency]
-            );
-
-            Wallet::where('id', $wallet->id)->increment('pending_balance', $totalCommission);
-
-            $locked->update($snapshot + [
+            $locked->fill($snapshot + [
                 'status' => 'approved',
                 'approved_at' => now(),
                 'wallet_credited_at' => now(),
             ]);
-
-            // P11 follow-up: gross / platform cut / VAT / net ledger postings (marketer_payable now carries the net).
-            app(MarketerCommissionStatementService::class)->postApprovalLedger($locked->refresh()->load('invitation'), $ledgerService);
-
-            $platformCommission = (int) $locked->platform_commission_amount;
-            if ($platformCommission > 0) {
-                $vendorId = $locked->orderItem?->subOrder?->vendor_id;
-                $ledgerService->record($ledgerService->newGroupId(), [
-                    [
-                        'account_type' => 'seller_payable',
-                        'account_holder_type' => 'vendor',
-                        'account_holder_id' => $vendorId,
-                        'debit' => $platformCommission,
-                        'credit' => 0,
-                        'currency' => $locked->currency,
-                        'reference_type' => 'marketer_conversion',
-                        'reference_id' => (string) $locked->id,
-                        'description' => "Platform commission deducted from vendor payable for conversion {$locked->id}",
-                    ],
-                    [
-                        'account_type' => 'platform_commission',
-                        'account_holder_type' => null,
-                        'account_holder_id' => null,
-                        'debit' => 0,
-                        'credit' => $platformCommission,
-                        'currency' => $locked->currency,
-                        'reference_type' => 'marketer_conversion',
-                        'reference_id' => (string) $locked->id,
-                        'description' => "Platform commission earned on marketer conversion {$locked->id}",
-                    ],
-                ]);
-            }
-
-            $approved = true;
-            $this->accrueAffiliateFee($locked);
+            $postings->creditPending($locked, $marketerId);
+            $locked->save();
         });
-
-        // Late approval on a campaign that already finished / hit its budget: settle the new accrual at once.
-        if ($approved) {
-            app(AffiliateFeeSettlementService::class)->settleIfClosed($conversion->campaign_id, 'late_approval');
-        }
-    }
-
-    /** P6: affiliate marketing-fee accrual, atomic with the approval; a failure must never block the approval. */
-    private function accrueAffiliateFee(MarketerCampaignConversion $conversion): void
-    {
-        try {
-            app(AffiliateFeeAccrualService::class)->accrue($conversion->refresh());
-        } catch (\Throwable $e) {
-            report($e);
-        }
     }
 }

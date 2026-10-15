@@ -151,9 +151,10 @@ class ClassifiedListingService
     public function recordInquiry(
         ClassifiedListing $listing,
         Customer $customer,
-        array $data
+        array $data,
+        ?string $sessionId = null
     ): ClassifiedInquiry {
-        return ClassifiedInquiry::create([
+        return ClassifiedInquiry::create(app(\App\Services\Marketer\ListingReferralService::class)->attributes('classified', (string) $listing->id, $sessionId) + [
             'classified_listing_id' => $listing->id,
             'customer_id'           => $customer->id,
             'message'               => $data['message'] ?? null,

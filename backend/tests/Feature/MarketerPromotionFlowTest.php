@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Contracts\WhatsAppGateway;
-use App\Enums\PromotionCategory;
 use App\Jobs\CollectPendingInfluencerFeesJob;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
 use App\Models\Admin;
@@ -12,10 +11,8 @@ use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerJob;
 use App\Models\MarketerMarketerJob;
-use App\Models\PromotionCategoryTarget;
 use App\Models\Setting;
 use App\Notifications\Admin\CampaignMarketerReassignedNotification;
-use App\Services\Marketer\PromotionQuotaService;
 use App\Services\MarketerCampaignService;
 use App\Services\WalletService;
 use App\Services\WhatsAppService;
@@ -146,40 +143,6 @@ class MarketerPromotionFlowTest extends TestCase
         app()->call([new SendCampaignWhatsAppNotificationJob($inv->id), 'handle']);
         $this->assertTrue($inv->fresh()->whatsapp_sent);
         $this->assertStringContainsString('/invitations/'.$inv->id.'/whatsapp/accept', $fake->last);
-    }
-
-    public function test_monthly_quota_resolves_target_progress_and_warns_only_in_the_last_week(): void
-    {
-        $profile = $this->s->marketerProfile;
-        $profile->update(['promotion_category' => PromotionCategory::VendorRequests->value]);
-        PromotionCategoryTarget::create(['promotion_category' => 1, 'country_id' => null, 'monthly_minimum' => 5]);
-        PromotionCategoryTarget::create(['promotion_category' => 1, 'country_id' => $this->s->country->id, 'monthly_minimum' => 3]);
-
-        $service = app(PromotionQuotaService::class);
-        $marketer = $this->s->marketer->fresh();
-        $this->assertSame(3, $service->targetFor($marketer));
-
-        $profile->update(['monthly_promotion_target' => 4]);
-        $this->assertSame(4, $service->targetFor($marketer->fresh()));
-        $profile->update(['monthly_promotion_target' => null]);
-
-        // scenario already holds one accepted invitation responded to "now"
-        $midMonth = now()->startOfMonth()->addDays(9);
-        $this->travelTo($midMonth);
-        $progress = $service->progressFor($marketer->fresh());
-        $this->assertSame(3, $progress['target']);
-        $this->assertTrue($progress['behind']);
-        $this->assertFalse($progress['warning']);
-
-        $this->travelTo(now()->endOfMonth()->subDays(2));
-        $this->assertTrue($service->progressFor($marketer->fresh())['last_week']);
-        $this->travelBack();
-    }
-
-    public function test_marketer_without_category_has_no_obligation(): void
-    {
-        $this->assertNull(app(PromotionQuotaService::class)->targetFor($this->s->marketer->fresh()));
-        $this->assertSame(4, PromotionCategory::NawyProducts->value);
     }
 
     private function influencerInvitation(int $fee): MarketerCampaignInvitation

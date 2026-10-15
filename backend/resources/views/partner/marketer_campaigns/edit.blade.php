@@ -2,10 +2,6 @@
 
 @php
     $product = $marketerCampaign->vendorListing?->productVariant?->product;
-    $currentTiers = old('tiered_rules', $marketerCampaign->tieredRules->map(fn ($r) => [
-        'from_sale_number' => $r->from_sale_number,
-        'commission_amount' => $r->commission_amount,
-    ])->values()->all());
     $currentAdTypes = old('selected_ad_types', $marketerCampaign->selected_ad_types ?? []);
 @endphp
 
@@ -13,15 +9,12 @@
 @section('page-title', __('partner.marketer_campaigns_my.edit'))
 
 @section('content')
-<div class="px-4 py-6 sm:px-6 lg:px-8 space-y-6"
-     x-data="{ commissionType: @js(old('commission_type', $marketerCampaign->commission_type)), tieredRules: @js(array_values($currentTiers)) }">
+<div class="px-4 py-6 sm:px-6 lg:px-8 space-y-6">
 
     <div>
         <h1 class="text-2xl font-bold text-gray-900">{{ __('partner.marketer_campaigns_my.edit') }}</h1>
         <p class="mt-1 text-sm text-gray-500">{{ __('partner.marketer_campaigns_my.edit_subtitle') }}</p>
-        @if($product)
-            <p class="mt-1 text-sm font-medium text-gray-700">{{ $product->name_ar ?? $product->name_en }}</p>
-        @endif
+        <p class="mt-1 text-sm font-medium text-gray-700">{{ $marketerCampaign->getPromotedTitle() }}</p>
     </div>
 
     @if($errors->any())
@@ -55,7 +48,7 @@
             </div>
 
             <div class="rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
-                <i class="fas fa-lock me-1"></i>{{ __('partner.marketer_campaigns.commission_set_by_platform_notice') }}
+                <i class="fas fa-lock me-1"></i>{{ __('marketer_campaigns.wizard.commission_set_by_platform') }}
             </div>
 
             <div>
@@ -63,9 +56,21 @@
                     {{ __('partner.marketer_campaigns.max_commission_budget_label') }}
                     <span class="text-xs text-gray-400">({{ $marketerCampaign->currency }})</span>
                 </label>
-                <input type="number" name="max_commission_budget" min="0" step="0.01" value="{{ old('max_commission_budget', $marketerCampaign->max_commission_budget) }}"
-                       class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+                <input type="number" name="max_commission_budget" min="0.01" step="0.01" value="{{ old('max_commission_budget', $marketerCampaign->max_commission_budget) }}"
+                       @disabled($marketerCampaign->status !== 'pending_admin')
+                       class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40 disabled:bg-gray-50 disabled:text-gray-400"
                        placeholder="0">
+                <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.wizard.budget_edit_help', ['fixed' => \App\Support\Money::format($marketerCampaign->influencer_fixed_reserved).' '.$marketerCampaign->currency]) }}</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="ends_at">
+                    {{ __('marketer_campaigns.wizard.ends_at_label') }}
+                    <span class="text-xs text-gray-400">({{ __('partner.marketer_campaigns.optional') }})</span>
+                </label>
+                <input type="date" id="ends_at" name="ends_at" min="{{ now()->addDay()->toDateString() }}" value="{{ old('ends_at', $marketerCampaign->ends_at?->toDateString()) }}"
+                       class="w-full sm:w-64 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400/40">
+                <p class="mt-1 text-xs text-gray-500">{{ __('marketer_campaigns.wizard.ends_at_help') }}</p>
             </div>
 
             <div class="space-y-4">

@@ -27,11 +27,8 @@
     };
     $isPending = $marketerCampaign->status === 'pending_admin';
     $acceptedInvitations = $marketerCampaign->invitations->where('status', 'accepted');
-    $totalFeeExpected = $acceptedInvitations->sum('platform_fee_amount');
-    $totalFeePaid     = $acceptedInvitations->where('platform_fee_status', 'paid')->sum('platform_fee_amount');
-    $totalFeePending  = $acceptedInvitations->where('platform_fee_status', 'pending')->sum('platform_fee_amount');
     $influencerAccepted = $acceptedInvitations->filter(fn ($i) => $i->marketer?->isInfluencer())->count();
-    $affiliateAccepted  = $acceptedInvitations->filter(fn ($i) => $i->marketer?->isAffiliate())->count();
+    $affiliateAccepted  = $acceptedInvitations->filter(fn ($i) => $i->marketer?->isCommissionMarketer())->count();
 @endphp
 
 {{-- ─── Page header ─────────────────────────────────────────────────────────── --}}
@@ -53,34 +50,12 @@
     </a>
 </div>
 
-@if($marketerCampaign->vendor_listing_id)
-    <x-marketer-campaign-fee-snapshot :campaign="$marketerCampaign" class="mb-6" />
+@if($marketerCampaign->vendor_listing_id || $marketerCampaign->admin_listing_id)
+    <x-marketer-campaign-cost :campaign="$marketerCampaign" audience="admin" class="mb-6" />
 @endif
 
-<x-affiliate-fee-history :campaign="$marketerCampaign" audience="admin" class="mb-6"
-    :settle-route="auth('admin')->user()->can('marketer_campaigns.approve') ? route('admin.marketer-campaigns.settle-affiliate-fees', $marketerCampaign) : null" />
-
-{{-- Financial Summary Bar --}}
-<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-
-    <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.platform_fees') }}</div>
-        <div class="text-lg font-bold
-            {{ $totalFeePending > 0 ? 'text-orange-600' : ($totalFeeExpected > 0 ? 'text-green-700' : 'text-gray-400') }}">
-            {{ \App\Support\Money::format($totalFeeExpected) }}
-            {{ $marketerCampaign->currency }}
-        </div>
-        <div class="text-xs mt-1">
-            @if($totalFeePending > 0)
-                <span class="text-orange-500">{{ __('admin.marketer_campaigns.pending_prefix') }}: {{ \App\Support\Money::format($totalFeePending) }}</span>
-            @elseif($totalFeeExpected > 0)
-                <span class="text-green-600">{{ __('admin.marketer_campaigns.fully_paid') }}</span>
-            @else
-                <span class="text-gray-400">{{ __('admin.marketer_campaigns.no_fees') }}</span>
-            @endif
-        </div>
-    </div>
-
+{{-- Summary bar --}}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
     <div class="bg-white rounded-xl border p-4 text-center">
         <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.marketers_accepted') }}</div>
         <div class="text-sm font-semibold text-gray-800">
@@ -95,47 +70,30 @@
                 <span class="text-gray-400">{{ __('admin.marketer_campaigns.none_yet') }}</span>
             @endif
         </div>
-        <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.affiliate_free') }}</div>
+        <div class="text-xs text-gray-400 mt-1">{{ $marketerCampaign->open_to_affiliates ? __('marketer_campaigns.wizard.audience_open') : __('marketer_campaigns.wizard.audience_picked') }}</div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
         <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.total_sales') }}</div>
-        <div class="text-lg font-bold text-gray-900">
-            {{ $marketerCampaign->conversions()->count() }}
-        </div>
+        <div class="text-lg font-bold text-gray-900">{{ $marketerCampaign->conversions()->count() }}</div>
         <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.successful_conversion') }}</div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
         <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.marketers_commission_owed') }}</div>
-        <div class="text-lg font-bold text-red-600">
-            {{ \App\Support\Money::format($marketerCampaign->total_commission_owed) }}
-            {{ $marketerCampaign->currency }}
-        </div>
+        <div class="text-lg font-bold text-red-600">{{ \App\Support\Money::format($marketerCampaign->total_commission_owed) }} {{ $marketerCampaign->currency }}</div>
         <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.not_paid_yet') }}</div>
     </div>
 
     <div class="bg-white rounded-xl border p-4 text-center">
-        <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.platform_profit') }}</div>
+        <div class="text-xs text-gray-500 mb-1">{{ __('marketer_campaigns.cost.commission_fees_earned') }}</div>
         <div class="text-lg font-bold text-green-700">
-            {{ \App\Support\Money::format($marketerCampaign->net_platform_profit) }}
+            {{ \App\Support\Money::format($marketerCampaign->conversions()->whereIn('status', ['pending', 'approved'])->sum('commission_fee_amount') + $marketerCampaign->invitations()->sum('influencer_fixed_fee_amount')) }}
             {{ $marketerCampaign->currency }}
         </div>
-        <div class="text-xs text-gray-400 mt-1">{{ __('admin.marketer_campaigns.from_fees') }}</div>
+        <div class="text-xs text-gray-400 mt-1">{{ __('marketer_campaigns.cost.commission_fees_help') }}</div>
     </div>
-
 </div>
-
-@if($totalFeePending > 0)
-<div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
-    <span class="font-semibold text-orange-800">
-        {{ __('admin.marketer_campaigns.pending_fees_notice') }}
-    </span>
-    <span class="text-sm text-orange-600 ml-2">
-        {{ __('admin.marketer_campaigns.pending_fees_detail', ['amount' => \App\Support\Money::format($totalFeePending), 'currency' => $marketerCampaign->currency]) }}
-    </span>
-</div>
-@endif
 
 <div x-data="{ tab: 'details' }">
     {{-- Tab bar --}}
@@ -144,7 +102,6 @@
             'details'     => __('admin.marketer_campaigns.tab_details'),
             'commission'  => __('admin.marketer_campaigns.tab_commission'),
             'marketers'   => __('admin.marketer_campaigns.tab_marketers'),
-            'tiered'      => __('admin.marketer_campaigns.tab_tiered'),
             'invitations' => __('admin.marketer_campaigns.tab_invitations'),
             'conversions' => __('admin.marketer_campaigns.tab_conversions'),
             'samples'     => __('admin.marketer_campaigns.tab_samples'),
@@ -169,10 +126,9 @@
                     __('admin.marketer_campaigns.product')                    => $promotedLabel ?? '—',
                     __('admin.marketer_campaigns.country')                    => $marketerCampaign->country?->name_en ?? '—',
                     __('admin.marketer_campaigns.currency')                   => $marketerCampaign->currency ?? '—',
-                    __('admin.marketer_campaigns.commission_type')            => $marketerCampaign->commission_type ? __('admin.marketer_campaigns.commission_type_' . $marketerCampaign->commission_type) : '—',
                     __('admin.marketer_campaigns.max_commission_budget')      => $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—',
-                    __('admin.marketer_campaigns.platform_commission_amount') => $marketerCampaign->platform_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->platform_commission_amount) : '—',
-                    __('admin.marketer_campaigns.marketer_commission_amount') => $marketerCampaign->marketer_commission_amount !== null ? \App\Support\Money::format($marketerCampaign->marketer_commission_amount) : '—',
+                    __('marketer_campaigns.cost.ends_at')                     => $marketerCampaign->ends_at?->format('d M Y') ?? __('marketer_campaigns.cost.no_end_date'),
+                    __('marketer_campaigns.wizard.audience')                  => $marketerCampaign->open_to_affiliates ? __('marketer_campaigns.wizard.audience_open') : __('marketer_campaigns.wizard.audience_picked'),
                     __('admin.marketer_campaigns.platform_sample_qty')        => $marketerCampaign->platform_sample_qty_snapshot ?? 0,
                     __('admin.marketer_campaigns.per_marketer_sample_qty')    => $marketerCampaign->per_marketer_sample_qty_snapshot ?? 0,
                     __('admin.marketer_campaigns.auto_approve_at')            => $marketerCampaign->auto_approve_at?->format('d M Y H:i') ?? '—',
@@ -199,67 +155,13 @@
             </div>
         </x-card>
 
-        <x-card title="{{ __('admin.marketer_campaigns.category_scope_title') }}">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                @foreach([['product', 'category', __('admin.marketer_campaigns.product_categories'), $categories], ['classified', 'classifiedCategory', __('admin.marketer_campaigns.classified_categories'), $classifiedCategories]] as [$type, $relation, $label, $options])
-                <form method="POST" action="{{ route('admin.marketer-campaigns.category-rules.sync', $marketerCampaign) }}" class="space-y-2 border rounded-lg p-3">
-                    @csrf
-                    <input type="hidden" name="category_type" value="{{ $type }}">
-                    <div class="text-sm font-semibold text-gray-700">{{ $label }}</div>
-                    <select name="selection_mode" class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                        @php $currentMode = $type === 'product' ? $marketerCampaign->product_category_selection_mode : $marketerCampaign->classified_category_selection_mode; @endphp
-                        <option value="all" @selected($currentMode === 'all')>{{ __('admin.marketer_campaigns.scope_all') }}</option>
-                        <option value="include" @selected($currentMode === 'include')>{{ __('admin.marketer_campaigns.scope_include') }}</option>
-                        <option value="exclude" @selected($currentMode === 'exclude')>{{ __('admin.marketer_campaigns.scope_exclude') }}</option>
-                    </select>
-                    <select name="category_ids[]" multiple data-select2-init class="block w-full rounded-lg border border-gray-300 py-2 px-3 text-sm">
-                        @php $selectedIds = $marketerCampaign->categoryRules->pluck($relation)->filter()->pluck('id')->all(); @endphp
-                        @foreach($options as $option)
-                            <option value="{{ $option->id }}" @selected(in_array($option->id, $selectedIds, true))>{{ $option->name_ar }}</option>
-                        @endforeach
-                    </select>
-                    <button class="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-900">{{ __('admin.marketer_campaigns.save') }}</button>
-                </form>
-                @endforeach
-            </div>
-        </x-card>
+        <x-marketer-campaign-calculations :campaign="$marketerCampaign" :calculations="$calculations" :price="$examplePrice" class="mt-4" />
     </div>
 
     {{-- ── Approval ──────────────────────────────────────────────────────── --}}
     <div x-show="tab === 'commission'">
         <x-card title="{{ __('admin.marketer_campaigns.approve_form_title') }}">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-gray-50 rounded-lg p-3 text-center">
-                    <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.commission_type') }}</div>
-                    <div class="font-semibold text-gray-800">{{ $marketerCampaign->commission_type ? __('admin.marketer_campaigns.commission_type_' . $marketerCampaign->commission_type) : '—' }}</div>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3 text-center">
-                    <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.max_commission_budget') }}</div>
-                    <div class="font-semibold text-gray-800">
-                        {{ $marketerCampaign->max_commission_budget !== null ? \App\Support\Money::format($marketerCampaign->max_commission_budget) : '—' }}
-                        {{ $marketerCampaign->currency }}
-                    </div>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3 text-center">
-                    <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.influencer_commission_label') }}</div>
-                    <div class="font-semibold text-green-700">
-                        {{ rtrim(rtrim(number_format((float) ($commissionSetting?->influencer_fee_share_pct ?? 0), 2), '0'), '.') }}%
-                    </div>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3 text-center">
-                    <div class="text-xs text-gray-500 mb-1">{{ __('admin.marketer_campaigns.affiliate_commission_label') }}</div>
-                    <div class="font-semibold text-green-700">
-                        @php $affMode = $commissionSetting?->affiliate_commission_mode; @endphp
-                        @if($commissionSetting && $commissionSetting->affiliateAmountFor(100, 1) > 0)
-                            @if(in_array($affMode, ['percentage', 'both'], true)){{ rtrim(rtrim(number_format((float) $commissionSetting->affiliate_commission_rate, 2), '0'), '.') }}%@endif
-                            @if($affMode === 'both') + @endif
-                            @if(in_array($affMode, ['fixed', 'both'], true)){{ \App\Support\Money::format($commissionSetting->affiliate_commission_flat) }} {{ $marketerCampaign->currency }}@endif
-                        @else
-                            —
-                        @endif
-                    </div>
-                </div>
-            </div>
+            <p class="text-sm text-gray-600 mb-4">{{ __('marketer_campaigns.cost.approval_hint') }}</p>
 
             @if($isPending)
                 <form method="POST" action="{{ route('admin.marketer-campaigns.approve', $marketerCampaign) }}">
@@ -323,34 +225,6 @@
         </div>
     @endif
 
-    {{-- ── Tiered Rules ─────────────────────────────────────────────────── --}}
-    <div x-show="tab === 'tiered'">
-        <x-card title="{{ __('admin.marketer_campaigns.tab_tiered') }}">
-            @if($marketerCampaign->commission_type === 'tiered' && $marketerCampaign->tieredRules->isNotEmpty())
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-gray-500 border-b border-gray-100">
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.from_sale_number') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.platform_commission_amount') }}</th>
-                            <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.currency') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($marketerCampaign->tieredRules as $rule)
-                            <tr class="border-b border-gray-50">
-                                <td class="py-2 pr-4">{{ $rule->from_sale_number }}</td>
-                                <td class="py-2 pr-4">{{ \App\Support\Money::format($rule->commission_amount) }}</td>
-                                <td class="py-2 pr-4">{{ $rule->currency }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @else
-                <p class="text-sm text-gray-400">{{ __('admin.marketer_campaigns.no_tiered_rules') }}</p>
-            @endif
-        </x-card>
-    </div>
-
     {{-- ── Invitations ──────────────────────────────────────────────────── --}}
     <div x-show="tab === 'invitations'">
         <x-card title="{{ __('admin.marketer_campaigns.tab_invitations') }}">
@@ -393,8 +267,7 @@
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_sent_at') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.whatsapp_col') }}</th>
                                 <th class="py-2 pr-4">{{ __('admin.marketer_campaigns.invitation_responded_at') }}</th>
-                                <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('admin.marketer_campaigns.platform_fees') }}</th>
-                                <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('admin.marketer_campaigns.fees_status') }}</th>
+                                <th class="text-center px-4 py-2 font-medium text-gray-600">{{ __('marketer_campaigns.cost.paid_how_col') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -440,58 +313,15 @@
                                         @endif
                                     </td>
                                     <td class="py-2 pr-4">{{ $invitation->responded_at?->format('d M Y H:i') ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-center">
-                                        @if($invitation->platform_fee_status === 'not_applicable')
-                                            <span class="text-xs text-green-600">{{ __('admin.marketer_campaigns.fee_free_affiliate') }}</span>
+                                    <td class="px-4 py-3 text-center text-xs">
+                                        @if($invitation->influencer_fixed_status !== \App\Models\MarketerCampaignInvitation::FIXED_NONE)
+                                            <span class="font-semibold text-gray-800">{{ \App\Support\Money::format($invitation->influencer_fixed_amount) }} {{ $marketerCampaign->currency }}</span>
+                                            <span class="block text-[11px] text-purple-600">{{ __('marketer_campaigns.calc.fixed_status.'.$invitation->influencer_fixed_status) }}</span>
+                                            @if($invitation->influencer_fixed_status === \App\Models\MarketerCampaignInvitation::FIXED_PAID)
+                                                <span class="block text-[11px] text-gray-500">{{ __('marketer_campaigns.marketer_panel.influencer_paid', ['net' => \App\Support\Money::format($invitation->influencer_fixed_net_amount).' '.$marketerCampaign->currency, 'fee' => \App\Support\Money::format($invitation->influencer_fixed_fee_amount).' '.$marketerCampaign->currency]) }}</span>
+                                            @endif
                                         @else
-                                            <span class="font-semibold text-gray-800">
-                                                {{ \App\Support\Money::format($invitation->platform_fee_amount) }} {{ $invitation->platform_fee_currency }}
-                                                @if($invitation->platform_fee_vat_amount > 0)<span class="block text-[11px] text-gray-500">+ {{ __('partner.marketer_campaigns.vat_label') }} {{ \App\Support\Money::format($invitation->platform_fee_vat_amount) }}</span>@endif
-                                            </span>
-                                            @if($invitation->platform_fee_marketing_amount > 0)
-                                                <span class="block text-[11px] text-gray-500" data-testid="admin-invitation-marketing">+ {{ __('admin.marketer_campaigns.marketing_fees_label') }} {{ \App\Support\Money::format($invitation->platform_fee_marketing_amount) }}</span>
-                                            @endif
-                                            @if($invitation->platform_fee_refunded_at)
-                                                <span class="block text-[11px] text-green-700" data-testid="admin-invitation-refund">{{ __('admin.marketer_campaigns.fee_refunded_line', ['amount' => \App\Support\Money::format($invitation->platform_fee_refund_amount), 'currency' => $invitation->platform_fee_currency, 'date' => $invitation->platform_fee_refunded_at->format('d M Y')]) }}</span>
-                                            @elseif($invitation->platform_fee_voided_at)
-                                                <span class="block text-[11px] text-gray-500" data-testid="admin-invitation-voided">{{ __('admin.marketer_campaigns.fee_voided_line', ['date' => $invitation->platform_fee_voided_at->format('d M Y')]) }}</span>
-                                            @endif
-                                            @if($invitation->marketer_credit_reversed_at && $invitation->marketer_credited_at)
-                                                <span class="block text-[11px] text-red-600" data-testid="admin-invitation-reversal">{{ __('admin.marketer_campaigns.marketer_fee_share_reversed', ['amount' => \App\Support\Money::format($invitation->marketer_payout_amount), 'date' => $invitation->marketer_credit_reversed_at->format('d M Y')]) }}</span>
-                                            @elseif($invitation->hasPendingClawback())
-                                                <span class="block text-[11px] text-red-600" data-testid="admin-invitation-clawback">{{ __('admin.marketer_campaigns.marketer_clawback_pending', ['amount' => \App\Support\Money::format($invitation->marketer_clawback_amount)]) }}</span>
-                                            @elseif($invitation->marketer_payout_amount > 0)
-                                                <span class="block text-[11px] text-indigo-600" data-testid="admin-invitation-payout">{{ __('admin.marketer_campaigns.marketer_fee_share_line', ['pct' => (float) $invitation->marketer_fee_share_pct, 'amount' => \App\Support\Money::format($invitation->marketer_payout_amount), 'status' => $invitation->marketer_credited_at ? __('admin.marketer_campaigns.marketer_fee_share_credited', ['date' => $invitation->marketer_credited_at->format('d M Y')]) : __('admin.marketer_campaigns.marketer_fee_share_not_credited')]) }}</span>
-                                            @endif
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-center">
-                                        @if($invitation->platform_fee_status === 'not_applicable')
-                                            <span class="text-xs text-gray-300">—</span>
-                                        @elseif($invitation->platform_fee_status === 'paid')
-                                            <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                                                <i class="fas fa-check mr-1"></i>{{ __('admin.marketer_campaigns.fee_paid') }}
-                                            </span>
-                                        @elseif($invitation->platform_fee_status === 'pending')
-                                            <div class="flex items-center gap-1 justify-center">
-                                                <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                                                    {{ __('admin.marketer_campaigns.pending_prefix') }}
-                                                </span>
-                                                @if(auth('admin')->user()?->can('marketer_campaigns.approve'))
-                                                <form action="{{ route('admin.marketer-campaigns.invitations.mark-fee-paid', [$marketerCampaign, $invitation]) }}"
-                                                      method="POST">
-                                                    @csrf @method('PATCH')
-                                                    <button type="submit"
-                                                            class="text-xs text-orange-600 hover:text-orange-800 underline">
-                                                        {{ __('admin.marketer_campaigns.mark_as_paid') }}
-                                                    </button>
-                                                </form>
-                                                @endif
-                                            </div>
-                                        @elseif($invitation->platform_fee_status === 'refunded')
-                                            <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full" data-testid="admin-invitation-refunded-badge">{{ __('admin.marketer_campaigns.fee_refunded') }}</span>
-                                        @elseif($invitation->platform_fee_status === 'waived')
-                                            <span class="text-xs text-gray-400">{{ $invitation->platform_fee_voided_at ? __('admin.marketer_campaigns.fee_voided') : __('admin.marketer_campaigns.fee_waived') }}</span>
+                                            <span class="text-gray-600">{{ __('marketer_campaigns.marketer_panel.sales_line', ['count' => (int) $invitation->total_conversions, 'amount' => \App\Support\Money::format($invitation->total_commission_earned).' '.$marketerCampaign->currency]) }}</span>
                                         @endif
                                     </td>
                                 </tr>

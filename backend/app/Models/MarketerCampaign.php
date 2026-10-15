@@ -31,7 +31,13 @@ class MarketerCampaign extends Model
         'fulfillment_type', 'campaign_subtotal', 'marketing_fee_fixed', 'marketing_fee_variable',
         'marketing_fee_total', 'campaign_grand_total',
         'affiliate_fee_accrued', 'affiliate_fee_settled_at', 'marketing_fee_fixed_accrued',
+        'open_to_affiliates', 'influencer_fixed_reserved',
+        'ends_at', 'influencer_fixed_snapshot', 'campaign_fee_status', 'campaign_fee_paid_at', 'campaign_fee_paid_via',
+        'influencers_settled_at',
     ];
+
+    /** The only commission_type written by v3: every marketer is paid according to his own type. */
+    public const COMMISSION_TYPE = 'per_marketer_type';
 
     protected $attributes = [
         'campaign_category' => 'product',
@@ -57,7 +63,21 @@ class MarketerCampaign extends Model
         'marketing_fee_fixed_accrued' => DecimalMoney::class,
         'affiliate_fee_settled_at' => 'datetime',
         'fulfillment_type' => MarketingFeeType::class,
+        'open_to_affiliates' => 'boolean',
+        'influencer_fixed_reserved' => DecimalMoney::class,
+        'ends_at' => 'datetime',
+        'influencer_fixed_snapshot' => 'array',
+        'campaign_fee_paid_at' => 'datetime',
+        'influencers_settled_at' => 'datetime',
     ];
+
+    public const OWNER_TRAVEL_AGENCY = 'travel_agency';
+
+    /** Vertical of the promoted listing (product | classified | travel); alias of campaign_category. */
+    public function getListingTypeAttribute(): string
+    {
+        return (string) $this->campaign_category;
+    }
 
     public function vendor(): BelongsTo
     {
@@ -127,33 +147,14 @@ class MarketerCampaign extends Model
         return $this->hasMany(MarketerCampaignInvitation::class, 'campaign_id');
     }
 
-    public function tieredRules(): HasMany
-    {
-        return $this->hasMany(MarketerCampaignTieredRule::class, 'campaign_id')->orderBy('from_sale_number');
-    }
-
-    /**
-     * Include/exclude category entries for this campaign's
-     * product_category_selection_mode / classified_category_selection_mode.
-     */
-    public function categoryRules(): HasMany
-    {
-        return $this->hasMany(MarketerCampaignCategoryRule::class, 'marketer_campaign_id');
-    }
-
     public function conversions(): HasMany
     {
         return $this->hasMany(MarketerCampaignConversion::class, 'campaign_id');
     }
 
-    public function feeAccruals(): HasMany
+    public function payoutItems(): HasMany
     {
-        return $this->hasMany(MarketerCampaignFeeAccrual::class, 'campaign_id')->orderBy('created_at')->orderBy('id');
-    }
-
-    public function feeSettlements(): HasMany
-    {
-        return $this->hasMany(MarketerCampaignFeeSettlement::class, 'campaign_id');
+        return $this->hasMany(PayoutItem::class, 'campaign_id');
     }
 
     public function samples(): HasMany
@@ -238,13 +239,34 @@ class MarketerCampaign extends Model
     }
 
     /**
-     * Peer promotion (influencer promotes an influencer's listing) whose promoter has no commission rule for the
-     * category: it earns nothing per sale until the admin sets a rule on his profile (D12).
+     * Peer promotion (influencer promotes an influencer's listing). In v3 it earns no per-sale commission: the
+     * promoter's reward is decided by the owner outside the campaign engine.
      */
     public function hasNoPeerCommission(): bool
     {
-        return $this->marketer_listing_id !== null
-            && $this->commission_type !== 'tiered'
-            && (float) $this->marketer_commission_amount <= 0;
+        return $this->marketer_listing_id !== null;
+    }
+
+    /** Budget claimed by affiliate / broker commissions and the influencers' reserved fixed amounts. */
+    public function budgetUsed(): float
+    {
+        return round((float) $this->commission_budget_spent + (float) $this->influencer_fixed_reserved, 2);
+    }
+
+    /** Budget left for affiliate / broker commissions (null = unlimited legacy / peer campaign). */
+    public function budgetRemaining(): ?float
+    {
+        if ((float) $this->max_commission_budget <= 0) {
+            return null;
+        }
+
+        return max(0.0, round((float) $this->max_commission_budget - $this->budgetUsed(), 2));
+    }
+
+    public function isBudgetExhausted(): bool
+    {
+        $remaining = $this->budgetRemaining();
+
+        return $remaining !== null && $remaining < 0.01;
     }
 }

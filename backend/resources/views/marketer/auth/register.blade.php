@@ -23,7 +23,7 @@
                 {{-- Marketer Type Selection --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">{{ __('marketer.auth.account_type_label') }} <span class="text-red-500">*</span></label>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-3 gap-3">
                         <label class="relative cursor-pointer">
                             <input type="radio" name="marketer_type" value="influencer" class="sr-only peer" {{ old('marketer_type') === 'influencer' ? 'checked' : '' }}>
                             <div class="peer-checked:border-yellow-400 peer-checked:bg-yellow-50 border-2 border-gray-200 rounded-xl p-4 text-center transition">
@@ -40,6 +40,15 @@
                                 <div class="font-bold text-gray-900 text-sm">{{ __('marketer.auth.type_affiliate') }}</div>
                                 <div class="text-gray-500 text-xs">Affiliate</div>
                                 <div class="text-gray-400 text-xs mt-1">{{ __('marketer.auth.type_affiliate_hint') }}</div>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="marketer_type" value="broker" class="sr-only peer" {{ old('marketer_type') === 'broker' ? 'checked' : '' }}>
+                            <div class="peer-checked:border-yellow-400 peer-checked:bg-yellow-50 border-2 border-gray-200 rounded-xl p-4 text-center transition">
+                                <div class="text-2xl mb-1">🤝</div>
+                                <div class="font-bold text-gray-900 text-sm">{{ __('marketer.auth.type_broker') }}</div>
+                                <div class="text-gray-500 text-xs">Broker</div>
+                                <div class="text-gray-400 text-xs mt-1">{{ __('marketer.auth.type_broker_hint') }}</div>
                             </div>
                         </label>
                     </div>

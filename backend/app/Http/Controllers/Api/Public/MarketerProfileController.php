@@ -91,10 +91,10 @@ class MarketerProfileController extends Controller
      * pages don't need real-time freshness, and this keeps response
      * times well under 1s under load.
      */
-    /** Public directory of active influencers or brokers (affiliates). */
+    /** Public directory of active influencers or brokers. */
     public function directory(Request $request, $country, string $type): JsonResponse
     {
-        $marketerType = $type === 'brokers' ? 'affiliate' : 'influencer';
+        $marketerType = $type === 'brokers' ? 'broker' : 'influencer';
         $rows = MarketerProfile::query()
             ->whereNotNull('profile_slug')
             ->whereHas('marketer', fn ($q) => $q->whereHas('marketerJobs', fn ($j) => $j->where('key', $marketerType))->where('global_status', 'active'))
@@ -264,9 +264,9 @@ class MarketerProfileController extends Controller
         }
 
         $brokerSpecialization = null;
-        if ($marketer->isAffiliate()) {
+        if ($marketer->isBroker()) {
             $brokerSpecialization = [
-                'categories' => $marketer->categoriesFor('affiliate', 'product')->map(fn ($c) => [
+                'categories' => $marketer->categoriesFor('broker', 'product')->map(fn ($c) => [
                     'category_id' => $c->id,
                     'category_name_en' => $c->name_en,
                     'category_name_ar' => $c->name_ar,

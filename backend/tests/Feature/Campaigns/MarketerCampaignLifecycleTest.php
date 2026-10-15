@@ -4,7 +4,6 @@ namespace Tests\Feature\Campaigns;
 
 use App\Contracts\WhatsAppGateway;
 use App\Enums\CancelActor;
-use App\Enums\PromotionCategory;
 use App\Enums\VendorGlobalStatus;
 use App\Jobs\ApproveMarketerConversionsJob;
 use App\Jobs\CollectPendingInfluencerFeesJob;
@@ -23,8 +22,6 @@ use App\Models\MarketerCommissionCountrySetting;
 use App\Models\MarketerInfluencerFeeCountrySetting;
 use App\Models\MarketerListing;
 use App\Models\MarketerProfile;
-use App\Models\MarketerPromotionFine;
-use App\Models\MarketerPromotionReminder;
 use App\Models\MarketerSaleSettlement;
 use App\Models\Order;
 use App\Models\Payout;
@@ -50,7 +47,7 @@ use Spatie\Permission\Models\Permission;
 use Tests\Support\CampaignSampleFixtures as F;
 use Tests\Support\MarketplaceScenario;
 use Tests\Support\PeerPromotionFixtures as P;
-use Tests\Support\PromotionQuotaFixtures as Q;
+use Tests\Support\WhatsAppGatewayFixtures as Q;
 use Tests\Support\ReferralCodeFixtures as R;
 use Tests\TestCase;
 
@@ -600,46 +597,5 @@ class MarketerCampaignLifecycleTest extends TestCase
         ])->assertStatus(201);
 
         return Order::where('order_number', $response->json('data.order.order_number') ?? $response->json('data.order_number'))->firstOrFail();
-    }
-
-    // ───────── (5) monthly quota ─────────
-
-    public function test_month_close_fines_a_short_marketer_once_and_the_reminder_goes_out_once(): void
-    {
-        $m = Q::marketerIn($this->s, PromotionCategory::VendorRequests, 3, 5000);
-        $m->update(['country_id' => $this->s->country->id]);
-        $ok = $this->influencer();
-
-        // One accepted vendor promotion this month (target 3), through the real chain.
-        $campaign = $this->vendorCreates([$m]);
-        $this->adminApproves($campaign);
-        $this->acceptViaLink(R::invitationOf($campaign, $m));
-        $this->gateway->sent = [];
-
-        $this->actingAs($this->login($m), 'marketer')->get(route('marketer.dashboard'))->assertOk()->assertSee('1/3');
-
-        // Last week of the month: one WhatsApp + one reminder row, however often the command runs.
-        $this->travelTo(now()->endOfMonth()->subDays(2));
-        Artisan::call('marketers:promotion-quota-reminders');
-        Artisan::call('marketers:promotion-quota-reminders');
-        $this->actingAs($this->login($m), 'marketer')->get(route('marketer.dashboard'))
-            ->assertOk()->assertSee('data-quota-penalty', false)->assertSee('5,000');
-        $this->assertCount(1, $this->gateway->sent);
-        $this->assertSame($m->whatsapp_for_campaigns, $this->gateway->sent[0]['to']);
-        $this->assertSame(1, MarketerPromotionReminder::where('marketer_id', $m->id)->count());
-        $this->assertSame(0, MarketerPromotionReminder::where('marketer_id', $ok->id)->count());
-
-        // First days of the next month: the close creates exactly one fine, a rerun adds nothing.
-        $this->travelTo(now()->addMonthNoOverflow()->startOfMonth()->addDays(2));
-        Artisan::call('promotion:close-month');
-        Artisan::call('promotion:close-month');
-        $fine = MarketerPromotionFine::where('marketer_id', $m->id)->sole();
-        $this->assertSame([5000, 1, 3, MarketerPromotionFine::PENDING], [$fine->amount, $fine->done, $fine->target, $fine->status]);
-        $this->assertSame(1, MarketerPromotionFine::count());
-
-        $this->actingAs($this->login($m), 'marketer')->get(route('marketer.dashboard'))
-            ->assertOk()->assertSee('data-pending-fines', false)->assertSee('5,000');
-        $this->actingAs($this->admin, 'admin')->get(route('admin.marketer-fines.index'))
-            ->assertOk()->assertSee($m->name)->assertSee('5,000')->assertSee($fine->period);
     }
 }

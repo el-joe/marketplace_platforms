@@ -4,30 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendCampaignWhatsAppNotificationJob;
-use App\Models\Category;
-use App\Models\ClassifiedCategory;
 use App\Models\Country;
 use App\Models\Marketer;
 use App\Models\MarketerCampaign;
-use App\Models\MarketerCampaignCategoryRule;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
-use App\Models\MarketerCommissionCountrySetting;
 use App\Models\Vendor;
 use App\Models\VendorListing;
-use App\Services\AffiliateFeeSettlementService;
 use App\Services\Campaign\CampaignSampleService;
 use App\Services\Inventory\InsufficientStockException;
+use App\Services\Marketer\MarketerCommissionCalculator;
 use App\Services\MarketerCampaignQuoteService;
 use App\Services\MarketerCampaignService;
-use App\Services\MarketerFeePayoutService;
 use App\Services\ReferralCodeResolver;
 use App\Support\Marketer\CampaignOwner;
 use App\Support\Marketer\CampaignSource;
-use App\Support\Money;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -75,24 +67,10 @@ class MarketerCampaignController extends Controller
             'adminListing.productVariant.product',
             'marketerListing.productVariant.product', 'ownerMarketer', 'promoter',
             'invitations.marketer.marketerProfile',
-            'tieredRules',
             'conversions.order',
             'samples.invitation.marketer',
             'samples.customAttributeValues',
-            'categoryRules.category',
-            'categoryRules.classifiedCategory',
         ]);
-
-        $categoryId = $marketerCampaign->vendorListing?->productVariant?->product?->category_id
-            ?? $marketerCampaign->adminListing?->productVariant?->product?->category_id
-            ?? $marketerCampaign->marketerListing?->productVariant?->product?->category_id;
-
-        $commissionSetting = $categoryId
-            ? MarketerCommissionCountrySetting::forCategory($marketerCampaign->country_id, $categoryId)
-            : null;
-
-        $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
-        $classifiedCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
 
         $referralChains = app(ReferralCodeResolver::class)->chainsFor($marketerCampaign);
 
@@ -106,12 +84,24 @@ class MarketerCampaignController extends Controller
         $requestedQuote = null;
         $quoteRows = collect();
         if ($requestedMarketers->isNotEmpty() && $marketerCampaign->vendorListing) {
-            $requestedQuote = app(MarketerCampaignQuoteService::class)->quote($marketerCampaign->vendorListing, $requestedIds);
+            $requestedQuote = app(MarketerCampaignQuoteService::class)->quote(
+                $marketerCampaign->vendorListing,
+                $requestedIds,
+                (float) $marketerCampaign->max_commission_budget,
+                (bool) $marketerCampaign->open_to_affiliates
+            );
             $quoteRows = collect($requestedQuote['rows'])->keyBy('id');
         }
 
+        // How each invited marketer is paid, with the promoted item's current price as the worked example.
+        $calculator = app(MarketerCommissionCalculator::class);
+        $examplePrice = (float) ($marketerCampaign->vendorListing?->price ?? $marketerCampaign->adminListing?->price ?? 0);
+        $calculations = $marketerCampaign->invitations
+            ->filter(fn ($i) => $i->marketer && in_array($i->status, ['pending', 'accepted'], true))
+            ->mapWithKeys(fn ($i) => [$i->id => $calculator->compute($i->marketer, $marketerCampaign, $examplePrice, 1, $i)]);
+
         return view('admin.marketer_campaigns.show', compact(
-            'marketerCampaign', 'commissionSetting', 'categories', 'classifiedCategories', 'referralChains',
+            'marketerCampaign', 'referralChains', 'calculations', 'examplePrice',
             'requestedMarketers', 'requestedQuote', 'quoteRows'
         ));
     }
@@ -190,37 +180,6 @@ class MarketerCampaignController extends Controller
         return back()->with('success', 'تم تحديث حالة العينة.');
     }
 
-    public function markInvitationFeePaid(
-        MarketerCampaign $marketerCampaign,
-        MarketerCampaignInvitation $invitation
-    ) {
-        abort_unless(auth('admin')->user()->can('marketer_campaigns.approve'), 403);
-
-        abort_unless($invitation->campaign_id === $marketerCampaign->id, 403);
-
-        // Same lock + status guard as the wallet collector and the weekly statement:
-        // a fee already settled there can't be marked paid again (and vice versa).
-        $marked = DB::transaction(function () use ($invitation) {
-            $locked = MarketerCampaignInvitation::whereKey($invitation->id)->lockForUpdate()->first();
-            if (! $locked || $locked->platform_fee_status !== 'pending' || $locked->payoutItems()->exists()) {
-                return false;
-            }
-            $locked->update([
-                'platform_fee_status' => 'paid',
-                'platform_fee_paid_via' => 'admin',
-                'platform_fee_paid_at' => now(),
-            ]);
-
-            return true;
-        });
-
-        abort_unless($marked, 422, 'الرسوم مدفوعة بالفعل أو غير مطبقة.');
-
-        app(MarketerFeePayoutService::class)->creditForInvitation($invitation);
-
-        return back()->with('success', 'تم تسجيل دفع رسوم الإنفلوينسر.');
-    }
-
     /**
      * P10 follow-up: re-send the WhatsApp invitation (same signed accept/reject links) of a PENDING invitation.
      * Cooldown: `marketer_whatsapp_resend_cooldown_minutes` (default 10) since the last resend, enforced with one
@@ -288,12 +247,8 @@ class MarketerCampaignController extends Controller
                 ->find(old('vendor_listing_id'));
         }
 
-        $categories = Category::where('is_active', true)->orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
-        $classifiedCategories = ClassifiedCategory::orderBy('name_ar')->get(['id', 'name_ar', 'name_en']);
-
         return view('admin.marketer_campaigns.create', compact(
-            'vendors', 'marketers', 'countries', 'vendorCountries', 'countryCurrencies', 'oldVendorListing',
-            'categories', 'classifiedCategories'
+            'vendors', 'marketers', 'countries', 'vendorCountries', 'countryCurrencies', 'oldVendorListing'
         ));
     }
 
@@ -312,16 +267,13 @@ class MarketerCampaignController extends Controller
             'marketer_ids.*' => 'uuid|exists:marketers,id',
             'country_id' => 'required|uuid|exists:countries,id',
             'currency' => 'required|string|size:3|exists:currencies,code',
-            'commission_type' => 'required|in:fixed,percentage,last_click,tiered',
+            // Max Commission Budget: affiliates / brokers are paid from it per sale, influencers' fixed amounts are
+            // reserved from it. Zero = unlimited (platform-owned campaigns only; a vendor campaign needs a budget).
             'max_commission_budget' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'open_to_affiliates' => 'nullable|boolean',
+            'ends_at' => 'nullable|date|after:now',
             'title' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
-            'product_category_selection_mode' => 'nullable|in:all,include,exclude',
-            'product_category_ids' => 'nullable|array',
-            'product_category_ids.*' => 'uuid|exists:categories,id',
-            'classified_category_selection_mode' => 'nullable|in:all,include,exclude',
-            'classified_category_ids' => 'nullable|array',
-            'classified_category_ids.*' => 'uuid|exists:classified_categories,id',
         ]);
 
         try {
@@ -334,13 +286,9 @@ class MarketerCampaignController extends Controller
                 $source = CampaignSource::vendorListing($data['vendor_listing_id']);
             }
 
-            $data['product_category_selection_mode'] = $data['product_category_selection_mode'] ?? 'all';
-            $data['classified_category_selection_mode'] = $data['classified_category_selection_mode'] ?? 'all';
+            $data['open_to_affiliates'] = $request->boolean('open_to_affiliates');
 
             $campaign = $this->service->createCampaign($owner, $source, $data);
-
-            $this->syncCategoryRuleRows($campaign, 'category_id', $data['product_category_ids'] ?? [], $data['product_category_selection_mode']);
-            $this->syncCategoryRuleRows($campaign, 'classified_category_id', $data['classified_category_ids'] ?? [], $data['classified_category_selection_mode']);
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -348,83 +296,6 @@ class MarketerCampaignController extends Controller
         return redirect()
             ->route('admin.marketer-campaigns.show', $campaign)
             ->with('success', 'تم إنشاء الحملة بنجاح.');
-    }
-
-    /**
-     * Replace a campaign's include/exclude category rules for one category
-     * source (product|classified) and update its selection mode. Used both
-     * at creation time and from the campaign show page.
-     */
-    public function syncCategoryRules(Request $request, MarketerCampaign $marketerCampaign)
-    {
-        abort_unless(auth('admin')->user()->can('marketer_campaigns.create'), 403);
-
-        $validated = $request->validate([
-            'category_type' => 'required|in:product,classified',
-            'selection_mode' => 'required|in:all,include,exclude',
-            'category_ids' => 'nullable|array',
-            'category_ids.*' => 'uuid',
-        ]);
-
-        $column = $validated['category_type'] === 'product' ? 'category_id' : 'classified_category_id';
-
-        $marketerCampaign->update([
-            ($validated['category_type'] === 'product' ? 'product_category_selection_mode' : 'classified_category_selection_mode') => $validated['selection_mode'],
-        ]);
-
-        $this->syncCategoryRuleRows($marketerCampaign, $column, $validated['category_ids'] ?? [], $validated['selection_mode']);
-
-        return back()->with('success', 'تم تحديث نطاق الأقسام لهذه الحملة.');
-    }
-
-    /**
-     * @param  'category_id'|'classified_category_id'  $column
-     * @param  array<string>  $categoryIds
-     */
-    private function syncCategoryRuleRows(MarketerCampaign $campaign, string $column, array $categoryIds, string $mode): void
-    {
-        $campaign->categoryRules()->whereNotNull($column)->delete();
-
-        if ($mode === 'all' || empty($categoryIds)) {
-            return;
-        }
-
-        foreach (array_filter($categoryIds) as $categoryId) {
-            MarketerCampaignCategoryRule::create([
-                'marketer_campaign_id' => $campaign->id,
-                $column => $categoryId,
-                'mode' => $mode,
-            ]);
-        }
-    }
-
-    /** P6: settle the unsettled affiliate marketing fees of the campaign now (idempotent; incremental). */
-    public function settleAffiliateFees(MarketerCampaign $marketerCampaign): RedirectResponse
-    {
-        $settlement = app(AffiliateFeeSettlementService::class)->settle($marketerCampaign, 'admin');
-
-        return back()->with(
-            $settlement ? 'success' : 'error',
-            $settlement
-                ? __($settlement->isRefund() ? 'marketing_fees.affiliate.settle_refund_done' : 'marketing_fees.affiliate.settle_done', ['amount' => Money::format($settlement->amount), 'currency' => $settlement->currency])
-                : __('marketing_fees.affiliate.settle_nothing')
-        );
-    }
-
-    public function updateCommission(Request $request, MarketerCampaign $marketerCampaign): JsonResponse
-    {
-        $request->validate([
-            'marketer_commission_amount' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
-            'platform_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
-        ]);
-
-        abort_unless($marketerCampaign->status === 'pending_admin', 422, 'Campaign is not pending admin review');
-
-        $marketerCampaign->marketer_commission_amount = $request->marketer_commission_amount;
-        $marketerCampaign->platform_commission_amount = $request->platform_commission_amount;
-        $marketerCampaign->save();
-
-        return response()->json(['success' => true]);
     }
 
     public function searchVendorListings(Request $request)
@@ -465,23 +336,22 @@ class MarketerCampaignController extends Controller
             ->when($countryId, fn ($q) => $q->where('country_id', $countryId))
             ->whereBetween('created_at', [$dateFrom, $dateTo.' 23:59:59']);
 
-        $summaryByCurrency = MarketerCampaignInvitation::query()
-            ->whereHas('campaign', function ($q) use ($countryId, $dateFrom, $dateTo) {
-                $q->when($countryId, fn ($q) => $q->where('country_id', $countryId))
-                    ->whereBetween('created_at', [$dateFrom, $dateTo.' 23:59:59']);
-            })
-            ->where('status', 'accepted')
-            ->whereIn('platform_fee_status', ['pending', 'paid'])
-            ->select('platform_fee_currency as currency')
-            ->selectRaw('COUNT(*) as total_influencers_accepted')
-            ->selectRaw('SUM(platform_fee_amount) as total_fees_expected')
-            ->selectRaw('SUM(CASE WHEN platform_fee_status = "paid" THEN platform_fee_amount ELSE 0 END) as collected_fees')
-            ->selectRaw('SUM(CASE WHEN platform_fee_status = "pending" THEN platform_fee_amount ELSE 0 END) as pending_fees')
-            ->groupBy('platform_fee_currency')
+        // Per currency: campaign fees (the platform's revenue from campaigns), the budgets vendors committed, and how
+        // much of them went to affiliates / brokers (spent) and influencers (reserved / paid).
+        $summaryByCurrency = $query->clone()
+            ->whereNotIn('status', ['rejected', 'cancelled'])
+            ->select('currency')
+            ->selectRaw('COUNT(*) as total_campaigns')
+            ->selectRaw('SUM(max_commission_budget) as total_budget')
+            ->selectRaw('SUM(commission_budget_spent) as commissions_spent')
+            ->selectRaw('SUM(influencer_fixed_reserved) as influencer_fixed_total')
+            ->selectRaw('SUM(CASE WHEN campaign_fee_status = \'paid\' THEN marketing_fee_total ELSE 0 END) as collected_fees')
+            ->selectRaw('SUM(CASE WHEN campaign_fee_status = \'pending\' THEN marketing_fee_total ELSE 0 END) as pending_fees')
+            ->groupBy('currency')
             ->get();
 
         $campaigns = $query->clone()
-            ->with(['vendor', 'country', 'invitations.marketer'])
+            ->with(['vendor', 'country'])
             ->withCount('conversions')
             ->latest()
             ->paginate(25)
@@ -499,17 +369,17 @@ class MarketerCampaignController extends Controller
         abort_unless(auth('admin')->user()->can('marketer_campaigns.approve'), 403);
 
         $request->validate([
-            'marketer_commission_amount' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
-            'platform_commission_amount' => ['required', 'numeric', 'min:0', 'max:999999999', 'decimal:0,2'],
+            'max_commission_budget' => ['required', 'numeric', 'min:0.01', 'max:999999999', 'decimal:0,2'],
         ]);
 
         abort_unless($marketerCampaign->status === 'marketer_requested', 422,
             'هذه الحملة لا يمكن قبول طلبها في حالتها الحالية.');
 
-        $this->service->approveMarketerRequest(
-            $marketerCampaign,
-            $request->only(['marketer_commission_amount', 'platform_commission_amount'])
-        );
+        try {
+            $this->service->approveMarketerRequest($marketerCampaign, $request->only(['max_commission_budget']));
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()
             ->route('admin.marketer-campaigns.index')

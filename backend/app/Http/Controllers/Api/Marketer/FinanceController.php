@@ -7,7 +7,6 @@ use App\Models\Marketer;
 use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\WalletTransaction;
-use App\Services\Marketer\PromotionPenaltyService;
 use App\Services\MarketingFeeReportService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
@@ -112,9 +111,6 @@ class FinanceController extends Controller
             'bank_name' => ['required', 'string', 'max:150'],
             'bank_iban' => ['required', 'string', 'max:50'],
         ]);
-
-        // Pending promotion fines are taken before the payout request.
-        app(PromotionPenaltyService::class)->collect($marketer);
 
         $wallet = $this->walletService->getOrCreateWallet('marketer', $marketer->id, $currency);
 

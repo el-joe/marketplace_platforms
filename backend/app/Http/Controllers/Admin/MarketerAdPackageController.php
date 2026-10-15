@@ -37,7 +37,7 @@ class MarketerAdPackageController extends Controller
             'name_ar' => 'required|string|max:255', 'name_en' => 'nullable|string|max:255',
             'description_ar' => 'nullable|string', 'price' => 'required|numeric|decimal:0,2|min:0',
             'currency' => 'required|string|size:3', 'vat_pct' => 'required|integer|between:0,100',
-            'target_type' => 'required|in:influencer,affiliate,broker,all', 'duration_days' => 'required|integer|min:1',
+            'target_type' => ['required', \Illuminate\Validation\Rule::in([...\App\Enums\MarketerType::values(), 'all'])], 'duration_days' => 'required|integer|min:1',
             'features_text' => 'nullable|string', 'is_active' => 'nullable|boolean', 'sort_order' => 'nullable|integer|min:0',
         ];
     }

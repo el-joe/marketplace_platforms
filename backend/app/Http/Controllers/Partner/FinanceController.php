@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
+use App\Models\MarketerCampaign;
 use App\Models\MarketerCampaignFeeSettlement;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\MarketerCampaignSample;
@@ -17,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class FinanceController extends Controller
 {
@@ -154,6 +156,35 @@ class FinanceController extends Controller
                         'commission' => $commission,
                         'net' => -$commission,
                         'payout_number' => null,
+                        'receipt_url' => null,
+                    ]);
+                });
+        }
+
+        // v3 campaign fee: charged once when the campaign goes live (wallet first, otherwise the next statement).
+        if (in_array($type, ['all', 'influencer_fees', 'campaign_fees'])) {
+            MarketerCampaign::where('vendor_id', $vendorId)
+                ->whereIn('campaign_fee_status', ['pending', 'paid'])
+                ->where('marketing_fee_total', '>', 0)
+                ->whereBetween(DB::raw('COALESCE(campaign_fee_paid_at, updated_at)'), [$dateFrom, $dateTo])
+                ->with('payoutItems.payout:id,payout_number')
+                ->get()
+                ->each(function ($campaign) use (&$rows) {
+                    $fee = Money::number($campaign->marketing_fee_total);
+                    $rows->push([
+                        'type' => 'campaign_fee',
+                        'date' => $campaign->campaign_fee_paid_at ?? $campaign->updated_at,
+                        'reference' => $campaign->title ?: ('#'.substr((string) $campaign->id, 0, 8)),
+                        'description' => __('marketer_campaigns.finance.campaign_fee_line', [
+                            'status' => $campaign->campaign_fee_status === 'paid'
+                                ? __('partner.finance.fee_settled_'.($campaign->campaign_fee_paid_via ?: 'wallet'))
+                                : __('partner.finance.fee_unsettled'),
+                        ]),
+                        'amount' => -$fee,
+                        'gross' => 0,
+                        'commission' => 0,
+                        'net' => -$fee,
+                        'payout_number' => $campaign->payoutItems->first()?->payout?->payout_number,
                         'receipt_url' => null,
                     ]);
                 });

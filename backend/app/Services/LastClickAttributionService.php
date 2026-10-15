@@ -2,17 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\FlashSaleMarketerInvitation;
-use App\Models\MarketerCampaign;
-use App\Models\MarketerCampaignConversion;
 use App\Models\MarketerCampaignInvitation;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Notifications\Marketer\NewConversionNotification;
+use App\Services\Marketer\CampaignSaleRecorder;
+use App\Services\Marketer\ConversionSource;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * enhancement.md P-12: attribution + conversion recording, PER ORDER ITEM.
@@ -44,23 +40,62 @@ class LastClickAttributionService
 
     private readonly ReferralCodeResolver $resolver;
 
+    private readonly CampaignSaleRecorder $recorder;
+
     public function __construct(
-        private readonly MarketerCommissionRateService $commissionRates = new MarketerCommissionRateService,
         ?ReferralCodeResolver $resolver = null,
+        ?CampaignSaleRecorder $recorder = null,
     ) {
         $this->resolver = $resolver ?? new ReferralCodeResolver;
+        $this->recorder = $recorder ?? app(CampaignSaleRecorder::class);
     }
 
     /**
      * Record a referral click from a referral code.
-     * Called when a customer visits the referral link so it can be matched at checkout.
+     * Called when a customer visits the referral link so it can be matched later (checkout, classified inquiry,
+     * trip booking). The click carries the campaign and marketer it belongs to and is remembered per vertical, so a
+     * classified link never overwrites the product click of the same session (and vice versa).
      */
-    public function recordClick(string $referralCode, string $sessionId): void
+    public function recordClick(string $referralCode, string $sessionId, ?MarketerCampaignInvitation $invitation = null): void
     {
-        Cache::put("referral_click:{$sessionId}", [
+        $invitation ??= MarketerCampaignInvitation::where('referral_code', $referralCode)->with('campaign:id,campaign_category')->first();
+
+        $payload = [
             'referral_code' => $referralCode,
             'clicked_at' => now()->toISOString(),
-        ], now()->addDays((int) setting('marketer_attribution_window_days', self::DEFAULT_ATTRIBUTION_WINDOW_DAYS)));
+            'invitation_id' => $invitation?->id,
+            'campaign_id' => $invitation?->campaign_id,
+            'marketer_id' => $invitation?->marketer_id,
+            'vertical' => self::verticalOf($invitation?->campaign?->campaign_category),
+        ];
+        $ttl = now()->addDays((int) setting('marketer_attribution_window_days', self::DEFAULT_ATTRIBUTION_WINDOW_DAYS));
+
+        Cache::put("referral_click:{$sessionId}:{$payload['vertical']}", $payload, $ttl);
+        // Legacy single slot, still read by older callers.
+        Cache::put("referral_click:{$sessionId}", $payload, $ttl);
+    }
+
+    /** The remembered click of a session for one vertical (product | classified | travel), if any. */
+    public function clickFor(?string $sessionId, string $vertical = 'product'): ?array
+    {
+        if (! $sessionId) {
+            return null;
+        }
+
+        $click = Cache::get("referral_click:{$sessionId}:{$vertical}");
+        if ($click) {
+            return $click;
+        }
+
+        // Clicks recorded before per-vertical slots existed are product clicks.
+        $legacy = Cache::get("referral_click:{$sessionId}");
+
+        return $legacy && ($legacy['vertical'] ?? 'product') === $vertical ? $legacy : null;
+    }
+
+    public static function verticalOf(?string $campaignCategory): string
+    {
+        return in_array($campaignCategory, ['classified', 'travel'], true) ? $campaignCategory : 'product';
     }
 
     /**
@@ -74,7 +109,7 @@ class LastClickAttributionService
     {
         $order->loadMissing('items');
 
-        $click = $sessionId ? Cache::get("referral_click:{$sessionId}") : null;
+        $click = $this->clickFor($sessionId, 'product');
         $windowDays = (int) setting('marketer_attribution_window_days', self::DEFAULT_ATTRIBUTION_WINDOW_DAYS);
 
         // P14: the click resolves to exactly ONE invitation through ReferralCodeResolver: the live
@@ -84,7 +119,7 @@ class LastClickAttributionService
         $clickedAt = $click ? Carbon::parse($click['clicked_at']) : null;
         if ($click && now()->diffInDays($clickedAt) <= $windowDays) {
             $candidate = MarketerCampaignInvitation::where('referral_code', $click['referral_code'])
-                ->with(['campaign.tieredRules', 'marketer.marketerProfile'])
+                ->with(['campaign', 'marketer.marketerProfile'])
                 ->first();
 
             if ($candidate && $this->resolver->isAttributable($candidate, $clickedAt)) {
@@ -126,7 +161,7 @@ class LastClickAttributionService
     private function resolveInvitationForItem(OrderItem $item, ?MarketerCampaignInvitation $lastClickInvitation): ?MarketerCampaignInvitation
     {
         if ($item->marketer_listing_id) {
-            $item->loadMissing('marketerListing.invitation.campaign.tieredRules', 'marketerListing.invitation.marketer.marketerProfile');
+            $item->loadMissing('marketerListing.invitation.campaign', 'marketerListing.invitation.marketer.marketerProfile');
             $invitation = $item->marketerListing?->invitation;
 
             if ($invitation && $this->resolver->stateFor($invitation) === ReferralCodeResolver::STATE_ACTIVE) {
@@ -142,148 +177,22 @@ class LastClickAttributionService
         return $lastClickInvitation;
     }
 
+    /**
+     * Product vertical: the commission basis is the item price excluding VAT after discounts, for the whole line.
+     * Everything else (influencer skip, budget cap, snapshots) is CampaignSaleRecorder's job.
+     */
     private function recordConversion(MarketerCampaignInvitation $invitation, Order $order, OrderItem $item, ?array $click): void
     {
-        $pausedForBudget = false;
+        $basis = max(0.0, round((float) $item->line_subtotal - (float) $item->line_discount, 2));
 
-        DB::transaction(function () use ($invitation, $order, $item, $click, &$pausedForBudget) {
-            // Row-lock the campaign for the whole compute+spend+pause
-            // sequence (enhancement.md P-12 task 2 — same reserve pattern
-            // as P-04's CouponUsageService::reserve()).
-            /** @var MarketerCampaign $campaign */
-            $campaign = MarketerCampaign::where('id', $invitation->campaign_id)->lockForUpdate()->firstOrFail();
-            $invitation->refresh();
-
-            // Double-credit guard (retried request / concurrent resolution): one conversion per order item, ever.
-            if (MarketerCampaignConversion::where('order_item_id', $item->id)->exists()) {
-                return;
-            }
-
-            $saleNumber = $invitation->total_conversions + 1;
-            $commissionAmount = 0.0;
-            $applicableTierId = null;
-
-            switch ($campaign->commission_type) {
-                case 'tiered':
-                    $tiers = $campaign->tieredRules;
-                    $applicableTier = $tiers->where('from_sale_number', '<=', $saleNumber)
-                        ->sortByDesc('from_sale_number')
-                        ->first();
-                    $commissionAmount = (float) ($applicableTier?->commission_amount ?? 0);
-                    $applicableTierId = $applicableTier?->id;
-                    break;
-
-                case 'fixed':
-                case 'last_click':
-                default:
-                    $categoryId = $item->commission_category_id;
-                    $marketer = $invitation->marketer;
-                    $resolver = new AffiliateCommissionResolver($this->commissionRates);
-
-                    // A per-unit amount typed on the campaign (admin approval, peer promotion) wins. The affiliate
-                    // default stored at approval is not a typed override: the marketer's own rule, else the
-                    // category default (affiliates only, D11) is resolved on the real line instead.
-                    $campaignPerUnit = (float) $campaign->marketer_commission_amount;
-                    if ($campaignPerUnit > 0 && ! $this->isStoredCategoryDefault($campaign, $categoryId, $item, $resolver)) {
-                        $commissionAmount = round($campaignPerUnit * $item->quantity, 2);
-                    } else {
-                        $commissionAmount = $resolver->forConversion($marketer, $campaign, $categoryId, $item->line_total, (int) $item->quantity);
-                    }
-                    break;
-            }
-
-            // P11: the profile's commission discount no longer reduces the gross; it discounts the
-            // admin cut at approval (MarketerCommissionStatementService).
-
-            // Flash sale bonus, if this marketer has an accepted invitation to
-            // a currently-live flash sale.
-            $flashSaleId = null;
-            $flashSaleBonusAmount = null;
-            $liveFlashSaleInvitation = FlashSaleMarketerInvitation::where('marketer_id', $invitation->marketer_id)
-                ->where('status', 'accepted')
-                ->whereHas('flashSale', fn ($q) => $q->where('status', 'live'))
-                ->with('flashSale')
-                ->first();
-
-            if ($liveFlashSaleInvitation && $liveFlashSaleInvitation->hasExtraCommission()) {
-                $flashSaleId = $liveFlashSaleInvitation->flash_sale_id;
-                $flashSaleBonusAmount = $liveFlashSaleInvitation->calculateBonus(
-                    (float) $item->line_total,
-                    (int) $item->quantity
-                );
-            }
-
-            $totalCommission = round($commissionAmount + (float) ($flashSaleBonusAmount ?? 0), 2);
-
-            $conversion = MarketerCampaignConversion::create([
-                'campaign_id' => $campaign->id,
-                'invitation_id' => $invitation->id,
-                'order_id' => $order->id,
-                'order_item_id' => $item->id,
-                'referral_clicked_at' => $click['clicked_at'] ?? null,
-                'commission_amount' => $commissionAmount,
-                'platform_commission_amount' => round((float) $campaign->platform_commission_amount * $item->quantity, 2),
-                'currency' => $campaign->currency,
-                'status' => 'pending',
-                'commissioned' => false,
-                'sale_number_in_campaign' => $saleNumber,
-                'tiered_rule_id' => $campaign->commission_type === 'tiered' ? $applicableTierId : null,
-                'flash_sale_id' => $flashSaleId,
-                'flash_sale_bonus_amount' => $flashSaleBonusAmount,
-            ]);
-
-            $invitation->increment('total_conversions');
-            $invitation->increment('total_commission_earned', $commissionAmount);
-
-            // enhancement.md P-12 task 2: enforce max_commission_budget —
-            // the campaign row is already locked above, so this increment
-            // and the pause decision below serialize against concurrent
-            // orders on the same campaign.
-            $campaign->increment('commission_budget_spent', $totalCommission);
-            $campaign->refresh();
-
-            if (
-                $campaign->max_commission_budget > 0
-                && $campaign->commission_budget_spent >= $campaign->max_commission_budget
-                && in_array($campaign->status, ['active', 'auto_approved'], true)
-            ) {
-                $campaign->update(['status' => 'paused']);
-                $pausedForBudget = true;
-                Log::info('MarketerCampaign auto-paused: commission budget exhausted.', [
-                    'campaign_id' => $campaign->id,
-                    'spent' => $campaign->commission_budget_spent,
-                    'budget' => $campaign->max_commission_budget,
-                ]);
-            }
-
-            $invitation->marketer->marketerAdmins->each(
-                fn ($ma) => $ma->notify(new NewConversionNotification($conversion, $ma->id))
-            );
-        });
-
-        // P6: budget exhausted -> settle the affiliate marketing fees accrued so far (later approvals settle on arrival).
-        if ($pausedForBudget) {
-            app(AffiliateFeeSettlementService::class)->settleIfClosed($invitation->campaign_id, 'budget_exhausted');
-        }
-    }
-
-    /** True when the campaign's per-unit amount is just the category affiliate default stored at approval. */
-    private function isStoredCategoryDefault(MarketerCampaign $campaign, ?string $categoryId, OrderItem $item, AffiliateCommissionResolver $resolver): bool
-    {
-        $stored = (float) $campaign->marketer_commission_amount;
-        $prices = array_filter([
-            $campaign->vendorListing?->price,
-            $campaign->adminListing?->price,
-            $item->quantity > 0 ? (float) $item->line_total / (int) $item->quantity : null,
-        ], fn ($price) => $price !== null);
-
-        foreach ($prices as $price) {
-            $default = $resolver->categoryDefault($campaign->country_id, $categoryId, $price, 1);
-            if ($default > 0 && abs($default - $stored) < 0.005) {
-                return true;
-            }
-        }
-
-        return false;
+        $this->recorder->record(
+            $invitation,
+            ConversionSource::orderItem((string) $order->id, (string) $item->id),
+            $basis,
+            max(1, (int) $item->quantity),
+            $item->commission_category_id,
+            $order->created_at ?? now(),
+            isset($click['clicked_at']) ? Carbon::parse($click['clicked_at']) : null,
+        );
     }
 }

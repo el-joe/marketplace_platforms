@@ -3,7 +3,7 @@
 namespace App\Services\Marketer;
 
 use App\Models\MarketerCampaignInvitation;
-use App\Models\MarketerInfluencerFeeCountrySetting;
+use App\Support\Money;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -32,40 +32,22 @@ class InvitationWhatsAppMessage
         $campaign = $invitation->campaign;
         $links = $this->links($invitation);
 
-        $commission = match ($campaign->commission_type) {
-            'fixed' => __('marketer.invitations.commission_type_fixed', [], $locale),
-            'tiered' => __('marketer.invitations.commission_type_tiered', [], $locale),
-            'last_click' => __('marketer.invitations.commission_type_last_click', [], $locale),
-            default => (string) $campaign->commission_type,
-        };
-        if ($campaign->commission_type === 'fixed' && \App\Support\Money::number($campaign->marketer_commission_amount) > 0) {
-            $commission .= ' ('.\App\Support\Money::format($campaign->marketer_commission_amount).' '.$campaign->currency.')';
-        }
+        $fixed = $invitation->influencer_fixed_status && $invitation->influencer_fixed_status !== 'none'
+            ? Money::number($invitation->influencer_fixed_amount)
+            : 0.0;
+        $commission = $fixed > 0
+            ? __('marketer.invitations.whatsapp_commission_fixed', ['amount' => Money::format($fixed), 'currency' => $campaign->currency], $locale)
+            : __('marketer.invitations.whatsapp_commission_percentage', [], $locale);
 
         return __('marketer.invitations.whatsapp_message', [
             'name' => $invitation->marketer->name,
             'product' => $campaign->getPromotedTitle(),
             'commission' => $commission,
-            'fees' => $this->feeSummary($invitation, $locale),
+            'fees' => __('marketer.invitations.whatsapp_fees_note', [], $locale),
             'hours' => $invitation->acceptance_window_hours,
             'deadline' => $invitation->expires_at?->copy()->locale($locale)->isoFormat('D MMM YYYY HH:mm') ?? '-',
             'accept_link' => $links['accept'],
             'reject_link' => $links['reject'],
         ], $locale);
-    }
-
-    private function feeSummary(MarketerCampaignInvitation $invitation, string $locale): string
-    {
-        $fee = $invitation->marketer->isInfluencer()
-            ? (int) (MarketerInfluencerFeeCountrySetting::where('country_id', $invitation->campaign->country_id)->value('fee_per_influencer') ?? 0)
-            : 0;
-
-        if ($fee <= 0) {
-            return __('marketer.invitations.whatsapp_fees_none', [], $locale);
-        }
-
-        return setting('marketer_influencer_fee_payer', 'vendor') === 'vendor' && $invitation->campaign->vendor_id
-            ? __('marketer.invitations.whatsapp_fees_seller', [], $locale)
-            : __('marketer.invitations.whatsapp_fees_marketer', ['fee' => number_format($fee).' '.$invitation->campaign->currency], $locale);
     }
 }

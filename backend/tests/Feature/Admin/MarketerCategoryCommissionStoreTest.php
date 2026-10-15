@@ -5,110 +5,152 @@ namespace Tests\Feature\Admin;
 use App\Models\Admin;
 use App\Models\Country;
 use App\Models\Marketer;
-use App\Models\MarketerCategoryCommission;
 use App\Models\MarketerCommissionRule;
-use App\Models\OpenMarketCategoryCommission;
+use App\Models\MarketerJob;
+use App\Models\MarketerMarketerJob;
 use App\Models\TravelCategory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
+/** R4: type-aware per-category commission rules on the admin marketer profile. */
 class MarketerCategoryCommissionStoreTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function storeCommission(array $data)
+    private function admin(): Admin
     {
-        Permission::firstOrCreate(['name' => 'vendors.assigned_only', 'guard_name' => 'admin']);
-        Permission::firstOrCreate(['name' => 'marketers.manage', 'guard_name' => 'admin']);
-        Permission::firstOrCreate(['name' => 'marketers.view', 'guard_name' => 'admin']);
+        foreach (['vendors.assigned_only', 'marketers.manage', 'marketers.view'] as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'admin']);
+        }
         $admin = Admin::factory()->create();
         $admin->givePermissionTo(['marketers.manage', 'marketers.view']);
+
+        return $admin;
+    }
+
+    private function marketerOf(string ...$types): Marketer
+    {
         $marketer = Marketer::create([
             'name' => 'M', 'email' => 'm-'.uniqid().'@example.test', 'phone' => '+9715'.random_int(10000000, 99999999),
-            'marketer_type' => 'influencer', 'global_status' => 'active', 'approved_at' => now(),
+            'global_status' => 'active', 'approved_at' => now(),
         ]);
+        foreach ($types as $type) {
+            $job = MarketerJob::firstOrCreate(['key' => $type], ['name_ar' => $type, 'name_en' => $type, 'is_active' => true, 'sort_order' => 1]);
+            MarketerMarketerJob::firstOrCreate(['marketer_id' => $marketer->id, 'marketer_job_id' => $job->id]);
+        }
 
-        return [$marketer, $this->actingAs($admin, 'admin')
-            ->post(route('admin.marketers.category-commissions.store', $marketer), $data)];
+        return $marketer;
     }
 
-    public function test_both_mode(): void
+    private function store(Marketer $marketer, array $data)
     {
-        [$m, $r] = $this->storeCommission(['commission_rate' => 10, 'commission_flat_amount' => 5]);
-        $r->assertSessionHasNoErrors();
-        $c = MarketerCategoryCommission::where('marketer_id', $m->id)->first();
-        $this->assertSame('both', $c->commission_mode);
-        $this->assertEquals(15, $c->resolveAmount(100));
+        return $this->actingAs($this->admin(), 'admin')
+            ->post(route('admin.marketers.category-commissions.store', $marketer), $data + ['scope' => 'products']);
     }
 
-    public function test_fixed_and_percentage_modes(): void
+    public function test_influencer_gets_a_fixed_amount_only_and_a_percentage_is_rejected(): void
     {
-        [$m] = $this->storeCommission(['commission_flat_amount' => 7]);
-        $this->assertSame('fixed', MarketerCategoryCommission::where('marketer_id', $m->id)->first()->commission_mode);
-        [$m2] = $this->storeCommission(['commission_rate' => 5]);
-        $this->assertSame('percentage', MarketerCategoryCommission::where('marketer_id', $m2->id)->first()->commission_mode);
+        $m = $this->marketerOf('influencer');
+
+        $this->store($m, ['commission_rate' => 5])->assertSessionHasErrors('commission_rate');
+        $this->store($m, [])->assertSessionHasErrors('commission_flat_amount');
+        $this->assertSame(0, MarketerCommissionRule::where('marketer_id', $m->id)->count());
+
+        $this->store($m, ['commission_flat_amount' => 200])->assertSessionHasNoErrors();
+        $rule = MarketerCommissionRule::where('marketer_id', $m->id)->sole();
+        $this->assertSame('influencer', $rule->marketer_type);
+        $this->assertSame('fixed', $rule->commission_mode);
+        $this->assertEquals(200, $rule->commission_flat_amount);
+        $this->assertEquals(0, $rule->commission_rate);
     }
 
-    public function test_requires_at_least_one(): void
+    public function test_affiliate_gets_a_percentage_only_and_a_fixed_amount_is_rejected(): void
     {
-        [, $r] = $this->storeCommission(['commission_rate' => 0, 'commission_flat_amount' => 0]);
-        $r->assertSessionHasErrors('commission_rate');
+        $m = $this->marketerOf('affiliate');
+
+        $this->store($m, ['commission_flat_amount' => 5])->assertSessionHasErrors('commission_flat_amount');
+        $this->store($m, [])->assertSessionHasErrors('commission_rate');
+
+        $this->store($m, ['commission_rate' => 8])->assertSessionHasNoErrors();
+        $rule = MarketerCommissionRule::where('marketer_id', $m->id)->sole();
+        $this->assertSame(['affiliate', 'percentage'], [$rule->marketer_type, $rule->commission_mode]);
+        $this->assertNull($rule->commission_flat_amount);
+    }
+
+    public function test_broker_may_use_fixed_percentage_or_both(): void
+    {
+        $m = $this->marketerOf('broker');
+
+        $this->store($m, [])->assertSessionHasErrors('commission_rate');
+        $this->store($m, ['commission_flat_amount' => 15, 'commission_rate' => 5])->assertSessionHasNoErrors();
+        $rule = MarketerCommissionRule::where('marketer_id', $m->id)->sole();
+        $this->assertSame(['broker', 'both'], [$rule->marketer_type, $rule->commission_mode]);
+        $this->assertEquals(65.0, $rule->resolveAmount(1000));
+
+        $this->store($m, ['commission_flat_amount' => 7])->assertSessionHasNoErrors();
+        $this->assertSame('fixed', $rule->fresh()->commission_mode);
+    }
+
+    public function test_the_fee_override_is_stored_and_empty_means_default(): void
+    {
+        $m = $this->marketerOf('affiliate');
+
+        $this->store($m, ['commission_rate' => 8])->assertSessionHasNoErrors();
+        $rule = MarketerCommissionRule::where('marketer_id', $m->id)->sole();
+        $this->assertNull($rule->fee_percentage);
+        $this->assertNull($rule->fee_fixed);
+
+        $this->store($m, ['commission_rate' => 8, 'fee_percentage' => 12.5, 'fee_fixed' => 2])->assertSessionHasNoErrors();
+        $rule->refresh();
+        $this->assertEquals(12.5, (float) $rule->fee_percentage);
+        $this->assertEquals(2, $rule->fee_fixed);
+    }
+
+    public function test_a_type_the_marketer_does_not_hold_is_rejected(): void
+    {
+        $m = $this->marketerOf('affiliate');
+
+        $this->store($m, ['marketer_type' => 'influencer', 'commission_flat_amount' => 10])->assertSessionHasErrors('marketer_type');
+        $this->assertSame(0, MarketerCommissionRule::where('marketer_id', $m->id)->count());
     }
 
     public function test_store_per_scope_and_category_validation(): void
     {
         $tc = TravelCategory::create(['name_en' => 'T', 'name_ar' => 'س', 'slug' => 't-'.uniqid(), 'is_active' => true]);
-        [$m, $r] = $this->storeCommission(['scope' => 'travel', 'category_id' => $tc->id, 'commission_rate' => 3]);
-        $r->assertSessionHasNoErrors();
+        $m = $this->marketerOf('broker');
+
+        $this->store($m, ['scope' => 'travel', 'category_id' => $tc->id, 'commission_rate' => 3])->assertSessionHasNoErrors();
         $this->assertSame(1, MarketerCommissionRule::where('marketer_id', $m->id)->where('scope', 'travel')->count());
 
-        [$m2, $r2] = $this->storeCommission(['scope' => 'products', 'category_id' => $tc->id, 'commission_rate' => 3]);
-        $r2->assertSessionHasErrors('category_id');
+        $m2 = $this->marketerOf('broker');
+        $this->store($m2, ['scope' => 'products', 'category_id' => $tc->id, 'commission_rate' => 3])->assertSessionHasErrors('category_id');
         $this->assertSame(0, MarketerCommissionRule::where('marketer_id', $m2->id)->count());
-
-        [$m3] = $this->storeCommission(['scope' => 'open_market', 'commission_rate' => 2]);
-        $this->assertSame(1, OpenMarketCategoryCommission::where('marketer_id', $m3->id)->count());
     }
 
-    public function test_delete_removes_both_tables(): void
+    public function test_delete_removes_the_rule(): void
     {
-        [$m] = $this->storeCommission(['scope' => 'open_market', 'commission_rate' => 2]);
-        [$m2] = $this->storeCommission(['commission_rate' => 4]);
-        $admin = Admin::first();
-        foreach ([$m, $m2] as $mk) {
-            $rule = MarketerCommissionRule::where('marketer_id', $mk->id)->first();
-            $this->actingAs($admin, 'admin')
-                ->delete(route('admin.marketers.category-commissions.destroy', [$mk, $rule->id]))->assertSessionHasNoErrors();
-        }
+        $m = $this->marketerOf('affiliate');
+        $this->store($m, ['commission_rate' => 4]);
+        $rule = MarketerCommissionRule::where('marketer_id', $m->id)->sole();
+
+        $this->actingAs(Admin::first(), 'admin')
+            ->delete(route('admin.marketers.category-commissions.destroy', [$m, $rule->id]))
+            ->assertSessionHasNoErrors();
+
         $this->assertSame(0, MarketerCommissionRule::count());
-        $this->assertSame(0, OpenMarketCategoryCommission::count());
-        $this->assertSame(0, MarketerCategoryCommission::count());
     }
 
-    public function test_currency_from_marketer_country(): void
+    public function test_profile_page_shows_the_heading_for_the_type_and_the_currency(): void
     {
-        [$m] = $this->storeCommission(['commission_flat_amount' => 5]);
+        $m = $this->marketerOf('influencer');
         $country = Country::factory()->create(['currency_code' => 'EGP']);
         $m->update(['country_id' => $country->id]);
+        $this->store($m, ['commission_flat_amount' => 5]);
+
         $this->actingAs(Admin::first(), 'admin')->get(route('admin.marketers.show', $m))
-            ->assertOk()->assertSee('5 EGP');
-    }
-
-    public function test_rule_is_rolled_back_when_the_legacy_mirror_write_fails(): void
-    {
-        $event = 'eloquent.creating: '.MarketerCategoryCommission::class;
-        Event::listen($event, fn () => throw new \RuntimeException('mirror write failed'));
-
-        try {
-            [$m, $r] = $this->storeCommission(['commission_rate' => 10]);
-        } finally {
-            Event::forget($event);
-        }
-
-        $r->assertServerError();
-        $this->assertSame(0, MarketerCommissionRule::where('marketer_id', $m->id)->count());
-        $this->assertSame(0, MarketerCategoryCommission::where('marketer_id', $m->id)->count());
+            ->assertOk()
+            ->assertSee(__('marketer_commissions.heading_influencer'))
+            ->assertSee('5 EGP');
     }
 }

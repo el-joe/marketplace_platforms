@@ -9,7 +9,7 @@ use App\Notifications\Marketer\BrokerSpecialRequestNotification;
 class SpecialRequestRoutingService
 {
     /**
-     * Notify active affiliate brokers matching the request (see
+     * Notify active brokers matching the request (see
      * MarketerProfile::scopeMatchingRequest). Each marketer-admin is notified once.
      *
      * @return int number of brokers (profiles) matched; stored as brokers_notified
