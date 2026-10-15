@@ -16,7 +16,7 @@ Execution rules (from the owner):
 ### 1.1 Marketer types (3)
 | Type | Earns | Basis | Per-category rule in marketer profile |
 |---|---|---|---|
-| **Influencer** | **Fixed amount** per sale unit | Fixed, per country + category | Fixed only (percentage input disabled) |
+| **Influencer** | **Fixed amount per campaign** (one flat amount per influencer per campaign, not per sale) | Fixed, per country + category | Fixed only (percentage input disabled) |
 | **Affiliate** | **Percentage** | Customer-visible product/listing price; classified = classified total price; travel = total of bookings attributed to him | Percentage only (fixed input disabled) |
 | **Broker** | Fixed, percentage, or both | Same bases as affiliate, same flow in all 3 verticals | Fixed / percentage / both |
 
@@ -34,7 +34,7 @@ Broker joins the same way affiliates do (open checkbox) and via invitation where
 
 ### 1.3 Formulas
 ```
-influencer_commission  = profile fixed rule (marketer, category type, category)  → else default influencer commission (marketer settings, category type [+ country])
+influencer_commission  = ONE fixed amount per influencer per campaign (not per sale/unit/order). Source: profile fixed rule (marketer, category type, category)  → else default influencer commission (marketer settings, category type [+ country])
 affiliate_commission   = pct × basis            (basis per vertical, §1.1)
 broker_commission      = fixed + pct × basis    (either part may be null/0)
 
@@ -46,8 +46,8 @@ commission_fee_to_platform (taken from marketer) = pct × marketer_commission + 
         overridden per marketer profile per category
 marketer_net = marketer_commission − commission_fee_to_platform   (never < 0)
 ```
-Open-to-affiliates campaigns stop (status `done`) when `commission_budget_spent ≥ max_commission_budget`.
-Travel/classified commissions accrue **after** sale/booking (classified marked sold; travel booking confirmed/completed) and are reversed on cancellation/refund.
+Influencer amount is **locked (snapshotted) on the invitation at campaign creation** and counts against Max Commission Budget at that moment (reserved), so the budget can never be exceeded by influencers. It is earned by the influencer on delivery of the campaign (decision Q4/Q16). Open-to-affiliates campaigns stop (status `done`) when `commission_budget_spent ≥ max_commission_budget`.
+Travel/classified affiliate/broker commissions accrue **after** sale/booking (classified marked sold; travel booking confirmed/completed) and are reversed on cancellation/refund.
 
 ---
 
@@ -76,7 +76,9 @@ Recommended answer in **bold**.
 | Q1 | Influencer fixed amount: "per country and category" — one default per (country, category type) in marketer settings, with optional per-category override? | **Settings: per (country × category type) default. Marketer profile: per category (and category type default) override. Category-edit "Marketers" tab influencer-share % removed.** |
 | Q2 | Travel/classified "commission due after sale": which event? | **Classified: seller taps "Mark sold" and enters sale price (required when a campaign is attached). Travel: booking `confirmed` and paid, released on trip `completed` (new nightly job marks past trips completed).** |
 | Q3 | Can brokers be invited by vendors like influencers, or only join via "open to all"? | **Open-checkbox label becomes "Open to all registered affiliates & brokers"; no per-broker invite.** |
-| Q4 | Influencer fixed amount unit: per order, per item, or per unit sold? | **Per sold unit (quantity-multiplied) for products; per sold listing for classified; per confirmed booking for travel.** |
+| Q4 | ~~Per sale unit~~ **Owner decision: influencer fixed amount is PER CAMPAIGN, not per sale.** | Settled. |
+| Q16 | When is the per-campaign influencer amount released to the influencer? | **Reserved from campaign budget when the influencer accepts; paid (net of commission fee) when the campaign ends `done` or on campaign end date, if the influencer fulfilled it; refunded to vendor budget if rejected/cancelled/not fulfilled. Alternative: pay on acceptance.** |
+| Q17 | Does the influencer amount count in Max Commission Budget? | **Yes (reserved), so remaining budget funds affiliate/broker % commissions only.** |
 | Q5 | Affiliate/broker % basis for product: price shown to the customer — incl. VAT or excl.? | **Excl. VAT, after discounts/coupons ("customer-visible item price before tax").** |
 | Q6 | Commission fee (platform cut on marketer) — replaces old `platform_cut_percentage` + profile discount + VAT-on-cut? | **Yes: replace with `pct + fixed`; VAT on the fee kept only if currently required by tax settings (reuse existing VAT line).** |
 | Q7 | Campaign fee % "taken from total campaign as now": keep current `campaign_subtotal` meaning? | **Yes, keep.** |
@@ -176,7 +178,7 @@ New / reworked services:
 
 **R5 – Calculator & fee services.** `MarketerCommissionCalculator`, `CommissionFeeService`, simplified `MarketingFeeService`; delete superseded services. Prompt: *"Implement §1.3 formulas exactly; unit tests with the worked examples in §9; replace callers; delete dead services."*
 
-**R6 – Product campaign flow update.** Wizard (influencer multi-select with amounts, open-to-affiliates/brokers, max budget, cost summary), conversion recording through `CampaignSaleRecorder`, budget → `done`, fix resume gap, payouts/wallet postings, remove tiered/flash/fee-accrual code. Prompt: *"Update partner campaign wizard and LastClickAttributionService→CampaignSaleRecorder for product vertical per §6."*
+**R6 – Product campaign flow update.** Influencer amount is per campaign: stored on the invitation (`influencer_fixed_amount` snapshot), reserved from budget, released per Q16; no per-sale influencer conversions — only affiliate/broker sales create commission conversions. Wizard (influencer multi-select with amounts, open-to-affiliates/brokers, max budget, cost summary), conversion recording through `CampaignSaleRecorder`, budget → `done`, fix resume gap, payouts/wallet postings, remove tiered/flash/fee-accrual code. Prompt: *"Update partner campaign wizard and LastClickAttributionService→CampaignSaleRecorder for product vertical per §6."*
 
 **R7 – Classified vertical.** Sold price/`sold_at`, inquiry/landing attribution, classified vendor campaign routes/views/permissions, conversion on sold, reversal on un-sold. Prompt: *"Wire classified campaigns end-to-end per §6; replace marketer_promotion_enabled dead checkbox."*
 
@@ -195,7 +197,7 @@ New / reworked services:
 - Existing tests referencing removed models will fail; R10 rewrites/deletes them (not run now).
 
 ## 9. Worked examples (for test md)
-- Influencer: default fixed 20 EGP (product, Egypt), profile override none, 3 units sold → gross 60; commission fee 5% + 1 fixed = 4 → net 56.
+- Influencer: default fixed 200 EGP per campaign (product, Egypt), no profile override; 3 units sold or 300 sold — still 200 gross; commission fee 5% + 1 fixed = 11 → net 189.
 - Affiliate: 8% of item price 1,000 = 80; fee 10% + 2 = 10 → net 70.
 - Broker: fixed 15 + 5% of 1,000 = 65; fee 10% + 2 = 8.5 → net 56.5.
 - Campaign fee: subtotal 500; fixed fee 10 + 2% = 20; variable 5 + 1% = 10 → platform earns 30.
